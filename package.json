@@ -1,13 +1,18 @@
 {
   "name": "cdk-preflight",
+  "description": "Catch deploy-time CloudFormation failures at synth time: a Rego rule pack for constraints that resource schemas miss, injected into the AWS CDK built-in validator",
   "repository": {
     "type": "git",
-    "url": "https://github.com/malaysia.cryer/cdk-preflight.git"
+    "url": "https://github.com/badmintoncryer/cdk-preflight.git"
+  },
+  "bin": {
+    "cdk-preflight": "lib/cli.js"
   },
   "scripts": {
     "build": "projen build",
     "bump": "projen bump",
     "bump:releasable-commits": "projen bump:releasable-commits",
+    "bundle-rules": "projen bundle-rules",
     "clobber": "projen clobber",
     "compat": "projen compat",
     "compile": "projen compile",
@@ -18,6 +23,7 @@
     "package": "projen package",
     "package-all": "projen package-all",
     "package:js": "projen package:js",
+    "package:python": "projen package:python",
     "post-compile": "projen post-compile",
     "post-upgrade": "projen post-upgrade",
     "pre-compile": "projen pre-compile",
@@ -30,7 +36,7 @@
     "projen": "projen"
   },
   "author": {
-    "name": "Kazuho Cryer-Shinozuka",
+    "name": "Kazuho CryerShinozuka",
     "email": "malaysia.cryer@gmail.com",
     "organization": false
   },
@@ -40,7 +46,7 @@
     "@types/node": "^26.4.0",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
-    "aws-cdk-lib": "2.189.1",
+    "aws-cdk-lib": "2.267.0",
     "commit-and-tag-version": "^12",
     "constructs": "10.5.1",
     "eslint": "^9",
@@ -48,29 +54,33 @@
     "eslint-plugin-import": "^2.32.0",
     "jest": "^30.5.1",
     "jest-junit": "^17",
-    "jsii": "~6.0.0",
+    "jsii": "~5.8.0",
     "jsii-diff": "^1.140.0",
     "jsii-docgen": "^10.5.0",
     "jsii-pacmak": "^1.140.0",
-    "jsii-rosetta": "~6.0.0",
+    "jsii-rosetta": "~5.8.0",
     "projen": "^0.103.12",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.0"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.189.1",
+    "aws-cdk-lib": "^2.267.0",
     "constructs": "^10.5.1"
   },
   "keywords": [
-    "cdk"
+    "aws",
+    "aws-cdk",
+    "cdk",
+    "cloudformation",
+    "fail-fast",
+    "linter",
+    "policy-validation",
+    "preflight",
+    "rego",
+    "validation"
   ],
-  "devEngines": {
-    "packageManager": {
-      "name": "npm",
-      "onFail": "ignore"
-    }
-  },
   "main": "lib/index.js",
   "license": "Apache-2.0",
   "stability": "stable",
@@ -126,7 +136,12 @@
   "types": "lib/index.d.ts",
   "jsii": {
     "outdir": "dist",
-    "targets": {},
+    "targets": {
+      "python": {
+        "distName": "cdk-preflight",
+        "module": "cdk_preflight"
+      }
+    },
     "tsconfig": "tsconfig.json",
     "validateTsconfig": "strict"
   },

@@ -68,6 +68,14 @@
         }
       ]
     },
+    "bundle-rules": {
+      "name": "bundle-rules",
+      "steps": [
+        {
+          "exec": "ts-node --project test/tsconfig.json scripts/bundle-rules.ts"
+        }
+      ]
+    },
     "clobber": {
       "name": "clobber",
       "description": "hard resets to HEAD of origin and cleans the local repo",
@@ -207,7 +215,7 @@
       "description": "Install project dependencies and update lockfile (non-frozen)",
       "steps": [
         {
-          "exec": "npm install"
+          "exec": "yarn install --check-files"
         }
       ]
     },
@@ -216,7 +224,7 @@
       "description": "Install project dependencies using frozen lockfile",
       "steps": [
         {
-          "exec": "npm ci"
+          "exec": "yarn install --check-files --frozen-lockfile"
         }
       ]
     },
@@ -240,6 +248,9 @@
       "steps": [
         {
           "spawn": "package:js"
+        },
+        {
+          "spawn": "package:python"
         }
       ]
     },
@@ -253,6 +264,20 @@
             "-v",
             "--target",
             "js"
+          ]
+        }
+      ]
+    },
+    "package:python": {
+      "name": "package:python",
+      "description": "Create python language bindings",
+      "steps": [
+        {
+          "execArgs": [
+            "jsii-pacmak",
+            "-v",
+            "--target",
+            "python"
           ]
         }
       ]
@@ -272,7 +297,12 @@
     },
     "pre-compile": {
       "name": "pre-compile",
-      "description": "Prepare the project for compilation"
+      "description": "Prepare the project for compilation",
+      "steps": [
+        {
+          "spawn": "bundle-rules"
+        }
+      ]
     },
     "release": {
       "name": "release",
@@ -364,16 +394,16 @@
             "--peer",
             "--no-deprecated",
             "--dep=dev,prod,peer,optional",
-            "--filter=@types/jest,@types/node,eslint-import-resolver-typescript,eslint-plugin-import,jest,jsii-diff,jsii-pacmak,projen,ts-jest,ts-node,typescript"
+            "--filter=@types/jest,@types/node,eslint-import-resolver-typescript,eslint-plugin-import,jest,jsii-diff,jsii-pacmak,projen,ts-jest,ts-node,typescript,yaml"
           ]
         },
         {
-          "exec": "npm install"
+          "exec": "yarn install --check-files"
         },
         {
           "execArgs": [
-            "npm",
-            "update",
+            "yarn",
+            "upgrade",
             "@stylistic/eslint-plugin",
             "@types/jest",
             "@types/node",
@@ -394,6 +424,7 @@
             "ts-jest",
             "ts-node",
             "typescript",
+            "yaml",
             "aws-cdk-lib",
             "constructs"
           ]

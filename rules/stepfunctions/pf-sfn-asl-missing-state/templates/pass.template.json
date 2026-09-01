@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "SM": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "RoleArn": "arn:aws:iam::123456789012:role/service-role/StatesExecutionRole",
+        "DefinitionString": "{\"StartAt\":\"A\",\"States\":{\"A\":{\"Type\":\"Pass\",\"Next\":\"B\"},\"B\":{\"Type\":\"Succeed\"}}}"
+      }
+    }
+  }
+}

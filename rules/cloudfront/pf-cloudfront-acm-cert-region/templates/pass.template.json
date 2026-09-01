@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Dist": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Aliases": ["www.example.com"],
+          "ViewerCertificate": {
+            "AcmCertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/11111111-2222-3333-4444-555555555555",
+            "SslSupportMethod": "sni-only",
+            "MinimumProtocolVersion": "TLSv1.2_2021"
+          },
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "origin1",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "ForwardedValues": { "QueryString": false }
+          },
+          "Origins": [{
+            "Id": "origin1",
+            "DomainName": "example.com",
+            "CustomOriginConfig": { "OriginProtocolPolicy": "https-only" }
+          }]
+        }
+      }
+    }
+  }
+}

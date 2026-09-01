@@ -1,0 +1,11 @@
+id: pf-cloudfront-acm-cert-region
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: CloudFront viewer certificates must live in us-east-1
+constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-certificate-issuer
+upstream: none
+repro:
+  method: doc-only
+  evidence: cannot reproduce without a validated ACM certificate; constraint documented and widely observed
+addedOn: 2026-09-01

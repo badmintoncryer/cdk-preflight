@@ -1,0 +1,11 @@
+id: pf-iam-managed-policy-size
+service: iam
+resourceTypes: [AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: Managed policy documents are limited to 6144 characters (whitespace excluded)
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html
+upstream: none
+repro:
+  method: research-case
+  evidence: cdk-validation-gap-research case08 (2026-09-01, "Cannot exceed quota for PolicySize 6144" at deploy)
+addedOn: 2026-09-01

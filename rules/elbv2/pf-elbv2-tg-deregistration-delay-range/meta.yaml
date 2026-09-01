@@ -1,0 +1,11 @@
+id: pf-elbv2-tg-deregistration-delay-range
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: Target group deregistration_delay.timeout_seconds must be between 0 and 3600
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#deregistration-delay
+upstream: none
+repro:
+  method: real-deploy
+  evidence: verified 2026-09-01 (bench, us-east-1)
+addedOn: 2026-09-01

@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Vpc": { "Type": "AWS::EC2::VPC", "Properties": { "CidrBlock": "10.0.0.0/16" } },
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "instance",
+        "VpcId": { "Ref": "Vpc" },
+        "TargetGroupAttributes": [
+          { "Key": "slow_start.duration_seconds", "Value": "10" }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "Resources": {
+    "U": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "UserName": "cdkpf-inline-size-user"
+      }
+    },
+    "P": {
+      "Type": "AWS::IAM::UserPolicy",
+      "Properties": {
+        "UserName": {
+          "Ref": "U"
+        },
+        "PolicyName": "big",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "LongStatementNumber0",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-0/*"
+            },
+            {
+              "Sid": "LongStatementNumber1",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-1/*"
+            },
+            {
+              "Sid": "LongStatementNumber2",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-2/*"
+            },
+            {
+              "Sid": "LongStatementNumber3",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-3/*"
+            },
+            {
+              "Sid": "LongStatementNumber4",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-4/*"
+            },
+            {
+              "Sid": "LongStatementNumber5",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-5/*"
+            },
+            {
+              "Sid": "LongStatementNumber6",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-6/*"
+            },
+            {
+              "Sid": "LongStatementNumber7",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-7/*"
+            },
+            {
+              "Sid": "LongStatementNumber8",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-8/*"
+            },
+            {
+              "Sid": "LongStatementNumber9",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-9/*"
+            },
+            {
+              "Sid": "LongStatementNumber10",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-10/*"
+            },
+            {
+              "Sid": "LongStatementNumber11",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-11/*"
+            },
+            {
+              "Sid": "LongStatementNumber12",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-12/*"
+            },
+            {
+              "Sid": "LongStatementNumber13",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-13/*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

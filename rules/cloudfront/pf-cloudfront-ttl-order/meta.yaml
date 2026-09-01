@@ -1,0 +1,11 @@
+id: pf-cloudfront-ttl-order
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL
+constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html
+upstream: none
+repro:
+  method: research-case
+  evidence: cdk-validation-gap-research case10 (2026-09-01, "MinTTL, MaxTTL and DefaultTTL..." at deploy)
+addedOn: 2026-09-01

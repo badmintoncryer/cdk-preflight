@@ -1,0 +1,23 @@
+# cdk-preflight
+
+> A Rego rule pack that catches deploy-time CloudFormation failures at `cdk synth` time, by injecting rules for schema-invisible constraints (doc-only limits, cross-property rules) into the AWS CDK built-in validator (aws-cdk-lib >= 2.267.0).
+
+## Install into a CDK app (agent playbook)
+
+1. `npm i -D cdk-preflight`
+2. `npx cdk-preflight init` — locates the app entry via cdk.json and inserts `Preflight.apply(app)`. `--dry-run` previews, `--dir <path>` targets another directory. Idempotent.
+3. `cdk synth` — violations appear as warnings with rule id, actual value, suggested fix, and construct trace.
+4. To fail the build on violations: `Preflight.apply(app, { enforce: true })`. Add `strict: true` to also fail on the engine's own error-class findings (F-/E-prefixed) that CDK otherwise downgrades to warnings.
+5. Machine-readable findings: synth with `-c @aws-cdk/core:validationReportJson=true`, then read `cdk.out/validation-report.json`.
+
+## Key files
+
+- README.md: usage and options
+- docs/rules.md: generated table of bundled rules
+- AGENTS.md: how to author a rule (fail/pass fixtures, duplication guard, real-deploy gate)
+- rules/<service>/<rule-id>/: rule.rego + meta.yaml + templates
+
+## API
+
+- `Preflight.apply(scope: App | Stage, options?: { exclude?: string[]; enforce?: boolean; strict?: boolean; includeUpstreamPending?: boolean })`
+- `Preflight.ruleIds(): string[]`

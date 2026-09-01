@@ -1,0 +1,114 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "LongStatementNumber0",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-0/*"
+            },
+            {
+              "Sid": "LongStatementNumber1",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-1/*"
+            },
+            {
+              "Sid": "LongStatementNumber2",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-2/*"
+            },
+            {
+              "Sid": "LongStatementNumber3",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-3/*"
+            },
+            {
+              "Sid": "LongStatementNumber4",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-4/*"
+            },
+            {
+              "Sid": "LongStatementNumber5",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-5/*"
+            },
+            {
+              "Sid": "LongStatementNumber6",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-6/*"
+            },
+            {
+              "Sid": "LongStatementNumber7",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-7/*"
+            },
+            {
+              "Sid": "LongStatementNumber8",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-8/*"
+            },
+            {
+              "Sid": "LongStatementNumber9",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-9/*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

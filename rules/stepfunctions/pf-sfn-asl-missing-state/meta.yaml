@@ -1,0 +1,11 @@
+id: pf-sfn-asl-missing-state
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: ASL StartAt/Next/Default/Choices must reference a defined state (top-level states)
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-states.html
+upstream: none
+repro:
+  method: research-case
+  evidence: cdk-validation-gap-research case12 (2026-09-01, "MISSING_TRANSITION_TARGET" at deploy)
+addedOn: 2026-09-01

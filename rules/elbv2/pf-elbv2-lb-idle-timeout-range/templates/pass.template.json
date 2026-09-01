@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internal",
+        "Subnets": ["subnet-0123456789abcdef0", "subnet-0123456789abcdef1"],
+        "LoadBalancerAttributes": [
+          { "Key": "idle_timeout.timeout_seconds", "Value": "3600" }
+        ]
+      }
+    }
+  }
+}

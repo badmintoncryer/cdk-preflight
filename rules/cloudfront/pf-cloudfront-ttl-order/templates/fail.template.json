@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Dist": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "origin1",
+            "ViewerProtocolPolicy": "allow-all",
+            "MinTTL": 100,
+            "DefaultTTL": 50,
+            "MaxTTL": 10,
+            "ForwardedValues": { "QueryString": false }
+          },
+          "Origins": [{
+            "Id": "origin1",
+            "DomainName": "example.com",
+            "CustomOriginConfig": { "OriginProtocolPolicy": "https-only" }
+          }]
+        }
+      }
+    }
+  }
+}

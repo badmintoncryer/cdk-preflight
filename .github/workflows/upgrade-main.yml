@@ -23,11 +23,11 @@ jobs:
         id: setup_node_js
         uses: actions/setup-node@v7.0.0
         with:
-          node-version: lts/*
+          node-version: "24"
           package-manager-cache: false
       - name: Install dependencies
         id: install_dependencies
-        run: npm ci
+        run: yarn install --check-files --frozen-lockfile
       - name: Upgrade dependencies
         id: upgrade_dependencies
         run: npx projen upgrade

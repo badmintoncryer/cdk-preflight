@@ -1,0 +1,11 @@
+id: pf-ec2-sg-port-range
+service: ec2
+resourceTypes: [AWS::EC2::SecurityGroup, AWS::EC2::SecurityGroupIngress, AWS::EC2::SecurityGroupEgress]
+severity: ERROR
+title: Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort
+constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html
+upstream: none
+repro:
+  method: research-case
+  evidence: cdk-validation-gap-research case14 (2026-09-01, "TCP/UDP (from) port (99999) out of range" at deploy)
+addedOn: 2026-09-01

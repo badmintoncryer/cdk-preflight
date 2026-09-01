@@ -1,0 +1,11 @@
+id: pf-elbv2-lb-idle-timeout-range
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: ALB idle_timeout.timeout_seconds must be between 1 and 4000
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html#connection-idle-timeout
+upstream: none
+repro:
+  method: research-case
+  evidence: cdk-validation-gap-research case06 (2026-09-01, "cannot be greater than 4000" at deploy, tte=176s)
+addedOn: 2026-09-01

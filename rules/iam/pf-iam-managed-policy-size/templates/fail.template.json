@@ -1,0 +1,414 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "LongStatementNumber0",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-0/*"
+            },
+            {
+              "Sid": "LongStatementNumber1",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-1/*"
+            },
+            {
+              "Sid": "LongStatementNumber2",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-2/*"
+            },
+            {
+              "Sid": "LongStatementNumber3",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-3/*"
+            },
+            {
+              "Sid": "LongStatementNumber4",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-4/*"
+            },
+            {
+              "Sid": "LongStatementNumber5",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-5/*"
+            },
+            {
+              "Sid": "LongStatementNumber6",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-6/*"
+            },
+            {
+              "Sid": "LongStatementNumber7",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-7/*"
+            },
+            {
+              "Sid": "LongStatementNumber8",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-8/*"
+            },
+            {
+              "Sid": "LongStatementNumber9",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-9/*"
+            },
+            {
+              "Sid": "LongStatementNumber10",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-10/*"
+            },
+            {
+              "Sid": "LongStatementNumber11",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-11/*"
+            },
+            {
+              "Sid": "LongStatementNumber12",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-12/*"
+            },
+            {
+              "Sid": "LongStatementNumber13",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-13/*"
+            },
+            {
+              "Sid": "LongStatementNumber14",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-14/*"
+            },
+            {
+              "Sid": "LongStatementNumber15",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-15/*"
+            },
+            {
+              "Sid": "LongStatementNumber16",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-16/*"
+            },
+            {
+              "Sid": "LongStatementNumber17",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-17/*"
+            },
+            {
+              "Sid": "LongStatementNumber18",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-18/*"
+            },
+            {
+              "Sid": "LongStatementNumber19",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-19/*"
+            },
+            {
+              "Sid": "LongStatementNumber20",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-20/*"
+            },
+            {
+              "Sid": "LongStatementNumber21",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-21/*"
+            },
+            {
+              "Sid": "LongStatementNumber22",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-22/*"
+            },
+            {
+              "Sid": "LongStatementNumber23",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-23/*"
+            },
+            {
+              "Sid": "LongStatementNumber24",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-24/*"
+            },
+            {
+              "Sid": "LongStatementNumber25",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-25/*"
+            },
+            {
+              "Sid": "LongStatementNumber26",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-26/*"
+            },
+            {
+              "Sid": "LongStatementNumber27",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-27/*"
+            },
+            {
+              "Sid": "LongStatementNumber28",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-28/*"
+            },
+            {
+              "Sid": "LongStatementNumber29",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-29/*"
+            },
+            {
+              "Sid": "LongStatementNumber30",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-30/*"
+            },
+            {
+              "Sid": "LongStatementNumber31",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-31/*"
+            },
+            {
+              "Sid": "LongStatementNumber32",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-32/*"
+            },
+            {
+              "Sid": "LongStatementNumber33",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-33/*"
+            },
+            {
+              "Sid": "LongStatementNumber34",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-34/*"
+            },
+            {
+              "Sid": "LongStatementNumber35",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-35/*"
+            },
+            {
+              "Sid": "LongStatementNumber36",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-36/*"
+            },
+            {
+              "Sid": "LongStatementNumber37",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-37/*"
+            },
+            {
+              "Sid": "LongStatementNumber38",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-38/*"
+            },
+            {
+              "Sid": "LongStatementNumber39",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-managed-39/*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

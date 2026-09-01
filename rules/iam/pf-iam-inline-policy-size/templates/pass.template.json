@@ -1,0 +1,54 @@
+{
+  "Resources": {
+    "U": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "UserName": "cdkpf-inline-size-user"
+      }
+    },
+    "P": {
+      "Type": "AWS::IAM::UserPolicy",
+      "Properties": {
+        "UserName": {
+          "Ref": "U"
+        },
+        "PolicyName": "small",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "LongStatementNumber0",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-0/*"
+            },
+            {
+              "Sid": "LongStatementNumber1",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-1/*"
+            },
+            {
+              "Sid": "LongStatementNumber2",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObjectVersionForReplication",
+                "s3:GetObjectVersionAcl",
+                "cloudformation:DescribeStackResourceDrifts"
+              ],
+              "Resource": "arn:aws:s3:::cdkpf-nonexistent-inline-2/*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

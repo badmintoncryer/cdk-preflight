@@ -1,18 +1,55 @@
-import { awscdk, javascript } from 'projen';
+import { awscdk } from 'projen';
 const project = new awscdk.AwsCdkConstructLibrary({
-  author: 'Kazuho Cryer-Shinozuka',
+  author: 'Kazuho CryerShinozuka',
   authorAddress: 'malaysia.cryer@gmail.com',
-  cdkVersion: '2.189.1',
-  jsiiVersion: '~6.0.0',
+  cdkVersion: '2.267.0',
+  defaultReleaseBranch: 'main',
+  jsiiVersion: '~5.8.0',
   name: 'cdk-preflight',
-  packageManager: javascript.NodePackageManager.NPM,
   projenrcTs: true,
-  repositoryUrl: 'https://github.com/malaysia.cryer/cdk-preflight.git',
-
-  // defaultReleaseBranch: "main",  /* The name of the main release branch. */
-  // deps: [],                      /* Runtime dependencies of this module. */
-  // description: undefined,        /* The description is just a string that helps people understand the purpose of the package. */
-  // devDeps: [],                   /* Build dependencies for this module. */
-  // packageName: undefined,        /* The "name" in package.json. */
+  repositoryUrl: 'https://github.com/badmintoncryer/cdk-preflight.git',
+  description: 'Catch deploy-time CloudFormation failures at synth time: a Rego rule pack for constraints that resource schemas miss, injected into the AWS CDK built-in validator',
+  keywords: [
+    'aws',
+    'cdk',
+    'aws-cdk',
+    'validation',
+    'cloudformation',
+    'rego',
+    'preflight',
+    'linter',
+    'policy-validation',
+    'fail-fast',
+  ],
+  gitignore: ['*.js', '*.d.ts', '!test/.*.snapshot/**/*', '.tmp'],
+  devDeps: ['yaml'],
+  releaseToNpm: true,
+  packageName: 'cdk-preflight',
+  npmTrustedPublishing: true,
+  workflowNodeVersion: '24',
+  publishToPypi: {
+    distName: 'cdk-preflight',
+    module: 'cdk_preflight',
+    trustedPublishing: true,
+  },
 });
+
+// rules/**/rule.rego + meta.yaml を src/rules.generated.ts に束ねる（コミット対象・鮮度は structure テストで担保）
+const bundleRules = project.addTask('bundle-rules', {
+  exec: 'ts-node --project test/tsconfig.json scripts/bundle-rules.ts',
+});
+project.preCompileTask.spawn(bundleRules);
+
+// `npx cdk-preflight init` codemod
+project.package.addBin({ 'cdk-preflight': 'lib/cli.js' });
+
+// projen 0.103 は legacy .eslintrc.json を生成するが eslint は ^9 のため、
+// v9 のレガシー設定サポートを明示的に有効化する
+project.tasks.tryFind('eslint')!.env('ESLINT_USE_FLAT_CONFIG', 'false');
+
+// 生成物とベンチの取り扱い
+project.addPackageIgnore('/rules/');
+project.addPackageIgnore('/bench/');
+project.addPackageIgnore('/scripts/');
+
 project.synth();
