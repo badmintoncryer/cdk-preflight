@@ -8,6 +8,8 @@ import type {
 import type { BundledRuleData } from '../rules.generated';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable import/no-extraneous-dependencies -- @aws/cloudformation-validate は
+   aws-cdk-lib 同梱コピーを動的解決する設計（依存には載せない）。README/AGENTS.md 参照 */
 
 interface EngineDiagnostic {
   readonly ruleId: string;
