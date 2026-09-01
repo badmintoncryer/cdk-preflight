@@ -17,7 +17,7 @@
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
-| `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | At most 20 managed policies can be attached per role/user/group (hard maximum) | none |
+| `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
 | `pf-s3-lifecycle-days-order` | AWS::S3::Bucket | Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition | none |

@@ -165,14 +165,14 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-iam-managed-policy-count",
     "service": "iam",
     "severity": "ERROR",
-    "title": "At most 20 managed policies can be attached per role/user/group (hard maximum)",
+    "title": "Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10)",
     "upstream": "none",
     "resourceTypes": [
       "AWS::IAM::Role",
       "AWS::IAM::User",
       "AWS::IAM::Group"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# デフォルトクォータは 10 だが引き上げ可能（最大 20）なので、静的に確実なのは\n# ハード上限 20 の超過のみ（bench アカウントも 20 に引き上げ済みで 11 個は成功する）。\n# 10 超はアカウント設定次第で成功し得るため ERROR にしない。\nviolation contains make_diag_full(\"pf-iam-managed-policy-count\", \"ERROR\", name,\n\t\"Properties.ManagedPolicyArns\",\n\tsprintf(\"%d managed policies are attached, but IAM allows at most 20 per role/user/group (hard maximum; the default quota is 10); deployment fails with LimitExceeded\", [n]),\n\t\"Consolidate statements into fewer managed policies\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome rtype in {\"AWS::IAM::Role\", \"AWS::IAM::User\", \"AWS::IAM::Group\"}\n\tsome name in resources_of_type(rtype)\n\tarr := resolve(name, \"Properties.ManagedPolicyArns\")\n\tis_array(arr)\n\tn := count(arr)\n\tn > 20\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ハード上限（Service Quotas の「Maximum quota」= それ以上引き上げ不可能な値）:\n#   role 25 / user 20 / group 10（group は adjustable: false、実測でも確認）。\n# デフォルト（role 20 / user 10 / group 10）超はアカウントのクォータ引き上げ次第で\n# 成功し得るため ERROR にしない（bench アカウントの role=20 で 11 個成功を実測済み）。\n_pf_iampol_limits := {\n\t\"AWS::IAM::Role\": 25,\n\t\"AWS::IAM::User\": 20,\n\t\"AWS::IAM::Group\": 10,\n}\n\nviolation contains make_diag_full(\"pf-iam-managed-policy-count\", \"ERROR\", name,\n\t\"Properties.ManagedPolicyArns\",\n\tsprintf(\"%d managed policies are attached, but the hard maximum for %s is %d (quota defaults: role 20, user 10, group 10; raisable only up to the hard maximum); deployment fails with LimitExceeded\", [n, rtype, limit]),\n\t\"Consolidate statements into fewer managed policies\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome rtype, limit in _pf_iampol_limits\n\tsome name in resources_of_type(rtype)\n\tarr := resolve(name, \"Properties.ManagedPolicyArns\")\n\tis_array(arr)\n\tn := count(arr)\n\tn > limit\n}\n"
   },
   {
     "id": "pf-iam-managed-policy-size",
