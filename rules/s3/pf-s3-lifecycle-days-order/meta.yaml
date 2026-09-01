@@ -1,0 +1,11 @@
+id: pf-s3-lifecycle-days-order
+service: s3
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (S3 400: 'Days' in the 'Transition' action for StorageClass 'GLACIER' must be 30 days more than the 'Transition' action for StorageClass 'STANDARD_IA'), pass template CREATE_COMPLETE. Log: bench/logs/pf-s3-lifecycle-days-order.log"
+addedOn: 2026-09-01

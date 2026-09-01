@@ -4,12 +4,23 @@
 
 | Rule | Resource types | Constraint | Upstream status |
 |---|---|---|---|
+| `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
+| `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | none |
+| `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
+| `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
+| `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
+| `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | none |
 | `pf-elbv2-lb-idle-timeout-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | ALB idle_timeout.timeout_seconds must be between 1 and 4000 | none |
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
+| `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
+| `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
+| `pf-s3-lifecycle-days-order` | AWS::S3::Bucket | Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition | none |
+| `pf-s3-replication-requires-versioning` | AWS::S3::Bucket | ReplicationConfiguration requires versioning to be enabled on the source bucket | none |
+| `pf-sns-fifo-topic-name` | AWS::SNS::Topic | FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic) | none |
 | `pf-sfn-asl-missing-state` | AWS::StepFunctions::StateMachine | ASL Next/Default/Choices must reference a defined state (top-level states; a dangling StartAt is covered by engine rule E3601) | none |

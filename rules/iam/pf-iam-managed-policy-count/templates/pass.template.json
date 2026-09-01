@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            { "Effect": "Allow", "Principal": { "Service": "lambda.amazonaws.com" }, "Action": "sts:AssumeRole" }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonSNSReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess",
+          "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSLambda_ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonRoute53ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSCloudTrail_ReadOnlyAccess"
+        ]
+      }
+    }
+  }
+}

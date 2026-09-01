@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            { "Effect": "Allow", "Principal": { "Service": "lambda.amazonaws.com" }, "Action": "sts:AssumeRole" }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonSNSReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess",
+          "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSLambda_ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonRoute53ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSCloudTrail_ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonVPCReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonSESReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonKinesisReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSStepFunctionsReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonEventBridgeReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSXrayReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonRedshiftReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonGlacierReadOnlyAccess",
+          "arn:aws:iam::aws:policy/IAMReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSCodePipeline_ReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AWSCodeBuildReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonKinesisFirehoseReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonMQReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
+        ]
+      }
+    }
+  }
+}

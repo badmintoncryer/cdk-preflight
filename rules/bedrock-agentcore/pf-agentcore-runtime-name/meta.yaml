@@ -1,0 +1,11 @@
+id: pf-agentcore-runtime-name
+service: bedrock-agentcore
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1 (--fail-only): CREATE_FAILED (BedrockAgentCoreControl 400: Value 'cdkpf-bad-name' at 'agentRuntimeName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z][a-zA-Z0-9_]{0,47}). Pass template not deployed: it would require a real ECR image for the runtime to reach READY. Log: bench/logs/pf-agentcore-runtime-name.log"
+addedOn: 2026-09-01

@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "RuntimeRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            { "Effect": "Allow", "Principal": { "Service": "bedrock-agentcore.amazonaws.com" }, "Action": "sts:AssumeRole" }
+          ]
+        }
+      }
+    },
+    "Runtime": {
+      "Type": "AWS::BedrockAgentCore::Runtime",
+      "Properties": {
+        "AgentRuntimeName": "cdkpf-bad-name",
+        "AgentRuntimeArtifact": {
+          "ContainerConfiguration": {
+            "ContainerUri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/cdkpf:latest"
+          }
+        },
+        "NetworkConfiguration": { "NetworkMode": "PUBLIC" },
+        "RoleArn": { "Fn::GetAtt": ["RuntimeRole", "Arn"] }
+      }
+    }
+  }
+}

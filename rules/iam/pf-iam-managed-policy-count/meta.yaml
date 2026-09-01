@@ -1,0 +1,11 @@
+id: pf-iam-managed-policy-count
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10)
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1: role fail template (26 policies) CREATE_FAILED (IAM 409 ServiceLimitExceeded: Cannot exceed quota for PoliciesPerRole: 20 — account sits at the current default quota of 20), user probe (11 policies) CREATE_FAILED (Cannot exceed quota for PoliciesPerUser: 10), group probe (11 policies) CREATE_FAILED (Cannot exceed quota for PoliciesPerGroup: 10). Service Quotas: role default 20 (max 25), user default 10 (max 20), group 10 with adjustable: false — thresholds use the hard maximums so raised-quota accounts never get false errors (11 role policies deploy fine at the default quota; measured). pass template (10 policies) CREATE_COMPLETE. Log: bench/logs/pf-iam-managed-policy-count.log"
+addedOn: 2026-09-01

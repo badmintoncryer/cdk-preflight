@@ -13,6 +13,28 @@ export interface BundledRuleData {
 
 export const BUNDLED_RULES: BundledRuleData[] = [
   {
+    "id": "pf-agentcore-gateway-jwt-authorizer",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Gateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gwjwt_has_config(name) if is_object(resolve(name, \"Properties.AuthorizerConfiguration\"))\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-jwt-authorizer\", \"ERROR\", name,\n\t\"Properties.AuthorizerConfiguration\",\n\t\"AuthorizerType is CUSTOM_JWT but AuthorizerConfiguration is missing; the CreateGateway API requires it and the deployment fails with a ValidationException\",\n\t\"Add AuthorizerConfiguration.CustomJWTAuthorizer (discoveryUrl and allowedAudience/allowedClients), or switch AuthorizerType to AWS_IAM\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGateway.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Gateway\")\n\tresolve(name, \"Properties.AuthorizerType\") == \"CUSTOM_JWT\"\n\tnot _pf_gwjwt_has_config(name)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-runtime-name",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens)",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation スキーマは AgentRuntimeName のパターンを持たない（エンジン素通り、\n# 2026-09-01 に 1.7.0-beta で確認）が、CreateAgentRuntime API は\n# [a-zA-Z][a-zA-Z0-9_]{0,47} を強制する。ハイフン入りの CDK 風命名が定番の死因。\nviolation contains make_diag_full(\"pf-agentcore-runtime-name\", \"ERROR\", name,\n\t\"Properties.AgentRuntimeName\",\n\tsprintf(\"AgentRuntimeName '%s' is invalid: it must start with a letter and contain only letters, digits, and underscores (max 48 characters, hyphens are not allowed); CreateAgentRuntime fails at deploy time\", [n]),\n\t\"Use an underscore-separated name such as 'my_agent_runtime'\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tn := resolve(name, \"Properties.AgentRuntimeName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z][a-zA-Z0-9_]{0,47}$`, n)\n}\n"
+  },
+  {
     "id": "pf-cloudfront-acm-cert-region",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -35,6 +57,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_ttl_fix := \"Order the TTLs as MinTTL <= DefaultTTL <= MaxTTL\"\n\n_pf_cf_ttl_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html\"\n\n_pf_cf_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"MinTTL (%v) must be less than or equal to MaxTTL (%v)\", [mn, mx]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tmn := to_number(object.get(b.value, \"MinTTL\", null))\n\tmx := to_number(object.get(b.value, \"MaxTTL\", null))\n\tmn > mx\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"MinTTL (%v) must be less than or equal to DefaultTTL (%v)\", [mn, df]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tmn := to_number(object.get(b.value, \"MinTTL\", null))\n\tdf := to_number(object.get(b.value, \"DefaultTTL\", null))\n\tmn > df\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"DefaultTTL (%v) must be less than or equal to MaxTTL (%v)\", [df, mx]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tdf := to_number(object.get(b.value, \"DefaultTTL\", null))\n\tmx := to_number(object.get(b.value, \"MaxTTL\", null))\n\tdf > mx\n}\n"
   },
   {
+    "id": "pf-dynamodb-billing-throughput",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbbt_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html\"\n\n_pf_ddbbt_has_pt(name) if is_object(resolve(name, \"Properties.ProvisionedThroughput\"))\n\n_pf_ddbbt_billing_present(name) if resolve(name, \"Properties.BillingMode\")\n\n# BillingMode がリテラル \"PROVISIONED\"、または未指定（デフォルト PROVISIONED）。\n# トークン値（Ref 等）は判定に使わない（誤検知防止）。\n_pf_ddbbt_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbbt_provisioned(name) if not _pf_ddbbt_billing_present(name)\n\nviolation contains make_diag_full(\"pf-dynamodb-billing-throughput\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughput\",\n\t\"ProvisionedThroughput cannot be specified when BillingMode is PAY_PER_REQUEST; CreateTable fails at deploy time\",\n\t\"Remove ProvisionedThroughput, or switch BillingMode to PROVISIONED\",\n\t_pf_ddbbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tresolve(name, \"Properties.BillingMode\") == \"PAY_PER_REQUEST\"\n\t_pf_ddbbt_has_pt(name)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-billing-throughput\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughput\",\n\t\"BillingMode is PROVISIONED (the default) but ProvisionedThroughput is missing; CreateTable fails at deploy time\",\n\t\"Add ProvisionedThroughput (ReadCapacityUnits / WriteCapacityUnits), or set BillingMode to PAY_PER_REQUEST\",\n\t_pf_ddbbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbbt_provisioned(name)\n\tnot _pf_ddbbt_has_pt(name)\n}\n"
+  },
+  {
     "id": "pf-ec2-sg-port-range",
     "service": "ec2",
     "severity": "ERROR",
@@ -46,6 +79,40 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::SecurityGroupEgress"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sg_fix := \"Use a port between 0 and 65535 with FromPort <= ToPort\"\n\n_pf_sg_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n_pf_port_out(n) if n < 0\n\n_pf_port_out(n) if n > 65535\n\n_pf_tcp_udp(p) if p in {\"tcp\", \"udp\", \"6\", \"17\", 6, 17}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s\", [dir, item.index, pname]),\n\tsprintf(\"%s %v is outside the valid TCP/UDP port range 0-65535\", [pname, n]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\t_pf_tcp_udp(object.get(entry, \"IpProtocol\", null))\n\tsome pname in {\"FromPort\", \"ToPort\"}\n\tn := to_number(object.get(entry, pname, null))\n\t_pf_port_out(n)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.FromPort\", [dir, item.index]),\n\tsprintf(\"FromPort (%v) must be less than or equal to ToPort (%v)\", [f, t]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\t_pf_tcp_udp(object.get(entry, \"IpProtocol\", null))\n\tf := to_number(object.get(entry, \"FromPort\", null))\n\tt := to_number(object.get(entry, \"ToPort\", null))\n\tf >= 0\n\tt <= 65535\n\tf > t\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [pname]),\n\tsprintf(\"%s %v is outside the valid TCP/UDP port range 0-65535\", [pname, n]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\t_pf_tcp_udp(resolve(name, \"Properties.IpProtocol\"))\n\tsome pname in {\"FromPort\", \"ToPort\"}\n\tn := to_number(resolve(name, sprintf(\"Properties.%s\", [pname])))\n\t_pf_port_out(n)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\t\"Properties.FromPort\",\n\tsprintf(\"FromPort (%v) must be less than or equal to ToPort (%v)\", [f, t]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\t_pf_tcp_udp(resolve(name, \"Properties.IpProtocol\"))\n\tf := to_number(resolve(name, \"Properties.FromPort\"))\n\tt := to_number(resolve(name, \"Properties.ToPort\"))\n\tf >= 0\n\tt <= 65535\n\tf > t\n}\n"
+  },
+  {
+    "id": "pf-ec2-userdata-size",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "EC2 user data is limited to 16384 bytes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance",
+      "AWS::EC2::LaunchTemplate"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_udsz_fix := \"Keep user data under 16384 bytes; move large payloads to S3 and fetch them from a small bootstrap script\"\n\n_pf_udsz_url := \"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html\"\n\n_pf_udsz_limit := 16384\n\n# base64 文字列のデコード後バイト数（パディング考慮）\n_pf_udsz_decoded(s) := ((count(s) * 3) / 4) - 2 if endswith(s, \"==\")\n\n_pf_udsz_decoded(s) := ((count(s) * 3) / 4) - 1 if {\n\tendswith(s, \"=\")\n\tnot endswith(s, \"==\")\n}\n\n_pf_udsz_decoded(s) := (count(s) * 3) / 4 if not endswith(s, \"=\")\n\n_pf_udsz_paths := {\n\t\"AWS::EC2::Instance\": \"Properties.UserData\",\n\t\"AWS::EC2::LaunchTemplate\": \"Properties.LaunchTemplateData.UserData\",\n}\n\n# UserData がリテラル base64 文字列のケース\nviolation contains make_diag_full(\"pf-ec2-userdata-size\", \"ERROR\", name, p,\n\tsprintf(\"UserData decodes to about %v bytes, but EC2 limits user data to %d bytes; RunInstances fails at deploy time\", [size, _pf_udsz_limit]),\n\t_pf_udsz_fix, _pf_udsz_url) if {\n\tsome rtype, p in _pf_udsz_paths\n\tsome name in resources_of_type(rtype)\n\tud := resolve(name, p)\n\tis_string(ud)\n\tsize := _pf_udsz_decoded(ud)\n\tsize > _pf_udsz_limit\n}\n\n# UserData が {\"Fn::Base64\": \"<literal>\"} のケース（エンコード前の生バイト数で判定）\nviolation contains make_diag_full(\"pf-ec2-userdata-size\", \"ERROR\", name, p,\n\tsprintf(\"UserData is %d bytes before base64 encoding, but EC2 limits user data to %d bytes; RunInstances fails at deploy time\", [count(inner), _pf_udsz_limit]),\n\t_pf_udsz_fix, _pf_udsz_url) if {\n\tsome rtype, p in _pf_udsz_paths\n\tsome name in resources_of_type(rtype)\n\tud := resolve(name, p)\n\tis_object(ud)\n\tinner := object.get(ud, \"Fn::Base64\", null)\n\tis_string(inner)\n\tcount(inner) > _pf_udsz_limit\n}\n"
+  },
+  {
+    "id": "pf-ec2-volume-iops",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "EBS Iops/Throughput must match the volume type's supported ranges and ratios",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Volume"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_voliops_fix := \"Match Iops/Throughput to the volume type: gp3 3000-80000 IOPS (max 500/GiB, throughput 125-2000 MiB/s and at most IOPS/4), io1 100-64000 (max 50/GiB), io2 100-256000 (max 1000/GiB); gp2/st1/sc1/standard accept neither property\"\n\n_pf_voliops_url := \"https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html\"\n\n_pf_voliops_range := {\"gp3\": [3000, 80000], \"io1\": [100, 64000], \"io2\": [100, 256000]}\n\n_pf_voliops_per_gib := {\"gp3\": 500, \"io1\": 50, \"io2\": 1000}\n\n_pf_voliops_out(n, lo, hi) if n < lo\n\n_pf_voliops_out(n, lo, hi) if n > hi\n\n_pf_voliops_has_iops(name) if resolve(name, \"Properties.Iops\")\n\n# IOPS が型ごとの絶対レンジ外\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Iops\",\n\tsprintf(\"Iops %v is outside the supported range %d-%d for %s volumes\", [n, r[0], r[1], vt]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tr := _pf_voliops_range[vt]\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\t_pf_voliops_out(n, r[0], r[1])\n}\n\n# IOPS : サイズ比の超過\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Iops\",\n\tsprintf(\"Iops %v exceeds the maximum ratio of %d IOPS per GiB for %s (Size %v GiB allows at most %v)\", [n, ratio, vt, s, s * ratio]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tratio := _pf_voliops_per_gib[vt]\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\ts := to_number(resolve(name, \"Properties.Size\"))\n\tn > s * ratio\n}\n\n# Iops を受け付けない型に Iops を指定\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Iops\",\n\tsprintf(\"Iops is not supported for %s volumes (valid only for gp3, io1, io2); EC2 rejects the CreateVolume call\", [vt]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tvt in {\"gp2\", \"st1\", \"sc1\", \"standard\"}\n\tresolve(name, \"Properties.Iops\")\n}\n\n# Throughput は gp3 専用\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput is not supported for %s volumes (valid only for gp3); EC2 rejects the CreateVolume call\", [vt]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tis_string(vt)\n\tvt != \"gp3\"\n\tresolve(name, \"Properties.Throughput\")\n}\n\n# gp3 Throughput の絶対レンジ\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput %v MiB/s is outside the supported range 125-2000 for gp3 volumes\", [t]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tresolve(name, \"Properties.VolumeType\") == \"gp3\"\n\tt := to_number(resolve(name, \"Properties.Throughput\"))\n\t_pf_voliops_out(t, 125, 2000)\n}\n\n# gp3 Throughput : IOPS 比（最大 0.25 MiB/s per IOPS）\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput %v MiB/s exceeds the maximum ratio of 0.25 MiB/s per provisioned IOPS (%v IOPS allows at most %v)\", [t, n, n / 4]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tresolve(name, \"Properties.VolumeType\") == \"gp3\"\n\tt := to_number(resolve(name, \"Properties.Throughput\"))\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\tt * 4 > n\n}\n\n# gp3 で Iops 未指定（デフォルト 3000）のときの Throughput 比\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput %v MiB/s exceeds 750, the maximum for the default 3000 IOPS (0.25 MiB/s per IOPS); provision Iops explicitly or lower the throughput\", [t]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tresolve(name, \"Properties.VolumeType\") == \"gp3\"\n\tnot _pf_voliops_has_iops(name)\n\tt := to_number(resolve(name, \"Properties.Throughput\"))\n\tt > 750\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-network-mode",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Fargate task definitions require NetworkMode 'awsvpc'",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsnm_url := \"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#network_mode\"\n\n_pf_ecsnm_has_mode(name) if resolve(name, \"Properties.NetworkMode\")\n\nviolation contains make_diag_full(\"pf-ecs-fargate-network-mode\", \"ERROR\", name,\n\t\"Properties.NetworkMode\",\n\tsprintf(\"NetworkMode is '%s' but task definitions requiring FARGATE compatibility must use 'awsvpc'; RegisterTaskDefinition fails at deploy time\", [nm]),\n\t\"Set NetworkMode to 'awsvpc'\",\n\t_pf_ecsnm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\trc := resolve(name, \"Properties.RequiresCompatibilities\")\n\tis_array(rc)\n\t\"FARGATE\" in rc\n\tnm := resolve(name, \"Properties.NetworkMode\")\n\tis_string(nm)\n\tnm != \"awsvpc\"\n}\n\n# NetworkMode 未指定でも RegisterTaskDefinition は\n# \"Fargate only supports network mode 'awsvpc'.\" で失敗する（2026-09-01 実 API 確認）\nviolation contains make_diag_full(\"pf-ecs-fargate-network-mode\", \"ERROR\", name,\n\t\"Properties.NetworkMode\",\n\t\"NetworkMode is not set, but task definitions requiring FARGATE compatibility must set it to 'awsvpc'; RegisterTaskDefinition fails at deploy time\",\n\t\"Set NetworkMode to 'awsvpc'\",\n\t_pf_ecsnm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\trc := resolve(name, \"Properties.RequiresCompatibilities\")\n\tis_array(rc)\n\t\"FARGATE\" in rc\n\tnot _pf_ecsnm_has_mode(name)\n}\n"
   },
   {
     "id": "pf-elbv2-lb-idle-timeout-range",
@@ -95,6 +162,19 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_inline_policy_limits := {\n\t\"AWS::IAM::Policy\": 10240,\n\t\"AWS::IAM::RolePolicy\": 10240,\n\t\"AWS::IAM::UserPolicy\": 2048,\n\t\"AWS::IAM::GroupPolicy\": 5120,\n}\n\nviolation contains make_diag_full(\"pf-iam-inline-policy-size\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\tsprintf(\"PolicyDocument is %d characters (JSON without whitespace) but the inline policy limit for %s is %d (role: 10240, group: 5120, user: 2048)\", [size, rtype, limit]),\n\t\"Move statements into managed policies or shorten the document\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome rtype, limit in _pf_inline_policy_limits\n\tsome name in resources_of_type(rtype)\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_object(doc)\n\tsize := count(json.marshal(doc))\n\tsize > limit\n}\n"
   },
   {
+    "id": "pf-iam-managed-policy-count",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::User",
+      "AWS::IAM::Group"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ハード上限（Service Quotas の「Maximum quota」= それ以上引き上げ不可能な値）:\n#   role 25 / user 20 / group 10（group は adjustable: false、実測でも確認）。\n# デフォルト（role 20 / user 10 / group 10）超はアカウントのクォータ引き上げ次第で\n# 成功し得るため ERROR にしない（bench アカウントの role=20 で 11 個成功を実測済み）。\n_pf_iampol_limits := {\n\t\"AWS::IAM::Role\": 25,\n\t\"AWS::IAM::User\": 20,\n\t\"AWS::IAM::Group\": 10,\n}\n\nviolation contains make_diag_full(\"pf-iam-managed-policy-count\", \"ERROR\", name,\n\t\"Properties.ManagedPolicyArns\",\n\tsprintf(\"%d managed policies are attached, but the hard maximum for %s is %d (quota defaults: role 20, user 10, group 10; raisable only up to the hard maximum); deployment fails with LimitExceeded\", [n, rtype, limit]),\n\t\"Consolidate statements into fewer managed policies\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome rtype, limit in _pf_iampol_limits\n\tsome name in resources_of_type(rtype)\n\tarr := resolve(name, \"Properties.ManagedPolicyArns\")\n\tis_array(arr)\n\tn := count(arr)\n\tn > limit\n}\n"
+  },
+  {
     "id": "pf-iam-managed-policy-size",
     "service": "iam",
     "severity": "ERROR",
@@ -104,6 +184,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::IAM::ManagedPolicy"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-iam-managed-policy-size\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\tsprintf(\"PolicyDocument is %d characters (JSON without whitespace) but the managed policy limit is 6144\", [size]),\n\t\"Split the document into multiple managed policies or shorten it\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::ManagedPolicy\")\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_object(doc)\n\tsize := count(json.marshal(doc))\n\tsize > 6144\n}\n"
+  },
+  {
+    "id": "pf-lambda-env-size",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Lambda environment variables are limited to 4096 bytes in total",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リテラル文字列のキー/値だけを数える（トークンはスキップ）。合計が既に 4096 を超えて\n# いれば、実際のデプロイでも必ず失敗する（実サイズは推定以上にしかならない）。\n# NOTE: このエンジンの Rego パーサは内包表記内の 2 変数 some（some k, v in vars）を\n# 受け付けないため、object.keys 経由で書く。\n_pf_lenv_size(vars) := sum([s |\n\tsome k in object.keys(vars)\n\tis_string(vars[k])\n\ts := count(k) + count(vars[k])\n])\n\nviolation contains make_diag_full(\"pf-lambda-env-size\", \"ERROR\", name,\n\t\"Properties.Environment.Variables\",\n\tsprintf(\"Environment variables total at least %d bytes (literal keys and values), but Lambda limits the environment to 4096 bytes; CreateFunction fails at deploy time\", [total]),\n\t\"Move large values to SSM Parameter Store, Secrets Manager, or a bundled config file\",\n\t\"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tvars := resolve(name, \"Properties.Environment.Variables\")\n\tis_object(vars)\n\ttotal := _pf_lenv_size(vars)\n\ttotal > 4096\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-days-order",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ord_fix := \"Order the lifecycle days so archive transitions come at least 30 days after IA transitions and expiration comes after every transition\"\n\n_pf_s3ord_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-days-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [r.index]),\n\tsprintf(\"Transition to %s at %v days is less than 30 days after the %s transition at %v days; S3 requires objects to stay at least 30 days in IA storage\", [sc2, d2, sc1, d1]),\n\t_pf_s3ord_fix, _pf_s3ord_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\ttrans := object.get(r.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t1 in trans\n\tis_object(t1)\n\tsc1 := object.get(t1, \"StorageClass\", \"\")\n\tsc1 in {\"STANDARD_IA\", \"ONEZONE_IA\"}\n\traw1 := object.get(t1, \"TransitionInDays\", null)\n\traw1 != null # to_number(null) は 0 になる\n\td1 := to_number(raw1)\n\tsome t2 in trans\n\tis_object(t2)\n\tsc2 := object.get(t2, \"StorageClass\", \"\")\n\tsc2 in {\"GLACIER\", \"DEEP_ARCHIVE\"}\n\traw2 := object.get(t2, \"TransitionInDays\", null)\n\traw2 != null\n\td2 := to_number(raw2)\n\td2 < d1 + 30\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-days-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpirationInDays\", [r.index]),\n\tsprintf(\"ExpirationInDays (%v) must be greater than TransitionInDays (%v); S3 rejects lifecycle rules that expire objects before or when they transition\", [e, d]),\n\t_pf_s3ord_fix, _pf_s3ord_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\trawe := object.get(r.value, \"ExpirationInDays\", null)\n\trawe != null # to_number(null) は 0 になる\n\te := to_number(rawe)\n\ttrans := object.get(r.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t in trans\n\tis_object(t)\n\trawd := object.get(t, \"TransitionInDays\", null)\n\trawd != null\n\td := to_number(rawd)\n\te <= d\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-requires-versioning",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ReplicationConfiguration requires versioning to be enabled on the source bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Status がリテラルで \"Suspended\" 以外（= \"Enabled\"）、または未解決トークンなら OK 扱い。\n# VersioningConfiguration 自体が無い / Suspended のときだけ違反にする。\n_pf_s3repl_versioning_ok(name) if {\n\ts := resolve(name, \"Properties.VersioningConfiguration.Status\")\n\tnot s == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-requires-versioning\", \"ERROR\", name,\n\t\"Properties.ReplicationConfiguration\",\n\t\"ReplicationConfiguration is set but bucket versioning is not enabled; S3 rejects the replication configuration at deploy time (InvalidRequest: Versioning must be 'Enabled' on the bucket)\",\n\t\"Set VersioningConfiguration.Status to 'Enabled' on the source bucket\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tis_object(resolve(name, \"Properties.ReplicationConfiguration\"))\n\tnot _pf_s3repl_versioning_ok(name)\n}\n"
+  },
+  {
+    "id": "pf-sns-fifo-topic-name",
+    "service": "sns",
+    "severity": "ERROR",
+    "title": "FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::SNS::Topic"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_snsfifo_fix := \"Give FIFO topics a TopicName ending in '.fifo' (or drop TopicName to let CloudFormation generate one), and set FifoTopic: true whenever the name ends in '.fifo'\"\n\n_pf_snsfifo_url := \"https://docs.aws.amazon.com/sns/latest/dg/sns-create-fifo-topic.html\"\n\n_pf_snsfifo_true(name) if resolve(name, \"Properties.FifoTopic\") in {true, \"true\"}\n\n# FifoTopic が存在し、リテラル false 以外（true やトークン）なら「FIFO かもしれない」扱い\n_pf_snsfifo_maybe_fifo(name) if {\n\tv := resolve(name, \"Properties.FifoTopic\")\n\tnot v in {false, \"false\"}\n}\n\nviolation contains make_diag_full(\"pf-sns-fifo-topic-name\", \"ERROR\", name,\n\t\"Properties.TopicName\",\n\tsprintf(\"FifoTopic is true but TopicName '%s' does not end with '.fifo'; SNS rejects the topic at deploy time\", [tn]),\n\t_pf_snsfifo_fix, _pf_snsfifo_url) if {\n\tsome name in resources_of_type(\"AWS::SNS::Topic\")\n\t_pf_snsfifo_true(name)\n\ttn := resolve(name, \"Properties.TopicName\")\n\tis_string(tn)\n\tnot endswith(tn, \".fifo\")\n}\n\nviolation contains make_diag_full(\"pf-sns-fifo-topic-name\", \"ERROR\", name,\n\t\"Properties.TopicName\",\n\tsprintf(\"TopicName '%s' ends with '.fifo' but FifoTopic is not true; SNS rejects the topic name at deploy time\", [tn]),\n\t_pf_snsfifo_fix, _pf_snsfifo_url) if {\n\tsome name in resources_of_type(\"AWS::SNS::Topic\")\n\ttn := resolve(name, \"Properties.TopicName\")\n\tis_string(tn)\n\tendswith(tn, \".fifo\")\n\tnot _pf_snsfifo_maybe_fifo(name)\n}\n"
   },
   {
     "id": "pf-sfn-asl-missing-state",

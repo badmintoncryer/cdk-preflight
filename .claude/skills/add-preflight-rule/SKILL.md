@@ -19,6 +19,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    console.log(JSON.stringify(r.diagnostics, null, 2));"
    ```
    ERROR/FATAL（source: SCHEMA / CFN_LINT）が既に出るなら**ルールは書かない**。終了し、その旨を報告する。
+   判定の全体像（WARN クラスのみ出るがデプロイは失敗するグレーゾーン、L2/cfn-lint/サーバー側検証との棲み分け）は AGENTS.md の「Where this pack sits among validation layers」に従う。L2 (aws-cdk-lib) が同じ検証を持っていても不採用理由にならない（原則 5）。
 3. **ルール作成**: `rules/<service>/<rule-id>/` に 4 ファイル。規約:
    - `package cdk_preflight` + `import rego.v1`、診断は `make_diag_full("<rule-id>", "ERROR", name, path, msg, fix, url)`
    - ヘルパーは `_pf_<短縮名>_` プレフィックスで一意に

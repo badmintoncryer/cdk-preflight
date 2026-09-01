@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "DestBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": { "Status": "Enabled" }
+      }
+    },
+    "ReplicationRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            { "Effect": "Allow", "Principal": { "Service": "s3.amazonaws.com" }, "Action": "sts:AssumeRole" }
+          ]
+        }
+      }
+    },
+    "SourceBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "ReplicationConfiguration": {
+          "Role": { "Fn::GetAtt": ["ReplicationRole", "Arn"] },
+          "Rules": [
+            {
+              "Destination": { "Bucket": { "Fn::GetAtt": ["DestBucket", "Arn"] } },
+              "Status": "Enabled",
+              "Prefix": ""
+            }
+          ]
+        }
+      }
+    }
+  }
+}
