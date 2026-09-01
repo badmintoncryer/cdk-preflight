@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "tiering",
+              "Status": "Enabled",
+              "Transitions": [
+                { "StorageClass": "STANDARD_IA", "TransitionInDays": 30 },
+                { "StorageClass": "GLACIER", "TransitionInDays": 40 }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

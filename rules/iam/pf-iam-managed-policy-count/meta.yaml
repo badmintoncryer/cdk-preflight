@@ -1,0 +1,11 @@
+id: pf-iam-managed-policy-count
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: At most 20 managed policies can be attached per role/user/group (hard maximum)
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (IAM 409 ServiceLimitExceeded: Cannot exceed quota for PoliciesPerRole: 20; the bench account quota is already raised to 20, confirming 20 as the hard cap and why the rule does not flag 11-20), pass template (10 policies) CREATE_COMPLETE. Log: bench/logs/pf-iam-managed-policy-count.log"
+addedOn: 2026-09-01

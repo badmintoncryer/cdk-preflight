@@ -1,0 +1,11 @@
+id: pf-s3-replication-requires-versioning
+service: s3
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: ReplicationConfiguration requires versioning to be enabled on the source bucket
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (S3 InvalidRequest: VersioningConfiguration Status must be 'Enabled' to specify ReplicationConfiguration), pass template CREATE_COMPLETE. Log: bench/logs/pf-s3-replication-requires-versioning.log"
+addedOn: 2026-09-01

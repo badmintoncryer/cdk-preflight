@@ -1,0 +1,11 @@
+id: pf-lambda-env-size
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: Lambda environment variables are limited to 4096 bytes in total
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (Lambda 400: environment variables ... exceeded the 4KB limit. Measured size: 5016 bytes), pass template CREATE_COMPLETE. Log: bench/logs/pf-lambda-env-size.log"
+addedOn: 2026-09-01

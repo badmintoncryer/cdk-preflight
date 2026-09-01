@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Topic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "FifoTopic": true,
+        "TopicName": "cdkpf-not-fifo"
+      }
+    }
+  }
+}

@@ -14,6 +14,20 @@ Scope: **deploy-failure prevention only.** Security/compliance policies (cdk-nag
 2. **Every rule ships with proof.** `templates/fail.template.json` must violate exactly this rule; `templates/pass.template.json` must be clean. `meta.yaml#repro` records how the deploy-time failure was verified (`real-deploy` / `research-case` / `doc-only` — the last one requires an explanation in `evidence`).
 3. **Rules graduate upstream.** Constraints expressible in schemas or generic engine rules should be PRed to [cloudformation-validate](https://github.com/aws-cloudformation/cloudformation-validate) (open an issue first). Track status in `meta.yaml#upstream` (`none` / `pending-engine` / `engine-pr` / `retired`). Shrinking this pack is success, not failure.
 4. **Tests are the contract.** Never merge with a red test; never weaken an assertion to make it pass. New behavior needs a new test first.
+5. **The boundary is the engine, not the CDK L2 layer.** Rules validate synthesized templates, so an L2 construct that validates (or structurally prevents) the same mistake does not make a rule redundant — L1 usage, escape hatches, `addPropertyOverride`, and externally generated templates all bypass L2. Overlapping an L2 guard is fine and expected; overlapping the bundled engine is forbidden (principle 1). When a rule does overlap L2, note it in the PR so reviewers can weigh the marginal value. See "Where this pack sits among validation layers" below.
+
+## Where this pack sits among validation layers
+
+Four other validation layers exist around a CDK app. Only one of them is a boundary for this pack; the relationships are:
+
+| Layer | Runs at | Catches | Relation to this pack |
+|---|---|---|---|
+| CDK L2 construct validation | synth, only on that construct's prop path | per-construct guards (e.g. `Volume` iops checks, SNS auto-`.fifo`, Fargate hardcoding `awsvpc`) | **Not a boundary** (principle 5). Bypassed by L1 / escape hatches / external templates. Overlap allowed; record it in the PR |
+| CDK L1 generated validators (`CfnXxx`) | synth, every CDK app | type and required-property checks only — never value ranges, patterns, or cross-field rules | **No practical overlap**: pack rules are value / cross-field constraints by construction |
+| Bundled engine default rules (`@aws/cloudformation-validate`: SCHEMA / CFN_LINT / ENGINE) | synth, via this plugin | patched registry-schema ranges/patterns/enums + cfn-lint rules | **The hard boundary** (principle 1). If the bare engine reports ERROR/FATAL on the minimal violating template, the rule must not exist — enforced by the jest duplication guard |
+| CloudFormation + service APIs | deploy (CREATE/UPDATE) | everything else: cross-field rules, service-side business rules, quotas | **The target, not a duplicate to avoid.** A rule exists *iff* it front-runs a real deploy-time failure here; `meta.yaml#repro` (real-deploy gate) proves that equivalence |
+
+Selection algorithm for a new rule, in order: (1) duplication guard — run the minimal violating template through the bare engine; any built-in ERROR/FATAL kills the candidate. (2) real-deploy gate — the fail template must actually fail CREATE with the predicted service error; a fail template that deploys kills the candidate (it happened: the "30-day minimum before STANDARD_IA" and the "4096-char ZipFile" constraints are documented but not enforced, so those rules were dropped). (3) L1/L2 coverage never disqualifies, only gets noted.
 
 ## Repository layout
 
@@ -58,4 +72,6 @@ bench/                      # real-deploy verification (needs an AWS account; no
 - Custom rule diagnostics carry `source: "CUSTOM"`; schema checks are `SCHEMA` (e.g. `F3034`), cfn-lint-derived rules are `CFN_LINT`.
 - The engine's bundled schemas are *patched* (e.g. SQS numeric ranges exist even though the raw registry schema lacks them). Always check what the engine already catches before writing a rule.
 - The CDK plugin path downgrades every finding to a warning; `@aws-cdk/core:validateAgainstDefaultRules` does not promote them (confirmed inert in aws-cdk-lib 2.267.0). This is why `enforce` mode exists — and why it is the default (`enforce: false` opts into warn-only reporting).
+- `to_number(null)` evaluates to `0` (not undefined). When reading optional numbers via `object.get(x, key, null)`, guard with `!= null` before `to_number`, or an absent property silently becomes 0 and can fire the rule (this bit the S3 lifecycle rules during development).
+- The Rego parser rejects two-variable `some k, v in obj` **inside comprehensions** ("unexpected keyword `some`"; fine in rule bodies). Use `some k in object.keys(obj)` and index instead.
 - The CDK renders `Acknowledge with 'cdk-preflight::<rule-id>'` under enforce-mode errors, but `Validations.acknowledge()` currently suppresses only annotation warnings (`validations.ts`: "Currently only annotation warnings can be suppressed") — the hint is inert for policy violations. The working opt-outs in enforce mode are `exclude` and `enforce: false`; do not document the acknowledge mechanism for enforce mode.

@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "TaskDef": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "RequiresCompatibilities": ["FARGATE"],
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "bridge",
+        "ContainerDefinitions": [
+          { "Name": "app", "Image": "public.ecr.aws/docker/library/busybox:latest", "Essential": true }
+        ]
+      }
+    }
+  }
+}

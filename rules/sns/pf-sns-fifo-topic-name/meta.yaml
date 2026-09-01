@@ -1,0 +1,11 @@
+id: pf-sns-fifo-topic-name
+service: sns
+resourceTypes: [AWS::SNS::Topic]
+severity: ERROR
+title: FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic)
+constraintSource: https://docs.aws.amazon.com/sns/latest/dg/sns-create-fifo-topic.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (SNS 400: Invalid parameter: Topic Name), pass template CREATE_COMPLETE. Log: bench/logs/pf-sns-fifo-topic-name.log"
+addedOn: 2026-09-01
