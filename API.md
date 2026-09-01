@@ -19,7 +19,7 @@ const preflightOptions: PreflightOptions = { ... }
 
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
-| <code><a href="#cdk-preflight.PreflightOptions.property.enforce">enforce</a></code> | <code>boolean</code> | Fail synthesis (instead of reporting warnings) when a bundled rule is violated. |
+| <code><a href="#cdk-preflight.PreflightOptions.property.enforce">enforce</a></code> | <code>boolean</code> | Fail synthesis when a bundled rule is violated. |
 | <code><a href="#cdk-preflight.PreflightOptions.property.exclude">exclude</a></code> | <code>string[]</code> | Rule ids to disable (see `Preflight.ruleIds()` or docs/rules.md). |
 | <code><a href="#cdk-preflight.PreflightOptions.property.includeUpstreamPending">includeUpstreamPending</a></code> | <code>boolean</code> | Include rules that are marked `pending-engine` (candidates that have been proposed to the upstream cloudformation-validate engine but are not merged yet). |
 | <code><a href="#cdk-preflight.PreflightOptions.property.strict">strict</a></code> | <code>boolean</code> | In enforce mode, additionally fail synthesis on error-class findings (severity ERROR/FATAL) of the built-in validation engine itself, e.g. schema violations like `F3034`. This is the workaround for the CDK behavior where all built-in findings are downgraded to warnings. |
@@ -33,14 +33,17 @@ public readonly enforce: boolean;
 ```
 
 - *Type:* boolean
-- *Default:* false
+- *Default:* true
 
-Fail synthesis (instead of reporting warnings) when a bundled rule is violated.
+Fail synthesis when a bundled rule is violated.
 
-In the default (warn) mode, findings are reported through the CDK built-in
-CloudFormation validator and surface as synth warnings with construct traces.
-With `enforce: true`, cdk-preflight evaluates its rules with its own
-validation plugin and a violation makes `cdk synth` fail.
+In the default (enforce) mode, cdk-preflight evaluates its rules with its
+own validation plugin and a violation makes `cdk synth` fail — the whole
+point of preflight checks is that a template known to fail at deploy time
+never leaves your machine. Set `enforce: false` to observe first: findings
+are then reported through the CDK built-in CloudFormation validator and
+surface as synth warnings with construct traces, which can be muted per
+finding via `Acknowledge with 'CloudFormation-Validate::<rule-id>'`.
 
 ---
 
@@ -83,7 +86,7 @@ public readonly strict: boolean;
 
 In enforce mode, additionally fail synthesis on error-class findings (severity ERROR/FATAL) of the built-in validation engine itself, e.g. schema violations like `F3034`. This is the workaround for the CDK behavior where all built-in findings are downgraded to warnings.
 
-Only effective together with `enforce: true`.
+Only effective in enforce mode (the default).
 
 ---
 

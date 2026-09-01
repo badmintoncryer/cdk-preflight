@@ -8,6 +8,8 @@
  *    ERROR/FATAL が出ない = 「エンジンが既に止める制約」をルールパックに重複実装していない
  *  - 【フィクスチャ健全性】pass テンプレートにも組み込み ERROR/FATAL が出ない
  */
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { loadEngine } from '../src/private/enforce';
 import { BUNDLED_RULES } from '../src/rules.generated';
@@ -21,7 +23,7 @@ interface Diagnostic {
 
 const engine = loadEngine();
 
-// エンジン初期化（WASM）と評価は重いので、全 13 ルールを 1 エンジンに載せ、
+// エンジン初期化（WASM）と評価は重いので、全ルールを 1 エンジンに載せ、
 // フィクスチャごとの診断結果をキャッシュして全テストで共有する。
 let sharedEngine: any;
 function engineInstance(): any {
@@ -77,5 +79,28 @@ describe.each(BUNDLED_RULES.map((r) => [r.id, r] as const))('%s', (_id, rule) =>
   test('pass template is clean for the built-in engine', () => {
     const ds = diagnose(fixturePath(rule, 'pass'));
     expect(blockers(ds)).toHaveLength(0);
+  });
+});
+
+describe('delegation to built-in rules', () => {
+  test('a dangling StartAt is left to engine rule E3601 (not duplicated)', () => {
+    const tpl = {
+      Resources: {
+        SM: {
+          Type: 'AWS::StepFunctions::StateMachine',
+          Properties: {
+            RoleArn: 'arn:aws:iam::123456789012:role/service-role/StatesExecutionRole',
+            DefinitionString: JSON.stringify({ StartAt: 'MISSING', States: { A: { Type: 'Succeed' } } }),
+          },
+        },
+      },
+    };
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-rules-')), 'startat.template.json');
+    fs.writeFileSync(file, JSON.stringify(tpl));
+    const ds = diagnose(file);
+    // エンジン組み込みの E3601（ERROR/CFN_LINT）が StartAt の参照切れを検出する
+    expect(ds.some((d) => d.ruleId === 'E3601' && d.severity === 'ERROR')).toBe(true);
+    // 自前ルールは StartAt を重複報告しない（Next/Default/Choices 専任 = 重複ガード方針）
+    expect(ds.filter((d) => d.source === 'CUSTOM')).toHaveLength(0);
   });
 });

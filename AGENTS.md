@@ -57,4 +57,5 @@ bench/                      # real-deploy verification (needs an AWS account; no
 
 - Custom rule diagnostics carry `source: "CUSTOM"`; schema checks are `SCHEMA` (e.g. `F3034`), cfn-lint-derived rules are `CFN_LINT`.
 - The engine's bundled schemas are *patched* (e.g. SQS numeric ranges exist even though the raw registry schema lacks them). Always check what the engine already catches before writing a rule.
-- The CDK plugin path downgrades every finding to a warning; `@aws-cdk/core:validateAgainstDefaultRules` does not promote them (confirmed inert in aws-cdk-lib 2.267.0). This is why `enforce` mode exists.
+- The CDK plugin path downgrades every finding to a warning; `@aws-cdk/core:validateAgainstDefaultRules` does not promote them (confirmed inert in aws-cdk-lib 2.267.0). This is why `enforce` mode exists — and why it is the default (`enforce: false` opts into warn-only reporting).
+- The CDK renders `Acknowledge with 'cdk-preflight::<rule-id>'` under enforce-mode errors, but `Validations.acknowledge()` currently suppresses only annotation warnings (`validations.ts`: "Currently only annotation warnings can be suppressed") — the hint is inert for policy violations. The working opt-outs in enforce mode are `exclude` and `enforce: false`; do not document the acknowledge mechanism for enforce mode.

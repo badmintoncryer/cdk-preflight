@@ -46,10 +46,10 @@ function addBuiltInOnlyViolation(stack: Stack): void {
   new logs.CfnLogGroup(stack, 'L', { retentionInDays: 4 });
 }
 
-describe('warn mode (default)', () => {
+describe('observe mode (enforce: false)', () => {
   test('reports bundled rule violations alongside built-in findings', () => {
     const app = makeApp();
-    Preflight.apply(app);
+    Preflight.apply(app, { enforce: false });
     const stack = new Stack(app, 'S');
     addBadSecurityGroup(stack);
     addBuiltInOnlyViolation(stack);
@@ -62,7 +62,7 @@ describe('warn mode (default)', () => {
 
   test('clean stacks produce no preflight findings', () => {
     const app = makeApp();
-    Preflight.apply(app);
+    Preflight.apply(app, { enforce: false });
     const stack = new Stack(app, 'S');
     const vpc = new ec2.CfnVPC(stack, 'Vpc', { cidrBlock: '10.0.0.0/16' });
     new ec2.CfnSecurityGroup(stack, 'SG', {
@@ -77,7 +77,7 @@ describe('warn mode (default)', () => {
 
   test('exclude removes a rule', () => {
     const app = makeApp();
-    Preflight.apply(app, { exclude: ['pf-ec2-sg-port-range'] });
+    Preflight.apply(app, { enforce: false, exclude: ['pf-ec2-sg-port-range'] });
     addBadSecurityGroup(new Stack(app, 'S'));
     app.synth();
     const rules = readReport(app).map((v) => v.ruleName);
@@ -86,7 +86,7 @@ describe('warn mode (default)', () => {
 
   test('includeUpstreamPending: false keeps non-pending rules active', () => {
     const app = makeApp();
-    Preflight.apply(app, { includeUpstreamPending: false });
+    Preflight.apply(app, { enforce: false, includeUpstreamPending: false });
     addBadSecurityGroup(new Stack(app, 'S'));
     app.synth();
     const rules = readReport(app).map((v) => v.ruleName);
@@ -108,12 +108,26 @@ describe('input validation', () => {
   });
 });
 
-describe('enforce mode', () => {
+describe('enforce mode (default)', () => {
+  test('is the default: synthesis fails on a bundled rule violation', () => {
+    const app = makeApp();
+    Preflight.apply(app);
+    addBadSecurityGroup(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
   test('fails synthesis on a bundled rule violation', () => {
     const app = makeApp();
     Preflight.apply(app, { enforce: true });
     addBadSecurityGroup(new Stack(app, 'S'));
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
+  test('exclude lets an otherwise-violating stack synthesize', () => {
+    const app = makeApp();
+    Preflight.apply(app, { exclude: ['pf-ec2-sg-port-range'] });
+    addBadSecurityGroup(new Stack(app, 'S'));
+    expect(() => app.synth()).not.toThrow();
   });
 
   test('passes synthesis for clean stacks', () => {

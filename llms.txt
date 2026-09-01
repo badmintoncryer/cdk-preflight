@@ -6,8 +6,8 @@
 
 1. `npm i -D cdk-preflight`
 2. `npx cdk-preflight init` — locates the app entry via cdk.json and inserts `Preflight.apply(app)`. `--dry-run` previews, `--dir <path>` targets another directory. Idempotent.
-3. `cdk synth` — violations appear as warnings with rule id, actual value, suggested fix, and construct trace.
-4. To fail the build on violations: `Preflight.apply(app, { enforce: true })`. Add `strict: true` to also fail on the engine's own error-class findings (F-/E-prefixed) that CDK otherwise downgrades to warnings.
+3. `cdk synth` — violations FAIL the synth by default, reported with rule id, actual value, and suggested fix.
+4. Opt-outs: `exclude: ['<rule-id>']` disables one rule; `enforce: false` reports as warnings only (with construct traces and per-finding acknowledgement). Add `strict: true` to also fail on the engine's own error-class findings (F-/E-prefixed) that CDK otherwise downgrades to warnings.
 5. Machine-readable findings: synth with `-c @aws-cdk/core:validationReportJson=true`, then read `cdk.out/validation-report.json`.
 
 ## Key files

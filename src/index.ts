@@ -15,14 +15,17 @@ export interface PreflightOptions {
   readonly exclude?: string[];
 
   /**
-   * Fail synthesis (instead of reporting warnings) when a bundled rule is violated.
+   * Fail synthesis when a bundled rule is violated.
    *
-   * In the default (warn) mode, findings are reported through the CDK built-in
-   * CloudFormation validator and surface as synth warnings with construct traces.
-   * With `enforce: true`, cdk-preflight evaluates its rules with its own
-   * validation plugin and a violation makes `cdk synth` fail.
+   * In the default (enforce) mode, cdk-preflight evaluates its rules with its
+   * own validation plugin and a violation makes `cdk synth` fail — the whole
+   * point of preflight checks is that a template known to fail at deploy time
+   * never leaves your machine. Set `enforce: false` to observe first: findings
+   * are then reported through the CDK built-in CloudFormation validator and
+   * surface as synth warnings with construct traces, which can be muted per
+   * finding via `Acknowledge with 'CloudFormation-Validate::<rule-id>'`.
    *
-   * @default false
+   * @default true
    */
   readonly enforce?: boolean;
 
@@ -32,7 +35,7 @@ export interface PreflightOptions {
    * schema violations like `F3034`. This is the workaround for the CDK
    * behavior where all built-in findings are downgraded to warnings.
    *
-   * Only effective together with `enforce: true`.
+   * Only effective in enforce mode (the default).
    *
    * @default false
    */
@@ -76,7 +79,7 @@ export class Preflight {
       .filter((r) => (options.includeUpstreamPending ?? true) || r.upstream !== 'pending-engine')
       .filter((r) => !exclude.includes(r.id));
 
-    if (options.enforce ?? false) {
+    if (options.enforce ?? true) {
       Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, options.strict ?? false));
     } else {
       Validations.of(scope).addPlugins(new CloudFormationValidatePlugin({

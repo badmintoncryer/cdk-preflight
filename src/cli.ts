@@ -79,8 +79,8 @@ export function runCli(args: string[]): number {
     '',
     'Next steps:',
     '  1. npm i -D cdk-preflight   (if not installed yet)',
-    '  2. cdk synth                (violations appear as warnings with construct traces)',
-    '  3. Optional: Preflight.apply(app, { enforce: true }) to fail synth on violations',
+    '  2. cdk synth                (violations fail the synth with a validation report)',
+    '  3. Optional: Preflight.apply(app, { enforce: false }) to only warn instead of failing',
   ].join('\n'));
   return 0;
 }

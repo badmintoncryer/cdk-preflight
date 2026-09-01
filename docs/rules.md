@@ -12,4 +12,4 @@
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
-| `pf-sfn-asl-missing-state` | AWS::StepFunctions::StateMachine | ASL StartAt/Next/Default/Choices must reference a defined state (top-level states) | none |
+| `pf-sfn-asl-missing-state` | AWS::StepFunctions::StateMachine | ASL Next/Default/Choices must reference a defined state (top-level states; a dangling StartAt is covered by engine rule E3601) | none |

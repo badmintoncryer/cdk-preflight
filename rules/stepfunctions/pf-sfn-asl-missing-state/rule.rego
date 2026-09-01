@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_sfn_fix := "Point StartAt/Next/Default at an existing state name"
+_pf_sfn_fix := "Point Next/Default/Choices at an existing state name"
 
 _pf_sfn_url := "https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-states.html"
 
@@ -15,16 +15,11 @@ _pf_sfn_asl(name) := asl if {
 
 _pf_sfn_defined(asl) := {sn | some sn, _ in object.get(asl, "States", {})}
 
-violation contains make_diag_full("pf-sfn-asl-missing-state", "ERROR", name,
-	"Properties.DefinitionString",
-	sprintf("state machine definition references state '%s' via StartAt, but no state with that name is defined", [target]),
-	_pf_sfn_fix, _pf_sfn_url) if {
-	some name in resources_of_type("AWS::StepFunctions::StateMachine")
-	asl := _pf_sfn_asl(name)
-	target := object.get(asl, "StartAt", null)
-	is_string(target)
-	not target in _pf_sfn_defined(asl)
-}
+# NOTE: a dangling StartAt is deliberately NOT checked here — the engine's
+# built-in rule E3601 (ERROR/CFN_LINT) already covers it. Verified against
+# @aws/cloudformation-validate 1.7.0-beta on 2026-09-01: E3601 fires for
+# StartAt only and does not check Next/Default/Choices, which is what this
+# rule adds.
 
 violation contains make_diag_full("pf-sfn-asl-missing-state", "ERROR", name,
 	"Properties.DefinitionString",
