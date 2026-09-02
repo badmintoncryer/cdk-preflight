@@ -1,0 +1,11 @@
+id: pf-events-pattern-scalar-value
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Event pattern values must be arrays or objects, not scalars
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (ev01): EventPattern {\"source\": \"aws.ec2\"} -> \"Event pattern is not valid. Reason: \\\"source\\\" must be an object or an array\". ROLLBACK_COMPLETE. Top level only — deeper levels legally hold operator objects like {\"prefix\": ...} and were not measured."
+addedOn: 2026-09-02

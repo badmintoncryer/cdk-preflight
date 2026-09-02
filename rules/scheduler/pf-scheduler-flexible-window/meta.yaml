@@ -1,0 +1,11 @@
+id: pf-scheduler-flexible-window
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-scheduler-schedule-flexibletimewindow.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: Mode FLEXIBLE without window (ev08) -> \"MaximumWindowInMinutes must be provided when FlexibleTimeWindowMode is set to FLEXIBLE\"; Mode OFF with window (ev09) -> \"MaximumWindowInMinutes must not be provided when FlexibleTimeWindowMode is set to OFF\". Both ROLLBACK_COMPLETE."
+addedOn: 2026-09-02

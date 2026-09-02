@@ -423,6 +423,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_slow_start_out(n) if n < 0\n\n_pf_slow_start_out(n) if {\n\tn > 0\n\tn < 30\n}\n\n_pf_slow_start_out(n) if n > 900\n\nviolation contains make_diag_full(\"pf-elbv2-tg-slow-start-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [item.index]),\n\tsprintf(\"slow_start.duration_seconds is %v but must be 0 (disabled) or between 30 and 900 seconds\", [num]),\n\t\"Set slow_start.duration_seconds to 0 or a value between 30 and 900\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#slow-start-mode\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"slow_start.duration_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_slow_start_out(num)\n}\n"
   },
   {
+    "id": "pf-events-input-transformer-placeholders",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "InputTemplate placeholders must be declared in InputPathsMap",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every <placeholder> in InputTemplate must be declared in InputPathsMap,\n# except the aws.events.* predefined variables. An InputPathsMap that is an\n# unresolvable intrinsic (normalized with __-prefixed marker keys) makes the\n# declared set unknowable, so the rule skips.\n_pf_evitp_placeholders(tmpl) := {substring(f, 1, count(f) - 2) | some f in regex.find_n(`<([A-Za-z0-9_.-]+)>`, tmpl, -1)}\n\n_pf_evitp_plain_map(pm) if {\n\tis_object(pm)\n\tevery k, _ in pm {\n\t\tnot startswith(k, \"__\")\n\t}\n}\n\nviolation contains make_diag_full(\"pf-events-input-transformer-placeholders\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.InputTransformer.InputTemplate\", [t.index]),\n\tsprintf(\"InputTemplate uses <%s> but InputPathsMap does not declare it; PutTargets fails with \\\"InputTemplate for target %s contains invalid placeholder %s\\\"\", [p, tid, p]),\n\tsprintf(\"Add '%s' to InputPathsMap, or remove the placeholder from the template\", [p]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-transform-target-input.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tit := object.get(t.value, \"InputTransformer\", null)\n\tis_object(it)\n\ttmpl := object.get(it, \"InputTemplate\", null)\n\tis_string(tmpl)\n\tpm := object.get(it, \"InputPathsMap\", {})\n\t_pf_evitp_plain_map(pm)\n\tsome p in _pf_evitp_placeholders(tmpl)\n\tnot startswith(p, \"aws.events.\")\n\tnot pm[p]\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
+  },
+  {
+    "id": "pf-events-pattern-empty",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "An empty EventPattern counts as no pattern at all",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's F3058 fires when the EventPattern KEY is absent, but an empty\n# object passes the schema and the handler then treats it as no pattern at\n# all. Fires only when ScheduleExpression is also literally absent — the\n# bench-verified shape (absence proven via input.resources, see AGENTS.md).\nviolation contains make_diag_full(\"pf-events-pattern-empty\", \"ERROR\", name,\n\t\"Properties.EventPattern\",\n\t\"EventPattern is an empty object, which the handler treats as no pattern; PutRule fails with \\\"Parameter(s) EventPattern or ScheduleExpression must be specified\\\"\",\n\t\"Give EventPattern at least one matcher (e.g. source), or use ScheduleExpression instead\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tcount(ep) == 0\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"ScheduleExpression\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-events-pattern-scalar-value",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Event pattern values must be arrays or objects, not scalars",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key. Only the top level is\n# checked — that is the bench-verified scope, and it dodges operator objects\n# like {\"prefix\": \"...\"} that legally carry scalars deeper down.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tsome k, v in ep\n\t_pf_evpsv_scalar(v)\n}\n"
+  },
+  {
     "id": "pf-iam-inline-policy-size",
     "service": "iam",
     "severity": "ERROR",
@@ -758,6 +791,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::S3::Bucket"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RedirectAllRequestsTo redirects the whole site, so S3 rejects any sibling\n# website setting alongside it.\nviolation contains make_diag_full(\"pf-s3-website-redirect-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.WebsiteConfiguration.%s\", [k]),\n\tsprintf(\"WebsiteConfiguration combines RedirectAllRequestsTo with %s; S3 rejects it with \\\"[IndexDocument, ErrorDocument, RoutingRules] should not be specified if RedirectAllRequestsTo is specified\\\"\", [k]),\n\t\"Keep RedirectAllRequestsTo alone, or drop it and configure the website with IndexDocument/ErrorDocument/RoutingRules\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-websiteconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\twc := resolve(name, \"Properties.WebsiteConfiguration\")\n\tis_object(wc)\n\tobject.get(wc, \"RedirectAllRequestsTo\", \"__pf_absent\") != \"__pf_absent\"\n\tsome k in {\"IndexDocument\", \"ErrorDocument\", \"RoutingRules\"}\n\tobject.get(wc, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-scheduler-flexible-window",
+    "service": "scheduler",
+    "severity": "ERROR",
+    "title": "FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Scheduler::Schedule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schfw_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-scheduler-schedule-flexibletimewindow.html\"\n\n_pf_schfw_ftw(name) := ftw if {\n\tftw := resolve(name, \"Properties.FlexibleTimeWindow\")\n\tis_object(ftw)\n}\n\nviolation contains make_diag_full(\"pf-scheduler-flexible-window\", \"ERROR\", name,\n\t\"Properties.FlexibleTimeWindow.MaximumWindowInMinutes\",\n\t\"FlexibleTimeWindow.Mode is FLEXIBLE but MaximumWindowInMinutes is missing; CreateSchedule fails with \\\"MaximumWindowInMinutes must be provided when FlexibleTimeWindowMode is set to FLEXIBLE\\\"\",\n\t\"Set MaximumWindowInMinutes (1-1440), or switch Mode to OFF\",\n\t_pf_schfw_url) if {\n\tsome name in resources_of_type(\"AWS::Scheduler::Schedule\")\n\tftw := _pf_schfw_ftw(name)\n\tobject.get(ftw, \"Mode\", null) == \"FLEXIBLE\"\n\tobject.get(ftw, \"MaximumWindowInMinutes\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-scheduler-flexible-window\", \"ERROR\", name,\n\t\"Properties.FlexibleTimeWindow.MaximumWindowInMinutes\",\n\t\"FlexibleTimeWindow.Mode is OFF but MaximumWindowInMinutes is set; CreateSchedule fails with \\\"MaximumWindowInMinutes must not be provided when FlexibleTimeWindowMode is set to OFF\\\"\",\n\t\"Drop MaximumWindowInMinutes, or switch Mode to FLEXIBLE\",\n\t_pf_schfw_url) if {\n\tsome name in resources_of_type(\"AWS::Scheduler::Schedule\")\n\tftw := _pf_schfw_ftw(name)\n\tobject.get(ftw, \"Mode\", null) == \"OFF\"\n\tobject.get(ftw, \"MaximumWindowInMinutes\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-scheduler-rate-positive",
+    "service": "scheduler",
+    "severity": "ERROR",
+    "title": "A Scheduler rate() value must be positive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Scheduler::Schedule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's E3027 validates rate() bounds for AWS::Events::Rule but not\n# for AWS::Scheduler::Schedule — same constraint family, different resource.\n# Only the value bound is checked here; unit spellings differ between the two\n# services and were not measured for Scheduler.\nviolation contains make_diag_full(\"pf-scheduler-rate-positive\", \"ERROR\", name,\n\t\"Properties.ScheduleExpression\",\n\tsprintf(\"The rate value in '%s' is not positive; CreateSchedule fails with \\\"Invalid Schedule Expression %s.\\\"\", [expr, expr]),\n\t\"Use a rate of 1 or more (e.g. rate(5 minutes))\",\n\t\"https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html\") if {\n\tsome name in resources_of_type(\"AWS::Scheduler::Schedule\")\n\texpr := resolve(name, \"Properties.ScheduleExpression\")\n\tis_string(expr)\n\tt := trim_space(expr)\n\tstartswith(t, \"rate(\")\n\tendswith(t, \")\")\n\tinner := trim_space(substring(t, 5, count(t) - 6))\n\tparts := split(inner, \" \")\n\tn := to_number(parts[0])\n\tn <= 0\n}\n"
   },
   {
     "id": "pf-sns-fifo-topic-name",

@@ -1,0 +1,48 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "scheduler.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "S": {
+      "Type": "AWS::Scheduler::Schedule",
+      "Properties": {
+        "FlexibleTimeWindow": {
+          "Mode": "FLEXIBLE"
+        },
+        "ScheduleExpression": "rate(1 hour)",
+        "Target": {
+          "Arn": {
+            "Fn::GetAtt": [
+              "Q",
+              "Arn"
+            ]
+          },
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "Role",
+              "Arn"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
