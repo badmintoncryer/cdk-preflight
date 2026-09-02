@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "WebsiteConfiguration": {
+          "RedirectAllRequestsTo": {
+            "HostName": "example.net"
+          }
+        }
+      }
+    }
+  }
+}

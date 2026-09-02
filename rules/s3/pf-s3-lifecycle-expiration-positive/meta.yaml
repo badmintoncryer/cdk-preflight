@@ -1,0 +1,11 @@
+id: pf-s3-lifecycle-expiration-positive
+service: s3
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: ExpirationInDays must be a positive integer
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-rule.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (s13): ExpirationInDays 0 -> \"'Days' for Expiration action must be a positive integer\". ROLLBACK_COMPLETE. Registry schema has no minimum on the field (probe: engine silent)."
+addedOn: 2026-09-02

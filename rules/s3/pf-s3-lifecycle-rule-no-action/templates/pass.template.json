@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Status": "Enabled",
+              "Prefix": "logs/",
+              "ExpirationInDays": 30
+            }
+          ]
+        }
+      }
+    }
+  }
+}

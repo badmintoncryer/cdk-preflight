@@ -1,0 +1,11 @@
+id: pf-s3-bucket-policy-principal
+service: s3
+resourceTypes: [AWS::S3::BucketPolicy]
+severity: ERROR
+title: Bucket policy statements need a Principal
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (s09): statement without Principal -> \"Missing required field Principal\". ROLLBACK_COMPLETE after ~15 min of handler retries — the slow failure mode is part of the pain this rule removes."
+addedOn: 2026-09-02

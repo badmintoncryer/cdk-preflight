@@ -1,0 +1,55 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "s3.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Dest": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "Src": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "ReplicationConfiguration": {
+          "Role": {
+            "Fn::GetAtt": [
+              "Role",
+              "Arn"
+            ]
+          },
+          "Rules": [
+            {
+              "Status": "Enabled",
+              "Prefix": "",
+              "Destination": {
+                "Bucket": {
+                  "Fn::GetAtt": [
+                    "Dest",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

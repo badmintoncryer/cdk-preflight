@@ -1,0 +1,11 @@
+id: pf-s3-bucket-policy-action-resource
+service: s3
+resourceTypes: [AWS::S3::BucketPolicy]
+severity: ERROR
+title: Object-level actions need an object-level Resource
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (s10): Action s3:GetObject with Resource Fn::GetAtt [B, Arn] (bucket ARN, no /*) -> \"Action does not apply to any resource(s) in statement\". ROLLBACK_COMPLETE after handler retries. Fn::GetAtt Arn resolves to the bucket's logical ID, which proves the ARN is bucket-level."
+addedOn: 2026-09-02

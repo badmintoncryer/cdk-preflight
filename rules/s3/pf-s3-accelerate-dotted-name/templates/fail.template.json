@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "cdkpf.verify.example",
+        "AccelerateConfiguration": {
+          "AccelerationStatus": "Enabled"
+        }
+      }
+    }
+  }
+}

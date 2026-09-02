@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycl
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (S3 400: 'Days' in the 'Transition' action for StorageClass 'GLACIER' must be 30 days more than the 'Transition' action for StorageClass 'STANDARD_IA'), pass template CREATE_COMPLETE. Log: bench/logs/pf-s3-lifecycle-days-order.log"
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (S3 400: 'Days' in the 'Transition' action for StorageClass 'GLACIER' must be 30 days more than the 'Transition' action for StorageClass 'STANDARD_IA'), pass template CREATE_COMPLETE. Log: bench/logs/pf-s3-lifecycle-days-order.log. Second block verified bench 2026-09-02 ap-northeast-1 (s15): ExpirationInDays 30 + STANDARD_IA TransitionInDays 30 -> \"'Days' in the Expiration action for filter '(prefix=)' must be greater than 'Days' in the Transition action\". Note: the ABSOLUTE 30-day minimum for an IA transition no longer exists — TransitionInDays 5 to STANDARD_IA deployed clean 2026-09-02 (s01, BROKEN-EXPECTATION); only the relative spacing and ordering are enforced."
 addedOn: 2026-09-01

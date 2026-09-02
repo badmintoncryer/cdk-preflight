@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "ObjectLockConfiguration": {
+          "ObjectLockEnabled": "Enabled",
+          "Rule": {
+            "DefaultRetention": {
+              "Mode": "GOVERNANCE",
+              "Days": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
