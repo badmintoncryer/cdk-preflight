@@ -23,6 +23,12 @@
 | `pf-apigwv2-jwt-authorizer-config` | AWS::ApiGatewayV2::Authorizer | JWT authorizers need JwtConfiguration | none |
 | `pf-apigwv2-request-authorizer-payload-version` | AWS::ApiGatewayV2::Authorizer | REQUEST authorizers on HTTP APIs need AuthorizerPayloadFormatVersion | none |
 | `pf-apigwv2-websocket-route-selection` | AWS::ApiGatewayV2::Api | WebSocket APIs need RouteSelectionExpression | none |
+| `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | none |
+| `pf-asg-desired-capacity-range` | AWS::AutoScaling::AutoScalingGroup | DesiredCapacity must sit between MinSize and MaxSize | none |
+| `pf-asg-health-check-grace-period` | AWS::AutoScaling::AutoScalingGroup | HealthCheckGracePeriod cannot be negative | none |
+| `pf-asg-ondemand-percentage-max` | AWS::AutoScaling::AutoScalingGroup | OnDemandPercentageAboveBaseCapacity tops out at 100 | none |
+| `pf-asg-target-value-positive` | AWS::AutoScaling::ScalingPolicy | Target tracking needs a positive TargetValue | none |
+| `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | none |
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
