@@ -594,6 +594,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation looks the zone up by the literal HostedZoneName and does not\n# normalize the trailing dot: the same stack deployed clean with\n# \"zone.example.\" and failed with NotFound for \"zone.example\" (2026-09-02).\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\tsprintf(\"HostedZoneName '%s' is missing the trailing dot, so CloudFormation fails the lookup with \\\"No hosted zone with name ... found\\\"\", [zn]),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\tis_string(zn)\n\tzn != \"\"\n\tnot endswith(zn, \".\")\n}\n"
   },
   {
+    "id": "pf-s3-accelerate-dotted-name",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Transfer Acceleration rejects bucket names with periods",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Transfer Acceleration endpoints are DNS-based, so bucket names containing\n# periods are rejected at creation. Only a literal BucketName is checkable;\n# CDK-generated names never contain periods anyway.\nviolation contains make_diag_full(\"pf-s3-accelerate-dotted-name\", \"ERROR\", name,\n\t\"Properties.AccelerateConfiguration.AccelerationStatus\",\n\tsprintf(\"Bucket name '%s' contains periods, which Transfer Acceleration does not support; CreateBucket fails with \\\"S3 Transfer Acceleration is not supported for buckets with periods (.) in their names\\\"\", [bn]),\n\t\"Rename the bucket without periods, or drop AccelerateConfiguration\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/transfer-acceleration.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tresolve(name, \"Properties.AccelerateConfiguration.AccelerationStatus\") == \"Enabled\"\n\tbn := resolve(name, \"Properties.BucketName\")\n\tis_string(bn)\n\tcontains(bn, \".\")\n}\n"
+  },
+  {
     "id": "pf-s3-lifecycle-days-order",
     "service": "s3",
     "severity": "ERROR",
@@ -605,6 +616,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ord_fix := \"Order the lifecycle days so archive transitions come at least 30 days after IA transitions and expiration comes after every transition\"\n\n_pf_s3ord_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-days-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [r.index]),\n\tsprintf(\"Transition to %s at %v days is less than 30 days after the %s transition at %v days; S3 requires objects to stay at least 30 days in IA storage\", [sc2, d2, sc1, d1]),\n\t_pf_s3ord_fix, _pf_s3ord_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\ttrans := object.get(r.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t1 in trans\n\tis_object(t1)\n\tsc1 := object.get(t1, \"StorageClass\", \"\")\n\tsc1 in {\"STANDARD_IA\", \"ONEZONE_IA\"}\n\traw1 := object.get(t1, \"TransitionInDays\", null)\n\traw1 != null # to_number(null) は 0 になる\n\td1 := to_number(raw1)\n\tsome t2 in trans\n\tis_object(t2)\n\tsc2 := object.get(t2, \"StorageClass\", \"\")\n\tsc2 in {\"GLACIER\", \"DEEP_ARCHIVE\"}\n\traw2 := object.get(t2, \"TransitionInDays\", null)\n\traw2 != null\n\td2 := to_number(raw2)\n\td2 < d1 + 30\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-days-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpirationInDays\", [r.index]),\n\tsprintf(\"ExpirationInDays (%v) must be greater than TransitionInDays (%v); S3 rejects lifecycle rules that expire objects before or when they transition\", [e, d]),\n\t_pf_s3ord_fix, _pf_s3ord_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\trawe := object.get(r.value, \"ExpirationInDays\", null)\n\trawe != null # to_number(null) は 0 になる\n\te := to_number(rawe)\n\ttrans := object.get(r.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t in trans\n\tis_object(t)\n\trawd := object.get(t, \"TransitionInDays\", null)\n\trawd != null\n\td := to_number(rawd)\n\te <= d\n}\n"
   },
   {
+    "id": "pf-s3-lifecycle-expiration-positive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ExpirationInDays must be a positive integer",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types ExpirationInDays as a bare integer with no\n# minimum, so 0 and negatives reach the service. Only the Expiration action\n# was bench-verified; other day fields are left alone.\nviolation contains make_diag_full(\"pf-s3-lifecycle-expiration-positive\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpirationInDays\", [r.index]),\n\tsprintf(\"ExpirationInDays is %v; S3 rejects the rule with \\\"'Days' for Expiration action must be a positive integer\\\"\", [d]),\n\t\"Use an ExpirationInDays of 1 or more\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-rule.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\traw := object.get(r.value, \"ExpirationInDays\", null)\n\traw != null\n\td := to_number(raw)\n\td <= 0\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-rule-no-action",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A lifecycle rule needs at least one action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The ten action fields, verbatim from the service error. A field whose value\n# is an unresolvable intrinsic still counts as present (fail closed).\n_pf_s3lna_actions := {\n\t\"AbortIncompleteMultipartUpload\",\n\t\"ExpirationDate\",\n\t\"ExpirationInDays\",\n\t\"ExpiredObjectDeleteMarker\",\n\t\"NoncurrentVersionExpiration\",\n\t\"NoncurrentVersionExpirationInDays\",\n\t\"NoncurrentVersionTransition\",\n\t\"NoncurrentVersionTransitions\",\n\t\"Transition\",\n\t\"Transitions\",\n}\n\n_pf_s3lna_has_action(rule) if {\n\tsome k in _pf_s3lna_actions\n\tobject.get(rule, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-rule-no-action\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d\", [r.index]),\n\t\"The lifecycle rule specifies no action; S3 rejects it with \\\"At least one of [ExpirationDate,ExpirationInDays,AbortIncompleteMultipartUpload,Transition,...] needs to be specified\\\"\",\n\t\"Add an expiration, transition, or abort-incomplete-multipart-upload action to the rule, or remove the rule\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-rule.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\tnot _pf_s3lna_has_action(r.value)\n}\n"
+  },
+  {
+    "id": "pf-s3-notification-overlapping-filters",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Notification entries must not overlap for the same event type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# S3 keeps one notification configuration per bucket and rejects it when two\n# entries (across queue/topic/lambda alike) could match the same object event:\n# overlapping event types AND overlapping prefixes AND overlapping suffixes.\n# A missing filter side means \"\" and overlaps everything. Pairs with an\n# unresolvable event or filter value are skipped — overlap cannot be proven.\n\n_pf_s3no_configs(name) := array.concat(array.concat(\n\t[c | some c in flatten_list(name, \"Properties.NotificationConfiguration.QueueConfigurations\")],\n\t[c | some c in flatten_list(name, \"Properties.NotificationConfiguration.TopicConfigurations\")]),\n\t[c | some c in flatten_list(name, \"Properties.NotificationConfiguration.LambdaConfigurations\")])\n\n_pf_s3no_rules(c) := rules if {\n\tf := object.get(c, \"Filter\", null)\n\tis_object(f)\n\tk := object.get(f, \"S3Key\", null)\n\tis_object(k)\n\trules := object.get(k, \"Rules\", [])\n\tis_array(rules)\n}\n\n_pf_s3no_rules(c) := [] if {\n\tobject.get(c, \"Filter\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3no_filter_val(c, kind) := v if {\n\tvs := [x | some r in _pf_s3no_rules(c); is_object(r); lower(object.get(r, \"Name\", \"\")) == kind; x := object.get(r, \"Value\", null)]\n\tcount(vs) > 0\n\tv := vs[0]\n}\n\n_pf_s3no_filter_val(c, kind) := \"\" if {\n\tvs := [x | some r in _pf_s3no_rules(c); is_object(r); lower(object.get(r, \"Name\", \"\")) == kind; x := object.get(r, \"Value\", null)]\n\tcount(vs) == 0\n}\n\n_pf_s3no_pre_overlap(a, b) if startswith(a, b)\n\n_pf_s3no_pre_overlap(a, b) if startswith(b, a)\n\n_pf_s3no_suf_overlap(a, b) if endswith(a, b)\n\n_pf_s3no_suf_overlap(a, b) if endswith(b, a)\n\n# \"s3:ObjectCreated:*\" covers \"s3:ObjectCreated:Put\"; drop the trailing \"*\"\n# and prefix-match.\n_pf_s3no_event_overlap(e1, e2) if e1 == e2\n\n_pf_s3no_event_overlap(e1, e2) if {\n\tendswith(e1, \":*\")\n\tstartswith(e2, substring(e1, 0, count(e1) - 1))\n}\n\n_pf_s3no_event_overlap(e1, e2) if {\n\tendswith(e2, \":*\")\n\tstartswith(e1, substring(e2, 0, count(e2) - 1))\n}\n\nviolation contains make_diag_full(\"pf-s3-notification-overlapping-filters\", \"ERROR\", name,\n\t\"Properties.NotificationConfiguration\",\n\tsprintf(\"Two notification entries for overlapping event types ('%s' and '%s') have overlapping prefix/suffix filters; S3 rejects the configuration with \\\"Configuration is ambiguously defined. Cannot have overlapping suffixes in two rules if the prefixes are overlapping for the same event type.\\\"\", [e1, e2]),\n\t\"Make the prefixes or suffixes disjoint, or merge the two entries into one\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tcs := _pf_s3no_configs(name)\n\tsome i, a in cs\n\tsome j, b in cs\n\ti < j\n\te1 := object.get(a.value, \"Event\", null)\n\tis_string(e1)\n\te2 := object.get(b.value, \"Event\", null)\n\tis_string(e2)\n\t_pf_s3no_event_overlap(e1, e2)\n\tp1 := _pf_s3no_filter_val(a.value, \"prefix\")\n\tis_string(p1)\n\tp2 := _pf_s3no_filter_val(b.value, \"prefix\")\n\tis_string(p2)\n\t_pf_s3no_pre_overlap(p1, p2)\n\ts1 := _pf_s3no_filter_val(a.value, \"suffix\")\n\tis_string(s1)\n\ts2 := _pf_s3no_filter_val(b.value, \"suffix\")\n\tis_string(s2)\n\t_pf_s3no_suf_overlap(s1, s2)\n}\n"
+  },
+  {
+    "id": "pf-s3-objectlock-requires-versioning",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ObjectLockConfiguration needs versioning enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ObjectLockConfiguration on its own does NOT require ObjectLockEnabled —\n# S3 accepts Object Lock on an existing versioned bucket (bench s05b deployed\n# clean). What it does require is versioning. When ObjectLockEnabled is true\n# the bucket is created lock-enabled and versioning comes with it, so the rule\n# fires only when lock-enablement is provably off (key literally absent or\n# literal false) and versioning is provably not enabled.\n_pf_s3olrv_no_lock_enabled(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"ObjectLockEnabled\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3olrv_no_lock_enabled(name) if {\n\tcoerce_to_bool(resolve(name, \"Properties.ObjectLockEnabled\")) == false\n}\n\n_pf_s3olrv_bad_versioning(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"VersioningConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3olrv_bad_versioning(name) if {\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-objectlock-requires-versioning\", \"ERROR\", name,\n\t\"Properties.ObjectLockConfiguration\",\n\t\"ObjectLockConfiguration is set on a bucket whose versioning is not enabled; S3 rejects it with \\\"Versioning must be 'Enabled' on the bucket to apply a Object Lock configuration\\\"\",\n\t\"Set VersioningConfiguration.Status to 'Enabled', or set ObjectLockEnabled: true to create the bucket lock-enabled\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tis_object(resolve(name, \"Properties.ObjectLockConfiguration\"))\n\t_pf_s3olrv_no_lock_enabled(name)\n\t_pf_s3olrv_bad_versioning(name)\n}\n"
+  },
+  {
+    "id": "pf-s3-objectlock-versioning-suspended",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Object Lock forbids suspending versioning",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Object Lock force-enables versioning at creation, so a template that also\n# suspends versioning contradicts itself and the handler's PutBucketVersioning\n# call is rejected. Fires only on a literal \"Suspended\".\nviolation contains make_diag_full(\"pf-s3-objectlock-versioning-suspended\", \"ERROR\", name,\n\t\"Properties.VersioningConfiguration.Status\",\n\t\"ObjectLockEnabled is true but VersioningConfiguration suspends versioning; S3 rejects it with \\\"An Object Lock configuration is present on this bucket, so the versioning state cannot be changed.\\\"\",\n\t\"Set VersioningConfiguration.Status to 'Enabled' (or drop it — Object Lock enables versioning itself)\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tcoerce_to_bool(resolve(name, \"Properties.ObjectLockEnabled\")) == true\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-dest-versioning",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "The replication destination bucket needs versioning enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The destination side of what pf-s3-replication-requires-versioning checks on\n# the source. Destination.Bucket is normally Fn::GetAtt/Ref to an in-template\n# bucket; resolve() turns both into the target's logical ID, so the\n# destination's own properties are readable. External destination ARNs resolve\n# to strings that are not logical IDs and skip. Versioning is \"not enabled\"\n# when VersioningConfiguration is literally absent (proven via\n# input.resources, see AGENTS.md) or Status resolves to \"Suspended\"; an\n# unresolvable Status skips.\n_pf_s3rdv_bad_versioning(dest) if {\n\tprops := input.resources[dest].properties\n\tis_object(props)\n\tobject.get(props, \"VersioningConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3rdv_bad_versioning(dest) if {\n\tresolve(dest, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-dest-versioning\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.Bucket\", [r.index]),\n\tsprintf(\"Replication destination bucket '%s' does not have versioning enabled; S3 rejects the configuration with \\\"Destination bucket must have versioning enabled\\\"\", [dest]),\n\t\"Set VersioningConfiguration.Status to 'Enabled' on the destination bucket\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tdest := resolve(name, sprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.Bucket\", [r.index]))\n\tis_string(dest)\n\tdest in resources_of_type(\"AWS::S3::Bucket\")\n\t_pf_s3rdv_bad_versioning(dest)\n}\n"
+  },
+  {
     "id": "pf-s3-replication-requires-versioning",
     "service": "s3",
     "severity": "ERROR",
@@ -613,7 +690,18 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::S3::Bucket"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Status がリテラルで \"Suspended\" 以外（= \"Enabled\"）、または未解決トークンなら OK 扱い。\n# VersioningConfiguration 自体が無い / Suspended のときだけ違反にする。\n_pf_s3repl_versioning_ok(name) if {\n\ts := resolve(name, \"Properties.VersioningConfiguration.Status\")\n\tnot s == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-requires-versioning\", \"ERROR\", name,\n\t\"Properties.ReplicationConfiguration\",\n\t\"ReplicationConfiguration is set but bucket versioning is not enabled; S3 rejects the replication configuration at deploy time (InvalidRequest: Versioning must be 'Enabled' on the bucket)\",\n\t\"Set VersioningConfiguration.Status to 'Enabled' on the source bucket\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tis_object(resolve(name, \"Properties.ReplicationConfiguration\"))\n\tnot _pf_s3repl_versioning_ok(name)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 違反にするのは VersioningConfiguration が文字どおり不在（input.resources で\n# 証明、AGENTS.md 参照）か、Status がリテラルで \"Suspended\" のときだけ。\n# 未解決トークンは OK 扱い（resolve() はキー不在と未解決の両方で undefined に\n# なるため、`not resolve(...)` では不在を証明できない — 2026-09-02 実測）。\n_pf_s3repl_bad_versioning(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"VersioningConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3repl_bad_versioning(name) if {\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-requires-versioning\", \"ERROR\", name,\n\t\"Properties.ReplicationConfiguration\",\n\t\"ReplicationConfiguration is set but bucket versioning is not enabled; S3 rejects the replication configuration at deploy time (InvalidRequest: Versioning must be 'Enabled' on the bucket)\",\n\t\"Set VersioningConfiguration.Status to 'Enabled' on the source bucket\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tis_object(resolve(name, \"Properties.ReplicationConfiguration\"))\n\t_pf_s3repl_bad_versioning(name)\n}\n"
+  },
+  {
+    "id": "pf-s3-website-redirect-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "RedirectAllRequestsTo excludes every other website setting",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RedirectAllRequestsTo redirects the whole site, so S3 rejects any sibling\n# website setting alongside it.\nviolation contains make_diag_full(\"pf-s3-website-redirect-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.WebsiteConfiguration.%s\", [k]),\n\tsprintf(\"WebsiteConfiguration combines RedirectAllRequestsTo with %s; S3 rejects it with \\\"[IndexDocument, ErrorDocument, RoutingRules] should not be specified if RedirectAllRequestsTo is specified\\\"\", [k]),\n\t\"Keep RedirectAllRequestsTo alone, or drop it and configure the website with IndexDocument/ErrorDocument/RoutingRules\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-websiteconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\twc := resolve(name, \"Properties.WebsiteConfiguration\")\n\tis_object(wc)\n\tobject.get(wc, \"RedirectAllRequestsTo\", \"__pf_absent\") != \"__pf_absent\"\n\tsome k in {\"IndexDocument\", \"ErrorDocument\", \"RoutingRules\"}\n\tobject.get(wc, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-sns-fifo-topic-name",

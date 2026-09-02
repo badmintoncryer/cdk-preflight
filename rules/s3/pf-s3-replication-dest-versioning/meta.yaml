@@ -1,0 +1,11 @@
+id: pf-s3-replication-dest-versioning
+service: s3
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: The replication destination bucket needs versioning enabled
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (s07): in-template destination bucket without VersioningConfiguration (Destination.Bucket via Fn::GetAtt) -> \"Destination bucket must have versioning enabled.\" ROLLBACK_COMPLETE. Fn::GetAtt Arn resolves to the target's logical ID (probe 2026-09-02), enabling the cross-resource read. Suspended-status variant not deployed; inferred from the same state check."
+addedOn: 2026-09-02

@@ -680,3 +680,163 @@ describe('ecs task definition rules', () => {
     });
   });
 });
+
+describe('s3 bucket rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  const bucket = (props: Record<string, unknown>) => ({
+    Resources: { B: { Type: 'AWS::S3::Bucket', Properties: props } },
+  });
+
+  describe('pf-s3-replication-requires-versioning', () => {
+    test('skips when Status is present but unresolvable (regression: fired before the input.resources fix)', () => {
+      const t = {
+        Parameters: { V: { Type: 'String' } },
+        Resources: {
+          B: {
+            Type: 'AWS::S3::Bucket',
+            Properties: {
+              VersioningConfiguration: { Status: { Ref: 'V' } },
+              ReplicationConfiguration: {
+                Role: 'arn:aws:iam::123456789012:role/repl',
+                Rules: [{ Status: 'Enabled', Destination: { Bucket: 'arn:aws:s3:::elsewhere' } }],
+              },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('still fires on a literal Suspended', () => {
+      const t = bucket({
+        VersioningConfiguration: { Status: 'Suspended' },
+        ReplicationConfiguration: {
+          Role: 'arn:aws:iam::123456789012:role/repl',
+          Rules: [{ Status: 'Enabled', Destination: { Bucket: 'arn:aws:s3:::elsewhere' } }],
+        },
+      });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-s3-replication-requires-versioning');
+    });
+  });
+
+  describe('pf-s3-replication-dest-versioning', () => {
+    test('skips an external destination ARN — the target bucket is not in the template', () => {
+      const t = {
+        Resources: {
+          Src: {
+            Type: 'AWS::S3::Bucket',
+            Properties: {
+              VersioningConfiguration: { Status: 'Enabled' },
+              ReplicationConfiguration: {
+                Role: 'arn:aws:iam::123456789012:role/repl',
+                Rules: [{ Status: 'Enabled', Destination: { Bucket: 'arn:aws:s3:::external-bucket' } }],
+              },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('fires when the in-template destination suspends versioning', () => {
+      const t = {
+        Resources: {
+          Dest: { Type: 'AWS::S3::Bucket', Properties: { VersioningConfiguration: { Status: 'Suspended' } } },
+          Src: {
+            Type: 'AWS::S3::Bucket',
+            Properties: {
+              VersioningConfiguration: { Status: 'Enabled' },
+              ReplicationConfiguration: {
+                Role: 'arn:aws:iam::123456789012:role/repl',
+                Rules: [{ Status: 'Enabled', Destination: { Bucket: { 'Fn::GetAtt': ['Dest', 'Arn'] } } }],
+              },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toContain('pf-s3-replication-dest-versioning');
+    });
+  });
+
+  describe('pf-s3-notification-overlapping-filters', () => {
+    const notif = (configs: unknown[]) => bucket({ NotificationConfiguration: { QueueConfigurations: configs } });
+    const q = 'arn:aws:sqs:ap-northeast-1:123456789012:q';
+
+    test('a wildcard event overlaps its specific form', () => {
+      const t = notif([
+        { Event: 's3:ObjectCreated:*', Queue: q, Filter: { S3Key: { Rules: [{ Name: 'prefix', Value: 'a/' }] } } },
+        { Event: 's3:ObjectCreated:Put', Queue: q, Filter: { S3Key: { Rules: [{ Name: 'prefix', Value: 'a/b/' }] } } },
+      ]);
+      expect(ids(diagnoseTemplate(t))).toContain('pf-s3-notification-overlapping-filters');
+    });
+
+    test('disjoint suffixes keep overlapping prefixes legal', () => {
+      const t = notif([
+        { Event: 's3:ObjectCreated:*', Queue: q, Filter: { S3Key: { Rules: [{ Name: 'prefix', Value: 'a/' }, { Name: 'suffix', Value: '.jpg' }] } } },
+        { Event: 's3:ObjectCreated:*', Queue: q, Filter: { S3Key: { Rules: [{ Name: 'prefix', Value: 'a/b/' }, { Name: 'suffix', Value: '.png' }] } } },
+      ]);
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('disjoint event families never overlap', () => {
+      const t = notif([
+        { Event: 's3:ObjectCreated:*', Queue: q },
+        { Event: 's3:ObjectRemoved:*', Queue: q },
+      ]);
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('an unfiltered entry overlaps a filtered one across config kinds', () => {
+      const t = bucket({
+        NotificationConfiguration: {
+          QueueConfigurations: [{ Event: 's3:ObjectCreated:*', Queue: q }],
+          TopicConfigurations: [{ Event: 's3:ObjectCreated:Put', Topic: 'arn:aws:sns:ap-northeast-1:123456789012:t', Filter: { S3Key: { Rules: [{ Name: 'prefix', Value: 'x/' }] } } }],
+        },
+      });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-s3-notification-overlapping-filters');
+    });
+  });
+
+  describe('pf-s3-lifecycle-days-order', () => {
+    test('IA transition below 30 days alone is NOT flagged — the absolute minimum is gone (bench s01)', () => {
+      const t = bucket({
+        LifecycleConfiguration: { Rules: [{ Status: 'Enabled', Transitions: [{ StorageClass: 'STANDARD_IA', TransitionInDays: 5 }] }] },
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-s3-objectlock-requires-versioning', () => {
+    test('skips when ObjectLockEnabled is true — the bucket is created lock-enabled', () => {
+      const t = bucket({
+        ObjectLockEnabled: true,
+        ObjectLockConfiguration: { ObjectLockEnabled: 'Enabled', Rule: { DefaultRetention: { Mode: 'GOVERNANCE', Days: 1 } } },
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('skips when ObjectLockEnabled is unresolvable', () => {
+      const t = {
+        Parameters: { L: { Type: 'String' } },
+        Resources: {
+          B: {
+            Type: 'AWS::S3::Bucket',
+            Properties: {
+              ObjectLockEnabled: { Ref: 'L' },
+              ObjectLockConfiguration: { ObjectLockEnabled: 'Enabled', Rule: { DefaultRetention: { Mode: 'GOVERNANCE', Days: 1 } } },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-s3-accelerate-dotted-name', () => {
+    test('skips when BucketName is generated (absent)', () => {
+      const t = bucket({ AccelerateConfiguration: { AccelerationStatus: 'Enabled' } });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+});

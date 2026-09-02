@@ -1,0 +1,11 @@
+id: pf-s3-notification-overlapping-filters
+service: s3
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: Notification entries must not overlap for the same event type
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (s08): two QueueConfigurations, same event s3:ObjectCreated:*, prefixes a/ and a/b/, no suffixes -> \"Configuration is ambiguously defined. Cannot have overlapping suffixes in two rules if the prefixes are overlapping for the same event type.\" ROLLBACK_COMPLETE. Event-wildcard overlap (:* covering a specific event) not separately deployed; mirrors documented filtering semantics."
+addedOn: 2026-09-02
