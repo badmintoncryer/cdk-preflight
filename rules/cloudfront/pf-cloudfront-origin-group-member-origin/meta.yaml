@@ -1,0 +1,11 @@
+id: pf-cloudfront-origin-group-member-origin
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: Origin group members must reference an origin declared in the distribution
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-origingroup.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "CloudFront rejects an origin group whose member OriginId matches no origin; the built-in E3057 checks TargetOriginId only, verified against @aws/cloudformation-validate 1.7.0-beta on 2026-09-02"
+addedOn: 2026-09-02

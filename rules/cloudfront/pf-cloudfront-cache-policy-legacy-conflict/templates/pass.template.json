@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Dist": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Origins": [
+            {
+              "Id": "origin1",
+              "DomainName": "bucket.s3.us-east-1.amazonaws.com",
+              "S3OriginConfig": {
+                "OriginAccessIdentity": ""
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "origin1",
+            "ViewerProtocolPolicy": "allow-all",
+            "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-cloudfront-cached-methods-subset
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: CachedMethods must be a subset of AllowedMethods
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "CloudFront rejects a cache behavior whose CachedMethods are not among AllowedMethods; the CDK L2 exposes the two as independent enums so the combination is reachable from typed code"
+addedOn: 2026-09-02

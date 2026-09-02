@@ -1,0 +1,11 @@
+id: pf-cloudfront-cache-policy-legacy-conflict
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: A cache behavior with a CachePolicyId must not also carry the legacy ForwardedValues or TTL properties
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "CacheBehavior reference: \"A CacheBehavior must include either a CachePolicyId or ForwardedValues\" — CloudFront rejects a behavior that sets both"
+addedOn: 2026-09-02

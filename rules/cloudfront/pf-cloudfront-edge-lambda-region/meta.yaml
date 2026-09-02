@@ -1,0 +1,11 @@
+id: pf-cloudfront-edge-lambda-region
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: Lambda@Edge functions associated with a distribution must be in us-east-1
+constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-edge-function-restrictions.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "documented Lambda@Edge restriction (\"The Lambda function must be in the US East (N. Virginia) Region\"); reproducing it requires publishing a function version in a second region"
+addedOn: 2026-09-02

@@ -7,7 +7,15 @@
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
+| `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | none |
+| `pf-cloudfront-cache-policy-legacy-conflict` | AWS::CloudFront::Distribution | A cache behavior with a CachePolicyId must not also carry the legacy ForwardedValues or TTL properties | none |
+| `pf-cloudfront-cached-methods-subset` | AWS::CloudFront::Distribution | CachedMethods must be a subset of AllowedMethods | none |
+| `pf-cloudfront-edge-lambda-region` | AWS::CloudFront::Distribution | Lambda@Edge functions associated with a distribution must be in us-east-1 | none |
+| `pf-cloudfront-edge-lambda-version` | AWS::CloudFront::Distribution | Lambda@Edge associations must reference a version ARN, not an alias or $LATEST | none |
+| `pf-cloudfront-geo-restriction-locations` | AWS::CloudFront::Distribution | GeoRestriction Locations must match the RestrictionType | none |
+| `pf-cloudfront-origin-group-member-origin` | AWS::CloudFront::Distribution | Origin group members must reference an origin declared in the distribution | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | none |
+| `pf-cloudfront-wafv2-webacl-region` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be created in us-east-1 | none |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |

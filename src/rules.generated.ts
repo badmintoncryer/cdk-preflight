@@ -46,6 +46,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-acm-cert-region\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\",\n\tsprintf(\"CloudFront requires the ACM certificate to be in us-east-1, but the certificate is in %s\", [region]),\n\t\"Issue or import the certificate in us-east-1 (e.g. a dedicated us-east-1 stack) and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-certificate-issuer\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"acm\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != \"us-east-1\"\n}\n"
   },
   {
+    "id": "pf-cloudfront-aliases-require-custom-certificate",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A distribution with Aliases cannot use the CloudFront default certificate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_aliascert_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-viewercertificate.html\"\n\n_pf_cf_aliascert_fix := \"Attach an ACM certificate (AcmCertificateArn, us-east-1) or an IAM certificate, together with SslSupportMethod and MinimumProtocolVersion\"\n\n_pf_cf_aliascert_count(name) := count([1 |\n\tsome _ in flatten_list(name, \"Properties.DistributionConfig.Aliases\")\n])\n\nviolation contains make_diag_full(\"pf-cloudfront-aliases-require-custom-certificate\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate\",\n\t\"A distribution with Aliases cannot use the CloudFront default certificate\",\n\t_pf_cf_aliascert_fix, _pf_cf_aliascert_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\t_pf_cf_aliascert_count(name) > 0\n\tresolve(name, \"Properties.DistributionConfig.ViewerCertificate.CloudFrontDefaultCertificate\") == true\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-legacy-conflict",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A cache behavior with a CachePolicyId must not also carry the legacy ForwardedValues or TTL properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cpconflict_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\n_pf_cf_cpconflict_legacy := [\"ForwardedValues\", \"MinTTL\", \"MaxTTL\", \"DefaultTTL\"]\n\n_pf_cf_cpconflict_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-legacy-conflict\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [b.path, prop]),\n\tsprintf(\"%s cannot be used on a cache behavior that has a CachePolicyId\", [prop]),\n\t\"Move the setting into the cache policy (or the origin request policy) and drop the legacy property\",\n\t_pf_cf_cpconflict_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_cpconflict_behaviors(name)\n\tis_object(b.value)\n\tpolicy := object.get(b.value, \"CachePolicyId\", null)\n\tis_string(policy)\n\tpolicy != \"\"\n\tsome prop in _pf_cf_cpconflict_legacy\n\tobject.get(b.value, prop, null) != null\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cached-methods-subset",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CachedMethods must be a subset of AllowedMethods",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_methods_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\n_pf_cf_methods_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\n# CloudFront defaults AllowedMethods to GET/HEAD when the property is omitted,\n# so an omitted AllowedMethods still constrains what may be cached.\n_pf_cf_methods_allowed(b) := object.get(b.value, \"AllowedMethods\", [\"GET\", \"HEAD\"])\n\nviolation contains make_diag_full(\"pf-cloudfront-cached-methods-subset\", \"ERROR\", name,\n\tsprintf(\"%s.CachedMethods\", [b.path]),\n\tsprintf(\"CachedMethods contains %s, which is not in AllowedMethods %v\", [method, allowed]),\n\t\"Every method in CachedMethods must also appear in AllowedMethods\",\n\t_pf_cf_methods_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_methods_behaviors(name)\n\tis_object(b.value)\n\tcached := object.get(b.value, \"CachedMethods\", null)\n\tis_array(cached)\n\tallowed := _pf_cf_methods_allowed(b)\n\tis_array(allowed)\n\tsome method in cached\n\tnot method in allowed\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-edge-lambda-region",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Lambda@Edge functions associated with a distribution must be in us-east-1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_edgeregion_fix := \"Create the Lambda@Edge function in us-east-1 (cloudfront.experimental.EdgeFunction does this for you) and associate that version's ARN\"\n\n_pf_cf_edgeregion_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-edge-function-restrictions.html\"\n\n_pf_cf_edgeregion_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\"} |\n\t\tsome _ in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index])} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\nviolation contains make_diag_full(\"pf-cloudfront-edge-lambda-region\", \"ERROR\", name,\n\tsprintf(\"%s.LambdaFunctionAssociations.%d.LambdaFunctionARN\", [b.path, a.index]),\n\tsprintf(\"Lambda@Edge functions must live in us-east-1, but this function is in %s\", [region]),\n\t_pf_cf_edgeregion_fix, _pf_cf_edgeregion_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_edgeregion_behaviors(name)\n\tsome a in flatten_list(name, sprintf(\"%s.LambdaFunctionAssociations\", [b.path]))\n\tarn := object.get(a.value, \"LambdaFunctionARN\", null)\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 7\n\tparts[0] == \"arn\"\n\tparts[2] == \"lambda\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != \"us-east-1\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-edge-lambda-version",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Lambda@Edge associations must reference a version ARN, not an alias or $LATEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_edgever_fix := \"Associate a version ARN (in the CDK, fn.currentVersion.edgeArn) instead of the unqualified function ARN, an alias, or $LATEST\"\n\n_pf_cf_edgever_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-lambdafunctionassociation.html\"\n\n_pf_cf_edgever_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\"} |\n\t\tsome _ in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index])} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\n# Lambda ARNs split into 7 segments when unqualified\n# (arn:partition:lambda:region:account:function:name) and 8 when a version or\n# alias qualifier is appended. Only an all-digit qualifier is a version.\n_pf_cf_edgever_arns(name) := [{\"path\": path, \"arn\": arn, \"parts\": parts} |\n\tsome b in _pf_cf_edgever_behaviors(name)\n\tsome a in flatten_list(name, sprintf(\"%s.LambdaFunctionAssociations\", [b.path]))\n\tarn := object.get(a.value, \"LambdaFunctionARN\", null)\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tparts[0] == \"arn\"\n\tparts[2] == \"lambda\"\n\tparts[5] == \"function\"\n\tpath := sprintf(\"%s.LambdaFunctionAssociations.%d.LambdaFunctionARN\", [b.path, a.index])\n]\n\nviolation contains make_diag_full(\"pf-cloudfront-edge-lambda-version\", \"ERROR\", name, it.path,\n\t\"Lambda@Edge requires a version-qualified function ARN, but this ARN has no qualifier\",\n\t_pf_cf_edgever_fix, _pf_cf_edgever_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in _pf_cf_edgever_arns(name)\n\tcount(it.parts) == 7\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-edge-lambda-version\", \"ERROR\", name, it.path,\n\tsprintf(\"Lambda@Edge requires a version-qualified function ARN, but '%s' is an alias or $LATEST\", [qualifier]),\n\t_pf_cf_edgever_fix, _pf_cf_edgever_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in _pf_cf_edgever_arns(name)\n\tcount(it.parts) == 8\n\tqualifier := it.parts[7]\n\tnot regex.match(\"^[0-9]+$\", qualifier)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-geo-restriction-locations",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "GeoRestriction Locations must match the RestrictionType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_geo_path := \"Properties.DistributionConfig.Restrictions.GeoRestriction\"\n\n_pf_cf_geo_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-georestriction.html\"\n\n_pf_cf_geo_locations(name) := count([1 |\n\tsome _ in flatten_list(name, sprintf(\"%s.Locations\", [_pf_cf_geo_path]))\n])\n\nviolation contains make_diag_full(\"pf-cloudfront-geo-restriction-locations\", \"ERROR\", name,\n\tsprintf(\"%s.Locations\", [_pf_cf_geo_path]),\n\tsprintf(\"RestrictionType '%s' requires at least one country code in Locations\", [kind]),\n\t\"List the ISO 3166-1 alpha-2 country codes in Locations, or set RestrictionType to none\",\n\t_pf_cf_geo_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tkind := resolve(name, sprintf(\"%s.RestrictionType\", [_pf_cf_geo_path]))\n\tkind in {\"whitelist\", \"blacklist\"}\n\t_pf_cf_geo_locations(name) == 0\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-geo-restriction-locations\", \"ERROR\", name,\n\tsprintf(\"%s.Locations\", [_pf_cf_geo_path]),\n\t\"RestrictionType 'none' must not be combined with Locations\",\n\t\"Remove Locations, or switch RestrictionType to whitelist or blacklist\",\n\t_pf_cf_geo_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tresolve(name, sprintf(\"%s.RestrictionType\", [_pf_cf_geo_path])) == \"none\"\n\t_pf_cf_geo_locations(name) > 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-group-member-origin",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin group members must reference an origin declared in the distribution",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_ogmember_ids(name) := {id |\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.Origins\")\n\tid := object.get(it.value, \"Id\", null)\n\tis_string(id)\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-group-member-origin\", \"ERROR\", name,\n\tsprintf(\"Properties.DistributionConfig.OriginGroups.Items.%d.Members\", [g.index]),\n\tsprintf(\"Origin group member '%s' does not match any origin Id in the distribution\", [oid]),\n\t\"Point every origin group member at the Id of an origin declared in Origins\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-origingroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome g in flatten_list(name, \"Properties.DistributionConfig.OriginGroups.Items\")\n\tmembers := object.get(object.get(g.value, \"Members\", {}), \"Items\", [])\n\tsome m in members\n\toid := object.get(m, \"OriginId\", null)\n\tis_string(oid)\n\tnot oid in _pf_cf_ogmember_ids(name)\n}\n"
+  },
+  {
     "id": "pf-cloudfront-ttl-order",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -55,6 +132,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudFront::Distribution"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_ttl_fix := \"Order the TTLs as MinTTL <= DefaultTTL <= MaxTTL\"\n\n_pf_cf_ttl_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html\"\n\n_pf_cf_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"MinTTL (%v) must be less than or equal to MaxTTL (%v)\", [mn, mx]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tmn := to_number(object.get(b.value, \"MinTTL\", null))\n\tmx := to_number(object.get(b.value, \"MaxTTL\", null))\n\tmn > mx\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"MinTTL (%v) must be less than or equal to DefaultTTL (%v)\", [mn, df]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tmn := to_number(object.get(b.value, \"MinTTL\", null))\n\tdf := to_number(object.get(b.value, \"DefaultTTL\", null))\n\tmn > df\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"DefaultTTL (%v) must be less than or equal to MaxTTL (%v)\", [df, mx]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tdf := to_number(object.get(b.value, \"DefaultTTL\", null))\n\tmx := to_number(object.get(b.value, \"MaxTTL\", null))\n\tdf > mx\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-wafv2-webacl-region",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A WAFv2 web ACL attached to CloudFront must be created in us-east-1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-wafv2-webacl-region\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.WebACLId\",\n\tsprintf(\"A web ACL attached to CloudFront must be created in us-east-1 with scope CLOUDFRONT, but this one is in %s\", [region]),\n\t\"Create the WAFv2 web ACL in a us-east-1 stack with scope CLOUDFRONT and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-wafv2-webacl.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.WebACLId\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"wafv2\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != \"us-east-1\"\n}\n"
   },
   {
     "id": "pf-dynamodb-billing-throughput",

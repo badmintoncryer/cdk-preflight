@@ -1,0 +1,11 @@
+id: pf-cloudfront-edge-lambda-version
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: Lambda@Edge associations must reference a version ARN, not an alias or $LATEST
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-lambdafunctionassociation.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "CloudFormation reference states \"You must specify the ARN of a function version; you can't specify an alias or $LATEST\""
+addedOn: 2026-09-02

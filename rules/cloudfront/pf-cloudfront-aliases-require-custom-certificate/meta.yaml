@@ -1,0 +1,11 @@
+id: pf-cloudfront-aliases-require-custom-certificate
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: A distribution with Aliases cannot use the CloudFront default certificate
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-viewercertificate.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "ViewerCertificate reference: if the distribution uses Aliases, omit CloudFrontDefaultCertificate and specify a certificate, SslSupportMethod and MinimumProtocolVersion"
+addedOn: 2026-09-02

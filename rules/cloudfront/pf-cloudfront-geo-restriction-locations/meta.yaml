@@ -1,0 +1,11 @@
+id: pf-cloudfront-geo-restriction-locations
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: GeoRestriction Locations must match the RestrictionType
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-georestriction.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "GeoRestriction reference marks Locations \"Required: Conditional\" — it holds the countries for whitelist/blacklist and has no meaning for none"
+addedOn: 2026-09-02
