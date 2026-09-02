@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p"
+      }
+    },
+    "Dom": {
+      "Type": "AWS::Cognito::UserPoolDomain",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "UP"
+        },
+        "Domain": "my-team-login"
+      }
+    }
+  }
+}

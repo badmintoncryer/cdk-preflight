@@ -1,0 +1,11 @@
+id: pf-cognito-schema-attr-length-order
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: Schema attribute MaxLength cannot undercut MinLength
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-schemaattribute.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: StringAttributeConstraints MinLength \"10\" MaxLength \"5\" (c11) -> \"Attribute custom:level cannot have a max length shorter than it's min length\". ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

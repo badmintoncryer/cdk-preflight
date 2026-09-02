@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 4
+          }
+        }
+      }
+    }
+  }
+}

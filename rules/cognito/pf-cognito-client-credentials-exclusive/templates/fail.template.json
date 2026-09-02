@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p"
+      }
+    },
+    "C": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "UP"
+        },
+        "ClientName": "c",
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthFlows": [
+          "client_credentials",
+          "code"
+        ],
+        "AllowedOAuthScopes": [
+          "openid"
+        ],
+        "CallbackURLs": [
+          "https://example.com/cb"
+        ],
+        "GenerateSecret": true,
+        "SupportedIdentityProviders": [
+          "COGNITO"
+        ]
+      }
+    }
+  }
+}

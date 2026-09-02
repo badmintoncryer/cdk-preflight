@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p",
+        "Schema": [
+          {
+            "Name": "level",
+            "AttributeDataType": "String",
+            "StringAttributeConstraints": {
+              "MinLength": "10",
+              "MaxLength": "5"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

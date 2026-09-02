@@ -1,0 +1,11 @@
+id: pf-cognito-client-credentials-secret
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolClient]
+severity: ERROR
+title: client_credentials needs a client secret
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: AllowedOAuthFlows [client_credentials] with GenerateSecret false (c10b, with a ResourceServer custom scope isolating this check) -> \"client_credentials flow can not be selected if client does not have a client secret.\" ROLLBACK_COMPLETE. The absent-GenerateSecret branch rides on the schema default (false)."
+addedOn: 2026-09-03

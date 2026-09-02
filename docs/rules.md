@@ -40,6 +40,18 @@
 | `pf-cloudwatch-extended-statistic` | AWS::CloudWatch::Alarm | A percentile statistic cannot exceed p100 | none |
 | `pf-cloudwatch-metric-query-exclusive` | AWS::CloudWatch::Alarm | Expression and MetricStat are mutually exclusive per query | none |
 | `pf-cloudwatch-metric-query-returndata` | AWS::CloudWatch::Alarm | Exactly one metric query must return data | none |
+| `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | none |
+| `pf-cognito-client-credentials-exclusive` | AWS::Cognito::UserPoolClient | client_credentials cannot combine with code or implicit | none |
+| `pf-cognito-client-credentials-secret` | AWS::Cognito::UserPoolClient | client_credentials needs a client secret | none |
+| `pf-cognito-domain-reserved-word` | AWS::Cognito::UserPoolDomain | Domain prefixes cannot contain reserved words | none |
+| `pf-cognito-mfa-sms-config` | AWS::Cognito::UserPool | MFA without any factor configuration cannot deploy | none |
+| `pf-cognito-oauth-callback-required` | AWS::Cognito::UserPoolClient | code and implicit OAuth flows need CallbackURLs | none |
+| `pf-cognito-oauth-flows-scopes-required` | AWS::Cognito::UserPoolClient | Enabling OAuth requires both AllowedOAuthFlows and AllowedOAuthScopes | none |
+| `pf-cognito-password-min-length` | AWS::Cognito::UserPool | PasswordPolicy MinimumLength runs 6 to 99 | none |
+| `pf-cognito-recovery-duplicate` | AWS::Cognito::UserPool | Recovery mechanisms cannot repeat priorities or names | none |
+| `pf-cognito-schema-attr-length-order` | AWS::Cognito::UserPool | Schema attribute MaxLength cannot undercut MinLength | none |
+| `pf-cognito-token-expiration-order` | AWS::Cognito::UserPoolClient | Access and id tokens cannot outlive the refresh token | none |
+| `pf-cognito-token-validity-range` | AWS::Cognito::UserPoolClient | Token validity ranges depend on token type and unit | none |
 | `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | none |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | none |
