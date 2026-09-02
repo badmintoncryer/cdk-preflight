@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "G": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "MixedInstancesPolicy": {
+          "LaunchTemplate": {
+            "LaunchTemplateSpecification": {
+              "LaunchTemplateId": {
+                "Ref": "LT"
+              },
+              "Version": {
+                "Fn::GetAtt": [
+                  "LT",
+                  "LatestVersionNumber"
+                ]
+              }
+            }
+          },
+          "InstancesDistribution": {
+            "OnDemandPercentageAboveBaseCapacity": 200
+          }
+        }
+      }
+    }
+  }
+}

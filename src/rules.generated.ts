@@ -222,6 +222,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# WebSocket APIs route by evaluating this expression against each message,\n# so the create call rejects its absence. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_agv2wrs_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RouteSelectionExpression\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-route-selection\", \"ERROR\", name,\n\t\"Properties.RouteSelectionExpression\",\n\t\"WebSocket API has no RouteSelectionExpression; the API create fails with \\\"Invalid routeSelectionExpression\\\"\",\n\t\"Set RouteSelectionExpression, e.g. $request.body.action\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(name, \"Properties.ProtocolType\") == \"WEBSOCKET\"\n\t_pf_agv2wrs_missing(name)\n}\n"
   },
   {
+    "id": "pf-asg-cooldown-non-negative",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Cooldown cannot be negative",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cooldown is a string in the schema; only the service knows it is a\n# non-negative integer.\nviolation contains make_diag_full(\"pf-asg-cooldown-non-negative\", \"ERROR\", name,\n\t\"Properties.Cooldown\",\n\tsprintf(\"Cooldown %v is negative; the group create fails with \\\"Member must have value greater than or equal to 0\\\"\", [c]),\n\t\"Use zero or a positive number of seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tc := to_number(resolve(name, \"Properties.Cooldown\"))\n\tc < 0\n}\n"
+  },
+  {
+    "id": "pf-asg-desired-capacity-range",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "DesiredCapacity must sit between MinSize and MaxSize",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The sizes are string-typed in the schema; the between-relationship is\n# a three-way cross-property check. The min>max pair itself is engine\n# territory (E3706) and not repeated here.\nviolation contains make_diag_full(\"pf-asg-desired-capacity-range\", \"ERROR\", name,\n\t\"Properties.DesiredCapacity\",\n\tsprintf(\"DesiredCapacity %v is outside [%v, %v]; the group create fails with \\\"Desired capacity:%v must be between the specified min size:%v and max size:%v\\\"\", [dc, mn, mx, dc, mn, mx]),\n\t\"Keep MinSize <= DesiredCapacity <= MaxSize\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tdc := to_number(resolve(name, \"Properties.DesiredCapacity\"))\n\tmn := to_number(resolve(name, \"Properties.MinSize\"))\n\tmx := to_number(resolve(name, \"Properties.MaxSize\"))\n\tmn <= mx\n\t_pf_asgdcr_out(dc, mn, mx)\n}\n\n_pf_asgdcr_out(dc, mn, _) if dc < mn\n\n_pf_asgdcr_out(dc, _, mx) if dc > mx\n"
+  },
+  {
+    "id": "pf-asg-health-check-grace-period",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "HealthCheckGracePeriod cannot be negative",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types it as a bare integer with no floor; zero is the\n# service default, so only negatives are claimed.\nviolation contains make_diag_full(\"pf-asg-health-check-grace-period\", \"ERROR\", name,\n\t\"Properties.HealthCheckGracePeriod\",\n\tsprintf(\"HealthCheckGracePeriod %v is negative; the group create fails with \\\"Grace period must be a positive integer.\\\"\", [g]),\n\t\"Use zero or a positive number of seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tg := to_number(resolve(name, \"Properties.HealthCheckGracePeriod\"))\n\tg < 0\n}\n"
+  },
+  {
+    "id": "pf-asg-ondemand-percentage-max",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "OnDemandPercentageAboveBaseCapacity tops out at 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A percentage split cannot exceed 100; the schema has no maximum.\nviolation contains make_diag_full(\"pf-asg-ondemand-percentage-max\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity\",\n\tsprintf(\"OnDemandPercentageAboveBaseCapacity %v is over 100; the group create fails with \\\"Member must have value less than or equal to 100\\\"\", [p]),\n\t\"Use a percentage between 0 and 100\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-autoscaling-autoscalinggroup-instancesdistribution.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tp := to_number(resolve(name, \"Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity\"))\n\tp > 100\n}\n"
+  },
+  {
+    "id": "pf-asg-target-value-positive",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Target tracking needs a positive TargetValue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service floor is effectively \"positive\" (8.5e-12); zero and\n# negatives are rejected.\nviolation contains make_diag_full(\"pf-asg-target-value-positive\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.TargetValue\",\n\tsprintf(\"TargetValue %v is not positive; the policy create fails with \\\"Target value must be between 8.51592E-12 and 1.174271E17\\\"\", [v]),\n\t\"Use a positive target value\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-scalingpolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tv := to_number(resolve(name, \"Properties.TargetTrackingConfiguration.TargetValue\"))\n\tv <= 0\n}\n"
+  },
+  {
+    "id": "pf-asg-zone-or-subnet-required",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group needs AvailabilityZones, AvailabilityZoneIds, or subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Placement must come from somewhere. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_asgzsr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-asg-zone-or-subnet-required\", \"ERROR\", name,\n\t\"Properties.VPCZoneIdentifier\",\n\t\"Neither AvailabilityZones, AvailabilityZoneIds, nor VPCZoneIdentifier is set; the group create fails with \\\"You must specify 1 of either AvailabilityZones, AvailabilityZoneIds, or Subnets\\\"\",\n\t\"Set VPCZoneIdentifier with the target subnets (or AvailabilityZones)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\t_pf_asgzsr_absent(name, \"AvailabilityZones\")\n\t_pf_asgzsr_absent(name, \"AvailabilityZoneIds\")\n\t_pf_asgzsr_absent(name, \"VPCZoneIdentifier\")\n}\n"
+  },
+  {
     "id": "pf-agentcore-gateway-jwt-authorizer",
     "service": "bedrock-agentcore",
     "severity": "ERROR",

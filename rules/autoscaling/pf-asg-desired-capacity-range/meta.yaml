@@ -1,0 +1,11 @@
+id: pf-asg-desired-capacity-range
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: DesiredCapacity must sit between MinSize and MaxSize
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: MinSize 0, MaxSize 2, DesiredCapacity 10 (as02) -> \"Desired capacity:10 must be between the specified min size:0 and max size:2\". ROLLBACK_COMPLETE. (MinSize > MaxSize itself is engine rule E3706 - not duplicated.)"
+addedOn: 2026-09-03
