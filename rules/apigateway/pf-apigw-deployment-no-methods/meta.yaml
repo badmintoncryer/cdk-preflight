@@ -1,0 +1,11 @@
+id: pf-apigw-deployment-no-methods
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Deployment]
+severity: ERROR
+title: A Deployment needs at least one Method on its REST API
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-deployment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Deployment whose RestApi has no Method (a09) -> \"The REST API doesn't contain any methods\". ROLLBACK_COMPLETE. Only fires when the RestApi is in the same template with no Body/BodyS3Location (an imported api id or an OpenAPI body can carry methods we cannot see)."
+addedOn: 2026-09-03

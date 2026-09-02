@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "ProtocolType": "HTTP"
+      }
+    }
+  }
+}

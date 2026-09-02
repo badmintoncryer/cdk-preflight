@@ -4,6 +4,25 @@
 
 | Rule | Resource types | Constraint | Upstream status |
 |---|---|---|---|
+| `pf-apigw-access-log-format-request-id` | AWS::ApiGateway::Stage | Access log format must include a request id variable | none |
+| `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | none |
+| `pf-apigw-cognito-authorizer-provider-arns` | AWS::ApiGateway::Authorizer | COGNITO_USER_POOLS authorizers need ProviderARNs | none |
+| `pf-apigw-deployment-no-methods` | AWS::ApiGateway::Deployment | A Deployment needs at least one Method on its REST API | none |
+| `pf-apigw-integration-http-method` | AWS::ApiGateway::Method | Non-MOCK integrations need IntegrationHttpMethod | none |
+| `pf-apigw-method-authorizer-id` | AWS::ApiGateway::Method | CUSTOM and COGNITO_USER_POOLS authorization need AuthorizerId | none |
+| `pf-apigw-model-schema-type` | AWS::ApiGateway::Model | Model schema 'type' must be a JSON Schema draft-4 type | none |
+| `pf-apigw-resource-path-part` | AWS::ApiGateway::Resource | PathPart allows a-zA-Z0-9._-: or one curly-brace variable | none |
+| `pf-apigw-stage-variable-value` | AWS::ApiGateway::Stage | Stage variable values have a restricted character set | none |
+| `pf-apigw-token-authorizer-identity-source` | AWS::ApiGateway::Authorizer | TOKEN authorizers need IdentitySource | none |
+| `pf-apigwv2-api-name-required` | AWS::ApiGatewayV2::Api | An Api needs a Name unless an OpenAPI body provides one | none |
+| `pf-apigwv2-aws-proxy-payload-version` | AWS::ApiGatewayV2::Integration | AWS_PROXY integrations take PayloadFormatVersion 1.0 or 2.0 | none |
+| `pf-apigwv2-cors-credentials-wildcard` | AWS::ApiGatewayV2::Api | CORS AllowCredentials cannot pair with a wildcard origin | none |
+| `pf-apigwv2-http-proxy-payload-version` | AWS::ApiGatewayV2::Integration | HTTP_PROXY integrations only take PayloadFormatVersion 1.0 | none |
+| `pf-apigwv2-http-route-key` | AWS::ApiGatewayV2::Route | HTTP API route keys are "METHOD /path" or $default | none |
+| `pf-apigwv2-http-route-selection` | AWS::ApiGatewayV2::Api | HTTP APIs accept only the method-path route selection expression | none |
+| `pf-apigwv2-jwt-authorizer-config` | AWS::ApiGatewayV2::Authorizer | JWT authorizers need JwtConfiguration | none |
+| `pf-apigwv2-request-authorizer-payload-version` | AWS::ApiGatewayV2::Authorizer | REQUEST authorizers on HTTP APIs need AuthorizerPayloadFormatVersion | none |
+| `pf-apigwv2-websocket-route-selection` | AWS::ApiGatewayV2::Api | WebSocket APIs need RouteSelectionExpression | none |
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |

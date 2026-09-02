@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "p",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "Int": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": "arn:aws:lambda:us-east-1:123456789012:function:f",
+        "PayloadFormatVersion": "2.0"
+      }
+    }
+  }
+}

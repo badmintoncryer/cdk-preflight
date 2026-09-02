@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "M": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "Api",
+            "RootResourceId"
+          ]
+        },
+        "HttpMethod": "GET",
+        "AuthorizationType": "COGNITO_USER_POOLS",
+        "Integration": {
+          "Type": "MOCK"
+        }
+      }
+    }
+  }
+}

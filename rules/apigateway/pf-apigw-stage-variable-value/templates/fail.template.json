@@ -1,0 +1,53 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "M": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "Api",
+            "RootResourceId"
+          ]
+        },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK"
+        }
+      }
+    },
+    "Dep": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "DependsOn": "M",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        }
+      }
+    },
+    "St": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "DeploymentId": {
+          "Ref": "Dep"
+        },
+        "StageName": "dev",
+        "Variables": {
+          "key1": "bad value with spaces!"
+        }
+      }
+    }
+  }
+}

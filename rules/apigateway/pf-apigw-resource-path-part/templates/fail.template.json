@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "R": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "ParentId": {
+          "Fn::GetAtt": [
+            "Api",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "bad path!"
+      }
+    }
+  }
+}

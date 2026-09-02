@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "Auth": {
+      "Type": "AWS::ApiGateway::Authorizer",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "Name": "auth",
+        "Type": "COGNITO_USER_POOLS",
+        "IdentitySource": "method.request.header.Authorization"
+      }
+    }
+  }
+}

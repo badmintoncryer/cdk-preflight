@@ -1,0 +1,11 @@
+id: pf-apigw-method-authorizer-id
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Method]
+severity: ERROR
+title: CUSTOM and COGNITO_USER_POOLS authorization need AuthorizerId
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: AuthorizationType COGNITO_USER_POOLS without AuthorizerId (a02) -> \"Invalid authorizer ID specified. Setting the authorization type to CUSTOM or COGNITO_USER_POOLS requires a valid authorizer.\" (the service error itself names CUSTOM too). ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

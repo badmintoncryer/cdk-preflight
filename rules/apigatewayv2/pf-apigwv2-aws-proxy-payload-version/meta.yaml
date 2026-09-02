@@ -1,0 +1,11 @@
+id: pf-apigwv2-aws-proxy-payload-version
+service: apigatewayv2
+resourceTypes: [AWS::ApiGatewayV2::Integration]
+severity: ERROR
+title: AWS_PROXY integrations take PayloadFormatVersion 1.0 or 2.0
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: AWS_PROXY integration on an HTTP API with PayloadFormatVersion \"3.0\" (v04) -> \"Unsupported PayloadFormatVersion: 3.0\". ROLLBACK_COMPLETE."
+addedOn: 2026-09-03
