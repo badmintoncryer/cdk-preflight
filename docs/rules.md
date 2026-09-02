@@ -14,6 +14,13 @@
 | `pf-cloudfront-origin-group-member-origin` | AWS::CloudFront::Distribution | Origin group members must reference an origin declared in the distribution | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | none |
+| `pf-cloudwatch-alarm-period` | AWS::CloudWatch::Alarm | Period must be 10, 20, 30 or a multiple of 60 | none |
+| `pf-cloudwatch-alarm-threshold` | AWS::CloudWatch::Alarm | Standard operators need Threshold, range operators need ThresholdMetricId | none |
+| `pf-cloudwatch-composite-alarm-rule-syntax` | AWS::CloudWatch::CompositeAlarm | An AlarmRule must start with a valid expression token | none |
+| `pf-cloudwatch-datapoints-evaluation` | AWS::CloudWatch::Alarm | DatapointsToAlarm must not exceed EvaluationPeriods | none |
+| `pf-cloudwatch-extended-statistic` | AWS::CloudWatch::Alarm | A percentile statistic cannot exceed p100 | none |
+| `pf-cloudwatch-metric-query-exclusive` | AWS::CloudWatch::Alarm | Expression and MetricStat are mutually exclusive per query | none |
+| `pf-cloudwatch-metric-query-returndata` | AWS::CloudWatch::Alarm | Exactly one metric query must return data | none |
 | `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | none |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | none |

@@ -1,0 +1,11 @@
+id: pf-cloudwatch-datapoints-evaluation
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: DatapointsToAlarm must not exceed EvaluationPeriods
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (w05): DatapointsToAlarm 5 with EvaluationPeriods 3 -> \"DatapointsToAlarm must be less than or equal to EvaluationPeriods\". ROLLBACK_COMPLETE."
+addedOn: 2026-09-02

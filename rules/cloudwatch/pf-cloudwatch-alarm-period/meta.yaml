@@ -1,0 +1,11 @@
+id: pf-cloudwatch-alarm-period
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: Period must be 10, 20, 30 or a multiple of 60
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (w09): Period 45 -> \"Period must be 10, 20, 30 or a multiple of 60\". ROLLBACK_COMPLETE. Registry schema has no constraint on the field. Top-level Period only; MetricStat.Period not measured."
+addedOn: 2026-09-02

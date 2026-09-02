@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Metrics": [
+          {
+            "Id": "m1",
+            "MetricStat": {
+              "Metric": {
+                "MetricName": "x",
+                "Namespace": "cdkpf"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m2",
+            "MetricStat": {
+              "Metric": {
+                "MetricName": "y",
+                "Namespace": "cdkpf"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          }
+        ],
+        "Threshold": 1
+      }
+    }
+  }
+}

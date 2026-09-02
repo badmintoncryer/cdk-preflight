@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "Properties": {
+        "AlarmRule": "ALARM(\"cpu-high\") OR NOT OK(\"disk-full\")"
+      }
+    }
+  }
+}

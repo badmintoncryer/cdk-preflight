@@ -123,6 +123,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A WAFv2 ARN carries its scope in the resource segment:\n#   arn:aws:wafv2:us-east-1:123456789012:global/webacl/name/id    (CLOUDFRONT)\n#   arn:aws:wafv2:ap-northeast-1:123456789012:regional/webacl/... (REGIONAL)\n# CloudFront accepts only the global form. Checking the region alone would miss\n# a REGIONAL web ACL that happens to have been created in us-east-1, which is\n# the easy mistake to make.\nviolation contains make_diag_full(\"pf-cloudfront-wafv2-webacl-scope\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.WebACLId\",\n\tsprintf(\"CloudFront only accepts a globally scoped web ACL, but this ARN is scoped '%s'\", [scope]),\n\t\"Create the web ACL with scope CLOUDFRONT in us-east-1 (wafv2.CfnWebACL with scope: 'CLOUDFRONT') and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-wafv2-webacl.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.WebACLId\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"wafv2\"\n\tsegments := split(parts[5], \"/\")\n\tscope := segments[0]\n\tscope != \"global\"\n}\n"
   },
   {
+    "id": "pf-cloudwatch-alarm-period",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Period must be 10, 20, 30 or a multiple of 60",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types Period as a bare integer; the valid values are\n# only in the service (\"Period must be 10, 20, 30 or a multiple of 60\").\n# Top-level Period only — the same constraint inside MetricStat was not\n# measured.\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-period\", \"ERROR\", name,\n\t\"Properties.Period\",\n\tsprintf(\"Period %v is invalid; PutMetricAlarm fails with \\\"Period must be 10, 20, 30 or a multiple of 60\\\"\", [p]),\n\t\"Use 10, 20, 30, or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tp := to_number(resolve(name, \"Properties.Period\"))\n\tnot p in {10, 20, 30}\n\tp % 60 != 0\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-threshold",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Standard operators need Threshold, range operators need ThresholdMetricId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwath_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\"\n\n# The two range operators anchor to an anomaly-detection band via\n# ThresholdMetricId; every other operator needs a static Threshold. Absence\n# is proven against the preprocessed document (see AGENTS.md).\n_pf_cwath_range_ops := {\"LessThanLowerOrGreaterThanUpperThreshold\", \"LessThanLowerThreshold\", \"GreaterThanUpperThreshold\"}\n\n_pf_cwath_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-threshold\", \"ERROR\", name,\n\t\"Properties.Threshold\",\n\tsprintf(\"ComparisonOperator '%s' needs a static Threshold but none is set; PutMetricAlarm fails with \\\"PutMetricAlarm request should have valid Threshold parameter\\\"\", [op]),\n\t\"Set Threshold, or switch to an anomaly-detection operator with ThresholdMetricId\",\n\t_pf_cwath_url) if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\top := resolve(name, \"Properties.ComparisonOperator\")\n\tis_string(op)\n\tnot op in _pf_cwath_range_ops\n\t_pf_cwath_absent(name, \"Threshold\")\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-threshold\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"ComparisonOperator '%s' is a range operator but ThresholdMetricId is not set; PutMetricAlarm fails with \\\"ComparisonOperators for ranges require ThresholdMetricId to be set\\\"\", [op]),\n\t\"Point ThresholdMetricId at the ANOMALY_DETECTION_BAND query id, or use a static-threshold operator\",\n\t_pf_cwath_url) if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\top := resolve(name, \"Properties.ComparisonOperator\")\n\top in _pf_cwath_range_ops\n\t_pf_cwath_absent(name, \"ThresholdMetricId\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-composite-alarm-rule-syntax",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An AlarmRule must start with a valid expression token",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::CompositeAlarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service names the only tokens a rule expression may start with; this\n# checks just that first token — a full grammar is out of scope. Function\n# tokens take an argument list, keywords stand alone.\n_pf_cwcas_valid_start(t) if startswith(t, \"(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"NOT \")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"NOT(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"AT_LEAST\")\n\n_pf_cwcas_valid_start(t) if t == \"TRUE\"\n\n_pf_cwcas_valid_start(t) if t == \"FALSE\"\n\n_pf_cwcas_valid_start(t) if startswith(t, \"ALARM(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"OK(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"INSUFFICIENT_DATA(\")\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-alarm-rule-syntax\", \"ERROR\", name,\n\t\"Properties.AlarmRule\",\n\tsprintf(\"AlarmRule '%s' does not start with a valid token; the service rejects it with \\\"Error in AlarmRule [Unsupported token ... must be: '(', 'NOT', AT_LEAST, TRUE or FALSE, ALARM, OK, or INSUFFICIENT_DATA]\\\"\", [expr]),\n\t\"Start the rule with ALARM(...), OK(...), INSUFFICIENT_DATA(...), NOT, AT_LEAST, TRUE, FALSE, or a parenthesized group\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Create_Composite_Alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\texpr := resolve(name, \"Properties.AlarmRule\")\n\tis_string(expr)\n\tt := trim_space(expr)\n\tt != \"\"\n\tnot _pf_cwcas_valid_start(t)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-datapoints-evaluation",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "DatapointsToAlarm must not exceed EvaluationPeriods",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-datapoints-evaluation\", \"ERROR\", name,\n\t\"Properties.DatapointsToAlarm\",\n\tsprintf(\"DatapointsToAlarm (%v) exceeds EvaluationPeriods (%v); PutMetricAlarm fails with \\\"DatapointsToAlarm must be less than or equal to EvaluationPeriods\\\"\", [d, ev]),\n\t\"Lower DatapointsToAlarm to at most EvaluationPeriods, or raise EvaluationPeriods\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\td := to_number(resolve(name, \"Properties.DatapointsToAlarm\"))\n\tev := to_number(resolve(name, \"Properties.EvaluationPeriods\"))\n\td > ev\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-extended-statistic",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A percentile statistic cannot exceed p100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Percentile statistics run p0.0 to p100. Only the pN form is checked; other\n# extended forms (tm, wm, tc, ts, ...) have their own grammars and were not\n# measured.\nviolation contains make_diag_full(\"pf-cloudwatch-extended-statistic\", \"ERROR\", name,\n\t\"Properties.ExtendedStatistic\",\n\tsprintf(\"ExtendedStatistic '%s' is beyond p100; PutMetricAlarm fails with \\\"The value %s for parameter ExtendedStatistic is not supported.\\\"\", [s, s]),\n\t\"Use a percentile between p0.0 and p100\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html#Percentiles\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ts := resolve(name, \"Properties.ExtendedStatistic\")\n\tis_string(s)\n\tstartswith(s, \"p\")\n\tn := to_number(substring(s, 1, count(s) - 1))\n\tn > 100\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-query-exclusive",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Expression and MetricStat are mutually exclusive per query",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One query entry is either a math expression or a metric fetch, never both.\n# The specify-neither shape fails too, but with an unrelated error (\"Period\n# must not be null\", bench w03b) — so only the both-set direction is claimed.\nviolation contains make_diag_full(\"pf-cloudwatch-metric-query-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Metrics.%d\", [q.index]),\n\tsprintf(\"Metric query '%s' sets both Expression and MetricStat; PutMetricAlarm fails with \\\"The parameters MetricDataQuery Expression and MetricStat are mutually exclusive and you have specified both.\\\"\", [qid]),\n\t\"Keep the Expression and drop MetricStat (fetch the inputs in separate queries), or vice versa\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome q in flatten_list(name, \"Properties.Metrics\")\n\tis_object(q.value)\n\tobject.get(q.value, \"Expression\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(q.value, \"MetricStat\", \"__pf_absent\") != \"__pf_absent\"\n\tqid := object.get(q.value, \"Id\", \"<query>\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-query-returndata",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Exactly one metric query must return data",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An alarm on a Metrics array needs exactly one query returning data.\n# ReturnData defaults to true when absent (bench w04b), and explicit false\n# everywhere is rejected too (w04c). A query whose ReturnData is an\n# unresolvable intrinsic makes the count unknowable, so the rule skips.\n_pf_cwmqr_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwmqr_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwmqr_returns(q) if object.get(q, \"ReturnData\", true) == true\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-query-returndata\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"%d of the metric queries return data (ReturnData defaults to true); PutMetricAlarm fails with \\\"Exactly one element of the metrics list should return data.\\\"\", [n]),\n\t\"Set ReturnData: false on every query except the one the alarm should watch\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\t_pf_cwmqr_countable(q.value)\n\t}\n\tn := count([q | some q in items; _pf_cwmqr_returns(q.value)])\n\tn != 1\n}\n"
+  },
+  {
     "id": "pf-dynamodb-attribute-definitions-usage",
     "service": "dynamodb",
     "severity": "ERROR",
