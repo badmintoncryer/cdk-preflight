@@ -4,7 +4,14 @@ import rego.v1
 
 _pf_ecsnm_url := "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#network_mode"
 
-_pf_ecsnm_has_mode(name) if resolve(name, "Properties.NetworkMode")
+# resolve() cannot tell "absent" from "unresolvable" (both undefined), so true
+# absence is proven against the preprocessed document; a Ref-valued NetworkMode
+# no longer trips the not-set block.
+_pf_ecsnm_absent(name) if {
+	props := input.resources[name].properties
+	is_object(props)
+	object.get(props, "NetworkMode", "__pf_absent") == "__pf_absent"
+}
 
 violation contains make_diag_full("pf-ecs-fargate-network-mode", "ERROR", name,
 	"Properties.NetworkMode",
@@ -31,5 +38,5 @@ violation contains make_diag_full("pf-ecs-fargate-network-mode", "ERROR", name,
 	rc := resolve(name, "Properties.RequiresCompatibilities")
 	is_array(rc)
 	"FARGATE" in rc
-	not _pf_ecsnm_has_mode(name)
+	_pf_ecsnm_absent(name)
 }

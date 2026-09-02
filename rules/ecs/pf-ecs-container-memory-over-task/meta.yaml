@@ -1,0 +1,11 @@
+id: pf-ecs-container-memory-over-task
+service: ecs
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: A container Memory must not exceed the task-level Memory
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: task Memory 512 + container Memory 1024 (e09) -> \"The 'memory' setting for container 'app' is greater than for the task\". ROLLBACK_COMPLETE."
+addedOn: 2026-09-02

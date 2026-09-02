@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": true,
+            "Memory": 256
+          },
+          {
+            "Name": "sidecar",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": false,
+            "Memory": 256
+          }
+        ]
+      }
+    }
+  }
+}
