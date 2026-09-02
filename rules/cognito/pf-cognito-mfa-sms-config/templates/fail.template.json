@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p",
+        "MfaConfiguration": "ON"
+      }
+    }
+  }
+}

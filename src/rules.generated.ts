@@ -409,6 +409,138 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An alarm on a Metrics array needs exactly one query returning data.\n# ReturnData defaults to true when absent (bench w04b), and explicit false\n# everywhere is rejected too (w04c). A query whose ReturnData is an\n# unresolvable intrinsic makes the count unknowable, so the rule skips.\n_pf_cwmqr_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwmqr_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwmqr_returns(q) if object.get(q, \"ReturnData\", true) == true\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-query-returndata\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"%d of the metric queries return data (ReturnData defaults to true); PutMetricAlarm fails with \\\"Exactly one element of the metrics list should return data.\\\"\", [n]),\n\t\"Set ReturnData: false on every query except the one the alarm should watch\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\t_pf_cwmqr_countable(q.value)\n\t}\n\tn := count([q | some q in items; _pf_cwmqr_returns(q.value)])\n\tn != 1\n}\n"
   },
   {
+    "id": "pf-cognito-alias-username-exclusive",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "AliasAttributes and UsernameAttributes are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Key presence is the violation regardless of values, so this checks the\n# preprocessed document directly (see AGENTS.md).\n_pf_cogaue_set(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cognito-alias-username-exclusive\", \"ERROR\", name,\n\t\"Properties.UsernameAttributes\",\n\t\"Both AliasAttributes and UsernameAttributes are set; the pool create fails with \\\"Only one of the aliasAttributes or usernameAttributes can be set in a User pool.\\\"\",\n\t\"Keep one: aliases for sign-in alternatives, or username attributes to replace usernames\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_cogaue_set(name, \"AliasAttributes\")\n\t_pf_cogaue_set(name, \"UsernameAttributes\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-client-credentials-exclusive",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "client_credentials cannot combine with code or implicit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Machine-to-machine and user-facing grants are mutually exclusive on one\n# client.\n_pf_cogcce_flows(name) := {f.value | some f in flatten_list(name, \"Properties.AllowedOAuthFlows\")}\n\nviolation contains make_diag_full(\"pf-cognito-client-credentials-exclusive\", \"ERROR\", name,\n\t\"Properties.AllowedOAuthFlows\",\n\tsprintf(\"AllowedOAuthFlows combines client_credentials with '%s'; the client create fails with \\\"client_credentials flow can not be selected along with code flow or implicit flow.\\\"\", [other]),\n\t\"Split the flows across separate user pool clients\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tflows := _pf_cogcce_flows(name)\n\t\"client_credentials\" in flows\n\tsome other in {\"code\", \"implicit\"}\n\tother in flows\n}\n"
+  },
+  {
+    "id": "pf-cognito-client-credentials-secret",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "client_credentials needs a client secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Machine-to-machine auth is secret-based. GenerateSecret defaults to\n# false, so both the literal false and the absent key leave the client\n# secretless. Absence is proven against the preprocessed document (see\n# AGENTS.md).\n_pf_cogccs_no_secret(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"GenerateSecret\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogccs_no_secret(name) if coerce_to_bool(resolve(name, \"Properties.GenerateSecret\")) == false\n\nviolation contains make_diag_full(\"pf-cognito-client-credentials-secret\", \"ERROR\", name,\n\t\"Properties.GenerateSecret\",\n\t\"client_credentials flow on a client without a secret; the client create fails with \\\"client_credentials flow can not be selected if client does not have a client secret.\\\"\",\n\t\"Set GenerateSecret: true on this client\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tsome f in flatten_list(name, \"Properties.AllowedOAuthFlows\")\n\tf.value == \"client_credentials\"\n\t_pf_cogccs_no_secret(name)\n}\n"
+  },
+  {
+    "id": "pf-cognito-domain-reserved-word",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Domain prefixes cannot contain reserved words",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolDomain"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service refuses prefixes with a reserved word as a hyphen-delimited\n# token, with only a generic error. Pinned by controlled pairs: -aws- /\n# -amazon- / -cognito- fail while -awsome- deploys (bench c07-c07e), so\n# a token merely containing a word stays legal.\n_pf_cogdrw_words := {\"aws\", \"amazon\", \"cognito\"}\n\nviolation contains make_diag_full(\"pf-cognito-domain-reserved-word\", \"ERROR\", name,\n\t\"Properties.Domain\",\n\tsprintf(\"Domain prefix '%s' has the reserved word '%s' as a segment; the domain create fails with the generic \\\"Invalid request provided: AWS::Cognito::UserPoolDomain\\\"\", [d, w]),\n\t\"Rename or merge that segment (e.g. myapp-auth); words merely inside a longer segment are fine\",\n\t\"https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-assign-domain-prefix.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\td := resolve(name, \"Properties.Domain\")\n\tis_string(d)\n\tsome w in _pf_cogdrw_words\n\tw in split(d, \"-\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-mfa-sms-config",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "MFA without any factor configuration cannot deploy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# With MFA on and no EnabledMfas, Cognito falls back to SMS MFA, which\n# needs SmsConfiguration. A pool declaring EnabledMfas (e.g. TOTP only,\n# bench c05b) is valid without SMS, so its presence mutes the rule.\n# Absence is proven against the preprocessed document (see AGENTS.md).\n_pf_cogmsc_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cognito-mfa-sms-config\", \"ERROR\", name,\n\t\"Properties.MfaConfiguration\",\n\tsprintf(\"MfaConfiguration '%s' with no SmsConfiguration and no EnabledMfas; the pool create fails with \\\"SMS configuration and Auto verification for phone_number are required when MFA is required/optional\\\"\", [mfa]),\n\t\"Configure SmsConfiguration (SMS MFA), or pick factors via EnabledMfas (e.g. SOFTWARE_TOKEN_MFA)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tmfa := resolve(name, \"Properties.MfaConfiguration\")\n\tmfa in {\"ON\", \"OPTIONAL\"}\n\t_pf_cogmsc_absent(name, \"SmsConfiguration\")\n\t_pf_cogmsc_absent(name, \"EnabledMfas\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-oauth-callback-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "code and implicit OAuth flows need CallbackURLs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Redirect-based flows need somewhere to redirect to. Absence is proven\n# against the preprocessed document (see AGENTS.md).\n_pf_cogocr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cognito-oauth-callback-required\", \"ERROR\", name,\n\t\"Properties.CallbackURLs\",\n\tsprintf(\"AllowedOAuthFlows has '%s' but CallbackURLs is not set; the client create fails with \\\"CallbackUrls can not be empty when code flow or implicit flow is selected\\\"\", [f.value]),\n\t\"Add at least one callback URL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tcoerce_to_bool(resolve(name, \"Properties.AllowedOAuthFlowsUserPoolClient\")) == true\n\tsome f in flatten_list(name, \"Properties.AllowedOAuthFlows\")\n\tf.value in {\"code\", \"implicit\"}\n\t_pf_cogocr_absent(name, \"CallbackURLs\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-oauth-flows-scopes-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Enabling OAuth requires both AllowedOAuthFlows and AllowedOAuthScopes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both directions deploy-verified. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_cogofs_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogofs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\"\n\n_pf_cogofs_msg := \"the client create fails with \\\"AllowedOAuthFlows and AllowedOAuthScopes are required if user pool client is allowed to use OAuth flows.\\\"\"\n\nviolation contains make_diag_full(\"pf-cognito-oauth-flows-scopes-required\", \"ERROR\", name,\n\t\"Properties.AllowedOAuthFlows\",\n\tsprintf(\"AllowedOAuthFlowsUserPoolClient is true but AllowedOAuthFlows is not set; %s\", [_pf_cogofs_msg]),\n\t\"Set AllowedOAuthFlows, or drop AllowedOAuthFlowsUserPoolClient\",\n\t_pf_cogofs_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tcoerce_to_bool(resolve(name, \"Properties.AllowedOAuthFlowsUserPoolClient\")) == true\n\t_pf_cogofs_absent(name, \"AllowedOAuthFlows\")\n}\n\nviolation contains make_diag_full(\"pf-cognito-oauth-flows-scopes-required\", \"ERROR\", name,\n\t\"Properties.AllowedOAuthScopes\",\n\tsprintf(\"AllowedOAuthFlowsUserPoolClient is true but AllowedOAuthScopes is not set; %s\", [_pf_cogofs_msg]),\n\t\"Set AllowedOAuthScopes, or drop AllowedOAuthFlowsUserPoolClient\",\n\t_pf_cogofs_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tcoerce_to_bool(resolve(name, \"Properties.AllowedOAuthFlowsUserPoolClient\")) == true\n\t_pf_cogofs_absent(name, \"AllowedOAuthScopes\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-password-min-length",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "PasswordPolicy MinimumLength runs 6 to 99",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types MinimumLength as a bare integer; both bounds\n# are deploy-verified.\n_pf_cogpml_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-passwordpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cognito-password-min-length\", \"ERROR\", name,\n\t\"Properties.Policies.PasswordPolicy.MinimumLength\",\n\tsprintf(\"MinimumLength %v is under the floor; the pool create fails with \\\"Member must have value greater than or equal to 6\\\"\", [ml]),\n\t\"Use a minimum password length between 6 and 99\",\n\t_pf_cogpml_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tml := to_number(resolve(name, \"Properties.Policies.PasswordPolicy.MinimumLength\"))\n\tml < 6\n}\n\nviolation contains make_diag_full(\"pf-cognito-password-min-length\", \"ERROR\", name,\n\t\"Properties.Policies.PasswordPolicy.MinimumLength\",\n\tsprintf(\"MinimumLength %v is over the cap; the pool create fails with \\\"Member must have value less than or equal to 99\\\"\", [ml]),\n\t\"Use a minimum password length between 6 and 99\",\n\t_pf_cogpml_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tml := to_number(resolve(name, \"Properties.Policies.PasswordPolicy.MinimumLength\"))\n\tml > 99\n}\n"
+  },
+  {
+    "id": "pf-cognito-recovery-duplicate",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Recovery mechanisms cannot repeat priorities or names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Pairwise duplicate check on the mechanism list; the service error names\n# both duplicate priorities and duplicate mechanism names.\n_pf_cogrdp_dup(a, b) if {\n\tpa := to_number(object.get(a, \"Priority\", -1))\n\tpb := to_number(object.get(b, \"Priority\", -2))\n\tpa == pb\n}\n\n_pf_cogrdp_dup(a, b) if {\n\tn := object.get(a, \"Name\", \"__pf_a\")\n\tis_string(n)\n\tn == object.get(b, \"Name\", \"__pf_b\")\n}\n\nviolation contains make_diag_full(\"pf-cognito-recovery-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.AccountRecoverySetting.RecoveryMechanisms.%d\", [b.index]),\n\t\"Recovery mechanisms repeat a priority or name; the pool create fails with \\\"Account Recovery Setting cannot have duplicate priorities or recovery mechanisms.\\\"\",\n\t\"Give each recovery mechanism a distinct priority and name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-recoveryoption.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.AccountRecoverySetting.RecoveryMechanisms\")\n\tsome b in flatten_list(name, \"Properties.AccountRecoverySetting.RecoveryMechanisms\")\n\ta.index < b.index\n\tis_object(a.value)\n\tis_object(b.value)\n\t_pf_cogrdp_dup(a.value, b.value)\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-attr-length-order",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Schema attribute MaxLength cannot undercut MinLength",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The constraints are typed as strings, so no schema layer can compare\n# them numerically.\nviolation contains make_diag_full(\"pf-cognito-schema-attr-length-order\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.StringAttributeConstraints\", [att.index]),\n\tsprintf(\"Attribute '%s' has MinLength %v over MaxLength %v; the pool create fails with \\\"cannot have a max length shorter than it's min length\\\"\", [object.get(att.value, \"Name\", \"<attr>\"), mn, mx]),\n\t\"Keep MinLength less than or equal to MaxLength\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-schemaattribute.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome att in flatten_list(name, \"Properties.Schema\")\n\tis_object(att.value)\n\tsac := object.get(att.value, \"StringAttributeConstraints\", {})\n\tis_object(sac)\n\tmn_raw := object.get(sac, \"MinLength\", \"__pf_absent\")\n\tmn_raw != \"__pf_absent\"\n\tmx_raw := object.get(sac, \"MaxLength\", \"__pf_absent\")\n\tmx_raw != \"__pf_absent\"\n\tmn := to_number(mn_raw)\n\tmx := to_number(mx_raw)\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-cognito-token-expiration-order",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Access and id tokens cannot outlive the refresh token",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cross-property inequality between differently-united durations - only\n# comparable after normalizing to seconds. Unit defaults are the\n# deploy-verified hours/hours/days.\n_pf_cogteo_unit_secs := {\"seconds\": 1, \"minutes\": 60, \"hours\": 3600, \"days\": 86400}\n\n_pf_cogteo_unit(name, unitKey, _) := u if {\n\tu := resolve(name, sprintf(\"Properties.TokenValidityUnits.%s\", [unitKey]))\n\tis_string(u)\n}\n\n_pf_cogteo_unit(name, unitKey, defUnit) := defUnit if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttvu := object.get(props, \"TokenValidityUnits\", {})\n\tis_object(tvu)\n\tobject.get(tvu, unitKey, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogteo_secs(name, valKey, unitKey, defUnit) := s if {\n\tv := to_number(resolve(name, sprintf(\"Properties.%s\", [valKey])))\n\tu := _pf_cogteo_unit(name, unitKey, defUnit)\n\ts := v * _pf_cogteo_unit_secs[u]\n}\n\n_pf_cogteo_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\"\n\nviolation contains make_diag_full(\"pf-cognito-token-expiration-order\", \"ERROR\", name,\n\t\"Properties.AccessTokenValidity\",\n\tsprintf(\"Access token validity (%v s) exceeds refresh token validity (%v s); the client create fails with \\\"Access and Id Token expiration times must be less than or equal to refresh token expiration times.\\\"\", [a, r]),\n\t\"Shorten the access token validity or lengthen the refresh token validity\",\n\t_pf_cogteo_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ta := _pf_cogteo_secs(name, \"AccessTokenValidity\", \"AccessToken\", \"hours\")\n\tr := _pf_cogteo_secs(name, \"RefreshTokenValidity\", \"RefreshToken\", \"days\")\n\ta > r\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-expiration-order\", \"ERROR\", name,\n\t\"Properties.IdTokenValidity\",\n\tsprintf(\"Id token validity (%v s) exceeds refresh token validity (%v s); the client create fails with \\\"Access and Id Token expiration times must be less than or equal to refresh token expiration times.\\\"\", [i, r]),\n\t\"Shorten the id token validity or lengthen the refresh token validity\",\n\t_pf_cogteo_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ti := _pf_cogteo_secs(name, \"IdTokenValidity\", \"IdToken\", \"hours\")\n\tr := _pf_cogteo_secs(name, \"RefreshTokenValidity\", \"RefreshToken\", \"days\")\n\ti > r\n}\n"
+  },
+  {
+    "id": "pf-cognito-token-validity-range",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Token validity ranges depend on token type and unit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types the validities as bare integers; the real ranges are\n# per token type AND unit (access/id: 5 minutes-1 day, refresh: 60\n# minutes-10 years). Unit defaults (hours/hours/days) are deploy-verified.\n_pf_cogtvr_unit_secs := {\"seconds\": 1, \"minutes\": 60, \"hours\": 3600, \"days\": 86400}\n\n_pf_cogtvr_unit(name, unitKey, _) := u if {\n\tu := resolve(name, sprintf(\"Properties.TokenValidityUnits.%s\", [unitKey]))\n\tis_string(u)\n}\n\n_pf_cogtvr_unit(name, unitKey, defUnit) := defUnit if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttvu := object.get(props, \"TokenValidityUnits\", {})\n\tis_object(tvu)\n\tobject.get(tvu, unitKey, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogtvr_secs(name, valKey, unitKey, defUnit) := s if {\n\tv := to_number(resolve(name, sprintf(\"Properties.%s\", [valKey])))\n\tu := _pf_cogtvr_unit(name, unitKey, defUnit)\n\ts := v * _pf_cogtvr_unit_secs[u]\n}\n\n_pf_cogtvr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\"\n\n_pf_cogtvr_ai_bad(s) if s < 300\n\n_pf_cogtvr_ai_bad(s) if s > 86400\n\n_pf_cogtvr_rt_bad(s) if s < 3600\n\n_pf_cogtvr_rt_bad(s) if s > 315360000\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.AccessTokenValidity\",\n\tsprintf(\"AccessTokenValidity works out to %v seconds, outside 5 minutes-1 day; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the access token validity between 5 minutes and 1 day\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"AccessTokenValidity\", \"AccessToken\", \"hours\")\n\t_pf_cogtvr_ai_bad(s)\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.IdTokenValidity\",\n\tsprintf(\"IdTokenValidity works out to %v seconds, outside 5 minutes-1 day; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the id token validity between 5 minutes and 1 day\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"IdTokenValidity\", \"IdToken\", \"hours\")\n\t_pf_cogtvr_ai_bad(s)\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.RefreshTokenValidity\",\n\tsprintf(\"RefreshTokenValidity works out to %v seconds, outside 60 minutes-10 years; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the refresh token validity between 60 minutes and 10 years\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"RefreshTokenValidity\", \"RefreshToken\", \"days\")\n\t_pf_cogtvr_rt_bad(s)\n}\n"
+  },
+  {
     "id": "pf-dynamodb-attribute-definitions-usage",
     "service": "dynamodb",
     "severity": "ERROR",

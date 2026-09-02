@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p",
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1
+            },
+            {
+              "Name": "verified_phone_number",
+              "Priority": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

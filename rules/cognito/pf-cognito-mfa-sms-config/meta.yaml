@@ -1,0 +1,11 @@
+id: pf-cognito-mfa-sms-config
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: MFA without any factor configuration cannot deploy
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: MfaConfiguration ON with neither SmsConfiguration nor EnabledMfas (c05) -> \"SMS configuration and Auto verification for phone_number are required when MFA is required/optional\" (the error names OPTIONAL too). ROLLBACK_COMPLETE. Counter-bench c05b: ON with EnabledMfas [SOFTWARE_TOKEN_MFA] deploys CREATE_COMPLETE, so any EnabledMfas mutes the rule."
+addedOn: 2026-09-03

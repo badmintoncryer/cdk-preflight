@@ -1,0 +1,11 @@
+id: pf-cognito-password-min-length
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: PasswordPolicy MinimumLength runs 6 to 99
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-passwordpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: MinimumLength 4 (c01) -> \"Value '4' at 'policies.passwordPolicy.minimumLength' failed to satisfy constraint: Member must have value greater than or equal to 6\"; MinimumLength 200 (c01b) -> \"Member must have value less than or equal to 99\". Both ROLLBACK_COMPLETE. Registry schema carries no bounds (engine clean on both)."
+addedOn: 2026-09-03

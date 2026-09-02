@@ -1229,3 +1229,87 @@ describe('api gateway rules', () => {
     });
   });
 });
+
+describe('cognito rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const pool = (props: Record<string, unknown>) => ({
+    Resources: { UP: { Type: 'AWS::Cognito::UserPool', Properties: { UserPoolName: 'p', ...props } } },
+  });
+  const client = (props: Record<string, unknown>, parameters?: Record<string, unknown>) => ({
+    ...(parameters ? { Parameters: parameters } : {}),
+    Resources: {
+      UP: { Type: 'AWS::Cognito::UserPool', Properties: { UserPoolName: 'p' } },
+      C: { Type: 'AWS::Cognito::UserPoolClient', Properties: { UserPoolId: { Ref: 'UP' }, ClientName: 'c', ...props } },
+    },
+  });
+
+  describe('pf-cognito-token-validity-range', () => {
+    test('the deploy-verified unit defaults apply when TokenValidityUnits is omitted', () => {
+      expect(ids(diagnoseTemplate(client({ AccessTokenValidity: 25 })))).toContain('pf-cognito-token-validity-range');
+      expect(ids(diagnoseTemplate(client({ RefreshTokenValidity: 4000 })))).toContain('pf-cognito-token-validity-range');
+      expect(ids(diagnoseTemplate(client({ AccessTokenValidity: 12 })))).toHaveLength(0);
+    });
+
+    test('an unresolvable unit makes the duration unknowable — rule skips', () => {
+      const t = client(
+        { TokenValidityUnits: { AccessToken: { Ref: 'U' } }, AccessTokenValidity: 25 },
+        { U: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-cognito-token-expiration-order', () => {
+    test('cross-unit comparison normalizes to seconds', () => {
+      const ok = client({
+        TokenValidityUnits: { AccessToken: 'hours', RefreshToken: 'days' },
+        AccessTokenValidity: 23,
+        RefreshTokenValidity: 1,
+      });
+      expect(ids(diagnoseTemplate(ok))).toHaveLength(0);
+      const bad = client({
+        TokenValidityUnits: { AccessToken: 'minutes', RefreshToken: 'minutes' },
+        AccessTokenValidity: 200,
+        RefreshTokenValidity: 90,
+      });
+      expect(ids(diagnoseTemplate(bad))).toContain('pf-cognito-token-expiration-order');
+    });
+  });
+
+  describe('pf-cognito-mfa-sms-config', () => {
+    test('declared factors mute the rule (TOTP-only pools deploy, bench c05b)', () => {
+      expect(ids(diagnoseTemplate(pool({ MfaConfiguration: 'ON', EnabledMfas: ['SOFTWARE_TOKEN_MFA'] })))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(pool({ MfaConfiguration: 'OFF' })))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(pool({ MfaConfiguration: 'OPTIONAL' })))).toContain('pf-cognito-mfa-sms-config');
+    });
+  });
+
+  describe('pf-cognito-client-credentials-secret', () => {
+    test('GenerateSecret omitted defaults to false — rule fires; unresolvable skips', () => {
+      const flows = {
+        AllowedOAuthFlowsUserPoolClient: true,
+        AllowedOAuthFlows: ['client_credentials'],
+        AllowedOAuthScopes: ['rs/read'],
+      };
+      expect(ids(diagnoseTemplate(client(flows)))).toContain('pf-cognito-client-credentials-secret');
+      const unresolvable = client({ ...flows, GenerateSecret: { Ref: 'G' } }, { G: { Type: 'String' } });
+      expect(ids(diagnoseTemplate(unresolvable))).not.toContain('pf-cognito-client-credentials-secret');
+    });
+  });
+});
+
+describe('pf-cognito-domain-reserved-word', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const domain = (d: string) => ({
+    Resources: {
+      UP: { Type: 'AWS::Cognito::UserPool', Properties: { UserPoolName: 'p' } },
+      Dom: { Type: 'AWS::Cognito::UserPoolDomain', Properties: { UserPoolId: { Ref: 'UP' }, Domain: d } },
+    },
+  });
+
+  test('reserved words match per hyphen segment, not substring (bench c07e: -awsome- deploys)', () => {
+    expect(ids(diagnoseTemplate(domain('my-awsome-app')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(domain('my-aws-app')))).toContain('pf-cognito-domain-reserved-word');
+    expect(ids(diagnoseTemplate(domain('login-amazon')))).toContain('pf-cognito-domain-reserved-word');
+  });
+});

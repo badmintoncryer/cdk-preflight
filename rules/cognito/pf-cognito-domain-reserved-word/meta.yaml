@@ -1,0 +1,11 @@
+id: pf-cognito-domain-reserved-word
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolDomain]
+severity: ERROR
+title: Domain prefixes cannot contain reserved words
+constraintSource: https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-assign-domain-prefix.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Domain \"cdkpf-cognito-zz9x\" (c07) -> \"Invalid request provided: AWS::Cognito::UserPoolDomain\" ROLLBACK_COMPLETE, while the control \"cdkpf-zz9x-bench\" (c07b, same shape minus the reserved word) deployed CREATE_COMPLETE - the reserved word is the differentiator. Prefixes with \"aws\" (c07c) and \"amazon\" (c07d) fail identically, pinning the word set. \"cdkpf-awsome-zz9x\" deploys CREATE_COMPLETE (c07e), so matching is per hyphen-delimited token, not substring."
+addedOn: 2026-09-03

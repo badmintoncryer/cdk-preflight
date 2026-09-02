@@ -1,0 +1,11 @@
+id: pf-cognito-token-validity-range
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolClient]
+severity: ERROR
+title: Token validity ranges depend on token type and unit
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: AccessTokenValidity 25 hours (c02), RefreshTokenValidity 30 minutes (c03), RefreshTokenValidity 4000 days (c03b), IdTokenValidity 25 hours (c02d), AccessTokenValidity 25 with units omitted (c02c, proves the hours default), IdTokenValidity 25 with units omitted (c02e, proves the hours default), RefreshTokenValidity 4000 with units omitted (c03c, proves the days default) -> all \"Invalid range for token validity.\" and ROLLBACK_COMPLETE. Allowed: access/id 5 minutes-1 day, refresh 60 minutes-10 years."
+addedOn: 2026-09-03

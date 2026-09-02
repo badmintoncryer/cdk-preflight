@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p",
+        "MfaConfiguration": "ON",
+        "EnabledMfas": [
+          "SOFTWARE_TOKEN_MFA"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "Resources": {
+    "UP": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p"
+      }
+    },
+    "RS": {
+      "Type": "AWS::Cognito::UserPoolResourceServer",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "UP"
+        },
+        "Identifier": "pf-rs",
+        "Name": "rs",
+        "Scopes": [
+          {
+            "ScopeName": "read",
+            "ScopeDescription": "r"
+          }
+        ]
+      }
+    },
+    "C": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "UP"
+        },
+        "ClientName": "c",
+        "GenerateSecret": false,
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthFlows": [
+          "client_credentials"
+        ],
+        "AllowedOAuthScopes": [
+          "pf-rs/read"
+        ],
+        "SupportedIdentityProviders": [
+          "COGNITO"
+        ]
+      }
+    }
+  }
+}
