@@ -1,0 +1,11 @@
+id: pf-dynamodb-global-table-replica-region
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: GlobalTable Replicas must include the deployment region
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: Replicas [us-east-1] deployed from ap-northeast-1 -> ROLLBACK_COMPLETE, \"Invalid request provided: The Replicas section must contain an entry for the current region\"; control with Replicas [ap-northeast-1]: CREATE_COMPLETE. Evaluates only in enforce mode with a concrete app region (deploy_region injection); silent otherwise. Test fixtures assume the harness region us-east-1."
+addedOn: 2026-09-02

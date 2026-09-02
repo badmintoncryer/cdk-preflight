@@ -11,7 +11,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { loadEngine } from '../src/private/enforce';
+import { deployEnvironmentModule, loadEngine } from '../src/private/enforce';
 import { BUNDLED_RULES } from '../src/rules.generated';
 
 interface Diagnostic {
@@ -23,35 +23,45 @@ interface Diagnostic {
 
 const engine = loadEngine();
 
-// エンジン初期化（WASM）と評価は重いので、全ルールを 1 エンジンに載せ、
-// フィクスチャごとの診断結果をキャッシュして全テストで共有する。
-let sharedEngine: any;
-function engineInstance(): any {
-  if (!sharedEngine) {
-    sharedEngine = new engine.RegoEngine({
-      customRules: BUNDLED_RULES.map((r) => ({ name: r.id, content: r.rego })),
-    });
+/** フィクスチャ評価時のデプロイリージョン（deploy_region 注入のハーネス既定）。 */
+const HARNESS_REGION = 'us-east-1';
+
+// エンジン初期化（WASM）と評価は重いので、リージョンごとに 1 エンジンに全ルールを
+// 載せてキャッシュし、フィクスチャの診断結果も共有する。本番の enforce プラグインと
+// 同じ deployEnvironmentModule を注入する（ローダー契約のカップリングテストを兼ねる）。
+const engineCache = new Map<string, any>();
+function engineInstance(region?: string): any {
+  const key = region ?? '';
+  if (!engineCache.has(key)) {
+    const customRules = BUNDLED_RULES.map((r) => ({ name: r.id, content: r.rego }));
+    if (region) customRules.push(deployEnvironmentModule(region));
+    engineCache.set(key, new engine.RegoEngine({ customRules }));
   }
-  return sharedEngine;
+  return engineCache.get(key);
 }
 
 const diagCache = new Map<string, Diagnostic[]>();
 function diagnose(templateFile: string): Diagnostic[] {
   if (!diagCache.has(templateFile)) {
-    const report = engineInstance().validateDetailed(new engine.TemplateFile(templateFile), {});
+    const report = engineInstance(HARNESS_REGION).validateDetailed(new engine.TemplateFile(templateFile), {
+      pseudoParameterOverrides: { accountId: '123456789012', region: HARNESS_REGION },
+    });
     diagCache.set(templateFile, (report.diagnostics ?? []) as Diagnostic[]);
   }
   return diagCache.get(templateFile)!;
 }
 
-/** 一時ファイルに書いて評価する。region を渡すと擬似パラメータ解決を有効にする。 */
+/**
+ * 一時ファイルに書いて評価する。region を渡すと擬似パラメータ解決と
+ * deploy_region 注入の両方を有効にする（省略時はどちらも無し＝リージョン不明の挙動）。
+ */
 function diagnoseTemplate(tpl: unknown, region?: string): Diagnostic[] {
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-rules-')), 'inline.template.json');
   fs.writeFileSync(file, JSON.stringify(tpl));
   const options = region
     ? { pseudoParameterOverrides: { accountId: '123456789012', region } }
     : {};
-  const report = engineInstance().validateDetailed(new engine.TemplateFile(file), options);
+  const report = engineInstance(region).validateDetailed(new engine.TemplateFile(file), options);
   return (report.diagnostics ?? []) as Diagnostic[];
 }
 
@@ -463,5 +473,89 @@ describe('dynamodb rules', () => {
       }));
       expect(ids(ds)).toContain('pf-dynamodb-duplicate-index-name');
     });
+  });
+});
+
+describe('deploy_region rules', () => {
+  const globalTable = (region: string) => ({
+    Resources: {
+      GT: {
+        Type: 'AWS::DynamoDB::GlobalTable',
+        Properties: {
+          AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          StreamSpecification: { StreamViewType: 'NEW_AND_OLD_IMAGES' },
+          Replicas: [{ Region: region }],
+        },
+      },
+    },
+  });
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  test('replica rule fires only when the deploy region is missing from Replicas', () => {
+    expect(ids(diagnoseTemplate(globalTable('us-east-1'), 'ap-northeast-1')))
+      .toContain('pf-dynamodb-global-table-replica-region');
+    expect(ids(diagnoseTemplate(globalTable('ap-northeast-1'), 'ap-northeast-1')))
+      .toHaveLength(0);
+  });
+
+  // deploy_region 未注入（リージョン不明）ではリージョン依存ルールは沈黙する。
+  // data 参照が undefined に評価されるだけでコンパイルは通ることの回帰テスト。
+  test('both rules stay silent without deploy_region injection', () => {
+    const ds = diagnoseTemplate(globalTable('us-east-1'));
+    expect(ids(ds)).toHaveLength(0);
+    const kinesis = {
+      Resources: {
+        T: {
+          Type: 'AWS::DynamoDB::Table',
+          Properties: {
+            AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+            KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+            BillingMode: 'PAY_PER_REQUEST',
+            KinesisStreamSpecification: { StreamArn: 'arn:aws:kinesis:eu-west-1:123456789012:stream/x' },
+          },
+        },
+      },
+    };
+    expect(ids(diagnoseTemplate(kinesis))).toHaveLength(0);
+  });
+
+  test('kinesis rule compares the ARN region against the deploy region', () => {
+    const kinesis = (arnRegion: string) => ({
+      Resources: {
+        T: {
+          Type: 'AWS::DynamoDB::Table',
+          Properties: {
+            AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+            KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+            BillingMode: 'PAY_PER_REQUEST',
+            KinesisStreamSpecification: { StreamArn: `arn:aws:kinesis:${arnRegion}:123456789012:stream/x` },
+          },
+        },
+      },
+    });
+    expect(ids(diagnoseTemplate(kinesis('us-east-1'), 'ap-northeast-1')))
+      .toContain('pf-dynamodb-kinesis-stream-region');
+    expect(ids(diagnoseTemplate(kinesis('ap-northeast-1'), 'ap-northeast-1')))
+      .toHaveLength(0);
+  });
+
+  test('replica rule skips when a replica region is unresolvable', () => {
+    const t = {
+      Resources: {
+        GT: {
+          Type: 'AWS::DynamoDB::GlobalTable',
+          Properties: {
+            AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+            KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+            BillingMode: 'PAY_PER_REQUEST',
+            StreamSpecification: { StreamViewType: 'NEW_AND_OLD_IMAGES' },
+            Replicas: [{ Region: { 'Fn::ImportValue': 'ReplicaRegion' } }],
+          },
+        },
+      },
+    };
+    expect(ids(diagnoseTemplate(t, 'ap-northeast-1'))).toHaveLength(0);
   });
 });
