@@ -26,6 +26,17 @@
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
+| `pf-route53-alias-cloudfront-zone-id` | AWS::Route53::RecordSet | A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2 | none |
+| `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | none |
+| `pf-route53-geolocation-exclusive` | AWS::Route53::RecordSet | GeoLocation cannot specify both ContinentCode and CountryCode | pending-engine |
+| `pf-route53-multivalue-alias` | AWS::Route53::RecordSet | MultiValueAnswer cannot be combined with AliasTarget | none |
+| `pf-route53-record-type-routing-policy` | AWS::Route53::RecordSet | NS records take no routing policy; CNAME cannot be multivalue | none |
+| `pf-route53-record-value-source` | AWS::Route53::RecordSet | A record set needs AliasTarget or the full TTL+ResourceRecords pair | none |
+| `pf-route53-routing-policy-exclusive` | AWS::Route53::RecordSet | A record set can use only one routing policy | none |
+| `pf-route53-set-identifier-pairing` | AWS::Route53::RecordSet | SetIdentifier and a routing policy must appear together | none |
+| `pf-route53-ttl-range` | AWS::Route53::RecordSet | TTL must fit in 32 bits (0..2147483647 seconds) | pending-engine |
+| `pf-route53-weight-range` | AWS::Route53::RecordSet | Weight must be between 0 and 255 | pending-engine |
+| `pf-route53-zonename-trailing-dot` | AWS::Route53::RecordSet | HostedZoneName must end with a trailing dot | none |
 | `pf-s3-lifecycle-days-order` | AWS::S3::Bucket | Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition | none |
 | `pf-s3-replication-requires-versioning` | AWS::S3::Bucket | ReplicationConfiguration requires versioning to be enabled on the source bucket | none |
 | `pf-sns-fifo-topic-name` | AWS::SNS::Topic | FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic) | none |

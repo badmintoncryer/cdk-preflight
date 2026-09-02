@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": "Z1234567890ABC",
+        "Name": "www.example.org.",
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": "d111111abcdef8.cloudfront.net",
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "ResourceRecords": [
+          "192.0.2.1"
+        ]
+      }
+    }
+  }
+}

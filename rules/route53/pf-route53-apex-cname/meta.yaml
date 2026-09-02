@@ -1,0 +1,11 @@
+id: pf-route53-apex-cname
+service: route53
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::HostedZone]
+severity: ERROR
+title: A CNAME record is not permitted at the zone apex
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: apex CNAME linked via HostedZoneId {Ref} -> ROLLBACK_COMPLETE, \"RRSet of type CNAME with DNS name d17b-apex-cname-ref.cdkpf-verify.com. is not permitted at apex in zone d17b-apex-cname-ref.cdkpf-verify.com.\" (Status Code 400). The engine's E3023 catches only the literal-HostedZoneName shape and stays silent on this {Ref} shape (measured, 1.7.0-beta), which is the shape CDK L2 emits."
+addedOn: 2026-09-02

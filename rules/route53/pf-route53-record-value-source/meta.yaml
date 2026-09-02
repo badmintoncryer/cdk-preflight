@@ -1,0 +1,11 @@
+id: pf-route53-record-value-source
+service: route53
+resourceTypes: [AWS::Route53::RecordSet]
+severity: ERROR
+title: A record set needs AliasTarget or the full TTL+ResourceRecords pair
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1, three shapes: AliasTarget+ResourceRecords -> \"Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords], or TrafficPolicyInstanceId], but found more than one\"; TTL only -> same message \"found none\"; ResourceRecords only -> same message \"found none\". All ROLLBACK_COMPLETE, Status Code 400. TTL+AliasTarget is left to the engine's E3029."
+addedOn: 2026-09-02

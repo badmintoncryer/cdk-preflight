@@ -77,6 +77,7 @@ bench/                      # real-deploy verification (needs an AWS account; no
    - `package cdk_preflight`, `import rego.v1`
    - Emit via `make_diag_full("<rule-id>", "ERROR", name, <property-path>, <message with actual value>, <fix>, <doc url>)`
    - Use the engine builtins (`resources_of_type`, `resolve`, `flatten_list`, `object.get`); guard numbers with `to_number` — it is undefined for non-numeric input, which safely skips tokens/refs.
+   - `resolve()` resolves a Ref-to-resource to the target's **logical ID as a string**, and resolves template-parameter defaults (measured 2026-09-02, 1.7.0-beta). Two consequences: an `is_string` guard alone does not prove a user literal — add a shape guard (ARN prefix, pattern, known constant) before comparing values; and cross-resource rules need no private API — test the resolved string for membership in `resources_of_type(...)`, then `resolve(<that id>, "Properties....")` reads the target resource (`pf-route53-apex-cname` is the reference implementation).
    - The standard OPA `walk` builtin is NOT available in this engine. Write explicit traversals.
    - Helper rules must use a unique `_pf_<rule>_...` prefix (all rules share one package).
 3. `npx projen bundle-rules` then `npx jest test/rules.test.ts test/structure.test.ts` — the duplication guard and fixture checks run here.

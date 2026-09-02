@@ -263,6 +263,128 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リテラル文字列のキー/値だけを数える（トークンはスキップ）。合計が既に 4096 を超えて\n# いれば、実際のデプロイでも必ず失敗する（実サイズは推定以上にしかならない）。\n# NOTE: このエンジンの Rego パーサは内包表記内の 2 変数 some（some k, v in vars）を\n# 受け付けないため、object.keys 経由で書く。\n_pf_lenv_size(vars) := sum([s |\n\tsome k in object.keys(vars)\n\tis_string(vars[k])\n\ts := count(k) + count(vars[k])\n])\n\nviolation contains make_diag_full(\"pf-lambda-env-size\", \"ERROR\", name,\n\t\"Properties.Environment.Variables\",\n\tsprintf(\"Environment variables total at least %d bytes (literal keys and values), but Lambda limits the environment to 4096 bytes; CreateFunction fails at deploy time\", [total]),\n\t\"Move large values to SSM Parameter Store, Secrets Manager, or a bundled config file\",\n\t\"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tvars := resolve(name, \"Properties.Environment.Variables\")\n\tis_object(vars)\n\ttotal := _pf_lenv_size(vars)\n\ttotal > 4096\n}\n"
   },
   {
+    "id": "pf-route53-alias-cloudfront-zone-id",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every CloudFront distribution is aliased through the single global hosted\n# zone Z2FDTNDATAQYW2. Any other AliasTarget.HostedZoneId (an ALB's regional\n# zone id is the classic paste error) fails at deploy time with \"the alias\n# target name does not lie within the target zone\".\nviolation contains make_diag_full(\"pf-route53-alias-cloudfront-zone-id\", \"ERROR\", name,\n\t\"Properties.AliasTarget.HostedZoneId\",\n\tsprintf(\"The alias targets a CloudFront domain, so AliasTarget.HostedZoneId must be Z2FDTNDATAQYW2, not '%s'\", [zid]),\n\t\"Set AliasTarget.HostedZoneId to Z2FDTNDATAQYW2 (in the CDK, route53_targets.CloudFrontTarget does this)\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/cf_region.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tdns := resolve(name, \"Properties.AliasTarget.DNSName\")\n\tis_string(dns)\n\tendswith(trim_suffix(lower(dns), \".\"), \".cloudfront.net\")\n\tzid := resolve(name, \"Properties.AliasTarget.HostedZoneId\")\n\tis_string(zid)\n\tzid != \"Z2FDTNDATAQYW2\"\n}\n"
+  },
+  {
+    "id": "pf-route53-apex-cname",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CNAME record is not permitted at the zone apex",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_apex_norm(n) := trim_suffix(lower(n), \".\")\n\n# The engine's E3023 catches an apex CNAME only when the record carries a\n# literal HostedZoneName. CDK L2 always links records with\n# HostedZoneId: {\"Ref\": <zone>}, which E3023 does not see (measured 2026-09-02,\n# engine 1.7.0-beta). resolve() turns such a Ref into the target's logical ID,\n# so when that ID names a HostedZone in the same template we can read its\n# literal Name and do the apex comparison ourselves.\nviolation contains make_diag_full(\"pf-route53-apex-cname\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"A CNAME record is not permitted at the zone apex ('%s'); the deployment fails with \\\"RRSet of type CNAME ... is not permitted at apex\\\"\", [recName]),\n\t\"Use an alias A/AAAA record for the apex (AliasTarget), or move the CNAME to a subdomain\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"CNAME\"\n\tzref := resolve(name, \"Properties.HostedZoneId\")\n\tis_string(zref)\n\tzref in resources_of_type(\"AWS::Route53::HostedZone\")\n\tzoneName := resolve(zref, \"Properties.Name\")\n\tis_string(zoneName)\n\trecName := resolve(name, \"Properties.Name\")\n\tis_string(recName)\n\t_pf_r53_apex_norm(recName) == _pf_r53_apex_norm(zoneName)\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-exclusive",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoLocation cannot specify both ContinentCode and CountryCode",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema expresses this as a oneOf, which the server-side\n# pre-deploy validation enforces (\"2 subschemas matched instead of one\") but\n# the bundled engine does not evaluate — hence upstream: pending-engine.\nviolation contains make_diag_full(\"pf-route53-geolocation-exclusive\", \"ERROR\", name,\n\t\"Properties.GeoLocation\",\n\t\"GeoLocation cannot specify both ContinentCode and CountryCode; CloudFormation rejects the record set before provisioning\",\n\t\"Keep either the ContinentCode or the CountryCode (add SubdivisionCode only next to CountryCode US)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53-recordset-geolocation.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tgeo := resolve(name, \"Properties.GeoLocation\")\n\tis_object(geo)\n\tis_string(object.get(geo, \"ContinentCode\", null))\n\tis_string(object.get(geo, \"CountryCode\", null))\n}\n"
+  },
+  {
+    "id": "pf-route53-multivalue-alias",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "MultiValueAnswer cannot be combined with AliasTarget",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-multivalue-alias\", \"ERROR\", name,\n\t\"Properties.MultiValueAnswer\",\n\t\"MultiValueAnswer cannot be combined with AliasTarget; the service rejects it with \\\"Multivalue answer rrset should not be an alias rrset\\\"\",\n\t\"Use plain multivalue records with ResourceRecords, or drop MultiValueAnswer and keep the alias\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n\tis_object(resolve(name, \"Properties.AliasTarget\"))\n}\n"
+  },
+  {
+    "id": "pf-route53-record-type-routing-policy",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "NS records take no routing policy; CNAME cannot be multivalue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_typol_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_typol_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_typol_has_policy(name) if {\n\tsome p in _pf_r53_typol_props\n\tresolve(name, sprintf(\"Properties.%s\", [p])) != null\n}\n\n_pf_r53_typol_has_policy(name) if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\n# Only combinations that failed on a real deploy are flagged. SOA/DS with a\n# routing policy are also documented as unsupported but were not measured, so\n# they are deliberately left out (see the discovery issue).\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"An NS record cannot use a routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Use a simple record set for NS records (no Weight/Region/Failover/GeoLocation/MultiValueAnswer/CidrRoutingConfig)\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"NS\"\n\t_pf_r53_typol_has_policy(name)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"A CNAME record cannot use the multivalue answer routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Point the multivalue records at A/AAAA (or another supported type), or drop MultiValueAnswer\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"CNAME\"\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n"
+  },
+  {
+    "id": "pf-route53-record-value-source",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A record set needs AliasTarget or the full TTL+ResourceRecords pair",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_valsrc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n# The service expects \"exactly one of [AliasTarget, all of [TTL, and\n# ResourceRecords]]\" (TrafficPolicyInstanceId has no CloudFormation property).\n# The TTL+AliasTarget combination is already the engine's E3029, so this rule\n# covers the remaining shapes: alias plus records, and an incomplete non-alias\n# group (records without TTL, TTL without records, or neither).\n_pf_r53_valsrc_has_alias(name) if is_object(resolve(name, \"Properties.AliasTarget\"))\n\n_pf_r53_valsrc_has_rr(name) if {\n\tsome _ in flatten_list(name, \"Properties.ResourceRecords\")\n}\n\n_pf_r53_valsrc_has_ttl(name) if resolve(name, \"Properties.TTL\") != null\n\nviolation contains make_diag_full(\"pf-route53-record-value-source\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\t\"AliasTarget and ResourceRecords are mutually exclusive; the service expects exactly one of AliasTarget or TTL-plus-ResourceRecords\",\n\t\"Keep the AliasTarget and drop ResourceRecords, or make it a plain record with TTL and ResourceRecords\",\n\t_pf_r53_valsrc_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\t_pf_r53_valsrc_has_alias(name)\n\t_pf_r53_valsrc_has_rr(name)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-value-source\", \"ERROR\", name,\n\t\"Properties\",\n\t\"A non-alias record set needs both TTL and ResourceRecords; the service rejects an incomplete pair with \\\"Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords]] ... found none\\\"\",\n\t\"Specify TTL and ResourceRecords together, or use AliasTarget instead\",\n\t_pf_r53_valsrc_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tnot _pf_r53_valsrc_has_alias(name)\n\tnot _pf_r53_valsrc_complete(name)\n}\n\n_pf_r53_valsrc_complete(name) if {\n\t_pf_r53_valsrc_has_rr(name)\n\t_pf_r53_valsrc_has_ttl(name)\n}\n"
+  },
+  {
+    "id": "pf-route53-routing-policy-exclusive",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A record set can use only one routing policy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service enforces \"Expected exactly one of [Weight, Region, Failover,\n# GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig]\".\n# GeoProximityLocation is not a CloudFormation property, so five remain here.\n# MultiValueAnswer: false is treated as absent — only true selects the policy.\n_pf_r53_polx_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_polx_present(name, prop) if {\n\tprop != \"MultiValueAnswer\"\n\tresolve(name, sprintf(\"Properties.%s\", [prop])) != null\n}\n\n_pf_r53_polx_present(name, \"MultiValueAnswer\") if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\n_pf_r53_polx_policies(name) := ps if {\n\tps := [p | some p in array.concat(_pf_r53_polx_props, [\"MultiValueAnswer\"]); _pf_r53_polx_present(name, p)]\n}\n\nviolation contains make_diag_full(\"pf-route53-routing-policy-exclusive\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"A record set can use only one routing policy, but %v are all specified\", [ps]),\n\t\"Keep exactly one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, or CidrRoutingConfig and split the rest into separate record sets\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tps := _pf_r53_polx_policies(name)\n\tcount(ps) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53-set-identifier-pairing",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "SetIdentifier and a routing policy must appear together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_sidp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_sidp_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_sidp_has_policy(name) if {\n\tsome p in _pf_r53_sidp_props\n\tresolve(name, sprintf(\"Properties.%s\", [p])) != null\n}\n\n_pf_r53_sidp_has_policy(name) if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-pairing\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"A routing policy is configured but SetIdentifier is missing; the ChangeResourceRecordSets call fails with \\\"Missing field 'SetIdentifier'\\\"\",\n\t\"Add a SetIdentifier that is unique among the record sets sharing this Name and Type\",\n\t_pf_r53_sidp_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\t_pf_r53_sidp_has_policy(name)\n\tnot is_string(resolve(name, \"Properties.SetIdentifier\"))\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-pairing\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"SetIdentifier is specified but no routing policy is; the service expects exactly one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, or CidrRoutingConfig and finds none\",\n\t\"Remove SetIdentifier from this simple record set, or add the routing policy it was meant for\",\n\t_pf_r53_sidp_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tis_string(resolve(name, \"Properties.SetIdentifier\"))\n\tnot _pf_r53_sidp_has_policy(name)\n}\n"
+  },
+  {
+    "id": "pf-route53-ttl-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "TTL must fit in 32 bits (0..2147483647 seconds)",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound is enforced: the service rejected 9999999999 with\n# \"Member must have value less than or equal to 2147483647\". Negative TTLs are\n# untested, so they are deliberately not flagged.\nviolation contains make_diag_full(\"pf-route53-ttl-range\", \"ERROR\", name,\n\t\"Properties.TTL\",\n\tsprintf(\"TTL must be at most 2147483647 seconds, got %v\", [n]),\n\t\"Set TTL to a 32-bit value; anything above a day rarely helps caching anyway\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tt := resolve(name, \"Properties.TTL\")\n\tn := to_number(t)\n\tn > 2147483647\n}\n"
+  },
+  {
+    "id": "pf-route53-weight-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Weight must be between 0 and 255",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound is enforced: the service rejected 300 with \"Member\n# must have value less than or equal to 255\". Negative weights are untested,\n# so they are deliberately not flagged.\nviolation contains make_diag_full(\"pf-route53-weight-range\", \"ERROR\", name,\n\t\"Properties.Weight\",\n\tsprintf(\"Weight must be at most 255, got %v\", [n]),\n\t\"Set Weight to a value in [0, 255]; weights are relative, so scale the group down proportionally\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tw := resolve(name, \"Properties.Weight\")\n\tn := to_number(w)\n\tn > 255\n}\n"
+  },
+  {
+    "id": "pf-route53-zonename-trailing-dot",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "HostedZoneName must end with a trailing dot",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation looks the zone up by the literal HostedZoneName and does not\n# normalize the trailing dot: the same stack deployed clean with\n# \"zone.example.\" and failed with NotFound for \"zone.example\" (2026-09-02).\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\tsprintf(\"HostedZoneName '%s' is missing the trailing dot, so CloudFormation fails the lookup with \\\"No hosted zone with name ... found\\\"\", [zn]),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\tis_string(zn)\n\tzn != \"\"\n\tnot endswith(zn, \".\")\n}\n"
+  },
+  {
     "id": "pf-s3-lifecycle-days-order",
     "service": "s3",
     "severity": "ERROR",

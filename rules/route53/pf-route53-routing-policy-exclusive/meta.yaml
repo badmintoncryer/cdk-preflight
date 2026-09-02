@@ -1,0 +1,11 @@
+id: pf-route53-routing-policy-exclusive
+service: route53
+resourceTypes: [AWS::Route53::RecordSet]
+severity: ERROR
+title: A record set can use only one routing policy
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE, \"Invalid request: Expected exactly one of [Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig], but found more than one\" (Weight+Region, Service: Route53, Status Code: 400)."
+addedOn: 2026-09-02

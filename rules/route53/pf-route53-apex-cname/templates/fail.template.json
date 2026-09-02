@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "example.org."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "Name": "example.org.",
+        "Type": "CNAME",
+        "ResourceRecords": [
+          "target.example.net."
+        ],
+        "TTL": "300"
+      }
+    }
+  }
+}

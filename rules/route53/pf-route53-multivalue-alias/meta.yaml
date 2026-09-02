@@ -1,0 +1,11 @@
+id: pf-route53-multivalue-alias
+service: route53
+resourceTypes: [AWS::Route53::RecordSet]
+severity: ERROR
+title: MultiValueAnswer cannot be combined with AliasTarget
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE, \"Multivalue answer rrset should not be an alias rrset. No changes made.\" (Service: Route53, Status Code: 400)."
+addedOn: 2026-09-02
