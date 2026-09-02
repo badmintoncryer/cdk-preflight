@@ -954,3 +954,69 @@ describe('cloudwatch logs rules', () => {
     });
   });
 });
+
+describe('eventbridge rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  const rule = (props: Record<string, unknown>, parameters?: Record<string, unknown>) => ({
+    ...(parameters ? { Parameters: parameters } : {}),
+    Resources: {
+      Q: { Type: 'AWS::SQS::Queue', Properties: {} },
+      R: { Type: 'AWS::Events::Rule', Properties: props },
+    },
+  });
+  const QARN = { 'Fn::GetAtt': ['Q', 'Arn'] };
+
+  describe('pf-events-pattern-scalar-value', () => {
+    test('a nested scalar is out of scope — only the top level was bench-verified', () => {
+      const t = rule({ EventPattern: { detail: { state: 'x' } }, Targets: [{ Id: 't1', Arn: QARN }] });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-events-pattern-empty', () => {
+    test('an empty pattern next to a ScheduleExpression is not the verified shape', () => {
+      const t = rule({ EventPattern: {}, ScheduleExpression: 'rate(5 minutes)', Targets: [{ Id: 't1', Arn: QARN }] });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-events-input-transformer-placeholders', () => {
+    test('predefined aws.events.* variables need no declaration even without InputPathsMap', () => {
+      const t = rule({
+        EventPattern: { source: ['aws.ec2'] },
+        Targets: [{ Id: 't1', Arn: QARN, InputTransformer: { InputTemplate: '"rule <aws.events.rule-name>"' } }],
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('an unresolvable InputPathsMap mutes the rule', () => {
+      const t = rule(
+        {
+          EventPattern: { source: ['aws.ec2'] },
+          Targets: [{ Id: 't1', Arn: QARN, InputTransformer: { InputPathsMap: { Ref: 'M' }, InputTemplate: '"<x>"' } }],
+        },
+        { M: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-scheduler-rate-positive', () => {
+    test('extra spacing inside a valid rate() stays silent', () => {
+      const t = {
+        Resources: {
+          S: {
+            Type: 'AWS::Scheduler::Schedule',
+            Properties: {
+              FlexibleTimeWindow: { Mode: 'OFF' },
+              ScheduleExpression: 'rate( 2 hours )',
+              Target: { Arn: 'arn:aws:sqs:ap-northeast-1:123456789012:q', RoleArn: 'arn:aws:iam::123456789012:role/r' },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+});

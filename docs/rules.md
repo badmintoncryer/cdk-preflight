@@ -41,6 +41,9 @@
 | `pf-elbv2-lb-idle-timeout-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | ALB idle_timeout.timeout_seconds must be between 1 and 4000 | none |
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
+| `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
+| `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
+| `pf-events-pattern-scalar-value` | AWS::Events::Rule | Event pattern values must be arrays or objects, not scalars | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
@@ -71,5 +74,7 @@
 | `pf-s3-replication-dest-versioning` | AWS::S3::Bucket | The replication destination bucket needs versioning enabled | none |
 | `pf-s3-replication-requires-versioning` | AWS::S3::Bucket | ReplicationConfiguration requires versioning to be enabled on the source bucket | none |
 | `pf-s3-website-redirect-exclusive` | AWS::S3::Bucket | RedirectAllRequestsTo excludes every other website setting | none |
+| `pf-scheduler-flexible-window` | AWS::Scheduler::Schedule | FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it | none |
+| `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | none |
 | `pf-sns-fifo-topic-name` | AWS::SNS::Topic | FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic) | none |
 | `pf-sfn-asl-missing-state` | AWS::StepFunctions::StateMachine | ASL Next/Default/Choices must reference a defined state (top-level states; a dangling StartAt is covered by engine rule E3601) | none |

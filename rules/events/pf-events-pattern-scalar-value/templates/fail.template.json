@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "EventPattern": {
+          "source": "aws.ec2"
+        },
+        "Targets": [
+          {
+            "Id": "t1",
+            "Arn": {
+              "Fn::GetAtt": [
+                "Q",
+                "Arn"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

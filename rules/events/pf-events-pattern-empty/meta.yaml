@@ -1,0 +1,11 @@
+id: pf-events-pattern-empty
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: An empty EventPattern counts as no pattern at all
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (ev02): EventPattern {} with no ScheduleExpression -> \"Parameter(s) EventPattern or ScheduleExpression must be specified\" — F3058 only fires when the key is absent. ROLLBACK_COMPLETE."
+addedOn: 2026-09-02

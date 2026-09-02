@@ -1,0 +1,11 @@
+id: pf-scheduler-rate-positive
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: A Scheduler rate() value must be positive
+constraintSource: https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1 (ev10): rate(0 minutes) -> \"Invalid Schedule Expression rate(0 minutes).\" ROLLBACK_COMPLETE. E3027 covers Events::Rule but not Scheduler::Schedule. Note ev11: a five-field cron(0 12 * * ?) deployed CLEAN on Scheduler — the six-field requirement is a BROKEN-EXPECTATION there."
+addedOn: 2026-09-02
