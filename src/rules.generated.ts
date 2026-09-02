@@ -123,6 +123,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A WAFv2 ARN carries its scope in the resource segment:\n#   arn:aws:wafv2:us-east-1:123456789012:global/webacl/name/id    (CLOUDFRONT)\n#   arn:aws:wafv2:ap-northeast-1:123456789012:regional/webacl/... (REGIONAL)\n# CloudFront accepts only the global form. Checking the region alone would miss\n# a REGIONAL web ACL that happens to have been created in us-east-1, which is\n# the easy mistake to make.\nviolation contains make_diag_full(\"pf-cloudfront-wafv2-webacl-scope\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.WebACLId\",\n\tsprintf(\"CloudFront only accepts a globally scoped web ACL, but this ARN is scoped '%s'\", [scope]),\n\t\"Create the web ACL with scope CLOUDFRONT in us-east-1 (wafv2.CfnWebACL with scope: 'CLOUDFRONT') and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-wafv2-webacl.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.WebACLId\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"wafv2\"\n\tsegments := split(parts[5], \"/\")\n\tscope := segments[0]\n\tscope != \"global\"\n}\n"
   },
   {
+    "id": "pf-dynamodb-attribute-definitions-usage",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Every AttributeDefinitions entry must be used by a key schema",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DynamoDB requires an exact match: every AttributeDefinitions entry must be\n# used by the table key schema or an index key schema. The engine's E3039\n# checks the opposite direction only (key attribute not defined), so the\n# classic \"removed a GSI, left the attribute definition\" mistake sails through.\n\n_pf_ddbadu_table_keys(name) := {a |\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\ta := object.get(it.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbadu_index_keys(name, prop) := {a |\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome k in object.get(ix.value, \"KeySchema\", [])\n\ta := object.get(k, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbadu_used(name) := ((_pf_ddbadu_table_keys(name) |\n\t_pf_ddbadu_index_keys(name, \"GlobalSecondaryIndexes\")) |\n\t_pf_ddbadu_index_keys(name, \"LocalSecondaryIndexes\"))\n\n# Any unresolvable AttributeName in a key schema means the used-set is\n# incomplete, so the rule must stay silent rather than guess.\n_pf_ddbadu_unresolvable(name) if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tnot is_string(object.get(it.value, \"AttributeName\", null))\n}\n\n_pf_ddbadu_unresolvable(name) if {\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome k in object.get(ix.value, \"KeySchema\", [])\n\tnot is_string(object.get(k, \"AttributeName\", null))\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-attribute-definitions-usage\", \"ERROR\", name,\n\tsprintf(\"Properties.AttributeDefinitions.%d\", [d.index]),\n\tsprintf(\"Attribute '%s' is defined but used by no key schema; DynamoDB requires an exact match and fails with \\\"Number of attributes in KeySchema does not exactly match number of attributes defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Remove the unused definition (non-key attributes such as a TTL attribute must NOT be declared), or add the index that uses it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tnot _pf_ddbadu_unresolvable(name)\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\tattr := object.get(d.value, \"AttributeName\", null)\n\tis_string(attr)\n\tnot attr in _pf_ddbadu_used(name)\n}\n"
+  },
+  {
     "id": "pf-dynamodb-billing-throughput",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -132,6 +143,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::Table"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbbt_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html\"\n\n_pf_ddbbt_has_pt(name) if is_object(resolve(name, \"Properties.ProvisionedThroughput\"))\n\n_pf_ddbbt_billing_present(name) if resolve(name, \"Properties.BillingMode\")\n\n# BillingMode がリテラル \"PROVISIONED\"、または未指定（デフォルト PROVISIONED）。\n# トークン値（Ref 等）は判定に使わない（誤検知防止）。\n_pf_ddbbt_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbbt_provisioned(name) if not _pf_ddbbt_billing_present(name)\n\nviolation contains make_diag_full(\"pf-dynamodb-billing-throughput\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughput\",\n\t\"ProvisionedThroughput cannot be specified when BillingMode is PAY_PER_REQUEST; CreateTable fails at deploy time\",\n\t\"Remove ProvisionedThroughput, or switch BillingMode to PROVISIONED\",\n\t_pf_ddbbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tresolve(name, \"Properties.BillingMode\") == \"PAY_PER_REQUEST\"\n\t_pf_ddbbt_has_pt(name)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-billing-throughput\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughput\",\n\t\"BillingMode is PROVISIONED (the default) but ProvisionedThroughput is missing; CreateTable fails at deploy time\",\n\t\"Add ProvisionedThroughput (ReadCapacityUnits / WriteCapacityUnits), or set BillingMode to PAY_PER_REQUEST\",\n\t_pf_ddbbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbbt_provisioned(name)\n\tnot _pf_ddbbt_has_pt(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-duplicate-attribute-definitions",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "AttributeDefinitions must not define the same attribute twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-duplicate-attribute-definitions\", \"ERROR\", name,\n\tsprintf(\"Properties.AttributeDefinitions.%d\", [b.index]),\n\tsprintf(\"Attribute '%s' appears more than once in AttributeDefinitions; CreateTable fails with \\\"An attribute appears more than once in AttributeDefinitions\\\"\", [an]),\n\t\"Keep a single definition per attribute name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome a in flatten_list(name, \"Properties.AttributeDefinitions\")\n\tsome b in flatten_list(name, \"Properties.AttributeDefinitions\")\n\ta.index < b.index\n\tan := object.get(a.value, \"AttributeName\", null)\n\tis_string(an)\n\tobject.get(b.value, \"AttributeName\", null) == an\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-duplicate-index-name",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Secondary index names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbdin_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\"\n\n# Duplicates within the same index list only; a GSI/LSI cross-list clash was\n# not measured (issue #21).\nviolation contains make_diag_full(\"pf-dynamodb-duplicate-index-name\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.IndexName\", [prop, b.index]),\n\tsprintf(\"Index name '%s' is used more than once; CreateTable fails with \\\"Duplicate index name\\\"\", [iname]),\n\t\"Give every secondary index a unique IndexName\",\n\t_pf_ddbdin_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome a in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome b in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\ta.index < b.index\n\tiname := object.get(a.value, \"IndexName\", null)\n\tis_string(iname)\n\tobject.get(b.value, \"IndexName\", null) == iname\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-gsi-billing-throughput",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GSI ProvisionedThroughput must match the table BillingMode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbgbt_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html\"\n\n# GSI-level counterpart of pf-dynamodb-billing-throughput (which covers the\n# table-level pair only). Same token safety: literal BillingMode or absent\n# (default PROVISIONED); token values never judged.\n_pf_ddbgbt_billing_present(name) if resolve(name, \"Properties.BillingMode\")\n\n_pf_ddbgbt_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbgbt_provisioned(name) if not _pf_ddbgbt_billing_present(name)\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-billing-throughput\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.ProvisionedThroughput\", [g.index]),\n\tsprintf(\"GSI '%s' specifies ProvisionedThroughput but BillingMode is PAY_PER_REQUEST; CreateTable fails with \\\"Property ProvisionedThroughput can't be used with PAY_PER_REQUEST BillingMode\\\"\", [iname]),\n\t\"Remove the GSI's ProvisionedThroughput, or switch the table to PROVISIONED\",\n\t_pf_ddbgbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tresolve(name, \"Properties.BillingMode\") == \"PAY_PER_REQUEST\"\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tis_object(object.get(g.value, \"ProvisionedThroughput\", null))\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-billing-throughput\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.ProvisionedThroughput\", [g.index]),\n\tsprintf(\"GSI '%s' is missing ProvisionedThroughput while the table bills PROVISIONED (the default); CreateTable fails with \\\"Property ProvisionedThroughput cannot be empty\\\"\", [iname]),\n\t\"Add ProvisionedThroughput to the GSI, or set BillingMode to PAY_PER_REQUEST\",\n\t_pf_ddbgbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbgbt_provisioned(name)\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tnot is_object(object.get(g.value, \"ProvisionedThroughput\", null))\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-gsi-projection-nonkey",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "NonKeyAttributes goes with INCLUDE, and only with INCLUDE",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbgpn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-projection.html\"\n\n# GSI projections only: the LSI shape and the KEYS_ONLY+NonKeyAttributes combo\n# were not measured (issue #21).\nviolation contains make_diag_full(\"pf-dynamodb-gsi-projection-nonkey\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.Projection\", [g.index]),\n\tsprintf(\"GSI '%s' uses ProjectionType INCLUDE without NonKeyAttributes; CreateTable fails with \\\"ProjectionType is INCLUDE, but NonKeyAttributes is not specified\\\"\", [iname]),\n\t\"List the projected attributes in NonKeyAttributes, or switch ProjectionType to ALL / KEYS_ONLY\",\n\t_pf_ddbgpn_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tproj := object.get(g.value, \"Projection\", null)\n\tis_object(proj)\n\tobject.get(proj, \"ProjectionType\", null) == \"INCLUDE\"\n\tcount(object.get(proj, \"NonKeyAttributes\", [])) == 0\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-projection-nonkey\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.Projection\", [g.index]),\n\tsprintf(\"GSI '%s' combines ProjectionType ALL with NonKeyAttributes; CreateTable fails with \\\"ProjectionType is ALL, but NonKeyAttributes is specified\\\"\", [iname]),\n\t\"Drop NonKeyAttributes (ALL already projects everything), or switch ProjectionType to INCLUDE\",\n\t_pf_ddbgpn_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tproj := object.get(g.value, \"Projection\", null)\n\tis_object(proj)\n\tobject.get(proj, \"ProjectionType\", null) == \"ALL\"\n\tcount(object.get(proj, \"NonKeyAttributes\", [])) > 0\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-key-schema-shape",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "KeySchema must be [HASH] or [HASH, RANGE]",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbksh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\"\n\n# Table-level key schema only: index key schemas produce different service\n# errors and were not measured (issue #21).\n_pf_ddbksh_type(name, i) := kt if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tit.index == i\n\tkt := object.get(it.value, \"KeyType\", null)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.0.KeyType\",\n\tsprintf(\"The first KeySchema element must be HASH, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The first KeySchemaElement is not a HASH key type\\\"\", [kt]),\n\t\"Put the partition key (KeyType HASH) first and the optional sort key (RANGE) second\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tkt := _pf_ddbksh_type(name, 0)\n\tis_string(kt)\n\tkt != \"HASH\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.1.KeyType\",\n\tsprintf(\"The second KeySchema element must be RANGE, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The second KeySchemaElement is not a RANGE key type\\\"\", [kt]),\n\t\"Use exactly one HASH element, optionally followed by one RANGE element\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tkt := _pf_ddbksh_type(name, 1)\n\tis_string(kt)\n\tkt != \"RANGE\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema\",\n\tsprintf(\"KeySchema can hold at most 2 elements (HASH + optional RANGE), got %d\", [n]),\n\t\"Model extra access patterns as global or local secondary indexes instead\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tn := count([1 | some _ in flatten_list(name, \"Properties.KeySchema\")])\n\tn > 2\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-lsi-attribute-definitions",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "LSI key attributes must be defined in AttributeDefinitions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's E3039 checks table and GSI key schemas against\n# AttributeDefinitions but is blind to LocalSecondaryIndexes (measured\n# 2026-09-02, 1.7.0-beta). This rule covers exactly that gap.\n\n_pf_ddblad_defs(name) := {a |\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\ta := object.get(d.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n# If any definition's name is unresolvable the set is incomplete — stay silent.\n_pf_ddblad_defs_resolvable(name) if {\n\tevery d in [x | some x in flatten_list(name, \"Properties.AttributeDefinitions\")] {\n\t\tis_string(object.get(d.value, \"AttributeName\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-attribute-definitions\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"LSI key attribute '%s' is not defined in AttributeDefinitions; CreateTable fails with \\\"An attribute referenced in a KeySchema element is not defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Add the attribute to AttributeDefinitions (and nowhere else: only key attributes belong there)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-localsecondaryindex.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tcount(_pf_ddblad_defs(name)) > 0\n\t_pf_ddblad_defs_resolvable(name)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tsome k in object.get(l.value, \"KeySchema\", [])\n\tattr := object.get(k, \"AttributeName\", null)\n\tis_string(attr)\n\tnot attr in _pf_ddblad_defs(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-lsi-shape",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "An LSI needs a RANGE key and the table's leading hash key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddblsh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-localsecondaryindex.html\"\n\n_pf_ddblsh_keytypes(ks) := {kt |\n\tsome k in ks\n\tkt := object.get(k, \"KeyType\", null)\n\tis_string(kt)\n}\n\n# Only judge a key schema whose KeyTypes are all literal strings.\n_pf_ddblsh_resolvable(ks) if count(_pf_ddblsh_keytypes(ks)) > 0\n\n_pf_ddblsh_resolvable_all(ks) if {\n\tevery k in ks {\n\t\tis_string(object.get(k, \"KeyType\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' has no RANGE key; CreateTable fails with \\\"Index KeySchema does not have a range key for index\\\"\", [iname]),\n\t\"Give the LSI a sort key: [table HASH key, its own RANGE key]\",\n\t_pf_ddblsh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tcount(ks) > 0\n\t_pf_ddblsh_resolvable_all(ks)\n\tnot \"RANGE\" in _pf_ddblsh_keytypes(ks)\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' uses hash key '%s' but the table's hash key is '%s'; CreateTable fails with \\\"Index KeySchema does not have the same leading hash key as table KeySchema\\\"\", [iname, lsiHash, tableHash]),\n\t\"An LSI must reuse the table's partition key; use a global secondary index for a different hash key\",\n\t_pf_ddblsh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome t in flatten_list(name, \"Properties.KeySchema\")\n\tt.index == 0\n\ttableHash := object.get(t.value, \"AttributeName\", null)\n\tis_string(tableHash)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tsome k in ks\n\tobject.get(k, \"KeyType\", null) == \"HASH\"\n\tlsiHash := object.get(k, \"AttributeName\", null)\n\tis_string(lsiHash)\n\tlsiHash != tableHash\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-table-name-length",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "TableName must be at least 3 characters",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound (minimum 3 characters) is enforced. The 255-char\n# maximum and the character pattern were not measured. Note resolve() turns a\n# Ref-to-resource into the target's logical ID; a logical ID short enough to\n# trip this rule while feeding a TableName is treated as the bug it almost\n# certainly is.\nviolation contains make_diag_full(\"pf-dynamodb-table-name-length\", \"ERROR\", name,\n\t\"Properties.TableName\",\n\tsprintf(\"TableName '%s' is shorter than 3 characters; CreateTable fails with \\\"Member must have length greater than or equal to 3\\\"\", [tn]),\n\t\"Use a table name of at least 3 characters, or omit TableName and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\ttn := resolve(name, \"Properties.TableName\")\n\tis_string(tn)\n\tcount(tn) < 3\n}\n"
   },
   {
     "id": "pf-ec2-sg-port-range",

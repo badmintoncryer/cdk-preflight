@@ -14,7 +14,16 @@
 | `pf-cloudfront-origin-group-member-origin` | AWS::CloudFront::Distribution | Origin group members must reference an origin declared in the distribution | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | none |
+| `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | none |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
+| `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | none |
+| `pf-dynamodb-duplicate-index-name` | AWS::DynamoDB::Table | Secondary index names must be unique | none |
+| `pf-dynamodb-gsi-billing-throughput` | AWS::DynamoDB::Table | GSI ProvisionedThroughput must match the table BillingMode | none |
+| `pf-dynamodb-gsi-projection-nonkey` | AWS::DynamoDB::Table | NonKeyAttributes goes with INCLUDE, and only with INCLUDE | none |
+| `pf-dynamodb-key-schema-shape` | AWS::DynamoDB::Table | KeySchema must be [HASH] or [HASH, RANGE] | none |
+| `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | none |
+| `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | none |
+| `pf-dynamodb-table-name-length` | AWS::DynamoDB::Table | TableName must be at least 3 characters | pending-engine |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |

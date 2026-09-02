@@ -1,0 +1,11 @@
+id: pf-dynamodb-gsi-projection-nonkey
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: NonKeyAttributes goes with INCLUDE, and only with INCLUDE
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-projection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: INCLUDE without NonKeyAttributes -> \"ProjectionType is INCLUDE, but NonKeyAttributes is not specified\"; ALL with NonKeyAttributes -> \"ProjectionType is ALL, but NonKeyAttributes is specified\". Both ROLLBACK_COMPLETE. GSI projections only; LSI and KEYS_ONLY combinations were not measured (issue #21)."
+addedOn: 2026-09-02

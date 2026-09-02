@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "ab",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST"
+      }
+    }
+  }
+}

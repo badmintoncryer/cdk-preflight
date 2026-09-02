@@ -1,0 +1,11 @@
+id: pf-dynamodb-key-schema-shape
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: KeySchema must be [HASH] or [HASH, RANGE]
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1, three shapes: RANGE first -> \"Invalid KeySchema: The first KeySchemaElement is not a HASH key type\"; two HASH -> \"The second KeySchemaElement is not a RANGE key type\"; three elements -> \"Member must have length less than or equal to 2\" (the count bound is schema-expressible, engine silent). All ROLLBACK_COMPLETE. Index key schemas emit different errors and were not measured — table level only."
+addedOn: 2026-09-02
