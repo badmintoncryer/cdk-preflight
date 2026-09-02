@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": "arn:aws:iam::123456789012:role/lambda-role",
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return 0\n"
+        },
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "MemorySize": 20000
+      }
+    }
+  }
+}

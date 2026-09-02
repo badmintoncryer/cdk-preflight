@@ -85,7 +85,17 @@
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
+| `pf-lambda-code-s3-pair` | AWS::Lambda::Function | S3-based Code needs both S3Bucket and S3Key | none |
+| `pf-lambda-code-zipfile-exclusive` | AWS::Lambda::Function | Inline ZipFile excludes every other Code parameter | none |
+| `pf-lambda-dlq-region` | AWS::Lambda::Function | The dead letter target must sit in the deploy region | none |
+| `pf-lambda-dlq-service` | AWS::Lambda::Function | The dead letter target must be an SQS queue or SNS topic | none |
+| `pf-lambda-efs-requires-vpc` | AWS::Lambda::Function | Mounting EFS requires VpcConfig | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
+| `pf-lambda-esm-batchsize-window` | AWS::Lambda::EventSourceMapping | SQS batch sizes over 10 need a batching window | none |
+| `pf-lambda-esm-fifo-batching-window` | AWS::Lambda::EventSourceMapping | FIFO queues reject a batching window | none |
+| `pf-lambda-esm-sqs-starting-position` | AWS::Lambda::EventSourceMapping | SQS event sources reject StartingPosition | none |
+| `pf-lambda-memory-max` | AWS::Lambda::Function | MemorySize tops out at 10240 | pending-engine |
+| `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | pending-engine |
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |
 | `pf-logs-metric-dimensions-default-exclusive` | AWS::Logs::MetricFilter | Dimensions and DefaultValue are mutually exclusive | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | none |

@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": "arn:aws:iam::123456789012:role/lambda-role",
+        "Code": {
+          "ZipFile": "def handler(e, c): pass",
+          "S3Bucket": "my-bucket",
+          "S3Key": "k.zip"
+        },
+        "Runtime": "python3.12",
+        "Handler": "index.handler"
+      }
+    }
+  }
+}

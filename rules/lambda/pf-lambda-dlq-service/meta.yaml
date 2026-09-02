@@ -1,0 +1,11 @@
+id: pf-lambda-dlq-service
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: The dead letter target must be an SQS queue or SNS topic
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-deadletterconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: TargetArn pointing at a same-region lambda function (dl01c) -> \"Invalid dead letter queue ARN: The service specified by the TargetArn is not supported for dead letter configuration.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

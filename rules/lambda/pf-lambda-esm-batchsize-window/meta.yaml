@@ -1,0 +1,11 @@
+id: pf-lambda-esm-batchsize-window
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: SQS batch sizes over 10 need a batching window
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: BatchSize 100 with no window on a FIFO queue (esm03) and on a standard queue (esm03b) -> both \"Invalid request provided: Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10\". ROLLBACK_COMPLETE. (The often-cited FIFO batch cap of 10 is unreachable at create: this check and the FIFO window ban fire first.)"
+addedOn: 2026-09-03
