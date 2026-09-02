@@ -1,0 +1,11 @@
+id: pf-route53-geolocation-exclusive
+service: route53
+resourceTypes: [AWS::Route53::RecordSet]
+severity: ERROR
+title: GeoLocation cannot specify both ContinentCode and CountryCode
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53-recordset-geolocation.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE before provisioning; describe-events VALIDATION_ERROR ValidationName=PROPERTY_VALIDATION, \"#/GeoLocation: #: 2 subschemas matched instead of one\". The registry schema oneOf is enforced server-side but not evaluated by the bundled engine (silent, 1.7.0-beta) -> upstream: pending-engine."
+addedOn: 2026-09-02

@@ -255,3 +255,114 @@ describe('cloudfront rules', () => {
     });
   });
 });
+
+describe('route53 rules', () => {
+  const record = (props: Record<string, unknown>) => ({
+    Resources: {
+      Rec: {
+        Type: 'AWS::Route53::RecordSet',
+        Properties: {
+          HostedZoneId: 'Z1234567890ABC',
+          Name: 'www.example.org.',
+          Type: 'A',
+          ...props,
+        },
+      },
+    },
+  });
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  describe('pf-route53-apex-cname', () => {
+    // E3023 は HostedZoneName リテラル形しか見ない。CDK L2 が吐く
+    // HostedZoneId {Ref} 形はこのルールだけが apex を判定できる。
+    const zoneAndCname = (recName: string) => ({
+      Resources: {
+        Zone: { Type: 'AWS::Route53::HostedZone', Properties: { Name: 'example.org.' } },
+        Rec: {
+          Type: 'AWS::Route53::RecordSet',
+          Properties: {
+            HostedZoneId: { Ref: 'Zone' },
+            Name: recName,
+            Type: 'CNAME',
+            ResourceRecords: ['target.example.net.'],
+            TTL: '300',
+          },
+        },
+      },
+    });
+
+    test('normalizes the trailing dot when comparing names', () => {
+      const ds = diagnoseTemplate(zoneAndCname('example.org'));
+      expect(ids(ds)).toContain('pf-route53-apex-cname');
+    });
+
+    test('stays silent when the zone lives outside the template', () => {
+      const ds = diagnoseTemplate(record({ Type: 'CNAME', ResourceRecords: ['target.example.net.'], TTL: '300' }));
+      expect(ids(ds)).toHaveLength(0);
+    });
+  });
+
+  describe('pf-route53-set-identifier-pairing', () => {
+    test('fires when SetIdentifier has no routing policy', () => {
+      const ds = diagnoseTemplate(record({ ResourceRecords: ['192.0.2.1'], TTL: '300', SetIdentifier: 'one' }));
+      expect(ids(ds)).toContain('pf-route53-set-identifier-pairing');
+    });
+
+    test('MultiValueAnswer: false does not count as a routing policy', () => {
+      const ds = diagnoseTemplate(record({
+        ResourceRecords: ['192.0.2.1'], TTL: '300', SetIdentifier: 'one', MultiValueAnswer: false,
+      }));
+      expect(ids(ds)).toContain('pf-route53-set-identifier-pairing');
+      expect(ids(ds)).not.toContain('pf-route53-routing-policy-exclusive');
+    });
+  });
+
+  describe('pf-route53-record-type-routing-policy', () => {
+    test('fires on a multivalue CNAME', () => {
+      const ds = diagnoseTemplate(record({
+        Type: 'CNAME',
+        ResourceRecords: ['target.example.net.'],
+        TTL: '300',
+        MultiValueAnswer: true,
+        SetIdentifier: 'one',
+      }));
+      expect(ids(ds)).toContain('pf-route53-record-type-routing-policy');
+    });
+  });
+
+  describe('pf-route53-record-value-source', () => {
+    test('fires when TTL is present but ResourceRecords is missing', () => {
+      const ds = diagnoseTemplate(record({ TTL: '300' }));
+      expect(ids(ds)).toContain('pf-route53-record-value-source');
+    });
+
+    test('fires when ResourceRecords is present but TTL is missing', () => {
+      const ds = diagnoseTemplate(record({ ResourceRecords: ['192.0.2.1'] }));
+      expect(ids(ds)).toContain('pf-route53-record-value-source');
+    });
+
+    test('a TTL supplied through a template parameter is treated as present', () => {
+      const ds = diagnoseTemplate({
+        Parameters: { Ttl: { Type: 'String', Default: '300' } },
+        ...record({ ResourceRecords: ['192.0.2.1'], TTL: { Ref: 'Ttl' } }),
+      });
+      expect(ids(ds)).not.toContain('pf-route53-record-value-source');
+    });
+  });
+
+  describe('pf-route53-alias-cloudfront-zone-id', () => {
+    test('normalizes a trailing dot on the DNS name', () => {
+      const ds = diagnoseTemplate(record({
+        AliasTarget: { DNSName: 'd111111abcdef8.cloudfront.net.', HostedZoneId: 'Z14GRHDCWA56QT' },
+      }));
+      expect(ids(ds)).toContain('pf-route53-alias-cloudfront-zone-id');
+    });
+
+    test('leaves non-CloudFront alias targets alone', () => {
+      const ds = diagnoseTemplate(record({
+        AliasTarget: { DNSName: 'my-lb-123.ap-northeast-1.elb.amazonaws.com', HostedZoneId: 'Z14GRHDCWA56QT' },
+      }));
+      expect(ids(ds)).toHaveLength(0);
+    });
+  });
+});

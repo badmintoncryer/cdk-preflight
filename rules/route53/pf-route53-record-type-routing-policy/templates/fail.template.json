@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": "Z1234567890ABC",
+        "Name": "sub.example.org.",
+        "Type": "NS",
+        "ResourceRecords": [
+          "ns1.example.net."
+        ],
+        "TTL": "300",
+        "SetIdentifier": "one",
+        "Weight": 10
+      }
+    }
+  }
+}

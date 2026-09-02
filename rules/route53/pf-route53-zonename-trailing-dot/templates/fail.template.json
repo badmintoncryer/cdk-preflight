@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneName": "example.org",
+        "Name": "www.example.org.",
+        "Type": "A",
+        "ResourceRecords": [
+          "192.0.2.1"
+        ],
+        "TTL": "300"
+      }
+    }
+  }
+}
