@@ -1,0 +1,11 @@
+id: pf-dynamodb-kinesis-stream-region
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: A Kinesis streaming destination must be in the table's region
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/kds.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: table referencing a real 1-shard stream in us-east-1 -> ROLLBACK_COMPLETE via NotStabilized (\"did not stabilize\") — the service error does not name the constraint, but the same-region control stream deployed CREATE_COMPLETE, isolating region as the only variable. Evaluates only in enforce mode with a concrete app region (deploy_region injection); silent otherwise. Test fixtures assume the harness region us-east-1."
+addedOn: 2026-09-02

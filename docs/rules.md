@@ -18,9 +18,11 @@
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | none |
 | `pf-dynamodb-duplicate-index-name` | AWS::DynamoDB::Table | Secondary index names must be unique | none |
+| `pf-dynamodb-global-table-replica-region` | AWS::DynamoDB::GlobalTable | GlobalTable Replicas must include the deployment region | none |
 | `pf-dynamodb-gsi-billing-throughput` | AWS::DynamoDB::Table | GSI ProvisionedThroughput must match the table BillingMode | none |
 | `pf-dynamodb-gsi-projection-nonkey` | AWS::DynamoDB::Table | NonKeyAttributes goes with INCLUDE, and only with INCLUDE | none |
 | `pf-dynamodb-key-schema-shape` | AWS::DynamoDB::Table | KeySchema must be [HASH] or [HASH, RANGE] | none |
+| `pf-dynamodb-kinesis-stream-region` | AWS::DynamoDB::Table | A Kinesis streaming destination must be in the table's region | none |
 | `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | none |
 | `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | none |
 | `pf-dynamodb-table-name-length` | AWS::DynamoDB::Table | TableName must be at least 3 characters | pending-engine |

@@ -167,6 +167,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbdin_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\"\n\n# Duplicates within the same index list only; a GSI/LSI cross-list clash was\n# not measured (issue #21).\nviolation contains make_diag_full(\"pf-dynamodb-duplicate-index-name\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.IndexName\", [prop, b.index]),\n\tsprintf(\"Index name '%s' is used more than once; CreateTable fails with \\\"Duplicate index name\\\"\", [iname]),\n\t\"Give every secondary index a unique IndexName\",\n\t_pf_ddbdin_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome a in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome b in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\ta.index < b.index\n\tiname := object.get(a.value, \"IndexName\", null)\n\tis_string(iname)\n\tobject.get(b.value, \"IndexName\", null) == iname\n}\n"
   },
   {
+    "id": "pf-dynamodb-global-table-replica-region",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTable Replicas must include the deployment region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_region is defined only when the enforce plugin\n# knows the app's concrete region (see src/private/enforce.ts); without it the\n# reference is undefined and this rule skips. Replicas with unresolvable\n# Region values also make the rule skip — absence cannot be proven then.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-replica-region\", \"ERROR\", name,\n\t\"Properties.Replicas\",\n\tsprintf(\"The Replicas list %v does not include the deployment region '%s'; CreateGlobalTable fails with \\\"The Replicas section must contain an entry for the current region\\\"\", [replicas, region]),\n\t\"Add a replica entry for the region the stack deploys to (CDK TableV2 does this automatically)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\titems := [it | some it in flatten_list(name, \"Properties.Replicas\")]\n\tcount(items) > 0\n\tevery it in items {\n\t\tis_string(object.get(it.value, \"Region\", null))\n\t}\n\treplicas := [r | some it in items; r := object.get(it.value, \"Region\", null)]\n\tnot region in replicas\n}\n"
+  },
+  {
     "id": "pf-dynamodb-gsi-billing-throughput",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -198,6 +209,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::Table"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbksh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\"\n\n# Table-level key schema only: index key schemas produce different service\n# errors and were not measured (issue #21).\n_pf_ddbksh_type(name, i) := kt if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tit.index == i\n\tkt := object.get(it.value, \"KeyType\", null)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.0.KeyType\",\n\tsprintf(\"The first KeySchema element must be HASH, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The first KeySchemaElement is not a HASH key type\\\"\", [kt]),\n\t\"Put the partition key (KeyType HASH) first and the optional sort key (RANGE) second\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tkt := _pf_ddbksh_type(name, 0)\n\tis_string(kt)\n\tkt != \"HASH\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.1.KeyType\",\n\tsprintf(\"The second KeySchema element must be RANGE, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The second KeySchemaElement is not a RANGE key type\\\"\", [kt]),\n\t\"Use exactly one HASH element, optionally followed by one RANGE element\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tkt := _pf_ddbksh_type(name, 1)\n\tis_string(kt)\n\tkt != \"RANGE\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema\",\n\tsprintf(\"KeySchema can hold at most 2 elements (HASH + optional RANGE), got %d\", [n]),\n\t\"Model extra access patterns as global or local secondary indexes instead\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tn := count([1 | some _ in flatten_list(name, \"Properties.KeySchema\")])\n\tn > 2\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-kinesis-stream-region",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A Kinesis streaming destination must be in the table's region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Kinesis Data Streams destination must live in the same region as the\n# table. The deploy-time failure mode is ugly: the table is created, the\n# streaming destination never stabilizes, and CloudFormation rolls back on\n# NotStabilized minutes later — nothing names the region mismatch.\n# data.cdk_preflight.deploy_region is defined only in enforce mode with a\n# concrete region; otherwise this rule skips.\nviolation contains make_diag_full(\"pf-dynamodb-kinesis-stream-region\", \"ERROR\", name,\n\t\"Properties.KinesisStreamSpecification.StreamArn\",\n\tsprintf(\"The Kinesis stream lives in '%s' but the table deploys to '%s'; the streaming destination never stabilizes and the stack rolls back\", [streamRegion, region]),\n\t\"Point KinesisStreamSpecification.StreamArn at a stream in the table's own region\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/kds.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tarn := resolve(name, \"Properties.KinesisStreamSpecification.StreamArn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kinesis\"\n\tstreamRegion := parts[3]\n\tstreamRegion != \"\"\n\tstreamRegion != region\n}\n"
   },
   {
     "id": "pf-dynamodb-lsi-attribute-definitions",
