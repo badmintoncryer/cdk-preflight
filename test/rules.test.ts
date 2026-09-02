@@ -1074,3 +1074,158 @@ describe('cloudwatch alarm rules', () => {
     });
   });
 });
+
+describe('api gateway rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const rest = (extra: Record<string, unknown>) => ({
+    Resources: { Api: { Type: 'AWS::ApiGateway::RestApi', Properties: { Name: 'p' } }, ...extra },
+  });
+  const v2 = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
+    Resources: { Api: { Type: 'AWS::ApiGatewayV2::Api', Properties: { Name: 'p', ProtocolType: 'HTTP', ...props } }, ...extra },
+  });
+
+  describe('pf-apigw-integration-http-method', () => {
+    test('MOCK integrations do not need IntegrationHttpMethod', () => {
+      const t = rest({
+        M: {
+          Type: 'AWS::ApiGateway::Method',
+          Properties: {
+            RestApiId: { Ref: 'Api' },
+            ResourceId: { 'Fn::GetAtt': ['Api', 'RootResourceId'] },
+            HttpMethod: 'GET',
+            AuthorizationType: 'NONE',
+            Integration: { Type: 'MOCK' },
+          },
+        },
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-apigw-deployment-no-methods', () => {
+    test('an OpenAPI Body can define methods invisibly — rule skips', () => {
+      const t = {
+        Resources: {
+          Api: {
+            Type: 'AWS::ApiGateway::RestApi',
+            Properties: { Body: { openapi: '3.0.1', info: { title: 'p', version: '1' }, paths: {} } },
+          },
+          Dep: { Type: 'AWS::ApiGateway::Deployment', Properties: { RestApiId: { Ref: 'Api' } } },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('an imported rest api id is outside the template — rule skips', () => {
+      const t = {
+        Resources: {
+          Dep: { Type: 'AWS::ApiGateway::Deployment', Properties: { RestApiId: 'abc123' } },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-apigw-stage-variable-value', () => {
+    test('every documented symbol including space is legal', () => {
+      const t = rest({
+        M: {
+          Type: 'AWS::ApiGateway::Method',
+          Properties: {
+            RestApiId: { Ref: 'Api' },
+            ResourceId: { 'Fn::GetAtt': ['Api', 'RootResourceId'] },
+            HttpMethod: 'GET',
+            AuthorizationType: 'NONE',
+            Integration: { Type: 'MOCK' },
+          },
+        },
+        Dep: { Type: 'AWS::ApiGateway::Deployment', DependsOn: 'M', Properties: { RestApiId: { Ref: 'Api' } } },
+        St: {
+          Type: 'AWS::ApiGateway::Stage',
+          Properties: {
+            RestApiId: { Ref: 'Api' },
+            DeploymentId: { Ref: 'Dep' },
+            StageName: 'dev',
+            Variables: { a: 'v1 v2-x.y_z:8/p?q=1&r=2,end' },
+          },
+        },
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-apigw-model-schema-type', () => {
+    test('a schema without type, or with an array type, is out of scope', () => {
+      const model = (schema: unknown) =>
+        rest({
+          Mo: {
+            Type: 'AWS::ApiGateway::Model',
+            Properties: { RestApiId: { Ref: 'Api' }, ContentType: 'application/json', Schema: schema },
+          },
+        });
+      expect(ids(diagnoseTemplate(model({ properties: { id: { type: 'string' } } })))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(model({ type: ['object', 'null'] })))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(model({ type: 'String' })))).toContain('pf-apigw-model-schema-type');
+    });
+  });
+
+  describe('pf-apigwv2-http-route-selection', () => {
+    test('both deploy-verified spellings stay silent', () => {
+      expect(ids(diagnoseTemplate(v2({ RouteSelectionExpression: '$request.method $request.path' })))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(v2({ RouteSelectionExpression: '${request.method} ${request.path}' })))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-apigwv2-http-route-key', () => {
+    test('websocket route keys are free-form — protocol guard mutes the rule', () => {
+      const t = {
+        Resources: {
+          Api: {
+            Type: 'AWS::ApiGatewayV2::Api',
+            Properties: { Name: 'p', ProtocolType: 'WEBSOCKET', RouteSelectionExpression: '$request.body.action' },
+          },
+          Rt: { Type: 'AWS::ApiGatewayV2::Route', Properties: { ApiId: { Ref: 'Api' }, RouteKey: 'sendmessage' } },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('a path with spaces is unmeasured — rule stays silent', () => {
+      const t = v2({}, {
+        Rt: { Type: 'AWS::ApiGatewayV2::Route', Properties: { ApiId: { Ref: 'Api' }, RouteKey: 'GET /a b' } },
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('TRACE is deploy-verified as rejected', () => {
+      const t = v2({}, {
+        Rt: { Type: 'AWS::ApiGatewayV2::Route', Properties: { ApiId: { Ref: 'Api' }, RouteKey: 'TRACE /items' } },
+      });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-apigwv2-http-route-key');
+    });
+  });
+
+  describe('pf-apigwv2-request-authorizer-payload-version', () => {
+    test('websocket REQUEST authorizers must not set the property — guard mutes the rule', () => {
+      const t = {
+        Resources: {
+          Api: {
+            Type: 'AWS::ApiGatewayV2::Api',
+            Properties: { Name: 'p', ProtocolType: 'WEBSOCKET', RouteSelectionExpression: '$request.body.action' },
+          },
+          Auth: {
+            Type: 'AWS::ApiGatewayV2::Authorizer',
+            Properties: {
+              ApiId: { Ref: 'Api' },
+              Name: 'auth',
+              AuthorizerType: 'REQUEST',
+              AuthorizerUri: 'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:123456789012:function:f/invocations',
+              IdentitySource: ['route.request.header.Authorization'],
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+});

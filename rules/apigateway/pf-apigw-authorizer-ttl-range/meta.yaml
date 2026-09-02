@@ -1,0 +1,11 @@
+id: pf-apigw-authorizer-ttl-range
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Authorizer]
+severity: ERROR
+title: AuthorizerResultTtlInSeconds tops out at 3600
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: AuthorizerResultTtlInSeconds 7200 (a05) -> \"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\" ROLLBACK_COMPLETE. Registry schema carries no maximum (engine clean). Lower bound not claimed (negative values unmeasured; schema may floor them)."
+addedOn: 2026-09-03

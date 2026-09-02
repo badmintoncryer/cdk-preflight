@@ -1,0 +1,11 @@
+id: pf-apigw-model-schema-type
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Model]
+severity: ERROR
+title: "Model schema 'type' must be a JSON Schema draft-4 type"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-model.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Schema {\"type\": \"not-a-real-type\"} (a14) -> \"Invalid model specified: Validation Result: warnings : [], errors : [Invalid model schema specified]\". ROLLBACK_COMPLETE. Only the top-level literal string type is checked; full JSON Schema validation is out of scope."
+addedOn: 2026-09-03

@@ -1,0 +1,11 @@
+id: pf-apigw-access-log-format-request-id
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Stage]
+severity: ERROR
+title: Access log format must include a request id variable
+constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Stage AccessLogSetting.Format \"hello-no-request-id\" (a06) -> \"Access Log format must include either $context.requestId or $context.extendedRequestId : 'hello-no-request-id'\". ROLLBACK_COMPLETE. V2 stages unmeasured."
+addedOn: 2026-09-03

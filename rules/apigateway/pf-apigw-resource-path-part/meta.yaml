@@ -1,0 +1,11 @@
+id: pf-apigw-resource-path-part
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Resource]
+severity: ERROR
+title: "PathPart allows a-zA-Z0-9._-: or one curly-brace variable"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-resource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: PathPart \"bad path!\" (a07) -> \"Resource's path part only allow a-zA-Z0-9._-: or a valid greedy path variable and curly braces at the beginning and the end.\" ROLLBACK_COMPLETE. Registry schema carries no pattern (engine clean)."
+addedOn: 2026-09-03

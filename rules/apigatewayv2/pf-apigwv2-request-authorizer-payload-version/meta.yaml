@@ -1,0 +1,11 @@
+id: pf-apigwv2-request-authorizer-payload-version
+service: apigatewayv2
+resourceTypes: [AWS::ApiGatewayV2::Authorizer]
+severity: ERROR
+title: REQUEST authorizers on HTTP APIs need AuthorizerPayloadFormatVersion
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: REQUEST authorizer on an HTTP API without AuthorizerPayloadFormatVersion (v07) -> \"AuthorizerPayloadFormatVersion is a required parameter for REQUEST authorizer\". ROLLBACK_COMPLETE. WebSocket REQUEST authorizers do not take the property, hence the HTTP guard."
+addedOn: 2026-09-03

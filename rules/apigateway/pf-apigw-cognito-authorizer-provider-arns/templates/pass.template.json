@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "Auth": {
+      "Type": "AWS::ApiGateway::Authorizer",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "Name": "auth",
+        "Type": "COGNITO_USER_POOLS",
+        "IdentitySource": "method.request.header.Authorization",
+        "ProviderARNs": [
+          "arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_abc123"
+        ]
+      }
+    }
+  }
+}

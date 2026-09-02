@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "p",
+        "ProtocolType": "HTTP",
+        "CorsConfiguration": {
+          "AllowCredentials": true,
+          "AllowOrigins": [
+            "https://example.com"
+          ]
+        }
+      }
+    }
+  }
+}

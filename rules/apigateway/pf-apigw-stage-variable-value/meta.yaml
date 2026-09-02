@@ -1,0 +1,11 @@
+id: pf-apigw-stage-variable-value
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Stage]
+severity: ERROR
+title: Stage variable values have a restricted character set
+constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Variables value \"bad value with spaces!\" (a13) -> \"Invalid stage variable value of key key1.  Please use values with alphanumeric characters and the symbols ' ', -', '.', '_', ':', '/', '?', '&', '=', and ','.\" (the ! is the violation; spaces are legal). ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "p",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "Auth": {
+      "Type": "AWS::ApiGatewayV2::Authorizer",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "Name": "auth",
+        "AuthorizerType": "JWT",
+        "IdentitySource": [
+          "$request.header.Authorization"
+        ],
+        "JwtConfiguration": {
+          "Issuer": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_abc123",
+          "Audience": [
+            "client123"
+          ]
+        }
+      }
+    }
+  }
+}

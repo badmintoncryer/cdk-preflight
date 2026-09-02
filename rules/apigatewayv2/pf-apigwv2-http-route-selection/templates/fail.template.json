@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "p",
+        "ProtocolType": "HTTP",
+        "RouteSelectionExpression": "$request.body.action"
+      }
+    }
+  }
+}

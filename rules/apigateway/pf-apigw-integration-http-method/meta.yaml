@@ -1,0 +1,11 @@
+id: pf-apigw-integration-http-method
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Method]
+severity: ERROR
+title: Non-MOCK integrations need IntegrationHttpMethod
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Integration Type AWS (a01), AWS_PROXY (a01b), HTTP_PROXY (a01c) and HTTP (a01d), each without IntegrationHttpMethod -> \"Enumeration value for HttpMethod must be non-empty\". All four ROLLBACK_COMPLETE."
+addedOn: 2026-09-03
