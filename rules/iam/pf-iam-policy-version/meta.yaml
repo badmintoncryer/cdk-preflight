@@ -1,0 +1,11 @@
+id: pf-iam-policy-version
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: Policy Version must be 2012-10-17 or 2008-10-17
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Version \"2012-10-18\" (i06) -> \"Syntax errors in policy.\" ROLLBACK_COMPLETE (controlled shape: only Version differs from a valid policy). 2008-10-17 is the documented legacy value and stays in the allow set."
+addedOn: 2026-09-03

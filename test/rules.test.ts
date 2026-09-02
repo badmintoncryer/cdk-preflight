@@ -1438,3 +1438,69 @@ describe('firehose rules', () => {
     expect(ids(diagnoseTemplate(t))).toHaveLength(0);
   });
 });
+
+describe('iam policy document rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const TRUST = {
+    Version: '2012-10-17',
+    Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }],
+  };
+  const inline = (stmt: unknown) => ({
+    Resources: {
+      R: {
+        Type: 'AWS::IAM::Role',
+        Properties: {
+          AssumeRolePolicyDocument: TRUST,
+          Policies: [{ PolicyName: 'p', PolicyDocument: { Version: '2012-10-17', Statement: stmt } }],
+        },
+      },
+    },
+  });
+
+  test('intrinsic resources surface as marker objects and stay unjudged (measured)', () => {
+    const t = {
+      Resources: {
+        B: { Type: 'AWS::S3::Bucket', Properties: {} },
+        R: {
+          Type: 'AWS::IAM::Role',
+          Properties: {
+            AssumeRolePolicyDocument: TRUST,
+            Policies: [
+              {
+                PolicyName: 'p',
+                PolicyDocument: {
+                  Version: '2012-10-17',
+                  Statement: [
+                    { Effect: 'Allow', Action: 's3:GetObject', Resource: { 'Fn::GetAtt': ['B', 'Arn'] } },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+    };
+    expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+  });
+
+  test('a single statement object (not array) is handled', () => {
+    const t = inline({ Effect: 'Allow', Action: 'GetObject', Resource: '*' });
+    expect(ids(diagnoseTemplate(t))).toContain('pf-iam-policy-action-format');
+  });
+
+  test('operator grammar accepts prefixes and IfExists, rejects the bare typo', () => {
+    const cond = (c: unknown) => inline([{ Effect: 'Allow', Action: 's3:GetObject', Resource: '*', Condition: c }]);
+    expect(ids(diagnoseTemplate(cond({ 'ForAllValues:StringEquals': { 'aws:TagKeys': ['a'] } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(cond({ NumericLessThanEqualsIfExists: { 'aws:MultiFactorAuthAge': '300' } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(cond({ StringEqual: { 'aws:username': 'x' } })))).toContain(
+      'pf-iam-policy-condition-operator',
+    );
+  });
+
+  test('wildcard action and NotResource-only statements are legal shapes', () => {
+    expect(ids(diagnoseTemplate(inline([{ Effect: 'Allow', Action: '*', Resource: '*' }])))).toHaveLength(0);
+    expect(
+      ids(diagnoseTemplate(inline([{ Effect: 'Deny', Action: 's3:GetObject', NotResource: 'arn:aws:s3:::ok/*' }]))),
+    ).toHaveLength(0);
+  });
+});

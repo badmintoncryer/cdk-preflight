@@ -88,9 +88,21 @@
 | `pf-firehose-kinesis-source-config` | AWS::KinesisFirehose::DeliveryStream | KinesisStreamAsSource streams need KinesisStreamSourceConfiguration | none |
 | `pf-firehose-one-destination` | AWS::KinesisFirehose::DeliveryStream | A delivery stream takes exactly one destination configuration | none |
 | `pf-firehose-s3-backup-config` | AWS::KinesisFirehose::DeliveryStream | Enabling S3 backup needs S3BackupConfiguration | none |
+| `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
+| `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | none |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
+| `pf-iam-policy-action-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Actions must carry a service prefix | none |
+| `pf-iam-policy-condition-operator` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Condition operators come from a closed grammar | none |
+| `pf-iam-policy-duplicate-sid` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Statement IDs must be unique within a policy | none |
+| `pf-iam-policy-effect-case` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Effect is case-sensitive Allow or Deny | none |
+| `pf-iam-policy-exclusive-fields` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Action/NotAction and Resource/NotResource are exclusive pairs | none |
+| `pf-iam-policy-resource-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Resources must be ARNs or * | none |
+| `pf-iam-policy-statement-resource-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policy statements need Resource or NotResource | none |
+| `pf-iam-policy-version` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy Version must be 2012-10-17 or 2008-10-17 | none |
+| `pf-iam-trust-policy-no-resource` | AWS::IAM::Role | Trust policies cannot carry a Resource field | none |
+| `pf-iam-trust-policy-service-principal` | AWS::IAM::Role | Service principals live under amazonaws.com | none |
 | `pf-lambda-code-s3-pair` | AWS::Lambda::Function | S3-based Code needs both S3Bucket and S3Key | none |
 | `pf-lambda-code-zipfile-exclusive` | AWS::Lambda::Function | Inline ZipFile excludes every other Code parameter | none |
 | `pf-lambda-dlq-region` | AWS::Lambda::Function | The dead letter target must sit in the deploy region | none |

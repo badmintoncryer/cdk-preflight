@@ -1,0 +1,11 @@
+id: pf-iam-instance-profile-single-role
+service: iam
+resourceTypes: [AWS::IAM::InstanceProfile]
+severity: ERROR
+title: An instance profile holds exactly one role
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-instanceprofile.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: InstanceProfile with two roles (i14) -> \"Cannot exceed quota for InstanceSessionsPerInstanceProfile: 1\". ROLLBACK_COMPLETE. Phrased as a quota but fixed at 1 (not raisable); the registry schema carries no maxItems (engine clean)."
+addedOn: 2026-09-03

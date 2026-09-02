@@ -1,0 +1,11 @@
+id: pf-iam-policy-effect-case
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: Effect is case-sensitive Allow or Deny
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Effect \"allow\" (i10) -> \"The policy failed legacy parsing\". ROLLBACK_COMPLETE (controlled shape: only the casing differs from a valid policy)."
+addedOn: 2026-09-03

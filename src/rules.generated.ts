@@ -940,6 +940,19 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Backup mode points deliveries at a second bucket that must be\n# configured. Scoped to the benched ExtendedS3 destination. Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_fhsbc_outer(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"ExtendedS3DestinationConfiguration\", {})\n\tis_object(c)\n}\n\nviolation contains make_diag_full(\"pf-firehose-s3-backup-config\", \"ERROR\", name,\n\t\"Properties.ExtendedS3DestinationConfiguration.S3BackupConfiguration\",\n\t\"S3BackupMode is Enabled but S3BackupConfiguration is not set; the stream create fails with \\\"S3 backup destination configuration is required when enabling S3 backup.\\\"\",\n\t\"Add S3BackupConfiguration (bucket and role), or drop S3BackupMode\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-extendeds3destinationconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tresolve(name, \"Properties.ExtendedS3DestinationConfiguration.S3BackupMode\") == \"Enabled\"\n\tx := _pf_fhsbc_outer(name)\n\tobject.get(x, \"S3BackupConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-iam-identity-policy-no-principal",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Identity policies cannot carry a Principal field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Identity policies attach to their principal implicitly; the field\n# belongs to resource-based policies.\n_pf_iinp_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_iinp_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_iinp_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_iinp_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\nviolation contains make_diag_full(\"pf-iam-identity-policy-no-principal\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Principal\", [path, i]),\n\t\"Identity policy statement has a Principal field; the policy is rejected with \\\"Policy document should not specify a principal.\\\"\",\n\t\"Remove Principal (identity policies apply to the identity they attach to)\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_iinp_docs\n\tsome [i, s] in _pf_iinp_stmts(d)\n\tis_object(s)\n\tobject.get(s, \"Principal\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-iam-inline-policy-size",
     "service": "iam",
     "severity": "ERROR",
@@ -952,6 +965,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::IAM::GroupPolicy"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_inline_policy_limits := {\n\t\"AWS::IAM::Policy\": 10240,\n\t\"AWS::IAM::RolePolicy\": 10240,\n\t\"AWS::IAM::UserPolicy\": 2048,\n\t\"AWS::IAM::GroupPolicy\": 5120,\n}\n\nviolation contains make_diag_full(\"pf-iam-inline-policy-size\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\tsprintf(\"PolicyDocument is %d characters (JSON without whitespace) but the inline policy limit for %s is %d (role: 10240, group: 5120, user: 2048)\", [size, rtype, limit]),\n\t\"Move statements into managed policies or shorten the document\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome rtype, limit in _pf_inline_policy_limits\n\tsome name in resources_of_type(rtype)\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_object(doc)\n\tsize := count(json.marshal(doc))\n\tsize > limit\n}\n"
+  },
+  {
+    "id": "pf-iam-instance-profile-single-role",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "An instance profile holds exactly one role",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::InstanceProfile"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The \"quota\" is a hard limit of one role; the schema has no maxItems.\nviolation contains make_diag_full(\"pf-iam-instance-profile-single-role\", \"ERROR\", name,\n\t\"Properties.Roles\",\n\tsprintf(\"%d roles on one instance profile; the create fails with \\\"Cannot exceed quota for InstanceSessionsPerInstanceProfile: 1\\\"\", [n]),\n\t\"Keep exactly one role per instance profile\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-instanceprofile.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::InstanceProfile\")\n\tn := count(flatten_list(name, \"Properties.Roles\"))\n\tn > 1\n}\n"
   },
   {
     "id": "pf-iam-managed-policy-count",
@@ -976,6 +1000,132 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::IAM::ManagedPolicy"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-iam-managed-policy-size\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\tsprintf(\"PolicyDocument is %d characters (JSON without whitespace) but the managed policy limit is 6144\", [size]),\n\t\"Split the document into multiple managed policies or shorten it\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::ManagedPolicy\")\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_object(doc)\n\tsize := count(json.marshal(doc))\n\tsize > 6144\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-action-format",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Actions must carry a service prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A bare action name has no service to attach to. Intrinsics inside the\n# preprocessed document are marker objects, so is_string mutes them.\n_pf_iaf_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_iaf_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_iaf_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_iaf_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n_pf_iaf_vals(v) := [v] if is_string(v)\n\n_pf_iaf_vals(v) := v if is_array(v)\n\nviolation contains make_diag_full(\"pf-iam-policy-action-format\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Action\", [path, i]),\n\tsprintf(\"Action '%s' has no service prefix; the policy is rejected with \\\"Actions/Conditions must be prefaced by a vendor, e.g., iam, sdb, ec2, etc.\\\"\", [a]),\n\t\"Write actions as service:Action (e.g. s3:GetObject), or *\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_iaf_docs\n\tsome [i, s] in _pf_iaf_stmts(d)\n\tis_object(s)\n\tsome a in _pf_iaf_vals(object.get(s, \"Action\", []))\n\tis_string(a)\n\ta != \"*\"\n\tnot contains(a, \":\")\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-condition-operator",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Condition operators come from a closed grammar",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Base operators plus the IfExists suffix and set-operator prefixes.\n# A typo like StringEqual/StringEqualz is unreachable for every other\n# layer because the document is opaque json.\n_pf_ico_base := {\n\t\"StringEquals\", \"StringNotEquals\", \"StringEqualsIgnoreCase\", \"StringNotEqualsIgnoreCase\",\n\t\"StringLike\", \"StringNotLike\",\n\t\"NumericEquals\", \"NumericNotEquals\", \"NumericLessThan\", \"NumericLessThanEquals\",\n\t\"NumericGreaterThan\", \"NumericGreaterThanEquals\",\n\t\"DateEquals\", \"DateNotEquals\", \"DateLessThan\", \"DateLessThanEquals\",\n\t\"DateGreaterThan\", \"DateGreaterThanEquals\",\n\t\"Bool\", \"BinaryEquals\", \"IpAddress\", \"NotIpAddress\",\n\t\"ArnEquals\", \"ArnLike\", \"ArnNotEquals\", \"ArnNotLike\", \"Null\",\n}\n\n_pf_ico_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_ico_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_ico_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_ico_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n# Strip an optional ForAllValues:/ForAnyValue: prefix, then IfExists.\n_pf_ico_unprefixed(op) := parts[count(parts) - 1] if parts := split(op, \":\")\n\n_pf_ico_root(op) := substring(b, 0, count(b) - 8) if {\n\tb := _pf_ico_unprefixed(op)\n\tendswith(b, \"IfExists\")\n}\n\n_pf_ico_root(op) := b if {\n\tb := _pf_ico_unprefixed(op)\n\tnot endswith(b, \"IfExists\")\n}\n\nviolation contains make_diag_full(\"pf-iam-policy-condition-operator\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Condition\", [path, i]),\n\tsprintf(\"Condition operator '%s' does not exist; the policy is rejected with \\\"Syntax errors in policy.\\\"\", [op]),\n\t\"Use a documented operator (StringEquals, ArnLike, ...), optionally with IfExists or a ForAllValues:/ForAnyValue: prefix\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html\") if {\n\tsome [name, path, d] in _pf_ico_docs\n\tsome [i, s] in _pf_ico_stmts(d)\n\tis_object(s)\n\tcond := object.get(s, \"Condition\", {})\n\tis_object(cond)\n\tsome op, _ in cond\n\tis_string(op)\n\tnot _pf_ico_root(op) in _pf_ico_base\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-duplicate-sid",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Statement IDs must be unique within a policy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Pairwise uniqueness within one document; separate documents may reuse\n# ids freely.\n_pf_ids_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_ids_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_ids_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_ids_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\nviolation contains make_diag_full(\"pf-iam-policy-duplicate-sid\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Sid\", [path, j]),\n\tsprintf(\"Sid '%s' repeats within one policy; the policy is rejected with \\\"Statement IDs (SID) in a single policy must be unique.\\\"\", [sid]),\n\t\"Give every statement in the document a distinct Sid (or drop the duplicates)\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_ids_docs\n\tstmts := _pf_ids_stmts(d)\n\tsome [i, a] in stmts\n\tsome [j, b] in stmts\n\ti < j\n\tis_object(a)\n\tis_object(b)\n\tsid := object.get(a, \"Sid\", \"__pf_absent\")\n\tis_string(sid)\n\tsid == object.get(b, \"Sid\", \"__pf_other\")\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-effect-case",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Effect is case-sensitive Allow or Deny",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Lowercase effects are a classic hand-written-JSON typo the schema\n# cannot see (the document is opaque json).\n_pf_iec_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_iec_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_iec_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_iec_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\nviolation contains make_diag_full(\"pf-iam-policy-effect-case\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Effect\", [path, i]),\n\tsprintf(\"Effect '%s' is not Allow or Deny (case-sensitive); the policy is rejected with \\\"The policy failed legacy parsing\\\"\", [ef]),\n\t\"Use Effect: Allow or Effect: Deny\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_iec_docs\n\tsome [i, s] in _pf_iec_stmts(d)\n\tis_object(s)\n\tef := object.get(s, \"Effect\", \"__pf_absent\")\n\tis_string(ef)\n\tnot ef in {\"Allow\", \"Deny\"}\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-exclusive-fields",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Action/NotAction and Resource/NotResource are exclusive pairs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Each pair is either-or per statement; both at once is a syntax error.\n_pf_ief_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_ief_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_ief_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_ief_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n_pf_ief_pairs := {[\"Action\", \"NotAction\"], [\"Resource\", \"NotResource\"]}\n\nviolation contains make_diag_full(\"pf-iam-policy-exclusive-fields\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.%s\", [path, i, pair[1]]),\n\tsprintf(\"Statement sets both %s and %s; the policy is rejected with \\\"Syntax errors in policy.\\\"\", [pair[0], pair[1]]),\n\t\"Keep one of the pair per statement\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_ief_docs\n\tsome [i, s] in _pf_ief_stmts(d)\n\tis_object(s)\n\tsome pair in _pf_ief_pairs\n\tobject.get(s, pair[0], \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(s, pair[1], \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-resource-format",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Resources must be ARNs or *",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only literal strings are judged - Fn::GetAtt / Fn::Sub values surface\n# as marker objects in the preprocessed document (measured), so the\n# is_string guard mutes them.\n_pf_irf_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_irf_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_irf_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_irf_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n_pf_irf_vals(v) := [v] if is_string(v)\n\n_pf_irf_vals(v) := v if is_array(v)\n\nviolation contains make_diag_full(\"pf-iam-policy-resource-format\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Resource\", [path, i]),\n\tsprintf(\"Resource '%s' is not an ARN; the policy is rejected with \\\"Resource %s must be in ARN format or '*'.\\\"\", [r, r]),\n\t\"Use a full ARN (arn:...) or *\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_irf_docs\n\tsome [i, s] in _pf_irf_stmts(d)\n\tis_object(s)\n\tsome r in _pf_irf_vals(object.get(s, \"Resource\", []))\n\tis_string(r)\n\tr != \"*\"\n\tnot startswith(r, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-statement-resource-required",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Identity policy statements need Resource or NotResource",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A statement scoped to nothing is rejected.\n_pf_isrr_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_isrr_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_isrr_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_isrr_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\nviolation contains make_diag_full(\"pf-iam-policy-statement-resource-required\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d\", [path, i]),\n\t\"Statement has neither Resource nor NotResource; the policy is rejected with \\\"Policy statement must contain resources.\\\"\",\n\t\"Add Resource (an ARN or *) to the statement\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_isrr_docs\n\tsome [i, s] in _pf_isrr_stmts(d)\n\tis_object(s)\n\tobject.get(s, \"Resource\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(s, \"NotResource\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-version",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Policy Version must be 2012-10-17 or 2008-10-17",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The version string is an enum of two dates; anything else is a syntax\n# error at create.\n_pf_ipv_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_ipv_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\nviolation contains make_diag_full(\"pf-iam-policy-version\", \"ERROR\", name,\n\tsprintf(\"%s.Version\", [path]),\n\tsprintf(\"Policy Version '%s' does not exist; the policy is rejected with \\\"Syntax errors in policy.\\\"\", [v]),\n\t\"Use Version: 2012-10-17\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html\") if {\n\tsome [name, path, d] in _pf_ipv_docs\n\tv := object.get(d, \"Version\", \"__pf_absent\")\n\tis_string(v)\n\tnot v in {\"2012-10-17\", \"2008-10-17\"}\n}\n"
+  },
+  {
+    "id": "pf-iam-trust-policy-no-resource",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Trust policies cannot carry a Resource field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The role itself is the resource of its trust policy; an explicit\n# Resource field is prohibited.\n_pf_itnr_trust(name) := d if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"AssumeRolePolicyDocument\", \"__pf_absent\")\n\tis_object(d)\n}\n\n_pf_itnr_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_itnr_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\nviolation contains make_diag_full(\"pf-iam-trust-policy-no-resource\", \"ERROR\", name,\n\tsprintf(\"Properties.AssumeRolePolicyDocument.Statement.%d.Resource\", [i]),\n\t\"Trust policy statement has a Resource field; the role create fails with \\\"Has prohibited field Resource\\\"\",\n\t\"Remove Resource from the trust policy statement\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\td := _pf_itnr_trust(name)\n\tsome [i, s] in _pf_itnr_stmts(d)\n\tis_object(s)\n\tobject.get(s, \"Resource\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-iam-trust-policy-service-principal",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Service principals live under amazonaws.com",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shape check only: every service principal ends in .amazonaws.com (or\n# .amazonaws.com.cn in the China partition). Whether a well-shaped name\n# exists is left to the service.\n_pf_itsp_trust(name) := d if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"AssumeRolePolicyDocument\", \"__pf_absent\")\n\tis_object(d)\n}\n\n_pf_itsp_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_itsp_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n_pf_itsp_vals(v) := [v] if is_string(v)\n\n_pf_itsp_vals(v) := v if is_array(v)\n\n_pf_itsp_ok(sp) if endswith(sp, \".amazonaws.com\")\n\n_pf_itsp_ok(sp) if endswith(sp, \".amazonaws.com.cn\")\n\nviolation contains make_diag_full(\"pf-iam-trust-policy-service-principal\", \"ERROR\", name,\n\tsprintf(\"Properties.AssumeRolePolicyDocument.Statement.%d.Principal.Service\", [i]),\n\tsprintf(\"Service principal '%s' is not an amazonaws.com domain; the role create fails with 'Invalid principal in policy: \\\"SERVICE\\\":\\\"%s\\\"'\", [sp, sp]),\n\t\"Use the service principal name, e.g. lambda.amazonaws.com\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\td := _pf_itsp_trust(name)\n\tsome [i, s] in _pf_itsp_stmts(d)\n\tis_object(s)\n\tp := object.get(s, \"Principal\", {})\n\tis_object(p)\n\tsome sp in _pf_itsp_vals(object.get(p, \"Service\", []))\n\tis_string(sp)\n\tnot _pf_itsp_ok(sp)\n}\n"
   },
   {
     "id": "pf-lambda-code-s3-pair",

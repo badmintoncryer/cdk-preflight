@@ -1,0 +1,11 @@
+id: pf-iam-policy-action-format
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: Actions must carry a service prefix
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Action \"GetObject\" in a Role inline policy (i01) and in a ManagedPolicy (i19) -> \"Actions/Conditions must be prefaced by a vendor, e.g., iam, sdb, ec2, etc.\" Both ROLLBACK_COMPLETE. NotAction format unmeasured."
+addedOn: 2026-09-03
