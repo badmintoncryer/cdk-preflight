@@ -1399,3 +1399,42 @@ describe('lambda function and esm rules', () => {
     });
   });
 });
+
+describe('firehose rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const stream = (props: Record<string, unknown>) => ({
+    Resources: { DS: { Type: 'AWS::KinesisFirehose::DeliveryStream', Properties: props } },
+  });
+  const dest = {
+    BucketARN: 'arn:aws:s3:::my-bucket',
+    RoleARN: 'arn:aws:iam::123456789012:role/firehose-role',
+  };
+
+  test('the plain S3 destination variant also counts as the one destination', () => {
+    expect(ids(diagnoseTemplate(stream({ S3DestinationConfiguration: dest })))).toHaveLength(0);
+  });
+
+  test('dynamic partitioning rules stay silent when the feature is off', () => {
+    const t = stream({
+      ExtendedS3DestinationConfiguration: {
+        ...dest,
+        DynamicPartitioningConfiguration: { Enabled: false },
+        BufferingHints: { SizeInMBs: 5, IntervalInSeconds: 300 },
+        Prefix: 'data/plain/',
+      },
+    });
+    expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+  });
+
+  test('DirectPut with a source configuration deploys (bench f06) — no rule fires', () => {
+    const t = stream({
+      DeliveryStreamType: 'DirectPut',
+      KinesisStreamSourceConfiguration: {
+        KinesisStreamARN: 'arn:aws:kinesis:us-east-1:123456789012:stream/s',
+        RoleARN: 'arn:aws:iam::123456789012:role/firehose-role',
+      },
+      ExtendedS3DestinationConfiguration: dest,
+    });
+    expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+  });
+});

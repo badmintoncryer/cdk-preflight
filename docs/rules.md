@@ -82,6 +82,12 @@
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule | Event pattern values must be arrays or objects, not scalars | none |
+| `pf-firehose-dfcc-required-configs` | AWS::KinesisFirehose::DeliveryStream | Enabled format conversion needs input, output, and schema configs | none |
+| `pf-firehose-dynamic-partitioning-buffer` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs a 64 MB buffer floor | none |
+| `pf-firehose-dynamic-partitioning-prefix` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs partition namespaces in the prefix | none |
+| `pf-firehose-kinesis-source-config` | AWS::KinesisFirehose::DeliveryStream | KinesisStreamAsSource streams need KinesisStreamSourceConfiguration | none |
+| `pf-firehose-one-destination` | AWS::KinesisFirehose::DeliveryStream | A delivery stream takes exactly one destination configuration | none |
+| `pf-firehose-s3-backup-config` | AWS::KinesisFirehose::DeliveryStream | Enabling S3 backup needs S3BackupConfiguration | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | none |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
