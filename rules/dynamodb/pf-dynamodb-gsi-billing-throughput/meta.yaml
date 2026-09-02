@@ -1,0 +1,11 @@
+id: pf-dynamodb-gsi-billing-throughput
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: GSI ProvisionedThroughput must match the table BillingMode
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: PAY_PER_REQUEST + GSI ProvisionedThroughput -> \"Property ProvisionedThroughput can't be used with PAY_PER_REQUEST BillingMode.\"; PROVISIONED table + GSI without it -> \"Property ProvisionedThroughput cannot be empty\". Both ROLLBACK_COMPLETE. GSI-level counterpart of pf-dynamodb-billing-throughput."
+addedOn: 2026-09-02

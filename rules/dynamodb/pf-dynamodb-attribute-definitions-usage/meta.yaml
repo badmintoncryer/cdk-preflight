@@ -1,0 +1,11 @@
+id: pf-dynamodb-attribute-definitions-usage
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: Every AttributeDefinitions entry must be used by a key schema
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE, \"Number of attributes in KeySchema does not exactly match number of attributes defined in AttributeDefinitions\" (HandlerErrorCode InvalidRequest). Reverse direction of the engine's E3039."
+addedOn: 2026-09-02

@@ -1,0 +1,11 @@
+id: pf-dynamodb-lsi-attribute-definitions
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: LSI key attributes must be defined in AttributeDefinitions
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-localsecondaryindex.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE, \"An attribute referenced in a KeySchema element is not defined in AttributeDefinitions\". The engine's E3039 covers table and GSI key schemas but stays silent on LSIs (probe, 1.7.0-beta) — this rule covers exactly that gap."
+addedOn: 2026-09-02

@@ -366,3 +366,102 @@ describe('route53 rules', () => {
     });
   });
 });
+
+describe('dynamodb rules', () => {
+  const table = (props: Record<string, unknown>) => ({
+    Resources: { T: { Type: 'AWS::DynamoDB::Table', Properties: props } },
+  });
+  const AD = (...names: string[]) => names.map((n) => ({ AttributeName: n, AttributeType: 'S' }));
+  const KS = (...pairs: [string, string][]) => pairs.map(([n, t]) => ({ AttributeName: n, KeyType: t }));
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  describe('pf-dynamodb-key-schema-shape', () => {
+    test('fires on two HASH elements', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'sk'), KeySchema: KS(['pk', 'HASH'], ['sk', 'HASH']), BillingMode: 'PAY_PER_REQUEST',
+      }));
+      expect(ids(ds)).toContain('pf-dynamodb-key-schema-shape');
+    });
+
+    test('fires on three key elements', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'sk', 'x'),
+        KeySchema: KS(['pk', 'HASH'], ['sk', 'RANGE'], ['x', 'RANGE']),
+        BillingMode: 'PAY_PER_REQUEST',
+      }));
+      expect(ids(ds)).toContain('pf-dynamodb-key-schema-shape');
+    });
+  });
+
+  describe('pf-dynamodb-lsi-shape', () => {
+    test('fires when the LSI hash key differs from the table hash key', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'sk', 'other'),
+        KeySchema: KS(['pk', 'HASH'], ['sk', 'RANGE']),
+        BillingMode: 'PAY_PER_REQUEST',
+        LocalSecondaryIndexes: [{ IndexName: 'lsi1', KeySchema: KS(['other', 'HASH'], ['sk', 'RANGE']), Projection: { ProjectionType: 'ALL' } }],
+      }));
+      expect(ids(ds)).toContain('pf-dynamodb-lsi-shape');
+    });
+  });
+
+  describe('pf-dynamodb-attribute-definitions-usage', () => {
+    test('stays silent when a key attribute name is unresolvable', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'maybeUsed'),
+        KeySchema: [{ AttributeName: { 'Fn::ImportValue': 'SharedKeyName' }, KeyType: 'HASH' }],
+        BillingMode: 'PAY_PER_REQUEST',
+      }));
+      expect(ids(ds)).not.toContain('pf-dynamodb-attribute-definitions-usage');
+    });
+
+    test('counts an attribute used only by an LSI as used', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'sk', 'alt'),
+        KeySchema: KS(['pk', 'HASH'], ['sk', 'RANGE']),
+        BillingMode: 'PAY_PER_REQUEST',
+        LocalSecondaryIndexes: [{ IndexName: 'lsi1', KeySchema: KS(['pk', 'HASH'], ['alt', 'RANGE']), Projection: { ProjectionType: 'ALL' } }],
+      }));
+      expect(ids(ds)).toHaveLength(0);
+    });
+  });
+
+  describe('pf-dynamodb-gsi-billing-throughput', () => {
+    test('fires when a PROVISIONED-by-default table has a GSI without throughput', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'g'),
+        KeySchema: KS(['pk', 'HASH']),
+        ProvisionedThroughput: { ReadCapacityUnits: 1, WriteCapacityUnits: 1 },
+        GlobalSecondaryIndexes: [{ IndexName: 'gsi1', KeySchema: KS(['g', 'HASH']), Projection: { ProjectionType: 'ALL' } }],
+      }));
+      expect(ids(ds)).toContain('pf-dynamodb-gsi-billing-throughput');
+    });
+  });
+
+  describe('pf-dynamodb-gsi-projection-nonkey', () => {
+    test('fires on ALL with NonKeyAttributes', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'g'),
+        KeySchema: KS(['pk', 'HASH']),
+        BillingMode: 'PAY_PER_REQUEST',
+        GlobalSecondaryIndexes: [{ IndexName: 'gsi1', KeySchema: KS(['g', 'HASH']), Projection: { ProjectionType: 'ALL', NonKeyAttributes: ['extra'] } }],
+      }));
+      expect(ids(ds)).toContain('pf-dynamodb-gsi-projection-nonkey');
+    });
+  });
+
+  describe('pf-dynamodb-duplicate-index-name', () => {
+    test('fires on duplicate LSI names', () => {
+      const ds = diagnoseTemplate(table({
+        AttributeDefinitions: AD('pk', 'sk', 'a', 'b'),
+        KeySchema: KS(['pk', 'HASH'], ['sk', 'RANGE']),
+        BillingMode: 'PAY_PER_REQUEST',
+        LocalSecondaryIndexes: [
+          { IndexName: 'lsi1', KeySchema: KS(['pk', 'HASH'], ['a', 'RANGE']), Projection: { ProjectionType: 'ALL' } },
+          { IndexName: 'lsi1', KeySchema: KS(['pk', 'HASH'], ['b', 'RANGE']), Projection: { ProjectionType: 'ALL' } },
+        ],
+      }));
+      expect(ids(ds)).toContain('pf-dynamodb-duplicate-index-name');
+    });
+  });
+});
