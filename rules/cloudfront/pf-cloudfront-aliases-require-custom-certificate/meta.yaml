@@ -6,6 +6,6 @@ title: A distribution with Aliases cannot use the CloudFront default certificate
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-viewercertificate.html
 upstream: none
 repro:
-  method: doc-only
-  evidence: "ViewerCertificate reference: if the distribution uses Aliases, omit CloudFrontDefaultCertificate and specify a certificate, SslSupportMethod and MinimumProtocolVersion"
+  method: real-deploy
+  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"The parameter CNAME contains one or more parameters that are not valid.\" (Service: CloudFront, Status Code: 400). CloudFront reports the rejection against CNAME rather than the certificate, so the message does not name the cause; the fail template differs from the pass template only in this property pair."
 addedOn: 2026-09-02

@@ -6,6 +6,6 @@ title: Lambda@Edge functions associated with a distribution must be in us-east-1
 constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-edge-function-restrictions.html
 upstream: none
 repro:
-  method: doc-only
-  evidence: "documented Lambda@Edge restriction (\"The Lambda function must be in the US East (N. Virginia) Region\"); reproducing it requires publishing a function version in a second region"
+  method: real-deploy
+  evidence: "bench 2026-09-02: a stack deployed in ap-northeast-1 containing a function, its version and a distribution associating it rolled back with \"The function must be in region 'us-east-1'. ARN: arn:aws:lambda:ap-northeast-1:<account>:function:...:1\" (Service: CloudFront, Status Code: 400). The bundled fixture uses a literal foreign-account ARN so that the unit test needs no live resources."
 addedOn: 2026-09-02

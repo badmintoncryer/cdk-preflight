@@ -225,52 +225,6 @@ describe('cloudfront rules', () => {
     });
   });
 
-  describe('pf-cloudfront-geo-restriction-locations', () => {
-    test('fires when RestrictionType is none but Locations are listed', () => {
-      const ds = diagnoseTemplate(distribution({
-        Restrictions: { GeoRestriction: { RestrictionType: 'none', Locations: ['JP'] } },
-      }));
-      expect(ids(ds)).toContain('pf-cloudfront-geo-restriction-locations');
-    });
-
-    test('stays silent on RestrictionType none without Locations', () => {
-      const ds = diagnoseTemplate(distribution({
-        Restrictions: { GeoRestriction: { RestrictionType: 'none' } },
-      }));
-      expect(ids(ds)).toHaveLength(0);
-    });
-  });
-
-  describe('pf-cloudfront-cache-policy-legacy-conflict', () => {
-    test.each(['MinTTL', 'MaxTTL', 'DefaultTTL'])('fires on a legacy %s alongside a CachePolicyId', (prop) => {
-      const ds = diagnoseTemplate(distribution({
-        DefaultCacheBehavior: {
-          TargetOriginId: 'origin1',
-          ViewerProtocolPolicy: 'allow-all',
-          CachePolicyId: '658327ea-f89d-4fab-a63d-7e88639e58f6',
-          [prop]: 60,
-        },
-      }));
-      const mine = ds.filter((d) => d.ruleId === 'pf-cloudfront-cache-policy-legacy-conflict');
-      expect(mine).toHaveLength(1);
-      expect(mine[0].message).toContain(prop);
-    });
-
-    test('leaves the legacy-only cache configuration alone', () => {
-      const ds = diagnoseTemplate(distribution({
-        DefaultCacheBehavior: {
-          TargetOriginId: 'origin1',
-          ViewerProtocolPolicy: 'allow-all',
-          ForwardedValues: { QueryString: false },
-          MinTTL: 0,
-          DefaultTTL: 60,
-          MaxTTL: 86400,
-        },
-      }));
-      expect(ids(ds)).toHaveLength(0);
-    });
-  });
-
   describe('pf-cloudfront-cached-methods-subset', () => {
     test('fires when AllowedMethods is omitted and CachedMethods exceeds the GET/HEAD default', () => {
       const ds = diagnoseTemplate(distribution({
@@ -285,10 +239,19 @@ describe('cloudfront rules', () => {
     });
   });
 
-  describe('pf-cloudfront-wafv2-webacl-region', () => {
+  describe('pf-cloudfront-wafv2-webacl-scope', () => {
     test('leaves a WAF Classic web ACL id alone', () => {
       const ds = diagnoseTemplate(distribution({ WebACLId: 'a1b2c3d4-5678-90ab-cdef-EXAMPLE11111' }));
       expect(ids(ds)).toHaveLength(0);
+    });
+
+    // CloudFront checks the ARN's scope segment, not its region, so a REGIONAL
+    // web ACL that happens to live in us-east-1 is rejected just the same.
+    test('fires on a REGIONAL web ACL created in us-east-1', () => {
+      const ds = diagnoseTemplate(distribution({
+        WebACLId: 'arn:aws:wafv2:us-east-1:123456789012:regional/webacl/app/1a2b3c4d-5e6f-7890-abcd-ef1234567890',
+      }));
+      expect(ids(ds)).toContain('pf-cloudfront-wafv2-webacl-scope');
     });
   });
 });

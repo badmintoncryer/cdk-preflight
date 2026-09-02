@@ -6,6 +6,6 @@ title: Lambda@Edge associations must reference a version ARN, not an alias or $L
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-lambdafunctionassociation.html
 upstream: none
 repro:
-  method: doc-only
-  evidence: "CloudFormation reference states \"You must specify the ARN of a function version; you can't specify an alias or $LATEST\""
+  method: real-deploy
+  evidence: "bench 2026-09-02 us-east-1: associating an unqualified function ARN rolled back with \"The function ARN must reference a specific function version. (The ARN must end with the version number.)\" (Service: CloudFront, Status Code: 400)"
 addedOn: 2026-09-02

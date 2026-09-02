@@ -6,6 +6,6 @@ title: Origin group members must reference an origin declared in the distributio
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-origingroup.html
 upstream: none
 repro:
-  method: doc-only
-  evidence: "CloudFront rejects an origin group whose member OriginId matches no origin; the built-in E3057 checks TargetOriginId only, verified against @aws/cloudformation-validate 1.7.0-beta on 2026-09-02"
+  method: real-deploy
+  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"The parameter Members has one or more origins [origin-typo] for origin group group1 that aren't valid. (Service: CloudFront, Status Code: 400)\". The built-in E3057 checks TargetOriginId only."
 addedOn: 2026-09-02
