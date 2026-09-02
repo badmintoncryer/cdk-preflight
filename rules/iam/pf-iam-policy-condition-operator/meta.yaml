@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-operator
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: Condition operators come from a closed grammar
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Condition operator \"StringEqualz\" (i11) -> \"Syntax errors in policy.\" ROLLBACK_COMPLETE (controlled shape: only the operator differs from a valid policy). The operator grammar (base set + IfExists suffix + ForAllValues:/ForAnyValue: prefixes) has been stable for years; a future operator addition would need a rule update (noted risk)."
+addedOn: 2026-09-03

@@ -1,0 +1,11 @@
+id: pf-iam-identity-policy-no-principal
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: Identity policies cannot carry a Principal field
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Role inline policy statement with Principal (i04) -> \"Policy document should not specify a principal.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

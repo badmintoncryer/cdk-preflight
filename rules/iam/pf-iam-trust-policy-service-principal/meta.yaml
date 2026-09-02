@@ -1,0 +1,11 @@
+id: pf-iam-trust-policy-service-principal
+service: iam
+resourceTypes: [AWS::IAM::Role]
+severity: ERROR
+title: Service principals live under amazonaws.com
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: trust policy Principal Service \"lambda.example.com\" (i18) -> 'Invalid principal in policy: \"SERVICE\":\"lambda.example.com\"'. ROLLBACK_COMPLETE. Only the domain-shape is claimed (unknown-but-well-shaped service names are account/region dependent and stay unjudged)."
+addedOn: 2026-09-03
