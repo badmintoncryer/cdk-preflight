@@ -32,6 +32,15 @@ const project = new awscdk.AwsCdkConstructLibrary({
     module: 'cdk_preflight',
     trustedPublishing: true,
   },
+  // AGENTS.md / llms.txt / 同梱スキルは製品の一部であり docs PR が日常的に発生するため、
+  // projen 既定の feat/fix/chore に docs を加える
+  githubOptions: {
+    pullRequestLintOptions: {
+      semanticTitleOptions: {
+        types: ['feat', 'fix', 'chore', 'docs'],
+      },
+    },
+  },
 });
 
 // rules/**/rule.rego + meta.yaml を src/rules.generated.ts に束ねる（コミット対象・鮮度は structure テストで担保）

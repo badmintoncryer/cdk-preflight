@@ -31,6 +31,25 @@ Four other validation layers exist around a CDK app. Only one of them is a bound
 
 Selection algorithm for a new rule, in order: (1) duplication guard — run the minimal violating template through the bare engine; any built-in ERROR/FATAL kills the candidate. A **WARN-class-only** engine finding (`W…`) does *not* kill it but marks a gray zone: the engine knows about the constraint and under-classifies it, so nothing blocks the deploy (`strict` promotes only ERROR/FATAL) — prefer filing an upstream severity issue, and if a stopgap rule ships anyway, mark it `upstream: pending-engine` so it retires with the upstream fix. (2) real-deploy gate — the fail template must actually fail CREATE with the predicted service error; a fail template that deploys kills the candidate (it happened: the "30-day minimum before STANDARD_IA" and the "4096-char ZipFile" constraints are documented but not enforced, so those rules were dropped). (3) L1/L2 coverage never disqualifies, only gets noted.
 
+### How much is an L2 overlap worth?
+
+Principle 5 says an L2 guard never disqualifies a rule. It does not say every L2 check deserves a port — "allowed" and "worth it" are different questions, and the second one decides priority once rules are being added in bulk. Note that enforce is the default mode, so a false positive is a hard synth failure for users; the bar sits above "it is permitted".
+
+Rank a candidate by **how easily the L2 guard is bypassed in normal use**, not by whether one exists.
+
+**Highest value — CDK cannot validate it at all, by construction:**
+
+- *Anything applied after the validation phase.* `validateTree` runs at `core/lib/private/synthesis.ts:48`, `synthesizeTree` at `:59`, and `addPropertyOverride` values are `deepMerge`d into the rendered resource inside `_toCloudFormation` (`core/lib/cfn-resource.ts:538`). A value injected by an override therefore passes through neither the L1 generated validator nor any `node.addValidation()` hook. The same ordering hides render-time transformations: IAM policy documents get a final minimization pass "just before rendering" (`aws-iam/lib/policy-document.ts:222`), so the final document size does not exist yet at validation time — and `aws-iam` accordingly has no size check at all.
+- *Entry points the type system cannot describe.* Stringly-typed Key/Value attribute lists (ELBv2 `setAttribute` and friends): the type is `[{key, value}]`, so neither TypeScript nor an L2 prop can express "this key takes 30–900". `pf-elbv2-tg-slow-start-range` is the canonical case — the L2 prop `slowStart` does validate, but `setAttribute` is the normal way to set the other attributes, so the bypass is routine rather than exotic.
+- *Opaque strings.* ASL passed via `DefinitionBody.fromString` / `fromFile`, policy document JSON, EventBridge patterns, metric expressions. The L2 accepts a string and does not parse it (and should not).
+- *No L2 at the entry point at all.* Raw `CfnXxx` usage, `cloudformation-include`, migrate output, SAM-generated templates.
+
+**Medium value — the information is usually missing rather than impossible to obtain:** cross-resource consistency where the counterpart was imported with `fromXxxArn`. The L2 holds only an ARN string; the template has both resources side by side with concrete values.
+
+**Low value:** a constraint whose only entry point is a typed L2 prop that already validates it. Porting it buys coverage for hand-written L1 only, at full maintenance cost. Say so explicitly in the PR and expect a reviewer to ask why it is worth it.
+
+**Do not repeat this mis-analysis:** "L2 cannot validate accumulated state because it validates in the constructor" is false — `node.addValidation()` hooks run during `validateTree`, after all mutation. Accumulation is not the structural wall. The wall is transformation that happens *after* `validateTree`.
+
 ## Repository layout
 
 ```
