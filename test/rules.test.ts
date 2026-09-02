@@ -839,4 +839,53 @@ describe('s3 bucket rules', () => {
       expect(ids(diagnoseTemplate(t))).toHaveLength(0);
     });
   });
+
+  describe('pf-s3-bucket-policy-action-resource', () => {
+    const pol = (statement: Record<string, unknown>) => ({
+      Resources: {
+        B: { Type: 'AWS::S3::Bucket', Properties: {} },
+        P: { Type: 'AWS::S3::BucketPolicy', Properties: { Bucket: { Ref: 'B' }, PolicyDocument: { Version: '2012-10-17', Statement: [statement] } } },
+      },
+    });
+
+    test('a mixed resource list with an object ARN is legal', () => {
+      const t = pol({
+        Effect: 'Allow',
+        Principal: '*',
+        Action: ['s3:GetObject', 's3:ListBucket'],
+        Resource: ['arn:aws:s3:::my-bucket', 'arn:aws:s3:::my-bucket/*'],
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('fires on an action list whose object action has only literal bucket ARNs', () => {
+      const t = pol({
+        Effect: 'Allow',
+        Principal: '*',
+        Action: ['s3:PutObjectAcl'],
+        Resource: ['arn:aws:s3:::my-bucket'],
+      });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-s3-bucket-policy-action-resource');
+    });
+
+    test('an unresolvable resource entry mutes the statement', () => {
+      const t = pol({
+        Effect: 'Allow',
+        Principal: '*',
+        Action: 's3:GetObject',
+        Resource: [{ 'Fn::GetAtt': ['B', 'Arn'] }, { 'Fn::Sub': '${B.Arn}/*' }],
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('bucket-level actions on bucket ARNs stay silent', () => {
+      const t = pol({
+        Effect: 'Allow',
+        Principal: '*',
+        Action: 's3:ListBucket',
+        Resource: { 'Fn::GetAtt': ['B', 'Arn'] },
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
 });

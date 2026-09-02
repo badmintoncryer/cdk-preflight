@@ -57,6 +57,8 @@
 | `pf-route53-weight-range` | AWS::Route53::RecordSet | Weight must be between 0 and 255 | pending-engine |
 | `pf-route53-zonename-trailing-dot` | AWS::Route53::RecordSet | HostedZoneName must end with a trailing dot | none |
 | `pf-s3-accelerate-dotted-name` | AWS::S3::Bucket | Transfer Acceleration rejects bucket names with periods | none |
+| `pf-s3-bucket-policy-action-resource` | AWS::S3::BucketPolicy | Object-level actions need an object-level Resource | none |
+| `pf-s3-bucket-policy-principal` | AWS::S3::BucketPolicy | Bucket policy statements need a Principal | none |
 | `pf-s3-lifecycle-days-order` | AWS::S3::Bucket | Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition | none |
 | `pf-s3-lifecycle-expiration-positive` | AWS::S3::Bucket | ExpirationInDays must be a positive integer | pending-engine |
 | `pf-s3-lifecycle-rule-no-action` | AWS::S3::Bucket | A lifecycle rule needs at least one action | none |
