@@ -1,0 +1,11 @@
+id: pf-firehose-dfcc-required-configs
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: Enabled format conversion needs input, output, and schema configs
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-dataformatconversionconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Enabled true with no sub-configs (f07) -> \"InputFormatConfiguration must not be null\"; input present, output missing (f07b) -> \"OutputFormatConfiguration must not be null\"; input+output present, schema missing (f07c) -> \"SchemaConfiguration must not be null\". All ROLLBACK_COMPLETE - each of the three keys individually verified."
+addedOn: 2026-09-03

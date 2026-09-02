@@ -874,6 +874,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key. Only the top level is\n# checked — that is the bench-verified scope, and it dodges operator objects\n# like {\"prefix\": \"...\"} that legally carry scalars deeper down.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tsome k, v in ep\n\t_pf_evpsv_scalar(v)\n}\n"
   },
   {
+    "id": "pf-firehose-dfcc-required-configs",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Enabled format conversion needs input, output, and schema configs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The three sub-configurations are unconditionally required once Enabled\n# is true; the service rejects each absence in turn. Read from the\n# preprocessed document (see AGENTS.md).\n_pf_fhdfcc_outer(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"ExtendedS3DestinationConfiguration\", {})\n\tis_object(c)\n}\n\n_pf_fhdfcc_conf(name) := c if {\n\tx := _pf_fhdfcc_outer(name)\n\tc := object.get(x, \"DataFormatConversionConfiguration\", {})\n\tis_object(c)\n}\n\nviolation contains make_diag_full(\"pf-firehose-dfcc-required-configs\", \"ERROR\", name,\n\tsprintf(\"Properties.ExtendedS3DestinationConfiguration.DataFormatConversionConfiguration.%s\", [k]),\n\tsprintf(\"Data format conversion is enabled without %s; the stream create fails with \\\"%s must not be null\\\"\", [k, k]),\n\t\"Set InputFormatConfiguration, OutputFormatConfiguration, and SchemaConfiguration together\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-dataformatconversionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tc := _pf_fhdfcc_conf(name)\n\tcoerce_to_bool(object.get(c, \"Enabled\", false)) == true\n\tsome k in {\"InputFormatConfiguration\", \"OutputFormatConfiguration\", \"SchemaConfiguration\"}\n\tobject.get(c, k, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-dynamic-partitioning-buffer",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Dynamic partitioning needs a 64 MB buffer floor",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema floor is 1; the 64 floor only applies with dynamic\n# partitioning on - a conditional bound no schema layer can express.\nviolation contains make_diag_full(\"pf-firehose-dynamic-partitioning-buffer\", \"ERROR\", name,\n\t\"Properties.ExtendedS3DestinationConfiguration.BufferingHints.SizeInMBs\",\n\tsprintf(\"SizeInMBs %v with dynamic partitioning; the stream create fails with \\\"BufferingHints.SizeInMBs must be at least 64 when Dynamic Partitioning is enabled.\\\"\", [s]),\n\t\"Raise SizeInMBs to at least 64\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-dynamicpartitioningconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tcoerce_to_bool(resolve(name, \"Properties.ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration.Enabled\")) == true\n\ts := to_number(resolve(name, \"Properties.ExtendedS3DestinationConfiguration.BufferingHints.SizeInMBs\"))\n\ts < 64\n}\n"
+  },
+  {
+    "id": "pf-firehose-dynamic-partitioning-prefix",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Dynamic partitioning needs partition namespaces in the prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Partitioned delivery has nowhere to put the keys unless the prefix\n# interpolates them via !{partitionKeyFrom...} namespaces.\nviolation contains make_diag_full(\"pf-firehose-dynamic-partitioning-prefix\", \"ERROR\", name,\n\t\"Properties.ExtendedS3DestinationConfiguration.Prefix\",\n\tsprintf(\"Prefix '%s' has no partition namespace; the stream create fails with \\\"S3 Prefix should contain Dynamic Partitioning namespaces when Dynamic Partitioning is enabled\\\"\", [p]),\n\t\"Interpolate at least one !{partitionKeyFromQuery:...} or !{partitionKeyFromLambda:...} into the prefix\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tcoerce_to_bool(resolve(name, \"Properties.ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration.Enabled\")) == true\n\tp := resolve(name, \"Properties.ExtendedS3DestinationConfiguration.Prefix\")\n\tis_string(p)\n\tnot contains(p, \"!{partitionKey\")\n}\n"
+  },
+  {
+    "id": "pf-firehose-kinesis-source-config",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "KinesisStreamAsSource streams need KinesisStreamSourceConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only this direction is a deploy failure - DirectPut with a (silently\n# ignored) source configuration deploys fine (bench f06). Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_fhksc_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"KinesisStreamSourceConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-firehose-kinesis-source-config\", \"ERROR\", name,\n\t\"Properties.KinesisStreamSourceConfiguration\",\n\t\"DeliveryStreamType is KinesisStreamAsSource but no source configuration is set; the stream create fails with \\\"KinesisSourceStreamConfig is mandatory for KinesisStreamAsSource stream type.\\\"\",\n\t\"Add KinesisStreamSourceConfiguration with the stream ARN and role\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tresolve(name, \"Properties.DeliveryStreamType\") == \"KinesisStreamAsSource\"\n\t_pf_fhksc_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-firehose-one-destination",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A delivery stream takes exactly one destination configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both directions deploy-verified: none set, and two set. Key presence is\n# read from the preprocessed document (see AGENTS.md).\n_pf_fhod_dests := {\n\t\"S3DestinationConfiguration\",\n\t\"ExtendedS3DestinationConfiguration\",\n\t\"RedshiftDestinationConfiguration\",\n\t\"ElasticsearchDestinationConfiguration\",\n\t\"AmazonopensearchserviceDestinationConfiguration\",\n\t\"AmazonOpenSearchServerlessDestinationConfiguration\",\n\t\"SplunkDestinationConfiguration\",\n\t\"HttpEndpointDestinationConfiguration\",\n\t\"SnowflakeDestinationConfiguration\",\n\t\"IcebergDestinationConfiguration\",\n}\n\nviolation contains make_diag_full(\"pf-firehose-one-destination\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"%d destination configurations are set; the stream create fails with \\\"Exactly one destination configuration is supported for a Firehose\\\"\", [n]),\n\t\"Set exactly one *DestinationConfiguration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tn := count([k | some k in _pf_fhod_dests; object.get(props, k, \"__pf_absent\") != \"__pf_absent\"])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-firehose-s3-backup-config",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Enabling S3 backup needs S3BackupConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Backup mode points deliveries at a second bucket that must be\n# configured. Scoped to the benched ExtendedS3 destination. Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_fhsbc_outer(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"ExtendedS3DestinationConfiguration\", {})\n\tis_object(c)\n}\n\nviolation contains make_diag_full(\"pf-firehose-s3-backup-config\", \"ERROR\", name,\n\t\"Properties.ExtendedS3DestinationConfiguration.S3BackupConfiguration\",\n\t\"S3BackupMode is Enabled but S3BackupConfiguration is not set; the stream create fails with \\\"S3 backup destination configuration is required when enabling S3 backup.\\\"\",\n\t\"Add S3BackupConfiguration (bucket and role), or drop S3BackupMode\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-extendeds3destinationconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tresolve(name, \"Properties.ExtendedS3DestinationConfiguration.S3BackupMode\") == \"Enabled\"\n\tx := _pf_fhsbc_outer(name)\n\tobject.get(x, \"S3BackupConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-iam-inline-policy-size",
     "service": "iam",
     "severity": "ERROR",

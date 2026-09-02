@@ -1,0 +1,11 @@
+id: pf-firehose-s3-backup-config
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: Enabling S3 backup needs S3BackupConfiguration
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-extendeds3destinationconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: ExtendedS3 destination with S3BackupMode Enabled and no S3BackupConfiguration (f12) -> \"S3 backup destination configuration is required when enabling S3 backup.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

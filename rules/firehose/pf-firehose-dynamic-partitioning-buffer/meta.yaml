@@ -1,0 +1,11 @@
+id: pf-firehose-dynamic-partitioning-buffer
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: Dynamic partitioning needs a 64 MB buffer floor
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-dynamicpartitioningconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: dynamic partitioning enabled with BufferingHints.SizeInMBs 32 (f08) -> \"BufferingHints.SizeInMBs must be at least 64 when Dynamic Partitioning is enabled.\" ROLLBACK_COMPLETE. The schema minimum is 1 (engine clean on 32) - the 64 floor exists only conditionally in the service."
+addedOn: 2026-09-03
