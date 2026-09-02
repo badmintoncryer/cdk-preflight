@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {}
+    },
+    "SF": {
+      "Type": "AWS::Logs::SubscriptionFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "",
+        "DestinationArn": {
+          "Fn::Sub": "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/app-stream"
+        }
+      }
+    }
+  }
+}

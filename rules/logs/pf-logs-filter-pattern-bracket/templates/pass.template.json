@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {}
+    },
+    "MF": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "[ip, status]",
+        "MetricTransformations": [
+          {
+            "MetricName": "m",
+            "MetricNamespace": "cdkpf",
+            "MetricValue": "1"
+          }
+        ]
+      }
+    }
+  }
+}

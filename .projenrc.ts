@@ -21,7 +21,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
     'policy-validation',
     'fail-fast',
   ],
-  gitignore: ['*.js', '*.d.ts', '!test/.*.snapshot/**/*', '.tmp'],
+  gitignore: ['*.js', '*.d.ts', '!test/.*.snapshot/**/*', '.tmp', '!/rules/logs/'],
   devDeps: ['yaml'],
   releaseToNpm: true,
   packageName: 'cdk-preflight',
