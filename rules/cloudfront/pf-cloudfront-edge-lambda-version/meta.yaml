@@ -1,0 +1,11 @@
+id: pf-cloudfront-edge-lambda-version
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: Lambda@Edge associations must reference a version ARN, not an alias or $LATEST
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-lambdafunctionassociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 us-east-1: associating an unqualified function ARN rolled back with \"The function ARN must reference a specific function version. (The ARN must end with the version number.)\" (Service: CloudFront, Status Code: 400)"
+addedOn: 2026-09-02

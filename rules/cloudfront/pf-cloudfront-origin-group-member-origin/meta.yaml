@@ -1,0 +1,11 @@
+id: pf-cloudfront-origin-group-member-origin
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: Origin group members must reference an origin declared in the distribution
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-origingroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"The parameter Members has one or more origins [origin-typo] for origin group group1 that aren't valid. (Service: CloudFront, Status Code: 400)\". The built-in E3057 checks TargetOriginId only."
+addedOn: 2026-09-02

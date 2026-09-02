@@ -44,6 +44,17 @@ function diagnose(templateFile: string): Diagnostic[] {
   return diagCache.get(templateFile)!;
 }
 
+/** 一時ファイルに書いて評価する。region を渡すと擬似パラメータ解決を有効にする。 */
+function diagnoseTemplate(tpl: unknown, region?: string): Diagnostic[] {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-rules-')), 'inline.template.json');
+  fs.writeFileSync(file, JSON.stringify(tpl));
+  const options = region
+    ? { pseudoParameterOverrides: { accountId: '123456789012', region } }
+    : {};
+  const report = engineInstance().validateDetailed(new engine.TemplateFile(file), options);
+  return (report.diagnostics ?? []) as Diagnostic[];
+}
+
 function fixturePath(rule: (typeof BUNDLED_RULES)[number], kind: 'fail' | 'pass'): string {
   return path.join(__dirname, '..', 'rules', rule.service, rule.id, 'templates', `${kind}.template.json`);
 }
@@ -102,5 +113,145 @@ describe('delegation to built-in rules', () => {
     expect(ds.some((d) => d.ruleId === 'E3601' && d.severity === 'ERROR')).toBe(true);
     // 自前ルールは StartAt を重複報告しない（Next/Default/Choices 専任 = 重複ガード方針）
     expect(ds.filter((d) => d.source === 'CUSTOM')).toHaveLength(0);
+  });
+});
+
+/**
+ * CloudFront ルールのうち、fail フィクスチャ 1 枚では踏めない分岐と、
+ * このパック固有の武器（デプロイ先リージョンの解決）を直接固定するテスト。
+ */
+describe('cloudfront rules', () => {
+  const originS3 = {
+    Id: 'origin1',
+    DomainName: 'bucket.s3.us-east-1.amazonaws.com',
+    S3OriginConfig: { OriginAccessIdentity: '' },
+  };
+  const distribution = (config: Record<string, unknown>) => ({
+    Resources: {
+      Dist: {
+        Type: 'AWS::CloudFront::Distribution',
+        Properties: {
+          DistributionConfig: {
+            Enabled: true,
+            Origins: [originS3],
+            DefaultCacheBehavior: {
+              TargetOriginId: 'origin1',
+              ViewerProtocolPolicy: 'allow-all',
+              ForwardedValues: { QueryString: false },
+            },
+            ...config,
+          },
+        },
+      },
+    },
+  });
+  const edgeAssociation = (arn: unknown) => distribution({
+    DefaultCacheBehavior: {
+      TargetOriginId: 'origin1',
+      ViewerProtocolPolicy: 'allow-all',
+      ForwardedValues: { QueryString: false },
+      LambdaFunctionAssociations: [{ EventType: 'viewer-request', LambdaFunctionARN: arn }],
+    },
+  });
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  describe('pf-cloudfront-edge-lambda-region', () => {
+    // このパックにしか書けない検査の本体: CDK が組み立てる ARN は
+    // {"Ref": "AWS::Region"} 入りの Fn::Join なので、L2 も cfn-lint も
+    // リージョンを知りようがない。プラグイン経由で渡る実リージョンで解決する。
+    const joinedArn = {
+      'Fn::Join': ['', [
+        'arn:', { Ref: 'AWS::Partition' }, ':lambda:', { Ref: 'AWS::Region' }, ':',
+        { Ref: 'AWS::AccountId' }, ':function:edge-auth:3',
+      ]],
+    };
+
+    test('resolves AWS::Region and fires when the stack is not in us-east-1', () => {
+      const ds = diagnoseTemplate(edgeAssociation(joinedArn), 'ap-northeast-1');
+      const mine = ds.filter((d) => d.ruleId === 'pf-cloudfront-edge-lambda-region');
+      expect(mine).toHaveLength(1);
+      expect(mine[0].message).toContain('ap-northeast-1');
+    });
+
+    test('the same template is clean when the stack is in us-east-1', () => {
+      const ds = diagnoseTemplate(edgeAssociation(joinedArn), 'us-east-1');
+      expect(ids(ds)).not.toContain('pf-cloudfront-edge-lambda-region');
+    });
+
+    test('an ARN that stays unresolved (cross-stack GetAtt) is skipped, not guessed at', () => {
+      const tpl: any = edgeAssociation({ 'Fn::GetAtt': ['Ver', 'FunctionArn'] });
+      tpl.Resources.Ver = {
+        Type: 'AWS::Lambda::Version',
+        Properties: { FunctionName: 'edge-auth' },
+      };
+      expect(ids(diagnoseTemplate(tpl, 'ap-northeast-1'))).toHaveLength(0);
+    });
+
+    test('fires on an additional cache behavior, not just the default one', () => {
+      const ds = diagnoseTemplate(distribution({
+        CacheBehaviors: [{
+          PathPattern: '/api/*',
+          TargetOriginId: 'origin1',
+          ViewerProtocolPolicy: 'allow-all',
+          ForwardedValues: { QueryString: false },
+          LambdaFunctionAssociations: [{
+            EventType: 'origin-request',
+            LambdaFunctionARN: 'arn:aws:lambda:eu-west-1:123456789012:function:edge-auth:3',
+          }],
+        }],
+      }), 'us-east-1');
+      const mine = ds.filter((d) => d.ruleId === 'pf-cloudfront-edge-lambda-region');
+      expect(mine).toHaveLength(1);
+      expect(mine[0].message).toContain('eu-west-1');
+    });
+  });
+
+  describe('pf-cloudfront-edge-lambda-version', () => {
+    test('rejects an alias qualifier', () => {
+      const ds = diagnoseTemplate(edgeAssociation('arn:aws:lambda:us-east-1:123456789012:function:edge-auth:live'));
+      const mine = ds.filter((d) => d.ruleId === 'pf-cloudfront-edge-lambda-version');
+      expect(mine).toHaveLength(1);
+      expect(mine[0].message).toContain('live');
+    });
+
+    test('rejects $LATEST', () => {
+      const ds = diagnoseTemplate(edgeAssociation('arn:aws:lambda:us-east-1:123456789012:function:edge-auth:$LATEST'));
+      expect(ids(ds)).toContain('pf-cloudfront-edge-lambda-version');
+    });
+
+    test('accepts a numeric version qualifier', () => {
+      const ds = diagnoseTemplate(edgeAssociation('arn:aws:lambda:us-east-1:123456789012:function:edge-auth:12'));
+      expect(ids(ds)).toHaveLength(0);
+    });
+  });
+
+  describe('pf-cloudfront-cached-methods-subset', () => {
+    test('fires when AllowedMethods is omitted and CachedMethods exceeds the GET/HEAD default', () => {
+      const ds = diagnoseTemplate(distribution({
+        DefaultCacheBehavior: {
+          TargetOriginId: 'origin1',
+          ViewerProtocolPolicy: 'allow-all',
+          ForwardedValues: { QueryString: false },
+          CachedMethods: ['GET', 'HEAD', 'OPTIONS'],
+        },
+      }));
+      expect(ids(ds)).toContain('pf-cloudfront-cached-methods-subset');
+    });
+  });
+
+  describe('pf-cloudfront-wafv2-webacl-scope', () => {
+    test('leaves a WAF Classic web ACL id alone', () => {
+      const ds = diagnoseTemplate(distribution({ WebACLId: 'a1b2c3d4-5678-90ab-cdef-EXAMPLE11111' }));
+      expect(ids(ds)).toHaveLength(0);
+    });
+
+    // CloudFront checks the ARN's scope segment, not its region, so a REGIONAL
+    // web ACL that happens to live in us-east-1 is rejected just the same.
+    test('fires on a REGIONAL web ACL created in us-east-1', () => {
+      const ds = diagnoseTemplate(distribution({
+        WebACLId: 'arn:aws:wafv2:us-east-1:123456789012:regional/webacl/app/1a2b3c4d-5e6f-7890-abcd-ef1234567890',
+      }));
+      expect(ids(ds)).toContain('pf-cloudfront-wafv2-webacl-scope');
+    });
   });
 });

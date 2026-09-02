@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Dist": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Origins": [
+            {
+              "Id": "origin1",
+              "DomainName": "bucket.s3.us-east-1.amazonaws.com",
+              "S3OriginConfig": {
+                "OriginAccessIdentity": ""
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "origin1",
+            "ViewerProtocolPolicy": "allow-all",
+            "ForwardedValues": {
+              "QueryString": false
+            }
+          },
+          "WebACLId": "arn:aws:wafv2:ap-northeast-1:123456789012:regional/webacl/app/1a2b3c4d-5e6f-7890-abcd-ef1234567890"
+        }
+      }
+    }
+  }
+}

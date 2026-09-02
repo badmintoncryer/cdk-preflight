@@ -1,0 +1,11 @@
+id: pf-cloudfront-cached-methods-subset
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: CachedMethods must be a subset of AllowedMethods
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"The parameter CachedMethods OPTIONS does not exists in AllowedMethods. (Service: CloudFront, Status Code: 400)\""
+addedOn: 2026-09-02

@@ -1,0 +1,62 @@
+{
+  "Resources": {
+    "Dist": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Origins": [
+            {
+              "Id": "origin1",
+              "DomainName": "bucket.s3.us-east-1.amazonaws.com",
+              "S3OriginConfig": {
+                "OriginAccessIdentity": ""
+              }
+            },
+            {
+              "Id": "origin2",
+              "DomainName": "backup.s3.us-east-1.amazonaws.com",
+              "S3OriginConfig": {
+                "OriginAccessIdentity": ""
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "group1",
+            "ViewerProtocolPolicy": "allow-all",
+            "ForwardedValues": {
+              "QueryString": false
+            }
+          },
+          "OriginGroups": {
+            "Quantity": 1,
+            "Items": [
+              {
+                "Id": "group1",
+                "FailoverCriteria": {
+                  "StatusCodes": {
+                    "Quantity": 1,
+                    "Items": [
+                      500
+                    ]
+                  }
+                },
+                "Members": {
+                  "Quantity": 2,
+                  "Items": [
+                    {
+                      "OriginId": "origin1"
+                    },
+                    {
+                      "OriginId": "origin-typo"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
