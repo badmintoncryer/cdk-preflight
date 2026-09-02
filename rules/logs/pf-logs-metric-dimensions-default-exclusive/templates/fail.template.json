@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {}
+    },
+    "MF": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "{ $.a = \"x\" }",
+        "MetricTransformations": [
+          {
+            "MetricName": "m",
+            "MetricNamespace": "cdkpf",
+            "MetricValue": "1",
+            "DefaultValue": 0,
+            "Dimensions": [
+              {
+                "Key": "d1",
+                "Value": "$.a"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -889,3 +889,68 @@ describe('s3 bucket rules', () => {
     });
   });
 });
+
+describe('cloudwatch logs rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  describe('pf-logs-subscription-kinesis-role', () => {
+    const sf = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
+      Resources: {
+        LG: { Type: 'AWS::Logs::LogGroup', Properties: {} },
+        SF: { Type: 'AWS::Logs::SubscriptionFilter', Properties: { LogGroupName: { Ref: 'LG' }, FilterPattern: '', ...props } },
+        ...extra,
+      },
+    });
+
+    test('an in-template stream via GetAtt is a provable Kinesis destination', () => {
+      const t = sf(
+        { DestinationArn: { 'Fn::GetAtt': ['Stream', 'Arn'] } },
+        { Stream: { Type: 'AWS::Kinesis::Stream', Properties: { ShardCount: 1 } } },
+      );
+      expect(ids(diagnoseTemplate(t, 'ap-northeast-1'))).toContain('pf-logs-subscription-kinesis-role');
+    });
+
+    test('a Lambda destination without RoleArn stays silent — only vendor kinesis was measured', () => {
+      const t = sf({ DestinationArn: { 'Fn::Sub': 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:f' } });
+      expect(ids(diagnoseTemplate(t, 'ap-northeast-1'))).toHaveLength(0);
+    });
+
+    test('an unresolvable RoleArn counts as present', () => {
+      const t = {
+        Parameters: { R: { Type: 'String' } },
+        Resources: {
+          LG: { Type: 'AWS::Logs::LogGroup', Properties: {} },
+          SF: {
+            Type: 'AWS::Logs::SubscriptionFilter',
+            Properties: {
+              LogGroupName: { Ref: 'LG' },
+              FilterPattern: '',
+              DestinationArn: { 'Fn::Sub': 'arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/s' },
+              RoleArn: { Ref: 'R' },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t, 'ap-northeast-1'))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-logs-filter-pattern-bracket', () => {
+    test('surrounding whitespace does not hide the unbalanced bracket', () => {
+      const t = {
+        Resources: {
+          LG: { Type: 'AWS::Logs::LogGroup', Properties: {} },
+          MF: {
+            Type: 'AWS::Logs::MetricFilter',
+            Properties: {
+              LogGroupName: { Ref: 'LG' },
+              FilterPattern: '  [ip, status  ',
+              MetricTransformations: [{ MetricName: 'm', MetricNamespace: 'cdkpf', MetricValue: '1' }],
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toContain('pf-logs-filter-pattern-bracket');
+    });
+  });
+});

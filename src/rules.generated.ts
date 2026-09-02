@@ -472,6 +472,40 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リテラル文字列のキー/値だけを数える（トークンはスキップ）。合計が既に 4096 を超えて\n# いれば、実際のデプロイでも必ず失敗する（実サイズは推定以上にしかならない）。\n# NOTE: このエンジンの Rego パーサは内包表記内の 2 変数 some（some k, v in vars）を\n# 受け付けないため、object.keys 経由で書く。\n_pf_lenv_size(vars) := sum([s |\n\tsome k in object.keys(vars)\n\tis_string(vars[k])\n\ts := count(k) + count(vars[k])\n])\n\nviolation contains make_diag_full(\"pf-lambda-env-size\", \"ERROR\", name,\n\t\"Properties.Environment.Variables\",\n\tsprintf(\"Environment variables total at least %d bytes (literal keys and values), but Lambda limits the environment to 4096 bytes; CreateFunction fails at deploy time\", [total]),\n\t\"Move large values to SSM Parameter Store, Secrets Manager, or a bundled config file\",\n\t\"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tvars := resolve(name, \"Properties.Environment.Variables\")\n\tis_object(vars)\n\ttotal := _pf_lenv_size(vars)\n\ttotal > 4096\n}\n"
   },
   {
+    "id": "pf-logs-filter-pattern-bracket",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A filter pattern starting with '[' must end with ']'",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::MetricFilter",
+      "AWS::Logs::SubscriptionFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgfpb_url := \"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html\"\n\n_pf_lgfpb_msg(kind) := sprintf(\"The %s filter pattern starts with '[' but does not end with ']'; the service rejects it with \\\"If a filter pattern starts with '[' it must end with ']'\\\"\", [kind])\n\n_pf_lgfpb_fix := \"Close the bracket — a space-delimited pattern is [field1, field2, ...]\"\n\n# The same parser runs for metric filters and subscription filters, and it\n# runs before any destination validation (bench c01/c06). Only this\n# start/end pairing is checked here; a full pattern parser is out of scope.\n_pf_lgfpb_unbalanced(p) if {\n\tt := trim_space(p)\n\tstartswith(t, \"[\")\n\tnot endswith(t, \"]\")\n}\n\nviolation contains make_diag_full(\"pf-logs-filter-pattern-bracket\", \"ERROR\", name,\n\t\"Properties.FilterPattern\",\n\t_pf_lgfpb_msg(\"metric\"),\n\t_pf_lgfpb_fix, _pf_lgfpb_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tp := resolve(name, \"Properties.FilterPattern\")\n\tis_string(p)\n\t_pf_lgfpb_unbalanced(p)\n}\n\nviolation contains make_diag_full(\"pf-logs-filter-pattern-bracket\", \"ERROR\", name,\n\t\"Properties.FilterPattern\",\n\t_pf_lgfpb_msg(\"subscription\"),\n\t_pf_lgfpb_fix, _pf_lgfpb_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\tp := resolve(name, \"Properties.FilterPattern\")\n\tis_string(p)\n\t_pf_lgfpb_unbalanced(p)\n}\n"
+  },
+  {
+    "id": "pf-logs-metric-dimensions-default-exclusive",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "Dimensions and DefaultValue are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::MetricFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DefaultValue is emitted when a log line does not match, but a dimension\n# value can only come from a match — the service rejects the combination.\nviolation contains make_diag_full(\"pf-logs-metric-dimensions-default-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.MetricTransformations.%d.DefaultValue\", [t.index]),\n\t\"The metric transformation sets both Dimensions and DefaultValue; the service rejects it with \\\"Invalid metric transformation: dimensions and default value are mutually exclusive properties\\\"\",\n\t\"Drop DefaultValue when the transformation has Dimensions, or drop the Dimensions\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-logs-metricfilter-metrictransformation.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tsome t in flatten_list(name, \"Properties.MetricTransformations\")\n\tis_object(t.value)\n\tobject.get(t.value, \"DefaultValue\", \"__pf_absent\") != \"__pf_absent\"\n\tdims := object.get(t.value, \"Dimensions\", null)\n\tis_array(dims)\n\tcount(dims) > 0\n}\n"
+  },
+  {
+    "id": "pf-logs-subscription-kinesis-role",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A Kinesis destination needs RoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::SubscriptionFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgskr_url := \"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\"\n\n# The destination is provably Kinesis two ways: a literal\n# arn:<partition>:kinesis: string, or a Ref/GetAtt that resolve() turns into\n# the logical ID of an in-template AWS::Kinesis::Stream. Scoped to Kinesis —\n# the bench error names \"vendor kinesis\"; other vendors were not measured.\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\tparts := split(d, \":\")\n\tcount(parts) >= 3\n\tparts[0] == \"arn\"\n\tparts[2] == \"kinesis\"\n}\n\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\td in resources_of_type(\"AWS::Kinesis::Stream\")\n}\n\n# True absence of RoleArn needs the preprocessed document (see AGENTS.md).\n_pf_lgskr_role_absent(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-logs-subscription-kinesis-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"The subscription filter targets a Kinesis stream but sets no RoleArn; the service rejects it with \\\"destinationArn for vendor kinesis cannot be used without roleArn\\\"\",\n\t\"Add a RoleArn for a role that logs.amazonaws.com can assume with kinesis:PutRecord on the stream\",\n\t_pf_lgskr_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lgskr_kinesis_dest(name)\n\t_pf_lgskr_role_absent(name)\n}\n"
+  },
+  {
     "id": "pf-route53-alias-cloudfront-zone-id",
     "service": "route53",
     "severity": "ERROR",
