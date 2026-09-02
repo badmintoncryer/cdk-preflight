@@ -1,0 +1,11 @@
+id: pf-lambda-code-s3-pair
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: S3-based Code needs both S3Bucket and S3Key
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-code.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Code with S3Bucket and no S3Key (cd02) -> \"S3 Bucket and Key are required for uploading with S3 parameters.\" ROLLBACK_COMPLETE. The key-without-bucket direction is inferred from the same symmetric error text (unbenched)."
+addedOn: 2026-09-03

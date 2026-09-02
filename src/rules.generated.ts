@@ -912,6 +912,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-iam-managed-policy-size\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\tsprintf(\"PolicyDocument is %d characters (JSON without whitespace) but the managed policy limit is 6144\", [size]),\n\t\"Split the document into multiple managed policies or shorten it\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::ManagedPolicy\")\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_object(doc)\n\tsize := count(json.marshal(doc))\n\tsize > 6144\n}\n"
   },
   {
+    "id": "pf-lambda-code-s3-pair",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "S3-based Code needs both S3Bucket and S3Key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Half an S3 reference cannot be fetched. Only judged when neither ZipFile\n# nor ImageUri is present (those shapes belong to the exclusive rule).\n_pf_lcsp_code(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"Code\", {})\n\tis_object(c)\n}\n\n_pf_lcsp_has(c, k) if object.get(c, k, \"__pf_absent\") != \"__pf_absent\"\n\n_pf_lcsp_half(c) := [\"S3Key\", \"S3Bucket\"] if {\n\t_pf_lcsp_has(c, \"S3Bucket\")\n\tnot _pf_lcsp_has(c, \"S3Key\")\n}\n\n_pf_lcsp_half(c) := [\"S3Bucket\", \"S3Key\"] if {\n\t_pf_lcsp_has(c, \"S3Key\")\n\tnot _pf_lcsp_has(c, \"S3Bucket\")\n}\n\nviolation contains make_diag_full(\"pf-lambda-code-s3-pair\", \"ERROR\", name,\n\tsprintf(\"Properties.Code.%s\", [missing[0]]),\n\tsprintf(\"Code has %s but no %s; the function create fails with \\\"S3 Bucket and Key are required for uploading with S3 parameters.\\\"\", [missing[1], missing[0]]),\n\t\"Set both S3Bucket and S3Key\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-code.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tc := _pf_lcsp_code(name)\n\tnot _pf_lcsp_has(c, \"ZipFile\")\n\tnot _pf_lcsp_has(c, \"ImageUri\")\n\tmissing := _pf_lcsp_half(c)\n}\n"
+  },
+  {
+    "id": "pf-lambda-code-zipfile-exclusive",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Inline ZipFile excludes every other Code parameter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Key presence in the Code object is the violation; checked against the\n# preprocessed document (see AGENTS.md).\n_pf_lczx_other := {\"S3Bucket\", \"S3Key\", \"S3ObjectVersion\", \"ImageUri\"}\n\n_pf_lczx_code(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"Code\", {})\n\tis_object(c)\n}\n\nviolation contains make_diag_full(\"pf-lambda-code-zipfile-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Code.%s\", [k]),\n\tsprintf(\"Code sets ZipFile together with %s; the function create fails with \\\"Please do not provide other FunctionCode parameters when providing a ZipFile.\\\"\", [k]),\n\t\"Keep the inline ZipFile alone, or switch entirely to the S3/image reference\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-code.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tc := _pf_lczx_code(name)\n\tobject.get(c, \"ZipFile\", \"__pf_absent\") != \"__pf_absent\"\n\tsome k in _pf_lczx_other\n\tobject.get(c, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-dlq-region",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The dead letter target must sit in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Region comparison needs the deploy region, which only this pack sees\n# (data.cdk_preflight.deploy_region is defined in enforce mode; the rule\n# skips without it).\nviolation contains make_diag_full(\"pf-lambda-dlq-region\", \"ERROR\", name,\n\t\"Properties.DeadLetterConfig.TargetArn\",\n\tsprintf(\"Dead letter target region '%s' is not the deploy region '%s'; the function create fails with \\\"Invalid dead letter queue ARN: The resource specified by the TargetArn must be in the same region as the Lambda function it's associated with.\\\"\", [parts[3], region]),\n\t\"Point DeadLetterConfig at a queue or topic in the same region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-deadletterconfig.html\") if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tarn := resolve(name, \"Properties.DeadLetterConfig.TargetArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-lambda-dlq-service",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The dead letter target must be an SQS queue or SNS topic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service segment lives inside the ARN string, invisible to any\n# schema layer.\nviolation contains make_diag_full(\"pf-lambda-dlq-service\", \"ERROR\", name,\n\t\"Properties.DeadLetterConfig.TargetArn\",\n\tsprintf(\"Dead letter target service '%s' is not sqs or sns; the function create fails with \\\"Invalid dead letter queue ARN: The service specified by the TargetArn is not supported for dead letter configuration.\\\"\", [parts[2]]),\n\t\"Point DeadLetterConfig at an SQS queue or SNS topic ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-deadletterconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tarn := resolve(name, \"Properties.DeadLetterConfig.TargetArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tnot parts[2] in {\"sqs\", \"sns\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-efs-requires-vpc",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Mounting EFS requires VpcConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Mounting EFS requires the function to run inside a VPC. Key presence is\n# checked against the preprocessed document (see AGENTS.md).\n_pf_lefsv_props(name) := props if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n}\n\nviolation contains make_diag_full(\"pf-lambda-efs-requires-vpc\", \"ERROR\", name,\n\t\"Properties.VpcConfig\",\n\t\"FileSystemConfigs without VpcConfig; the function create fails with \\\"Function must be configured to execute in a VPC to reference access point ... Please update the function configuration to include VPC subnets and security groups.\\\"\",\n\t\"Add VpcConfig with subnets that have EFS mount targets in their AZs\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tprops := _pf_lefsv_props(name)\n\tobject.get(props, \"FileSystemConfigs\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(props, \"VpcConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-lambda-env-size",
     "service": "lambda",
     "severity": "ERROR",
@@ -921,6 +976,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Lambda::Function"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リテラル文字列のキー/値だけを数える（トークンはスキップ）。合計が既に 4096 を超えて\n# いれば、実際のデプロイでも必ず失敗する（実サイズは推定以上にしかならない）。\n# NOTE: このエンジンの Rego パーサは内包表記内の 2 変数 some（some k, v in vars）を\n# 受け付けないため、object.keys 経由で書く。\n_pf_lenv_size(vars) := sum([s |\n\tsome k in object.keys(vars)\n\tis_string(vars[k])\n\ts := count(k) + count(vars[k])\n])\n\nviolation contains make_diag_full(\"pf-lambda-env-size\", \"ERROR\", name,\n\t\"Properties.Environment.Variables\",\n\tsprintf(\"Environment variables total at least %d bytes (literal keys and values), but Lambda limits the environment to 4096 bytes; CreateFunction fails at deploy time\", [total]),\n\t\"Move large values to SSM Parameter Store, Secrets Manager, or a bundled config file\",\n\t\"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tvars := resolve(name, \"Properties.Environment.Variables\")\n\tis_object(vars)\n\ttotal := _pf_lenv_size(vars)\n\ttotal > 4096\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-batchsize-window",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "SQS batch sizes over 10 need a batching window",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SQS-only coupling: big batches must wait for a window. Kinesis and\n# DynamoDB sources take large batches without one, hence the SQS guard.\n_pf_lbsw_is_sqs(name) if {\n\tresolve(name, \"Properties.EventSourceArn\") in resources_of_type(\"AWS::SQS::Queue\")\n}\n\n_pf_lbsw_is_sqs(name) if {\n\tarn := resolve(name, \"Properties.EventSourceArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tsplit(arn, \":\")[2] == \"sqs\"\n}\n\n_pf_lbsw_no_window(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"MaximumBatchingWindowInSeconds\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_lbsw_no_window(name) if {\n\tto_number(resolve(name, \"Properties.MaximumBatchingWindowInSeconds\")) == 0\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-batchsize-window\", \"ERROR\", name,\n\t\"Properties.BatchSize\",\n\tsprintf(\"BatchSize %v without a batching window; the mapping create fails with \\\"Invalid request provided: Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10\\\"\", [b]),\n\t\"Set MaximumBatchingWindowInSeconds (1-300), or keep BatchSize at 10 or less\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\t_pf_lbsw_is_sqs(name)\n\tb := to_number(resolve(name, \"Properties.BatchSize\"))\n\tb > 10\n\t_pf_lbsw_no_window(name)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-fifo-batching-window",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "FIFO queues reject a batching window",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# FIFO ordering forbids holding a batch open. FIFO-ness comes from the\n# queue sibling's FifoQueue flag or the .fifo arn suffix.\n_pf_lfbw_is_fifo(name) if {\n\tq := resolve(name, \"Properties.EventSourceArn\")\n\tq in resources_of_type(\"AWS::SQS::Queue\")\n\tcoerce_to_bool(resolve(q, \"Properties.FifoQueue\")) == true\n}\n\n_pf_lfbw_is_fifo(name) if {\n\tarn := resolve(name, \"Properties.EventSourceArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tendswith(arn, \".fifo\")\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-fifo-batching-window\", \"ERROR\", name,\n\t\"Properties.MaximumBatchingWindowInSeconds\",\n\t\"Batching window on a FIFO queue source; the mapping create fails with \\\"Invalid request provided: Batching window is not supported for FIFO queues\\\"\",\n\t\"Drop MaximumBatchingWindowInSeconds, or use a standard queue\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\t_pf_lfbw_is_fifo(name)\n\tto_number(resolve(name, \"Properties.MaximumBatchingWindowInSeconds\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-sqs-starting-position",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "SQS event sources reject StartingPosition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# StartingPosition belongs to stream sources; queues have no offsets.\n# Detected via an in-template queue sibling or the sqs arn segment.\n_pf_lesp_is_sqs(name) if {\n\tresolve(name, \"Properties.EventSourceArn\") in resources_of_type(\"AWS::SQS::Queue\")\n}\n\n_pf_lesp_is_sqs(name) if {\n\tarn := resolve(name, \"Properties.EventSourceArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tsplit(arn, \":\")[2] == \"sqs\"\n}\n\n_pf_lesp_set(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"StartingPosition\", \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-sqs-starting-position\", \"ERROR\", name,\n\t\"Properties.StartingPosition\",\n\t\"StartingPosition on an SQS event source; the mapping create fails with \\\"Invalid request provided: StartingPosition is not valid for SQS event sources.\\\"\",\n\t\"Drop StartingPosition (it only applies to Kinesis/DynamoDB/Kafka sources)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\t_pf_lesp_is_sqs(name)\n\t_pf_lesp_set(name)\n}\n"
+  },
+  {
+    "id": "pf-lambda-memory-max",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MemorySize tops out at 10240",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema has the 128 floor but is missing the 10240 cap\n# (engine clean on 20000, F3034 on 64).\nviolation contains make_diag_full(\"pf-lambda-memory-max\", \"ERROR\", name,\n\t\"Properties.MemorySize\",\n\tsprintf(\"MemorySize %v is over the cap; the function create fails with \\\"'MemorySize' value failed to satisfy constraint: Member must have value less than or equal to 10240\\\"\", [m]),\n\t\"Use at most 10240 MB\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tm := to_number(resolve(name, \"Properties.MemorySize\"))\n\tm > 10240\n}\n"
+  },
+  {
+    "id": "pf-lambda-timeout-max",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Timeout tops out at 900 seconds",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema has the 1 floor but is missing the 900 cap (engine\n# clean on 901, F3034 on 0).\nviolation contains make_diag_full(\"pf-lambda-timeout-max\", \"ERROR\", name,\n\t\"Properties.Timeout\",\n\tsprintf(\"Timeout %v is over the 15-minute cap; the function create fails with \\\"Value '%v' at 'timeout' failed to satisfy constraint: Member must have value less than or equal to 900\\\"\", [t, t]),\n\t\"Use at most 900 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tt := to_number(resolve(name, \"Properties.Timeout\"))\n\tt > 900\n}\n"
   },
   {
     "id": "pf-logs-filter-pattern-bracket",

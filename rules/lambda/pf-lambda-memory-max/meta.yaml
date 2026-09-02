@@ -1,0 +1,11 @@
+id: pf-lambda-memory-max
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: MemorySize tops out at 10240
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: MemorySize 20000 (m02) -> \"'MemorySize' value failed to satisfy constraint: Member must have value less than or equal to 10240\". ROLLBACK_COMPLETE. The registry schema carries the 128 minimum (F3034) but no maximum - upstream schema-patch candidate."
+addedOn: 2026-09-03

@@ -1,0 +1,11 @@
+id: pf-lambda-efs-requires-vpc
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: Mounting EFS requires VpcConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: function with FileSystemConfigs referencing a real access point (full VPC+EFS+mount-target chain, ef01c) and no VpcConfig -> \"Function must be configured to execute in a VPC to reference access point ... Please update the function configuration to include VPC subnets and security groups.\" ROLLBACK_COMPLETE. Two shallower benches confounded first: a fake AP arn hits the existence check (ef01), a real AP without mount targets hits the mount-target check (ef01b)."
+addedOn: 2026-09-03

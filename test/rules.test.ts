@@ -1313,3 +1313,89 @@ describe('pf-cognito-domain-reserved-word', () => {
     expect(ids(diagnoseTemplate(domain('login-amazon')))).toContain('pf-cognito-domain-reserved-word');
   });
 });
+
+describe('lambda function and esm rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const fn = (props: Record<string, unknown>) => ({
+    Resources: {
+      F: {
+        Type: 'AWS::Lambda::Function',
+        Properties: {
+          Role: 'arn:aws:iam::123456789012:role/r',
+          Code: { ZipFile: 'def handler(e, c):\n    return 0\n' },
+          Runtime: 'python3.12',
+          Handler: 'index.handler',
+          ...props,
+        },
+      },
+    },
+  });
+  const esm = (props: Record<string, unknown>) => ({
+    Resources: {
+      M: {
+        Type: 'AWS::Lambda::EventSourceMapping',
+        Properties: { FunctionName: 'my-fn', ...props },
+      },
+    },
+  });
+
+  describe('dead letter config rules', () => {
+    test('a region-less s3 arn violates both the region and service rules (bench dl01)', () => {
+      const t = fn({ DeadLetterConfig: { TargetArn: 'arn:aws:s3:::my-bucket' } });
+      const fired = ids(diagnoseTemplate(t, 'us-east-1'));
+      expect(fired).toContain('pf-lambda-dlq-region');
+      expect(fired).toContain('pf-lambda-dlq-service');
+    });
+
+    test('without a deploy region the region rule skips but the service rule still fires', () => {
+      const t = fn({ DeadLetterConfig: { TargetArn: 'arn:aws:lambda:us-east-1:123456789012:function:x' } });
+      const fired = ids(diagnoseTemplate(t));
+      expect(fired).not.toContain('pf-lambda-dlq-region');
+      expect(fired).toContain('pf-lambda-dlq-service');
+    });
+  });
+
+  describe('event source mapping rules stay stream-agnostic', () => {
+    const KINESIS = 'arn:aws:kinesis:us-east-1:123456789012:stream/s';
+    test('kinesis sources take StartingPosition and big batches without a window', () => {
+      const t1 = esm({ EventSourceArn: KINESIS, StartingPosition: 'LATEST' });
+      const t2 = esm({ EventSourceArn: KINESIS, StartingPosition: 'LATEST', BatchSize: 100 });
+      expect(ids(diagnoseTemplate(t1))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(t2))).toHaveLength(0);
+    });
+
+    test('a literal .fifo arn trips the fifo window rule', () => {
+      const t = esm({
+        EventSourceArn: 'arn:aws:sqs:us-east-1:123456789012:q.fifo',
+        MaximumBatchingWindowInSeconds: 10,
+      });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-lambda-esm-fifo-batching-window');
+    });
+
+    test('an explicit window of 0 still counts as no window', () => {
+      const t = esm({
+        EventSourceArn: 'arn:aws:sqs:us-east-1:123456789012:q',
+        BatchSize: 100,
+        MaximumBatchingWindowInSeconds: 0,
+      });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-lambda-esm-batchsize-window');
+    });
+  });
+
+  describe('code shape rules', () => {
+    test('S3Key without S3Bucket is the other half of the pair', () => {
+      const t = fn({});
+      (t.Resources.F.Properties as Record<string, unknown>).Code = { S3Key: 'code.zip' };
+      expect(ids(diagnoseTemplate(t))).toContain('pf-lambda-code-s3-pair');
+    });
+
+    test('ZipFile alongside ImageUri trips the exclusive rule', () => {
+      const t = fn({});
+      (t.Resources.F.Properties as Record<string, unknown>).Code = {
+        ZipFile: 'def handler(e, c): pass',
+        ImageUri: '123456789012.dkr.ecr.us-east-1.amazonaws.com/repo:tag',
+      };
+      expect(ids(diagnoseTemplate(t))).toContain('pf-lambda-code-zipfile-exclusive');
+    });
+  });
+});

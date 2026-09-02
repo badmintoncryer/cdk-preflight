@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": "arn:aws:iam::123456789012:role/lambda-role",
+        "Code": {
+          "S3Bucket": "my-bucket"
+        },
+        "Runtime": "python3.12",
+        "Handler": "index.handler"
+      }
+    }
+  }
+}

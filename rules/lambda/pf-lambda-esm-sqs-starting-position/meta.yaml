@@ -1,0 +1,11 @@
+id: pf-lambda-esm-sqs-starting-position
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: SQS event sources reject StartingPosition
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: mapping on a real in-template queue with StartingPosition LATEST (esm01) -> \"Invalid request provided: StartingPosition is not valid for SQS event sources.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03
