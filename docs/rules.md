@@ -29,7 +29,15 @@
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
+| `pf-ecs-container-definitions-empty` | AWS::ECS::TaskDefinition | ContainerDefinitions must contain at least one container | pending-engine |
+| `pf-ecs-container-memory-over-task` | AWS::ECS::TaskDefinition | A container Memory must not exceed the task-level Memory | none |
+| `pf-ecs-container-memory-required` | AWS::ECS::TaskDefinition | A container needs Memory or MemoryReservation when the task sets no Memory | none |
+| `pf-ecs-container-memory-reservation` | AWS::ECS::TaskDefinition | MemoryReservation must not exceed Memory | none |
+| `pf-ecs-duplicate-container-names` | AWS::ECS::TaskDefinition | Container names must be unique within a task definition | none |
+| `pf-ecs-ephemeral-storage-range` | AWS::ECS::TaskDefinition | EphemeralStorage SizeInGiB must be 21-200 | pending-engine |
+| `pf-ecs-essential-container` | AWS::ECS::TaskDefinition | At least one container must be essential | none |
 | `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | none |
+| `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | none |
 | `pf-elbv2-lb-idle-timeout-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | ALB idle_timeout.timeout_seconds must be between 1 and 4000 | none |
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |

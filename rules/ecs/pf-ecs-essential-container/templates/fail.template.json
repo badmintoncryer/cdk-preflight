@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": false,
+            "Memory": 256
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-ecs-fargate-task-cpu-memory
+service: ecs
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: FARGATE compatibility requires task-level Cpu and Memory
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: FARGATE with container memory but no task Cpu/Memory (e02c) -> \"Fargate requires that 'cpu' be defined at the task level\"; with Cpu 256 but no Memory (e02d) -> \"Fargate requires that 'memory' be defined at the task level\". Both ROLLBACK_COMPLETE. Engine E3047 checks the pair only when both are present."
+addedOn: 2026-09-02

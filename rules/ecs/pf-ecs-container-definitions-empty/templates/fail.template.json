@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": []
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-ecs-ephemeral-storage-range
+service: ecs
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: EphemeralStorage SizeInGiB must be 21-200
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-ephemeralstorage.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: SizeInGiB 10 (e08) -> \"EphemeralStorage size should be at least 21\"; SizeInGiB 300 (e08b) -> \"EphemeralStorage size should be at most 200\". Both ROLLBACK_COMPLETE. Registry schema carries no minimum/maximum for SizeInGiB."
+addedOn: 2026-09-02

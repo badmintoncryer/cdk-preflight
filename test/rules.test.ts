@@ -559,3 +559,124 @@ describe('deploy_region rules', () => {
     expect(ids(diagnoseTemplate(t, 'ap-northeast-1'))).toHaveLength(0);
   });
 });
+
+describe('ecs task definition rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  const td = (props: Record<string, unknown>, parameters?: Record<string, unknown>) => ({
+    ...(parameters ? { Parameters: parameters } : {}),
+    Resources: { TD: { Type: 'AWS::ECS::TaskDefinition', Properties: props } },
+  });
+  const APP = { Name: 'app', Image: 'public.ecr.aws/nginx/nginx:latest', Essential: true };
+
+  describe('pf-ecs-container-memory-required', () => {
+    test('skips when task Memory is present but unresolvable (Ref without default)', () => {
+      // `not resolve(...)` would fire here — the input.resources absence proof must not
+      const t = td(
+        { Memory: { Ref: 'MemParam' }, ContainerDefinitions: [APP] },
+        { MemParam: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-ecs-fargate-task-cpu-memory', () => {
+    test('fires once per missing task-level setting', () => {
+      const t = td({
+        RequiresCompatibilities: ['FARGATE'],
+        NetworkMode: 'awsvpc',
+        ContainerDefinitions: [{ ...APP, Memory: 512 }],
+      });
+      const got = ids(diagnoseTemplate(t));
+      expect(got).toHaveLength(2);
+      expect(new Set(got)).toEqual(new Set(['pf-ecs-fargate-task-cpu-memory']));
+    });
+
+    test('skips when Cpu and Memory are present but unresolvable', () => {
+      const t = td(
+        {
+          RequiresCompatibilities: ['FARGATE'],
+          NetworkMode: 'awsvpc',
+          Cpu: { Ref: 'CpuParam' },
+          Memory: { Ref: 'MemParam' },
+          ContainerDefinitions: [{ ...APP, Memory: 512 }],
+        },
+        { CpuParam: { Type: 'String' }, MemParam: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-ecs-fargate-network-mode', () => {
+    test('not-set block skips when NetworkMode is a Ref without default', () => {
+      const t = td(
+        {
+          RequiresCompatibilities: ['FARGATE'],
+          NetworkMode: { Ref: 'NmParam' },
+          Cpu: '256',
+          Memory: '512',
+          ContainerDefinitions: [APP],
+        },
+        { NmParam: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-ecs-container-definitions-empty', () => {
+    test('fires when ContainerDefinitions is absent entirely (bench e06b)', () => {
+      const t = td({ Cpu: '256' });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-ecs-container-definitions-empty');
+    });
+  });
+
+  describe('pf-ecs-essential-container', () => {
+    test('skips when one Essential is unresolvable — absence of an essential container is unproven', () => {
+      const t = td(
+        {
+          ContainerDefinitions: [
+            { ...APP, Essential: false, Memory: 256 },
+            { Name: 'b', Image: 'public.ecr.aws/nginx/nginx:latest', Essential: { Ref: 'EssParam' }, Memory: 256 },
+          ],
+        },
+        { EssParam: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-ecs-duplicate-container-names', () => {
+    test('skips Ref-valued names — only literal duplicates are provable', () => {
+      const t = td(
+        {
+          ContainerDefinitions: [
+            { Name: { Ref: 'NameParam' }, Image: 'x', Essential: true, Memory: 256 },
+            { Name: { Ref: 'NameParam' }, Image: 'x', Essential: false, Memory: 256 },
+          ],
+        },
+        { NameParam: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-ecs-container-memory-over-task', () => {
+    test('skips when the task Memory is unresolvable', () => {
+      const t = td(
+        {
+          Memory: { Ref: 'MemParam' },
+          ContainerDefinitions: [{ ...APP, Memory: 1024 }],
+        },
+        { MemParam: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-ecs-container-memory-reservation', () => {
+    test('coerces string-typed numbers before comparing', () => {
+      const t = td({ ContainerDefinitions: [{ ...APP, Memory: '256', MemoryReservation: '512' }] });
+      expect(ids(diagnoseTemplate(t))).toContain('pf-ecs-container-memory-reservation');
+    });
+  });
+});

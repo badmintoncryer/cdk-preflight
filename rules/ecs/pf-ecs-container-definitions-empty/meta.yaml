@@ -1,0 +1,11 @@
+id: pf-ecs-container-definitions-empty
+service: ecs
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: ContainerDefinitions must contain at least one container
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-02 ap-northeast-1: ContainerDefinitions [] (e06) and ContainerDefinitions absent (e06b) both -> \"Container list cannot be empty\". ROLLBACK_COMPLETE. Registry schema marks nothing required and no minItems, so the engine is silent on both shapes."
+addedOn: 2026-09-02
