@@ -1020,3 +1020,57 @@ describe('eventbridge rules', () => {
     });
   });
 });
+
+describe('cloudwatch alarm rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const alarm = (props: Record<string, unknown>, parameters?: Record<string, unknown>) => ({
+    ...(parameters ? { Parameters: parameters } : {}),
+    Resources: { A: { Type: 'AWS::CloudWatch::Alarm', Properties: { ComparisonOperator: 'GreaterThanThreshold', EvaluationPeriods: 1, ...props } } },
+  });
+  const ms = (n: string) => ({ Metric: { MetricName: n, Namespace: 'cdkpf' }, Period: 60, Stat: 'Average' });
+
+  describe('pf-cloudwatch-metric-query-returndata', () => {
+    test('an unresolvable ReturnData makes the count unknowable — rule skips', () => {
+      const t = alarm(
+        { Metrics: [{ Id: 'm1', MetricStat: ms('x') }, { Id: 'm2', MetricStat: ms('y'), ReturnData: { Ref: 'P' } }], Threshold: 1 },
+        { P: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-cloudwatch-composite-alarm-rule-syntax', () => {
+    test('AT_LEAST and parenthesized groups are valid starts', () => {
+      const t = {
+        Resources: {
+          C: { Type: 'AWS::CloudWatch::CompositeAlarm', Properties: { AlarmRule: 'AT_LEAST(2, ALARM("a"), ALARM("b"), ALARM("c"))' } },
+          D: { Type: 'AWS::CloudWatch::CompositeAlarm', Properties: { AlarmRule: '(ALARM("a") AND OK("b"))' } },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-cloudwatch-alarm-threshold', () => {
+    test('a range operator with ThresholdMetricId and no Threshold is the anomaly-detection happy path', () => {
+      const t = alarm({
+        ComparisonOperator: 'LessThanLowerOrGreaterThanUpperThreshold',
+        ThresholdMetricId: 'ad1',
+        Metrics: [
+          { Id: 'ad1', Expression: 'ANOMALY_DETECTION_BAND(m1, 2)' },
+          { Id: 'm1', MetricStat: ms('x'), ReturnData: false },
+        ],
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-cloudwatch-alarm-period', () => {
+    test('high-resolution values and multiples of 60 stay silent', () => {
+      const ok = (p: number) => alarm({ MetricName: 'x', Namespace: 'cdkpf', Statistic: 'Average', Period: p, Threshold: 1 });
+      expect(ids(diagnoseTemplate(ok(10)))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(ok(300)))).toHaveLength(0);
+      expect(ids(diagnoseTemplate(ok(90)))).toContain('pf-cloudwatch-alarm-period');
+    });
+  });
+});

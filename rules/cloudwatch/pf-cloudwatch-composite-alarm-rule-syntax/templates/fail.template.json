@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "Properties": {
+        "AlarmRule": "GARBAGE(not a rule"
+      }
+    }
+  }
+}
