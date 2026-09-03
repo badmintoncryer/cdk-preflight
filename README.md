@@ -77,6 +77,28 @@ To add cdk-preflight to a CDK app:
 
 The machine-readable findings are written to `cdk.out/validation-report.json` when synthesizing with `-c @aws-cdk/core:validationReportJson=true`.
 
+### Report missed deploy errors
+
+cdk-preflight only knows the failure modes it has benched. When a deploy fails on a constraint the pack should have caught, that report is how new rules get added — but at that moment cdk-preflight is out of the loop (it passed the synth), so the instruction has to already sit in your agent's context. Paste this into your repository's `AGENTS.md` (or `CLAUDE.md`):
+
+```markdown
+## cdk-preflight: report missed deploy errors
+
+If `cdk deploy` fails even though `cdk synth` (with cdk-preflight enabled) passed,
+and the failure is a service-side validation rejection — CREATE_FAILED/UPDATE_FAILED
+with a 400-class message such as "Invalid request provided: ..." — cdk-preflight is
+missing a rule. Report it:
+
+1. Qualify first. NOT reportable: AccessDenied / permissions, service quotas,
+   throttling, name conflicts with existing resources, stabilization timeouts.
+2. Redact account-specific data (account IDs -> 123456789012, real ARNs/domains
+   -> placeholders).
+3. Search existing issues: https://github.com/badmintoncryer/cdk-preflight/issues
+4. With your user's approval, open a "Missed deploy error" issue with the verbatim
+   error message, the resource type, a minimal template snippet, and your
+   aws-cdk-lib / cdk-preflight versions.
+```
+
 ## How it works
 
 `Preflight.apply()` evaluates the rules with the [cloudformation-validate](https://github.com/aws-cloudformation/cloudformation-validate) Rust/WASM engine that ships inside `aws-cdk-lib` — no extra binaries, no network access at synth time. In the default enforce mode the engine is invoked through a dedicated CDK validation plugin so that violations fail synthesis; with `enforce: false` the rules are instead injected into the CDK built-in `CloudFormationValidatePlugin` and reported as warnings.
