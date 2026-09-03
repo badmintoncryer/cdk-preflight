@@ -1,0 +1,11 @@
+id: pf-rds-window-overlap
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: The backup window and the maintenance window must not overlap
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: PreferredBackupWindow 03:00-04:00 + PreferredMaintenanceWindow mon:03:30-mon:04:30 (r05) -> \"The backup window and maintenance window must not overlap.\" ROLLBACK_COMPLETE. Claim scope: both windows well-formed, neither wrapping midnight, single-day maintenance window; other shapes stay silent (under-claim)."
+addedOn: 2026-09-03

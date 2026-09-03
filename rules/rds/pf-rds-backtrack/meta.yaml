@@ -1,0 +1,11 @@
+id: pf-rds-backtrack
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: Backtrack only works on aurora-mysql, with a window of at most 259200 seconds
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Backtrack.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: BacktrackWindow 3600 on aurora-postgresql (r13) -> \"Backtrack is not enabled for the aurora-postgresql engine.\"; BacktrackWindow 300000 on aurora-mysql (r13b) -> \"The specified value (300000) is not a valid Backtrack Window. Allowed values are within the range of 0 to 259200\". Both ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

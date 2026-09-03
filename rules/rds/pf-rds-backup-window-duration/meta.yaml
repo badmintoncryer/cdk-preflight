@@ -1,0 +1,11 @@
+id: pf-rds-backup-window-duration
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: The backup window must be at least 30 minutes
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: PreferredBackupWindow 03:00-03:10 (r05c) -> \"Backup window must be at least 30 minutes.\" ROLLBACK_COMPLETE. Midnight-wrapping windows are handled ((end - start + 1440) mod 1440)."
+addedOn: 2026-09-03

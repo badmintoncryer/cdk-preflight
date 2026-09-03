@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::RDS::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "aurora-postgresql",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "BacktrackWindow": 3600
+      }
+    }
+  }
+}

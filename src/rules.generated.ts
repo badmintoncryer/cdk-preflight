@@ -1508,6 +1508,139 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgskr_url := \"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\"\n\n# The destination is provably Kinesis two ways: a literal\n# arn:<partition>:kinesis: string, or a Ref/GetAtt that resolve() turns into\n# the logical ID of an in-template AWS::Kinesis::Stream. Scoped to Kinesis —\n# the bench error names \"vendor kinesis\"; other vendors were not measured.\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\tparts := split(d, \":\")\n\tcount(parts) >= 3\n\tparts[0] == \"arn\"\n\tparts[2] == \"kinesis\"\n}\n\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\td in resources_of_type(\"AWS::Kinesis::Stream\")\n}\n\n# True absence of RoleArn needs the preprocessed document (see AGENTS.md).\n_pf_lgskr_role_absent(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-logs-subscription-kinesis-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"The subscription filter targets a Kinesis stream but sets no RoleArn; the service rejects it with \\\"destinationArn for vendor kinesis cannot be used without roleArn\\\"\",\n\t\"Add a RoleArn for a role that logs.amazonaws.com can assume with kinesis:PutRecord on the stream\",\n\t_pf_lgskr_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lgskr_kinesis_dest(name)\n\t_pf_lgskr_role_absent(name)\n}\n"
   },
   {
+    "id": "pf-rds-backtrack",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Backtrack only works on aurora-mysql, with a window of at most 259200 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsbt_url := \"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Backtrack.html\"\n\nviolation contains make_diag_full(\"pf-rds-backtrack\", \"ERROR\", name,\n\t\"Properties.BacktrackWindow\",\n\tsprintf(\"Backtrack is only available on aurora-mysql (\\\"Backtrack is not enabled for the %s engine.\\\")\", [eng]),\n\t\"Remove BacktrackWindow, or use the aurora-mysql engine\",\n\t_pf_rdsbt_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tn := to_number(resolve(name, \"Properties.BacktrackWindow\"))\n\tn > 0\n\teng := resolve(name, \"Properties.Engine\")\n\tis_string(eng)\n\teng != \"aurora-mysql\"\n}\n\nviolation contains make_diag_full(\"pf-rds-backtrack\", \"ERROR\", name,\n\t\"Properties.BacktrackWindow\",\n\tsprintf(\"BacktrackWindow %v is outside 0-259200 seconds (72 hours)\", [n]),\n\t\"Use at most 259200 seconds\",\n\t_pf_rdsbt_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tresolve(name, \"Properties.Engine\") == \"aurora-mysql\"\n\tn := to_number(resolve(name, \"Properties.BacktrackWindow\"))\n\tn > 259200\n}\n"
+  },
+  {
+    "id": "pf-rds-backup-retention-range",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "BackupRetentionPeriod must be at most 35 days",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-backup-retention-range\", \"ERROR\", name,\n\t\"Properties.BackupRetentionPeriod\",\n\tsprintf(\"BackupRetentionPeriod %v exceeds the maximum; RDS rejects it with \\\"Retention period must be between 0 and 35.\\\"\", [n]),\n\t\"Use a retention period of 35 days or less\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tn := to_number(resolve(name, \"Properties.BackupRetentionPeriod\"))\n\tn > 35\n}\n"
+  },
+  {
+    "id": "pf-rds-backup-window-duration",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "The backup window must be at least 30 minutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"HH:MM\" -> minutes of day; undefined for anything else. Digits go\n# through a lookup table because to_number rejects leading zeros\n# (to_number(\"03\") is undefined in the engine's Rego build).\n_pf_rdswd_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_rdswd_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_rdswd_digit[substring(t, 0, 1)] * 10) + _pf_rdswd_digit[substring(t, 1, 1)]\n\tmi := (_pf_rdswd_digit[substring(t, 3, 1)] * 10) + _pf_rdswd_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\nviolation contains make_diag_full(\"pf-rds-backup-window-duration\", \"ERROR\", name,\n\t\"Properties.PreferredBackupWindow\",\n\tsprintf(\"PreferredBackupWindow '%s' is only %v minutes; RDS requires at least 30 (\\\"Backup window must be at least 30 minutes.\\\")\", [w, d]),\n\t\"Widen the window to 30 minutes or more\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tw := resolve(name, \"Properties.PreferredBackupWindow\")\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_rdswd_min(parts[0])\n\te := _pf_rdswd_min(parts[1])\n\td := ((e - s) + 1440) % 1440\n\td < 30\n}\n"
+  },
+  {
+    "id": "pf-rds-backup-window-format",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "PreferredBackupWindow must be hh24:mi-hh24:mi",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-backup-window-format\", \"ERROR\", name,\n\t\"Properties.PreferredBackupWindow\",\n\tsprintf(\"PreferredBackupWindow '%s' is not hh24:mi-hh24:mi (24H clock UTC); RDS rejects it at create time\", [w]),\n\t\"Use the hh24:mi-hh24:mi form, e.g. 03:00-04:00\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tw := resolve(name, \"Properties.PreferredBackupWindow\")\n\tis_string(w)\n\tnot regex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]$`, w)\n}\n"
+  },
+  {
+    "id": "pf-rds-dbname-format",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "postgres DBName must begin with a letter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the letter-start half of the service message is claimed: the\n# \"only alphanumeric\" half is measurably wrong (bench_db deploys).\nviolation contains make_diag_full(\"pf-rds-dbname-format\", \"ERROR\", name,\n\t\"Properties.DBName\",\n\tsprintf(\"DBName '%s' does not begin with a letter (\\\"DBName must begin with a letter\\\"); the CreateDBInstance call fails\", [dn]),\n\t\"Start the database name with a letter\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tresolve(name, \"Properties.Engine\") == \"postgres\"\n\tdn := resolve(name, \"Properties.DBName\")\n\tis_string(dn)\n\tnot regex.match(`^[a-zA-Z]`, dn)\n}\n"
+  },
+  {
+    "id": "pf-rds-gp3-iops-storage-threshold",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "gp3 below 400 GiB cannot take custom Iops or StorageThroughput (postgres/mysql)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsgp3_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_rdsgp3_custom(name) if _pf_rdsgp3_has(name, \"Iops\")\n\n_pf_rdsgp3_custom(name) if _pf_rdsgp3_has(name, \"StorageThroughput\")\n\nviolation contains make_diag_full(\"pf-rds-gp3-iops-storage-threshold\", \"ERROR\", name,\n\t\"Properties.Iops\",\n\tsprintf(\"gp3 with %v GiB cannot take custom Iops/StorageThroughput below 400 GiB for engine %s (\\\"You can't specify IOPS or storage throughput ... less than 400.\\\")\", [s, eng]),\n\t\"Drop the custom Iops/StorageThroughput, or allocate at least 400 GiB\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\teng := resolve(name, \"Properties.Engine\")\n\teng in {\"postgres\", \"mysql\"}\n\tresolve(name, \"Properties.StorageType\") == \"gp3\"\n\ts := to_number(resolve(name, \"Properties.AllocatedStorage\"))\n\ts < 400\n\t_pf_rdsgp3_custom(name)\n}\n"
+  },
+  {
+    "id": "pf-rds-io1-iops-ratio",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "postgres io1 Iops may not exceed 50 per GiB of storage",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the benched engine/type pair; the historical 64000 IOPS cap is\n# gone (80000 deployed clean at ratio 40 on 2026-09-03).\nviolation contains make_diag_full(\"pf-rds-io1-iops-ratio\", \"ERROR\", name,\n\t\"Properties.Iops\",\n\tsprintf(\"Iops %v is %v per GiB for %v GiB; postgres io1 allows at most 50 (\\\"Invalid iops to storage (GiB) ratio\\\")\", [n, n / s, s]),\n\t\"Keep Iops at or below 50 x AllocatedStorage\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tresolve(name, \"Properties.Engine\") == \"postgres\"\n\tresolve(name, \"Properties.StorageType\") == \"io1\"\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\ts := to_number(resolve(name, \"Properties.AllocatedStorage\"))\n\ts > 0\n\tn > s * 50\n}\n"
+  },
+  {
+    "id": "pf-rds-iops-required",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "io1 and io2 storage require the Iops property",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-iops-required\", \"ERROR\", name,\n\t\"Properties.Iops\",\n\tsprintf(\"StorageType %s requires Iops (\\\"The storage type %s requires iops to be specified.\\\")\", [st, st]),\n\t\"Set Iops alongside the provisioned-IOPS storage type\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tst := resolve(name, \"Properties.StorageType\")\n\tst in {\"io1\", \"io2\"}\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Iops\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-rds-password-valid",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MasterUserPassword must be at least 8 characters without '/', '@', '\\\"' or spaces",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance",
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspw_url := \"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\"\n\n_pf_rdspw_types := {\"AWS::RDS::DBInstance\", \"AWS::RDS::DBCluster\"}\n\n_pf_rdspw_forbidden := {\"/\", \"@\", \"\\\"\", \" \"}\n\nviolation contains make_diag_full(\"pf-rds-password-valid\", \"ERROR\", name,\n\t\"Properties.MasterUserPassword\",\n\t\"MasterUserPassword is shorter than 8 characters; RDS rejects it at create time\",\n\t\"Use 8+ characters, or a Secrets Manager reference\",\n\t_pf_rdspw_url) if {\n\tsome rtype in _pf_rdspw_types\n\tsome name in resources_of_type(rtype)\n\tpw := resolve(name, \"Properties.MasterUserPassword\")\n\tis_string(pw)\n\tcount(pw) < 8\n}\n\nviolation contains make_diag_full(\"pf-rds-password-valid\", \"ERROR\", name,\n\t\"Properties.MasterUserPassword\",\n\tsprintf(\"MasterUserPassword contains '%s'; RDS forbids '/', '@', double quotes and spaces\", [ch]),\n\t\"Remove the forbidden character, or use a Secrets Manager reference\",\n\t_pf_rdspw_url) if {\n\tsome rtype in _pf_rdspw_types\n\tsome name in resources_of_type(rtype)\n\tpw := resolve(name, \"Properties.MasterUserPassword\")\n\tis_string(pw)\n\tsome ch in _pf_rdspw_forbidden\n\tcontains(pw, ch)\n}\n"
+  },
+  {
+    "id": "pf-rds-port-range",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "The database port must be within 1150-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsport_out(n) if n < 1150\n\n_pf_rdsport_out(n) if n > 65535\n\nviolation contains make_diag_full(\"pf-rds-port-range\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"Port %v is outside 1150-65535 (\\\"Invalid endpoint port %v. Valid range is: 1150-65535\\\")\", [n, n]),\n\t\"Pick a port between 1150 and 65535\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tn := to_number(resolve(name, \"Properties.Port\"))\n\t_pf_rdsport_out(n)\n}\n"
+  },
+  {
+    "id": "pf-rds-serverless-v2-capacity",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Serverless v2 MinCapacity must not exceed MaxCapacity, and MaxCapacity is at most 256",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdssv2_url := \"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html\"\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MinCapacity\",\n\tsprintf(\"MinCapacity %v exceeds MaxCapacity %v (\\\"minimum capacity must be less than or equal to maximum capacity\\\")\", [mn, mx]),\n\t\"Keep MinCapacity <= MaxCapacity\",\n\t_pf_rdssv2_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tmn := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MinCapacity\"))\n\tmx := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\tmn > mx\n}\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v is above 256 ACUs (\\\"The valid scaling range for this cluster is 0.0 to 256.0.\\\")\", [mx]),\n\t\"Use at most 256 ACUs\",\n\t_pf_rdssv2_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tmx := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\tmx > 256\n}\n"
+  },
+  {
+    "id": "pf-rds-window-overlap",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "The backup window and the maintenance window must not overlap",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"HH:MM\" -> minutes of day; undefined for anything else. Digits go\n# through a lookup table because to_number rejects leading zeros\n# (to_number(\"03\") is undefined in the engine's Rego build).\n_pf_rdswo_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_rdswo_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_rdswo_digit[substring(t, 0, 1)] * 10) + _pf_rdswo_digit[substring(t, 1, 1)]\n\tmi := (_pf_rdswo_digit[substring(t, 3, 1)] * 10) + _pf_rdswo_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# The backup window recurs daily, so a same-day maintenance window\n# overlaps whenever the time-of-day intervals intersect.\nviolation contains make_diag_full(\"pf-rds-window-overlap\", \"ERROR\", name,\n\t\"Properties.PreferredBackupWindow\",\n\tsprintf(\"Backup window %s overlaps maintenance window %s; RDS rejects the pair (\\\"The backup window and maintenance window must not overlap.\\\")\", [bw, mw]),\n\t\"Separate the two windows in time\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tbw := resolve(name, \"Properties.PreferredBackupWindow\")\n\tis_string(bw)\n\tbp := split(bw, \"-\")\n\tcount(bp) == 2\n\tbs := _pf_rdswo_min(bp[0])\n\tbe := _pf_rdswo_min(bp[1])\n\tbs < be\n\tmw := resolve(name, \"Properties.PreferredMaintenanceWindow\")\n\tis_string(mw)\n\tmp := split(lower(mw), \"-\")\n\tcount(mp) == 2\n\tm1 := split(mp[0], \":\")\n\tm2 := split(mp[1], \":\")\n\tcount(m1) == 3\n\tcount(m2) == 3\n\tm1[0] == m2[0]\n\tms := _pf_rdswo_min(sprintf(\"%s:%s\", [m1[1], m1[2]]))\n\tme := _pf_rdswo_min(sprintf(\"%s:%s\", [m2[1], m2[2]]))\n\tms < me\n\tbs < me\n\tms < be\n}\n"
+  },
+  {
     "id": "pf-route53-alias-cloudfront-zone-id",
     "service": "route53",
     "severity": "ERROR",

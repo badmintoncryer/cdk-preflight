@@ -1608,3 +1608,66 @@ describe('ec2 and vpc rules', () => {
     expect(ids(diagnoseTemplate(volT({ Encrypted: { Ref: 'Enc' } })))).toHaveLength(0);
   });
 });
+
+describe('rds and aurora rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const baseInst = {
+    Engine: 'postgres',
+    DBInstanceClass: 'db.t4g.micro',
+    AllocatedStorage: '20',
+    MasterUsername: 'benchuser',
+    MasterUserPassword: 'benchpass123',
+  };
+  const inst = (p: Record<string, unknown>) => ({
+    Resources: { I: { Type: 'AWS::RDS::DBInstance', DeletionPolicy: 'Delete', UpdateReplacePolicy: 'Delete', Properties: { ...baseInst, ...p } } },
+  });
+
+  test('backup window duration handles zero-padded times and midnight wrap (to_number leading-zero pitfall)', () => {
+    expect(ids(diagnoseTemplate(inst({ PreferredBackupWindow: '03:00-03:29', BackupRetentionPeriod: 7 })))).toContain('pf-rds-backup-window-duration');
+    expect(ids(diagnoseTemplate(inst({ PreferredBackupWindow: '03:00-03:30', BackupRetentionPeriod: 7 })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst({ PreferredBackupWindow: '23:50-00:20', BackupRetentionPeriod: 7 })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst({ PreferredBackupWindow: '23:50-00:10', BackupRetentionPeriod: 7 })))).toContain('pf-rds-backup-window-duration');
+  });
+
+  test('window overlap: same-day intersection fires, adjacent windows and other maintenance days stay silent', () => {
+    const w = (b: string, m: string) => inst({ PreferredBackupWindow: b, PreferredMaintenanceWindow: m, BackupRetentionPeriod: 7 });
+    expect(ids(diagnoseTemplate(w('03:00-04:00', 'mon:03:30-mon:04:30')))).toContain('pf-rds-window-overlap');
+    expect(ids(diagnoseTemplate(w('03:00-04:00', 'mon:04:00-mon:05:00')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(w('03:00-04:00', 'Mon:03:30-Mon:04:30')))).toContain('pf-rds-window-overlap');
+  });
+
+  test('password rules ignore Secrets Manager dynamic references and non-literal values', () => {
+    const secret = '{{resolve:secretsmanager:arn:aws:secretsmanager:us-east-1:123456789012:secret:x:SecretString:password}}';
+    expect(ids(diagnoseTemplate(inst({ MasterUserPassword: secret })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst({ MasterUserPassword: 'has space x' })))).toContain('pf-rds-password-valid');
+    expect(ids(diagnoseTemplate(inst({ MasterUserPassword: 'short' })))).toContain('pf-rds-password-valid');
+  });
+
+  test('gp3 threshold needs a custom setting; 400 GiB boundary and other engines stay silent', () => {
+    expect(ids(diagnoseTemplate(inst({ StorageType: 'gp3', AllocatedStorage: '100' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst({ StorageType: 'gp3', AllocatedStorage: '100', StorageThroughput: 500 })))).toContain('pf-rds-gp3-iops-storage-threshold');
+    expect(ids(diagnoseTemplate(inst({ Engine: 'sqlserver-ex', AllocatedStorage: '100', StorageType: 'gp3', Iops: 12000, MasterUsername: 'benchuser', MasterUserPassword: 'benchpass123' })))).toHaveLength(0);
+  });
+
+  test('io1 ratio is scoped to the benched postgres/io1 pair; ratio 50 exactly is legal', () => {
+    expect(ids(diagnoseTemplate(inst({ StorageType: 'io1', AllocatedStorage: '100', Iops: 5000 })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst({ StorageType: 'io1', AllocatedStorage: '100', Iops: 5001 })))).toContain('pf-rds-io1-iops-ratio');
+    expect(ids(diagnoseTemplate(inst({ Engine: 'mysql', StorageType: 'io1', AllocatedStorage: '100', Iops: 6000 })))).toHaveLength(0);
+  });
+
+  test('backtrack: zero disables cleanly on any engine; range check only on aurora-mysql', () => {
+    const cl = (p: Record<string, unknown>) => ({
+      Resources: { C: { Type: 'AWS::RDS::DBCluster', DeletionPolicy: 'Delete', UpdateReplacePolicy: 'Delete', Properties: { Engine: 'aurora-postgresql', MasterUsername: 'benchuser', MasterUserPassword: 'benchpass123', ...p } } },
+    });
+    expect(ids(diagnoseTemplate(cl({ BacktrackWindow: 0 })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(cl({ BacktrackWindow: 3600 })))).toContain('pf-rds-backtrack');
+    expect(ids(diagnoseTemplate(cl({ Engine: 'aurora-mysql', BacktrackWindow: 259200 })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(cl({ Engine: 'aurora-mysql', BacktrackWindow: 259201 })))).toContain('pf-rds-backtrack');
+  });
+
+  test('dbname: only the letter-start half is claimed - underscores deploy clean (bench r15b)', () => {
+    expect(ids(diagnoseTemplate(inst({ DBName: 'bench_db' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst({ DBName: '1abc' })))).toContain('pf-rds-dbname-format');
+    expect(ids(diagnoseTemplate(inst({ Engine: 'mysql', DBName: '1abc' })))).toHaveLength(0);
+  });
+});

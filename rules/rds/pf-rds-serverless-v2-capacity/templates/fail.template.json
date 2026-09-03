@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::RDS::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "aurora-postgresql",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "ServerlessV2ScalingConfiguration": {
+          "MinCapacity": 8,
+          "MaxCapacity": 1
+        }
+      }
+    }
+  }
+}
