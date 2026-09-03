@@ -1,0 +1,11 @@
+id: pf-batch-queue-order-required
+service: batch
+resourceTypes: [AWS::Batch::JobQueue]
+severity: ERROR
+title: ComputeEnvironmentOrder may not be empty
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Priority 1 + ComputeEnvironmentOrder [] (d11) -> \"computeEnvironmentOrder is required.\" ROLLBACK_COMPLETE (the schema accepts the empty list; the service treats it as absent). Priority range 0-1000 itself is engine F3034 - not duplicated."
+addedOn: 2026-09-03

@@ -1,0 +1,11 @@
+id: pf-batch-fargate-execution-role
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Fargate job definitions require ExecutionRoleArn
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: FARGATE platform without ContainerProperties.ExecutionRoleArn (d04) -> \"executionRoleArn is required for Fargate jobs.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

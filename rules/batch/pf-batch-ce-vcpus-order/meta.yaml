@@ -1,0 +1,11 @@
+id: pf-batch-ce-vcpus-order
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+severity: ERROR
+title: MaxvCpus must be at least MinvCpus
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: EC2 compute environment with MinvCpus 8 / MaxvCpus 4 (d07, real instance profile and subnets so nothing masked it) -> \"maxvCpus should be greater than or equal to minvCpus.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

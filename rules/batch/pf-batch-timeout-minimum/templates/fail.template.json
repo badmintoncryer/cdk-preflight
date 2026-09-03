@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "J": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "ContainerProperties": {
+          "Image": "public.ecr.aws/amazonlinux/amazonlinux:latest",
+          "ResourceRequirements": [
+            {
+              "Type": "VCPU",
+              "Value": "1"
+            },
+            {
+              "Type": "MEMORY",
+              "Value": "2048"
+            }
+          ]
+        },
+        "Timeout": {
+          "AttemptDurationSeconds": 30
+        }
+      }
+    }
+  }
+}

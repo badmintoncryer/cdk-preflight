@@ -29,6 +29,16 @@
 | `pf-asg-ondemand-percentage-max` | AWS::AutoScaling::AutoScalingGroup | OnDemandPercentageAboveBaseCapacity tops out at 100 | none |
 | `pf-asg-target-value-positive` | AWS::AutoScaling::ScalingPolicy | Target tracking needs a positive TargetValue | none |
 | `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | none |
+| `pf-batch-ce-vcpus-order` | AWS::Batch::ComputeEnvironment | MaxvCpus must be at least MinvCpus | none |
+| `pf-batch-fargate-ce-fields` | AWS::Batch::ComputeEnvironment | Fargate compute environments cannot take AllocationStrategy or InstanceTypes | none |
+| `pf-batch-fargate-cpu-memory` | AWS::Batch::JobDefinition | Fargate job definitions must use a supported vCPU/memory combination | none |
+| `pf-batch-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate job definitions require ExecutionRoleArn | none |
+| `pf-batch-fargate-multinode` | AWS::Batch::JobDefinition | Multi-node parallel jobs are not supported on Fargate | none |
+| `pf-batch-managed-compute-resources` | AWS::Batch::ComputeEnvironment | MANAGED compute environments require ComputeResources | none |
+| `pf-batch-queue-order-required` | AWS::Batch::JobQueue | ComputeEnvironmentOrder may not be empty | none |
+| `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts may not exceed 10 | none |
+| `pf-batch-timeout-minimum` | AWS::Batch::JobDefinition | Timeout.AttemptDurationSeconds must be at least 60 | none |
+| `pf-batch-unmanaged-fargate` | AWS::Batch::ComputeEnvironment | UNMANAGED compute environments cannot be Fargate | none |
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |

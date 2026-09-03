@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED"
+      }
+    }
+  }
+}

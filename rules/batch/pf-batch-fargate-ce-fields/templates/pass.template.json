@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "FARGATE",
+          "MaxvCpus": 4,
+          "Subnets": [
+            "subnet-11112222"
+          ],
+          "SecurityGroupIds": [
+            "sg-11112222"
+          ]
+        }
+      }
+    }
+  }
+}

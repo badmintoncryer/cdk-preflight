@@ -1,0 +1,11 @@
+id: pf-batch-fargate-ce-fields
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+severity: ERROR
+title: Fargate compute environments cannot take AllocationStrategy or InstanceTypes
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: FARGATE + AllocationStrategy (d08) -> \"allocationStrategy is not applicable for Fargate.\"; FARGATE + InstanceTypes (d09) -> \"instanceTypes is not applicable for Fargate and should be empty or null.\"; FARGATE_SPOT variants (d08b, d09b) -> identical errors. All four cells benched, ROLLBACK_COMPLETE."
+addedOn: 2026-09-03
