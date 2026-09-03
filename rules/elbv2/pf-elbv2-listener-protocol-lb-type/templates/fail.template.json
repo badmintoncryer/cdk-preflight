@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "L": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internal",
+        "Subnets": [
+          "subnet-11112222",
+          "subnet-33334444"
+        ]
+      }
+    },
+    "T": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "TCP",
+        "Port": 80,
+        "VpcId": "vpc-11112222",
+        "TargetType": "instance"
+      }
+    },
+    "S": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "L"
+        },
+        "Protocol": "TCP",
+        "Port": 80,
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "T"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

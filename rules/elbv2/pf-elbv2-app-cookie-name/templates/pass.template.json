@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-11112222",
+        "TargetType": "instance",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.enabled",
+            "Value": "true"
+          },
+          {
+            "Key": "stickiness.type",
+            "Value": "app_cookie"
+          },
+          {
+            "Key": "stickiness.app_cookie.cookie_name",
+            "Value": "session"
+          }
+        ]
+      }
+    }
+  }
+}

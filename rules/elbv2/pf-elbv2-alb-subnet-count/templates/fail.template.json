@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "L": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internal",
+        "Subnets": [
+          "subnet-11112222"
+        ]
+      }
+    }
+  }
+}

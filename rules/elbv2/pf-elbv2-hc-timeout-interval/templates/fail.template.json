@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-11112222",
+        "TargetType": "instance",
+        "HealthCheckIntervalSeconds": 5,
+        "HealthCheckTimeoutSeconds": 10
+      }
+    }
+  }
+}

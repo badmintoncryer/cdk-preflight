@@ -1,0 +1,96 @@
+{
+  "Resources": {
+    "L": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internal",
+        "Subnets": [
+          "subnet-11112222",
+          "subnet-33334444"
+        ]
+      }
+    },
+    "T": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-11112222",
+        "TargetType": "instance"
+      }
+    },
+    "S": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "L"
+        },
+        "Protocol": "HTTP",
+        "Port": 80,
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "T"
+            }
+          }
+        ]
+      }
+    },
+    "R1": {
+      "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+      "Properties": {
+        "ListenerArn": {
+          "Ref": "S"
+        },
+        "Priority": 10,
+        "Conditions": [
+          {
+            "Field": "path-pattern",
+            "PathPatternConfig": {
+              "Values": [
+                "/a"
+              ]
+            }
+          }
+        ],
+        "Actions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "T"
+            }
+          }
+        ]
+      }
+    },
+    "R2": {
+      "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+      "Properties": {
+        "ListenerArn": {
+          "Ref": "S"
+        },
+        "Priority": 20,
+        "Conditions": [
+          {
+            "Field": "path-pattern",
+            "PathPatternConfig": {
+              "Values": [
+                "/b"
+              ]
+            }
+          }
+        ],
+        "Actions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "T"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

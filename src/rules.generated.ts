@@ -1143,6 +1143,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsfargcm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html\"\n\n# The engine's E3047 checks the Cpu/Memory pairing only when both are present;\n# leaving one out entirely is caught by nothing before registration. True\n# absence needs the preprocessed document (see pf-ecs-container-memory-required\n# for the idiom).\n_pf_ecsfargcm_fargate(name) if {\n\tsome rc in flatten_list(name, \"Properties.RequiresCompatibilities\")\n\trc.value == \"FARGATE\"\n}\n\n_pf_ecsfargcm_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-task-cpu-memory\", \"ERROR\", name,\n\t\"Properties.Cpu\",\n\t\"RequiresCompatibilities includes FARGATE but the task-level Cpu is missing; RegisterTaskDefinition fails with \\\"Fargate requires that 'cpu' be defined at the task level\\\"\",\n\t\"Set task-level Cpu (and Memory) to one of the supported Fargate combinations\",\n\t_pf_ecsfargcm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecsfargcm_fargate(name)\n\t_pf_ecsfargcm_absent(name, \"Cpu\")\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-task-cpu-memory\", \"ERROR\", name,\n\t\"Properties.Memory\",\n\t\"RequiresCompatibilities includes FARGATE but the task-level Memory is missing; RegisterTaskDefinition fails with \\\"Fargate requires that 'memory' be defined at the task level\\\"\",\n\t\"Set task-level Memory (and Cpu) to one of the supported Fargate combinations\",\n\t_pf_ecsfargcm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecsfargcm_fargate(name)\n\t_pf_ecsfargcm_absent(name, \"Memory\")\n}\n"
   },
   {
+    "id": "pf-elbv2-alb-subnet-count",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Application load balancers need at least two subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbsc_alb(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Type\", \"application\") == \"application\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-alb-subnet-count\", \"ERROR\", name,\n\t\"Properties.Subnets\",\n\tsprintf(\"The application load balancer lists %v subnet(s); ELB requires at least two in different AZs (\\\"At least two subnets in two different Availability Zones must be specified\\\")\", [count(subs)]),\n\t\"List two or more subnets from different Availability Zones\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\t_pf_elbsc_alb(name)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tsubs := object.get(props, \"Subnets\", \"__pf_absent\")\n\tis_array(subs)\n\tcount(subs) < 2\n}\n"
+  },
+  {
+    "id": "pf-elbv2-app-cookie-name",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "app_cookie stickiness requires a cookie name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbacn_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html\"\n\n_pf_elbacn_attr(name, key) := v if {\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tentry := item.value\n\tis_object(entry)\n\tobject.get(entry, \"Key\", \"\") == key\n\tv := object.get(entry, \"Value\", null)\n\tis_string(v)\n}\n\n_pf_elbacn_has(name, key) if _pf_elbacn_attr(name, key)\n\nviolation contains make_diag_full(\"pf-elbv2-app-cookie-name\", \"ERROR\", name,\n\t\"Properties.TargetGroupAttributes\",\n\t\"stickiness.type app_cookie has no stickiness.app_cookie.cookie_name (\\\"You must set an application cookie name to enable stickiness of type 'app_cookie'\\\")\",\n\t\"Add the stickiness.app_cookie.cookie_name attribute\",\n\t_pf_elbacn_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\t_pf_elbacn_attr(name, \"stickiness.enabled\") == \"true\"\n\t_pf_elbacn_attr(name, \"stickiness.type\") == \"app_cookie\"\n\tnot _pf_elbacn_has(name, \"stickiness.app_cookie.cookie_name\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-hc-timeout-interval",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Health check timeout must be strictly smaller than the interval",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Equality is rejected too (benched): the requirement is strictly less.\nviolation contains make_diag_full(\"pf-elbv2-hc-timeout-interval\", \"ERROR\", name,\n\t\"Properties.HealthCheckTimeoutSeconds\",\n\tsprintf(\"HealthCheckTimeoutSeconds %v is not smaller than HealthCheckIntervalSeconds %v (\\\"Health check timeout '%v' must be smaller than the interval '%v'\\\")\", [t, i, t, i]),\n\t\"Keep the timeout strictly below the interval\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tt := to_number(resolve(name, \"Properties.HealthCheckTimeoutSeconds\"))\n\ti := to_number(resolve(name, \"Properties.HealthCheckIntervalSeconds\"))\n\tt >= i\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lambda-target-protocol",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Lambda target groups cannot specify Protocol",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-elbv2-lambda-target-protocol\", \"ERROR\", name,\n\t\"Properties.Protocol\",\n\t\"TargetType lambda cannot take Protocol (\\\"Protocol cannot be specified for target groups with target type 'lambda'\\\")\",\n\t\"Remove Protocol from the lambda target group\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tresolve(name, \"Properties.TargetType\") == \"lambda\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Protocol\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-elbv2-lb-idle-timeout-range",
     "service": "elbv2",
     "severity": "ERROR",
@@ -1152,6 +1196,62 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ElasticLoadBalancingV2::LoadBalancer"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_idle_timeout_out(n) if n < 1\n\n_pf_idle_timeout_out(n) if n > 4000\n\n_pf_non_alb(name) if {\n\tt := resolve(name, \"Properties.Type\")\n\tt != \"application\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-idle-timeout-range\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [item.index]),\n\tsprintf(\"idle_timeout.timeout_seconds is %v but must be between 1 and 4000 seconds\", [num]),\n\t\"Set idle_timeout.timeout_seconds to a value between 1 and 4000\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html#connection-idle-timeout\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tnot _pf_non_alb(name)\n\tsome item in flatten_list(name, \"Properties.LoadBalancerAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"idle_timeout.timeout_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_idle_timeout_out(num)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-name",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Load balancer names cannot begin with internal- or end with a hyphen",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbname_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\n_pf_elbname_bad(n) := \"cannot begin with 'internal-'\" if startswith(n, \"internal-\")\n\n_pf_elbname_bad(n) := \"cannot end with a hyphen(-)\" if endswith(n, \"-\")\n\nviolation contains make_diag_full(\"pf-elbv2-lb-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The load balancer name '%s' %s; ELB rejects the create call\", [n, why]),\n\t\"Pick a name without the reserved internal- prefix or a trailing hyphen\",\n\t_pf_elbname_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\twhy := _pf_elbname_bad(n)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-protocol-lb-type",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Listener protocols must match the load balancer type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Allow-sets verbatim from the two benched service errors.\n_pf_elblpt_allow := {\"application\": {\"HTTP\", \"HTTPS\"}, \"network\": {\"TCP\", \"QUIC\", \"TCP_QUIC\", \"UDP\", \"TCP_UDP\", \"TLS\"}}\n\n_pf_elblpt_type(lb) := t if {\n\tprops := input.resources[lb].properties\n\tis_object(props)\n\tt := object.get(props, \"Type\", \"application\")\n}\n\nviolation contains make_diag_full(\"pf-elbv2-listener-protocol-lb-type\", \"ERROR\", name,\n\t\"Properties.Protocol\",\n\tsprintf(\"Listener protocol '%s' is not valid for a %s load balancer (allowed: %v)\", [proto, t, allow]),\n\t\"Use HTTP/HTTPS on application LBs and TCP/UDP/TLS/QUIC variants on network LBs\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::Listener\")\n\tlb := resolve(name, \"Properties.LoadBalancerArn\")\n\tlb in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tt := _pf_elblpt_type(lb)\n\tallow := _pf_elblpt_allow[t]\n\tproto := resolve(name, \"Properties.Protocol\")\n\tis_string(proto)\n\tnot proto in allow\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-priority-unique",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Listener rules on the same listener must have distinct priorities",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# resolve() turns a Ref/GetAtt to a sibling listener into its logical\n# id, so both Ref-wired and identical-literal ListenerArns compare equal.\nviolation contains make_diag_full(\"pf-elbv2-rule-priority-unique\", \"ERROR\", r2,\n\t\"Properties.Priority\",\n\tsprintf(\"Priority %v is also used by '%s' on the same listener (\\\"Priority '%v' is currently in use\\\")\", [p1, r1, p1]),\n\t\"Give each rule on a listener a distinct priority\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateRule.html\") if {\n\tsome r1 in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerRule\")\n\tsome r2 in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerRule\")\n\tr1 < r2\n\tl1 := resolve(r1, \"Properties.ListenerArn\")\n\tl2 := resolve(r2, \"Properties.ListenerArn\")\n\tl1 == l2\n\tp1 := to_number(resolve(r1, \"Properties.Priority\"))\n\tp2 := to_number(resolve(r2, \"Properties.Priority\"))\n\tp1 == p2\n}\n"
+  },
+  {
+    "id": "pf-elbv2-stickiness-type-protocol",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Stickiness type lb_cookie needs an HTTP-protocol target group, source_ip a TCP one",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbstp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html\"\n\n_pf_elbstp_attr(name, key) := v if {\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tentry := item.value\n\tis_object(entry)\n\tobject.get(entry, \"Key\", \"\") == key\n\tv := object.get(entry, \"Value\", null)\n\tis_string(v)\n}\n\n# Only the two benched pairs are claimed.\n_pf_elbstp_bad(name) := [\"lb_cookie\", \"TCP\"] if {\n\tresolve(name, \"Properties.Protocol\") == \"TCP\"\n\t_pf_elbstp_attr(name, \"stickiness.type\") == \"lb_cookie\"\n}\n\n_pf_elbstp_bad(name) := [\"source_ip\", \"HTTP\"] if {\n\tresolve(name, \"Properties.Protocol\") == \"HTTP\"\n\t_pf_elbstp_attr(name, \"stickiness.type\") == \"source_ip\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-stickiness-type-protocol\", \"ERROR\", name,\n\t\"Properties.TargetGroupAttributes\",\n\tsprintf(\"Stickiness type '%s' is not supported for target groups with the %s protocol\", [pair[0], pair[1]]),\n\t\"Use source_ip stickiness for TCP target groups and cookie stickiness for HTTP ones\",\n\t_pf_elbstp_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tpair := _pf_elbstp_bad(name)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tcp-health-check-path",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "TCP health checks cannot take a health check path",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtchp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\n_pf_elbtchp_tcp_hc(name) if resolve(name, \"Properties.HealthCheckProtocol\") == \"TCP\"\n\n# HealthCheckProtocol defaults to the target group protocol (benched via e04b).\n_pf_elbtchp_tcp_hc(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"HealthCheckProtocol\", \"__pf_absent\") == \"__pf_absent\"\n\tresolve(name, \"Properties.Protocol\") == \"TCP\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tcp-health-check-path\", \"ERROR\", name,\n\t\"Properties.HealthCheckPath\",\n\t\"The effective health check protocol is TCP, which cannot take HealthCheckPath (\\\"Health check paths are not supported for TCP health checks\\\")\",\n\t\"Remove HealthCheckPath, or use an HTTP/HTTPS health check protocol\",\n\t_pf_elbtchp_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\t_pf_elbtchp_tcp_hc(name)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"HealthCheckPath\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-elbv2-tg-deregistration-delay-range",

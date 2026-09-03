@@ -106,7 +106,16 @@
 | `pf-ecs-essential-container` | AWS::ECS::TaskDefinition | At least one container must be essential | none |
 | `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | none |
 | `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | none |
+| `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | none |
+| `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | none |
+| `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | none |
+| `pf-elbv2-lambda-target-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Lambda target groups cannot specify Protocol | none |
 | `pf-elbv2-lb-idle-timeout-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | ALB idle_timeout.timeout_seconds must be between 1 and 4000 | none |
+| `pf-elbv2-lb-name` | AWS::ElasticLoadBalancingV2::LoadBalancer | Load balancer names cannot begin with internal- or end with a hyphen | none |
+| `pf-elbv2-listener-protocol-lb-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | Listener protocols must match the load balancer type | none |
+| `pf-elbv2-rule-priority-unique` | AWS::ElasticLoadBalancingV2::ListenerRule | Listener rules on the same listener must have distinct priorities | none |
+| `pf-elbv2-stickiness-type-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Stickiness type lb_cookie needs an HTTP-protocol target group, source_ip a TCP one | none |
+| `pf-elbv2-tcp-health-check-path` | AWS::ElasticLoadBalancingV2::TargetGroup | TCP health checks cannot take a health check path | none |
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |

@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "L": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internal",
+        "Name": "internal-cdkpf",
+        "Subnets": [
+          "subnet-11112222",
+          "subnet-33334444"
+        ]
+      }
+    }
+  }
+}
