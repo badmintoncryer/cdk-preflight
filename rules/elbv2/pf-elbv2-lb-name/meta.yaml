@@ -1,0 +1,11 @@
+id: pf-elbv2-lb-name
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: Load balancer names cannot begin with internal- or end with a hyphen
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Name internal-cdkpf (e12) -> \"The load balancer name 'internal-cdkpf' cannot begin with 'internal-'\"; Name cdkpf-bench- (e12b) -> \"The load balancer name 'cdkpf-bench-' cannot end with a hyphen(-)\". Both ROLLBACK_COMPLETE. A leading hyphen is unbenched and not claimed."
+addedOn: 2026-09-03

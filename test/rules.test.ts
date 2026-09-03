@@ -1744,3 +1744,56 @@ describe('batch rules', () => {
     expect(ids(diagnoseTemplate(jdT(0)))).toHaveLength(0);
   });
 });
+
+describe('elbv2 rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const VPC = 'vpc-11112222';
+  const tgT = (p: Record<string, unknown>) => ({
+    Resources: { T: { Type: 'AWS::ElasticLoadBalancingV2::TargetGroup', Properties: { Protocol: 'HTTP', Port: 80, VpcId: VPC, TargetType: 'instance', ...p } } },
+  });
+
+  test('stickiness pairs are scoped to the benched combinations', () => {
+    const attrs = (type: string) => [{ Key: 'stickiness.enabled', Value: 'true' }, { Key: 'stickiness.type', Value: type }];
+    expect(ids(diagnoseTemplate(tgT({ Protocol: 'TCP', TargetGroupAttributes: attrs('lb_cookie') })))).toContain('pf-elbv2-stickiness-type-protocol');
+    expect(ids(diagnoseTemplate(tgT({ TargetGroupAttributes: attrs('source_ip') })))).toContain('pf-elbv2-stickiness-type-protocol');
+    expect(ids(diagnoseTemplate(tgT({ TargetGroupAttributes: attrs('lb_cookie') })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(tgT({ Protocol: 'UDP', TargetGroupAttributes: attrs('lb_cookie') })))).toHaveLength(0);
+  });
+
+  test('tcp health check path: explicit HTTP health check protocol overrides a TCP target group', () => {
+    expect(ids(diagnoseTemplate(tgT({ Protocol: 'TCP', HealthCheckProtocol: 'HTTP', HealthCheckPath: '/h' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(tgT({ Protocol: 'TCP', HealthCheckPath: '/h' })))).toContain('pf-elbv2-tcp-health-check-path');
+    expect(ids(diagnoseTemplate(tgT({ HealthCheckPath: '/h' })))).toHaveLength(0);
+  });
+
+  test('listener protocol rule: NLB QUIC is legal per the service allow-set; literal LB ARNs stay silent', () => {
+    const nlb = (proto: string, lbRef: unknown = { Ref: 'L' }) => ({
+      Resources: {
+        L: { Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer', Properties: { Type: 'network', Scheme: 'internal', Subnets: ['subnet-11112222', 'subnet-33334444'] } },
+        T: { Type: 'AWS::ElasticLoadBalancingV2::TargetGroup', Properties: { Protocol: 'TCP', Port: 80, VpcId: VPC, TargetType: 'instance' } },
+        S: { Type: 'AWS::ElasticLoadBalancingV2::Listener', Properties: { LoadBalancerArn: lbRef, Protocol: proto, Port: 80, DefaultActions: [{ Type: 'forward', TargetGroupArn: { Ref: 'T' } }] } },
+      },
+    });
+    expect(ids(diagnoseTemplate(nlb('QUIC')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(nlb('HTTP')))).toContain('pf-elbv2-listener-protocol-lb-type');
+    expect(ids(diagnoseTemplate(nlb('HTTP', 'arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/net/x/1')))).toHaveLength(0);
+  });
+
+  test('alb subnet count ignores NLBs and SubnetMappings-based load balancers', () => {
+    const lb = (p: Record<string, unknown>) => ({ Resources: { L: { Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer', Properties: { Scheme: 'internal', ...p } } } });
+    expect(ids(diagnoseTemplate(lb({ Subnets: ['subnet-11112222'] })))).toContain('pf-elbv2-alb-subnet-count');
+    expect(ids(diagnoseTemplate(lb({ Type: 'network', Subnets: ['subnet-11112222'] })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(lb({ SubnetMappings: [{ SubnetId: 'subnet-11112222' }] })))).toHaveLength(0);
+  });
+
+  test('rule priorities only clash on the same listener', () => {
+    const two = (arn2: unknown) => ({
+      Resources: {
+        R1: { Type: 'AWS::ElasticLoadBalancingV2::ListenerRule', Properties: { ListenerArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/a', Priority: 10, Conditions: [], Actions: [] } },
+        R2: { Type: 'AWS::ElasticLoadBalancingV2::ListenerRule', Properties: { ListenerArn: arn2, Priority: 10, Conditions: [], Actions: [] } },
+      },
+    });
+    expect(ids(diagnoseTemplate(two('arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/a')))).toContain('pf-elbv2-rule-priority-unique');
+    expect(ids(diagnoseTemplate(two('arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/b')))).toHaveLength(0);
+  });
+});

@@ -1,0 +1,11 @@
+id: pf-elbv2-hc-timeout-interval
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: Health check timeout must be strictly smaller than the interval
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: interval 5 / timeout 10 (e01) -> \"Health check timeout '10' must be smaller than the interval '5'\"; interval 10 / timeout 10 (e01b) -> same error - equality is also rejected, so the rule fires on timeout >= interval. Both ROLLBACK_COMPLETE."
+addedOn: 2026-09-03
