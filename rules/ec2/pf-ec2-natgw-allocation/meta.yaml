@@ -1,0 +1,11 @@
+id: pf-ec2-natgw-allocation
+service: ec2
+resourceTypes: [AWS::EC2::NatGateway]
+severity: ERROR
+title: NAT gateway AllocationId is required for public connectivity and forbidden for private
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-natgateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: private + AllocationId (e07) -> \"AllocationId cannot be specified for a NAT Gateway with Connectivity Type private.\"; default (public) without AllocationId (e07b) -> \"The request must include the AllocationId parameter.\" Both ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

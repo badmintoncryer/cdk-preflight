@@ -70,9 +70,23 @@
 | `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | none |
 | `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | none |
 | `pf-dynamodb-table-name-length` | AWS::DynamoDB::Table | TableName must be at least 3 characters | pending-engine |
+| `pf-ec2-instance-ami-arch` | AWS::EC2::Instance | Instance type architecture must match the SSM public-parameter AMI architecture | none |
+| `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |
+| `pf-ec2-pg-cluster-burstable` | AWS::EC2::Instance<br>AWS::EC2::PlacementGroup | Burstable instance types are not supported in cluster placement groups | none |
+| `pf-ec2-route-target-exactly-one` | AWS::EC2::Route | A route must name exactly one target | none |
+| `pf-ec2-sg-cidr-valid` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule CidrIp must be a well-formed IPv4 CIDR | none |
+| `pf-ec2-sg-group-name` | AWS::EC2::SecurityGroup | Security group names may not start with sg- | none |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
+| `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
+| `pf-ec2-volume-iops-required` | AWS::EC2::Volume | io1 and io2 volumes require the Iops property | none |
+| `pf-ec2-volume-kms-encrypted` | AWS::EC2::Volume | KmsKeyId on a volume requires Encrypted to be true | none |
+| `pf-ec2-volume-size-minimum` | AWS::EC2::Volume | EBS volume size must meet the volume type minimum (io1/io2 4 GiB, st1/sc1 125 GiB) | none |
+| `pf-ec2-vpc-cidr-block-size` | AWS::EC2::VPC | VPC IPv4 CIDR block netmask must be between /16 and /28 | none |
+| `pf-ec2-vpce-gateway-service` | AWS::EC2::VPCEndpoint | Gateway VPC endpoints only exist for S3 and DynamoDB | none |
+| `pf-ec2-vpce-service-region` | AWS::EC2::VPCEndpoint | VPC endpoint service names must use the deploy region unless ServiceRegion is set | none |
+| `pf-ec2-vpce-type-config` | AWS::EC2::VPCEndpoint | SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway) | none |
 | `pf-ecs-container-definitions-empty` | AWS::ECS::TaskDefinition | ContainerDefinitions must contain at least one container | pending-engine |
 | `pf-ecs-container-memory-over-task` | AWS::ECS::TaskDefinition | A container Memory must not exceed the task-level Memory | none |
 | `pf-ecs-container-memory-required` | AWS::ECS::TaskDefinition | A container needs Memory or MemoryReservation when the task sets no Memory | none |

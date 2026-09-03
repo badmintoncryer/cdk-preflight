@@ -1504,3 +1504,107 @@ describe('iam policy document rules', () => {
     ).toHaveLength(0);
   });
 });
+
+describe('ec2 and vpc rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const R = 'us-east-1';
+  const vpc = (cidr: string) => ({ Resources: { V: { Type: 'AWS::EC2::VPC', Properties: { CidrBlock: cidr } } } });
+  const sgIn = (entry: Record<string, unknown>) => ({
+    Resources: { G: { Type: 'AWS::EC2::SecurityGroup', Properties: { GroupDescription: 'x', VpcId: 'vpc-11112222', SecurityGroupIngress: [{ IpProtocol: 'tcp', FromPort: 80, ToPort: 80, ...entry }] } } },
+  });
+  const inst = (type: string, image: unknown) => ({
+    Resources: { I: { Type: 'AWS::EC2::Instance', Properties: { InstanceType: type, ImageId: image } } },
+  });
+  const ARM_PATH = '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64}}';
+  const X86_PATH = '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}';
+
+  test('vpc cidr netmask: /16 and /28 legal, /8 and /29 flagged (bench e01/e01b)', () => {
+    expect(ids(diagnoseTemplate(vpc('10.0.0.0/16')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(vpc('10.255.0.0/28')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(vpc('10.0.0.0/8')))).toContain('pf-ec2-vpc-cidr-block-size');
+    expect(ids(diagnoseTemplate(vpc('10.0.0.0/29')))).toContain('pf-ec2-vpc-cidr-block-size');
+  });
+
+  test('sg rule sources: embedded zero-source is legal (bench e03) but standalone needs exactly one (e03c/e03e)', () => {
+    expect(ids(diagnoseTemplate(sgIn({})))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(sgIn({ CidrIp: '10.1.0.0/24', CidrIpv6: '::/0' })))).toContain('pf-ec2-sg-source-exclusive');
+    const standalone = (props: Record<string, unknown>) => ({
+      Resources: { X: { Type: 'AWS::EC2::SecurityGroupIngress', Properties: { GroupId: 'sg-11112222', IpProtocol: 'tcp', FromPort: 80, ToPort: 80, ...props } } },
+    });
+    expect(ids(diagnoseTemplate(standalone({})))).toContain('pf-ec2-sg-source-exclusive');
+    expect(ids(diagnoseTemplate(standalone({ CidrIp: '10.1.0.0/24' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(standalone({ CidrIp: '10.1.0.0/24', SourcePrefixListId: 'pl-11112222' })))).toContain('pf-ec2-sg-source-exclusive');
+  });
+
+  test('malformed CidrIp octet/prefix flagged; /32 boundary and intrinsic values silent (bench e14/e14b)', () => {
+    expect(ids(diagnoseTemplate(sgIn({ CidrIp: '10.0.0.0/32' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(sgIn({ CidrIp: '10.0.999.0/24' })))).toContain('pf-ec2-sg-cidr-valid');
+    expect(ids(diagnoseTemplate(sgIn({ CidrIp: '10.0.0.0/33' })))).toContain('pf-ec2-sg-cidr-valid');
+    expect(ids(diagnoseTemplate(sgIn({ CidrIp: { 'Fn::ImportValue': 'net-cidr' } })))).toHaveLength(0);
+  });
+
+  test('route target count: a Ref-wired target is the one target; zero and two fire (bench e08/e08b)', () => {
+    const route = (extra: Record<string, unknown>) => ({
+      Resources: {
+        G: { Type: 'AWS::EC2::InternetGateway' },
+        X: { Type: 'AWS::EC2::Route', Properties: { RouteTableId: 'rtb-11112222', DestinationCidrBlock: '0.0.0.0/0', ...extra } },
+      },
+    });
+    expect(ids(diagnoseTemplate(route({ GatewayId: { Ref: 'G' } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(route({})))).toContain('pf-ec2-route-target-exactly-one');
+    expect(ids(diagnoseTemplate(route({ GatewayId: { Ref: 'G' }, NatGatewayId: 'nat-0aaaabbbbccccdddd1' })))).toContain('pf-ec2-route-target-exactly-one');
+  });
+
+  test('nat gateway: explicit public without AllocationId fires; private without AllocationId is legal (bench e07/e07b)', () => {
+    const nat = (props: Record<string, unknown>) => ({
+      Resources: { N: { Type: 'AWS::EC2::NatGateway', Properties: { SubnetId: 'subnet-11112222', ...props } } },
+    });
+    expect(ids(diagnoseTemplate(nat({ ConnectivityType: 'public' })))).toContain('pf-ec2-natgw-allocation');
+    expect(ids(diagnoseTemplate(nat({ ConnectivityType: 'private' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(nat({ ConnectivityType: 'private', AllocationId: 'eipalloc-11112222' })))).toContain('pf-ec2-natgw-allocation');
+  });
+
+  test('vpce service region: fires for both endpoint types, mutes on ServiceRegion, skips non-region segments (bench e09/e09c)', () => {
+    const vpce = (props: Record<string, unknown>) => ({
+      Resources: { P: { Type: 'AWS::EC2::VPCEndpoint', Properties: { VpcId: 'vpc-11112222', ...props } } },
+    });
+    expect(ids(diagnoseTemplate(vpce({ ServiceName: 'com.amazonaws.ap-northeast-1.s3' }), R))).toContain('pf-ec2-vpce-service-region');
+    expect(ids(diagnoseTemplate(vpce({ ServiceName: 'com.amazonaws.ap-northeast-1.sqs', VpcEndpointType: 'Interface' }), R))).toContain('pf-ec2-vpce-service-region');
+    expect(ids(diagnoseTemplate(vpce({ ServiceName: 'com.amazonaws.ap-northeast-1.sqs', VpcEndpointType: 'Interface', ServiceRegion: 'ap-northeast-1' }), R))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(vpce({ ServiceName: 'com.amazonaws.s3-global.accesspoint', VpcEndpointType: 'Interface' }), R))).toHaveLength(0);
+    // gateway-service judgment is region-independent: fires even without deploy_region
+    expect(ids(diagnoseTemplate(vpce({ ServiceName: 'com.amazonaws.ap-northeast-1.sqs' })))).toContain('pf-ec2-vpce-gateway-service');
+    expect(ids(diagnoseTemplate(vpce({ ServiceName: 'com.amazonaws.ap-northeast-1.sqs' })))).not.toContain('pf-ec2-vpce-service-region');
+  });
+
+  test('instance arch heuristic: g4dn is x86, c7gn and a1 are arm, mac and literal AMIs are skipped (bench e12)', () => {
+    expect(ids(diagnoseTemplate(inst('g4dn.xlarge', ARM_PATH)))).toContain('pf-ec2-instance-ami-arch');
+    expect(ids(diagnoseTemplate(inst('c7gn.large', X86_PATH)))).toContain('pf-ec2-instance-ami-arch');
+    expect(ids(diagnoseTemplate(inst('a1.large', X86_PATH)))).toContain('pf-ec2-instance-ami-arch');
+    expect(ids(diagnoseTemplate(inst('t4g.micro', ARM_PATH)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst('mac2.metal', ARM_PATH)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(inst('t3.micro', 'ami-11112222333344445')))).toHaveLength(0);
+  });
+
+  test('placement group: spread strategy and literal (pre-existing) group names stay silent (bench e11 family)', () => {
+    const pgTpl = (strategy: string | undefined, pg: unknown, type = 't3.micro') => ({
+      Resources: {
+        ...(strategy ? { P: { Type: 'AWS::EC2::PlacementGroup', Properties: { Strategy: strategy } } } : {}),
+        I: { Type: 'AWS::EC2::Instance', Properties: { InstanceType: type, ImageId: X86_PATH, PlacementGroupName: pg } },
+      },
+    });
+    expect(ids(diagnoseTemplate(pgTpl('cluster', { Ref: 'P' })))).toContain('pf-ec2-pg-cluster-burstable');
+    expect(ids(diagnoseTemplate(pgTpl('spread', { Ref: 'P' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(pgTpl(undefined, 'my-existing-group')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(pgTpl('cluster', { Ref: 'P' }, 'c5.large')))).toHaveLength(0);
+  });
+
+  test('volume kms: explicit false fires like absence; unresolvable Encrypted stays silent (bench e06/e06b)', () => {
+    const volT = (props: Record<string, unknown>) => ({
+      Parameters: { Enc: { Type: 'String' } },
+      Resources: { W: { Type: 'AWS::EC2::Volume', Properties: { AvailabilityZone: 'us-east-1a', VolumeType: 'gp3', Size: 10, KmsKeyId: 'alias/aws/ebs', ...props } } },
+    });
+    expect(ids(diagnoseTemplate(volT({ Encrypted: false })))).toContain('pf-ec2-volume-kms-encrypted');
+    expect(ids(diagnoseTemplate(volT({ Encrypted: { Ref: 'Enc' } })))).toHaveLength(0);
+  });
+});

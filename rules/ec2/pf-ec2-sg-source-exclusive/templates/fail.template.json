@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "bench",
+        "VpcId": "vpc-11112222",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "10.1.0.0/24",
+            "SourceSecurityGroupId": "sg-33334444"
+          }
+        ]
+      }
+    }
+  }
+}

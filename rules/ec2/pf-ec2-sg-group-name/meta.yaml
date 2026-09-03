@@ -1,0 +1,11 @@
+id: pf-ec2-sg-group-name
+service: ec2
+resourceTypes: [AWS::EC2::SecurityGroup]
+severity: ERROR
+title: Security group names may not start with sg-
+constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: GroupName sg-cdkpfbad (e02) -> \"Value (sg-cdkpfbad) for parameter GroupName is invalid. Group names may not be in the format sg-*.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03
