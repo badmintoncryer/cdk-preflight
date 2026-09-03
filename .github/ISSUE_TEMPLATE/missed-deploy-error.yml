@@ -1,0 +1,41 @@
+name: Missed deploy error
+description: "cdk synth (with cdk-preflight enabled) passed, but cdk deploy failed with a service-side validation error"
+title: "missed: <resource type>: <short error>"
+labels: ["missed-error"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Qualification
+      options:
+        - label: "`cdk synth` with cdk-preflight enabled passed cleanly"
+          required: true
+        - label: "The failure is a validation rejection (400-class, e.g. `Invalid request provided: ...`) — not AccessDenied / permissions, a service quota, throttling, a name conflict with an existing resource, or a stabilization timeout"
+          required: true
+        - label: "All account-specific data below is redacted (account IDs → 123456789012, real ARNs/domains → placeholders)"
+          required: true
+  - type: input
+    attributes:
+      label: Resource type
+      placeholder: "AWS::ECS::Service"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Verbatim error message
+      description: The full CREATE_FAILED/UPDATE_FAILED message from the stack events, redacted.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Minimal template snippet
+      description: The smallest resource snippet (synthesized template JSON) that reproduces the failure.
+      render: json
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Versions
+      placeholder: "aws-cdk-lib 2.267.0, cdk-preflight 0.0.24"
+    validations:
+      required: true
