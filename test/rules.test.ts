@@ -1797,3 +1797,79 @@ describe('elbv2 rules', () => {
     expect(ids(diagnoseTemplate(two('arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/b')))).toHaveLength(0);
   });
 });
+
+describe('ecs service and cloudwatch dashboard rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const IMG = 'public.ecr.aws/amazonlinux/amazonlinux:2023';
+  const svcT = (svcProps: Record<string, unknown>, tdProps?: Record<string, unknown>) => ({
+    Resources: {
+      Cluster: { Type: 'AWS::ECS::Cluster', Properties: {} },
+      TaskDef: { Type: 'AWS::ECS::TaskDefinition', Properties: tdProps ?? { NetworkMode: 'bridge', ContainerDefinitions: [{ Name: 'app', Image: IMG, Essential: true, Memory: 512 }] } },
+      Service: { Type: 'AWS::ECS::Service', Properties: { Cluster: { Ref: 'Cluster' }, TaskDefinition: { Ref: 'TaskDef' }, ...svcProps } },
+    },
+  });
+  const dashT = (body: unknown, name?: string) => ({
+    Resources: { Dash: { Type: 'AWS::CloudWatch::Dashboard', Properties: { DashboardBody: typeof body === 'string' ? body : JSON.stringify(body), ...(name ? { DashboardName: name } : {}) } } },
+  });
+  const widget = { type: 'text', x: 0, y: 0, width: 6, height: 6, properties: { markdown: 'hi' } };
+
+  test('daemon rejects DesiredCount even at 0 (bench sv03b)', () => {
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', SchedulingStrategy: 'DAEMON', DesiredCount: 0 })))).toContain('pf-ecs-service-daemon-desired-count');
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', SchedulingStrategy: 'DAEMON' })))).toHaveLength(0);
+  });
+
+  test('network configuration vs task definition mode is cross-resource; external task definitions stay silent', () => {
+    const netcfg = { AwsvpcConfiguration: { Subnets: ['subnet-11112222'] } };
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, NetworkConfiguration: netcfg })))).toContain('pf-ecs-service-network-config-mode');
+    const ext = {
+      Resources: {
+        Service: { Type: 'AWS::ECS::Service', Properties: { TaskDefinition: 'arn:aws:ecs:us-east-1:123456789012:task-definition/td:1', LaunchType: 'EC2', DesiredCount: 0, NetworkConfiguration: netcfg } },
+      },
+    };
+    expect(ids(diagnoseTemplate(ext))).toHaveLength(0);
+  });
+
+  test('deployment percent bounds fire on both sides', () => {
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MinimumHealthyPercent: 101 } })))).toContain('pf-ecs-service-deployment-percent');
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MaximumPercent: 90 } })))).toContain('pf-ecs-service-deployment-percent');
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MinimumHealthyPercent: 100, MaximumPercent: 100 } })))).toHaveLength(0);
+  });
+
+  test('fargate placement fires for strategies too (bench sv09b)', () => {
+    const strategies = [{ Type: 'spread', Field: 'attribute:ecs.availability-zone' }];
+    const netcfg = { AwsvpcConfiguration: { Subnets: ['subnet-11112222'] } };
+    const fargateTd = { RequiresCompatibilities: ['FARGATE'], NetworkMode: 'awsvpc', Cpu: '256', Memory: '512', ContainerDefinitions: [{ Name: 'app', Image: IMG, Essential: true }] };
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'FARGATE', DesiredCount: 0, NetworkConfiguration: netcfg, PlacementStrategies: strategies }, fargateTd)))).toContain('pf-ecs-service-fargate-placement');
+    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, PlacementStrategies: strategies })))).toHaveLength(0);
+  });
+
+  test('MetricStat.Period is covered by the alarm period rule (bench w11)', () => {
+    const alarm = (period: number) => ({
+      Resources: {
+        Alarm: { Type: 'AWS::CloudWatch::Alarm', Properties: { ComparisonOperator: 'GreaterThanThreshold', EvaluationPeriods: 1, Threshold: 1, Metrics: [{ Id: 'm1', ReturnData: true, MetricStat: { Metric: { MetricName: 'CPUUtilization', Namespace: 'AWS/EC2' }, Period: period, Stat: 'Average' } }] } },
+      },
+    });
+    expect(ids(diagnoseTemplate(alarm(45)))).toContain('pf-cloudwatch-alarm-period');
+    expect(ids(diagnoseTemplate(alarm(300)))).toHaveLength(0);
+  });
+
+  test('dashboard widget checks stay inside the parsed body', () => {
+    expect(ids(diagnoseTemplate(dashT({ widgets: [{ type: 'metric', x: 0, y: 0, width: 6, height: 6 }] })))).toContain('pf-cloudwatch-dashboard-widget-fields');
+    expect(ids(diagnoseTemplate(dashT({ widgets: [{ ...widget, x: 24 }] })))).toContain('pf-cloudwatch-dashboard-widget-position');
+    expect(ids(diagnoseTemplate(dashT({ widgets: [{ ...widget, type: 'metricc' }] })))).toHaveLength(0);
+    const intrinsicBody = {
+      Resources: { Dash: { Type: 'AWS::CloudWatch::Dashboard', Properties: { DashboardBody: { 'Fn::Sub': '{"widgets":${W}' } } } },
+    };
+    expect(ids(diagnoseTemplate(intrinsicBody))).toHaveLength(0);
+  });
+
+  test('threshold metric id needs a ReturnData true match', () => {
+    const alarm = (adReturnData: boolean) => ({
+      Resources: {
+        Alarm: { Type: 'AWS::CloudWatch::Alarm', Properties: { ComparisonOperator: 'LessThanLowerOrGreaterThanUpperThreshold', EvaluationPeriods: 1, ThresholdMetricId: 'ad1', Metrics: [{ Id: 'm1', ReturnData: !adReturnData, MetricStat: { Metric: { MetricName: 'CPUUtilization', Namespace: 'AWS/EC2' }, Period: 300, Stat: 'Average' } }, { Id: 'ad1', ReturnData: adReturnData, Expression: 'ANOMALY_DETECTION_BAND(m1, 2)' }] } },
+      },
+    });
+    expect(ids(diagnoseTemplate(alarm(false)))).toContain('pf-cloudwatch-threshold-metric-id');
+    expect(ids(diagnoseTemplate(alarm(true)))).toHaveLength(0);
+  });
+});

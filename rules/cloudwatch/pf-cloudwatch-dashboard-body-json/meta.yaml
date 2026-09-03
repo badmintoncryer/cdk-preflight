@@ -1,0 +1,11 @@
+id: pf-cloudwatch-dashboard-body-json
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Dashboard]
+severity: ERROR
+title: DashboardBody must be valid JSON
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1 (dw01): DashboardBody \"{not json\" -> PutDashboard \"The field DashboardBody must be a valid JSON object\". ROLLBACK_COMPLETE. Bare engine clean (no dashboard body semantics)."
+addedOn: 2026-09-03

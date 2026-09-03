@@ -52,10 +52,16 @@
 | `pf-cloudwatch-alarm-period` | AWS::CloudWatch::Alarm | Period must be 10, 20, 30 or a multiple of 60 | none |
 | `pf-cloudwatch-alarm-threshold` | AWS::CloudWatch::Alarm | Standard operators need Threshold, range operators need ThresholdMetricId | none |
 | `pf-cloudwatch-composite-alarm-rule-syntax` | AWS::CloudWatch::CompositeAlarm | An AlarmRule must start with a valid expression token | none |
+| `pf-cloudwatch-dashboard-body-json` | AWS::CloudWatch::Dashboard | DashboardBody must be valid JSON | none |
+| `pf-cloudwatch-dashboard-name` | AWS::CloudWatch::Dashboard | Dashboard names allow only alphanumerics, dash and underscore | none |
+| `pf-cloudwatch-dashboard-widget-fields` | AWS::CloudWatch::Dashboard | Every dashboard widget requires type and properties | none |
+| `pf-cloudwatch-dashboard-widget-position` | AWS::CloudWatch::Dashboard | Dashboard widget x tops out at 23 and width at 24 | none |
+| `pf-cloudwatch-dashboard-widgets` | AWS::CloudWatch::Dashboard | DashboardBody requires a widgets array | none |
 | `pf-cloudwatch-datapoints-evaluation` | AWS::CloudWatch::Alarm | DatapointsToAlarm must not exceed EvaluationPeriods | none |
 | `pf-cloudwatch-extended-statistic` | AWS::CloudWatch::Alarm | A percentile statistic cannot exceed p100 | none |
 | `pf-cloudwatch-metric-query-exclusive` | AWS::CloudWatch::Alarm | Expression and MetricStat are mutually exclusive per query | none |
 | `pf-cloudwatch-metric-query-returndata` | AWS::CloudWatch::Alarm | Exactly one metric query must return data | none |
+| `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | none |
 | `pf-cognito-client-credentials-exclusive` | AWS::Cognito::UserPoolClient | client_credentials cannot combine with code or implicit | none |
 | `pf-cognito-client-credentials-secret` | AWS::Cognito::UserPoolClient | client_credentials needs a client secret | none |
@@ -106,6 +112,14 @@
 | `pf-ecs-essential-container` | AWS::ECS::TaskDefinition | At least one container must be essential | none |
 | `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | none |
 | `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | none |
+| `pf-ecs-service-codedeploy-lb` | AWS::ECS::Service | CODE_DEPLOY deployment controller requires a load balancer | none |
+| `pf-ecs-service-daemon-desired-count` | AWS::ECS::Service | DAEMON scheduling strategy does not accept DesiredCount | none |
+| `pf-ecs-service-deployment-percent` | AWS::ECS::Service | DeploymentConfiguration percent bounds (min <= 100, max >= 100) | none |
+| `pf-ecs-service-fargate-placement` | AWS::ECS::Service | Placement constraints and strategies are not supported on FARGATE | none |
+| `pf-ecs-service-launch-type-capacity-provider` | AWS::ECS::Service | LaunchType and CapacityProviderStrategy are mutually exclusive | none |
+| `pf-ecs-service-lb-target-exclusive` | AWS::ECS::Service | A load balancer entry takes either TargetGroupArn or LoadBalancerName, not both | none |
+| `pf-ecs-service-network-config-mode` | AWS::ECS::Service<br>AWS::ECS::TaskDefinition | NetworkConfiguration requires an awsvpc task definition | none |
+| `pf-ecs-service-platform-version-ec2` | AWS::ECS::Service | PlatformVersion is not allowed with the EC2 launch type | none |
 | `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | none |
 | `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | none |
 | `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | none |

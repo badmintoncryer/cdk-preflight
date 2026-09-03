@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {}
+    },
+    "TaskDef": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "NetworkMode": "bridge",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/amazonlinux/amazonlinux:2023",
+            "Essential": true,
+            "Memory": 512
+          }
+        ]
+      }
+    },
+    "Service": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDef"
+        },
+        "DesiredCount": 0,
+        "LaunchType": "EC2",
+        "PlatformVersion": "1.4.0"
+      }
+    }
+  }
+}

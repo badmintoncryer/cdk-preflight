@@ -1,0 +1,11 @@
+id: pf-ecs-service-lb-target-exclusive
+service: ecs
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: A load balancer entry takes either TargetGroupArn or LoadBalancerName, not both
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1 (sv10): entry with both TargetGroupArn and LoadBalancerName -> CreateService \"loadBalancerName and targetGroupArn cannot both be specified. You must specify either a loadBalancerName or a targetGroupArn in all loadBalancer entries\". ROLLBACK_COMPLETE. Bare engine clean."
+addedOn: 2026-09-03

@@ -1,0 +1,11 @@
+id: pf-cloudwatch-dashboard-widgets
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Dashboard]
+severity: ERROR
+title: DashboardBody requires a widgets array
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1 (dw02): valid-JSON body without a widgets key -> PutDashboard \"The dashboard body is invalid, there are 1 validation errors: [{dataPath: '', message: \\\"Should have required property 'widgets'\\\"}]\". ROLLBACK_COMPLETE. Bare engine clean."
+addedOn: 2026-09-03
