@@ -1,0 +1,11 @@
+id: pf-ecs-service-daemon-desired-count
+service: ecs
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: DAEMON scheduling strategy does not accept DesiredCount
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: DAEMON + DesiredCount 2 (sv03) -> CreateService \"The daemon scheduling strategy does not support a desired count for services. Remove the desired count value and try again\"; DAEMON + DesiredCount 0 (sv03b) -> the same error, so any presence of the key fails. Any presence fails, value irrelevant. Bare engine clean."
+addedOn: 2026-09-03

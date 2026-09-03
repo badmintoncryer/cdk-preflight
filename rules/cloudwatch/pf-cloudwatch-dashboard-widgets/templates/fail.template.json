@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Dash": {
+      "Type": "AWS::CloudWatch::Dashboard",
+      "Properties": {
+        "DashboardBody": "{\"foo\":1}"
+      }
+    }
+  }
+}

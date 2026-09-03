@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "LessThanLowerOrGreaterThanUpperThreshold",
+        "EvaluationPeriods": 1,
+        "ThresholdMetricId": "ad1",
+        "Metrics": [
+          {
+            "Id": "m1",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2"
+              },
+              "Period": 300,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "ad1",
+            "ReturnData": true,
+            "Expression": "ANOMALY_DETECTION_BAND(m1, 2)"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -516,7 +516,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::CloudWatch::Alarm"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types Period as a bare integer; the valid values are\n# only in the service (\"Period must be 10, 20, 30 or a multiple of 60\").\n# Top-level Period only — the same constraint inside MetricStat was not\n# measured.\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-period\", \"ERROR\", name,\n\t\"Properties.Period\",\n\tsprintf(\"Period %v is invalid; PutMetricAlarm fails with \\\"Period must be 10, 20, 30 or a multiple of 60\\\"\", [p]),\n\t\"Use 10, 20, 30, or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tp := to_number(resolve(name, \"Properties.Period\"))\n\tnot p in {10, 20, 30}\n\tp % 60 != 0\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types Period as a bare integer; the valid values are\n# only in the service (\"Period must be 10, 20, 30 or a multiple of 60\").\n# The same constraint applies inside MetricStat (bench w11, 2026-09-03).\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-period\", \"ERROR\", name,\n\t\"Properties.Period\",\n\tsprintf(\"Period %v is invalid; PutMetricAlarm fails with \\\"Period must be 10, 20, 30 or a multiple of 60\\\"\", [p]),\n\t\"Use 10, 20, 30, or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tp := to_number(resolve(name, \"Properties.Period\"))\n\tnot p in {10, 20, 30}\n\tp % 60 != 0\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-period\", \"ERROR\", name,\n\tsprintf(\"Properties.Metrics (MetricStat.Period of query %d)\", [i]),\n\tsprintf(\"MetricStat Period %v is invalid; PutMetricAlarm fails with \\\"Period must be 10, 20, 30 or a multiple of 60\\\"\", [p]),\n\t\"Use 10, 20, 30, or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome item in flatten_list(name, \"Properties.Metrics\")\n\ti := item.index\n\tq := item.value\n\tis_object(q)\n\tp := object.get(q, [\"MetricStat\", \"Period\"], null)\n\tis_number(p)\n\tnot p in {10, 20, 30}\n\tp % 60 != 0\n}\n"
   },
   {
     "id": "pf-cloudwatch-alarm-threshold",
@@ -539,6 +539,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::CompositeAlarm"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service names the only tokens a rule expression may start with; this\n# checks just that first token — a full grammar is out of scope. Function\n# tokens take an argument list, keywords stand alone.\n_pf_cwcas_valid_start(t) if startswith(t, \"(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"NOT \")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"NOT(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"AT_LEAST\")\n\n_pf_cwcas_valid_start(t) if t == \"TRUE\"\n\n_pf_cwcas_valid_start(t) if t == \"FALSE\"\n\n_pf_cwcas_valid_start(t) if startswith(t, \"ALARM(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"OK(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"INSUFFICIENT_DATA(\")\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-alarm-rule-syntax\", \"ERROR\", name,\n\t\"Properties.AlarmRule\",\n\tsprintf(\"AlarmRule '%s' does not start with a valid token; the service rejects it with \\\"Error in AlarmRule [Unsupported token ... must be: '(', 'NOT', AT_LEAST, TRUE or FALSE, ALARM, OK, or INSUFFICIENT_DATA]\\\"\", [expr]),\n\t\"Start the rule with ALARM(...), OK(...), INSUFFICIENT_DATA(...), NOT, AT_LEAST, TRUE, FALSE, or a parenthesized group\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Create_Composite_Alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\texpr := resolve(name, \"Properties.AlarmRule\")\n\tis_string(expr)\n\tt := trim_space(expr)\n\tt != \"\"\n\tnot _pf_cwcas_valid_start(t)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-body-json",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "DashboardBody must be valid JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-body-json\", \"ERROR\", name,\n\t\"Properties.DashboardBody\",\n\t\"DashboardBody does not parse as JSON; PutDashboard fails with \\\"The field DashboardBody must be a valid JSON object\\\"\",\n\t\"Fix the JSON syntax of the dashboard body\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tnot json.is_valid(body)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-name",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Dashboard names allow only alphanumerics, dash and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Extra painful at deploy time: the invalid name also breaks the rollback\n# DELETE, leaving the stack in ROLLBACK_FAILED (benched).\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-name\", \"ERROR\", name,\n\t\"Properties.DashboardName\",\n\tsprintf(\"DashboardName '%s' contains invalid characters; PutDashboard allows only alphanumerics, dash (-) and underscore (_), and the failed stack cannot even roll back cleanly\", [dn]),\n\t\"Use only letters, digits, dash and underscore in the dashboard name\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutDashboard.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tdn := resolve(name, \"Properties.DashboardName\")\n\tis_string(dn)\n\tnot regex.match(`^[A-Za-z0-9_-]+$`, dn)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-widget-fields",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Every dashboard widget requires type and properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only key presence is checked: the service accepts arbitrary type values\n# (bench dw04, type \"metricc\" deployed clean), so no enum validation.\n_pf_cwdwf_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-fields\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d])\", [i]),\n\tsprintf(\"Dashboard widget %d is missing '%s'; PutDashboard fails with \\\"Should have required property '%s'\\\"\", [i, key, key]),\n\t\"Give every widget a type and a properties object\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwdwf_widgets(name)\n\tis_object(w)\n\tsome key in {\"type\", \"properties\"}\n\tobject.get(w, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-widget-position",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Dashboard widget x tops out at 23 and width at 24",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the two benched maxima are claimed (x <= 23, width <= 24).\n_pf_cwdwp_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwdwp_max := {\"x\": 23, \"width\": 24}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-position\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].%s)\", [i, key]),\n\tsprintf(\"Dashboard widget %d has %s=%v, above the maximum %v; PutDashboard fails with \\\"Should be <= %v\\\"\", [i, key, v, m, m]),\n\t\"Keep x within 0-23 and width within 1-24 (24-column grid)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwdwp_widgets(name)\n\tis_object(w)\n\tsome key, m in _pf_cwdwp_max\n\tv := object.get(w, key, 0)\n\tis_number(v)\n\tv > m\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-widgets",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "DashboardBody requires a widgets array",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widgets\", \"ERROR\", name,\n\t\"Properties.DashboardBody\",\n\t\"DashboardBody has no 'widgets' key; PutDashboard fails with \\\"Should have required property 'widgets'\\\"\",\n\t\"Add a widgets array to the dashboard body\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tobject.get(obj, \"widgets\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-cloudwatch-datapoints-evaluation",
@@ -583,6 +638,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::Alarm"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An alarm on a Metrics array needs exactly one query returning data.\n# ReturnData defaults to true when absent (bench w04b), and explicit false\n# everywhere is rejected too (w04c). A query whose ReturnData is an\n# unresolvable intrinsic makes the count unknowable, so the rule skips.\n_pf_cwmqr_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwmqr_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwmqr_returns(q) if object.get(q, \"ReturnData\", true) == true\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-query-returndata\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"%d of the metric queries return data (ReturnData defaults to true); PutMetricAlarm fails with \\\"Exactly one element of the metrics list should return data.\\\"\", [n]),\n\t\"Set ReturnData: false on every query except the one the alarm should watch\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\t_pf_cwmqr_countable(q.value)\n\t}\n\tn := count([q | some q in items; _pf_cwmqr_returns(q.value)])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-threshold-metric-id",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "ThresholdMetricId must match a metric query that returns data",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matching means Id equality AND effective ReturnData true (default true,\n# bench w04b); w12 proved an Id match with ReturnData false does not count.\n# Only n == 0 fires - the duplicate-match side is unbenched. Queries with\n# unresolvable Id/ReturnData make the count unknowable, so the rule skips.\n_pf_cwtmi_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwtmi_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwtmi_matches(q, tmid) if {\n\tobject.get(q, \"Id\", null) == tmid\n\tobject.get(q, \"ReturnData\", true) == true\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-threshold-metric-id\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"No metric query with Id '%s' returns data; PutMetricAlarm fails with \\\"Metrics list must contain exactly one metric matching the ThresholdMetricId parameter\\\"\", [tmid]),\n\t\"Point ThresholdMetricId at a query whose ReturnData is true\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ttmid := resolve(name, \"Properties.ThresholdMetricId\")\n\tis_string(tmid)\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\tis_string(object.get(q.value, \"Id\", null))\n\t\t_pf_cwtmi_countable(q.value)\n\t}\n\tcount([q | some q in items; _pf_cwtmi_matches(q.value, tmid)]) == 0\n}\n"
   },
   {
     "id": "pf-cognito-alias-username-exclusive",
@@ -1141,6 +1207,95 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ECS::TaskDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsfargcm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html\"\n\n# The engine's E3047 checks the Cpu/Memory pairing only when both are present;\n# leaving one out entirely is caught by nothing before registration. True\n# absence needs the preprocessed document (see pf-ecs-container-memory-required\n# for the idiom).\n_pf_ecsfargcm_fargate(name) if {\n\tsome rc in flatten_list(name, \"Properties.RequiresCompatibilities\")\n\trc.value == \"FARGATE\"\n}\n\n_pf_ecsfargcm_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-task-cpu-memory\", \"ERROR\", name,\n\t\"Properties.Cpu\",\n\t\"RequiresCompatibilities includes FARGATE but the task-level Cpu is missing; RegisterTaskDefinition fails with \\\"Fargate requires that 'cpu' be defined at the task level\\\"\",\n\t\"Set task-level Cpu (and Memory) to one of the supported Fargate combinations\",\n\t_pf_ecsfargcm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecsfargcm_fargate(name)\n\t_pf_ecsfargcm_absent(name, \"Cpu\")\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-task-cpu-memory\", \"ERROR\", name,\n\t\"Properties.Memory\",\n\t\"RequiresCompatibilities includes FARGATE but the task-level Memory is missing; RegisterTaskDefinition fails with \\\"Fargate requires that 'memory' be defined at the task level\\\"\",\n\t\"Set task-level Memory (and Cpu) to one of the supported Fargate combinations\",\n\t_pf_ecsfargcm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecsfargcm_fargate(name)\n\t_pf_ecsfargcm_absent(name, \"Memory\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-codedeploy-lb",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "CODE_DEPLOY deployment controller requires a load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Fires on a missing key or a present-but-empty list; an unresolvable\n# LoadBalancers value stays silent (marker objects are \"present\").\n_pf_ecscdlb_none(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"LoadBalancers\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_ecscdlb_none(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tlbs := object.get(props, \"LoadBalancers\", null)\n\tis_array(lbs)\n\tcount(lbs) == 0\n}\n\nviolation contains make_diag_full(\"pf-ecs-service-codedeploy-lb\", \"ERROR\", name,\n\t\"Properties.DeploymentController\",\n\t\"DeploymentController is CODE_DEPLOY but no LoadBalancers are configured; CreateService fails with \\\"the service requires an Application Load Balancer or Network Load Balancer\\\"\",\n\t\"Add a LoadBalancers entry with a target group, or use the ECS controller\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.DeploymentController.Type\") == \"CODE_DEPLOY\"\n\t_pf_ecscdlb_none(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-daemon-desired-count",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DAEMON scheduling strategy does not accept DesiredCount",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DesiredCount 0 fails too (sv03b) - any presence of the key is the violation.\nviolation contains make_diag_full(\"pf-ecs-service-daemon-desired-count\", \"ERROR\", name,\n\t\"Properties.DesiredCount\",\n\t\"SchedulingStrategy is DAEMON but DesiredCount is set; CreateService fails with \\\"The daemon scheduling strategy does not support a desired count for services\\\"\",\n\t\"Remove DesiredCount from DAEMON services\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.SchedulingStrategy\") == \"DAEMON\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tnot object.get(props, \"DesiredCount\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-deployment-percent",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DeploymentConfiguration percent bounds (min <= 100, max >= 100)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-deployment-percent\", \"ERROR\", name,\n\t\"Properties.DeploymentConfiguration.MinimumHealthyPercent\",\n\tsprintf(\"MinimumHealthyPercent %v exceeds 100; CreateService fails with \\\"minimumHealthyPercent must be at most 100\\\"\", [minp]),\n\t\"Keep MinimumHealthyPercent at 100 or below\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tminp := to_number(resolve(name, \"Properties.DeploymentConfiguration.MinimumHealthyPercent\"))\n\tminp > 100\n}\n\nviolation contains make_diag_full(\"pf-ecs-service-deployment-percent\", \"ERROR\", name,\n\t\"Properties.DeploymentConfiguration.MaximumPercent\",\n\tsprintf(\"MaximumPercent %v is below 100; CreateService fails with \\\"maximumPercent must be at least 100\\\"\", [maxp]),\n\t\"Keep MaximumPercent at 100 or above\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tmaxp := to_number(resolve(name, \"Properties.DeploymentConfiguration.MaximumPercent\"))\n\tmaxp < 100\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-fargate-placement",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Placement constraints and strategies are not supported on FARGATE",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-fargate-placement\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"%s is set but the FARGATE launch type does not support task placement; CreateService fails at deploy time\", [key]),\n\t\"Remove placement constraints/strategies from Fargate services\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.LaunchType\") == \"FARGATE\"\n\tsome key in {\"PlacementConstraints\", \"PlacementStrategies\"}\n\tcount([q | some q in flatten_list(name, sprintf(\"Properties.%s\", [key]))]) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-launch-type-capacity-provider",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "LaunchType and CapacityProviderStrategy are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-launch-type-capacity-provider\", \"ERROR\", name,\n\t\"Properties.CapacityProviderStrategy\",\n\tsprintf(\"LaunchType '%s' and CapacityProviderStrategy cannot both be set; CreateService fails with \\\"Specifying both a launch type and capacity provider strategy is not supported\\\"\", [lt]),\n\t\"Remove LaunchType or the capacity provider strategy\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tlt := resolve(name, \"Properties.LaunchType\")\n\tis_string(lt)\n\tcount([q | some q in flatten_list(name, \"Properties.CapacityProviderStrategy\")]) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-lb-target-exclusive",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A load balancer entry takes either TargetGroupArn or LoadBalancerName, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-lb-target-exclusive\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\t\"A LoadBalancers entry sets both TargetGroupArn and LoadBalancerName; CreateService fails with \\\"loadBalancerName and targetGroupArn cannot both be specified\\\"\",\n\t\"Keep exactly one of TargetGroupArn (ALB/NLB) or LoadBalancerName (CLB) per entry\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome item in flatten_list(name, \"Properties.LoadBalancers\")\n\tentry := item.value\n\tis_object(entry)\n\tnot object.get(entry, \"TargetGroupArn\", \"__pf_absent\") == \"__pf_absent\"\n\tnot object.get(entry, \"LoadBalancerName\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-network-config-mode",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "NetworkConfiguration requires an awsvpc task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service",
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine ships E3052 for the inverse (awsvpc task definition without\n# NetworkConfiguration); this direction is unguarded. Only an explicit\n# non-awsvpc NetworkMode fires - the absent-mode default is unbenched.\nviolation contains make_diag_full(\"pf-ecs-service-network-config-mode\", \"ERROR\", name,\n\t\"Properties.NetworkConfiguration\",\n\tsprintf(\"NetworkConfiguration is set but the referenced task definition uses NetworkMode '%s'; CreateService fails with \\\"Network Configuration is not valid for the given networkMode of this task definition.\\\"\", [nm]),\n\t\"Use an awsvpc task definition, or drop NetworkConfiguration\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tnot object.get(props, \"NetworkConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n\ttd := resolve(name, \"Properties.TaskDefinition\")\n\ttd in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tnm := resolve(td, \"Properties.NetworkMode\")\n\tis_string(nm)\n\tnm != \"awsvpc\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-service-platform-version-ec2",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "PlatformVersion is not allowed with the EC2 launch type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-platform-version-ec2\", \"ERROR\", name,\n\t\"Properties.PlatformVersion\",\n\t\"LaunchType is EC2 but PlatformVersion is set; CreateService fails with \\\"The platform version must be null when specifying an EC2 launch type\\\"\",\n\t\"Remove PlatformVersion (it applies to Fargate only)\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.LaunchType\") == \"EC2\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tnot object.get(props, \"PlatformVersion\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-elbv2-alb-subnet-count",

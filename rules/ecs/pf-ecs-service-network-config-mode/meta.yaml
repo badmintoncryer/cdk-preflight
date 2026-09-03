@@ -1,0 +1,11 @@
+id: pf-ecs-service-network-config-mode
+service: ecs
+resourceTypes: [AWS::ECS::Service, AWS::ECS::TaskDefinition]
+severity: ERROR
+title: NetworkConfiguration requires an awsvpc task definition
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1 (sv13): NetworkConfiguration + bridge-mode task definition -> CreateService \"Network Configuration is not valid for the given networkMode of this task definition.\" ROLLBACK_COMPLETE. Bare engine catches the inverse direction only (E3052: awsvpc without NetworkConfiguration) and is clean on this one."
+addedOn: 2026-09-03

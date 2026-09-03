@@ -1,0 +1,11 @@
+id: pf-ecs-service-fargate-placement
+service: ecs
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: Placement constraints and strategies are not supported on FARGATE
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: FARGATE + PlacementConstraints (sv09) -> CreateService \"Placement constraints are not supported with FARGATE launch type.\"; FARGATE + PlacementStrategies (sv09b) -> \"Placement strategies are not supported with FARGATE launch type.\". Both ROLLBACK_COMPLETE. Bare engine clean."
+addedOn: 2026-09-03

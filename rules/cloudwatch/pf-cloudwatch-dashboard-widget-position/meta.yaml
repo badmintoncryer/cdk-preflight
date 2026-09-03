@@ -1,0 +1,11 @@
+id: pf-cloudwatch-dashboard-widget-position
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Dashboard]
+severity: ERROR
+title: Dashboard widget x tops out at 23 and width at 24
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: width 25 (dw05) -> PutDashboard \"Should be <= 24\" at /widgets/0/width; x 24 (dw08) -> \"Should be <= 23\" at /widgets/0/x. Both ROLLBACK_COMPLETE. y/height bounds unbenched, not claimed. Bare engine clean."
+addedOn: 2026-09-03
