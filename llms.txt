@@ -2,6 +2,8 @@
 
 > A Rego rule pack that catches deploy-time CloudFormation failures at `cdk synth` time, by injecting rules for schema-invisible constraints (doc-only limits, cross-property rules) into the AWS CDK built-in validator (aws-cdk-lib >= 2.267.0).
 
+Scope: every deploy-time failure that no existing CDK mechanism already catches. L2 construct validation does not count as coverage (L1, escape hatches, `addPropertyOverride` and included templates bypass it), so L2 overlap neither blocks a new rule nor retires an existing one; only the bundled engine or CloudFormation's server-side validation retires a rule, and then the rule is deleted outright. New rules land in minor releases, so a minor upgrade can newly fail a synth that passed before — pin the version, `exclude` the id, or set `enforce: false`.
+
 ## Install into a CDK app (agent playbook)
 
 1. `npm i -D cdk-preflight`

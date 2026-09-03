@@ -5,7 +5,9 @@ description: cdk-preflight に新しいルールを追加する半自動パイ�
 
 # add-preflight-rule
 
-cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則（重複禁止・証拠必須・上流昇格）を機械的に踏む。
+cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則（重複禁止・証拠必須）を機械的に踏む。
+
+対象は「違反すると実際にデプロイが失敗し、かつ同じ合成済みテンプレートを見る層が誰も止めない」制約すべて。**候補を落とせるのは下の 2 つのゲートだけ**で、「割に合うか」「L2 が持っているのでは」は判断材料にしない。上流 PR は歓迎だがゲートではなく、ルールは先にここに入る。
 
 ## 手順
 
@@ -19,7 +21,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    console.log(JSON.stringify(r.diagnostics, null, 2));"
    ```
    ERROR/FATAL（source: SCHEMA / CFN_LINT）が既に出るなら**ルールは書かない**。終了し、その旨を報告する。
-   判定の全体像（WARN クラスのみ出るがデプロイは失敗するグレーゾーン、L2/cfn-lint/サーバー側検証との棲み分け）は AGENTS.md の「Where this pack sits among validation layers」に従う。L2 (aws-cdk-lib) が同じ検証を持っていても不採用理由にならない（原則 5）。
+   判定の全体像（WARN クラスのみ出るがデプロイは失敗するグレーゾーン、L2/cfn-lint/サーバー側検証との棲み分け）は AGENTS.md の「Where this pack sits among validation layers」に従う。L2 (aws-cdk-lib) が同じ検証を持っていても不採用理由にならず、既存ルールの廃止理由にもならない（原則 5）。廃止の引き金は同梱エンジン（か CFN サーバー側検証）がカバーしたときだけで、そのとき重複ガードが自動で赤くなる。
 3. **ルール作成**: `rules/<service>/<rule-id>/` に 4 ファイル。規約:
    - `package cdk_preflight` + `import rego.v1`、診断は `make_diag_full("<rule-id>", "ERROR", name, path, msg, fix, url)`
    - ヘルパーは `_pf_<短縮名>_` プレフィックスで一意に
