@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "bench",
+        "VpcId": "vpc-11112222",
+        "GroupName": "web-sg"
+      }
+    }
+  }
+}

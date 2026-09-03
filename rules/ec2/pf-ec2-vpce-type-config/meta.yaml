@@ -1,0 +1,11 @@
+id: pf-ec2-vpce-type-config
+service: ec2
+resourceTypes: [AWS::EC2::VPCEndpoint]
+severity: ERROR
+title: SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway)
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Gateway + SubnetIds (e10) -> \"Subnet IDs are only supported for Interface and GatewayLoadBalancer type VPC Endpoints.\"; Interface + RouteTableIds (e10b) -> \"Route table IDs are only supported for Gateway type VPC Endpoint.\" Both ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

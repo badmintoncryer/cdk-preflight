@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "V": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "S": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "V"
+        },
+        "CidrBlock": "10.0.0.0/26"
+      }
+    },
+    "N": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "S"
+        },
+        "ConnectivityType": "private",
+        "AllocationId": "eipalloc-11112222"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-ec2-route-target-exactly-one
+service: ec2
+resourceTypes: [AWS::EC2::Route]
+severity: ERROR
+title: A route must name exactly one target
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-route.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: zero targets (e08) and two targets (e08b, real IGW + NatGatewayId) both -> \"The request must contain exactly one of gatewayId, localGatewayId, carrierGatewayId, natGatewayId, networkInterfaceId, vpcPeeringConnectionId, egressOnlyInternetGatewayId, transitGatewayId, vpcEndpointId, coreNetworkArn or instanceId\". The exactly-one check fires before target existence (the fake NatGatewayId never produced NotFound)."
+addedOn: 2026-09-03

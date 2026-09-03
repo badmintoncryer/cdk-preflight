@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::EC2::PlacementGroup",
+      "Properties": {
+        "Strategy": "cluster"
+      }
+    },
+    "I": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t3.micro",
+        "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+        "PlacementGroupName": {
+          "Ref": "P"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-ec2-vpce-gateway-service
+service: ec2
+resourceTypes: [AWS::EC2::VPCEndpoint]
+severity: ERROR
+title: Gateway VPC endpoints only exist for S3 and DynamoDB
+constraintSource: https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Gateway + com.amazonaws.ap-northeast-1.ec2 (e09b) -> \"Endpoint type (Gateway) does not match available service types ([Interface]).\" ROLLBACK_COMPLETE. Region mismatches are pf-ec2-vpce-service-region territory; this rule only judges the service segment."
+addedOn: 2026-09-03

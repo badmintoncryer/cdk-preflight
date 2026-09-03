@@ -739,6 +739,75 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound (minimum 3 characters) is enforced. The 255-char\n# maximum and the character pattern were not measured. Note resolve() turns a\n# Ref-to-resource into the target's logical ID; a logical ID short enough to\n# trip this rule while feeding a TableName is treated as the bug it almost\n# certainly is.\nviolation contains make_diag_full(\"pf-dynamodb-table-name-length\", \"ERROR\", name,\n\t\"Properties.TableName\",\n\tsprintf(\"TableName '%s' is shorter than 3 characters; CreateTable fails with \\\"Member must have length greater than or equal to 3\\\"\", [tn]),\n\t\"Use a table name of at least 3 characters, or omit TableName and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\ttn := resolve(name, \"Properties.TableName\")\n\tis_string(tn)\n\tcount(tn) < 3\n}\n"
   },
   {
+    "id": "pf-ec2-instance-ami-arch",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Instance type architecture must match the SSM public-parameter AMI architecture",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2iaa_url := \"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html\"\n\n# Graviton naming convention: a \"g\" among the letters after the\n# generation digit (t4g, c7gn, im4gn, g5g), plus the pre-convention a1.\n# mac* families are excluded from judgment entirely.\n_pf_ec2iaa_arm_fam(fam) if regex.match(`^[a-z]+[0-9]+[a-z0-9]*g[a-z0-9]*$`, fam)\n\n_pf_ec2iaa_arm_fam(fam) if fam == \"a1\"\n\n_pf_ec2iaa_fam(name) := fam if {\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\tfam := split(it, \".\")[0]\n\tnot startswith(fam, \"mac\")\n}\n\n# {{resolve:ssm:...}} strings surface as {\"__dynamic\": \"dynamic\n# reference: {{resolve:ssm:<path>}}\"} marker objects (measured\n# 2026-09-03); the reference text is read from the marker.\n_pf_ec2iaa_img(name) := d if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\traw := object.get(props, \"ImageId\", \"__pf_absent\")\n\tis_object(raw)\n\td := object.get(raw, \"__dynamic\", \"\")\n\tis_string(d)\n\tcontains(d, \"{{resolve:ssm:\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-instance-ami-arch\", \"ERROR\", name,\n\t\"Properties.ImageId\",\n\tsprintf(\"Instance type '%s' is x86_64 but the AMI parameter path names arm64; the launch fails with an architecture mismatch\", [resolve(name, \"Properties.InstanceType\")]),\n\t\"Use an arm64 (Graviton) instance type or the x86_64 AMI path\",\n\t_pf_ec2iaa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tfam := _pf_ec2iaa_fam(name)\n\tnot _pf_ec2iaa_arm_fam(fam)\n\timg := _pf_ec2iaa_img(name)\n\tcontains(img, \"arm64\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-instance-ami-arch\", \"ERROR\", name,\n\t\"Properties.ImageId\",\n\tsprintf(\"Instance type '%s' is arm64 (Graviton) but the AMI parameter path names x86_64; the launch fails with an architecture mismatch\", [resolve(name, \"Properties.InstanceType\")]),\n\t\"Use an x86_64 instance type or the arm64 AMI path\",\n\t_pf_ec2iaa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tfam := _pf_ec2iaa_fam(name)\n\t_pf_ec2iaa_arm_fam(fam)\n\timg := _pf_ec2iaa_img(name)\n\tcontains(img, \"x86_64\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-natgw-allocation",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "NAT gateway AllocationId is required for public connectivity and forbidden for private",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NatGateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2nga_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-natgateway.html\"\n\n_pf_ec2nga_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# ConnectivityType defaults to public; an unresolvable value skips both directions.\n_pf_ec2nga_public(name) if _pf_ec2nga_absent(name, \"ConnectivityType\")\n\n_pf_ec2nga_public(name) if resolve(name, \"Properties.ConnectivityType\") == \"public\"\n\nviolation contains make_diag_full(\"pf-ec2-natgw-allocation\", \"ERROR\", name,\n\t\"Properties.AllocationId\",\n\t\"A private NAT gateway cannot take AllocationId (\\\"AllocationId cannot be specified for a NAT Gateway with Connectivity Type private.\\\")\",\n\t\"Remove AllocationId, or switch ConnectivityType to public\",\n\t_pf_ec2nga_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::NatGateway\")\n\tresolve(name, \"Properties.ConnectivityType\") == \"private\"\n\tnot _pf_ec2nga_absent(name, \"AllocationId\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-natgw-allocation\", \"ERROR\", name,\n\t\"Properties.AllocationId\",\n\t\"A public NAT gateway requires AllocationId (\\\"The request must include the AllocationId parameter.\\\")\",\n\t\"Allocate an EIP and pass its AllocationId, or set ConnectivityType: private\",\n\t_pf_ec2nga_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::NatGateway\")\n\t_pf_ec2nga_public(name)\n\t_pf_ec2nga_absent(name, \"AllocationId\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-pg-cluster-burstable",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Burstable instance types are not supported in cluster placement groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance",
+      "AWS::EC2::PlacementGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cross-resource: only fires when the referenced placement group is in\n# the template with Strategy cluster. A literal (pre-existing) group\n# name carries no strategy information and stays silent.\n_pf_ec2pgb_burstable(fam) if fam in {\"t2\", \"t3\", \"t3a\", \"t4g\"}\n\nviolation contains make_diag_full(\"pf-ec2-pg-cluster-burstable\", \"ERROR\", name,\n\t\"Properties.InstanceType\",\n\tsprintf(\"Cluster placement groups are not supported by the '%s' instance type; the launch fails at deploy\", [it]),\n\t\"Use a non-burstable type, or a spread/partition placement group\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\t_pf_ec2pgb_burstable(split(it, \".\")[0])\n\tpg := resolve(name, \"Properties.PlacementGroupName\")\n\tpg in resources_of_type(\"AWS::EC2::PlacementGroup\")\n\tresolve(pg, \"Properties.Strategy\") == \"cluster\"\n}\n"
+  },
+  {
+    "id": "pf-ec2-route-target-exactly-one",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A route must name exactly one target",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Route"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The 11 target properties, straight from the EC2 error message.\n_pf_ec2rte_targets := [\"GatewayId\", \"LocalGatewayId\", \"CarrierGatewayId\", \"NatGatewayId\", \"NetworkInterfaceId\", \"VpcPeeringConnectionId\", \"EgressOnlyInternetGatewayId\", \"TransitGatewayId\", \"VpcEndpointId\", \"CoreNetworkArn\", \"InstanceId\"]\n\n_pf_ec2rte_count(name) := n if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tn := count([k | some k in _pf_ec2rte_targets; object.get(props, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-ec2-route-target-exactly-one\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"The route names %v targets; EC2 requires exactly one of GatewayId, LocalGatewayId, CarrierGatewayId, NatGatewayId, NetworkInterfaceId, VpcPeeringConnectionId, EgressOnlyInternetGatewayId, TransitGatewayId, VpcEndpointId, CoreNetworkArn or InstanceId\", [n]),\n\t\"Set exactly one target property on the route\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-route.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Route\")\n\tn := _pf_ec2rte_count(name)\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-ec2-sg-cidr-valid",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Security group rule CidrIp must be a well-formed IPv4 CIDR",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::SecurityGroup",
+      "AWS::EC2::SecurityGroupIngress",
+      "AWS::EC2::SecurityGroupEgress"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2scv_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n_pf_ec2scv_malformed(c) if {\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tto_number(split(c, \"/\")[1]) > 32\n}\n\n_pf_ec2scv_malformed(c) if {\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tsome o in split(split(c, \"/\")[0], \".\")\n\tto_number(o) > 255\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-cidr-valid\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.CidrIp\", [dir, item.index]),\n\tsprintf(\"CidrIp '%s' is malformed (octets must be 0-255, prefix 0-32); EC2 rejects it with \\\"CIDR block %s is malformed\\\"\", [c, c]),\n\t\"Fix the CIDR notation\",\n\t_pf_ec2scv_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\tc := object.get(entry, \"CidrIp\", null)\n\tis_string(c)\n\t_pf_ec2scv_malformed(c)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-cidr-valid\", \"ERROR\", name,\n\t\"Properties.CidrIp\",\n\tsprintf(\"CidrIp '%s' is malformed (octets must be 0-255, prefix 0-32); EC2 rejects it with \\\"CIDR block %s is malformed\\\"\", [c, c]),\n\t\"Fix the CIDR notation\",\n\t_pf_ec2scv_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\tc := resolve(name, \"Properties.CidrIp\")\n\tis_string(c)\n\t_pf_ec2scv_malformed(c)\n}\n"
+  },
+  {
+    "id": "pf-ec2-sg-group-name",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Security group names may not start with sg-",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::SecurityGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-sg-group-name\", \"ERROR\", name,\n\t\"Properties.GroupName\",\n\tsprintf(\"GroupName '%s' starts with the reserved prefix; EC2 rejects it with \\\"Group names may not be in the format sg-*\\\"\", [gn]),\n\t\"Pick a name that does not start with sg-\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tgn := resolve(name, \"Properties.GroupName\")\n\tis_string(gn)\n\tstartswith(gn, \"sg-\")\n}\n"
+  },
+  {
     "id": "pf-ec2-sg-port-range",
     "service": "ec2",
     "severity": "ERROR",
@@ -750,6 +819,19 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::SecurityGroupEgress"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sg_fix := \"Use a port between 0 and 65535 with FromPort <= ToPort\"\n\n_pf_sg_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n_pf_port_out(n) if n < 0\n\n_pf_port_out(n) if n > 65535\n\n_pf_tcp_udp(p) if p in {\"tcp\", \"udp\", \"6\", \"17\", 6, 17}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s\", [dir, item.index, pname]),\n\tsprintf(\"%s %v is outside the valid TCP/UDP port range 0-65535\", [pname, n]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\t_pf_tcp_udp(object.get(entry, \"IpProtocol\", null))\n\tsome pname in {\"FromPort\", \"ToPort\"}\n\tn := to_number(object.get(entry, pname, null))\n\t_pf_port_out(n)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.FromPort\", [dir, item.index]),\n\tsprintf(\"FromPort (%v) must be less than or equal to ToPort (%v)\", [f, t]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\t_pf_tcp_udp(object.get(entry, \"IpProtocol\", null))\n\tf := to_number(object.get(entry, \"FromPort\", null))\n\tt := to_number(object.get(entry, \"ToPort\", null))\n\tf >= 0\n\tt <= 65535\n\tf > t\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [pname]),\n\tsprintf(\"%s %v is outside the valid TCP/UDP port range 0-65535\", [pname, n]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\t_pf_tcp_udp(resolve(name, \"Properties.IpProtocol\"))\n\tsome pname in {\"FromPort\", \"ToPort\"}\n\tn := to_number(resolve(name, sprintf(\"Properties.%s\", [pname])))\n\t_pf_port_out(n)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\t\"Properties.FromPort\",\n\tsprintf(\"FromPort (%v) must be less than or equal to ToPort (%v)\", [f, t]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\t_pf_tcp_udp(resolve(name, \"Properties.IpProtocol\"))\n\tf := to_number(resolve(name, \"Properties.FromPort\"))\n\tt := to_number(resolve(name, \"Properties.ToPort\"))\n\tf >= 0\n\tt <= 65535\n\tf > t\n}\n"
+  },
+  {
+    "id": "pf-ec2-sg-source-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A security group rule takes exactly one source/destination field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::SecurityGroup",
+      "AWS::EC2::SecurityGroupIngress",
+      "AWS::EC2::SecurityGroupEgress"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2sse_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n# The member sets come verbatim from the EC2 error messages.\n_pf_ec2sse_sets := {\"in\": [\"CidrIp\", \"CidrIpv6\", \"SourceSecurityGroupId\", \"SourcePrefixListId\"], \"out\": [\"CidrIp\", \"CidrIpv6\", \"DestinationPrefixListId\", \"DestinationSecurityGroupId\"]}\n\n_pf_ec2sse_dirkey := {\"SecurityGroupIngress\": \"in\", \"SecurityGroupEgress\": \"out\"}\n\n_pf_ec2sse_rkey := {\"AWS::EC2::SecurityGroupIngress\": \"in\", \"AWS::EC2::SecurityGroupEgress\": \"out\"}\n\n_pf_ec2sse_count(entry, setkey) := n if {\n\tis_object(entry)\n\tn := count([k | some k in _pf_ec2sse_sets[setkey]; object.get(entry, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\n# Embedded rules: two or more members is an error; zero is tolerated\n# (a source-less embedded ingress deployed clean on 2026-09-03).\nviolation contains make_diag_full(\"pf-ec2-sg-source-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d\", [dir, item.index]),\n\tsprintf(\"The rule sets %v of %v; EC2 allows only one (\\\"Only one of %s can be specified\\\")\", [n, _pf_ec2sse_sets[k], concat(\", \", _pf_ec2sse_sets[k])]),\n\t\"Keep exactly one source/destination field on the rule\",\n\t_pf_ec2sse_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tk := _pf_ec2sse_dirkey[dir]\n\tn := _pf_ec2sse_count(item.value, k)\n\tn >= 2\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-source-exclusive\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"The rule sets %v of %v; EC2 requires exactly one (\\\"Exactly one of %s must be specified and not empty\\\")\", [n, _pf_ec2sse_sets[k], concat(\", \", _pf_ec2sse_sets[k])]),\n\t\"Set exactly one source/destination field on the rule resource\",\n\t_pf_ec2sse_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\tk := _pf_ec2sse_rkey[rtype]\n\tn := _pf_ec2sse_count(input.resources[name].properties, k)\n\tn != 1\n}\n"
   },
   {
     "id": "pf-ec2-userdata-size",
@@ -773,6 +855,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::Volume"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_voliops_fix := \"Match Iops/Throughput to the volume type: gp3 3000-80000 IOPS (max 500/GiB, throughput 125-2000 MiB/s and at most IOPS/4), io1 100-64000 (max 50/GiB), io2 100-256000 (max 1000/GiB); gp2/st1/sc1/standard accept neither property\"\n\n_pf_voliops_url := \"https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html\"\n\n_pf_voliops_range := {\"gp3\": [3000, 80000], \"io1\": [100, 64000], \"io2\": [100, 256000]}\n\n_pf_voliops_per_gib := {\"gp3\": 500, \"io1\": 50, \"io2\": 1000}\n\n_pf_voliops_out(n, lo, hi) if n < lo\n\n_pf_voliops_out(n, lo, hi) if n > hi\n\n_pf_voliops_has_iops(name) if resolve(name, \"Properties.Iops\")\n\n# IOPS が型ごとの絶対レンジ外\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Iops\",\n\tsprintf(\"Iops %v is outside the supported range %d-%d for %s volumes\", [n, r[0], r[1], vt]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tr := _pf_voliops_range[vt]\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\t_pf_voliops_out(n, r[0], r[1])\n}\n\n# IOPS : サイズ比の超過\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Iops\",\n\tsprintf(\"Iops %v exceeds the maximum ratio of %d IOPS per GiB for %s (Size %v GiB allows at most %v)\", [n, ratio, vt, s, s * ratio]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tratio := _pf_voliops_per_gib[vt]\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\ts := to_number(resolve(name, \"Properties.Size\"))\n\tn > s * ratio\n}\n\n# Iops を受け付けない型に Iops を指定\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Iops\",\n\tsprintf(\"Iops is not supported for %s volumes (valid only for gp3, io1, io2); EC2 rejects the CreateVolume call\", [vt]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tvt in {\"gp2\", \"st1\", \"sc1\", \"standard\"}\n\tresolve(name, \"Properties.Iops\")\n}\n\n# Throughput は gp3 専用\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput is not supported for %s volumes (valid only for gp3); EC2 rejects the CreateVolume call\", [vt]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tis_string(vt)\n\tvt != \"gp3\"\n\tresolve(name, \"Properties.Throughput\")\n}\n\n# gp3 Throughput の絶対レンジ\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput %v MiB/s is outside the supported range 125-2000 for gp3 volumes\", [t]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tresolve(name, \"Properties.VolumeType\") == \"gp3\"\n\tt := to_number(resolve(name, \"Properties.Throughput\"))\n\t_pf_voliops_out(t, 125, 2000)\n}\n\n# gp3 Throughput : IOPS 比（最大 0.25 MiB/s per IOPS）\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput %v MiB/s exceeds the maximum ratio of 0.25 MiB/s per provisioned IOPS (%v IOPS allows at most %v)\", [t, n, n / 4]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tresolve(name, \"Properties.VolumeType\") == \"gp3\"\n\tt := to_number(resolve(name, \"Properties.Throughput\"))\n\tn := to_number(resolve(name, \"Properties.Iops\"))\n\tt * 4 > n\n}\n\n# gp3 で Iops 未指定（デフォルト 3000）のときの Throughput 比\nviolation contains make_diag_full(\"pf-ec2-volume-iops\", \"ERROR\", name, \"Properties.Throughput\",\n\tsprintf(\"Throughput %v MiB/s exceeds 750, the maximum for the default 3000 IOPS (0.25 MiB/s per IOPS); provision Iops explicitly or lower the throughput\", [t]),\n\t_pf_voliops_fix, _pf_voliops_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tresolve(name, \"Properties.VolumeType\") == \"gp3\"\n\tnot _pf_voliops_has_iops(name)\n\tt := to_number(resolve(name, \"Properties.Throughput\"))\n\tt > 750\n}\n"
+  },
+  {
+    "id": "pf-ec2-volume-iops-required",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "io1 and io2 volumes require the Iops property",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Volume"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-ec2-volume-iops validates Iops values; this rule covers the\n# conditional requirement (absence) that the schema cannot express.\n_pf_ec2vir_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-volume-iops-required\", \"ERROR\", name,\n\t\"Properties.Iops\",\n\tsprintf(\"%s volumes require Iops; EC2 rejects the CreateVolume call with \\\"The parameter iops must be specified for %s volumes.\\\"\", [vt, vt]),\n\t\"Set Iops (io1: 100-64000, io2: 100-256000)\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateVolume.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tvt in {\"io1\", \"io2\"}\n\t_pf_ec2vir_absent(name, \"Iops\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-volume-kms-encrypted",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "KmsKeyId on a volume requires Encrypted to be true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Volume"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vke_bad(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Encrypted\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_ec2vke_bad(name) if resolve(name, \"Properties.Encrypted\") == false\n\nviolation contains make_diag_full(\"pf-ec2-volume-kms-encrypted\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\t\"KmsKeyId is set but Encrypted is not true; EC2 rejects the volume with \\\"The parameter [KmsKeyId] requires the parameter Encrypted to be set.\\\"\",\n\t\"Set Encrypted: true alongside KmsKeyId\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateVolume.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"KmsKeyId\", \"__pf_absent\") != \"__pf_absent\"\n\t_pf_ec2vke_bad(name)\n}\n"
+  },
+  {
+    "id": "pf-ec2-volume-size-minimum",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "EBS volume size must meet the volume type minimum (io1/io2 4 GiB, st1/sc1 125 GiB)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Volume"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only minimums: the historical 16384 GiB maximum no longer holds\n# (a 17000 GiB gp3 deployed clean on 2026-09-03).\n_pf_ec2vsm_min := {\"io1\": 4, \"io2\": 4, \"st1\": 125, \"sc1\": 125}\n\nviolation contains make_diag_full(\"pf-ec2-volume-size-minimum\", \"ERROR\", name,\n\t\"Properties.Size\",\n\tsprintf(\"Size %v GiB is below the %v GiB minimum for %s volumes (\\\"%s volumes must be at least %v GiB in size.\\\")\", [s, mn, vt, vt, mn]),\n\t\"Raise Size to the volume type minimum\",\n\t\"https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tmn := _pf_ec2vsm_min[vt]\n\ts := to_number(resolve(name, \"Properties.Size\"))\n\ts < mn\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpc-cidr-block-size",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "VPC IPv4 CIDR block netmask must be between /16 and /28",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPC"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine validates subnet containment (E3059) and overlap (E3060)\n# but accepts any VPC netmask; EC2 rejects anything outside /16../28.\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-block-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"VPC CIDR block '%s' has netmask /%v; EC2 only accepts /16 through /28 (\\\"The CIDR '%s' is invalid.\\\")\", [c, p, c]),\n\t\"Use a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPC\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\t_pf_ec2vcs_out(p)\n}\n\n_pf_ec2vcs_out(p) if p < 16\n\n_pf_ec2vcs_out(p) if p > 28\n"
+  },
+  {
+    "id": "pf-ec2-vpce-gateway-service",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Gateway VPC endpoints only exist for S3 and DynamoDB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VpcEndpointType defaults to Gateway (measured: a type-less endpoint\n# fails with \"Endpoint type (Gateway) ...\" messages).\n_pf_ec2vgs_gateway(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"VpcEndpointType\", \"Gateway\") == \"Gateway\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-gateway-service\", \"ERROR\", name,\n\t\"Properties.ServiceName\",\n\tsprintf(\"Only S3 and DynamoDB offer Gateway endpoints; \\\"%s\\\" fails with \\\"Endpoint type (Gateway) does not match available service types\\\"\", [concat(\".\", parts)]),\n\t\"Use com.amazonaws.<region>.s3 or .dynamodb, or switch VpcEndpointType to Interface\",\n\t\"https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\t_pf_ec2vgs_gateway(name)\n\tsn := resolve(name, \"Properties.ServiceName\")\n\tis_string(sn)\n\tparts := split(sn, \".\")\n\tcount(parts) == 4\n\tparts[0] == \"com\"\n\tparts[1] == \"amazonaws\"\n\tnot parts[3] in {\"s3\", \"dynamodb\"}\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpce-service-region",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "VPC endpoint service names must use the deploy region unless ServiceRegion is set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vsr_url := \"https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html\"\n\n# Only com.amazonaws.<region>.<service> names where the third segment is\n# region-shaped; names like com.amazonaws.s3-global.accesspoint stay out.\n_pf_ec2vsr_parts(name) := parts if {\n\tsn := resolve(name, \"Properties.ServiceName\")\n\tis_string(sn)\n\tparts := split(sn, \".\")\n\tcount(parts) == 4\n\tparts[0] == \"com\"\n\tparts[1] == \"amazonaws\"\n\tregex.match(`^[a-z]{2}(-[a-z]+)+-[0-9]+$`, parts[2])\n}\n\n_pf_ec2vsr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-service-region\", \"ERROR\", name,\n\t\"Properties.ServiceName\",\n\tsprintf(\"Endpoint service '%s' names region %s but this stack deploys to %s; without ServiceRegion the lookup is regional and the create fails\", [concat(\".\", parts), parts[2], region]),\n\t\"Use com.amazonaws.<deploy-region>.<service>, or set ServiceRegion for cross-region PrivateLink\",\n\t_pf_ec2vsr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tparts := _pf_ec2vsr_parts(name)\n\tparts[2] != region\n\t_pf_ec2vsr_absent(name, \"ServiceRegion\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpce-type-config",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vtc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html\"\n\n_pf_ec2vtc_type(name) := t if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tt := object.get(props, \"VpcEndpointType\", \"Gateway\")\n}\n\n_pf_ec2vtc_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\t\"A Gateway endpoint cannot take SubnetIds (\\\"Subnet IDs are only supported for Interface and GatewayLoadBalancer type VPC Endpoints.\\\")\",\n\t\"Remove SubnetIds, or set VpcEndpointType: Interface\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\t_pf_ec2vtc_type(name) == \"Gateway\"\n\t_pf_ec2vtc_has(name, \"SubnetIds\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.RouteTableIds\",\n\tsprintf(\"A %s endpoint cannot take RouteTableIds; only Gateway endpoints attach to route tables\", [t]),\n\t\"Remove RouteTableIds, or set VpcEndpointType: Gateway\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tt := _pf_ec2vtc_type(name)\n\tt != \"Gateway\"\n\tis_string(t)\n\t_pf_ec2vtc_has(name, \"RouteTableIds\")\n}\n"
   },
   {
     "id": "pf-ecs-container-definitions-empty",

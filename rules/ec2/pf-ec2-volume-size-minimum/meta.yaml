@@ -1,0 +1,11 @@
+id: pf-ec2-volume-size-minimum
+service: ec2
+resourceTypes: [AWS::EC2::Volume]
+severity: ERROR
+title: EBS volume size must meet the volume type minimum (io1/io2 4 GiB, st1/sc1 125 GiB)
+constraintSource: https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: st1 Size 10 (e05) -> \"st1 volumes must be at least 125 GiB in size\"; sc1 Size 10 (e05c) and io1 Size 2 (e05d) and io2 Size 2 (e05f) -> same shape for each type. Boundary st1 Size 125 (e05b) CREATE_COMPLETE. gp3 Size 17000 (e05e) deployed clean - the old 16384 GiB ceiling no longer holds, so no maximum is claimed."
+addedOn: 2026-09-03

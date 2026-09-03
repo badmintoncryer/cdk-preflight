@@ -1,0 +1,11 @@
+id: pf-ec2-vpc-cidr-block-size
+service: ec2
+resourceTypes: [AWS::EC2::VPC]
+severity: ERROR
+title: VPC IPv4 CIDR block netmask must be between /16 and /28
+constraintSource: https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: CidrBlock 10.0.0.0/8 (e01) and 10.0.0.0/29 (e01b) both -> \"The CIDR '<block>' is invalid.\" ROLLBACK_COMPLETE; both edges measured. The engine checks subnet-inside-VPC (E3059) and sibling overlap (E3060) but not the VPC netmask itself."
+addedOn: 2026-09-03
