@@ -1,0 +1,11 @@
+id: pf-rds-backup-retention-range
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: BackupRetentionPeriod must be at most 35 days
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: BackupRetentionPeriod 36 (r04) -> \"Invalid backup retention period: 36. Retention period must be between 0 and 35.\" ROLLBACK_COMPLETE at the CreateDBInstance call. Aurora DBCluster retention (1-35) is unbenched and out of scope."
+addedOn: 2026-09-03

@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::RDS::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "aurora-mysql",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "BacktrackWindow": 86400
+      }
+    }
+  }
+}

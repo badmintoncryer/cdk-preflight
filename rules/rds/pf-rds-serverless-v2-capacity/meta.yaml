@@ -1,0 +1,11 @@
+id: pf-rds-serverless-v2-capacity
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: Serverless v2 MinCapacity must not exceed MaxCapacity, and MaxCapacity is at most 256
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: MinCapacity 8 / MaxCapacity 1 (r12) -> \"Serverless v2 minimum capacity must be less than or equal to maximum capacity\"; MaxCapacity 300 (r12b) -> \"Serverless v2 capacity value 300.0 is not valid. The valid scaling range for this cluster is 0.0 to 256.0.\" Both ROLLBACK_COMPLETE at the CreateDBCluster call."
+addedOn: 2026-09-03

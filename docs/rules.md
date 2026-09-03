@@ -137,6 +137,18 @@
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |
 | `pf-logs-metric-dimensions-default-exclusive` | AWS::Logs::MetricFilter | Dimensions and DefaultValue are mutually exclusive | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | none |
+| `pf-rds-backtrack` | AWS::RDS::DBCluster | Backtrack only works on aurora-mysql, with a window of at most 259200 seconds | none |
+| `pf-rds-backup-retention-range` | AWS::RDS::DBInstance | BackupRetentionPeriod must be at most 35 days | none |
+| `pf-rds-backup-window-duration` | AWS::RDS::DBInstance | The backup window must be at least 30 minutes | none |
+| `pf-rds-backup-window-format` | AWS::RDS::DBInstance | PreferredBackupWindow must be hh24:mi-hh24:mi | none |
+| `pf-rds-dbname-format` | AWS::RDS::DBInstance | postgres DBName must begin with a letter | none |
+| `pf-rds-gp3-iops-storage-threshold` | AWS::RDS::DBInstance | gp3 below 400 GiB cannot take custom Iops or StorageThroughput (postgres/mysql) | none |
+| `pf-rds-io1-iops-ratio` | AWS::RDS::DBInstance | postgres io1 Iops may not exceed 50 per GiB of storage | none |
+| `pf-rds-iops-required` | AWS::RDS::DBInstance | io1 and io2 storage require the Iops property | none |
+| `pf-rds-password-valid` | AWS::RDS::DBInstance<br>AWS::RDS::DBCluster | MasterUserPassword must be at least 8 characters without '/', '@', '\"' or spaces | none |
+| `pf-rds-port-range` | AWS::RDS::DBInstance | The database port must be within 1150-65535 | none |
+| `pf-rds-serverless-v2-capacity` | AWS::RDS::DBCluster | Serverless v2 MinCapacity must not exceed MaxCapacity, and MaxCapacity is at most 256 | none |
+| `pf-rds-window-overlap` | AWS::RDS::DBInstance | The backup window and the maintenance window must not overlap | none |
 | `pf-route53-alias-cloudfront-zone-id` | AWS::Route53::RecordSet | A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2 | none |
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | none |
 | `pf-route53-geolocation-exclusive` | AWS::Route53::RecordSet | GeoLocation cannot specify both ContinentCode and CountryCode | pending-engine |

@@ -1,0 +1,11 @@
+id: pf-rds-gp3-iops-storage-threshold
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: gp3 below 400 GiB cannot take custom Iops or StorageThroughput (postgres/mysql)
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: postgres gp3 100 GiB + Iops 12000 (r03) -> \"You can't specify IOPS or storage throughput for engine postgres and a storage size less than 400.\"; mysql variant (r03b) -> same with engine mysql. Both ROLLBACK_COMPLETE. Claim scoped to the two benched engines (thresholds differ elsewhere, e.g. SQL Server)."
+addedOn: 2026-09-03
