@@ -1,0 +1,11 @@
+id: pf-batch-timeout-minimum
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Timeout.AttemptDurationSeconds must be at least 60
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: AttemptDurationSeconds 30 (d02) -> \"AttemptDurationSeconds in Timeout must be at least 60 seconds.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

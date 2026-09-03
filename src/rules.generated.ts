@@ -288,6 +288,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Placement must come from somewhere. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_asgzsr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-asg-zone-or-subnet-required\", \"ERROR\", name,\n\t\"Properties.VPCZoneIdentifier\",\n\t\"Neither AvailabilityZones, AvailabilityZoneIds, nor VPCZoneIdentifier is set; the group create fails with \\\"You must specify 1 of either AvailabilityZones, AvailabilityZoneIds, or Subnets\\\"\",\n\t\"Set VPCZoneIdentifier with the target subnets (or AvailabilityZones)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\t_pf_asgzsr_absent(name, \"AvailabilityZones\")\n\t_pf_asgzsr_absent(name, \"AvailabilityZoneIds\")\n\t_pf_asgzsr_absent(name, \"VPCZoneIdentifier\")\n}\n"
   },
   {
+    "id": "pf-batch-ce-vcpus-order",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "MaxvCpus must be at least MinvCpus",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ComputeEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-ce-vcpus-order\", \"ERROR\", name,\n\t\"Properties.ComputeResources.MaxvCpus\",\n\tsprintf(\"MaxvCpus %v is below MinvCpus %v (\\\"maxvCpus should be greater than or equal to minvCpus.\\\")\", [mx, mn]),\n\t\"Keep MinvCpus <= MaxvCpus\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tmn := to_number(resolve(name, \"Properties.ComputeResources.MinvCpus\"))\n\tmx := to_number(resolve(name, \"Properties.ComputeResources.MaxvCpus\"))\n\tmx < mn\n}\n"
+  },
+  {
+    "id": "pf-batch-fargate-ce-fields",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Fargate compute environments cannot take AllocationStrategy or InstanceTypes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ComputeEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_batchfcf_cr(name) := cr if {\n\tcr := resolve(name, \"Properties.ComputeResources.Type\")\n\tis_string(cr)\n}\n\nviolation contains make_diag_full(\"pf-batch-fargate-ce-fields\", \"ERROR\", name,\n\tsprintf(\"Properties.ComputeResources.%s\", [field]),\n\tsprintf(\"%s is not applicable for %s compute environments; Batch rejects the create call\", [field, cr]),\n\t\"Remove the EC2-only field, or switch ComputeResources.Type to EC2/SPOT\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tcr := _pf_batchfcf_cr(name)\n\tcr in {\"FARGATE\", \"FARGATE_SPOT\"}\n\tcres := input.resources[name].properties.ComputeResources\n\tis_object(cres)\n\tsome field in {\"AllocationStrategy\", \"InstanceTypes\"}\n\tobject.get(cres, field, \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-batch-fargate-cpu-memory",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Fargate job definitions must use a supported vCPU/memory combination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_batchfcm_url := \"https://docs.aws.amazon.com/batch/latest/userguide/fargate.html\"\n\n# Memory spec per vCPU tier: 0.25 is an explicit set; the rest are\n# [min, max, step] arithmetic ranges. Keys are numbers so \"1.0\" and\n# \"1\" both land on the same tier after to_number.\n_pf_batchfcm_set := {512, 1024, 2048}\n\n_pf_batchfcm_range := {0.5: [1024, 4096, 1024], 1: [2048, 8192, 1024], 2: [4096, 16384, 1024], 4: [8192, 30720, 1024], 8: [16384, 61440, 4096], 16: [32768, 122880, 8192]}\n\n_pf_batchfcm_fargate(name) if {\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tpc.value == \"FARGATE\"\n}\n\n_pf_batchfcm_req(name, rtype) := v if {\n\tsome item in flatten_list(name, \"Properties.ContainerProperties.ResourceRequirements\")\n\tentry := item.value\n\tis_object(entry)\n\tobject.get(entry, \"Type\", \"\") == rtype\n\traw := object.get(entry, \"Value\", null)\n\tis_string(raw)\n\tv := to_number(raw)\n}\n\n_pf_batchfcm_bad(v, m) if {\n\tv == 0.25\n\tnot m in _pf_batchfcm_set\n}\n\n_pf_batchfcm_bad(v, m) if {\n\tspec := _pf_batchfcm_range[v]\n\tm < spec[0]\n}\n\n_pf_batchfcm_bad(v, m) if {\n\tspec := _pf_batchfcm_range[v]\n\tm > spec[1]\n}\n\n_pf_batchfcm_bad(v, m) if {\n\tspec := _pf_batchfcm_range[v]\n\t(m - spec[0]) % spec[2] != 0\n}\n\n_pf_batchfcm_tier(v) if v == 0.25\n\n_pf_batchfcm_tier(v) if _pf_batchfcm_range[v]\n\nviolation contains make_diag_full(\"pf-batch-fargate-cpu-memory\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.ResourceRequirements\",\n\tsprintf(\"VCPU %v is not a Fargate tier (0.25, 0.5, 1, 2, 4, 8, 16); Batch rejects it with \\\"Fargate resource requirements ... not valid.\\\"\", [v]),\n\t\"Use one of the Fargate vCPU tiers\",\n\t_pf_batchfcm_url) if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batchfcm_fargate(name)\n\tv := _pf_batchfcm_req(name, \"VCPU\")\n\tnot _pf_batchfcm_tier(v)\n}\n\nviolation contains make_diag_full(\"pf-batch-fargate-cpu-memory\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.ResourceRequirements\",\n\tsprintf(\"MEMORY %v MiB is not valid for VCPU %v; Batch rejects it with \\\"Fargate resource requirements (%v vCPU, %v MiB) not valid.\\\"\", [m, v, v, m]),\n\t\"Pick a memory value from the tier's supported list\",\n\t_pf_batchfcm_url) if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batchfcm_fargate(name)\n\tv := _pf_batchfcm_req(name, \"VCPU\")\n\tm := _pf_batchfcm_req(name, \"MEMORY\")\n\t_pf_batchfcm_bad(v, m)\n}\n"
+  },
+  {
+    "id": "pf-batch-fargate-execution-role",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Fargate job definitions require ExecutionRoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_batchfer_fargate(name) if {\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tpc.value == \"FARGATE\"\n}\n\nviolation contains make_diag_full(\"pf-batch-fargate-execution-role\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.ExecutionRoleArn\",\n\t\"PlatformCapabilities includes FARGATE but ExecutionRoleArn is missing (\\\"executionRoleArn is required for Fargate jobs.\\\")\",\n\t\"Set ContainerProperties.ExecutionRoleArn\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batchfer_fargate(name)\n\tcp := input.resources[name].properties.ContainerProperties\n\tis_object(cp)\n\tobject.get(cp, \"ExecutionRoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-batch-fargate-multinode",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Multi-node parallel jobs are not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-fargate-multinode\", \"ERROR\", name,\n\t\"Properties.PlatformCapabilities\",\n\t\"Type multinode cannot run on Fargate (\\\"Fargate does not support MNP jobs\\\")\",\n\t\"Use EC2 platform capabilities for multi-node parallel jobs\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tresolve(name, \"Properties.Type\") == \"multinode\"\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tpc.value == \"FARGATE\"\n}\n"
+  },
+  {
+    "id": "pf-batch-managed-compute-resources",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "MANAGED compute environments require ComputeResources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ComputeEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-managed-compute-resources\", \"ERROR\", name,\n\t\"Properties.ComputeResources\",\n\t\"Type MANAGED requires ComputeResources (\\\"computeResources must be provided for a MANAGED compute environment\\\")\",\n\t\"Add a ComputeResources block, or use Type UNMANAGED\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tresolve(name, \"Properties.Type\") == \"MANAGED\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"ComputeResources\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-batch-queue-order-required",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "ComputeEnvironmentOrder may not be empty",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema accepts an empty list; the service rejects it. True\n# absence is schema territory, so only the present-and-empty shape\n# is claimed (input.resources sees the raw list).\nviolation contains make_diag_full(\"pf-batch-queue-order-required\", \"ERROR\", name,\n\t\"Properties.ComputeEnvironmentOrder\",\n\t\"ComputeEnvironmentOrder is empty (\\\"computeEnvironmentOrder is required.\\\")\",\n\t\"List at least one compute environment\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\torder := object.get(props, \"ComputeEnvironmentOrder\", \"__pf_absent\")\n\tis_array(order)\n\tcount(order) == 0\n}\n"
+  },
+  {
+    "id": "pf-batch-retry-attempts",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "RetryStrategy.Attempts may not exceed 10",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-retry-attempts\", \"ERROR\", name,\n\t\"Properties.RetryStrategy.Attempts\",\n\tsprintf(\"RetryStrategy.Attempts %v is above the maximum (\\\"RetryAttempts must be between 1 and 10.\\\")\", [n]),\n\t\"Use at most 10 attempts\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := to_number(resolve(name, \"Properties.RetryStrategy.Attempts\"))\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-batch-timeout-minimum",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Timeout.AttemptDurationSeconds must be at least 60",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-timeout-minimum\", \"ERROR\", name,\n\t\"Properties.Timeout.AttemptDurationSeconds\",\n\tsprintf(\"Timeout %v seconds is below the minimum (\\\"AttemptDurationSeconds in Timeout must be at least 60 seconds.\\\")\", [n]),\n\t\"Use at least 60 seconds\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := to_number(resolve(name, \"Properties.Timeout.AttemptDurationSeconds\"))\n\tn < 60\n}\n"
+  },
+  {
+    "id": "pf-batch-unmanaged-fargate",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "UNMANAGED compute environments cannot be Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ComputeEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_batchumf_cr(name) := cr if {\n\tcr := resolve(name, \"Properties.ComputeResources.Type\")\n\tis_string(cr)\n}\n\nviolation contains make_diag_full(\"pf-batch-unmanaged-fargate\", \"ERROR\", name,\n\t\"Properties.ComputeResources.Type\",\n\tsprintf(\"Type UNMANAGED cannot pair with ComputeResources.Type %s (\\\"Cannot create an UNMANAGED Fargate Compute Environment.\\\")\", [cr]),\n\t\"Use MANAGED for Fargate, or EC2 resources for UNMANAGED\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tresolve(name, \"Properties.Type\") == \"UNMANAGED\"\n\tcr := _pf_batchumf_cr(name)\n\tcr in {\"FARGATE\", \"FARGATE_SPOT\"}\n}\n"
+  },
+  {
     "id": "pf-agentcore-gateway-jwt-authorizer",
     "service": "bedrock-agentcore",
     "severity": "ERROR",

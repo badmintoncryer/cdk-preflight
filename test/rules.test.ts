@@ -1671,3 +1671,76 @@ describe('rds and aurora rules', () => {
     expect(ids(diagnoseTemplate(inst({ Engine: 'mysql', DBName: '1abc' })))).toHaveLength(0);
   });
 });
+
+describe('batch rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const IMG = 'public.ecr.aws/amazonlinux/amazonlinux:latest';
+  const fargateJd = (vcpu: unknown, mem: unknown) => ({
+    Resources: {
+      J: {
+        Type: 'AWS::Batch::JobDefinition',
+        Properties: {
+          Type: 'container',
+          PlatformCapabilities: ['FARGATE'],
+          ContainerProperties: {
+            Image: IMG,
+            ExecutionRoleArn: 'arn:aws:iam::123456789012:role/exec',
+            ResourceRequirements: [{ Type: 'VCPU', Value: vcpu }, { Type: 'MEMORY', Value: mem }],
+          },
+        },
+      },
+    },
+  });
+  const ceT = (cr: Record<string, unknown>, p: Record<string, unknown> = {}) => ({
+    Resources: {
+      C: {
+        Type: 'AWS::Batch::ComputeEnvironment',
+        Properties: {
+          Type: 'MANAGED',
+          ComputeResources: { Type: 'FARGATE', MaxvCpus: 4, Subnets: ['subnet-11112222'], SecurityGroupIds: ['sg-11112222'], ...cr },
+          ...p,
+        },
+      },
+    },
+  });
+
+  test('fargate combo: "1.0" normalizes onto tier 1; the 0.25 tier is a set (1536 is not min+step math)', () => {
+    expect(ids(diagnoseTemplate(fargateJd('1.0', '2048')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(fargateJd('1.0', '1024')))).toContain('pf-batch-fargate-cpu-memory');
+    expect(ids(diagnoseTemplate(fargateJd('0.25', '1536')))).toContain('pf-batch-fargate-cpu-memory');
+    expect(ids(diagnoseTemplate(fargateJd('8', '20480')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(fargateJd('8', '17000')))).toContain('pf-batch-fargate-cpu-memory');
+  });
+
+  test('fargate combo and exec-role rules stay silent for EC2-platform job definitions', () => {
+    const t = fargateJd('0.25', '8192');
+    (t.Resources.J.Properties as any).PlatformCapabilities = ['EC2'];
+    delete (t.Resources.J.Properties.ContainerProperties as any).ExecutionRoleArn;
+    expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+  });
+
+  test('fargate-only CE fields: EC2 compute environments may use AllocationStrategy', () => {
+    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', AllocationStrategy: 'BEST_FIT', InstanceTypes: ['optimal'], InstanceRole: 'r' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(ceT({ Type: 'FARGATE_SPOT', InstanceTypes: ['optimal'] })))).toContain('pf-batch-fargate-ce-fields');
+  });
+
+  test('unmanaged rule is scoped to Fargate resource types; UNMANAGED + EC2 resources stay silent', () => {
+    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' }, { Type: 'UNMANAGED' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(ceT({ Type: 'FARGATE_SPOT' }, { Type: 'UNMANAGED' })))).toContain('pf-batch-unmanaged-fargate');
+  });
+
+  test('queue order: absent list is schema territory and stays silent here; empty list fires', () => {
+    const q = (props: Record<string, unknown>) => ({ Resources: { Q: { Type: 'AWS::Batch::JobQueue', Properties: { Priority: 1, ...props } } } });
+    expect(ids(diagnoseTemplate(q({ ComputeEnvironmentOrder: [] })))).toContain('pf-batch-queue-order-required');
+    expect(ids(diagnoseTemplate(q({ ComputeEnvironmentOrder: [{ Order: 1, ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/x' }] })))).toHaveLength(0);
+  });
+
+  test('retry attempts: only the benched upper edge fires; 0 stays silent (unbenched)', () => {
+    const jdT = (attempts: number) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', RetryStrategy: { Attempts: attempts }, ContainerProperties: { Image: IMG, ResourceRequirements: [{ Type: 'VCPU', Value: '1' }, { Type: 'MEMORY', Value: '2048' }] } } } },
+    });
+    expect(ids(diagnoseTemplate(jdT(11)))).toContain('pf-batch-retry-attempts');
+    expect(ids(diagnoseTemplate(jdT(10)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(jdT(0)))).toHaveLength(0);
+  });
+});

@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "ComputeEnvironmentOrder": [
+          {
+            "Order": 1,
+            "ComputeEnvironment": "arn:aws:batch:us-east-1:123456789012:compute-environment/x"
+          }
+        ]
+      }
+    }
+  }
+}

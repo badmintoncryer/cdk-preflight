@@ -1,0 +1,11 @@
+id: pf-batch-fargate-multinode
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Multi-node parallel jobs are not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: Type multinode + PlatformCapabilities [FARGATE] (d05) -> \"Fargate does not support MNP jobs\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-03

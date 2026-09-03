@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "ComputeEnvironmentOrder": []
+      }
+    }
+  }
+}

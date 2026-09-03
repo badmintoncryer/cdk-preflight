@@ -1,0 +1,11 @@
+id: pf-batch-fargate-cpu-memory
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Fargate job definitions must use a supported vCPU/memory combination
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/fargate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-03 ap-northeast-1: all four violation classes measured - 0.25 vCPU + 8192 MiB over-max (d03), vCPU tier 3 invalid (d03b), 16 vCPU + 16384 MiB under-min (d03c), 0.5 vCPU + 2500 MiB step-misaligned (d03d) - each -> \"Fargate resource requirements (<v> vCPU, <m> MiB) not valid.\" ROLLBACK_COMPLETE. The tier/memory table matches the ECS one the engine already checks for ECS task definitions (E3047), but the engine has no Batch counterpart."
+addedOn: 2026-09-03
