@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "テスト用",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "busybox",
+            "Memory": 128,
+            "Essential": true
+          }
+        ]
+      }
+    }
+  }
+}

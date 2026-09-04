@@ -1,0 +1,12 @@
+id: pf-rds-subnet-group-name
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBSubnetGroup]
+severity: ERROR
+title: DB subnet group names allow only letters, numbers, spaces, dot, underscore and hyphen
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBSubnetGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: DBSubnetGroupName '\u30c6\u30b9\u30c8\u7528' -> \"Invalid subnet group name:  ????\" ROLLBACK_COMPLETE. The engine has no pattern for this property."
+addedOn: 2026-09-04

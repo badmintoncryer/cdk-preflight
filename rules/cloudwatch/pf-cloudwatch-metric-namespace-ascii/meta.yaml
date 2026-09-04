@@ -1,0 +1,12 @@
+id: pf-cloudwatch-metric-namespace-ascii
+service: cloudwatch
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: Metric namespaces must not contain non-ASCII characters
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: Namespace '\u30c6\u30b9\u30c8\u7528' -> \"Namespace must not contain Non-ASCII characters.\" ROLLBACK_COMPLETE. AlarmName and AlarmDescription on the same resource accept Japanese (benched CREATE_COMPLETE), so only Namespace is claimed. The Metrics[].MetricStat.Metric.Namespace path is unbenched and not claimed."
+addedOn: 2026-09-04

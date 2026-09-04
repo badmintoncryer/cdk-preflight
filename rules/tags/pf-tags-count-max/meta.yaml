@@ -1,0 +1,12 @@
+id: pf-tags-count-max
+service: tags
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: A resource may carry at most 50 tags
+constraintSource: https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: an EC2 VPC with 51 tags -> \"More than 50 tags specified.\" ROLLBACK_COMPLETE, and the same VPC with 50 tags deploys clean. An SNS topic with 51 tags -> \"Could not complete request: tag quota of per resource exceeded\", but SNS also rejects 50, so its own cap is lower than 50 - this rule claims only the AWS-wide ceiling of 50 and deliberately under-detects services with a smaller quota. The engine does not count tags, and the count only exists after Tags.of() merges at render time (after validateTree)."
+addedOn: 2026-09-04

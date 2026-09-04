@@ -1,0 +1,12 @@
+id: pf-tags-aws-prefix
+service: tags
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "Tag keys may not use the reserved aws: prefix"
+constraintSource: https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: an SNS topic tagged aws:probe -> \"aws: prefixed tag key names are not allowed for external use.\"; the same tag on an EC2 VPC produced the identical message. Both ROLLBACK_COMPLETE. The engine has no check for the reserved prefix, and the final tag set only exists after validateTree because Tags.of() merges across scopes at render time."
+addedOn: 2026-09-04

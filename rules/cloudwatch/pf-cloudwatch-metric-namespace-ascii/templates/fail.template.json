@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "Namespace": "テスト用",
+        "MetricName": "m",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Period": 60,
+        "Statistic": "Average",
+        "Threshold": 1
+      }
+    }
+  }
+}

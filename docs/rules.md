@@ -29,11 +29,13 @@
 | `pf-asg-ondemand-percentage-max` | AWS::AutoScaling::AutoScalingGroup | OnDemandPercentageAboveBaseCapacity tops out at 100 | none |
 | `pf-asg-target-value-positive` | AWS::AutoScaling::ScalingPolicy | Target tracking needs a positive TargetValue | none |
 | `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | none |
+| `pf-batch-ce-name` | AWS::Batch::ComputeEnvironment | Compute environment names allow only letters, numbers, hyphen and underscore | none |
 | `pf-batch-ce-vcpus-order` | AWS::Batch::ComputeEnvironment | MaxvCpus must be at least MinvCpus | none |
 | `pf-batch-fargate-ce-fields` | AWS::Batch::ComputeEnvironment | Fargate compute environments cannot take AllocationStrategy or InstanceTypes | none |
 | `pf-batch-fargate-cpu-memory` | AWS::Batch::JobDefinition | Fargate job definitions must use a supported vCPU/memory combination | none |
 | `pf-batch-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate job definitions require ExecutionRoleArn | none |
 | `pf-batch-fargate-multinode` | AWS::Batch::JobDefinition | Multi-node parallel jobs are not supported on Fargate | none |
+| `pf-batch-jd-name` | AWS::Batch::JobDefinition | Job definition names allow only letters, numbers, hyphen and underscore | none |
 | `pf-batch-managed-compute-resources` | AWS::Batch::ComputeEnvironment | MANAGED compute environments require ComputeResources | none |
 | `pf-batch-queue-order-required` | AWS::Batch::JobQueue | ComputeEnvironmentOrder may not be empty | none |
 | `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts may not exceed 10 | none |
@@ -43,6 +45,7 @@
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
 | `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | none |
+| `pf-cloudfront-cache-policy-name` | AWS::CloudFront::CachePolicy | Cache policy names allow only alphanumerics, dash and underscore | none |
 | `pf-cloudfront-cached-methods-subset` | AWS::CloudFront::Distribution | CachedMethods must be a subset of AllowedMethods | none |
 | `pf-cloudfront-edge-lambda-region` | AWS::CloudFront::Distribution | Lambda@Edge functions associated with a distribution must be in us-east-1 | none |
 | `pf-cloudfront-edge-lambda-version` | AWS::CloudFront::Distribution | Lambda@Edge associations must reference a version ARN, not an alias or $LATEST | none |
@@ -59,12 +62,14 @@
 | `pf-cloudwatch-dashboard-widgets` | AWS::CloudWatch::Dashboard | DashboardBody requires a widgets array | none |
 | `pf-cloudwatch-datapoints-evaluation` | AWS::CloudWatch::Alarm | DatapointsToAlarm must not exceed EvaluationPeriods | none |
 | `pf-cloudwatch-extended-statistic` | AWS::CloudWatch::Alarm | A percentile statistic cannot exceed p100 | none |
+| `pf-cloudwatch-metric-namespace-ascii` | AWS::CloudWatch::Alarm | Metric namespaces must not contain non-ASCII characters | none |
 | `pf-cloudwatch-metric-query-exclusive` | AWS::CloudWatch::Alarm | Expression and MetricStat are mutually exclusive per query | none |
 | `pf-cloudwatch-metric-query-returndata` | AWS::CloudWatch::Alarm | Exactly one metric query must return data | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | none |
 | `pf-cognito-client-credentials-exclusive` | AWS::Cognito::UserPoolClient | client_credentials cannot combine with code or implicit | none |
 | `pf-cognito-client-credentials-secret` | AWS::Cognito::UserPoolClient | client_credentials needs a client secret | none |
+| `pf-cognito-client-name` | AWS::Cognito::UserPoolClient | User pool client names allow only word characters, spaces and +=,.@- | none |
 | `pf-cognito-domain-reserved-word` | AWS::Cognito::UserPoolDomain | Domain prefixes cannot contain reserved words | none |
 | `pf-cognito-mfa-sms-config` | AWS::Cognito::UserPool | MFA without any factor configuration cannot deploy | none |
 | `pf-cognito-oauth-callback-required` | AWS::Cognito::UserPoolClient | code and implicit OAuth flows need CallbackURLs | none |
@@ -74,6 +79,7 @@
 | `pf-cognito-schema-attr-length-order` | AWS::Cognito::UserPool | Schema attribute MaxLength cannot undercut MinLength | none |
 | `pf-cognito-token-expiration-order` | AWS::Cognito::UserPoolClient | Access and id tokens cannot outlive the refresh token | none |
 | `pf-cognito-token-validity-range` | AWS::Cognito::UserPoolClient | Token validity ranges depend on token type and unit | none |
+| `pf-cognito-user-pool-name` | AWS::Cognito::UserPool | User pool names allow only word characters, spaces and +=,.@- | none |
 | `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | none |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | none |
@@ -85,15 +91,19 @@
 | `pf-dynamodb-kinesis-stream-region` | AWS::DynamoDB::Table | A Kinesis streaming destination must be in the table's region | none |
 | `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | none |
 | `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | none |
+| `pf-dynamodb-table-name-format` | AWS::DynamoDB::Table<br>AWS::DynamoDB::GlobalTable | Table names allow only letters, numbers, underscore, dot and hyphen (max 255) | none |
 | `pf-dynamodb-table-name-length` | AWS::DynamoDB::Table | TableName must be at least 3 characters | pending-engine |
 | `pf-ec2-instance-ami-arch` | AWS::EC2::Instance | Instance type architecture must match the SSM public-parameter AMI architecture | none |
+| `pf-ec2-launch-template-name` | AWS::EC2::LaunchTemplate | Launch template names are 3-128 chars of letters, numbers and -()./_ | none |
 | `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |
 | `pf-ec2-pg-cluster-burstable` | AWS::EC2::Instance<br>AWS::EC2::PlacementGroup | Burstable instance types are not supported in cluster placement groups | none |
 | `pf-ec2-route-target-exactly-one` | AWS::EC2::Route | A route must name exactly one target | none |
 | `pf-ec2-sg-cidr-valid` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule CidrIp must be a well-formed IPv4 CIDR | none |
 | `pf-ec2-sg-group-name` | AWS::EC2::SecurityGroup | Security group names may not start with sg- | none |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
+| `pf-ec2-sg-rule-description` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule descriptions are limited to 255 chars of a restricted ASCII set | none |
 | `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | none |
+| `pf-ec2-subnet-cidr-size` | AWS::EC2::Subnet | Subnet IPv4 CIDR netmask must be between /16 and /28 | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
 | `pf-ec2-volume-iops-required` | AWS::EC2::Volume | io1 and io2 volumes require the Iops property | none |
@@ -103,6 +113,7 @@
 | `pf-ec2-vpce-gateway-service` | AWS::EC2::VPCEndpoint | Gateway VPC endpoints only exist for S3 and DynamoDB | none |
 | `pf-ec2-vpce-service-region` | AWS::EC2::VPCEndpoint | VPC endpoint service names must use the deploy region unless ServiceRegion is set | none |
 | `pf-ec2-vpce-type-config` | AWS::EC2::VPCEndpoint | SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway) | none |
+| `pf-ecs-cluster-name` | AWS::ECS::Cluster | ECS cluster names allow only letters, numbers, hyphen and underscore (max 255) | none |
 | `pf-ecs-container-definitions-empty` | AWS::ECS::TaskDefinition | ContainerDefinitions must contain at least one container | pending-engine |
 | `pf-ecs-container-memory-over-task` | AWS::ECS::TaskDefinition | A container Memory must not exceed the task-level Memory | none |
 | `pf-ecs-container-memory-required` | AWS::ECS::TaskDefinition | A container needs Memory or MemoryReservation when the task sets no Memory | none |
@@ -118,19 +129,22 @@
 | `pf-ecs-service-fargate-placement` | AWS::ECS::Service | Placement constraints and strategies are not supported on FARGATE | none |
 | `pf-ecs-service-launch-type-capacity-provider` | AWS::ECS::Service | LaunchType and CapacityProviderStrategy are mutually exclusive | none |
 | `pf-ecs-service-lb-target-exclusive` | AWS::ECS::Service | A load balancer entry takes either TargetGroupArn or LoadBalancerName, not both | none |
+| `pf-ecs-service-name` | AWS::ECS::Service | ECS service names allow only letters, numbers, hyphen and underscore (max 255) | none |
 | `pf-ecs-service-network-config-mode` | AWS::ECS::Service<br>AWS::ECS::TaskDefinition | NetworkConfiguration requires an awsvpc task definition | none |
 | `pf-ecs-service-platform-version-ec2` | AWS::ECS::Service | PlatformVersion is not allowed with the EC2 launch type | none |
+| `pf-ecs-taskdef-family` | AWS::ECS::TaskDefinition | Task definition Family allows only letters, numbers, hyphen and underscore | none |
 | `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | none |
 | `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | none |
 | `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | none |
 | `pf-elbv2-lambda-target-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Lambda target groups cannot specify Protocol | none |
 | `pf-elbv2-lb-idle-timeout-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | ALB idle_timeout.timeout_seconds must be between 1 and 4000 | none |
-| `pf-elbv2-lb-name` | AWS::ElasticLoadBalancingV2::LoadBalancer | Load balancer names cannot begin with internal- or end with a hyphen | none |
+| `pf-elbv2-lb-name` | AWS::ElasticLoadBalancingV2::LoadBalancer | Load balancer names are at most 32 alphanumeric/hyphen chars and cannot begin with internal- or a hyphen | none |
 | `pf-elbv2-listener-protocol-lb-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | Listener protocols must match the load balancer type | none |
 | `pf-elbv2-rule-priority-unique` | AWS::ElasticLoadBalancingV2::ListenerRule | Listener rules on the same listener must have distinct priorities | none |
 | `pf-elbv2-stickiness-type-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Stickiness type lb_cookie needs an HTTP-protocol target group, source_ip a TCP one | none |
 | `pf-elbv2-tcp-health-check-path` | AWS::ElasticLoadBalancingV2::TargetGroup | TCP health checks cannot take a health check path | none |
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
+| `pf-elbv2-tg-name` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group names are at most 32 alphanumeric/hyphen chars and cannot start or end with a hyphen | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
@@ -146,12 +160,14 @@
 | `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | none |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
+| `pf-iam-name-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::ManagedPolicy | IAM entity names allow only alphanumerics and +=,.@-_ | none |
 | `pf-iam-policy-action-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Actions must carry a service prefix | none |
 | `pf-iam-policy-condition-operator` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Condition operators come from a closed grammar | none |
 | `pf-iam-policy-duplicate-sid` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Statement IDs must be unique within a policy | none |
 | `pf-iam-policy-effect-case` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Effect is case-sensitive Allow or Deny | none |
 | `pf-iam-policy-exclusive-fields` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Action/NotAction and Resource/NotResource are exclusive pairs | none |
 | `pf-iam-policy-resource-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Resources must be ARNs or * | none |
+| `pf-iam-policy-sid-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy statement Sid must be alphanumeric | none |
 | `pf-iam-policy-statement-resource-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policy statements need Resource or NotResource | none |
 | `pf-iam-policy-version` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy Version must be 2012-10-17 or 2008-10-17 | none |
 | `pf-iam-trust-policy-no-resource` | AWS::IAM::Role | Trust policies cannot carry a Resource field | none |
@@ -175,12 +191,14 @@
 | `pf-rds-backup-window-duration` | AWS::RDS::DBInstance | The backup window must be at least 30 minutes | none |
 | `pf-rds-backup-window-format` | AWS::RDS::DBInstance | PreferredBackupWindow must be hh24:mi-hh24:mi | none |
 | `pf-rds-dbname-format` | AWS::RDS::DBInstance | postgres DBName must begin with a letter | none |
+| `pf-rds-description-printable` | AWS::RDS::DBSubnetGroup<br>AWS::RDS::DBParameterGroup | RDS group descriptions must be printable ASCII | none |
 | `pf-rds-gp3-iops-storage-threshold` | AWS::RDS::DBInstance | gp3 below 400 GiB cannot take custom Iops or StorageThroughput (postgres/mysql) | none |
 | `pf-rds-io1-iops-ratio` | AWS::RDS::DBInstance | postgres io1 Iops may not exceed 50 per GiB of storage | none |
 | `pf-rds-iops-required` | AWS::RDS::DBInstance | io1 and io2 storage require the Iops property | none |
 | `pf-rds-password-valid` | AWS::RDS::DBInstance<br>AWS::RDS::DBCluster | MasterUserPassword must be at least 8 characters without '/', '@', '\"' or spaces | none |
 | `pf-rds-port-range` | AWS::RDS::DBInstance | The database port must be within 1150-65535 | none |
 | `pf-rds-serverless-v2-capacity` | AWS::RDS::DBCluster | Serverless v2 MinCapacity must not exceed MaxCapacity, and MaxCapacity is at most 256 | none |
+| `pf-rds-subnet-group-name` | AWS::RDS::DBSubnetGroup | DB subnet group names allow only letters, numbers, spaces, dot, underscore and hyphen | none |
 | `pf-rds-window-overlap` | AWS::RDS::DBInstance | The backup window and the maintenance window must not overlap | none |
 | `pf-route53-alias-cloudfront-zone-id` | AWS::Route53::RecordSet | A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2 | none |
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | none |
@@ -208,4 +226,8 @@
 | `pf-scheduler-flexible-window` | AWS::Scheduler::Schedule | FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it | none |
 | `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | none |
 | `pf-sns-fifo-topic-name` | AWS::SNS::Topic | FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic) | none |
+| `pf-sns-topic-name-format` | AWS::SNS::Topic | Topic names allow only letters, numbers, hyphen and underscore (plus a .fifo suffix) | none |
+| `pf-sqs-queue-name-format` | AWS::SQS::Queue | Queue names allow only letters, numbers, hyphen and underscore (max 80, plus a .fifo suffix) | none |
 | `pf-sfn-asl-missing-state` | AWS::StepFunctions::StateMachine | ASL Next/Default/Choices must reference a defined state (top-level states; a dangling StartAt is covered by engine rule E3601) | none |
+| `pf-tags-aws-prefix` | * | Tag keys may not use the reserved aws: prefix | none |
+| `pf-tags-count-max` | * | A resource may carry at most 50 tags | none |

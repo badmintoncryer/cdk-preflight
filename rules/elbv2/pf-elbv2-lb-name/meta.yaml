@@ -1,11 +1,12 @@
 id: pf-elbv2-lb-name
 service: elbv2
+benchRegion: ap-northeast-1
 resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
 severity: ERROR
-title: Load balancer names cannot begin with internal- or end with a hyphen
+title: Load balancer names are at most 32 alphanumeric/hyphen chars and cannot begin with internal- or a hyphen
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Name internal-cdkpf (e12) -> \"The load balancer name 'internal-cdkpf' cannot begin with 'internal-'\"; Name cdkpf-bench- (e12b) -> \"The load balancer name 'cdkpf-bench-' cannot end with a hyphen(-)\". Both ROLLBACK_COMPLETE. A leading hyphen is unbenched and not claimed."
+  evidence: "bench 2026-09-03 ap-northeast-1: Name internal-cdkpf (e12) -> \"The load balancer name 'internal-cdkpf' cannot begin with 'internal-'\"; Name cdkpf-bench- (e12b) -> \"...cannot end with a hyphen(-)\". bench 2026-09-04 us-east-1 added the remaining reasons: '-probe-alb-' -> \"cannot begin with a hyphen(-)\"; a 33-character name -> \"cannot be longer than '32' characters\"; 'probe_alb' and '\u30c6\u30b9\u30c8\u7528' -> \"can only contain characters that are alphanumeric characters and hyphens(-)\". All ROLLBACK_COMPLETE. The engine carries neither a pattern nor a maxLength for this property."
 addedOn: 2026-09-03

@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Lt": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateName": "web-tier-lt",
+        "LaunchTemplateData": {
+          "InstanceType": "t3.micro"
+        }
+      }
+    }
+  }
+}

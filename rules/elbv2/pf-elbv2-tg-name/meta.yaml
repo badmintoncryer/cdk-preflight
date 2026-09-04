@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-name
+service: elbv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: Target group names are at most 32 alphanumeric/hyphen chars and cannot start or end with a hyphen
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: Name '\u30c6\u30b9\u30c8\u7528' -> \"Value '????' at 'targetGroupName' failed to satisfy constraint: Member must satisfy regular expression pattern: (?!^-)(?!.*-$)^[A-Za-z0-9-]+$\"; Name 'probe_tg' -> same message; Name '-probe-tg-' -> same message; a 33-character name -> \"Target group name '...' cannot be longer than '32' characters\". All ROLLBACK_COMPLETE. The engine has neither a pattern nor a maxLength for this property."
+addedOn: 2026-09-04

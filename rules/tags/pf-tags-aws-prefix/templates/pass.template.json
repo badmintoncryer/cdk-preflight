@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "env",
+            "Value": "prod"
+          }
+        ]
+      }
+    }
+  }
+}

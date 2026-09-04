@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "U": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "テスト用"
+      }
+    }
+  }
+}

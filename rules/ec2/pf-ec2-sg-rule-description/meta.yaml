@@ -1,0 +1,12 @@
+id: pf-ec2-sg-rule-description
+service: ec2
+benchRegion: us-east-1
+resourceTypes: [AWS::EC2::SecurityGroup, AWS::EC2::SecurityGroupIngress, AWS::EC2::SecurityGroupEgress]
+severity: ERROR
+title: Security group rule descriptions are limited to 255 chars of a restricted ASCII set
+constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: SecurityGroup with an inline ingress rule Description of '\u30c6\u30b9\u30c8\u7528' -> \"Invalid rule description. Valid descriptions are strings less than 256 characters from the following set:  a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*\" ROLLBACK_COMPLETE; the same message for a standalone AWS::EC2::SecurityGroupIngress and for a 256-character ASCII description. The sibling GroupDescription is already blocked by the engine (F3031) - the rule-level Description is not, which is exactly where CDK's addIngressRule(peer, port, description) puts user text. Egress is unbenched (same API validator)."
+addedOn: 2026-09-04

@@ -1,0 +1,12 @@
+id: pf-iam-name-format
+service: iam
+benchRegion: us-east-1
+resourceTypes: [AWS::IAM::Role, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: IAM entity names allow only alphanumerics and +=,.@-_
+constraintSource: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: RoleName '\u30c6\u30b9\u30c8\u7528' -> \"The specified value for roleName is invalid. It must contain only alphanumeric characters and/or the following: +=,.@_-\"; UserName '\u30c6\u30b9\u30c8\u7528' -> same message for userName; an inline Policies[].PolicyName '\u30c6\u30b9\u30c8\u7528' and a ManagedPolicyName '\u30c6\u30b9\u30c8\u7528' -> same message for policyName. All ROLLBACK_COMPLETE. The engine enforces the 64-character maximum (F3033) but no character set."
+addedOn: 2026-09-04

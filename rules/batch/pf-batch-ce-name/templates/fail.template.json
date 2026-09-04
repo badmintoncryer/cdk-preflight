@@ -1,0 +1,37 @@
+{
+  "Resources": {
+    "BatchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "batch.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        ]
+      }
+    },
+    "Ce": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "ComputeEnvironmentName": "テスト用",
+        "Type": "UNMANAGED",
+        "ServiceRole": {
+          "Fn::GetAtt": [
+            "BatchRole",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

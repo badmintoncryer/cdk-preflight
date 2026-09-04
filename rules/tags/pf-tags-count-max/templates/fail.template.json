@@ -1,0 +1,216 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "Tags": [
+          {
+            "Key": "k0",
+            "Value": "v"
+          },
+          {
+            "Key": "k1",
+            "Value": "v"
+          },
+          {
+            "Key": "k2",
+            "Value": "v"
+          },
+          {
+            "Key": "k3",
+            "Value": "v"
+          },
+          {
+            "Key": "k4",
+            "Value": "v"
+          },
+          {
+            "Key": "k5",
+            "Value": "v"
+          },
+          {
+            "Key": "k6",
+            "Value": "v"
+          },
+          {
+            "Key": "k7",
+            "Value": "v"
+          },
+          {
+            "Key": "k8",
+            "Value": "v"
+          },
+          {
+            "Key": "k9",
+            "Value": "v"
+          },
+          {
+            "Key": "k10",
+            "Value": "v"
+          },
+          {
+            "Key": "k11",
+            "Value": "v"
+          },
+          {
+            "Key": "k12",
+            "Value": "v"
+          },
+          {
+            "Key": "k13",
+            "Value": "v"
+          },
+          {
+            "Key": "k14",
+            "Value": "v"
+          },
+          {
+            "Key": "k15",
+            "Value": "v"
+          },
+          {
+            "Key": "k16",
+            "Value": "v"
+          },
+          {
+            "Key": "k17",
+            "Value": "v"
+          },
+          {
+            "Key": "k18",
+            "Value": "v"
+          },
+          {
+            "Key": "k19",
+            "Value": "v"
+          },
+          {
+            "Key": "k20",
+            "Value": "v"
+          },
+          {
+            "Key": "k21",
+            "Value": "v"
+          },
+          {
+            "Key": "k22",
+            "Value": "v"
+          },
+          {
+            "Key": "k23",
+            "Value": "v"
+          },
+          {
+            "Key": "k24",
+            "Value": "v"
+          },
+          {
+            "Key": "k25",
+            "Value": "v"
+          },
+          {
+            "Key": "k26",
+            "Value": "v"
+          },
+          {
+            "Key": "k27",
+            "Value": "v"
+          },
+          {
+            "Key": "k28",
+            "Value": "v"
+          },
+          {
+            "Key": "k29",
+            "Value": "v"
+          },
+          {
+            "Key": "k30",
+            "Value": "v"
+          },
+          {
+            "Key": "k31",
+            "Value": "v"
+          },
+          {
+            "Key": "k32",
+            "Value": "v"
+          },
+          {
+            "Key": "k33",
+            "Value": "v"
+          },
+          {
+            "Key": "k34",
+            "Value": "v"
+          },
+          {
+            "Key": "k35",
+            "Value": "v"
+          },
+          {
+            "Key": "k36",
+            "Value": "v"
+          },
+          {
+            "Key": "k37",
+            "Value": "v"
+          },
+          {
+            "Key": "k38",
+            "Value": "v"
+          },
+          {
+            "Key": "k39",
+            "Value": "v"
+          },
+          {
+            "Key": "k40",
+            "Value": "v"
+          },
+          {
+            "Key": "k41",
+            "Value": "v"
+          },
+          {
+            "Key": "k42",
+            "Value": "v"
+          },
+          {
+            "Key": "k43",
+            "Value": "v"
+          },
+          {
+            "Key": "k44",
+            "Value": "v"
+          },
+          {
+            "Key": "k45",
+            "Value": "v"
+          },
+          {
+            "Key": "k46",
+            "Value": "v"
+          },
+          {
+            "Key": "k47",
+            "Value": "v"
+          },
+          {
+            "Key": "k48",
+            "Value": "v"
+          },
+          {
+            "Key": "k49",
+            "Value": "v"
+          },
+          {
+            "Key": "k50",
+            "Value": "v"
+          }
+        ]
+      }
+    }
+  }
+}
