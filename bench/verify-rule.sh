@@ -57,7 +57,8 @@ if ! aws cloudformation create-stack --stack-name "$FSTACK" --region "$REGION" \
   --capabilities CAPABILITY_NAMED_IAM --output text >> "$LOG" 2>&1; then
   # ponytail: API レベルの拒否は throttle/認証エラーと本物の制約発火を区別できないので
   # 一律 INCONCLUSIVE。毎月これに落ち続けるルールが出たら期待エラー文の白判定を個別に足す
-  echo "!! INCONCLUSIVE: create-stack API error (see log)" | tee -a "$LOG"
+  APIERR=$(grep -iE 'error|denied|exception' "$LOG" | tail -1)
+  echo "!! INCONCLUSIVE: create-stack API error: $APIERR" | tee -a "$LOG"
   cleanup "$FSTACK"
   exit 4
 fi
