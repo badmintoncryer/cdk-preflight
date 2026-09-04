@@ -1,0 +1,12 @@
+id: pf-sns-topic-name-format
+service: sns
+benchRegion: us-east-1
+resourceTypes: [AWS::SNS::Topic]
+severity: ERROR
+title: Topic names allow only letters, numbers, hyphen and underscore (plus a .fifo suffix)
+constraintSource: https://docs.aws.amazon.com/sns/latest/api/API_CreateTopic.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: TopicName '\u30c6\u30b9\u30c8\u7528' -> \"Invalid parameter: Topic Name\" ROLLBACK_COMPLETE. The engine enforces the 256-character maximum (F3033) but no character set. pf-sns-fifo-topic-name covers the .fifo/FifoTopic pairing."
+addedOn: 2026-09-04

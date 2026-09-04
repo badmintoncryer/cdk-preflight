@@ -1,0 +1,12 @@
+id: pf-dynamodb-table-name-format
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::Table, AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: Table names allow only letters, numbers, underscore, dot and hyphen (max 255)
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: TableName '\u30c6\u30b9\u30c8\u7528' -> \"Value '????' at 'tableName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_.-]+\"; a 256-character name -> the same validation error for the 3-255 length constraint; AWS::DynamoDB::GlobalTable behaves identically. All ROLLBACK_COMPLETE. The engine carries the pattern for GSI IndexName (F3031) but not for TableName. pf-dynamodb-table-name-length covers the lower bound."
+addedOn: 2026-09-04

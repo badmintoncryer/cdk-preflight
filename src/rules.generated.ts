@@ -288,6 +288,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Placement must come from somewhere. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_asgzsr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-asg-zone-or-subnet-required\", \"ERROR\", name,\n\t\"Properties.VPCZoneIdentifier\",\n\t\"Neither AvailabilityZones, AvailabilityZoneIds, nor VPCZoneIdentifier is set; the group create fails with \\\"You must specify 1 of either AvailabilityZones, AvailabilityZoneIds, or Subnets\\\"\",\n\t\"Set VPCZoneIdentifier with the target subnets (or AvailabilityZones)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\t_pf_asgzsr_absent(name, \"AvailabilityZones\")\n\t_pf_asgzsr_absent(name, \"AvailabilityZoneIds\")\n\t_pf_asgzsr_absent(name, \"VPCZoneIdentifier\")\n}\n"
   },
   {
+    "id": "pf-batch-ce-name",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Compute environment names allow only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ComputeEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-ce-name\", \"ERROR\", name,\n\t\"Properties.ComputeEnvironmentName\",\n\tsprintf(\"ComputeEnvironmentName '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tv := resolve(name, \"Properties.ComputeEnvironmentName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
+  },
+  {
     "id": "pf-batch-ce-vcpus-order",
     "service": "batch",
     "severity": "ERROR",
@@ -341,6 +352,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Batch::JobDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-fargate-multinode\", \"ERROR\", name,\n\t\"Properties.PlatformCapabilities\",\n\t\"Type multinode cannot run on Fargate (\\\"Fargate does not support MNP jobs\\\")\",\n\t\"Use EC2 platform capabilities for multi-node parallel jobs\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/multi-node-parallel-jobs.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tresolve(name, \"Properties.Type\") == \"multinode\"\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tpc.value == \"FARGATE\"\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-name",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Job definition names allow only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-name\", \"ERROR\", name,\n\t\"Properties.JobDefinitionName\",\n\tsprintf(\"JobDefinitionName '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tv := resolve(name, \"Properties.JobDefinitionName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
   },
   {
     "id": "pf-batch-managed-compute-resources",
@@ -440,6 +462,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudFront::Distribution"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_aliascert_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-viewercertificate.html\"\n\n_pf_cf_aliascert_fix := \"Attach an ACM certificate (AcmCertificateArn, us-east-1) or an IAM certificate, together with SslSupportMethod and MinimumProtocolVersion\"\n\n_pf_cf_aliascert_count(name) := count([1 |\n\tsome _ in flatten_list(name, \"Properties.DistributionConfig.Aliases\")\n])\n\nviolation contains make_diag_full(\"pf-cloudfront-aliases-require-custom-certificate\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate\",\n\t\"A distribution with Aliases cannot use the CloudFront default certificate\",\n\t_pf_cf_aliascert_fix, _pf_cf_aliascert_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\t_pf_cf_aliascert_count(name) > 0\n\tresolve(name, \"Properties.DistributionConfig.ViewerCertificate.CloudFrontDefaultCertificate\") == true\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-name",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache policy names allow only alphanumerics, dash and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-name\", \"ERROR\", name,\n\t\"Properties.CachePolicyConfig.Name\",\n\tsprintf(\"CachePolicyConfig.Name '%s' is rejected by the service: alphanumerics, dash and underscore\", [v]),\n\t\"Rename it to satisfy alphanumerics, dash and underscore\",\n\t\"https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_CreateCachePolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tv := resolve(name, \"Properties.CachePolicyConfig.Name\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, v)\n}\n"
   },
   {
     "id": "pf-cloudfront-cached-methods-subset",
@@ -618,6 +651,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Percentile statistics run p0.0 to p100. Only the pN form is checked; other\n# extended forms (tm, wm, tc, ts, ...) have their own grammars and were not\n# measured.\nviolation contains make_diag_full(\"pf-cloudwatch-extended-statistic\", \"ERROR\", name,\n\t\"Properties.ExtendedStatistic\",\n\tsprintf(\"ExtendedStatistic '%s' is beyond p100; PutMetricAlarm fails with \\\"The value %s for parameter ExtendedStatistic is not supported.\\\"\", [s, s]),\n\t\"Use a percentile between p0.0 and p100\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html#Percentiles\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ts := resolve(name, \"Properties.ExtendedStatistic\")\n\tis_string(s)\n\tstartswith(s, \"p\")\n\tn := to_number(substring(s, 1, count(s) - 1))\n\tn > 100\n}\n"
   },
   {
+    "id": "pf-cloudwatch-metric-namespace-ascii",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Metric namespaces must not contain non-ASCII characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-namespace-ascii\", \"ERROR\", name,\n\t\"Properties.Namespace\",\n\tsprintf(\"Namespace '%s' contains non-ASCII characters; CloudWatch rejects the alarm with \\\"Namespace must not contain Non-ASCII characters.\\\"\", [ns]),\n\t\"Use ASCII only in the metric namespace\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tns := resolve(name, \"Properties.Namespace\")\n\tis_string(ns)\n\tnot regex.match(`^[\\x00-\\x7f]*$`, ns)\n}\n"
+  },
+  {
     "id": "pf-cloudwatch-metric-query-exclusive",
     "service": "cloudwatch",
     "severity": "ERROR",
@@ -682,6 +726,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Cognito::UserPoolClient"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Machine-to-machine auth is secret-based. GenerateSecret defaults to\n# false, so both the literal false and the absent key leave the client\n# secretless. Absence is proven against the preprocessed document (see\n# AGENTS.md).\n_pf_cogccs_no_secret(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"GenerateSecret\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogccs_no_secret(name) if coerce_to_bool(resolve(name, \"Properties.GenerateSecret\")) == false\n\nviolation contains make_diag_full(\"pf-cognito-client-credentials-secret\", \"ERROR\", name,\n\t\"Properties.GenerateSecret\",\n\t\"client_credentials flow on a client without a secret; the client create fails with \\\"client_credentials flow can not be selected if client does not have a client secret.\\\"\",\n\t\"Set GenerateSecret: true on this client\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tsome f in flatten_list(name, \"Properties.AllowedOAuthFlows\")\n\tf.value == \"client_credentials\"\n\t_pf_cogccs_no_secret(name)\n}\n"
+  },
+  {
+    "id": "pf-cognito-client-name",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "User pool client names allow only word characters, spaces and +=,.@-",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-client-name\", \"ERROR\", name,\n\t\"Properties.ClientName\",\n\tsprintf(\"ClientName '%s' is rejected by the service: word characters, spaces and + = , . @ -\", [v]),\n\t\"Rename it to satisfy word characters, spaces and + = , . @ -\",\n\t\"https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateUserPoolClient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tv := resolve(name, \"Properties.ClientName\")\n\tis_string(v)\n\tnot regex.match(`^[A-Za-z0-9_ \\t+=,.@-]+$`, v)\n}\n"
   },
   {
     "id": "pf-cognito-domain-reserved-word",
@@ -781,6 +836,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Cognito::UserPoolClient"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types the validities as bare integers; the real ranges are\n# per token type AND unit (access/id: 5 minutes-1 day, refresh: 60\n# minutes-10 years). Unit defaults (hours/hours/days) are deploy-verified.\n_pf_cogtvr_unit_secs := {\"seconds\": 1, \"minutes\": 60, \"hours\": 3600, \"days\": 86400}\n\n_pf_cogtvr_unit(name, unitKey, _) := u if {\n\tu := resolve(name, sprintf(\"Properties.TokenValidityUnits.%s\", [unitKey]))\n\tis_string(u)\n}\n\n_pf_cogtvr_unit(name, unitKey, defUnit) := defUnit if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttvu := object.get(props, \"TokenValidityUnits\", {})\n\tis_object(tvu)\n\tobject.get(tvu, unitKey, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogtvr_secs(name, valKey, unitKey, defUnit) := s if {\n\tv := to_number(resolve(name, sprintf(\"Properties.%s\", [valKey])))\n\tu := _pf_cogtvr_unit(name, unitKey, defUnit)\n\ts := v * _pf_cogtvr_unit_secs[u]\n}\n\n_pf_cogtvr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\"\n\n_pf_cogtvr_ai_bad(s) if s < 300\n\n_pf_cogtvr_ai_bad(s) if s > 86400\n\n_pf_cogtvr_rt_bad(s) if s < 3600\n\n_pf_cogtvr_rt_bad(s) if s > 315360000\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.AccessTokenValidity\",\n\tsprintf(\"AccessTokenValidity works out to %v seconds, outside 5 minutes-1 day; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the access token validity between 5 minutes and 1 day\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"AccessTokenValidity\", \"AccessToken\", \"hours\")\n\t_pf_cogtvr_ai_bad(s)\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.IdTokenValidity\",\n\tsprintf(\"IdTokenValidity works out to %v seconds, outside 5 minutes-1 day; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the id token validity between 5 minutes and 1 day\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"IdTokenValidity\", \"IdToken\", \"hours\")\n\t_pf_cogtvr_ai_bad(s)\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.RefreshTokenValidity\",\n\tsprintf(\"RefreshTokenValidity works out to %v seconds, outside 60 minutes-10 years; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the refresh token validity between 60 minutes and 10 years\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"RefreshTokenValidity\", \"RefreshToken\", \"days\")\n\t_pf_cogtvr_rt_bad(s)\n}\n"
+  },
+  {
+    "id": "pf-cognito-user-pool-name",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "User pool names allow only word characters, spaces and +=,.@-",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-user-pool-name\", \"ERROR\", name,\n\t\"Properties.UserPoolName\",\n\tsprintf(\"UserPoolName '%s' is rejected by the service: word characters, spaces and + = , . @ -\", [v]),\n\t\"Rename it to satisfy word characters, spaces and + = , . @ -\",\n\t\"https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateUserPool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := resolve(name, \"Properties.UserPoolName\")\n\tis_string(v)\n\tnot regex.match(`^[A-Za-z0-9_ \\t+=,.@-]+$`, v)\n}\n"
   },
   {
     "id": "pf-dynamodb-attribute-definitions-usage",
@@ -904,6 +970,18 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddblsh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-localsecondaryindex.html\"\n\n_pf_ddblsh_keytypes(ks) := {kt |\n\tsome k in ks\n\tkt := object.get(k, \"KeyType\", null)\n\tis_string(kt)\n}\n\n# Only judge a key schema whose KeyTypes are all literal strings.\n_pf_ddblsh_resolvable(ks) if count(_pf_ddblsh_keytypes(ks)) > 0\n\n_pf_ddblsh_resolvable_all(ks) if {\n\tevery k in ks {\n\t\tis_string(object.get(k, \"KeyType\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' has no RANGE key; CreateTable fails with \\\"Index KeySchema does not have a range key for index\\\"\", [iname]),\n\t\"Give the LSI a sort key: [table HASH key, its own RANGE key]\",\n\t_pf_ddblsh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tcount(ks) > 0\n\t_pf_ddblsh_resolvable_all(ks)\n\tnot \"RANGE\" in _pf_ddblsh_keytypes(ks)\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' uses hash key '%s' but the table's hash key is '%s'; CreateTable fails with \\\"Index KeySchema does not have the same leading hash key as table KeySchema\\\"\", [iname, lsiHash, tableHash]),\n\t\"An LSI must reuse the table's partition key; use a global secondary index for a different hash key\",\n\t_pf_ddblsh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome t in flatten_list(name, \"Properties.KeySchema\")\n\tt.index == 0\n\ttableHash := object.get(t.value, \"AttributeName\", null)\n\tis_string(tableHash)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tsome k in ks\n\tobject.get(k, \"KeyType\", null) == \"HASH\"\n\tlsiHash := object.get(k, \"AttributeName\", null)\n\tis_string(lsiHash)\n\tlsiHash != tableHash\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n"
   },
   {
+    "id": "pf-dynamodb-table-name-format",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Table names allow only letters, numbers, underscore, dot and hyphen (max 255)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table",
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbname_bad contains [name, n] if {\n\tsome t in {\"AWS::DynamoDB::Table\", \"AWS::DynamoDB::GlobalTable\"}\n\tsome name in resources_of_type(t)\n\tn := resolve(name, \"Properties.TableName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z0-9_.-]{1,255}$`, n)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-table-name-format\", \"ERROR\", name,\n\t\"Properties.TableName\",\n\tsprintf(\"TableName '%s' is rejected: DynamoDB accepts only letters, numbers, underscore, dot and hyphen, up to 255 characters\", [n]),\n\t\"Rename the table using [a-zA-Z0-9_.-] within 255 characters\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome [name, n] in _pf_ddbname_bad\n}\n"
+  },
+  {
     "id": "pf-dynamodb-table-name-length",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -924,6 +1002,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::Instance"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2iaa_url := \"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html\"\n\n# Graviton naming convention: a \"g\" among the letters after the\n# generation digit (t4g, c7gn, im4gn, g5g), plus the pre-convention a1.\n# mac* families are excluded from judgment entirely.\n_pf_ec2iaa_arm_fam(fam) if regex.match(`^[a-z]+[0-9]+[a-z0-9]*g[a-z0-9]*$`, fam)\n\n_pf_ec2iaa_arm_fam(fam) if fam == \"a1\"\n\n_pf_ec2iaa_fam(name) := fam if {\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\tfam := split(it, \".\")[0]\n\tnot startswith(fam, \"mac\")\n}\n\n# {{resolve:ssm:...}} strings surface as {\"__dynamic\": \"dynamic\n# reference: {{resolve:ssm:<path>}}\"} marker objects (measured\n# 2026-09-03); the reference text is read from the marker.\n_pf_ec2iaa_img(name) := d if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\traw := object.get(props, \"ImageId\", \"__pf_absent\")\n\tis_object(raw)\n\td := object.get(raw, \"__dynamic\", \"\")\n\tis_string(d)\n\tcontains(d, \"{{resolve:ssm:\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-instance-ami-arch\", \"ERROR\", name,\n\t\"Properties.ImageId\",\n\tsprintf(\"Instance type '%s' is x86_64 but the AMI parameter path names arm64; the launch fails with an architecture mismatch\", [resolve(name, \"Properties.InstanceType\")]),\n\t\"Use an arm64 (Graviton) instance type or the x86_64 AMI path\",\n\t_pf_ec2iaa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tfam := _pf_ec2iaa_fam(name)\n\tnot _pf_ec2iaa_arm_fam(fam)\n\timg := _pf_ec2iaa_img(name)\n\tcontains(img, \"arm64\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-instance-ami-arch\", \"ERROR\", name,\n\t\"Properties.ImageId\",\n\tsprintf(\"Instance type '%s' is arm64 (Graviton) but the AMI parameter path names x86_64; the launch fails with an architecture mismatch\", [resolve(name, \"Properties.InstanceType\")]),\n\t\"Use an x86_64 instance type or the arm64 AMI path\",\n\t_pf_ec2iaa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tfam := _pf_ec2iaa_fam(name)\n\t_pf_ec2iaa_arm_fam(fam)\n\timg := _pf_ec2iaa_img(name)\n\tcontains(img, \"x86_64\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-launch-template-name",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Launch template names are 3-128 chars of letters, numbers and -()./_",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::LaunchTemplate"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-launch-template-name\", \"ERROR\", name,\n\t\"Properties.LaunchTemplateName\",\n\tsprintf(\"LaunchTemplateName '%s' is rejected: EC2 requires 3-128 characters of letters, numbers and - ( ) . / _\", [n]),\n\t\"Rename the launch template using only letters, numbers and - ( ) . / _ (3-128 characters)\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateLaunchTemplate.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n\tn := resolve(name, \"Properties.LaunchTemplateName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z0-9()./_-]{3,128}$`, n)\n}\n"
   },
   {
     "id": "pf-ec2-natgw-allocation",
@@ -997,6 +1086,19 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sg_fix := \"Use a port between 0 and 65535 with FromPort <= ToPort\"\n\n_pf_sg_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n_pf_port_out(n) if n < 0\n\n_pf_port_out(n) if n > 65535\n\n_pf_tcp_udp(p) if p in {\"tcp\", \"udp\", \"6\", \"17\", 6, 17}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s\", [dir, item.index, pname]),\n\tsprintf(\"%s %v is outside the valid TCP/UDP port range 0-65535\", [pname, n]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\t_pf_tcp_udp(object.get(entry, \"IpProtocol\", null))\n\tsome pname in {\"FromPort\", \"ToPort\"}\n\tn := to_number(object.get(entry, pname, null))\n\t_pf_port_out(n)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.FromPort\", [dir, item.index]),\n\tsprintf(\"FromPort (%v) must be less than or equal to ToPort (%v)\", [f, t]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tentry := item.value\n\tis_object(entry)\n\t_pf_tcp_udp(object.get(entry, \"IpProtocol\", null))\n\tf := to_number(object.get(entry, \"FromPort\", null))\n\tt := to_number(object.get(entry, \"ToPort\", null))\n\tf >= 0\n\tt <= 65535\n\tf > t\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [pname]),\n\tsprintf(\"%s %v is outside the valid TCP/UDP port range 0-65535\", [pname, n]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\t_pf_tcp_udp(resolve(name, \"Properties.IpProtocol\"))\n\tsome pname in {\"FromPort\", \"ToPort\"}\n\tn := to_number(resolve(name, sprintf(\"Properties.%s\", [pname])))\n\t_pf_port_out(n)\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-port-range\", \"ERROR\", name,\n\t\"Properties.FromPort\",\n\tsprintf(\"FromPort (%v) must be less than or equal to ToPort (%v)\", [f, t]),\n\t_pf_sg_fix, _pf_sg_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\t_pf_tcp_udp(resolve(name, \"Properties.IpProtocol\"))\n\tf := to_number(resolve(name, \"Properties.FromPort\"))\n\tt := to_number(resolve(name, \"Properties.ToPort\"))\n\tf >= 0\n\tt <= 65535\n\tf > t\n}\n"
   },
   {
+    "id": "pf-ec2-sg-rule-description",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Security group rule descriptions are limited to 255 chars of a restricted ASCII set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::SecurityGroup",
+      "AWS::EC2::SecurityGroupIngress",
+      "AWS::EC2::SecurityGroupEgress"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sgdesc_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n_pf_sgdesc_pat := `^[a-zA-Z0-9._ :/()#,@\\[\\]+=&;{}!$*-]{0,255}$`\n\n# inline rule lists on a security group\n_pf_sgdesc_bad contains [name, path, desc] if {\n\tsome n in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome key in [\"SecurityGroupIngress\", \"SecurityGroupEgress\"]\n\tsome r in flatten_list(n, sprintf(\"Properties.%s\", [key]))\n\tis_object(r.value)\n\tdesc := object.get(r.value, \"Description\", null)\n\tis_string(desc)\n\tnot regex.match(_pf_sgdesc_pat, desc)\n\tname := n\n\tpath := sprintf(\"Properties.%s.%d.Description\", [key, r.index])\n}\n\n# standalone rule resources\n_pf_sgdesc_bad contains [name, path, desc] if {\n\tsome t in [\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"]\n\tsome n in resources_of_type(t)\n\tdesc := resolve(n, \"Properties.Description\")\n\tis_string(desc)\n\tnot regex.match(_pf_sgdesc_pat, desc)\n\tname := n\n\tpath := \"Properties.Description\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-rule-description\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"Security group rule description '%s' is rejected: EC2 allows fewer than 256 characters from the set a-zA-Z0-9. _-:/()#,@[]+=&;{}!$* (non-ASCII text such as Japanese is rejected)\", [desc]),\n\t\"Write the rule description in the allowed ASCII set and keep it under 256 characters\",\n\t_pf_sgdesc_url) if {\n\tsome [name, path, desc] in _pf_sgdesc_bad\n}\n"
+  },
+  {
     "id": "pf-ec2-sg-source-exclusive",
     "service": "ec2",
     "severity": "ERROR",
@@ -1008,6 +1110,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::SecurityGroupEgress"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2sse_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html\"\n\n# The member sets come verbatim from the EC2 error messages.\n_pf_ec2sse_sets := {\"in\": [\"CidrIp\", \"CidrIpv6\", \"SourceSecurityGroupId\", \"SourcePrefixListId\"], \"out\": [\"CidrIp\", \"CidrIpv6\", \"DestinationPrefixListId\", \"DestinationSecurityGroupId\"]}\n\n_pf_ec2sse_dirkey := {\"SecurityGroupIngress\": \"in\", \"SecurityGroupEgress\": \"out\"}\n\n_pf_ec2sse_rkey := {\"AWS::EC2::SecurityGroupIngress\": \"in\", \"AWS::EC2::SecurityGroupEgress\": \"out\"}\n\n_pf_ec2sse_count(entry, setkey) := n if {\n\tis_object(entry)\n\tn := count([k | some k in _pf_ec2sse_sets[setkey]; object.get(entry, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\n# Embedded rules: two or more members is an error; zero is tolerated\n# (a source-less embedded ingress deployed clean on 2026-09-03).\nviolation contains make_diag_full(\"pf-ec2-sg-source-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d\", [dir, item.index]),\n\tsprintf(\"The rule sets %v of %v; EC2 allows only one (\\\"Only one of %s can be specified\\\")\", [n, _pf_ec2sse_sets[k], concat(\", \", _pf_ec2sse_sets[k])]),\n\t\"Keep exactly one source/destination field on the rule\",\n\t_pf_ec2sse_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tsome dir in {\"SecurityGroupIngress\", \"SecurityGroupEgress\"}\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [dir]))\n\tk := _pf_ec2sse_dirkey[dir]\n\tn := _pf_ec2sse_count(item.value, k)\n\tn >= 2\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-source-exclusive\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"The rule sets %v of %v; EC2 requires exactly one (\\\"Exactly one of %s must be specified and not empty\\\")\", [n, _pf_ec2sse_sets[k], concat(\", \", _pf_ec2sse_sets[k])]),\n\t\"Set exactly one source/destination field on the rule resource\",\n\t_pf_ec2sse_url) if {\n\tsome rtype in {\"AWS::EC2::SecurityGroupIngress\", \"AWS::EC2::SecurityGroupEgress\"}\n\tsome name in resources_of_type(rtype)\n\tk := _pf_ec2sse_rkey[rtype]\n\tn := _pf_ec2sse_count(input.resources[name].properties, k)\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-ec2-subnet-cidr-size",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Subnet IPv4 CIDR netmask must be between /16 and /28",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Subnet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_subnetcidr_len(c) := to_number(parts[1]) if {\n\tparts := split(c, \"/\")\n\tcount(parts) == 2\n}\n\nviolation contains make_diag_full(\"pf-ec2-subnet-cidr-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"Subnet CIDR '%s' has a /%d netmask; EC2 accepts /16 through /28 and rejects the create call otherwise\", [c, n]),\n\t\"Resize the subnet CIDR to a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Subnet\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tn := _pf_subnetcidr_len(c)\n\t_pf_subnetcidr_out(n)\n}\n\n_pf_subnetcidr_out(n) if n < 16\n\n_pf_subnetcidr_out(n) if n > 28\n"
   },
   {
     "id": "pf-ec2-userdata-size",
@@ -1108,6 +1221,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPCEndpoint"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vtc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html\"\n\n_pf_ec2vtc_type(name) := t if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tt := object.get(props, \"VpcEndpointType\", \"Gateway\")\n}\n\n_pf_ec2vtc_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\t\"A Gateway endpoint cannot take SubnetIds (\\\"Subnet IDs are only supported for Interface and GatewayLoadBalancer type VPC Endpoints.\\\")\",\n\t\"Remove SubnetIds, or set VpcEndpointType: Interface\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\t_pf_ec2vtc_type(name) == \"Gateway\"\n\t_pf_ec2vtc_has(name, \"SubnetIds\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.RouteTableIds\",\n\tsprintf(\"A %s endpoint cannot take RouteTableIds; only Gateway endpoints attach to route tables\", [t]),\n\t\"Remove RouteTableIds, or set VpcEndpointType: Gateway\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tt := _pf_ec2vtc_type(name)\n\tt != \"Gateway\"\n\tis_string(t)\n\t_pf_ec2vtc_has(name, \"RouteTableIds\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-cluster-name",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ECS cluster names allow only letters, numbers, hyphen and underscore (max 255)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cluster-name\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"ClusterName '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 255 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 255 characters\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Cluster\")\n\tv := resolve(name, \"Properties.ClusterName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,255}$`, v)\n}\n"
   },
   {
     "id": "pf-ecs-container-definitions-empty",
@@ -1275,6 +1399,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-lb-target-exclusive\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\t\"A LoadBalancers entry sets both TargetGroupArn and LoadBalancerName; CreateService fails with \\\"loadBalancerName and targetGroupArn cannot both be specified\\\"\",\n\t\"Keep exactly one of TargetGroupArn (ALB/NLB) or LoadBalancerName (CLB) per entry\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome item in flatten_list(name, \"Properties.LoadBalancers\")\n\tentry := item.value\n\tis_object(entry)\n\tnot object.get(entry, \"TargetGroupArn\", \"__pf_absent\") == \"__pf_absent\"\n\tnot object.get(entry, \"LoadBalancerName\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-ecs-service-name",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ECS service names allow only letters, numbers, hyphen and underscore (max 255)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-name\", \"ERROR\", name,\n\t\"Properties.ServiceName\",\n\tsprintf(\"ServiceName '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 255 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 255 characters\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tv := resolve(name, \"Properties.ServiceName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,255}$`, v)\n}\n"
+  },
+  {
     "id": "pf-ecs-service-network-config-mode",
     "service": "ecs",
     "severity": "ERROR",
@@ -1296,6 +1431,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ECS::Service"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-platform-version-ec2\", \"ERROR\", name,\n\t\"Properties.PlatformVersion\",\n\t\"LaunchType is EC2 but PlatformVersion is set; CreateService fails with \\\"The platform version must be null when specifying an EC2 launch type\\\"\",\n\t\"Remove PlatformVersion (it applies to Fargate only)\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.LaunchType\") == \"EC2\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tnot object.get(props, \"PlatformVersion\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-taskdef-family",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Task definition Family allows only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-taskdef-family\", \"ERROR\", name,\n\t\"Properties.Family\",\n\tsprintf(\"Family '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 255 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 255 characters\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RegisterTaskDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tv := resolve(name, \"Properties.Family\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,255}$`, v)\n}\n"
   },
   {
     "id": "pf-elbv2-alb-subnet-count",
@@ -1356,12 +1502,12 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-elbv2-lb-name",
     "service": "elbv2",
     "severity": "ERROR",
-    "title": "Load balancer names cannot begin with internal- or end with a hyphen",
+    "title": "Load balancer names are at most 32 alphanumeric/hyphen chars and cannot begin with internal- or a hyphen",
     "upstream": "none",
     "resourceTypes": [
       "AWS::ElasticLoadBalancingV2::LoadBalancer"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbname_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\n_pf_elbname_bad(n) := \"cannot begin with 'internal-'\" if startswith(n, \"internal-\")\n\n_pf_elbname_bad(n) := \"cannot end with a hyphen(-)\" if endswith(n, \"-\")\n\nviolation contains make_diag_full(\"pf-elbv2-lb-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The load balancer name '%s' %s; ELB rejects the create call\", [n, why]),\n\t\"Pick a name without the reserved internal- prefix or a trailing hyphen\",\n\t_pf_elbname_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\twhy := _pf_elbname_bad(n)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbname_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tstartswith(n, \"internal-\")\n\twhy := \"cannot begin with 'internal-'\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tendswith(n, \"-\")\n\twhy := \"cannot end with a hyphen(-)\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tstartswith(n, \"-\")\n\twhy := \"cannot begin with a hyphen(-)\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tcount(n) > 32\n\twhy := \"cannot be longer than '32' characters\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot regex.match(`^[A-Za-z0-9-]*$`, n)\n\twhy := \"can only contain characters that are alphanumeric characters and hyphens(-)\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The load balancer name '%s' %s; ELB rejects the create call\", [n, why]),\n\t\"Rename the load balancer to at most 32 alphanumeric or hyphen characters, without a leading/trailing hyphen or the reserved internal- prefix\",\n\t_pf_elbname_url) if {\n\tsome [name, n, why] in _pf_elbname_bad\n}\n"
   },
   {
     "id": "pf-elbv2-listener-protocol-lb-type",
@@ -1418,6 +1564,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ElasticLoadBalancingV2::TargetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dereg_delay_out(n) if n < 0\n\n_pf_dereg_delay_out(n) if n > 3600\n\nviolation contains make_diag_full(\"pf-elbv2-tg-deregistration-delay-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [item.index]),\n\tsprintf(\"deregistration_delay.timeout_seconds is %v but must be between 0 and 3600 seconds\", [num]),\n\t\"Set deregistration_delay.timeout_seconds to a value between 0 and 3600\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#deregistration-delay\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"deregistration_delay.timeout_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_dereg_delay_out(num)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-name",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Target group names are at most 32 alphanumeric/hyphen chars and cannot start or end with a hyphen",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_tgname_bad(n) := \"cannot be longer than 32 characters\" if count(n) > 32\n\n_pf_tgname_bad(n) := \"may use only alphanumerics and hyphens, and cannot start or end with a hyphen\" if {\n\tcount(n) <= 32\n\tnot regex.match(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$`, n)\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The target group name '%s' %s; ELB rejects the create call\", [n, why]),\n\t\"Rename the target group to at most 32 alphanumeric or hyphen characters, not starting or ending with a hyphen\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\twhy := _pf_tgname_bad(n)\n}\n"
   },
   {
     "id": "pf-elbv2-tg-slow-start-range",
@@ -1592,6 +1749,20 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-iam-managed-policy-size\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\tsprintf(\"PolicyDocument is %d characters (JSON without whitespace) but the managed policy limit is 6144\", [size]),\n\t\"Split the document into multiple managed policies or shorten it\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::ManagedPolicy\")\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_object(doc)\n\tsize := count(json.marshal(doc))\n\tsize > 6144\n}\n"
   },
   {
+    "id": "pf-iam-name-format",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "IAM entity names allow only alphanumerics and +=,.@-_",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::User",
+      "AWS::IAM::Group",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_iamname_pat := `^[A-Za-z0-9+=,.@_-]+$`\n\n_pf_iamname_prop(t, prop) := [name, path, v] if {\n\tsome name in resources_of_type(t)\n\tv := resolve(name, sprintf(\"Properties.%s\", [prop]))\n\tis_string(v)\n\tnot regex.match(_pf_iamname_pat, v)\n\tpath := sprintf(\"Properties.%s\", [prop])\n}\n\n_pf_iamname_bad contains _pf_iamname_prop(\"AWS::IAM::Role\", \"RoleName\")\n\n_pf_iamname_bad contains _pf_iamname_prop(\"AWS::IAM::User\", \"UserName\")\n\n_pf_iamname_bad contains _pf_iamname_prop(\"AWS::IAM::Group\", \"GroupName\")\n\n_pf_iamname_bad contains _pf_iamname_prop(\"AWS::IAM::ManagedPolicy\", \"ManagedPolicyName\")\n\n_pf_iamname_bad contains [name, path, v] if {\n\tsome t in {\"AWS::IAM::Role\", \"AWS::IAM::User\", \"AWS::IAM::Group\"}\n\tsome name in resources_of_type(t)\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\tv := object.get(p.value, \"PolicyName\", null)\n\tis_string(v)\n\tnot regex.match(_pf_iamname_pat, v)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyName\", [p.index])\n}\n\nviolation contains make_diag_full(\"pf-iam-name-format\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"IAM name '%s' is rejected: only alphanumerics and + = , . @ _ - are accepted (non-ASCII text such as Japanese is rejected)\", [v]),\n\t\"Rename the entity using alphanumerics and + = , . @ _ - only\",\n\t\"https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html\") if {\n\tsome [name, path, v] in _pf_iamname_bad\n}\n"
+  },
+  {
     "id": "pf-iam-policy-action-format",
     "service": "iam",
     "severity": "ERROR",
@@ -1668,6 +1839,21 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::IAM::ManagedPolicy"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only literal strings are judged - Fn::GetAtt / Fn::Sub values surface\n# as marker objects in the preprocessed document (measured), so the\n# is_string guard mutes them.\n_pf_irf_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_irf_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_irf_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_irf_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n_pf_irf_vals(v) := [v] if is_string(v)\n\n_pf_irf_vals(v) := v if is_array(v)\n\nviolation contains make_diag_full(\"pf-iam-policy-resource-format\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Resource\", [path, i]),\n\tsprintf(\"Resource '%s' is not an ARN; the policy is rejected with \\\"Resource %s must be in ARN format or '*'.\\\"\", [r, r]),\n\t\"Use a full ARN (arn:...) or *\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html\") if {\n\tsome [name, path, d] in _pf_irf_docs\n\tsome [i, s] in _pf_irf_stmts(d)\n\tis_object(s)\n\tsome r in _pf_irf_vals(object.get(s, \"Resource\", []))\n\tis_string(r)\n\tr != \"*\"\n\tnot startswith(r, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-iam-policy-sid-format",
+    "service": "iam",
+    "severity": "ERROR",
+    "title": "Policy statement Sid must be alphanumeric",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::IAM::Role",
+      "AWS::IAM::User",
+      "AWS::IAM::Group",
+      "AWS::IAM::Policy",
+      "AWS::IAM::ManagedPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sidfmt_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Role\", \"AWS::IAM::User\", \"AWS::IAM::Group\"}\n\tsome name in resources_of_type(t)\n\tsome p in flatten_list(name, \"Properties.Policies\")\n\tis_object(p.value)\n\td := object.get(p.value, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := sprintf(\"Properties.Policies.%d.PolicyDocument\", [p.index])\n}\n\n_pf_sidfmt_docs contains [name, path, d] if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"AssumeRolePolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.AssumeRolePolicyDocument\"\n}\n\n_pf_sidfmt_docs contains [name, path, d] if {\n\tsome t in {\"AWS::IAM::Policy\", \"AWS::IAM::ManagedPolicy\"}\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"PolicyDocument\", {})\n\tis_object(d)\n\tpath := \"Properties.PolicyDocument\"\n}\n\n_pf_sidfmt_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_sidfmt_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\nviolation contains make_diag_full(\"pf-iam-policy-sid-format\", \"ERROR\", name,\n\tsprintf(\"%s.Statement.%d.Sid\", [path, i]),\n\tsprintf(\"Sid '%s' is not alphanumeric; IAM rejects the policy with \\\"Statement IDs (SID) must be alpha-numeric\\\"\", [sid]),\n\t\"Use only letters and digits in the Sid (drop hyphens, underscores and spaces)\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_sid.html\") if {\n\tsome [name, path, d] in _pf_sidfmt_docs\n\tsome [i, s] in _pf_sidfmt_stmts(d)\n\tis_object(s)\n\tsid := object.get(s, \"Sid\", null)\n\tis_string(sid)\n\tnot regex.match(`^[0-9A-Za-z]*$`, sid)\n}\n"
   },
   {
     "id": "pf-iam-policy-statement-resource-required",
@@ -1928,6 +2114,18 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the letter-start half of the service message is claimed: the\n# \"only alphanumeric\" half is measurably wrong (bench_db deploys).\nviolation contains make_diag_full(\"pf-rds-dbname-format\", \"ERROR\", name,\n\t\"Properties.DBName\",\n\tsprintf(\"DBName '%s' does not begin with a letter (\\\"DBName must begin with a letter\\\"); the CreateDBInstance call fails\", [dn]),\n\t\"Start the database name with a letter\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tresolve(name, \"Properties.Engine\") == \"postgres\"\n\tdn := resolve(name, \"Properties.DBName\")\n\tis_string(dn)\n\tnot regex.match(`^[a-zA-Z]`, dn)\n}\n"
   },
   {
+    "id": "pf-rds-description-printable",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "RDS group descriptions must be printable ASCII",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBSubnetGroup",
+      "AWS::RDS::DBParameterGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsdesc_bad contains [name, path, v] if {\n\tsome name in resources_of_type(\"AWS::RDS::DBSubnetGroup\")\n\tv := resolve(name, \"Properties.DBSubnetGroupDescription\")\n\tis_string(v)\n\tnot regex.match(`^[\\x20-\\x7e]*$`, v)\n\tpath := \"Properties.DBSubnetGroupDescription\"\n}\n\n_pf_rdsdesc_bad contains [name, path, v] if {\n\tsome name in resources_of_type(\"AWS::RDS::DBParameterGroup\")\n\tv := resolve(name, \"Properties.Description\")\n\tis_string(v)\n\tnot regex.match(`^[\\x20-\\x7e]*$`, v)\n\tpath := \"Properties.Description\"\n}\n\nviolation contains make_diag_full(\"pf-rds-description-printable\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"Description '%s' is rejected: RDS treats any non-ASCII character as a non-printable control character\", [v]),\n\t\"Write the description in printable ASCII\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBSubnetGroup.html\") if {\n\tsome [name, path, v] in _pf_rdsdesc_bad\n}\n"
+  },
+  {
     "id": "pf-rds-gp3-iops-storage-threshold",
     "service": "rds",
     "severity": "ERROR",
@@ -1993,6 +2191,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::RDS::DBCluster"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdssv2_url := \"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html\"\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MinCapacity\",\n\tsprintf(\"MinCapacity %v exceeds MaxCapacity %v (\\\"minimum capacity must be less than or equal to maximum capacity\\\")\", [mn, mx]),\n\t\"Keep MinCapacity <= MaxCapacity\",\n\t_pf_rdssv2_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tmn := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MinCapacity\"))\n\tmx := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\tmn > mx\n}\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v is above 256 ACUs (\\\"The valid scaling range for this cluster is 0.0 to 256.0.\\\")\", [mx]),\n\t\"Use at most 256 ACUs\",\n\t_pf_rdssv2_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tmx := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\tmx > 256\n}\n"
+  },
+  {
+    "id": "pf-rds-subnet-group-name",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DB subnet group names allow only letters, numbers, spaces, dot, underscore and hyphen",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBSubnetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-subnet-group-name\", \"ERROR\", name,\n\t\"Properties.DBSubnetGroupName\",\n\tsprintf(\"DBSubnetGroupName '%s' is rejected with \\\"Invalid subnet group name\\\": RDS accepts only letters, numbers, spaces, dot, underscore and hyphen\", [n]),\n\t\"Rename the subnet group using [a-zA-Z0-9 ._-] only\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBSubnetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBSubnetGroup\")\n\tn := resolve(name, \"Properties.DBSubnetGroupName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z0-9 ._-]{1,255}$`, n)\n}\n"
   },
   {
     "id": "pf-rds-window-overlap",
@@ -2293,6 +2502,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_snsfifo_fix := \"Give FIFO topics a TopicName ending in '.fifo' (or drop TopicName to let CloudFormation generate one), and set FifoTopic: true whenever the name ends in '.fifo'\"\n\n_pf_snsfifo_url := \"https://docs.aws.amazon.com/sns/latest/dg/sns-create-fifo-topic.html\"\n\n_pf_snsfifo_true(name) if resolve(name, \"Properties.FifoTopic\") in {true, \"true\"}\n\n# FifoTopic が存在し、リテラル false 以外（true やトークン）なら「FIFO かもしれない」扱い\n_pf_snsfifo_maybe_fifo(name) if {\n\tv := resolve(name, \"Properties.FifoTopic\")\n\tnot v in {false, \"false\"}\n}\n\nviolation contains make_diag_full(\"pf-sns-fifo-topic-name\", \"ERROR\", name,\n\t\"Properties.TopicName\",\n\tsprintf(\"FifoTopic is true but TopicName '%s' does not end with '.fifo'; SNS rejects the topic at deploy time\", [tn]),\n\t_pf_snsfifo_fix, _pf_snsfifo_url) if {\n\tsome name in resources_of_type(\"AWS::SNS::Topic\")\n\t_pf_snsfifo_true(name)\n\ttn := resolve(name, \"Properties.TopicName\")\n\tis_string(tn)\n\tnot endswith(tn, \".fifo\")\n}\n\nviolation contains make_diag_full(\"pf-sns-fifo-topic-name\", \"ERROR\", name,\n\t\"Properties.TopicName\",\n\tsprintf(\"TopicName '%s' ends with '.fifo' but FifoTopic is not true; SNS rejects the topic name at deploy time\", [tn]),\n\t_pf_snsfifo_fix, _pf_snsfifo_url) if {\n\tsome name in resources_of_type(\"AWS::SNS::Topic\")\n\ttn := resolve(name, \"Properties.TopicName\")\n\tis_string(tn)\n\tendswith(tn, \".fifo\")\n\tnot _pf_snsfifo_maybe_fifo(name)\n}\n"
   },
   {
+    "id": "pf-sns-topic-name-format",
+    "service": "sns",
+    "severity": "ERROR",
+    "title": "Topic names allow only letters, numbers, hyphen and underscore (plus a .fifo suffix)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::SNS::Topic"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_snsname_ok(n) if regex.match(`^[a-zA-Z0-9_-]{1,256}$`, n)\n\n_pf_snsname_ok(n) if regex.match(`^[a-zA-Z0-9_-]{1,251}\\.fifo$`, n)\n\nviolation contains make_diag_full(\"pf-sns-topic-name-format\", \"ERROR\", name,\n\t\"Properties.TopicName\",\n\tsprintf(\"TopicName '%s' is rejected with \\\"Invalid parameter: Topic Name\\\": SNS accepts only letters, numbers, hyphen and underscore (a FIFO topic adds the .fifo suffix)\", [n]),\n\t\"Rename the topic using [a-zA-Z0-9_-] (append .fifo only for FIFO topics)\",\n\t\"https://docs.aws.amazon.com/sns/latest/api/API_CreateTopic.html\") if {\n\tsome name in resources_of_type(\"AWS::SNS::Topic\")\n\tn := resolve(name, \"Properties.TopicName\")\n\tis_string(n)\n\tnot _pf_snsname_ok(n)\n}\n"
+  },
+  {
+    "id": "pf-sqs-queue-name-format",
+    "service": "sqs",
+    "severity": "ERROR",
+    "title": "Queue names allow only letters, numbers, hyphen and underscore (max 80, plus a .fifo suffix)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::SQS::Queue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sqsname_ok(n) if regex.match(`^[a-zA-Z0-9_-]{1,80}$`, n)\n\n_pf_sqsname_ok(n) if regex.match(`^[a-zA-Z0-9_-]{1,75}\\.fifo$`, n)\n\nviolation contains make_diag_full(\"pf-sqs-queue-name-format\", \"ERROR\", name,\n\t\"Properties.QueueName\",\n\tsprintf(\"QueueName '%s' is rejected: SQS accepts 1-80 characters of letters, numbers, hyphen and underscore (a FIFO queue adds the .fifo suffix)\", [n]),\n\t\"Rename the queue using [a-zA-Z0-9_-] within 80 characters (append .fifo only for FIFO queues)\",\n\t\"https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::SQS::Queue\")\n\tn := resolve(name, \"Properties.QueueName\")\n\tis_string(n)\n\tnot _pf_sqsname_ok(n)\n}\n"
+  },
+  {
     "id": "pf-sfn-asl-missing-state",
     "service": "stepfunctions",
     "severity": "ERROR",
@@ -2302,5 +2533,27 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::StepFunctions::StateMachine"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_sfn_fix := \"Point Next/Default/Choices at an existing state name\"\n\n_pf_sfn_url := \"https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-states.html\"\n\n_pf_sfn_asl(name) := asl if {\n\tdef := resolve(name, \"Properties.DefinitionString\")\n\tis_string(def)\n\tasl := json.unmarshal(def)\n\tis_object(asl)\n}\n\n_pf_sfn_defined(asl) := {sn | some sn, _ in object.get(asl, \"States\", {})}\n\n# NOTE: a dangling StartAt is deliberately NOT checked here — the engine's\n# built-in rule E3601 (ERROR/CFN_LINT) already covers it. Verified against\n# @aws/cloudformation-validate 1.7.0-beta on 2026-09-01: E3601 fires for\n# StartAt only and does not check Next/Default/Choices, which is what this\n# rule adds.\n\nviolation contains make_diag_full(\"pf-sfn-asl-missing-state\", \"ERROR\", name,\n\t\"Properties.DefinitionString\",\n\tsprintf(\"state '%s' references state '%s' via %s, but no state with that name is defined\", [sname, target, key]),\n\t_pf_sfn_fix, _pf_sfn_url) if {\n\tsome name in resources_of_type(\"AWS::StepFunctions::StateMachine\")\n\tasl := _pf_sfn_asl(name)\n\tsome sname, st in object.get(asl, \"States\", {})\n\tis_object(st)\n\tsome key in {\"Next\", \"Default\"}\n\ttarget := object.get(st, key, null)\n\tis_string(target)\n\tnot target in _pf_sfn_defined(asl)\n}\n\nviolation contains make_diag_full(\"pf-sfn-asl-missing-state\", \"ERROR\", name,\n\t\"Properties.DefinitionString\",\n\tsprintf(\"state '%s' has a Choice rule referencing state '%s', but no state with that name is defined\", [sname, target]),\n\t_pf_sfn_fix, _pf_sfn_url) if {\n\tsome name in resources_of_type(\"AWS::StepFunctions::StateMachine\")\n\tasl := _pf_sfn_asl(name)\n\tsome sname, st in object.get(asl, \"States\", {})\n\tis_object(st)\n\tchoices := object.get(st, \"Choices\", [])\n\tis_array(choices)\n\tsome c in choices\n\tis_object(c)\n\ttarget := object.get(c, \"Next\", null)\n\tis_string(target)\n\tnot target in _pf_sfn_defined(asl)\n}\n"
+  },
+  {
+    "id": "pf-tags-aws-prefix",
+    "service": "tags",
+    "severity": "ERROR",
+    "title": "Tag keys may not use the reserved aws: prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "*"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Tags survive into the template from every scope that called Tags.of(), and the\n# merge happens in cfnProperties at render time - after validateTree - so no L1\n# or L2 validation can see the final key set. Applies to every resource type.\n_pf_tagaws_bad contains [name, idx, key] if {\n\tsome name in object.keys(input.resources)\n\tsome t in flatten_list(name, \"Properties.Tags\")\n\tis_object(t.value)\n\tkey := object.get(t.value, \"Key\", null)\n\tis_string(key)\n\tstartswith(lower(key), \"aws:\")\n\tidx := t.index\n}\n\nviolation contains make_diag_full(\"pf-tags-aws-prefix\", \"ERROR\", name,\n\tsprintf(\"Properties.Tags.%d.Key\", [idx]),\n\tsprintf(\"Tag key '%s' uses the reserved aws: prefix; AWS rejects the create call with \\\"aws: prefixed tag key names are not allowed for external use.\\\"\", [key]),\n\t\"Rename the tag key so it does not start with aws:\",\n\t\"https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html\") if {\n\tsome [name, idx, key] in _pf_tagaws_bad\n}\n"
+  },
+  {
+    "id": "pf-tags-count-max",
+    "service": "tags",
+    "severity": "ERROR",
+    "title": "A resource may carry at most 50 tags",
+    "upstream": "none",
+    "resourceTypes": [
+      "*"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The AWS-wide limit is 50 user tags per resource. Counted on the rendered\n# template, which is the only place the merged Tags.of() result exists.\n_pf_tagcount_bad contains [name, n] if {\n\tsome name in object.keys(input.resources)\n\ttags := flatten_list(name, \"Properties.Tags\")\n\tn := count(tags)\n\tn > 50\n}\n\nviolation contains make_diag_full(\"pf-tags-count-max\", \"ERROR\", name,\n\t\"Properties.Tags\",\n\tsprintf(\"%d tags are attached to this resource; AWS allows at most 50 per resource and rejects the create call (\\\"More than 50 tags specified.\\\")\", [n]),\n\t\"Reduce the tag set to 50 or fewer - remember that Tags.of() adds tags from every enclosing scope\",\n\t\"https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html\") if {\n\tsome [name, n] in _pf_tagcount_bad\n}\n"
   }
 ];

@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "テスト用"
+      }
+    }
+  }
+}

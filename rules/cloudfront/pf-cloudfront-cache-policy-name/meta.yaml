@@ -1,0 +1,12 @@
+id: pf-cloudfront-cache-policy-name
+service: cloudfront
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudFront::CachePolicy]
+severity: ERROR
+title: Cache policy names allow only alphanumerics, dash and underscore
+constraintSource: https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_CreateCachePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: CachePolicyConfig.Name '\u30c6\u30b9\u30c8\u7528' -> \"Invalid request provided: AWS::CloudFront::CachePolicy: The parameter Name contains characters other than alphanumericals, dashes, and underscores.\" ROLLBACK_COMPLETE. The sibling OriginRequestPolicy/ResponseHeadersPolicy names are unbenched and not claimed."
+addedOn: 2026-09-04

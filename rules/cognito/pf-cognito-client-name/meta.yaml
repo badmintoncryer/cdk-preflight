@@ -1,0 +1,12 @@
+id: pf-cognito-client-name
+service: cognito
+benchRegion: us-east-1
+resourceTypes: [AWS::Cognito::UserPoolClient]
+severity: ERROR
+title: User pool client names allow only word characters, spaces and +=,.@-
+constraintSource: https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateUserPoolClient.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: ClientName '\u30c6\u30b9\u30c8\u7528' against a real user pool -> \"1 validation error detected: Value '????' at 'clientName' failed to satisfy constraint\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-04

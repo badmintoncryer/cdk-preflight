@@ -1,0 +1,12 @@
+id: pf-sqs-queue-name-format
+service: sqs
+benchRegion: us-east-1
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: Queue names allow only letters, numbers, hyphen and underscore (max 80, plus a .fifo suffix)
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: QueueName '\u30c6\u30b9\u30c8\u7528' -> \"Can only include alphanumeric characters, hyphens, or underscores. 1 to 80 in length\" ROLLBACK_COMPLETE. The engine has no pattern for this property."
+addedOn: 2026-09-04

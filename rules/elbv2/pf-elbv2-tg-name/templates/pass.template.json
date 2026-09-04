@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Tg": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": "cdkpf-targets",
+        "Port": 80,
+        "Protocol": "HTTP",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

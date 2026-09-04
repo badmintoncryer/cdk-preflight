@@ -1,0 +1,12 @@
+id: pf-cognito-user-pool-name
+service: cognito
+benchRegion: us-east-1
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: User pool names allow only word characters, spaces and +=,.@-
+constraintSource: https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateUserPool.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: UserPoolName '\u30c6\u30b9\u30c8\u7528' -> \"1 validation error detected: Value '????' at 'poolName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w\\\\s+=,.@-]+\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-04

@@ -1,0 +1,12 @@
+id: pf-ec2-launch-template-name
+service: ec2
+benchRegion: us-east-1
+resourceTypes: [AWS::EC2::LaunchTemplate]
+severity: ERROR
+title: Launch template names are 3-128 chars of letters, numbers and -()./_
+constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateLaunchTemplate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: LaunchTemplateName '\u30c6\u30b9\u30c8\u7528' -> \"A launch template name must be between 3 and 128 characters, and may contain letters, numbers, and the following characters: - ( ) . / _.\" (InvalidLaunchTemplateName.MalformedException) ROLLBACK_COMPLETE. VersionDescription on the same resource accepts Japanese (benched CREATE_COMPLETE) and is deliberately not claimed."
+addedOn: 2026-09-04

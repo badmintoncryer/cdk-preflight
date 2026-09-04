@@ -1,0 +1,12 @@
+id: pf-ec2-subnet-cidr-size
+service: ec2
+benchRegion: us-east-1
+resourceTypes: [AWS::EC2::Subnet]
+severity: ERROR
+title: Subnet IPv4 CIDR netmask must be between /16 and /28
+constraintSource: https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: VPC 10.197.0.0/16 with a 10.197.0.0/29 subnet -> \"The CIDR '10.197.0.0/29' is invalid.\" ROLLBACK_COMPLETE. The engine's E3059/E3060 cover subnet-within-VPC and sibling overlap, not the netmask size; pf-ec2-vpc-cidr-block-size covers the VPC side only."
+addedOn: 2026-09-04

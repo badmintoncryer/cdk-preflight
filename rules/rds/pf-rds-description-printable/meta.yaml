@@ -1,0 +1,12 @@
+id: pf-rds-description-printable
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBSubnetGroup, AWS::RDS::DBParameterGroup]
+severity: ERROR
+title: RDS group descriptions must be printable ASCII
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBSubnetGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: DBSubnetGroupDescription '\u30c6\u30b9\u30c8\u7528' -> \"The parameter DBSubnetGroupDescription must not contain non-printable control characters.\"; DBParameterGroup Description '\u30c6\u30b9\u30c8\u7528' -> the same message for Description. Both ROLLBACK_COMPLETE - RDS classifies non-ASCII text as non-printable. The engine has no pattern for either property."
+addedOn: 2026-09-04

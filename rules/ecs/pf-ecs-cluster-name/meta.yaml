@@ -1,0 +1,12 @@
+id: pf-ecs-cluster-name
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Cluster]
+severity: ERROR
+title: ECS cluster names allow only letters, numbers, hyphen and underscore (max 255)
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: ClusterName '\u30c6\u30b9\u30c8\u7528' -> \"Invalid request retrieving cluster: ClusterName must match ^[a-zA-Z0-9\\\\-_]{1,255}$\" ROLLBACK_COMPLETE; a 256-character ASCII name produced the same message, so the length bound is enforced by the same check."
+addedOn: 2026-09-04

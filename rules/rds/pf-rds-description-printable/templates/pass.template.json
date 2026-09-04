@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Properties": {
+        "Description": "probe parameter group",
+        "Family": "postgres16"
+      }
+    }
+  }
+}

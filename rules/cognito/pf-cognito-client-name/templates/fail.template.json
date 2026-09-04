@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Pool": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "cdkpf-fixture-pool"
+      }
+    },
+    "Client": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "ClientName": "テスト用",
+        "UserPoolId": {
+          "Ref": "Pool"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-batch-jd-name
+service: batch
+benchRegion: us-east-1
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Job definition names allow only letters, numbers, hyphen and underscore
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: JobDefinitionName '\u30c6\u30b9\u30c8\u7528' -> \"Error executing request, Exception : Job definition name should match a valid pattern.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-04

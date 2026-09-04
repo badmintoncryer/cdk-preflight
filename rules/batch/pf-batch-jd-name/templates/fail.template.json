@@ -1,0 +1,53 @@
+{
+  "Resources": {
+    "ExecRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        ]
+      }
+    },
+    "Jd": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "JobDefinitionName": "テスト用",
+        "Type": "container",
+        "PlatformCapabilities": [
+          "FARGATE"
+        ],
+        "ContainerProperties": {
+          "Image": "busybox",
+          "ExecutionRoleArn": {
+            "Fn::GetAtt": [
+              "ExecRole",
+              "Arn"
+            ]
+          },
+          "ResourceRequirements": [
+            {
+              "Type": "VCPU",
+              "Value": "1"
+            },
+            {
+              "Type": "MEMORY",
+              "Value": "2048"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

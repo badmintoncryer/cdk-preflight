@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Lt": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateName": "テスト用",
+        "LaunchTemplateData": {
+          "InstanceType": "t3.micro"
+        }
+      }
+    }
+  }
+}

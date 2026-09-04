@@ -1,0 +1,12 @@
+id: pf-ecs-taskdef-family
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: Task definition Family allows only letters, numbers, hyphen and underscore
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RegisterTaskDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-04 us-east-1: Family '\u30c6\u30b9\u30c8\u7528' -> \"Invalid request provided: Create TaskDefinition: Family contains invalid characters.\" ROLLBACK_COMPLETE."
+addedOn: 2026-09-04
