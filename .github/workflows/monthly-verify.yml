@@ -27,7 +27,7 @@ jobs:
           if [ -n "${{ inputs.service }}" ]; then
             echo 'services=["${{ inputs.service }}"]' >> "$GITHUB_OUTPUT"
           else
-            echo 'services=["apigateway","apigatewayv2","autoscaling","batch","bedrock-agentcore","cloudfront","cloudwatch","cognito","dynamodb","ec2","ecs","elbv2","events","firehose","iam","lambda","logs","rds","route53","s3","scheduler","sns","sqs","stepfunctions","tags"]' >> "$GITHUB_OUTPUT"
+            echo 'services=["apigateway","apigatewayv2","autoscaling","batch","bedrock-agentcore","cloudfront","cloudwatch","cognito","dynamodb","ec2","ecs","elbv2","events","firehose","iam","lambda","logs","rds","route53","s3","scheduler","sns","stepfunctions"]' >> "$GITHUB_OUTPUT"
           fi
   verify:
     needs: plan
