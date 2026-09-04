@@ -27,6 +27,7 @@
     "post-compile": "projen post-compile",
     "post-upgrade": "projen post-upgrade",
     "pre-compile": "projen pre-compile",
+    "redundancy-scan": "projen redundancy-scan",
     "release": "projen release",
     "test": "projen test",
     "test:watch": "projen test:watch",

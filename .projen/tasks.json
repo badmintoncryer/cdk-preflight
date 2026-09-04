@@ -304,6 +304,15 @@
         }
       ]
     },
+    "redundancy-scan": {
+      "name": "redundancy-scan",
+      "description": "List rules the bundled engine now blocks by itself (retirement candidates)",
+      "steps": [
+        {
+          "exec": "ts-node --project test/tsconfig.json scripts/redundancy-scan.ts"
+        }
+      ]
+    },
     "release": {
       "name": "release",
       "description": "Prepare a release from \"main\" branch",

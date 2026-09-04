@@ -1,6 +1,8 @@
 #!/bin/bash
 # 月次検証の集計: bench/out/*.jsonl と sweep.log をまとめ、
-# BROKEN / INCONCLUSIVE / LEFTOVER が 1 件でもあれば集約 issue を 1 本起票する。
+# BROKEN / INCONCLUSIVE / LEFTOVER / REDUNDANT が 1 件でもあれば集約 issue を 1 本起票する。
+# 陳腐化（制約が消えた）は実機の BROKEN、不要化（エンジンが追いついた）は
+# redundancy.jsonl（bench/out/、redundancy-scan タスクの出力）で拾う。
 # GH_TOKEN が必要（GitHub Actions では github.token）。
 set -u
 cd "$(dirname "$0")/.."
@@ -11,6 +13,8 @@ import glob, json
 
 rows = []
 for f in sorted(glob.glob('bench/out/*.jsonl')):
+    if f.endswith('redundancy.jsonl'):
+        continue
     for line in open(f):
         line = line.strip()
         if line:
@@ -24,8 +28,12 @@ try:
     leftover = [l.strip() for l in open('bench/out/sweep.log') if l.startswith('LEFTOVER:')]
 except FileNotFoundError:
     leftover = []
+try:
+    redundant = [json.loads(l) for l in open('bench/out/redundancy.jsonl') if l.strip()]
+except FileNotFoundError:
+    redundant = []
 
-print(f"{len(ok)} OK / {len(broken)} BROKEN / {len(inconc)} INCONCLUSIVE / {len(skipped)} skipped\n")
+print(f"{len(ok)} OK / {len(broken)} BROKEN / {len(inconc)} INCONCLUSIVE / {len(skipped)} skipped / {len(redundant)} REDUNDANT\n")
 
 def section(title, items, fmt):
     if not items:
@@ -40,17 +48,21 @@ section('BROKEN — fail template deployed clean (constraint may have drifted)',
 section('INCONCLUSIVE — could not judge (after retry)', inconc,
         lambda r: f"- **{r['rule']}** ({r['service']}, {r['region']}): {r['detail']}")
 section('LEFTOVER — resources not fully reclaimed', leftover, lambda l: f"- {l}")
+section('REDUNDANT — the bundled engine now blocks this by itself; retire the rule', redundant,
+        lambda r: f"- **{r['rule']}** ({r['service']}, upstream={r['upstream']}) is now caught by "
+                  f"{', '.join(r['engineRules'])}: {r['detail']}\n"
+                  f"  `rm -rf rules/{r['service']}/{r['rule']}/ && npx projen bundle-rules`")
 
 with open('bench/out/counts', 'w') as f:
-    f.write(f"{len(broken)} {len(inconc)} {len(leftover)}")
+    f.write(f"{len(broken)} {len(inconc)} {len(leftover)} {len(redundant)}")
 EOF
 
-read -r nb ni nl < bench/out/counts
+read -r nb ni nl nr < bench/out/counts
 cat bench/out/summary.md
 
-if [ "$nb" -gt 0 ] || [ "$ni" -gt 0 ] || [ "$nl" -gt 0 ]; then
+if [ "$nb" -gt 0 ] || [ "$ni" -gt 0 ] || [ "$nl" -gt 0 ] || [ "$nr" -gt 0 ]; then
   gh issue create \
-    --title "monthly-verify $month: $nb broken / $ni inconclusive / $nl leftover" \
+    --title "monthly-verify $month: $nb broken / $nr redundant / $ni inconclusive / $nl leftover" \
     --body-file bench/out/summary.md
 else
   echo "all green — no issue filed"

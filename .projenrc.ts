@@ -67,6 +67,12 @@ project.addPackageIgnore('/scripts/');
 // 検証アカウントは workload-dev (502761806921)、既定リージョンは ap-northeast-1、
 // us-east-1 実測ルールは meta.yaml の benchRegion に従う。
 project.gitignore.addPatterns('/bench/out/');
+
+// ルール不要化（エンジンが追いついた）の検知。AWS 不要・完全ローカル。
+project.addTask('redundancy-scan', {
+  description: 'List rules the bundled engine now blocks by itself (retirement candidates)',
+  exec: 'ts-node --project test/tsconfig.json scripts/redundancy-scan.ts',
+});
 const services = fs
   .readdirSync('rules', { withFileTypes: true })
   .filter((e) => e.isDirectory())
@@ -168,6 +174,15 @@ monthlyVerify.addJob('report', {
       with: { 'pattern': 'verify-*', 'path': 'bench/out/', 'merge-multiple': true },
     },
     { name: 'Sweep leftover stacks', run: 'bash bench/sweep.sh | tee bench/out/sweep.log' },
+    {
+      name: 'Setup node',
+      uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+      with: { 'node-version': '20' },
+    },
+    { name: 'Install', run: 'yarn install --check-files --frozen-lockfile' },
+    // 不要化スキャン: 実機ではなく同梱エンジンに fail テンプレートを掛け直し、
+    // 組み込みが止めるようになったルール（＝退役候補）を洗い出す
+    { name: 'Redundancy scan', run: 'npx projen redundancy-scan | tee bench/out/redundancy.log' },
     { name: 'Report', run: 'bash bench/report.sh' },
   ],
 });

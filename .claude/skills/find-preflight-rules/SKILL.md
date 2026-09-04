@@ -51,11 +51,21 @@ CDK のプラグイン経路は `accountId` と `region` をエンジンに渡�
 - テンプレート内の一意性。実測で **Export 名の重複はエンジン未検出**
 - スタック間の整合性。全スタックのテンプレートを一度に見られるのは我々だけ（`context.stackTemplates`）。ただし Rego はテンプレート単位で評価するので、実装は enforce プラグイン側（TypeScript）になる。**現状は未対応**なので、この種の候補が出たら設計変更の要否とセットで issue に書く
 
-### レンズ 5：集約・上限（多くはエンジン済み。必ず実測してから書く）
+### レンズ 5：集約・上限、および文字種・長さ（プロパティ単位で必ず実測）
 
-実測でエンジンが既に `FATAL` で止めていたもの、つまり**書いてはいけない**もの：リソース数 `F0007`、Output 数 `F0004`、テンプレートサイズ `E1002`、文字列長とパターン `F3031` / `F3033`。
+テンプレート全体に効く集約はエンジンが持っている：リソース数 `F0007`、Output 数 `F0004`、テンプレートサイズ `E1002`。論理 ID の長さは `I3012` の **INFO 止まり**（＝グレーゾーン）、Export 名の重複は検出なし。
 
-空いていたもの：論理 ID の長さは `I3012` の **INFO 止まり**（＝グレーゾーン）、Export 名の重複は検出なし。
+**文字種と長さ（`F3031` / `F3033`）を「エンジン済み」と一般化してはいけない**（2026-09-04、57 テンプレートで実測）。カバレッジは**スキーマがそのプロパティに pattern / maxLength を書いているかどうか**で決まるので、同じリソースの中でも非対称になる:
+
+| エンジンが止める | 素通り（＝候補） |
+|---|---|
+| `SecurityGroup.GroupDescription`（F3031） | **`SecurityGroupIngress[].Description`** |
+| DynamoDB GSI `IndexName`（F3031） | **`Table.TableName`** |
+| `IAM Role.Description`、`Lambda FunctionName`、`Events Rule.Name`、`S3 BucketName`、`Firehose DeliveryStreamName` | `ECS ClusterName/ServiceName/Family`、`ELBv2 Name`（LB/TG とも）、`Cognito UserPoolName/ClientName`、`Batch` の各名前、`SNS TopicName`、`SQS QueueName`、`RDS DBSubnetGroupName`、`CloudWatch Namespace`、`LaunchTemplateName` |
+
+しかも `SecurityGroupIngress[].Description` は CDK で日本語が最も入りやすい場所（`addIngressRule(peer, port, '説明')` の第 3 引数）。**プロパティ 1 つずつ重複ガードに掛けること。**
+
+そして「日本語なら落ちる」も成立しない。同じ「説明」でも RDS は non-printable 扱いで落ち、IAM ManagedPolicy・Lambda・CloudWatch AlarmDescription は通る。実機ゲートまで通して初めて候補が確定する。
 
 ### レンズ 6：時間で変わる制約（対象。ただし重複ガードを先に）
 

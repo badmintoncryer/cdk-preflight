@@ -94,7 +94,15 @@ describe.each(BUNDLED_RULES.map((r) => [r.id, r] as const))('%s', (_id, rule) =>
 
   test('does not duplicate a built-in blocker (fail template)', () => {
     const ds = diagnose(fixturePath(rule, 'fail'));
-    expect(blockers(ds)).toHaveLength(0);
+    const found = blockers(ds);
+    // このテストは二役: 新規ルールに対しては「エンジンと重複したので書くな」、
+    // 既存ルールに対しては「エンジンが追いついたので退役させろ」の合図になる。
+    // 後者は aws-cdk-lib を上げた時にだけ赤くなる（bench/out/redundancy.jsonl と同じ判定）。
+    expect(found.map((d) => `${d.severity}/${d.source}/${d.ruleId}: ${d.message}`
+      + ` >>> the bundled engine now blocks ${rule.id} by itself — retire it:`
+      + ` rm -rf rules/${rule.service}/${rule.id}/ && npx projen bundle-rules`
+      + ' (AGENTS.md "Rule lifecycle"; npx projen redundancy-scan lists them all)'))
+      .toHaveLength(0);
   });
 
   test('pass template is clean for the built-in engine', () => {
