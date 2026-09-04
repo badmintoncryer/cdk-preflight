@@ -1,5 +1,6 @@
 id: pf-sns-fifo-topic-name
 service: sns
+benchRegion: us-east-1
 resourceTypes: [AWS::SNS::Topic]
 severity: ERROR
 title: FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic)

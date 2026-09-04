@@ -1,5 +1,6 @@
 id: pf-s3-lifecycle-days-order
 service: s3
+benchRegion: us-east-1
 resourceTypes: [AWS::S3::Bucket]
 severity: ERROR
 title: Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition

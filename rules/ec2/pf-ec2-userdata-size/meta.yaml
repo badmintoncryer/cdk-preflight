@@ -1,5 +1,6 @@
 id: pf-ec2-userdata-size
 service: ec2
+benchRegion: us-east-1
 resourceTypes: [AWS::EC2::Instance, AWS::EC2::LaunchTemplate]
 severity: ERROR
 title: EC2 user data is limited to 16384 bytes

@@ -1,5 +1,6 @@
 id: pf-s3-replication-requires-versioning
 service: s3
+benchRegion: us-east-1
 resourceTypes: [AWS::S3::Bucket]
 severity: ERROR
 title: ReplicationConfiguration requires versioning to be enabled on the source bucket

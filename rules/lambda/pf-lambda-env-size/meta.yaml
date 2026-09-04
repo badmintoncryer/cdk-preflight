@@ -1,5 +1,6 @@
 id: pf-lambda-env-size
 service: lambda
+benchRegion: us-east-1
 resourceTypes: [AWS::Lambda::Function]
 severity: ERROR
 title: Lambda environment variables are limited to 4096 bytes in total

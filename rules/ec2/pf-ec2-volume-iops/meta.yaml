@@ -1,5 +1,6 @@
 id: pf-ec2-volume-iops
 service: ec2
+benchRegion: us-east-1
 resourceTypes: [AWS::EC2::Volume]
 severity: ERROR
 title: EBS Iops/Throughput must match the volume type's supported ranges and ratios

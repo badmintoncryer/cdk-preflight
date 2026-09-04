@@ -1,5 +1,6 @@
 id: pf-cloudfront-edge-lambda-version
 service: cloudfront
+benchRegion: us-east-1
 resourceTypes: [AWS::CloudFront::Distribution]
 severity: ERROR
 title: Lambda@Edge associations must reference a version ARN, not an alias or $LATEST

@@ -1,5 +1,6 @@
 id: pf-ecs-fargate-network-mode
 service: ecs
+benchRegion: us-east-1
 resourceTypes: [AWS::ECS::TaskDefinition]
 severity: ERROR
 title: Fargate task definitions require NetworkMode 'awsvpc'

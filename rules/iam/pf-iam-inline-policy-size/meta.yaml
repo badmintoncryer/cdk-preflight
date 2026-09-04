@@ -1,5 +1,6 @@
 id: pf-iam-inline-policy-size
 service: iam
+benchRegion: us-east-1
 resourceTypes: [AWS::IAM::Policy, AWS::IAM::RolePolicy, AWS::IAM::UserPolicy, AWS::IAM::GroupPolicy]
 severity: ERROR
 title: Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters)

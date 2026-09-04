@@ -1,5 +1,6 @@
 id: pf-cloudfront-cached-methods-subset
 service: cloudfront
+benchRegion: us-east-1
 resourceTypes: [AWS::CloudFront::Distribution]
 severity: ERROR
 title: CachedMethods must be a subset of AllowedMethods

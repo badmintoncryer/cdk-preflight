@@ -1,5 +1,6 @@
 id: pf-cloudfront-origin-group-member-origin
 service: cloudfront
+benchRegion: us-east-1
 resourceTypes: [AWS::CloudFront::Distribution]
 severity: ERROR
 title: Origin group members must reference an origin declared in the distribution
