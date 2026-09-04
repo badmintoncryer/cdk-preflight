@@ -102,8 +102,29 @@ const awsCredsStep: github.workflows.JobStep = {
     'role-duration-seconds': 14400,
   },
 };
+// ジョブレベル if では matrix コンテキストが使えないため、
+// 単一サービス dispatch の絞り込みは matrix 自体を plan ジョブで組んで実現する
+monthlyVerify.addJob('plan', {
+  runsOn: ['ubuntu-latest'],
+  permissions: {},
+  outputs: { services: { stepId: 'plan', outputName: 'services' } },
+  steps: [
+    {
+      id: 'plan',
+      name: 'Compute service matrix',
+      run: [
+        'if [ -n "${{ inputs.service }}" ]; then',
+        '  echo \'services=["${{ inputs.service }}"]\' >> "$GITHUB_OUTPUT"',
+        'else',
+        `  echo 'services=${JSON.stringify(services)}' >> "$GITHUB_OUTPUT"`,
+        'fi',
+      ].join('\n'),
+    },
+  ],
+});
 monthlyVerify.addJob('verify', {
   runsOn: ['ubuntu-latest'],
+  needs: ['plan'],
   timeoutMinutes: 300,
   permissions: {
     idToken: github.workflows.JobPermission.WRITE,
@@ -112,9 +133,10 @@ monthlyVerify.addJob('verify', {
   strategy: {
     failFast: false,
     maxParallel: 4, // VPC クォータ 5 に対し shard 内逐次 × 並列 4 で同時 VPC を上限未満に抑える
-    matrix: { domain: { service: services } },
+    matrix: {
+      domain: { service: '${{ fromJSON(needs.plan.outputs.services) }}' as unknown as string[] },
+    },
   },
-  if: '${{ !inputs.service || inputs.service == matrix.service }}',
   steps: [
     checkoutStep,
     awsCredsStep,
@@ -143,7 +165,7 @@ monthlyVerify.addJob('report', {
     {
       name: 'Download results',
       uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c',
-      with: { pattern: 'verify-*', path: 'bench/out/', 'merge-multiple': true },
+      with: { 'pattern': 'verify-*', 'path': 'bench/out/', 'merge-multiple': true },
     },
     { name: 'Sweep leftover stacks', run: 'bash bench/sweep.sh | tee bench/out/sweep.log' },
     { name: 'Report', run: 'bash bench/report.sh' },
