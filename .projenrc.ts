@@ -75,7 +75,7 @@ project.addTask('redundancy-scan', {
 });
 const services = fs
   .readdirSync('rules', { withFileTypes: true })
-  .filter((e) => e.isDirectory())
+  .filter((e) => e.isDirectory() && !e.name.startsWith('_')) // rules/_lib holds shared helpers, not rules
   .map((e) => e.name)
   .sort();
 const monthlyVerify = new github.GithubWorkflow(project.github!, 'monthly-verify', {

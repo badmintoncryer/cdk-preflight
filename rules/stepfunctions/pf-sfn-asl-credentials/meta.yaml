@@ -1,0 +1,11 @@
+id: pf-sfn-asl-credentials
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: "A Task Credentials object needs RoleArn, and Credentials is not accepted on an Activity resource"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'SCHEMA_VALIDATION_FAILED: The field 'RoleArn' is required but was missing at /States/A/Credentials'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

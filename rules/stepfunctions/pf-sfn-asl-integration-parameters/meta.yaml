@@ -1,0 +1,11 @@
+id: pf-sfn-asl-integration-parameters
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: "An arn:<partition>:states::: integration Task needs Parameters (JSONPath) or Arguments (JSONata), and the common integrations need their required fields (lambda:invoke FunctionName, sqs:sendMessage QueueUrl+MessageBody, sns:publish Message, dynamodb:putItem TableName+Item, dynamodb:getItem TableName+Key, states:startExecution StateMachineArn, events:putEvents Entries, ecs:runTask TaskDefinition, glue:startJobRun JobName)"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'SCHEMA_VALIDATION_FAILED: Parameters field is required for resource ARN: arn:aws:states:::lambda:invoke at /States/A/Resource'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

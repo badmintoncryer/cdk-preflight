@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "SM": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "DefinitionString": "{\"StartAt\":\"A\",\"States\":{\"A\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:states:::sqs:sendMessage.waitForTaskToken\",\"Parameters\":{\"QueueUrl\":\"https://sqs.us-east-1.amazonaws.com/123456789012/q\",\"MessageBody\":{\"Token.$\":\"$$.Task.Token\"}},\"End\":true}}}",
+        "StateMachineType": "EXPRESS"
+      }
+    }
+  }
+}

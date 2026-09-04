@@ -1,0 +1,11 @@
+id: pf-sfn-asl-jsonpath-syntax
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: "JSONPath fields start with $ (InputPath, OutputPath, *Path, Choice Variable), ResultPath/ItemsPath are Reference Paths (no *, .., ?, @), values of \".$\" keys are a path or a States.* intrinsic, and Assign variable names are alphanumeric and not the reserved \"states\""
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/input-output-paths.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'SCHEMA_VALIDATION_FAILED: Value must be a valid JSONPath. at /States/A/InputPath'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

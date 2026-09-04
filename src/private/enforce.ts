@@ -5,7 +5,7 @@ import type {
   PolicyValidationPluginReport,
   PolicyViolation,
 } from 'aws-cdk-lib';
-import type { BundledRuleData } from '../rules.generated';
+import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable import/no-extraneous-dependencies -- @aws/cloudformation-validate は
@@ -129,7 +129,10 @@ const regoEngineCache = new Map<string, any>();
 function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: string): any {
   const key = `${region ?? ''}|${rules.map((r) => r.id).join(',')}`;
   if (!regoEngineCache.has(key)) {
-    const customRules = rules.map((r) => ({ name: r.id, content: r.rego }));
+    const customRules = [
+      ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
+      ...rules.map((r) => ({ name: r.id, content: r.rego })),
+    ];
     if (region !== undefined) {
       customRules.push(deployEnvironmentModule(region));
     }

@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { deployEnvironmentModule, loadEngine } from '../src/private/enforce';
-import { BUNDLED_RULES } from '../src/rules.generated';
+import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 interface Diagnostic {
   ruleId: string;
@@ -33,7 +33,10 @@ const engineCache = new Map<string, any>();
 function engineInstance(region?: string): any {
   const key = region ?? '';
   if (!engineCache.has(key)) {
-    const customRules = BUNDLED_RULES.map((r) => ({ name: r.id, content: r.rego }));
+    const customRules = [
+      ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
+      ...BUNDLED_RULES.map((r) => ({ name: r.id, content: r.rego })),
+    ];
     if (region) customRules.push(deployEnvironmentModule(region));
     engineCache.set(key, new engine.RegoEngine({ customRules }));
   }
@@ -1879,5 +1882,157 @@ describe('ecs service and cloudwatch dashboard rules', () => {
     });
     expect(ids(diagnoseTemplate(alarm(false)))).toContain('pf-cloudwatch-threshold-metric-id');
     expect(ids(diagnoseTemplate(alarm(true)))).toHaveLength(0);
+  });
+});
+
+/**
+ * Step Functions ルールのうち、fail フィクスチャ 1 枚では踏めない分岐:
+ * ネストしたスコープ（Parallel / Map）、L1 の Definition オブジェクト、
+ * Activity、深さ 3 のネスト上限、リージョン束縛。
+ */
+describe('stepfunctions rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const pass = { Type: 'Pass', End: true };
+  const L = 'arn:aws:lambda:us-east-1:123456789012:function:f';
+  const role = { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'states.amazonaws.com' }, Action: 'sts:AssumeRole' }] } } };
+  const machine = (states: Record<string, unknown>, props: Record<string, unknown> = {}, top: Record<string, unknown> = {}) => ({
+    Resources: {
+      Role: role,
+      SM: {
+        Type: 'AWS::StepFunctions::StateMachine',
+        Properties: { RoleArn: { 'Fn::GetAtt': ['Role', 'Arn'] }, DefinitionString: JSON.stringify({ StartAt: Object.keys(states)[0], States: states, ...top }), ...props },
+      },
+    },
+  });
+  const branch = (states: Record<string, unknown>) => ({ StartAt: Object.keys(states)[0], States: states });
+
+  test('missing-state sees Catch[].Next and nested scopes, and scopes names to the States block', () => {
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Task', Resource: L, End: true, Catch: [{ ErrorEquals: ['States.ALL'], Next: 'NOPE' }] } }))))
+      .toContain('pf-sfn-asl-missing-state');
+    expect(ids(diagnoseTemplate(machine({ P: { Type: 'Parallel', End: true, Branches: [branch({ X: { Type: 'Pass', Next: 'NOPE' } })] } }))))
+      .toContain('pf-sfn-asl-missing-state');
+    expect(ids(diagnoseTemplate(machine({ M: { Type: 'Map', End: true, ItemProcessor: branch({ X: { Type: 'Pass', Next: 'NOPE' } }) } }))))
+      .toContain('pf-sfn-asl-missing-state');
+    // a branch cannot transition to a top-level state
+    const ds = diagnoseTemplate(machine({ P: { Type: 'Parallel', Next: 'Z', Branches: [branch({ X: { Type: 'Pass', Next: 'Z' } })] }, Z: pass }));
+    expect(ids(ds)).toContain('pf-sfn-asl-missing-state');
+    expect(ids(ds)).not.toContain('pf-sfn-asl-unreachable-state');
+  });
+
+  test('all ASL rules read the L1 Definition object too', () => {
+    const tpl = machine({ A: pass });
+    delete (tpl.Resources.SM.Properties as any).DefinitionString;
+    (tpl.Resources.SM.Properties as any).Definition = { StartAt: 'A', States: { A: { Type: 'Pass', Next: 'NOPE', End: true }, Orphan: pass } };
+    const got = ids(diagnoseTemplate(tpl));
+    expect(got).toContain('pf-sfn-asl-missing-state');
+    expect(got).toContain('pf-sfn-asl-next-end');
+    expect(got).toContain('pf-sfn-asl-unreachable-state');
+  });
+
+  test('a definition wired through Fn::GetAtt to another resource is skipped, not misjudged', () => {
+    const tpl = machine({ A: pass });
+    (tpl.Resources.SM.Properties as any).DefinitionString = { 'Fn::Join': ['', ['{"StartAt":"A","States":{"A":{"Type":"Task","Resource":"', { 'Fn::GetAtt': ['Role', 'Arn'] }, '","Next":"NOPE"}}}']] };
+    expect(ids(diagnoseTemplate(tpl))).toHaveLength(0);
+  });
+
+  test('duplicate state names are detected across nesting; unreachable ignores a dangling StartAt (E3601)', () => {
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Parallel', End: true, Branches: [branch({ A: pass })] } }))))
+      .toContain('pf-sfn-asl-duplicate-state-name');
+    const tpl = machine({ A: pass });
+    (tpl.Resources.SM.Properties as any).DefinitionString = JSON.stringify({ StartAt: 'NOPE', States: { A: pass } });
+    expect(ids(diagnoseTemplate(tpl))).toHaveLength(0);
+  });
+
+  test('nesting is inspected to depth 3 and silently ignored beyond', () => {
+    const bad = { Type: 'Pass', Next: 'NOPE' };
+    const wrap = (n: string, inner: Record<string, unknown>) => ({ [n]: { Type: 'Parallel', End: true, Branches: [branch(inner)] } });
+    expect(ids(diagnoseTemplate(machine(wrap('P1', wrap('P2', wrap('P3', { X: bad }))))))).toContain('pf-sfn-asl-missing-state');
+    expect(ids(diagnoseTemplate(machine(wrap('P1', wrap('P2', wrap('P3', wrap('P4', { X: bad })))))))).toHaveLength(0);
+  });
+
+  test('state-fields: known field on the wrong type and case variants fire; an unknown field is left alone', () => {
+    expect(ids(diagnoseTemplate(machine({ C: { Type: 'Choice', Choices: [{ Variable: '$.x', IsPresent: true, Next: 'B' }], End: true }, B: pass }))))
+      .toContain('pf-sfn-asl-state-fields');
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Pass', next: 'B', End: true }, B: pass }))))
+      .toContain('pf-sfn-asl-state-fields');
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Pass', SomeFutureField: 1, End: true } }))))
+      .not.toContain('pf-sfn-asl-state-fields');
+  });
+
+  test('query-language: JSONata top level with a JSONPath state, JSONPath state with Arguments, unclosed {% nested in Output', () => {
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Pass', QueryLanguage: 'JSONPath', End: true } }, {}, { QueryLanguage: 'JSONata' }))))
+      .toContain('pf-sfn-asl-query-language');
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Task', Resource: L, Arguments: { x: 1 }, End: true } }))))
+      .toContain('pf-sfn-asl-query-language');
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Pass', QueryLanguage: 'JSONata', Output: { a: { b: '{% $x' } }, End: true } }))))
+      .toContain('pf-sfn-asl-query-language');
+    expect(ids(diagnoseTemplate(machine({ A: { Type: 'Pass', Result: { a: '{% not jsonata' }, End: true } }))))
+      .not.toContain('pf-sfn-asl-query-language');
+  });
+
+  test('integration-parameters: required fields, ".$" keys count as present, JSONata needs Arguments', () => {
+    const task = (extra: Record<string, unknown>) => machine({ A: { Type: 'Task', Resource: 'arn:aws:states:::sqs:sendMessage', End: true, ...extra } });
+    expect(ids(diagnoseTemplate(task({ Parameters: { QueueUrl: 'u' } })))).toContain('pf-sfn-asl-integration-parameters');
+    expect(ids(diagnoseTemplate(task({ Parameters: { 'QueueUrl.$': '$.u', 'MessageBody': 'm' } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(task({ QueryLanguage: 'JSONata' })))).toContain('pf-sfn-asl-integration-parameters');
+    expect(ids(diagnoseTemplate(task({ QueryLanguage: 'JSONata', Arguments: { QueueUrl: 'u', MessageBody: 'm' } })))).toHaveLength(0);
+  });
+
+  test('resource-arn: .waitForTaskToken on Glue and .sync:2 outside states fire; supported patterns stay quiet', () => {
+    const task = (res: string) => machine({ A: { Type: 'Task', Resource: res, Parameters: { JobName: 'j', StateMachineArn: 'a', TaskDefinition: 't' }, End: true } });
+    expect(ids(diagnoseTemplate(task('arn:aws:states:::glue:startJobRun.waitForTaskToken')))).toContain('pf-sfn-asl-resource-arn');
+    expect(ids(diagnoseTemplate(task('arn:aws:states:::ecs:runTask.sync:2')))).toContain('pf-sfn-asl-resource-arn');
+    expect(ids(diagnoseTemplate(task('arn:aws:states:::glue:startJobRun.sync')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(task('arn:aws:states:::states:startExecution.sync:2')))).toHaveLength(0);
+  });
+
+  test('express-unsupported fires on an Activity inside a branch and on Distributed Map, only for EXPRESS', () => {
+    const act = { Type: 'Task', Resource: 'arn:aws:states:us-east-1:123456789012:activity:Act', End: true };
+    const states = { P: { Type: 'Parallel', End: true, Branches: [branch({ X: act })] } };
+    expect(ids(diagnoseTemplate(machine(states, { StateMachineType: 'EXPRESS' })))).toContain('pf-sfn-express-unsupported');
+    expect(ids(diagnoseTemplate(machine(states)))).toHaveLength(0);
+    const dmap = { M: { Type: 'Map', End: true, ItemProcessor: { ProcessorConfig: { Mode: 'DISTRIBUTED', ExecutionType: 'STANDARD' }, ...branch({ X: pass }) } } };
+    expect(ids(diagnoseTemplate(machine(dmap, { StateMachineType: 'EXPRESS' })))).toContain('pf-sfn-express-unsupported');
+  });
+
+  test('retry-catch: States.ALL not last, Catch without Next, bad JitterStrategy', () => {
+    const task = (extra: Record<string, unknown>) => machine({ A: { Type: 'Task', Resource: L, Next: 'B', ...extra }, B: pass });
+    expect(ids(diagnoseTemplate(task({ Retry: [{ ErrorEquals: ['States.ALL'] }, { ErrorEquals: ['X'] }] })))).toContain('pf-sfn-asl-retry-catch');
+    expect(ids(diagnoseTemplate(task({ Catch: [{ ErrorEquals: ['States.ALL'] }] })))).toContain('pf-sfn-asl-retry-catch');
+    expect(ids(diagnoseTemplate(task({ Retry: [{ ErrorEquals: ['X'], JitterStrategy: 'SOME' }] })))).toContain('pf-sfn-asl-retry-catch');
+  });
+
+  test('numeric-ranges: Retry MaxDelaySeconds over the cap and a string TimeoutSeconds; JSONata expressions pass', () => {
+    const task = (extra: Record<string, unknown>) => machine({ A: { Type: 'Task', Resource: L, End: true, ...extra } });
+    expect(ids(diagnoseTemplate(task({ Retry: [{ ErrorEquals: ['X'], MaxDelaySeconds: 31622401 }] })))).toContain('pf-sfn-asl-numeric-ranges');
+    expect(ids(diagnoseTemplate(task({ TimeoutSeconds: '5' })))).toContain('pf-sfn-asl-numeric-ranges');
+    expect(ids(diagnoseTemplate(task({ QueryLanguage: 'JSONata', TimeoutSeconds: '{% 5 %}' })))).toHaveLength(0);
+  });
+
+  test('name-charset and encryption-config cover AWS::StepFunctions::Activity; AWS_OWNED_KEY rejects KmsKeyId', () => {
+    const activity = (props: Record<string, unknown>) => ({ Resources: { Act: { Type: 'AWS::StepFunctions::Activity', Properties: props } } });
+    expect(ids(diagnoseTemplate(activity({ Name: 'my act' })))).toContain('pf-sfn-name-charset');
+    expect(ids(diagnoseTemplate(activity({ Name: 'テスト' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(activity({ Name: 'a', EncryptionConfiguration: { Type: 'CUSTOMER_MANAGED_KMS_KEY' } })))).toContain('pf-sfn-encryption-config');
+    expect(ids(diagnoseTemplate(activity({ Name: 'a', EncryptionConfiguration: { Type: 'AWS_OWNED_KEY', KmsKeyId: 'k' } })))).toContain('pf-sfn-encryption-config');
+    expect(ids(diagnoseTemplate(activity({ Name: 'a', EncryptionConfiguration: { Type: 'AWS_OWNED_KEY' } })))).toHaveLength(0);
+  });
+
+  test('logging: two destinations and a non-:* literal ARN fire; Level OFF with destinations is fine', () => {
+    const lg = (arn: unknown) => ({ CloudWatchLogsLogGroup: { LogGroupArn: arn } });
+    const ok = 'arn:aws:logs:us-east-1:123456789012:log-group:/aws/vendedlogs/states/x:*';
+    expect(ids(diagnoseTemplate(machine({ A: pass }, { LoggingConfiguration: { Level: 'ERROR', Destinations: [lg(ok), lg(ok)] } })))).toContain('pf-sfn-logging-destination');
+    expect(ids(diagnoseTemplate(machine({ A: pass }, { LoggingConfiguration: { Level: 'ALL', Destinations: [lg('arn:aws:logs:us-east-1:123456789012:log-group:/x')] } })))).toContain('pf-sfn-logging-destination');
+    expect(ids(diagnoseTemplate(machine({ A: pass }, { LoggingConfiguration: { Level: 'ALL', Destinations: [lg('arn:aws:s3:::bucket')] } })))).toContain('pf-sfn-logging-destination');
+    expect(ids(diagnoseTemplate(machine({ A: pass }, { LoggingConfiguration: { Level: 'OFF', Destinations: [lg(ok), lg(ok)] } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(machine({ A: pass }, { StateMachineName: 'テスト', LoggingConfiguration: { Level: 'ALL', Destinations: [lg(ok)] } })))).toContain('pf-sfn-logging-name-ascii');
+    expect(ids(diagnoseTemplate(machine({ A: pass }, { StateMachineName: 'テスト' })))).toHaveLength(0);
+  });
+
+  test('kms-key-region fires only against the deploy region', () => {
+    const t = (r: string) => machine({ A: pass }, { EncryptionConfiguration: { Type: 'CUSTOMER_MANAGED_KMS_KEY', KmsKeyId: `arn:aws:kms:${r}:123456789012:key/11111111-1111-1111-1111-111111111111` } });
+    expect(ids(diagnoseTemplate(t('us-east-1'), 'ap-northeast-1'))).toContain('pf-sfn-kms-key-region');
+    expect(ids(diagnoseTemplate(t('ap-northeast-1'), 'ap-northeast-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(t('us-east-1')))).toHaveLength(0);
   });
 });

@@ -1,9 +1,31 @@
 {
   "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
     "SM": {
       "Type": "AWS::StepFunctions::StateMachine",
       "Properties": {
-        "RoleArn": "arn:aws:iam::123456789012:role/service-role/StatesExecutionRole",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
         "DefinitionString": "{\"StartAt\":\"A\",\"States\":{\"A\":{\"Type\":\"Pass\",\"Next\":\"MISSING\"}}}"
       }
     }
