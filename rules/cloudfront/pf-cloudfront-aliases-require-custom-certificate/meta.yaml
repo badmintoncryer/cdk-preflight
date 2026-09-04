@@ -1,5 +1,6 @@
 id: pf-cloudfront-aliases-require-custom-certificate
 service: cloudfront
+benchRegion: us-east-1
 resourceTypes: [AWS::CloudFront::Distribution]
 severity: ERROR
 title: A distribution with Aliases cannot use the CloudFront default certificate

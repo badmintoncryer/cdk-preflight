@@ -1,5 +1,6 @@
 id: pf-agentcore-gateway-jwt-authorizer
 service: bedrock-agentcore
+benchRegion: us-east-1
 resourceTypes: [AWS::BedrockAgentCore::Gateway]
 severity: ERROR
 title: Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration

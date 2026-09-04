@@ -1,5 +1,6 @@
 id: pf-cloudfront-wafv2-webacl-scope
 service: cloudfront
+benchRegion: us-east-1
 resourceTypes: [AWS::CloudFront::Distribution]
 severity: ERROR
 title: A WAFv2 web ACL attached to CloudFront must be globally scoped

@@ -1,5 +1,6 @@
 id: pf-dynamodb-billing-throughput
 service: dynamodb
+benchRegion: us-east-1
 resourceTypes: [AWS::DynamoDB::Table]
 severity: ERROR
 title: ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST)

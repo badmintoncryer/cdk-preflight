@@ -55,4 +55,6 @@ junit.xml
 !/projenrc/tsconfig.json
 .jsii
 !/API.md
+/bench/out/
+!/.github/workflows/monthly-verify.yml
 !/.projenrc.ts

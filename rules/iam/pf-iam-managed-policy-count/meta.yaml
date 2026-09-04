@@ -1,5 +1,6 @@
 id: pf-iam-managed-policy-count
 service: iam
+benchRegion: us-east-1
 resourceTypes: [AWS::IAM::Role, AWS::IAM::User, AWS::IAM::Group]
 severity: ERROR
 title: Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10)

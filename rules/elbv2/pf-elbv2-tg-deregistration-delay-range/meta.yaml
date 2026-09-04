@@ -1,5 +1,6 @@
 id: pf-elbv2-tg-deregistration-delay-range
 service: elbv2
+benchRegion: us-east-1
 resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
 severity: ERROR
 title: Target group deregistration_delay.timeout_seconds must be between 0 and 3600

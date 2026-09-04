@@ -1,5 +1,6 @@
 id: pf-elbv2-tg-slow-start-range
 service: elbv2
+benchRegion: us-east-1
 resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
 severity: ERROR
 title: Target group slow_start.duration_seconds must be 0 or between 30 and 900

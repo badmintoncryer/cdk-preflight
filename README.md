@@ -1,5 +1,7 @@
 # cdk-preflight
 
+[![monthly real-deploy verification](https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg)](https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml)
+
 **Catch deploy-time CloudFormation failures at `cdk synth` time.**
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
