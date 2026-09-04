@@ -93,6 +93,17 @@ jobs:
       - name: Sweep leftover stacks
         id: sweep_leftover_stacks
         run: bash bench/sweep.sh | tee bench/out/sweep.log
+      - name: Setup node
+        id: setup_node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+      - name: Install
+        id: install
+        run: yarn install --check-files --frozen-lockfile
+      - name: Redundancy scan
+        id: redundancy_scan
+        run: npx projen redundancy-scan | tee bench/out/redundancy.log
       - name: Report
         id: report
         run: bash bench/report.sh
