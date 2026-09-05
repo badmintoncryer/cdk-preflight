@@ -1,0 +1,11 @@
+id: pf-wafv2-ipset-addresses
+service: wafv2
+resourceTypes: [AWS::WAFv2::IPSet]
+severity: ERROR
+title: "IP set addresses must be CIDR blocks of the declared version with a 1..32 / 1..128 prefix and no host bits set"
+constraintSource: https://docs.aws.amazon.com/waf/latest/APIReference/API_CreateIPSet.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: The parameter contains formatting that is not valid., field: IP_ADDRESS, parameter: 10.0.0.1/24\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

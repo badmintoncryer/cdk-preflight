@@ -1,0 +1,11 @@
+id: pf-wafv2-managed-rule-group
+service: wafv2
+resourceTypes: [AWS::WAFv2::WebACL]
+severity: ERROR
+title: "Managed rule group statements: known AWS group names, matching and complete ManagedRuleGroupConfigs, consistent overrides and response inspection"
+constraintSource: https://docs.aws.amazon.com/waf/latest/APIReference/API_ManagedRuleGroupStatement.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: REQUIRED_FIELD_MISSING, field: MANAGED_RULE_GROUP_CONFIG, parameter: ManagedRuleGroupStatement\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

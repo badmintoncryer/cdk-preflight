@@ -1,0 +1,28 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "I": {
+      "Type": "AWS::WAFv2::IPSet",
+      "Properties": {
+        "Name": "cdkpf-ip-ipsetaddresses",
+        "Scope": "REGIONAL",
+        "IPAddressVersion": "IPV4",
+        "Addresses": [
+          "10.0.0.0/8",
+          "192.0.2.44/32"
+        ]
+      }
+    },
+    "I6": {
+      "Type": "AWS::WAFv2::IPSet",
+      "Properties": {
+        "Name": "cdkpf-ip6-ipsetaddresses",
+        "Scope": "REGIONAL",
+        "IPAddressVersion": "IPV6",
+        "Addresses": [
+          "2001:db8::/32"
+        ]
+      }
+    }
+  }
+}
