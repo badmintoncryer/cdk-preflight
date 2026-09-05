@@ -1,0 +1,11 @@
+id: pf-ecr-registry-scanning-configuration
+service: ecr
+resourceTypes: [AWS::ECR::RegistryScanningConfiguration]
+severity: ERROR
+title: "BASIC scanning supports SCAN_ON_PUSH only, and two rules cannot share a scan frequency"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/APIReference/API_PutRegistryScanningConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter failed to satisfy constraint: 'Invalid scan frequency for scanType BASIC: CONTINUOUS_SCAN'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

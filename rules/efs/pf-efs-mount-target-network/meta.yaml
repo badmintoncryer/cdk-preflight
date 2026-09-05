@@ -1,0 +1,11 @@
+id: pf-efs-mount-target-network
+service: efs
+resourceTypes: [AWS::EFS::MountTarget]
+severity: ERROR
+title: "A mount target takes at most five security groups, all in the subnet VPC, and every mount target of a file system shares one VPC"
+constraintSource: https://docs.aws.amazon.com/efs/latest/ug/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The maximum number of security groups per interface has been reached.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

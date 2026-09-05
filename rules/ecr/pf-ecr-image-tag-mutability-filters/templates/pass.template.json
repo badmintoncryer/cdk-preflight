@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-imagetagmutabilityfi",
+        "EmptyOnDelete": true,
+        "ImageTagMutability": "IMMUTABLE_WITH_EXCLUSION",
+        "ImageTagMutabilityExclusionFilters": [
+          {
+            "ImageTagMutabilityExclusionFilterType": "WILDCARD",
+            "ImageTagMutabilityExclusionFilterValue": "dev*"
+          }
+        ]
+      }
+    }
+  }
+}

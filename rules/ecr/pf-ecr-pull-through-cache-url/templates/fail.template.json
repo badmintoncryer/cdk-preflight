@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::ECR::PullThroughCacheRule",
+      "Properties": {
+        "EcrRepositoryPrefix": "cdkpf-pullthroughcacheurl",
+        "UpstreamRegistryUrl": "registry.example.com"
+      }
+    }
+  }
+}

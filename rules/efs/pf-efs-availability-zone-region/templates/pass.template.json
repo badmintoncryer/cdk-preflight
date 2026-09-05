@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "FS": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "cdkpf",
+            "Value": "bench"
+          }
+        ],
+        "AvailabilityZoneName": {
+          "Fn::Sub": "${AWS::Region}a"
+        }
+      }
+    }
+  }
+}

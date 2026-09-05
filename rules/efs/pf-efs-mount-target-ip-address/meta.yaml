@@ -1,0 +1,11 @@
+id: pf-efs-mount-target-ip-address
+service: efs
+resourceTypes: [AWS::EFS::MountTarget]
+severity: ERROR
+title: "IpAddress must fall inside the subnet CIDR and match IpAddressType, and IPv6 needs an IPv6 subnet"
+constraintSource: https://docs.aws.amazon.com/efs/latest/APIReference/API_CreateMountTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Address does not fall within the subnet's address range\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

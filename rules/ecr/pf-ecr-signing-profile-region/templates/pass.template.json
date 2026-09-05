@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Sign": {
+      "Type": "AWS::ECR::SigningConfiguration",
+      "Properties": {
+        "Rules": [
+          {
+            "SigningProfileArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:signer:${AWS::Region}:${AWS::AccountId}:/signing-profiles/cdkpfprobe"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

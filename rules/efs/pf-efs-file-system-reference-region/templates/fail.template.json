@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "AP": {
+      "Type": "AWS::EFS::AccessPoint",
+      "Properties": {
+        "FileSystemId": "arn:aws:elasticfilesystem:us-west-2:214794239830:file-system/fs-00000000000000000"
+      }
+    }
+  }
+}

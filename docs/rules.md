@@ -145,6 +145,20 @@
 | `pf-ec2-vpce-gateway-service` | AWS::EC2::VPCEndpoint | Gateway VPC endpoints only exist for S3 and DynamoDB | none |
 | `pf-ec2-vpce-service-region` | AWS::EC2::VPCEndpoint | VPC endpoint service names must use the deploy region unless ServiceRegion is set | none |
 | `pf-ec2-vpce-type-config` | AWS::EC2::VPCEndpoint | SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway) | none |
+| `pf-ecr-encryption-configuration` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | KmsKey is only valid with EncryptionType KMS/KMS_DSSE and must live in the deploy region | none |
+| `pf-ecr-image-tag-mutability-filters` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | ImageTagMutabilityExclusionFilters requires a *_WITH_EXCLUSION mutability setting, and vice versa | none |
+| `pf-ecr-lifecycle-action` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | The action type is expire or transition, and transition requires targetStorageClass: archive | none |
+| `pf-ecr-lifecycle-count` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | countUnit belongs to the sinceImage* count types only, countNumber must be positive and storageClass follows countType | none |
+| `pf-ecr-lifecycle-policy-syntax` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | The lifecycle policy must be a JSON document with 1-50 rules, each holding rulePriority, selection and action and no other keys | none |
+| `pf-ecr-lifecycle-rule-priority` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | rulePriority must be unique and >= 1, and the single tagStatus=any rule must carry the highest priority | none |
+| `pf-ecr-lifecycle-tag-status` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | tagStatus=tagged needs exactly one of tagPrefixList / tagPatternList, tagStatus=untagged or any takes neither | none |
+| `pf-ecr-pull-through-cache-credential` | AWS::ECR::PullThroughCacheRule | CredentialArn is required for the authenticated upstream registries, rejected for the open ones, and must name a secret in the deploy account and region | none |
+| `pf-ecr-pull-through-cache-registry-match` | AWS::ECR::PullThroughCacheRule | UpstreamRegistry must name the registry the URL belongs to | none |
+| `pf-ecr-pull-through-cache-url` | AWS::ECR::PullThroughCacheRule | UpstreamRegistryUrl must be one of the supported upstream endpoints and cannot be this registry itself | none |
+| `pf-ecr-registry-scanning-configuration` | AWS::ECR::RegistryScanningConfiguration | BASIC scanning supports SCAN_ON_PUSH only, and two rules cannot share a scan frequency | none |
+| `pf-ecr-replication-destination` | AWS::ECR::ReplicationConfiguration | A replication destination must be another registry: not the deploy account in the deploy region, and not another partition | none |
+| `pf-ecr-repository-creation-template-applied-for` | AWS::ECR::RepositoryCreationTemplate | AppliedFor accepts REPLICATION, PULL_THROUGH_CACHE and CREATE_ON_PUSH only | none |
+| `pf-ecr-signing-profile-region` | AWS::ECR::SigningConfiguration | A signing profile ARN must be in the same region as the registry | none |
 | `pf-ecs-cluster-name` | AWS::ECS::Cluster | ECS cluster names allow only letters, numbers, hyphen and underscore (max 255) | none |
 | `pf-ecs-container-definitions-empty` | AWS::ECS::TaskDefinition | ContainerDefinitions must contain at least one container | pending-engine |
 | `pf-ecs-container-memory-over-task` | AWS::ECS::TaskDefinition | A container Memory must not exceed the task-level Memory | none |
@@ -165,6 +179,17 @@
 | `pf-ecs-service-network-config-mode` | AWS::ECS::Service<br>AWS::ECS::TaskDefinition | NetworkConfiguration requires an awsvpc task definition | none |
 | `pf-ecs-service-platform-version-ec2` | AWS::ECS::Service | PlatformVersion is not allowed with the EC2 launch type | none |
 | `pf-ecs-taskdef-family` | AWS::ECS::TaskDefinition | Task definition Family allows only letters, numbers, hyphen and underscore | none |
+| `pf-efs-availability-zone-region` | AWS::EFS::FileSystem | AvailabilityZoneName must name an Availability Zone of the deploy region | none |
+| `pf-efs-file-system-policy` | AWS::EFS::FileSystem | A file system policy may only name its own file system and must not lock out PutFileSystemPolicy | none |
+| `pf-efs-file-system-reference-region` | AWS::EFS::MountTarget<br>AWS::EFS::AccessPoint | A file system ARN passed as FileSystemId must be in the deploy region | none |
+| `pf-efs-kms-key` | AWS::EFS::FileSystem | KmsKeyId requires Encrypted: true and a key in the deploy region | none |
+| `pf-efs-lifecycle-policy` | AWS::EFS::FileSystem | Each LifecyclePolicy object carries exactly one transition, transitions cannot repeat, Archive must be later than IA and needs elastic or provisioned throughput | none |
+| `pf-efs-mount-target-availability-zone` | AWS::EFS::MountTarget | A file system takes one mount target per Availability Zone, and a One Zone file system only in its own zone | none |
+| `pf-efs-mount-target-ip-address` | AWS::EFS::MountTarget | IpAddress must fall inside the subnet CIDR and match IpAddressType, and IPv6 needs an IPv6 subnet | none |
+| `pf-efs-mount-target-network` | AWS::EFS::MountTarget | A mount target takes at most five security groups, all in the subnet VPC, and every mount target of a file system shares one VPC | none |
+| `pf-efs-performance-mode` | AWS::EFS::FileSystem | PerformanceMode maxIO works with neither One Zone storage nor elastic throughput | none |
+| `pf-efs-replication-destination` | AWS::EFS::FileSystem | A replication destination pairs Region with an Availability Zone and a KMS key of that same region | none |
+| `pf-efs-throughput-mode` | AWS::EFS::FileSystem | ProvisionedThroughputInMibps belongs to ThroughputMode: provisioned and nothing else | none |
 | `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | none |
 | `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | none |
 | `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | none |

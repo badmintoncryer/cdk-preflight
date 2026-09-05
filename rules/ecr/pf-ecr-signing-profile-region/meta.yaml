@@ -1,0 +1,11 @@
+id: pf-ecr-signing-profile-region
+service: ecr
+resourceTypes: [AWS::ECR::SigningConfiguration]
+severity: ERROR
+title: "A signing profile ARN must be in the same region as the registry"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/APIReference/API_PutSigningConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'signingProfileArn' failed to satisfy constraint: 'The region of signing profile ARN 'arn:aws:signer:us-west-2:214794239830:/signing-profiles/cdkpfprobe' is 'us-west-2' but must be 'ap-northeast-1' (the current region)'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

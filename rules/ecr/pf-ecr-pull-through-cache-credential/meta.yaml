@@ -1,0 +1,11 @@
+id: pf-ecr-pull-through-cache-credential
+service: ecr
+resourceTypes: [AWS::ECR::PullThroughCacheRule]
+severity: ERROR
+title: "CredentialArn is required for the authenticated upstream registries, rejected for the open ones, and must name a secret in the deploy account and region"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/APIReference/API_CreatePullThroughCacheRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The specified upstream registry requires authentication. Specify a valid Secrets Manager ARN containing the upstream registry credentials and try again.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

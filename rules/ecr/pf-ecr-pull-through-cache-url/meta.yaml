@@ -1,0 +1,11 @@
+id: pf-ecr-pull-through-cache-url
+service: ecr
+resourceTypes: [AWS::ECR::PullThroughCacheRule]
+severity: ERROR
+title: "UpstreamRegistryUrl must be one of the supported upstream endpoints and cannot be this registry itself"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/APIReference/API_CreatePullThroughCacheRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The upstream registry URL registry.example.com is invalid. Specify a valid upstream registry URL and try again\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06
