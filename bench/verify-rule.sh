@@ -54,6 +54,7 @@ echo "=== $RULE: fail template ($REGION) ===" | tee -a "$LOG"
 FSTACK="cdkpf-$RULE-fail"
 if ! aws cloudformation create-stack --stack-name "$FSTACK" --region "$REGION" \
   --template-body "file://$DIR/templates/fail.template.json" \
+  --tags Key=cdkpf,Value="$RULE" \
   --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1; then
   # ponytail: API レベルの拒否は throttle/認証エラーと本物の制約発火を区別できないので
   # 一律 INCONCLUSIVE。毎月これに落ち続けるルールが出たら期待エラー文の白判定を個別に足す
@@ -82,6 +83,7 @@ if [ "$FAIL_ONLY" != "--fail-only" ]; then
   PSTACK="cdkpf-$RULE-pass"
   aws cloudformation create-stack --stack-name "$PSTACK" --region "$REGION" \
     --template-body "file://$DIR/templates/pass.template.json" \
+    --tags Key=cdkpf,Value="$RULE" \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1
   PSTATUS=$(poll_terminal "$PSTACK")
   echo "pass: finalStatus=$PSTATUS" | tee -a "$LOG"
