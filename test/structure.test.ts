@@ -4,8 +4,8 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { collectRules, evidenceProblem, renderDocs, renderGenerated } from '../scripts/bundle-rules';
-import { BUNDLED_RULES } from '../src/rules.generated';
+import { collectLibs, collectRules, evidenceProblem, renderDocs, renderGenerated } from '../scripts/bundle-rules';
+import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
 
@@ -21,7 +21,7 @@ test('rule ids are unique', () => {
 });
 
 test('src/rules.generated.ts is up to date', () => {
-  const expected = renderGenerated(collectRules(root));
+  const expected = renderGenerated(collectRules(root), collectLibs(root));
   const actual = fs.readFileSync(path.join(root, 'src', 'rules.generated.ts'), 'utf8');
   expect(actual).toBe(expected);
 });
@@ -36,6 +36,17 @@ test('every bundled rule declares the package cdk_preflight and rego.v1', () => 
   for (const r of BUNDLED_RULES) {
     expect(r.rego).toContain('package cdk_preflight');
     expect(r.rego).toContain('import rego.v1');
+  }
+});
+
+test('shared lib modules are helper-only and use the _pf_ prefix convention', () => {
+  for (const l of BUNDLED_LIBS) {
+    expect(l.rego).toContain('package cdk_preflight');
+    expect(l.rego).not.toContain('violation contains');
+    // every top-level rule/function in a lib starts with _pf_<lib>_
+    for (const m of l.rego.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)\s*(\(|:=|contains)/gm)) {
+      expect(m[1]).toMatch(/^_pf_/);
+    }
   }
 });
 

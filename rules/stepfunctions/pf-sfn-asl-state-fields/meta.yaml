@@ -1,0 +1,11 @@
+id: pf-sfn-asl-state-fields
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: "ASL fields are per state type: a known field placed on a type that does not accept it (Retry on Pass, End on Choice, Next on Fail, ...) fails creation"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'SCHEMA_VALIDATION_FAILED: Field 'Retry' is not supported at /States/A'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

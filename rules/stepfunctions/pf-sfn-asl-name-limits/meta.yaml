@@ -1,0 +1,11 @@
+id: pf-sfn-asl-name-limits
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: "ASL state names are at most 80 characters; a Distributed Map Label is at most 40 characters and unique within the state machine"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/service-quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'INVALID_STATE_NAME: Invalid State name: State '<81 x A>' exceeds the 80-character limit allowed by the service at /States/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

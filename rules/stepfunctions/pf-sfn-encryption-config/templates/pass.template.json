@@ -1,0 +1,73 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "SM": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "DefinitionString": "{\"StartAt\":\"A\",\"States\":{\"A\":{\"Type\":\"Pass\",\"End\":true}}}",
+        "EncryptionConfiguration": {
+          "Type": "CUSTOMER_MANAGED_KMS_KEY",
+          "KmsKeyId": {
+            "Fn::GetAtt": [
+              "Key",
+              "Arn"
+            ]
+          },
+          "KmsDataKeyReusePeriodSeconds": 60
+        }
+      }
+    },
+    "Act": {
+      "Type": "AWS::StepFunctions::Activity",
+      "Properties": {
+        "Name": "cdkpf-enc-ok",
+        "EncryptionConfiguration": {
+          "Type": "AWS_OWNED_KEY"
+        }
+      }
+    }
+  }
+}

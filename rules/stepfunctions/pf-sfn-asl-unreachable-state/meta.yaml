@@ -1,0 +1,11 @@
+id: pf-sfn-asl-unreachable-state
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine]
+severity: ERROR
+title: "Every ASL state must be reachable: a state that is not StartAt and that no other state transitions to fails creation"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'MISSING_TRANSITION_TARGET: State \"Orphan\" is not reachable. at /States/Orphan'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

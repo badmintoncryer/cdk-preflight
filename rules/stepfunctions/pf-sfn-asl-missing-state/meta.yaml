@@ -2,10 +2,10 @@ id: pf-sfn-asl-missing-state
 service: stepfunctions
 resourceTypes: [AWS::StepFunctions::StateMachine]
 severity: ERROR
-title: ASL Next/Default/Choices must reference a defined state (top-level states; a dangling StartAt is covered by engine rule E3601)
-constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-states.html
+title: "ASL Next/Default/Choices[].Next/Catch[].Next must reference a state defined in the same States block, at every nesting level (a dangling StartAt is covered by engine rule E3601)"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.html
 upstream: none
 repro:
-  method: research-case
-  evidence: cdk-validation-gap-research case12 (2026-09-01, "MISSING_TRANSITION_TARGET" at deploy)
-addedOn: 2026-09-01
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'MISSING_TRANSITION_TARGET: Missing 'Next' target: MISSING at /States/A/Next, MISSING_END_STATE: Workflow has no terminal state at null'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

@@ -1,0 +1,11 @@
+id: pf-sfn-encryption-config
+service: stepfunctions
+resourceTypes: [AWS::StepFunctions::StateMachine, AWS::StepFunctions::Activity]
+severity: ERROR
+title: "EncryptionConfiguration: CUSTOMER_MANAGED_KMS_KEY requires KmsKeyId, and AWS_OWNED_KEY rejects KmsKeyId and KmsDataKeyReusePeriodSeconds (state machines and activities)"
+constraintSource: https://docs.aws.amazon.com/step-functions/latest/apireference/API_EncryptionConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid Encryption Configuration: Must set a valid kmsKeyId.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

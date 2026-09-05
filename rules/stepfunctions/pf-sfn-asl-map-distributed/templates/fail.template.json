@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "SM": {
+      "Type": "AWS::StepFunctions::StateMachine",
+      "Properties": {
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "DefinitionString": "{\"StartAt\":\"M\",\"States\":{\"M\":{\"Type\":\"Map\",\"ItemProcessor\":{\"ProcessorConfig\":{\"Mode\":\"DISTRIBUTED\"},\"StartAt\":\"X\",\"States\":{\"X\":{\"Type\":\"Pass\",\"End\":true}}},\"End\":true}}}"
+      }
+    }
+  }
+}
