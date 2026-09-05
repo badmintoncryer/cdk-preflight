@@ -1,0 +1,12 @@
+id: pf-agentcore-runtime-artifact-exactly-one
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_AgentRuntimeArtifact.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe, fail-only): both blocks -> CREATE_FAILED (BedrockAgentCoreControl 400: Invalid request provided: AgentArtifact must have exactly one configuration.); empty AgentRuntimeArtifact {} -> same message; both ROLLBACK_COMPLETE. Pass template not deployed (a runtime needs a real ECR image). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE (fail-only). Log: bench/logs/pf-agentcore-runtime-artifact-exactly-one.log"
+addedOn: 2026-09-05

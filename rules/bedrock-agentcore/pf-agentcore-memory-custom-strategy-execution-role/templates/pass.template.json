@@ -1,0 +1,67 @@
+{
+  "Resources": {
+    "MemoryRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock-agentcore.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "invoke-model",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "bedrock:InvokeModel",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Memory": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_memrole_pass",
+        "EventExpiryDuration": 30,
+        "MemoryExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "MemoryRole",
+            "Arn"
+          ]
+        },
+        "MemoryStrategies": [
+          {
+            "CustomMemoryStrategy": {
+              "Name": "custom_semantic",
+              "Namespaces": [
+                "/actor/{actorId}/"
+              ],
+              "Configuration": {
+                "SemanticOverride": {
+                  "Extraction": {
+                    "ModelId": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+                    "AppendToPrompt": "Extract facts about the user."
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

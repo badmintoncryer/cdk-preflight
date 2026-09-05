@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Provider": {
+      "Type": "AWS::BedrockAgentCore::OAuth2CredentialProvider",
+      "Properties": {
+        "Name": "cdkpf-oavc-fail",
+        "CredentialProviderVendor": "GoogleOauth2",
+        "Oauth2ProviderConfigInput": {
+          "CustomOauth2ProviderConfig": {
+            "ClientId": "my-client-id",
+            "OauthDiscovery": {
+              "DiscoveryUrl": "https://accounts.google.com/.well-known/openid-configuration"
+            },
+            "ClientSecret": "my-client-secret"
+          }
+        }
+      }
+    }
+  }
+}

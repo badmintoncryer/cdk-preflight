@@ -1,0 +1,12 @@
+id: pf-agentcore-vpc-network-mode-config
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime, AWS::BedrockAgentCore::BrowserCustom, AWS::BedrockAgentCore::CodeInterpreterCustom, AWS::BedrockAgentCore::Harness]
+severity: ERROR
+title: NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_BrowserNetworkConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): BrowserCustom VPC without VpcConfig -> CREATE_FAILED (BedrockAgentCoreControl 400: VpcConfig is required for VPC mode); CodeInterpreterCustom same message; BrowserCustom PUBLIC + VpcConfig -> 400: VpcConfig is not allowed for PUBLIC mode; Runtime VPC without NetworkModeConfig -> 400: NetworkModeConfig is required for VPC mode; Runtime PUBLIC + NetworkModeConfig -> 400: NetworkModeConfig is not allowed for non-VPC mode; Harness Environment.AgentCoreRuntimeEnvironment VPC without NetworkModeConfig -> 400: networkModeConfig with non-empty subnets and securityGroups is required when networkMode is VPC. All ROLLBACK_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-vpc-network-mode-config.log"
+addedOn: 2026-09-05

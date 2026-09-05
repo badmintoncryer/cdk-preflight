@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-target-openapi-schema
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayTarget]
+severity: ERROR
+title: Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-openapi.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): swagger 2.0 document -> target FAILED (Invalid OpenAPI schema: attribute openapi is missing); no servers -> FAILED (Found 2 validation error(s) in OpenAPI schema: [Server URL must not be empty., Server URL (located at: servers) must use HTTPS ...]); operation without operationId -> FAILED (Operation /x -> GET must have an operationId); all ROLLBACK_COMPLETE on NotStabilized. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-openapi-schema.log"
+addedOn: 2026-09-05

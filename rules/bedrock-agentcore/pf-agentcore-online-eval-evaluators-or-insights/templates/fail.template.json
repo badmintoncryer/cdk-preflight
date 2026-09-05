@@ -1,0 +1,76 @@
+{
+  "Resources": {
+    "EvalRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock-agentcore.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "eval",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*",
+                    "bedrock:InvokeModel"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AgentLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 1
+      }
+    },
+    "OnlineEval": {
+      "Type": "AWS::BedrockAgentCore::OnlineEvaluationConfig",
+      "Properties": {
+        "OnlineEvaluationConfigName": "cdkpf_oeevs_fail",
+        "EvaluationExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "EvalRole",
+            "Arn"
+          ]
+        },
+        "ExecutionStatus": "ENABLED",
+        "DataSourceConfig": {
+          "CloudWatchLogs": {
+            "LogGroupNames": [
+              {
+                "Ref": "AgentLogGroup"
+              }
+            ],
+            "ServiceNames": [
+              "my-agent"
+            ]
+          }
+        },
+        "Rule": {
+          "SamplingConfig": {
+            "SamplingPercentage": 10
+          }
+        },
+        "Evaluators": []
+      }
+    }
+  }
+}

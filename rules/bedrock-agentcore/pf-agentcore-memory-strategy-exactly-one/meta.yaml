@@ -1,0 +1,12 @@
+id: pf-agentcore-memory-strategy-exactly-one
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: Each MemoryStrategies entry must hold exactly one strategy type, and a CustomMemoryStrategy exactly one Configuration override
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_MemoryStrategyInput.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): MemoryStrategies: [{}] -> stack VALIDATION_FAILED (CloudFormation PROPERTY_VALIDATION: #/MemoryStrategies/0: minimum size: [1], found: [0]); entry with Semantic+Summary -> #/MemoryStrategies/0: maximum size: [1], found: [2]; CustomMemoryStrategy.Configuration with SemanticOverride+SummaryOverride -> #/MemoryStrategies/0/CustomMemoryStrategy/Configuration: maximum size: [1], found: [2]; all ROLLBACK_COMPLETE. The registry schema carries minProperties/maxProperties that engine 1.7.0-beta does not evaluate. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-strategy-exactly-one.log"
+addedOn: 2026-09-05

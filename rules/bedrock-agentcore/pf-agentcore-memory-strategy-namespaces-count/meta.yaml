@@ -1,0 +1,12 @@
+id: pf-agentcore-memory-strategy-namespaces-count
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: A memory strategy accepts exactly one namespace
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_SemanticMemoryStrategyInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): Namespaces with 2 entries -> CREATE_FAILED (BedrockAgentCoreControl 400: Value at 'memoryStrategies.1.member.semanticMemoryStrategy.namespaces' failed to satisfy constraint: Member must have length less than or equal to 1) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-strategy-namespaces-count.log"
+addedOn: 2026-09-05

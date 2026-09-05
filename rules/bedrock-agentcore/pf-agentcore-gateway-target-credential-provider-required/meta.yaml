@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-target-credential-provider-required
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayTarget]
+severity: ERROR
+title: Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CredentialProviderConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): OAUTH without CredentialProvider, and OAUTH with only ApiKeyCredentialProvider -> CREATE_FAILED (BedrockAgentCoreControl 400: OAuth credential provider is required for OAUTH credential provider type); API_KEY without CredentialProvider -> 400: API key credential provider is required for API_KEY credential provider type; all ROLLBACK_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-credential-provider-required.log"
+addedOn: 2026-09-05

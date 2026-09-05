@@ -1,0 +1,12 @@
+id: pf-agentcore-memory-custom-strategy-execution-role
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: Memories with a custom strategy require MemoryExecutionRoleArn
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-configuring-custom-strategies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): CREATE_FAILED (BedrockAgentCoreControl 400: Validation failed during CreateMemory: Please provide memoryExecutionRoleArn as memory contains one or more Custom strategies) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-custom-strategy-execution-role.log"
+addedOn: 2026-09-05

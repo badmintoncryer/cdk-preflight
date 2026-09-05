@@ -1,0 +1,12 @@
+id: pf-agentcore-online-eval-evaluators-or-insights
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::OnlineEvaluationConfig]
+severity: ERROR
+title: An online evaluation config needs a non-empty Evaluators list (or Insights)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOnlineEvaluationConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): Evaluators: [] and no Insights -> CREATE_FAILED (AgentCoreEvaluationControlPlane 400 ValidationException: Exactly one of evaluators or insights must be provided) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-online-eval-evaluators-or-insights.log"
+addedOn: 2026-09-05

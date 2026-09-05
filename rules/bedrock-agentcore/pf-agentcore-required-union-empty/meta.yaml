@@ -1,0 +1,12 @@
+id: pf-agentcore-required-union-empty
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Evaluator, AWS::BedrockAgentCore::GatewayTarget, AWS::BedrockAgentCore::Policy]
+severity: ERROR
+title: Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_EvaluatorConfiguration.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): Evaluator EvaluatorConfig: {} -> stack VALIDATION_FAILED (CloudFormation PROPERTY_VALIDATION: Required property [LlmAsAJudge] not found / Required property [CodeBased] not found); GatewayTarget TargetConfiguration: {} -> CREATE_FAILED (Properties validation failed for resource: #/TargetConfiguration: 0 subschemas matched instead of one); Policy Definition: {} -> CREATE_FAILED (#/Definition: 0 subschemas matched instead of one); all ROLLBACK_COMPLETE. The registry schema oneOf catches this server-side while the bundled engine 1.7.0-beta only flags two-member objects (F3018). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-required-union-empty.log"
+addedOn: 2026-09-05

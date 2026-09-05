@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Secret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "SecretString": "{\"api_key\":\"dummy\"}"
+      }
+    },
+    "Provider": {
+      "Type": "AWS::BedrockAgentCore::ApiKeyCredentialProvider",
+      "Properties": {
+        "Name": "cdkpf-akpsrc-pass",
+        "ApiKeySecretSource": "EXTERNAL",
+        "ApiKeySecretConfig": {
+          "SecretId": {
+            "Ref": "Secret"
+          },
+          "JsonKey": "api_key"
+        }
+      }
+    }
+  }
+}

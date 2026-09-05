@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Evaluator": {
+      "Type": "AWS::BedrockAgentCore::Evaluator",
+      "Properties": {
+        "EvaluatorName": "cdkpf_union_pass",
+        "Level": "TRACE",
+        "EvaluatorConfig": {
+          "LlmAsAJudge": {
+            "Instructions": "Rate the {assistant_turn} given {context}",
+            "ModelConfig": {
+              "BedrockEvaluatorModelConfig": {
+                "ModelId": "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+              }
+            },
+            "RatingScale": {
+              "Categorical": [
+                {
+                  "Label": "good",
+                  "Definition": "The answer is helpful"
+                },
+                {
+                  "Label": "bad",
+                  "Definition": "The answer is not helpful"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

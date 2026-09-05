@@ -1,0 +1,12 @@
+id: pf-agentcore-policy-cedar-statement
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Policy]
+severity: ERROR
+title: A Cedar policy statement must be a permit/forbid clause that constrains the resource and, for permit, carries a condition
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-getting-started.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): free text statement -> CREATE_FAILED (Bedrock AgentCore Control 400 ValidationException: When parsing the policy statement, the following errors occurred: unexpected token `is`); permit(principal, action, resource); -> 400: When parsing the policy statement, a wildcard resource was detected. To avoid unexpected behavior changes, please constrain the resource either to a specific AgentCore::Gateway resource or to the AgentCore::Gateway resource type.; permit(principal, action == AgentCore::Action::\"tools___get_weather\", resource == AgentCore::Gateway::\"<gateway-arn>\"); without a when clause -> CREATE_FAILED (Overly Permissive: Policy Engine will allow every request for the specified principal (AgentCore::IamEntity), action (tools___get_weather) and resource (...) combination if the policy is added or updated); all ROLLBACK_COMPLETE. The pass fixture (same clause + when { context.input.city == \"Tokyo\" }) deploys. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-policy-cedar-statement.log"
+addedOn: 2026-09-05

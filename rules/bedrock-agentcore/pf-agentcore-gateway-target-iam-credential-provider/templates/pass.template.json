@@ -1,0 +1,103 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "agentcore",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "bedrock:InvokeModel",
+                    "logs:*",
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Fn": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return e\n"
+        }
+      }
+    },
+    "Gw": {
+      "Type": "AWS::BedrockAgentCore::Gateway",
+      "Properties": {
+        "Name": "cdkpf-gwtiam-pass",
+        "ProtocolType": "MCP",
+        "AuthorizerType": "AWS_IAM",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Target": {
+      "Type": "AWS::BedrockAgentCore::GatewayTarget",
+      "Properties": {
+        "GatewayIdentifier": {
+          "Fn::GetAtt": [
+            "Gw",
+            "GatewayIdentifier"
+          ]
+        },
+        "Name": "tools",
+        "TargetConfiguration": {
+          "Mcp": {
+            "OpenApiSchema": {
+              "InlinePayload": "{\"openapi\": \"3.0.0\", \"info\": {\"title\": \"Weather\", \"version\": \"1\"}, \"servers\": [{\"url\": \"https://api.example.com\"}], \"paths\": {\"/weather\": {\"get\": {\"operationId\": \"getWeather\", \"description\": \"Get weather\", \"responses\": {\"200\": {\"description\": \"ok\"}}}}}}"
+            }
+          }
+        },
+        "CredentialProviderConfigurations": [
+          {
+            "CredentialProviderType": "GATEWAY_IAM_ROLE",
+            "CredentialProvider": {
+              "IamCredentialProvider": {
+                "Service": "execute-api"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Browser": {
+      "Type": "AWS::BedrockAgentCore::BrowserCustom",
+      "Properties": {
+        "Name": "cdkpf_vpcnm_pass",
+        "NetworkConfiguration": {
+          "NetworkMode": "PUBLIC"
+        }
+      }
+    }
+  }
+}

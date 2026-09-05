@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-interceptor-point-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Gateway]
+severity: ERROR
+title: Gateway interceptors may bind each interception point (REQUEST / RESPONSE) only once
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GatewayInterceptorConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): CREATE_FAILED (BedrockAgentCoreControl 400: Only one interceptor configuration per interception point can be defined) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-interceptor-point-unique.log"
+addedOn: 2026-09-05

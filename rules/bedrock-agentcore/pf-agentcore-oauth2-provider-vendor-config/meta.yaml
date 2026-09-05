@@ -1,0 +1,12 @@
+id: pf-agentcore-oauth2-provider-vendor-config
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::OAuth2CredentialProvider]
+severity: ERROR
+title: Oauth2ProviderConfigInput must contain the config block that matches CredentialProviderVendor
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): GoogleOauth2 with only CustomOauth2ProviderConfig -> CREATE_FAILED (Bedrock AgentCore Control 400: Provided configuration does not match selected type: GoogleOauth2); OktaOauth2 with only CustomOauth2ProviderConfig -> 400: Provided configuration does not match selected type: OktaOauth2; CustomOauth2 with Custom+Google blocks CREATE_COMPLETE (extra blocks are ignored). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-oauth2-provider-vendor-config.log"
+addedOn: 2026-09-05

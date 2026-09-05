@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Memory": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_memrole_fail",
+        "EventExpiryDuration": 30,
+        "MemoryStrategies": [
+          {
+            "CustomMemoryStrategy": {
+              "Name": "custom_semantic",
+              "Namespaces": [
+                "/actor/{actorId}/"
+              ],
+              "Configuration": {
+                "SemanticOverride": {
+                  "Extraction": {
+                    "ModelId": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+                    "AppendToPrompt": "Extract facts about the user."
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

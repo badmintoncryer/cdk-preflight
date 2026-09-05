@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Provider": {
+      "Type": "AWS::BedrockAgentCore::PaymentCredentialProvider",
+      "Properties": {
+        "Name": "cdkpf-pcpvc-fail",
+        "CredentialProviderVendor": "CoinbaseCDP",
+        "ProviderConfigurationInput": {
+          "StripePrivyConfiguration": {
+            "AppId": "app",
+            "AppSecret": "secret",
+            "AuthorizationId": "auth",
+            "AuthorizationPrivateKey": "key"
+          }
+        }
+      }
+    }
+  }
+}
