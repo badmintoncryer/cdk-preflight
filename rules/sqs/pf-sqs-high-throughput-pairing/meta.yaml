@@ -1,0 +1,11 @@
+id: pf-sqs-high-throughput-pairing
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "FifoThroughputLimit perMessageGroupId requires DeduplicationScope messageGroup"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/high-throughput-fifo.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid value for the parameter FifoThroughputLimit. Reason: To set FifoThroughputLimit to perMessageGroupId, the DeduplicationScope must be messageGroup.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

@@ -1,0 +1,11 @@
+id: pf-sns-delivery-policy
+service: sns
+resourceTypes: [AWS::SNS::Subscription, AWS::SNS::Topic]
+severity: ERROR
+title: "HTTP/S DeliveryPolicy retry values: minDelayTarget >= 1, maxDelayTarget <= 3600 and >= minDelayTarget, numRetries 0..100 and at least the sum of the phase retries, phase counts >= 0, backoffFunction one of arithmetic|exponential|geometric|linear, maxReceivesPerSecond >= 1 (subscription DeliveryPolicy and topic DeliveryPolicy.http)"
+constraintSource: https://docs.aws.amazon.com/sns/latest/dg/sns-message-delivery-retries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: Attributes Reason: DeliveryPolicy: healthyRetryPolicy.numRetries must be less than or equal to 100\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

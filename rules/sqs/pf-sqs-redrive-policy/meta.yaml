@@ -1,0 +1,11 @@
+id: pf-sqs-redrive-policy
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "RedrivePolicy needs deadLetterTargetArn (an SQS queue ARN) and maxReceiveCount in 1..1000"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Value {\"maxReceiveCount\":\"0\",\"deadLetterTargetArn\":\"arn:aws:sqs:ap-northeast-1:214794239830:cdkpf-pf-sqs-redrive-policy-fail-DLQ-1y2AG6z4uwLj\"} for parameter RedrivePolicy is invalid. Reason: Invalid value for maxReceiveCount: 0, valid values are from 1 to 1000 both inclusive.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

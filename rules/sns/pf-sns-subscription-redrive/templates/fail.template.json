@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "sqs",
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "Q",
+            "Arn"
+          ]
+        },
+        "RedrivePolicy": {
+          "deadLetterTargetArn": "arn:aws:sns:us-east-1:123456789012:not-a-queue"
+        }
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "sqs",
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "Q",
+            "Arn"
+          ]
+        },
+        "FilterPolicy": {
+          "a": [
+            "1"
+          ],
+          "b": [
+            "1"
+          ],
+          "c": [
+            "1"
+          ],
+          "d": [
+            "1"
+          ],
+          "e": [
+            "1"
+          ],
+          "f": [
+            "1"
+          ]
+        }
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    }
+  }
+}

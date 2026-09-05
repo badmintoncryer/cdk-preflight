@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": "arn:aws:sqs:eu-west-1:123456789012:dlq",
+          "maxReceiveCount": 5
+        }
+      }
+    }
+  }
+}

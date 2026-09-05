@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedriveAllowPolicy": {
+          "redrivePermission": "byQueue",
+          "sourceQueueArns": [
+            {
+              "Fn::GetAtt": [
+                "DLQ",
+                "Arn"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "DLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    }
+  }
+}

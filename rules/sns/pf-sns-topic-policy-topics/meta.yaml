@@ -1,0 +1,11 @@
+id: pf-sns-topic-policy-topics
+service: sns
+resourceTypes: [AWS::SNS::TopicPolicy]
+severity: ERROR
+title: "TopicPolicy.Topics takes topic ARNs (Ref Topic), not topic names"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sns-topicpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: TopicArn Reason: An ARN must have at least 6 elements, not 1\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

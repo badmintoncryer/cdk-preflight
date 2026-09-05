@@ -225,9 +225,30 @@
 | `pf-s3-website-redirect-exclusive` | AWS::S3::Bucket | RedirectAllRequestsTo excludes every other website setting | none |
 | `pf-scheduler-flexible-window` | AWS::Scheduler::Schedule | FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it | none |
 | `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | none |
+| `pf-sns-delivery-policy` | AWS::SNS::Subscription<br>AWS::SNS::Topic | HTTP/S DeliveryPolicy retry values: minDelayTarget >= 1, maxDelayTarget <= 3600 and >= minDelayTarget, numRetries 0..100 and at least the sum of the phase retries, phase counts >= 0, backoffFunction one of arithmetic|exponential|geometric|linear, maxReceivesPerSecond >= 1 (subscription DeliveryPolicy and topic DeliveryPolicy.http) | none |
+| `pf-sns-fifo-only-attributes` | AWS::SNS::Topic | ContentBasedDeduplication, ArchivePolicy and FifoThroughputScope are FIFO-only topic attributes, and ArchivePolicy.MessageRetentionPeriod is 1..365 days | none |
+| `pf-sns-fifo-queue-on-standard-topic` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A FIFO SQS queue cannot subscribe to a standard topic (a FIFO topic may fan out to standard queues, not the reverse) | none |
 | `pf-sns-fifo-topic-name` | AWS::SNS::Topic | FIFO topic names must end with '.fifo' (and '.fifo' names require FifoTopic) | none |
+| `pf-sns-fifo-topic-protocol` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A FIFO topic only accepts sqs subscriptions (lambda, http/https, email, email-json, sms, firehose are rejected) | none |
+| `pf-sns-filter-policy` | AWS::SNS::Subscription<br>AWS::SNS::Topic | FilterPolicy shape: at most 5 keys, every value an array or object, no empty arrays, no arrays inside arrays, nesting only with FilterPolicyScope MessageBody, and FilterPolicyScope is MessageAttributes or MessageBody | none |
+| `pf-sns-firehose-subscription-role` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A firehose subscription requires SubscriptionRoleArn | none |
+| `pf-sns-raw-message-delivery` | AWS::SNS::Subscription<br>AWS::SNS::Topic | RawMessageDelivery is only supported for sqs, http, https and firehose subscriptions | none |
+| `pf-sns-subscription-endpoint` | AWS::SNS::Subscription<br>AWS::SNS::Topic | Subscription Protocol is one of the nine SNS protocols and the Endpoint matches it: an ARN of the right service for sqs/lambda/firehose/application, an email address, a URL with the same scheme for http/https, a phone number for sms | none |
+| `pf-sns-subscription-redrive` | AWS::SNS::Subscription<br>AWS::SNS::Topic | Subscription RedrivePolicy needs deadLetterTargetArn, which must be an SQS queue ARN in the deploy region | none |
+| `pf-sns-subscription-region` | AWS::SNS::Subscription | Subscription.Region must be the topic's region (the region in a literal TopicArn, or the deploy region for a topic in this template) | none |
+| `pf-sns-topic-attribute-values` | AWS::SNS::Topic | Topic DisplayName is at most 100 characters, SignatureVersion is 1 or 2, and TracingConfig is PassThrough or Active | none |
 | `pf-sns-topic-name-format` | AWS::SNS::Topic | Topic names allow only letters, numbers, hyphen and underscore (plus a .fifo suffix) | none |
+| `pf-sns-topic-policy-topics` | AWS::SNS::TopicPolicy | TopicPolicy.Topics takes topic ARNs (Ref Topic), not topic names | none |
+| `pf-sqs-dlq-same-type` | AWS::SQS::Queue | A dead-letter queue named by a literal ARN must be the same type as its source (FIFO for FIFO, standard for standard); Fn::GetAtt wiring is covered by engine rule E3502 | none |
+| `pf-sqs-fifo-name-suffix` | AWS::SQS::Queue | A QueueName ending in .fifo requires FifoQueue: true (a FIFO queue without the suffix is engine rule E2504) | none |
+| `pf-sqs-fifo-only-attributes` | AWS::SQS::Queue | ContentBasedDeduplication, DeduplicationScope and FifoThroughputLimit are FIFO-only queue attributes (and the two enums are messageGroup|queue and perQueue|perMessageGroupId) | none |
+| `pf-sqs-high-throughput-pairing` | AWS::SQS::Queue | FifoThroughputLimit perMessageGroupId requires DeduplicationScope messageGroup | none |
 | `pf-sqs-queue-name-format` | AWS::SQS::Queue | Queue names allow only letters, numbers, hyphen and underscore (max 80, plus a .fifo suffix) | none |
+| `pf-sqs-queue-policy-queues` | AWS::SQS::QueuePolicy | QueuePolicy.Queues takes queue URLs (Ref Queue), never ARNs (Fn::GetAtt Queue.Arn), and must not be empty | none |
+| `pf-sqs-redrive-allow-policy` | AWS::SQS::Queue | RedriveAllowPolicy: redrivePermission is required (allowAll|denyAll|byQueue); byQueue needs 1..10 sourceQueueArns and the other two forbid them | none |
+| `pf-sqs-redrive-arn-region` | AWS::SQS::Queue | The dead-letter target and every RedriveAllowPolicy source queue must sit in the deploy region | none |
+| `pf-sqs-redrive-policy` | AWS::SQS::Queue | RedrivePolicy needs deadLetterTargetArn (an SQS queue ARN) and maxReceiveCount in 1..1000 | none |
+| `pf-sqs-sse-exclusive` | AWS::SQS::Queue | SqsManagedSseEnabled: true and KmsMasterKeyId are mutually exclusive (one SSE type per queue) | none |
 | `pf-sfn-asl-branch-shape` | AWS::StepFunctions::StateMachine | Parallel Branches is a non-empty array and every branch / Map ItemProcessor / Iterator carries both StartAt and States | none |
 | `pf-sfn-asl-choice-rules` | AWS::StepFunctions::StateMachine | Choice rules: Choices is non-empty, each top-level rule has Next and exactly one selector (Variable / And / Or / Not / Condition), a Variable rule has exactly one comparator, and Next never sits inside And/Or/Not | none |
 | `pf-sfn-asl-credentials` | AWS::StepFunctions::StateMachine | A Task Credentials object needs RoleArn, and Credentials is not accepted on an Activity resource | none |

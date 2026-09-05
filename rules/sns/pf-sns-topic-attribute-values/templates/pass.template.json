@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "DisplayName": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "SignatureVersion": "2",
+        "TracingConfig": "Active"
+      }
+    }
+  }
+}

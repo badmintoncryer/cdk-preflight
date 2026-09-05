@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "DLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "FifoQueue": true,
+        "QueueName": "cdkpf-dlq-type-pass.fifo"
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "DependsOn": "DLQ",
+      "Properties": {
+        "FifoQueue": true,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-dlq-type-pass.fifo"
+          },
+          "maxReceiveCount": 5
+        }
+      }
+    }
+  }
+}

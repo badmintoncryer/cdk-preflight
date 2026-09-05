@@ -1,0 +1,11 @@
+id: pf-sns-subscription-region
+service: sns
+resourceTypes: [AWS::SNS::Subscription]
+severity: ERROR
+title: "Subscription.Region must be the topic's region (the region in a literal TopicArn, or the deploy region for a topic in this template)"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sns-subscription.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: TopicArn\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

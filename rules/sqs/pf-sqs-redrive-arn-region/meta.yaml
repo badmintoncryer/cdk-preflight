@@ -1,0 +1,11 @@
+id: pf-sqs-redrive-arn-region
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "The dead-letter target and every RedriveAllowPolicy source queue must sit in the deploy region"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Value {\"maxReceiveCount\":\"5\",\"deadLetterTargetArn\":\"arn:aws:sqs:eu-west-1:123456789012:dlq\"} for parameter RedrivePolicy is invalid. Reason: Dead-letter target must be in same region as the source.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05
