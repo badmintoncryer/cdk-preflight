@@ -24,5 +24,15 @@ for region in ap-northeast-1 us-east-1; do
       fi
     fi
   done
+
+  # retain 削除で切り離されたリソースはスタックが消えているので list-stacks では拾えない。
+  # スタックタグ cdkpf は課金対象リソースに伝播しているので、タグから直接残骸を探す。
+  # ponytail: 検知のみ。削除はリソース種別ごとの分岐が要るので、実際に課金物が出たら足す
+  aws resourcegroupstaggingapi get-resources --region "$region" --tag-filters Key=cdkpf \
+    --query 'ResourceTagMappingList[].ResourceARN' --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r arn; do
+    [ -z "$arn" ] || [ "$arn" = "None" ] && continue
+    echo "LEFTOVER: orphaned resource $arn ($region) — no stack owns it, delete by hand"
+  done
 done
 echo "sweep done"
