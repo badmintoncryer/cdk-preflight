@@ -1,0 +1,45 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "G": {
+      "Type": "AWS::WAFv2::RuleGroup",
+      "Properties": {
+        "Name": "cdkpf-rg-capacity",
+        "Scope": "REGIONAL",
+        "Capacity": 100,
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "rg"
+        },
+        "Rules": [
+          {
+            "Name": "r1",
+            "Priority": 1,
+            "Statement": {
+              "XssMatchStatement": {
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "TextTransformations": [
+                  {
+                    "Priority": 0,
+                    "Type": "NONE"
+                  }
+                ]
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r1"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

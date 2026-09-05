@@ -1,0 +1,11 @@
+id: pf-wafv2-logging-unique
+service: wafv2
+resourceTypes: [AWS::WAFv2::LoggingConfiguration]
+severity: ERROR
+title: "One LoggingConfiguration per web ACL in a template"
+constraintSource: https://docs.aws.amazon.com/waf/latest/APIReference/API_PutLoggingConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"arn:aws:wafv2:ap-northeast-1:214794239830:regional/webacl/cdkpf-w-loggingunique/97a785ff-8e9f-4042-868e-8d48ce9edf9f already exists in stack arn:aws:cloudformation:ap-northeast-1:214794239830:stack/cdkpf-pf-wafv2-logging-unique-fail/732a6320-a933-11f1-b0d5-063d4120f1cf\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

@@ -1,0 +1,52 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "W": {
+      "Type": "AWS::WAFv2::WebACL",
+      "Properties": {
+        "Name": "cdkpf-w-customresponse",
+        "Scope": "REGIONAL",
+        "DefaultAction": {
+          "Allow": {}
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "w"
+        },
+        "Rules": [
+          {
+            "Name": "r1",
+            "Priority": 1,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Block": {
+                "CustomResponse": {
+                  "ResponseCode": 403,
+                  "CustomResponseBodyKey": "nope"
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r1"
+            }
+          }
+        ],
+        "CustomResponseBodies": {
+          "b0": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          }
+        }
+      }
+    }
+  }
+}

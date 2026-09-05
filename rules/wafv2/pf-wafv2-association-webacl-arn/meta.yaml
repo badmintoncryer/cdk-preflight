@@ -1,0 +1,11 @@
+id: pf-wafv2-association-webacl-arn
+service: wafv2
+resourceTypes: [AWS::WAFv2::WebACLAssociation]
+severity: ERROR
+title: "WebACLArn must be the ARN of a web ACL in the deploy region"
+constraintSource: https://docs.aws.amazon.com/waf/latest/APIReference/API_AssociateWebACL.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: The ARN isn't valid. A valid ARN begins with arn: and includes other information separated by colons or slashes., field: RESOURCE_ARN, parameter: arn:aws:wafv2:ap-northeast-1:214794239830:regional/rulegroup/cdkpf-rg-associationwebaclarn/82129f60-b808-4f26-a55e-c58d048ff795\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

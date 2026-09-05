@@ -1,0 +1,21 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "W": {
+      "Type": "AWS::WAFv2::WebACL",
+      "Properties": {
+        "Name": "cdkpf-w-scoperegion",
+        "Scope": "CLOUDFRONT",
+        "DefaultAction": {
+          "Allow": {}
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "w"
+        },
+        "Rules": []
+      }
+    }
+  }
+}

@@ -44,10 +44,10 @@ function engineInstance(region?: string): any {
 }
 
 const diagCache = new Map<string, Diagnostic[]>();
-function diagnose(templateFile: string): Diagnostic[] {
+function diagnose(templateFile: string, region: string = HARNESS_REGION): Diagnostic[] {
   if (!diagCache.has(templateFile)) {
-    const report = engineInstance(HARNESS_REGION).validateDetailed(new engine.TemplateFile(templateFile), {
-      pseudoParameterOverrides: { accountId: '123456789012', region: HARNESS_REGION },
+    const report = engineInstance(region).validateDetailed(new engine.TemplateFile(templateFile), {
+      pseudoParameterOverrides: { accountId: '123456789012', region },
     });
     diagCache.set(templateFile, (report.diagnostics ?? []) as Diagnostic[]);
   }
@@ -80,8 +80,11 @@ test('engine is resolvable (bundled in aws-cdk-lib)', () => {
 });
 
 describe.each(BUNDLED_RULES.map((r) => [r.id, r] as const))('%s', (_id, rule) => {
+  // meta.fixtureRegion: rules about the deploy region itself (e.g. "CLOUDFRONT scope only in us-east-1")
+  // need their fixtures evaluated somewhere other than the harness default.
+  const region = rule.fixtureRegion ?? HARNESS_REGION;
   test('fires on the fail template', () => {
-    const ds = diagnose(fixturePath(rule, 'fail'));
+    const ds = diagnose(fixturePath(rule, 'fail'), region);
     const mine = ds.filter((d) => d.ruleId === rule.id && d.source === 'CUSTOM');
     expect(mine.length).toBeGreaterThanOrEqual(1);
     for (const d of mine) {
@@ -90,13 +93,13 @@ describe.each(BUNDLED_RULES.map((r) => [r.id, r] as const))('%s', (_id, rule) =>
   });
 
   test('stays silent on the pass template', () => {
-    const ds = diagnose(fixturePath(rule, 'pass'));
+    const ds = diagnose(fixturePath(rule, 'pass'), region);
     // 当該ルールはもちろん、他の pf- ルールの誤爆も無いこと
     expect(ds.filter((d) => d.source === 'CUSTOM')).toHaveLength(0);
   });
 
   test('does not duplicate a built-in blocker (fail template)', () => {
-    const ds = diagnose(fixturePath(rule, 'fail'));
+    const ds = diagnose(fixturePath(rule, 'fail'), region);
     const found = blockers(ds);
     // このテストは二役: 新規ルールに対しては「エンジンと重複したので書くな」、
     // 既存ルールに対しては「エンジンが追いついたので退役させろ」の合図になる。
@@ -109,7 +112,7 @@ describe.each(BUNDLED_RULES.map((r) => [r.id, r] as const))('%s', (_id, rule) =>
   });
 
   test('pass template is clean for the built-in engine', () => {
-    const ds = diagnose(fixturePath(rule, 'pass'));
+    const ds = diagnose(fixturePath(rule, 'pass'), region);
     expect(blockers(ds)).toHaveLength(0);
   });
 });
@@ -2463,5 +2466,375 @@ describe('kms / secretsmanager / ssm rules', () => {
     expect(ids(diagnoseTemplate(withDoc({ SyncCompliance: 'MANUAL' }, { Content: CMD({ parameters: { AssociationId: { type: 'String', default: '' } } }) })))).toHaveLength(0);
     expect(ids(diagnoseTemplate(withDoc({}, { DocumentType: 'Automation', Content: AUTO() })))).toContain('pf-ssm-association-document');
     expect(ids(diagnoseTemplate(withDoc({ AutomationTargetParameterName: 'InstanceId' }, { DocumentType: 'Automation', Content: AUTO({ parameters: { InstanceId: { type: 'String', default: '' } } }) })))).toHaveLength(0);
+  });
+});
+
+/**
+ * WAFv2 ルールのうち、fail フィクスチャ 1 枚では踏めない分岐。
+ * ap-northeast-1 / 123456789012 で評価する（リージョン・アカウント束縛の分岐を踏むため）。
+ */
+describe('wafv2 rules', () => {
+  const R = 'ap-northeast-1';
+  const ACCT = '123456789012';
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const fires = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).toContain(id);
+  const silent = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).not.toContain(id);
+  const VIS = (m: string) => ({ SampledRequestsEnabled: false, CloudWatchMetricsEnabled: false, MetricName: m });
+  const TT = [{ Priority: 0, Type: 'NONE' }];
+  const LOWER = [{ Priority: 0, Type: 'LOWERCASE' }];
+  type Obj = Record<string, unknown>;
+  const rule = (name: string, prio: number, stmt: Obj, extra: Obj = {}) =>
+    ({ Name: name, Priority: prio, Statement: stmt, Action: { Block: {} }, VisibilityConfig: VIS(name), ...extra });
+  const mrule = (name: string, prio: number, stmt: Obj, extra: Obj = {}) =>
+    ({ Name: name, Priority: prio, Statement: stmt, OverrideAction: { None: {} }, VisibilityConfig: VIS(name), ...extra });
+  const webacl = (rules: unknown[], over: Obj = {}, scope = 'REGIONAL') => ({ Type: 'AWS::WAFv2::WebACL', Properties: { Name: 'w', Scope: scope, DefaultAction: { Allow: {} }, VisibilityConfig: VIS('w'), Rules: rules, ...over } });
+  const acl = (rules: unknown[], over: Obj = {}, extra: Obj = {}) => ({ Resources: { W: webacl(rules, over), ...extra } });
+  const rg = (rules: unknown[], over: Obj = {}) => ({ Resources: { G: { Type: 'AWS::WAFv2::RuleGroup', Properties: { Name: 'g', Scope: 'REGIONAL', Capacity: 100, VisibilityConfig: VIS('g'), Rules: rules, ...over } } } });
+  const ipset = (addrs: string[], ver = 'IPV4', over: Obj = {}) => ({ Resources: { I: { Type: 'AWS::WAFv2::IPSet', Properties: { Name: 'i', Scope: 'REGIONAL', IPAddressVersion: ver, Addresses: addrs, ...over } } } });
+  const geo = { GeoMatchStatement: { CountryCodes: ['AQ'] } };
+  const xss = { XssMatchStatement: { FieldToMatch: { UriPath: {} }, TextTransformations: TT } };
+  const bm = (over: Obj = {}, field: Obj = { UriPath: {} }) => ({ ByteMatchStatement: { FieldToMatch: field, PositionalConstraint: 'CONTAINS', SearchString: 'bad', TextTransformations: TT, ...over } });
+  const mrg = (over: Obj = {}) => ({ ManagedRuleGroupStatement: { VendorName: 'AWS', Name: 'AWSManagedRulesCommonRuleSet', ...over } });
+  const rb = (over: Obj = {}) => ({ RateBasedStatement: { Limit: 100, AggregateKeyType: 'IP', ...over } });
+  const ga = (x: string) => ({ 'Fn::GetAtt': [x, 'Arn'] });
+  const ipArn = (scope = 'regional', region = R, acct = ACCT) => `arn:aws:wafv2:${region}:${acct}:${scope}/ipset/x/11111111-2222-3333-4444-555555555555`;
+  const assoc = (res: unknown, aclArn: unknown = ga('W'), extra: Obj = {}) => ({ Resources: { W: webacl([]), A: { Type: 'AWS::WAFv2::WebACLAssociation', Properties: { ResourceArn: res, WebACLArn: aclArn } }, ...extra } });
+  const logcfg = (dests: unknown[], over: Obj = {}, extra: Obj = {}, res: unknown = ga('W')) => ({ Resources: { W: webacl([]), L: { Type: 'AWS::WAFv2::LoggingConfiguration', Properties: { ResourceArn: res, LogDestinationConfigs: dests, ...over } }, ...extra } });
+  const atp = (over: Obj = {}) => ({ AWSManagedRulesATPRuleSet: { LoginPath: '/login', RequestInspection: { PayloadType: 'JSON', UsernameField: { Identifier: '/u' }, PasswordField: { Identifier: '/p' } }, ...over } });
+
+  test('scope-region: every entity type, silent in us-east-1', () => {
+    const SR = 'pf-wafv2-scope-region';
+    fires(rg([], { Scope: 'CLOUDFRONT' }), SR);
+    fires(ipset(['10.0.0.0/8'], 'IPV4', { Scope: 'CLOUDFRONT' }), SR);
+    fires({ Resources: { X: { Type: 'AWS::WAFv2::RegexPatternSet', Properties: { Name: 'x', Scope: 'CLOUDFRONT', RegularExpressionList: ['a+'] } } } }, SR);
+    silent(acl([], {}, {}), SR);
+    silent({ Resources: { W: webacl([], {}, 'CLOUDFRONT') } }, SR, 'us-east-1');
+  });
+
+  test('reference-arn: scope, region, account and in-template mismatches', () => {
+    const RA = 'pf-wafv2-reference-arn';
+    const ref = (arn: unknown) => acl([rule('r', 1, { IPSetReferenceStatement: { Arn: arn } })]);
+    fires(ref(ipArn('global', 'us-east-1')), RA);
+    fires(ref(ipArn('regional', 'us-east-1')), RA);
+    fires(ref(ipArn('regional', R, '111111111111')), RA);
+    fires(ref('not-an-arn'), RA);
+    fires(ref(`arn:aws:wafv2:${R}:${ACCT}:regional/rulegroup/x/11111111-2222-3333-4444-555555555555`), RA);
+    silent(ref(ipArn()), RA);
+    const I = { Type: 'AWS::WAFv2::IPSet', Properties: { Name: 'i', Scope: 'CLOUDFRONT', IPAddressVersion: 'IPV4', Addresses: ['10.0.0.0/8'] } };
+    fires(acl([rule('r', 1, { IPSetReferenceStatement: { Arn: ga('I') } })], {}, { I }), RA);
+    fires(acl([rule('r', 1, { IPSetReferenceStatement: { Arn: ga('G') } })], {}, { G: rg([]).Resources.G }), RA);
+    silent(acl([rule('r', 1, { IPSetReferenceStatement: { Arn: ga('I') } })], {}, { I: { ...I, Properties: { ...I.Properties, Scope: 'REGIONAL' } } }), RA);
+    // nested reference inside And
+    fires(acl([rule('r', 1, { AndStatement: { Statements: [geo, { RegexPatternSetReferenceStatement: { Arn: `arn:aws:wafv2:eu-west-1:${ACCT}:regional/regexpatternset/x/11111111-2222-3333-4444-555555555555`, FieldToMatch: { UriPath: {} }, TextTransformations: TT } }] } })]), RA);
+  });
+
+  test('association-resource-arn: supported formats, region, account, Amplify, in-template types', () => {
+    const AR = 'pf-wafv2-association-resource-arn';
+    fires(assoc(`arn:aws:elasticloadbalancing:${R}:${ACCT}:loadbalancer/net/x/50dc6c495c0c9188`), AR);
+    fires(assoc(`arn:aws:apigateway:${R}::/apis/abcdef1234/stages/prod`), AR);
+    fires(assoc(`arn:aws:apigateway:${R}::/restapis/abcdef1234`), AR);
+    fires(assoc(`arn:aws:elasticloadbalancing:us-east-1:${ACCT}:loadbalancer/app/x/50dc6c495c0c9188`), AR);
+    fires(assoc(`arn:aws:elasticloadbalancing:${R}:111111111111:loadbalancer/app/x/50dc6c495c0c9188`), AR);
+    fires(assoc(`arn:aws:amplify:${R}:${ACCT}:apps/d123`), AR);
+    silent(assoc(`arn:aws:amplify:us-east-1:${ACCT}:apps/d123`), AR, 'us-east-1');
+    silent(assoc(`arn:aws:elasticloadbalancing:${R}:${ACCT}:loadbalancer/app/x/50dc6c495c0c9188`), AR);
+    silent(assoc(`arn:aws:apigateway:${R}::/restapis/abcdef1234/stages/prod`), AR);
+    silent(assoc(`arn:aws:cognito-idp:${R}:${ACCT}:userpool/${R}_abc`), AR);
+    fires(assoc(ga('D'), ga('W'), { D: { Type: 'AWS::CloudFront::Distribution', Properties: { DistributionConfig: { Enabled: true, DefaultCacheBehavior: { TargetOriginId: 'o', ViewerProtocolPolicy: 'allow-all' }, Origins: [{ Id: 'o', DomainName: 'x.example.com', CustomOriginConfig: { OriginProtocolPolicy: 'https-only' } }] } } } }), AR);
+    fires(assoc(ga('LB'), ga('W'), { LB: { Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer', Properties: { Type: 'network', Subnets: ['subnet-1'] } } }), AR);
+    silent(assoc(ga('LB'), ga('W'), { LB: { Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer', Properties: { Type: 'application', Subnets: ['subnet-1', 'subnet-2'] } } }), AR);
+    fires(assoc({ Ref: 'St' }, ga('W'), { St: { Type: 'AWS::ApiGateway::Stage', Properties: { RestApiId: 'abc', StageName: 'prod' } } }), AR);
+  });
+
+  test('association-webacl-arn: entity type and region', () => {
+    const AW = 'pf-wafv2-association-webacl-arn';
+    const stage = `arn:aws:apigateway:${R}::/restapis/abcdef1234/stages/prod`;
+    fires(assoc(stage, `arn:aws:wafv2:${R}:${ACCT}:regional/rulegroup/x/11111111-2222-3333-4444-555555555555`), AW);
+    fires(assoc(stage, `arn:aws:wafv2:us-east-1:${ACCT}:global/webacl/x/11111111-2222-3333-4444-555555555555`), AW);
+    silent(assoc(stage, `arn:aws:wafv2:${R}:${ACCT}:regional/webacl/x/11111111-2222-3333-4444-555555555555`), AW);
+    silent(assoc(stage), AW);
+    fires(assoc(stage, ga('G'), { G: rg([]).Resources.G }), AW);
+  });
+
+  test('logging-destination: count, ARN kinds, prefix, region, account, generated names', () => {
+    const LD = 'pf-wafv2-logging-destination';
+    const lg = (n: string, region = R, acct = ACCT) => `arn:aws:logs:${region}:${acct}:log-group:${n}`;
+    fires(logcfg([lg('aws-waf-logs-a'), lg('aws-waf-logs-b')]), LD);
+    fires(logcfg([]), LD);
+    fires(logcfg(['arn:aws:s3:::plain-bucket']), LD);
+    silent(logcfg(['arn:aws:s3:::aws-waf-logs-bucket/prefix/']), LD);
+    fires(logcfg([`arn:aws:firehose:${R}:${ACCT}:deliverystream/plain`]), LD);
+    silent(logcfg([`arn:aws:firehose:${R}:${ACCT}:deliverystream/aws-waf-logs-x`]), LD);
+    fires(logcfg([lg('aws-waf-logs-x', 'us-east-1')]), LD);
+    fires(logcfg([lg('aws-waf-logs-x', R, '111111111111')]), LD);
+    fires(logcfg([lg('AWS-WAF-LOGS-x')]), LD);
+    fires(logcfg([`arn:aws:sqs:${R}:${ACCT}:aws-waf-logs-q`]), LD);
+    fires(logcfg(['aws-waf-logs-x']), LD);
+    silent(logcfg([lg('aws-waf-logs-x') + ':*']), LD);
+    fires(logcfg([ga('B')], {}, { B: { Type: 'AWS::S3::Bucket', Properties: {} } }), LD);
+    silent(logcfg([ga('B')], {}, { B: { Type: 'AWS::S3::Bucket', Properties: { BucketName: 'aws-waf-logs-mybucket' } } }), LD);
+    fires(logcfg([ga('Q')], {}, { Q: { Type: 'AWS::SQS::Queue', Properties: {} } }), LD);
+    fires(logcfg([lg('aws-waf-logs-x')], {}, {}, `arn:aws:wafv2:${R}:${ACCT}:regional/rulegroup/x/11111111-2222-3333-4444-555555555555`), LD);
+    // a CLOUDFRONT web ACL logs in us-east-1: an ap-northeast-1 log group is in the wrong region
+    fires(logcfg([lg('aws-waf-logs-x')], {}, {}, `arn:aws:wafv2:us-east-1:${ACCT}:global/webacl/x/11111111-2222-3333-4444-555555555555`), LD);
+    fires({ Resources: { W: webacl([], {}, 'CLOUDFRONT'), L: { Type: 'AWS::WAFv2::LoggingConfiguration', Properties: { ResourceArn: ga('W'), LogDestinationConfigs: [lg('aws-waf-logs-x')] } } } }, LD, 'us-east-1');
+  });
+
+  test('logging-filter-condition / logging-unique / name-unique', () => {
+    fires(logcfg([`arn:aws:logs:${R}:${ACCT}:log-group:aws-waf-logs-x`], { LoggingFilter: { DefaultBehavior: 'KEEP', Filters: [{ Behavior: 'DROP', Requirement: 'MEETS_ALL', Conditions: [{}] }] } }), 'pf-wafv2-logging-filter-condition');
+    const I = { Type: 'AWS::WAFv2::IPSet', Properties: { Name: 'same', Scope: 'REGIONAL', IPAddressVersion: 'IPV4', Addresses: ['10.0.0.0/8'] } };
+    fires({ Resources: { I1: I, I2: I } }, 'pf-wafv2-name-unique');
+    silent({ Resources: { I1: I, I2: { ...I, Properties: { ...I.Properties, Scope: 'CLOUDFRONT' } } } }, 'pf-wafv2-name-unique', 'us-east-1');
+  });
+
+  test('association-config-scope / cloudfront-only-features', () => {
+    fires({ Resources: { W: webacl([], { AssociationConfig: { RequestBody: { API_GATEWAY: { DefaultSizeInspectionLimit: 'KB_32' } } } }, 'CLOUDFRONT') } }, 'pf-wafv2-association-config-scope', 'us-east-1');
+    silent({ Resources: { W: webacl([], { AssociationConfig: { RequestBody: { CLOUDFRONT: { DefaultSizeInspectionLimit: 'KB_32' } } } }, 'CLOUDFRONT') } }, 'pf-wafv2-association-config-scope', 'us-east-1');
+    const CF = 'pf-wafv2-cloudfront-only-features';
+    fires(acl([rule('r', 1, geo, { Action: { Monetize: {} } })]), CF);
+    fires({ Resources: { W: webacl([rule('r', 1, geo, { Action: { Monetize: {} } })], {}, 'CLOUDFRONT') } }, CF, 'us-east-1');
+    silent({ Resources: { W: webacl([rule('r', 1, geo, { Action: { Monetize: {} } })], { MonetizationConfig: { CurrencyMode: 'CRYPTO' } }, 'CLOUDFRONT') } }, CF, 'us-east-1');
+    silent({ Resources: { W: webacl([mrule('r', 1, mrg({ Name: 'AWSManagedRulesATPRuleSet', ManagedRuleGroupConfigs: [atp({ ResponseInspection: { StatusCode: { SuccessCodes: [200], FailureCodes: [401] } } })] }))], {}, 'CLOUDFRONT') } }, CF, 'us-east-1');
+  });
+
+  test('rule-unique / rule-action', () => {
+    fires(acl([rule('a', 1, geo), rule('a', 2, xss)]), 'pf-wafv2-rule-unique');
+    const RA = 'pf-wafv2-rule-action';
+    fires(acl([rule('r', 1, geo, { OverrideAction: { None: {} } })]), RA);
+    fires(acl([{ Name: 'r', Priority: 1, Statement: geo, VisibilityConfig: VIS('r') }]), RA);
+    fires(acl([rule('r', 1, { RuleGroupReferenceStatement: { Arn: `arn:aws:wafv2:${R}:${ACCT}:regional/rulegroup/x/11111111-2222-3333-4444-555555555555` } })]), RA);
+    fires(acl([mrule('r', 1, geo)]), RA);
+    fires(acl([rule('r', 1, geo, { Action: { Block: {}, Count: {} } })]), RA);
+    fires(acl([rule('r', 1, geo, { Action: {} })]), RA);
+    fires(acl([], { DefaultAction: {} }), RA);
+    fires(acl([], { DefaultAction: { Allow: {}, Block: {} } }), RA);
+    fires(acl([rule('r', 1, rb(), { Action: { Allow: {} } })]), RA);
+    silent(acl([rule('r', 1, rb(), { Action: { Count: {} } })]), RA);
+    fires(rg([{ Name: 'r', Priority: 1, Statement: geo, VisibilityConfig: VIS('r') }]), RA);
+  });
+
+  test('statement-exactly-one / statement-nesting', () => {
+    const EO = 'pf-wafv2-statement-exactly-one';
+    fires(acl([rule('r', 1, bm({}, { UriPath: {}, QueryString: {} }))]), EO);
+    fires(acl([rule('r', 1, bm({}, {}))]), EO);
+    fires(acl([rule('r', 1, bm({}, { JsonBody: { MatchPattern: { All: {}, IncludedPaths: ['/a'] }, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } }))]), EO);
+    fires(acl([rule('r', 1, bm({}, { Headers: { MatchPattern: {}, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } }))]), EO);
+    fires(acl([rule('r', 1, bm({}, { Cookies: { MatchPattern: { IncludedCookies: ['a'], ExcludedCookies: ['b'] }, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } }))]), EO);
+    fires(acl([rule('r', 1, rb({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ HTTPMethod: {}, UriPath: { TextTransformations: TT } }] }))]), EO);
+    fires(acl([rule('r', 1, { NotStatement: { Statement: {} } })]), EO);
+    silent(acl([rule('r', 1, { NotStatement: { Statement: geo } })]), EO);
+    const NS = 'pf-wafv2-statement-nesting';
+    fires(acl([rule('r', 1, { OrStatement: { Statements: [geo] } })]), NS);
+    fires(acl([rule('r', 1, { AndStatement: { Statements: [geo, rb()] } })]), NS);
+    fires(acl([mrule('r', 1, { NotStatement: { Statement: mrg() } })]), NS);
+    fires(acl([rule('r', 1, rb({ ScopeDownStatement: rb() }))]), NS);
+    fires(acl([mrule('r', 1, mrg({ ScopeDownStatement: { AndStatement: { Statements: [geo, { NotStatement: { Statement: rb() } }] } } }))]), NS);
+    silent(acl([mrule('r', 1, mrg({ ScopeDownStatement: { AndStatement: { Statements: [geo, { NotStatement: { Statement: xss } }] } } }))]), NS);
+  });
+
+  test('rate-based-statement branches', () => {
+    const RB = 'pf-wafv2-rate-based-statement';
+    const one = (over: Obj) => acl([rule('r', 1, rb(over))]);
+    fires(one({ AggregateKeyType: 'FORWARDED_IP' }), RB);
+    fires(one({ AggregateKeyType: 'CONSTANT' }), RB);
+    fires(one({ CustomKeys: [{ HTTPMethod: {} }] }), RB);
+    fires(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [] }), RB);
+    fires(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ IP: {} }] }), RB);
+    fires(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ ForwardedIP: {} }, { HTTPMethod: {} }] }), RB);
+    fires(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ HTTPMethod: {} }, { HTTPMethod: {} }] }), RB);
+    fires(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ LabelNamespace: { Namespace: 'ns' } }] }), RB);
+    silent(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ ForwardedIP: {} }, { HTTPMethod: {} }], ForwardedIPConfig: { HeaderName: 'X-Forwarded-For', FallbackBehavior: 'MATCH' } }), RB);
+    silent(one({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ LabelNamespace: { Namespace: 'awswaf:managed:aws:bot-control:' } }, { Header: { Name: 'a', TextTransformations: TT } }, { Header: { Name: 'b', TextTransformations: TT } }] }), RB);
+    silent(one({ AggregateKeyType: 'CONSTANT', ScopeDownStatement: geo }), RB);
+    fires(acl(Array.from({ length: 11 }, (_, i) => rule(`r${i}`, i, rb()))), RB);
+    silent(acl(Array.from({ length: 10 }, (_, i) => rule(`r${i}`, i, rb()))), RB);
+    fires(rg(Array.from({ length: 5 }, (_, i) => rule(`r${i}`, i, rb()))), RB);
+  });
+
+  test('label-syntax branches', () => {
+    const LB = 'pf-wafv2-label-syntax';
+    const lbl = (...names: string[]) => acl([rule('r', 1, geo, { RuleLabels: names.map((n) => ({ Name: n })), Action: { Count: {} } })]);
+    fires(lbl('awswaf'), LB);
+    fires(lbl('ns:managed'), LB);
+    fires(lbl('foo:'), LB);
+    fires(lbl(':foo'), LB);
+    fires(lbl('a::b'), LB);
+    fires(lbl('a:b:c:d:e:f:g:h:name'), LB);
+    silent(lbl('a:b:c:d:e:f:g:name'), LB);
+    fires(lbl('x'.repeat(129)), LB);
+    fires(lbl('dup', 'dup'), LB);
+    silent(lbl('header:encoding:utf8', 'header:user_agent:firefox'), LB);
+    fires(acl([mrule('r', 1, mrg(), { RuleLabels: [{ Name: 'foo' }] })]), LB);
+    const lm = (key: string, scope: string) => acl([rule('r', 1, { LabelMatchStatement: { Scope: scope, Key: key } })]);
+    fires(lm('ns', 'NAMESPACE'), LB);
+    fires(lm('ns:', 'LABEL'), LB);
+    fires(lm('a::b', 'LABEL'), LB);
+    silent(lm('awswaf:managed:aws:core-rule-set:', 'NAMESPACE'), LB);
+    silent(lm('awswaf:managed:aws:core-rule-set:NoUserAgent_Header', 'LABEL'), LB);
+  });
+
+  test('metric-name-reserved / custom-response / custom-request-handling', () => {
+    fires(acl([], { VisibilityConfig: VIS('Default_Action') }), 'pf-wafv2-metric-name-reserved');
+    silent(acl([rule('r', 1, geo, { VisibilityConfig: VIS('All') })]), 'pf-wafv2-metric-name-reserved');
+    const CR = 'pf-wafv2-custom-response';
+    const blk = (cr: Obj, over: Obj = {}) => acl([rule('r', 1, geo, { Action: { Block: { CustomResponse: { ResponseCode: 403, ...cr } } } })], over);
+    fires(blk({ ResponseHeaders: [{ Name: 'Content-Type', Value: 'text/plain' }] }), CR);
+    fires(blk({ ResponseHeaders: [{ Name: 'x-a', Value: '1' }, { Name: 'X-A', Value: '2' }] }), CR);
+    fires(blk({ ResponseHeaders: Array.from({ length: 11 }, (_, i) => ({ Name: `h${i}`, Value: 'v' })) }), CR);
+    fires(acl([], { DefaultAction: { Block: { CustomResponse: { ResponseCode: 403, CustomResponseBodyKey: 'b0' } } } }), CR);
+    fires(acl([], { CustomResponseBodies: Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`b${i}`, { ContentType: 'TEXT_PLAIN', Content: 'x' }])) }), CR);
+    fires(acl([], { CustomResponseBodies: { b0: { ContentType: 'TEXT_PLAIN', Content: 'x'.repeat(4097) } } }), CR);
+    fires(acl([], { CustomResponseBodies: Object.fromEntries(Array.from({ length: 13 }, (_, i) => [`b${i}`, { ContentType: 'TEXT_PLAIN', Content: 'x'.repeat(4000) }])) }), CR);
+    silent(blk({ CustomResponseBodyKey: 'b0', ResponseHeaders: [{ Name: 'x-a', Value: '1' }, { Name: 'x-b', Value: '2' }] }, { CustomResponseBodies: { b0: { ContentType: 'TEXT_PLAIN', Content: 'x'.repeat(4096) } } }), CR);
+    fires(acl([mrule('r', 1, mrg({ RuleActionOverrides: [{ Name: 'NoUserAgent_HEADER', ActionToUse: { Block: { CustomResponse: { ResponseCode: 403, CustomResponseBodyKey: 'nope' } } } }] }))]), CR);
+    const CH = 'pf-wafv2-custom-request-handling';
+    const ins = (n: number) => ({ InsertHeaders: Array.from({ length: n }, (_, i) => ({ Name: `h${i}`, Value: 'v' })) });
+    fires(acl([rule('r', 1, geo, { Action: { Count: { CustomRequestHandling: ins(11) } } })]), CH);
+    fires(acl(Array.from({ length: 11 }, (_, i) => rule(`r${i}`, i, geo, { Action: { Count: { CustomRequestHandling: ins(10) } } }))), CH);
+    silent(acl(Array.from({ length: 10 }, (_, i) => rule(`r${i}`, i, geo, { Action: { Count: { CustomRequestHandling: ins(10) } } }))), CH);
+    fires(acl([], { DefaultAction: { Allow: { CustomRequestHandling: { InsertHeaders: [{ Name: 'a', Value: '1' }, { Name: 'A', Value: '2' }] } } } }), CH);
+  });
+
+  test('text-transformations / challenge-immunity-time / token-domains', () => {
+    const TX = 'pf-wafv2-text-transformations';
+    fires(acl([rule('r', 1, bm({ TextTransformations: Array.from({ length: 11 }, (_, i) => ({ Priority: i, Type: 'LOWERCASE' })) }))]), TX);
+    fires(acl([rule('r', 1, bm({ PreParseTextTransformations: [{ Priority: 0, Type: 'URL_DECODE' }] }))]), TX);
+    fires(acl([rule('r', 1, bm({ PreParseTextTransformations: [{ Priority: 0, Type: 'LOWERCASE' }] }, { AllQueryArguments: {} }))]), TX);
+    silent(acl([rule('r', 1, bm({ PreParseTextTransformations: [{ Priority: 0, Type: 'URL_DECODE' }, { Priority: 1, Type: 'REPLACE_SEMICOLONS_WITH_AMPERSANDS' }] }, { SingleQueryArgument: { Name: 'q' } }))]), TX);
+    fires(acl([rule('r', 1, rb({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ UriPath: { TextTransformations: [{ Priority: 0, Type: 'LOWERCASE' }, { Priority: 0, Type: 'URL_DECODE' }] } }] }))]), TX);
+    const CI = 'pf-wafv2-challenge-immunity-time';
+    fires(acl([rule('r', 1, geo, { Action: { Challenge: {} }, ChallengeConfig: { ImmunityTimeProperty: { ImmunityTime: 299 } } })]), CI);
+    silent(acl([rule('r', 1, geo, { Action: { Captcha: {} }, CaptchaConfig: { ImmunityTimeProperty: { ImmunityTime: 60 } } })]), CI);
+    const TD = 'pf-wafv2-token-domains';
+    fires(acl([], { TokenDomains: Array.from({ length: 11 }, (_, i) => `d${i}.example.com`) }), TD);
+    fires(acl([], { TokenDomains: ['example'] }), TD);
+    fires(acl([], { TokenDomains: ['com'] }), TD);
+    fires(acl([], { TokenDomains: ['gov.au'] }), TD);
+    fires(acl([], { TokenDomains: ['CO.UK'] }), TD);
+    silent(acl([], { TokenDomains: ['example.co.uk', 'shop.example.com'] }), TD);
+  });
+
+  test('byte-match / regex-syntax', () => {
+    const BM = 'pf-wafv2-byte-match';
+    fires(acl([rule('r', 1, { ByteMatchStatement: { FieldToMatch: { UriPath: {} }, PositionalConstraint: 'CONTAINS', TextTransformations: TT } })]), BM);
+    fires(acl([rule('r', 1, bm({ SearchString: 'x'.repeat(201) }))]), BM);
+    fires(acl([rule('r', 1, bm({ SearchString: '  ' }))]), BM);
+    fires(acl([rule('r', 1, bm({ PositionalConstraint: 'CONTAINS_WORD', SearchString: 'bad-bot' }))]), BM);
+    silent(acl([rule('r', 1, bm({ PositionalConstraint: 'CONTAINS_WORD', SearchString: 'BadBot_1' }))]), BM);
+    silent(acl([rule('r', 1, { ByteMatchStatement: { FieldToMatch: { UriPath: {} }, PositionalConstraint: 'CONTAINS', SearchStringBase64: 'YmFk', TextTransformations: TT } })]), BM);
+    const RX = 'pf-wafv2-regex-syntax';
+    const re = (s: string) => acl([rule('r', 1, { RegexMatchStatement: { RegexString: s, FieldToMatch: { UriPath: {} }, TextTransformations: TT } })]);
+    for (const bad of ['(?<=a)b', 'a(?!b)', 'a++', 'a*+', '(?>a)', '(a)?(?(1)b|c)', '(a(?R)?b)', 'a\\Kb', 'a\\Rb', 'a(*FAIL)', '(', 'a[b']) fires(re(bad), RX);
+    for (const ok of ['\\++', '(?<n>a)b', '(?i)^/api/(v1|v2)/', '\\.(php|asp)$', '[a-z]{2,5}\\d+', 'a|b']) silent(re(ok), RX);
+    const rps = (list: string[]) => ({ Resources: { X: { Type: 'AWS::WAFv2::RegexPatternSet', Properties: { Name: 'x', Scope: 'REGIONAL', RegularExpressionList: list } } } });
+    fires(rps(Array.from({ length: 11 }, (_, i) => `a${i}+`)), RX);
+    fires(rps(['(a)\\1']), RX);
+    silent(rps(['^/admin', 'x{2}']), RX);
+    fires(acl([mrule('r', 1, mrg({ Name: 'AWSManagedRulesATPRuleSet', ManagedRuleGroupConfigs: [atp({ LoginPath: '(?-i)/login', EnableRegexInPath: true })] }))]), RX);
+    fires(acl([mrule('r', 1, mrg({ Name: 'AWSManagedRulesAntiDDoSRuleSet', ManagedRuleGroupConfigs: [{ AWSManagedRulesAntiDDoSRuleSet: { ClientSideActionConfig: { Challenge: { UsageOfAction: 'ENABLED', ExemptUriRegularExpressions: [{ RegexString: '(a)\\1' }] } } } }] }))]), RX);
+  });
+
+  test('ipset-addresses branches', () => {
+    const IP = 'pf-wafv2-ipset-addresses';
+    fires(ipset(['10.0.0.0/8'], 'IPV6'), IP);
+    fires(ipset(['2001:db8::/32'], 'IPV4'), IP);
+    fires(ipset(['0.0.0.0/0']), IP);
+    fires(ipset(['::/0'], 'IPV6'), IP);
+    fires(ipset(['10.0.0.1']), IP);
+    fires(ipset(['10.0.0.0/33']), IP);
+    fires(ipset(['300.1.1.1/32']), IP);
+    fires(ipset(['::ffff:10.0.0.1/128'], 'IPV6'), IP);
+    fires(ipset([' 10.0.0.0/8']), IP);
+    fires(ipset(['2001:db8::/129'], 'IPV6'), IP);
+    fires(ipset(['192.0.2.44/24']), IP);
+    silent(ipset(['192.0.2.44/32', '10.0.0.0/8', '172.16.0.0/12', '192.168.128.0/17']), IP);
+    silent(ipset(['2001:db8::/32', '2001:db8::1/128', '1111:0000:0000:0000:0000:0000:0000:0000/64'], 'IPV6'), IP);
+  });
+
+  test('managed-rule-group branches', () => {
+    const MG = 'pf-wafv2-managed-rule-group';
+    const m = (over: Obj) => acl([mrule('r', 1, mrg(over))]);
+    fires(m({ Name: 'AWSManagedRulesFooRuleSet' }), MG);
+    silent(m({ VendorName: 'F5', Name: 'anything' }), MG);
+    fires(m({ Name: 'AWSManagedRulesACFPRuleSet' }), MG);
+    fires(m({ ManagedRuleGroupConfigs: [atp()] }), MG);
+    fires(m({ Name: 'AWSManagedRulesATPRuleSet', ManagedRuleGroupConfigs: [atp(), { AWSManagedRulesBotControlRuleSet: { InspectionLevel: 'COMMON' } }] }), MG);
+    fires(m({ Name: 'AWSManagedRulesATPRuleSet', ManagedRuleGroupConfigs: [atp(), atp()] }), MG);
+    fires(m({ ExcludedRules: [{ Name: 'NoUserAgent_HEADER' }], RuleActionOverrides: [{ Name: 'NoUserAgent_HEADER', ActionToUse: { Count: {} } }] }), MG);
+    fires(m({ RuleActionOverrides: [{ Name: 'A', ActionToUse: { Count: {} } }, { Name: 'A', ActionToUse: { Block: {} } }] }), MG);
+    fires(m({ Name: 'AWSManagedRulesAntiDDoSRuleSet', ManagedRuleGroupConfigs: [{ AWSManagedRulesAntiDDoSRuleSet: { ClientSideActionConfig: { Challenge: { UsageOfAction: 'ENABLED' } } } }] }), MG);
+    fires(m({ Name: 'AWSManagedRulesAntiDDoSRuleSet', ManagedRuleGroupConfigs: [{ AWSManagedRulesAntiDDoSRuleSet: { ClientSideActionConfig: { Challenge: { UsageOfAction: 'ENABLED', ExemptUriRegularExpressions: Array.from({ length: 6 }, (_, i) => ({ RegexString: `/a${i}/` })) } } } }] }), MG);
+    silent(m({ Name: 'AWSManagedRulesAntiDDoSRuleSet', ManagedRuleGroupConfigs: [{ AWSManagedRulesAntiDDoSRuleSet: { ClientSideActionConfig: { Challenge: { UsageOfAction: 'DISABLED' } } } }] }), MG);
+    const cf = (ri: Obj) => ({ Resources: { W: webacl([mrule('r', 1, mrg({ Name: 'AWSManagedRulesATPRuleSet', ManagedRuleGroupConfigs: [atp({ ResponseInspection: ri })] }))], {}, 'CLOUDFRONT') } });
+    fires(cf({ StatusCode: { SuccessCodes: [200], FailureCodes: [401] }, Header: { Name: 'x', SuccessValues: ['ok'], FailureValues: ['ng'] } }), MG, 'us-east-1');
+    fires(cf({ StatusCode: { SuccessCodes: [200, 201], FailureCodes: [401, 200] } }), MG, 'us-east-1');
+    silent(cf({ StatusCode: { SuccessCodes: [200], FailureCodes: [401, 403] } }), MG, 'us-east-1');
+    silent(m({ Name: 'AWSManagedRulesBotControlRuleSet', ManagedRuleGroupConfigs: [{ AWSManagedRulesBotControlRuleSet: { InspectionLevel: 'TARGETED', EnableMachineLearning: false } }], ExcludedRules: [{ Name: 'A' }], RuleActionOverrides: [{ Name: 'B', ActionToUse: { Count: {} } }] }), MG);
+  });
+
+  test('capacity: bounds and the WCU estimate against CheckCapacity samples (2026-09-05)', () => {
+    const CAP = 'pf-wafv2-capacity';
+    fires(rg([], { Capacity: 0 }), CAP);
+    fires(rg([], { Capacity: 5001 }), CAP);
+    const ipRef = { IPSetReferenceStatement: { Arn: ipArn() } };
+    const rxRef = (field: Obj, tt = TT) => ({ RegexPatternSetReferenceStatement: { Arn: `arn:aws:wafv2:${R}:${ACCT}:regional/regexpatternset/x/11111111-2222-3333-4444-555555555555`, FieldToMatch: field, TextTransformations: tt } });
+    const json = { JsonBody: { MatchPattern: { All: {} }, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } };
+    const samples: [unknown[], number][] = [
+      [[rule('x', 1, bm({ PositionalConstraint: 'EXACTLY' }))], 2],
+      [[rule('x', 1, bm())], 10],
+      [[rule('x', 1, bm({ TextTransformations: LOWER }))], 20],
+      [[rule('x', 1, { IPSetReferenceStatement: { Arn: ipArn(), IPSetForwardedIPConfig: { HeaderName: 'X-Forwarded-For', FallbackBehavior: 'MATCH', Position: 'ANY' } } })], 5],
+      [[rule('x', 1, ipRef)], 1],
+      [[rule('x', 1, rb())], 2],
+      [[rule('x', 1, rb({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ HTTPMethod: {} }, { UriPath: { TextTransformations: TT } }], ScopeDownStatement: geo }))], 63],
+      [[rule('x', 1, rb({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ UriPath: { TextTransformations: LOWER } }] }))], 32],
+      [[rule('x', 1, geo, { RuleLabels: Array.from({ length: 6 }, (_, i) => ({ Name: `l${i}` })) })], 3],
+      [[rule('x', 1, geo, { RuleLabels: [{ Name: 'l0' }] }), rule('y', 2, geo, { RuleLabels: [{ Name: 'l1' }] })], 3],
+      [[rule('x', 1, { SqliMatchStatement: { FieldToMatch: { UriPath: {} }, TextTransformations: TT, SensitivityLevel: 'HIGH' } })], 30],
+      [[rule('x', 1, { SqliMatchStatement: { FieldToMatch: { UriPath: {} }, TextTransformations: TT } })], 20],
+      [[rule('x', 1, rxRef({ AllQueryArguments: {} }, LOWER))], 45],
+      [[rule('x', 1, { AndStatement: { Statements: [geo, xss] } })], 41],
+      [[rule('x', 1, { NotStatement: { Statement: xss } })], 40],
+      [[rule('x', 1, { LabelMatchStatement: { Scope: 'LABEL', Key: 'foo' } })], 1],
+      [[rule('x', 1, { AsnMatchStatement: { AsnList: [1] } })], 1],
+      [[rule('x', 1, { SizeConstraintStatement: { FieldToMatch: json, ComparisonOperator: 'GT', Size: 1, TextTransformations: LOWER } })], 12],
+      [[rule('x', 1, { RegexMatchStatement: { RegexString: 'a', FieldToMatch: { UriPath: {} }, TextTransformations: TT } })], 3],
+      [[rule('x', 1, { RegexMatchStatement: { RegexString: 'a', FieldToMatch: json, TextTransformations: [{ Priority: 0, Type: 'LOWERCASE' }, { Priority: 1, Type: 'URL_DECODE' }] } })], 26],
+      [[rule('x', 1, { XssMatchStatement: { FieldToMatch: { Body: {} }, TextTransformations: [{ Priority: 0, Type: 'LOWERCASE' }, { Priority: 1, Type: 'URL_DECODE' }, { Priority: 2, Type: 'HTML_ENTITY_DECODE' }] } })], 70],
+      [[rule('x', 1, bm({ PositionalConstraint: 'EXACTLY' }, { AllQueryArguments: {} }))], 12],
+      [[rule('a', 1, geo), rule('b', 2, xss)], 41],
+      [[rule('a', 1, bm({ PositionalConstraint: 'EXACTLY', TextTransformations: LOWER })), rule('b', 2, bm({ PositionalConstraint: 'EXACTLY', SearchString: 'other', TextTransformations: LOWER }))], 14],
+      [[rule('x', 1, bm({ PositionalConstraint: 'EXACTLY', TextTransformations: [{ Priority: 0, Type: 'NONE' }, { Priority: 1, Type: 'NONE' }] }))], 2],
+      [[rule('x', 1, { AndStatement: { Statements: [{ XssMatchStatement: { FieldToMatch: { UriPath: {} }, TextTransformations: LOWER } }, { SqliMatchStatement: { FieldToMatch: { UriPath: {} }, TextTransformations: LOWER } }] } })], 70],
+      [[mrule('x', 1, mrg())], 700],
+    ];
+    for (const [rules, wcu] of samples) {
+      const fired = (cap: number) => ids(diagnoseTemplate(rg(rules, { Capacity: cap }), R)).includes(CAP);
+      expect({ rules, at: wcu - 1, fired: fired(wcu - 1) }).toEqual({ rules, at: wcu - 1, fired: true });
+      expect({ rules, at: wcu, fired: fired(wcu) }).toEqual({ rules, at: wcu, fired: false });
+    }
+    // in-template rule group reference costs the group's Capacity; a web ACL is capped at 5,000
+    const G = rg([rule('g', 1, geo)], { Capacity: 4990 }).Resources.G;
+    fires(acl([mrule('r', 1, { RuleGroupReferenceStatement: { Arn: ga('G') } }), rule('x', 2, xss)], {}, { G }), CAP);
+    silent(acl([mrule('r', 1, { RuleGroupReferenceStatement: { Arn: ga('G') } }), rule('x', 2, geo)], {}, { G }), CAP);
+    fires(acl(Array.from({ length: 8 }, (_, i) => mrule(`r${i}`, i, mrg()))), CAP);
+    silent(acl(Array.from({ length: 7 }, (_, i) => mrule(`r${i}`, i, mrg()))), CAP);
+  });
+
+  test('data-protection / statement-limits', () => {
+    const DP = 'pf-wafv2-data-protection';
+    const dp = (list: unknown[]) => acl([], { DataProtectionConfig: { DataProtections: list } });
+    fires(dp([{ Field: { FieldType: 'BODY', FieldKeys: ['a'] }, Action: 'HASH' }]), DP);
+    fires(dp([{ Field: { FieldType: 'SINGLE_COOKIE', FieldKeys: [] }, Action: 'HASH' }]), DP);
+    fires(dp([{ Field: { FieldType: 'BODY' }, Action: 'HASH' }, { Field: { FieldType: 'BODY' }, Action: 'SUBSTITUTION' }]), DP);
+    silent(dp([{ Field: { FieldType: 'QUERY_STRING' }, Action: 'HASH' }, { Field: { FieldType: 'SINGLE_QUERY_ARGUMENT', FieldKeys: ['token'] }, Action: 'SUBSTITUTION' }]), DP);
+    const SL = 'pf-wafv2-statement-limits';
+    fires(acl([rule('r', 1, bm({}, { SingleQueryArgument: { Name: 'a'.repeat(31) } }))]), SL);
+    fires(acl([rule('r', 1, rb({ AggregateKeyType: 'CUSTOM_KEYS', CustomKeys: [{ QueryArgument: { Name: 'a'.repeat(31), TextTransformations: TT } }] }))]), SL);
+    const I = { Type: 'AWS::WAFv2::IPSet', Properties: { Name: 'i', Scope: 'REGIONAL', IPAddressVersion: 'IPV4', Addresses: ['10.0.0.0/8'] } };
+    fires(acl(Array.from({ length: 51 }, (_, i) => rule(`r${i}`, i, { IPSetReferenceStatement: { Arn: ga('I') } })), {}, { I }), SL);
+    silent(acl(Array.from({ length: 50 }, (_, i) => rule(`r${i}`, i, { IPSetReferenceStatement: { Arn: ga('I') } })), {}, { I }), SL);
+    fires(acl([rule('r', 1, bm({}, { Headers: { MatchPattern: { IncludedHeaders: ['a', 'a'] }, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } }))]), SL);
+    silent(acl([rule('r', 1, bm({}, { Cookies: { MatchPattern: { ExcludedCookies: ['a', 'b'] }, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } }))]), SL);
   });
 });

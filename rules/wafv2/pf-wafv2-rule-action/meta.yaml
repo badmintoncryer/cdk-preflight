@@ -1,0 +1,11 @@
+id: pf-wafv2-rule-action
+service: wafv2
+resourceTypes: [AWS::WAFv2::WebACL, AWS::WAFv2::RuleGroup]
+severity: ERROR
+title: "Rule group references take OverrideAction, every other rule takes Action; each action object names exactly one action"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-wafv2-webacl-rule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: A reference in your rule statement is not valid., field: RULE, parameter: Statement\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

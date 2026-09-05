@@ -1,0 +1,11 @@
+id: pf-wafv2-regex-syntax
+service: wafv2
+resourceTypes: [AWS::WAFv2::WebACL, AWS::WAFv2::RuleGroup, AWS::WAFv2::RegexPatternSet]
+severity: ERROR
+title: "Regular expressions must stay within the supported PCRE subset (no backreferences, lookaround, possessive / atomic groups, conditionals, recursion, \\K, \\R, control verbs), at most 10 per pattern set"
+constraintSource: https://docs.aws.amazon.com/waf/latest/developerguide/waf-regex-pattern-support.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: The parameter contains formatting that is not valid., field: null, parameter: (a)\\1\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

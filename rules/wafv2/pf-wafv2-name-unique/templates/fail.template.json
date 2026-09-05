@@ -1,0 +1,37 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "W": {
+      "Type": "AWS::WAFv2::WebACL",
+      "Properties": {
+        "Name": "cdkpf-w-nameunique",
+        "Scope": "REGIONAL",
+        "DefaultAction": {
+          "Allow": {}
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "w"
+        },
+        "Rules": []
+      }
+    },
+    "W2": {
+      "Type": "AWS::WAFv2::WebACL",
+      "Properties": {
+        "Name": "cdkpf-w-nameunique",
+        "Scope": "REGIONAL",
+        "DefaultAction": {
+          "Allow": {}
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "w"
+        },
+        "Rules": []
+      }
+    }
+  }
+}

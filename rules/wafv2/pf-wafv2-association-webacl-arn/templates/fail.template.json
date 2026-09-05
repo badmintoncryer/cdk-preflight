@@ -1,0 +1,106 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "cdkpf-waf-api"
+      }
+    },
+    "Method": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "Api",
+            "RootResourceId"
+          ]
+        },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\":200}"
+          },
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200"
+            }
+          ]
+        },
+        "MethodResponses": [
+          {
+            "StatusCode": "200"
+          }
+        ]
+      }
+    },
+    "Dep": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "DependsOn": [
+        "Method"
+      ],
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "StageName": "prod"
+      }
+    },
+    "G": {
+      "Type": "AWS::WAFv2::RuleGroup",
+      "Properties": {
+        "Name": "cdkpf-rg-associationwebaclarn",
+        "Scope": "REGIONAL",
+        "Capacity": 100,
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "rg"
+        },
+        "Rules": [
+          {
+            "Name": "g1",
+            "Priority": 1,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "g1"
+            }
+          }
+        ]
+      }
+    },
+    "A": {
+      "Type": "AWS::WAFv2::WebACLAssociation",
+      "Properties": {
+        "ResourceArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:apigateway:${AWS::Region}::/restapis/${Api}/stages/prod"
+        },
+        "WebACLArn": {
+          "Fn::GetAtt": [
+            "G",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "Dep"
+      ]
+    }
+  }
+}

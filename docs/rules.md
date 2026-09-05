@@ -312,3 +312,32 @@
 | `pf-sfn-name-charset` | AWS::StepFunctions::StateMachine<br>AWS::StepFunctions::Activity | StateMachineName and Activity Name may not contain whitespace, brackets (< > { } [ ]), wildcards (? *), the special characters " # % \ ^ | ~ ` $ & , ; : / or control characters (non-ASCII letters are accepted) | none |
 | `pf-tags-aws-prefix` | * | Tag keys may not use the reserved aws: prefix | none |
 | `pf-tags-count-max` | * | A resource may carry at most 50 tags | none |
+| `pf-wafv2-association-config-scope` | AWS::WAFv2::WebACL | AssociationConfig.RequestBody keys must match the web ACL Scope | none |
+| `pf-wafv2-association-resource-arn` | AWS::WAFv2::WebACLAssociation | ResourceArn must be a supported protected-resource ARN in the deploy account and region | none |
+| `pf-wafv2-association-webacl-arn` | AWS::WAFv2::WebACLAssociation | WebACLArn must be the ARN of a web ACL in the deploy region | none |
+| `pf-wafv2-byte-match` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | ByteMatchStatement: exactly one of SearchString / SearchStringBase64, at most 200 bytes, non-blank, and CONTAINS_WORD only with [A-Za-z0-9_] | none |
+| `pf-wafv2-capacity` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Rule group Capacity must be 1..5000 and cover the WCUs of its rules; a web ACL is limited to 5000 WCUs | none |
+| `pf-wafv2-challenge-immunity-time` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Challenge immunity time must be at least 300 seconds | none |
+| `pf-wafv2-cloudfront-only-features` | AWS::WAFv2::WebACL | ResponseInspection and the Monetize action only work in CLOUDFRONT-scoped web ACLs (Monetize also needs MonetizationConfig) | none |
+| `pf-wafv2-custom-request-handling` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Inserted request headers: unique names, at most 10 per action and 100 per web ACL / rule group | none |
+| `pf-wafv2-custom-response` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Custom responses: no content-type or duplicate headers, at most 10 headers, body keys must exist, bodies within 4 KB / 50 entries / 50 KB total | none |
+| `pf-wafv2-data-protection` | AWS::WAFv2::WebACL | Data protection fields: FieldKeys required for single-key types, forbidden for QUERY_STRING / BODY, one entry per field type | none |
+| `pf-wafv2-ipset-addresses` | AWS::WAFv2::IPSet | IP set addresses must be CIDR blocks of the declared version with a 1..32 / 1..128 prefix and no host bits set | none |
+| `pf-wafv2-label-syntax` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Rule labels and label match keys must follow the label syntax (no reserved words, no empty components, at most 8 components of 128 chars, no labels on rule group references) | none |
+| `pf-wafv2-logging-destination` | AWS::WAFv2::LoggingConfiguration | Exactly one log destination whose name starts with aws-waf-logs-, in the web ACL account and region | none |
+| `pf-wafv2-logging-filter-condition` | AWS::WAFv2::LoggingConfiguration | Each logging filter condition is exactly one of ActionCondition / LabelNameCondition | none |
+| `pf-wafv2-logging-unique` | AWS::WAFv2::LoggingConfiguration | One LoggingConfiguration per web ACL in a template | none |
+| `pf-wafv2-managed-rule-group` | AWS::WAFv2::WebACL | Managed rule group statements: known AWS group names, matching and complete ManagedRuleGroupConfigs, consistent overrides and response inspection | none |
+| `pf-wafv2-metric-name-reserved` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | MetricName Default_Action is reserved | none |
+| `pf-wafv2-name-unique` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup<br>AWS::WAFv2::IPSet<br>AWS::WAFv2::RegexPatternSet | Two WAFv2 entities of the same type, Scope and Name in one template | none |
+| `pf-wafv2-rate-based-statement` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Rate-based statement aggregation settings must be consistent (keys, forwarded IP config, scope-down, counts) | none |
+| `pf-wafv2-reference-arn` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | IP set / regex pattern set / rule group references must match the web ACL scope, region and account | none |
+| `pf-wafv2-regex-syntax` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup<br>AWS::WAFv2::RegexPatternSet | Regular expressions must stay within the supported PCRE subset (no backreferences, lookaround, possessive / atomic groups, conditionals, recursion, \K, \R, control verbs), at most 10 per pattern set | none |
+| `pf-wafv2-rule-action` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Rule group references take OverrideAction, every other rule takes Action; each action object names exactly one action | none |
+| `pf-wafv2-rule-unique` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Rule priorities and names must be unique within a web ACL / rule group | none |
+| `pf-wafv2-scope-region` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup<br>AWS::WAFv2::IPSet<br>AWS::WAFv2::RegexPatternSet | Scope CLOUDFRONT is only accepted in us-east-1 | none |
+| `pf-wafv2-statement-exactly-one` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Statement, FieldToMatch, MatchPattern and custom-key objects name exactly one alternative | none |
+| `pf-wafv2-statement-limits` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Statement limits: 50 country codes, 30-character query argument names, 50 reference statements per web ACL / rule group, unique header and cookie filters | none |
+| `pf-wafv2-statement-nesting` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | And/Or need two nested statements; managed rule group, rule group reference and rate-based statements cannot be nested | none |
+| `pf-wafv2-text-transformations` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Text transformations: unique priorities, at most 10, and pre-parse transformations only on query-argument components with pre-parse types | none |
+| `pf-wafv2-token-domains` | AWS::WAFv2::WebACL | Token domains must be registrable domains (no bare labels, TLDs or public suffixes), at most 10 | none |

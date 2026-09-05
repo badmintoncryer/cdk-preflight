@@ -17,6 +17,8 @@ interface Meta {
   upstream: string;
   repro?: { method: string; evidence?: string };
   addedOn?: string;
+  /** Region the fixture harness evaluates this rule's templates in (default us-east-1). */
+  fixtureRegion?: string;
 }
 
 /** Shared helper module under rules/_lib/, loaded ahead of every rule (never emits diagnostics). */
@@ -32,6 +34,7 @@ export interface BundledRule {
   title: string;
   upstream: string;
   resourceTypes: string[];
+  fixtureRegion?: string;
   rego: string;
 }
 
@@ -100,6 +103,7 @@ export function collectRules(root: string): BundledRule[] {
         title: meta.title,
         upstream: meta.upstream,
         resourceTypes: meta.resourceTypes,
+        ...(meta.fixtureRegion ? { fixtureRegion: meta.fixtureRegion } : {}),
         rego,
       });
     }
@@ -132,6 +136,7 @@ export function renderGenerated(rules: BundledRule[], libs: BundledLib[] = []): 
     '  readonly title: string;',
     '  readonly upstream: string;',
     '  readonly resourceTypes: string[];',
+    '  readonly fixtureRegion?: string;',
     '  readonly rego: string;',
     '}',
     '',

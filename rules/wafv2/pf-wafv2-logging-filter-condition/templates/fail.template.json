@@ -1,0 +1,66 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "W": {
+      "Type": "AWS::WAFv2::WebACL",
+      "Properties": {
+        "Name": "cdkpf-w-loggingfiltercondition",
+        "Scope": "REGIONAL",
+        "DefaultAction": {
+          "Allow": {}
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "w"
+        },
+        "Rules": []
+      }
+    },
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "aws-waf-logs-cdkpf-lfc-fail",
+        "RetentionInDays": 1
+      }
+    },
+    "L": {
+      "Type": "AWS::WAFv2::LoggingConfiguration",
+      "Properties": {
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "W",
+            "Arn"
+          ]
+        },
+        "LogDestinationConfigs": [
+          {
+            "Fn::GetAtt": [
+              "LG",
+              "Arn"
+            ]
+          }
+        ],
+        "LoggingFilter": {
+          "DefaultBehavior": "KEEP",
+          "Filters": [
+            {
+              "Behavior": "DROP",
+              "Requirement": "MEETS_ALL",
+              "Conditions": [
+                {
+                  "ActionCondition": {
+                    "Action": "BLOCK"
+                  },
+                  "LabelNameCondition": {
+                    "LabelName": "awswaf:x"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
