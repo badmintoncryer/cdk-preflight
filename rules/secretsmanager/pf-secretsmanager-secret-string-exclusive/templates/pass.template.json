@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "SecretString": "cdkpf-literal"
+      }
+    }
+  }
+}

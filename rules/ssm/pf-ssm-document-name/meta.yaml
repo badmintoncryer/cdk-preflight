@@ -1,0 +1,11 @@
+id: pf-ssm-document-name
+service: ssm
+resourceTypes: [AWS::SSM::Document]
+severity: ERROR
+title: "Document Name must not start with aws-, amazon or amzn (case-insensitive)"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_CreateDocument.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: Invalid document name aws-cdkpf-probe\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

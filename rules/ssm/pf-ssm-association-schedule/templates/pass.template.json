@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::SSM::Association",
+      "Properties": {
+        "Name": "AWS-RunShellScript",
+        "Targets": [
+          {
+            "Key": "tag:cdkpf",
+            "Values": [
+              "probe"
+            ]
+          }
+        ],
+        "Parameters": {
+          "commands": [
+            "echo hi"
+          ]
+        },
+        "ScheduleExpression": "cron(0 0 ? * TUE#3 *)",
+        "ApplyOnlyAtCronInterval": true,
+        "ScheduleOffset": 2
+      }
+    }
+  }
+}

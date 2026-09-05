@@ -1,0 +1,11 @@
+id: pf-ssm-parameter-allowed-pattern
+service: ssm
+resourceTypes: [AWS::SSM::Parameter]
+severity: ERROR
+title: "Value (each item of a StringList) must match AllowedPattern"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_PutParameter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error occurred during operation 'PutParameter'.\" (the CloudFormation handler masks the service error; the same input sent straight to the API is rejected with \"Parameter value, cannot be validated against allowedPattern: ^\\d+$\"); pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

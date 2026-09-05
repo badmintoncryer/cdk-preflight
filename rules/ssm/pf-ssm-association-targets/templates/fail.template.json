@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::SSM::Association",
+      "Properties": {
+        "Name": "AWS-RunShellScript",
+        "Targets": [
+          {
+            "Key": "foo",
+            "Values": [
+              "x"
+            ]
+          }
+        ],
+        "Parameters": {
+          "commands": [
+            "echo hi"
+          ]
+        }
+      }
+    }
+  }
+}

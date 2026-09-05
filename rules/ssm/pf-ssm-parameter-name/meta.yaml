@@ -1,0 +1,11 @@
+id: pf-ssm-parameter-name
+service: ssm
+resourceTypes: [AWS::SSM::Parameter]
+severity: ERROR
+title: "Parameter Name must not start with aws or ssm (case-insensitive), must not end with / or contain empty segments, uses only [A-Za-z0-9_.-] per segment, and with the ARN prefix must stay within 1011 characters"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_PutParameter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error occurred during operation 'PutParameter'.\" (the CloudFormation handler masks the service error; the same input sent straight to the API is rejected with \"Parameter name: can't be prefixed with \"ssm\" (case-insensitive). If formed as a path, it can consist of sub-paths divided by slash symbol; each sub-path can be formed as a mix of letters, numbers and the following 3 symbols .-_\"); pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

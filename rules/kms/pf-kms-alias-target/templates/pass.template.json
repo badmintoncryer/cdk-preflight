@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7
+      }
+    },
+    "Alias": {
+      "Type": "AWS::KMS::Alias",
+      "Properties": {
+        "TargetKeyId": {
+          "Ref": "Key"
+        },
+        "AliasName": "alias/cdkpf-probe-target-pass"
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "W": {
+      "Type": "AWS::SSM::MaintenanceWindow",
+      "Properties": {
+        "Name": "cdkpf-probe",
+        "AllowUnassociatedTargets": false,
+        "Schedule": "cron(0 4 ? * SUN *)",
+        "Duration": 2,
+        "Cutoff": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"admin\"}",
+          "GenerateStringKey": "password"
+        },
+        "ReplicaRegions": [
+          {
+            "Region": "us-west-2"
+          }
+        ]
+      }
+    }
+  }
+}

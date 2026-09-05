@@ -27,11 +27,17 @@ export const DEPLOY_ENV_MODULE_NAME = '_pf_deploy_environment';
  * region is concrete; the warn mode (CDK built-in plugin) never injects it,
  * so region-dependent rules only fire in enforce mode.
  */
-export function deployEnvironmentModule(region: string): { name: string; content: string } {
+export function deployEnvironmentModule(region: string, accountId?: string): { name: string; content: string } {
+  const account = isConcreteAccount(accountId) ? `deploy_account := ${JSON.stringify(accountId)}\n` : '';
   return {
     name: DEPLOY_ENV_MODULE_NAME,
-    content: `package cdk_preflight\n\nimport rego.v1\n\ndeploy_region := ${JSON.stringify(region)}\n`,
+    content: `package cdk_preflight\n\nimport rego.v1\n\ndeploy_region := ${JSON.stringify(region)}\n${account}`,
   };
+}
+
+/** Whether the account from the validation context is a concrete 12-digit account id. */
+export function isConcreteAccount(accountId: string | undefined): accountId is string {
+  return typeof accountId === 'string' && /^\d{12}$/.test(accountId);
 }
 
 /**
@@ -81,7 +87,8 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     }
 
     const region = isConcreteRegion(context.region) ? context.region : undefined;
-    const eng = regoEngineCached(engine, this.rules, region);
+    const account = isConcreteAccount(context.accountId) ? context.accountId : undefined;
+    const eng = regoEngineCached(engine, this.rules, region, account);
     const ours = new Set(this.rules.map((r) => r.id));
     const violations: PolicyViolation[] = [];
 
@@ -126,15 +133,15 @@ function loadEngineCached(): any | undefined {
 }
 
 const regoEngineCache = new Map<string, any>();
-function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: string): any {
-  const key = `${region ?? ''}|${rules.map((r) => r.id).join(',')}`;
+function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: string, account?: string): any {
+  const key = `${region ?? ''}|${account ?? ''}|${rules.map((r) => r.id).join(',')}`;
   if (!regoEngineCache.has(key)) {
     const customRules = [
       ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
       ...rules.map((r) => ({ name: r.id, content: r.rego })),
     ];
     if (region !== undefined) {
-      customRules.push(deployEnvironmentModule(region));
+      customRules.push(deployEnvironmentModule(region, account));
     }
     regoEngineCache.set(key, new engineModule.RegoEngine({ customRules }));
   }

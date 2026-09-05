@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {}
+      }
+    },
+    "A": {
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+      "Properties": {
+        "SecretId": {
+          "Ref": "S"
+        },
+        "TargetId": "cdkpf-no-such-db",
+        "TargetType": "AWS::RDS::DBInstance"
+      }
+    }
+  }
+}

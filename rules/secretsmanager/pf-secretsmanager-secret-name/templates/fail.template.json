@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": "cdkpf:probe",
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"admin\"}",
+          "GenerateStringKey": "password"
+        }
+      }
+    }
+  }
+}

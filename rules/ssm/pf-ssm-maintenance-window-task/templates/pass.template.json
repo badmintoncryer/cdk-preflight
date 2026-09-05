@@ -1,0 +1,44 @@
+{
+  "Resources": {
+    "W": {
+      "Type": "AWS::SSM::MaintenanceWindow",
+      "Properties": {
+        "Name": "cdkpf-probe",
+        "AllowUnassociatedTargets": false,
+        "Schedule": "cron(0 4 ? * SUN *)",
+        "Duration": 4,
+        "Cutoff": 1
+      }
+    },
+    "T": {
+      "Type": "AWS::SSM::MaintenanceWindowTask",
+      "Properties": {
+        "WindowId": {
+          "Ref": "W"
+        },
+        "TaskType": "RUN_COMMAND",
+        "TaskArn": "AWS-RunShellScript",
+        "Priority": 1,
+        "Targets": [
+          {
+            "Key": "InstanceIds",
+            "Values": [
+              "i-0123456789abcdef0"
+            ]
+          }
+        ],
+        "MaxConcurrency": "1",
+        "MaxErrors": "1",
+        "TaskInvocationParameters": {
+          "MaintenanceWindowRunCommandParameters": {
+            "Parameters": {
+              "commands": [
+                "echo hi"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

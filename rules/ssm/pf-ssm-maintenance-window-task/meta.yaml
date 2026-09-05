@@ -1,0 +1,11 @@
+id: pf-ssm-maintenance-window-task
+service: ssm
+resourceTypes: [AWS::SSM::MaintenanceWindowTask]
+severity: ERROR
+title: "RUN_COMMAND tasks need Targets; tasks with Targets need MaxConcurrency and MaxErrors (and targetless tasks must not set them); TaskInvocationParameters may only hold the block for the TaskType; target keys are InstanceIds or WindowTargetIds; a NotificationConfig needs ServiceRoleArn"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_RegisterTaskWithMaintenanceWindow.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"For Run Command tasks, you must specify at least one resource as the target of the task. You can specify between 1 and 50 instance IDs, or between 1 and 10 maintenance window target IDs.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

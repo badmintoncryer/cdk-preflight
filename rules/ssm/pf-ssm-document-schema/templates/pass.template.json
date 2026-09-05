@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::SSM::Document",
+      "Properties": {
+        "Content": {
+          "schemaVersion": "0.3",
+          "description": "d",
+          "mainSteps": [
+            {
+              "name": "sleep",
+              "action": "aws:sleep",
+              "inputs": {
+                "Duration": "PT1S"
+              }
+            }
+          ]
+        },
+        "DocumentType": "Automation"
+      }
+    }
+  }
+}

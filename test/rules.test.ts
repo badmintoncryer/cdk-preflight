@@ -37,7 +37,7 @@ function engineInstance(region?: string): any {
       ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
       ...BUNDLED_RULES.map((r) => ({ name: r.id, content: r.rego })),
     ];
-    if (region) customRules.push(deployEnvironmentModule(region));
+    if (region) customRules.push(deployEnvironmentModule(region, '123456789012'));
     engineCache.set(key, new engine.RegoEngine({ customRules }));
   }
   return engineCache.get(key);
@@ -2144,5 +2144,324 @@ describe('sqs / sns rules', () => {
     expect(ids(diagnoseTemplate(topic({ TracingConfig: 'Foo' })))).toContain('pf-sns-topic-attribute-values');
     expect(ids(diagnoseTemplate(topic({ FifoTopic: true, TopicName: 't.fifo', ArchivePolicy: { MessageRetentionPeriod: 366 } })))).toContain('pf-sns-fifo-only-attributes');
     expect(ids(diagnoseTemplate(topic({}, { P: { Type: 'AWS::SNS::TopicPolicy', Properties: { Topics: ['my-topic'], PolicyDocument: {} } } })))).toContain('pf-sns-topic-policy-topics');
+  });
+});
+
+/**
+ * KMS / Secrets Manager / SSM ルールのうち、fail フィクスチャ 1 枚では踏めない分岐:
+ * KeySpec×KeyUsage 表、キーポリシーの lockout 判定、リージョン・アカウント束縛、
+ * GenerateSecretString の文字種計算、ローテーション式、SSM ドキュメント DSL、
+ * Maintenance Window / Association の cron 受理集合。ハーネスは us-east-1 /
+ * 123456789012 を deploy_region / deploy_account として注入する。
+ */
+describe('kms / secretsmanager / ssm rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const key = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { Key: { Type: 'AWS::KMS::Key', Properties: props }, ...extra } });
+  const ROOT = 'arn:aws:iam::123456789012:root';
+  const stmt = (s: Record<string, unknown>) => ({ Version: '2012-10-17', Statement: [s] });
+  const allow = (extra: Record<string, unknown>) => ({ Effect: 'Allow', Principal: { AWS: ROOT }, Action: 'kms:*', Resource: '*', ...extra });
+
+  test('kms KeySpec x KeyUsage table and the KeyUsage requirement', () => {
+    expect(ids(diagnoseTemplate(key({ KeySpec: 'RSA_2048' })))).toContain('pf-kms-key-spec-usage');
+    expect(ids(diagnoseTemplate(key({ KeyUsage: 'SIGN_VERIFY' })))).toContain('pf-kms-key-spec-usage');
+    expect(ids(diagnoseTemplate(key({ KeySpec: 'ECC_NIST_P384', KeyUsage: 'KEY_AGREEMENT' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeySpec: 'ML_DSA_65', KeyUsage: 'ENCRYPT_DECRYPT' })))).toContain('pf-kms-key-spec-usage');
+  });
+
+  test('kms rotation on EXTERNAL material, SM2 region binding, unsupported origins', () => {
+    expect(ids(diagnoseTemplate(key({ Origin: 'EXTERNAL', EnableKeyRotation: true })))).toContain('pf-kms-key-rotation');
+    expect(ids(diagnoseTemplate(key({ EnableKeyRotation: true })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeySpec: 'SM2', KeyUsage: 'SIGN_VERIFY' }), 'ap-northeast-1'))).toContain('pf-kms-key-spec-region');
+    expect(ids(diagnoseTemplate(key({ KeySpec: 'SM2', KeyUsage: 'SIGN_VERIFY' }), 'cn-north-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeySpec: 'SM2', KeyUsage: 'SIGN_VERIFY' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ Origin: 'AWS_CLOUDHSM' })))).toContain('pf-kms-key-origin');
+  });
+
+  test('kms key policy statement shape, in object and JSON-string form', () => {
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: { Version: '2012-10-17', Statement: [] } })))).toContain('pf-kms-key-policy-statement');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: { Version: '2012-10-17', Statement: [allow({}), { Effect: 'Allow', Principal: { AWS: ROOT }, Action: 'kms:Encrypt' }] } })))).toContain('pf-kms-key-policy-statement');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: JSON.stringify({ Version: '2012-10-17', Statement: [allow({}), { Effect: 'Allow', Principal: { AWS: ROOT }, Resource: '*' }] }) })))).toContain('pf-kms-key-policy-statement');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: { Version: '2012-10-17', Statement: [allow({}), allow({ Principal: { AWS: 'not-an-arn' }, Action: 'kms:Encrypt' })] } })))).toContain('pf-kms-key-policy-statement');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: { Version: '2012-10-17', Statement: [allow({ Principal: { AWS: [ROOT, '123456789012'] } })] } })))).toHaveLength(0);
+  });
+
+  test('kms key policy lockout: deny-only, service-only, foreign account, and the escapes', () => {
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Effect: 'Deny' })) })))).toContain('pf-kms-key-policy-lockout');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Principal: { Service: 'logs.amazonaws.com' } })) })))).toContain('pf-kms-key-policy-lockout');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Principal: { AWS: 'arn:aws:iam::999999999999:root' } })) }), 'us-east-1'))).toContain('pf-kms-key-policy-lockout');
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Principal: { AWS: 'arn:aws:iam::999999999999:root' } })) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Action: 'kms:Put*' })) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Principal: '*', Action: ['kms:Encrypt', 'kms:PutKeyPolicy'] })) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Principal: { AWS: { 'Fn::GetAtt': ['Role', 'Arn'] } } })) }, { Role: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }] } } } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ BypassPolicyLockoutSafetyCheck: true, KeyPolicy: stmt(allow({ Effect: 'Deny' })) })))).toHaveLength(0);
+  });
+
+  test('kms key policy charset: Latin-1 passes, other scripts fail, also in JSON-string form', () => {
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: stmt(allow({ Sid: 'Clé' })) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(key({ KeyPolicy: JSON.stringify(stmt(allow({ Sid: '鍵' }))) })))).toContain('pf-kms-key-policy-charset');
+  });
+
+  test('kms alias name and target', () => {
+    const alias = (props: Record<string, unknown>) => key({}, { A: { Type: 'AWS::KMS::Alias', Properties: { TargetKeyId: { Ref: 'Key' }, ...props } } });
+    expect(ids(diagnoseTemplate(alias({ AliasName: 'alias/AWS/x' })))).toContain('pf-kms-alias-name');
+    expect(ids(diagnoseTemplate(alias({ AliasName: 'alias/x:y' })))).toContain('pf-kms-alias-name');
+    expect(ids(diagnoseTemplate(alias({ AliasName: 'alias/x', TargetKeyId: 'alias/other' })))).toContain('pf-kms-alias-target');
+    expect(ids(diagnoseTemplate(alias({ AliasName: 'alias/x', TargetKeyId: 'arn:aws:kms:us-east-1:999999999999:key/11111111-1111-1111-1111-111111111111' }), 'us-east-1'))).toContain('pf-kms-alias-target');
+    expect(ids(diagnoseTemplate(alias({ AliasName: 'alias/x', TargetKeyId: 'arn:aws:kms:us-east-1:123456789012:key/11111111-1111-1111-1111-111111111111' }), 'us-east-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(alias({ AliasName: 'alias/x' })))).toHaveLength(0);
+  });
+
+  test('kms replica primary ARN: same region, partition, mrk id, literal', () => {
+    const rep = (arn: unknown) => ({ Resources: { R: { Type: 'AWS::KMS::ReplicaKey', Properties: { PrimaryKeyArn: arn, KeyPolicy: stmt(allow({})) } } } });
+    expect(ids(diagnoseTemplate(rep('arn:aws:kms:us-east-1:123456789012:key/mrk-1234abcd12ab34cd56ef1234567890ab'), 'us-east-1'))).toContain('pf-kms-replica-primary-arn');
+    expect(ids(diagnoseTemplate(rep('arn:aws:kms:us-west-2:123456789012:key/mrk-1234abcd12ab34cd56ef1234567890ab'), 'us-east-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(rep('arn:aws:kms:us-west-2:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab')))).toContain('pf-kms-replica-primary-arn');
+    expect(ids(diagnoseTemplate(rep('arn:aws-cn:kms:cn-north-1:123456789012:key/mrk-1234abcd12ab34cd56ef1234567890ab'), 'us-east-1'))).toContain('pf-kms-replica-primary-arn');
+    expect(ids(diagnoseTemplate(rep('mrk-1234abcd12ab34cd56ef1234567890ab')))).toContain('pf-kms-replica-primary-arn');
+  });
+
+  const secret = (props: Record<string, unknown>, extra: Record<string, unknown> = {}, top: Record<string, unknown> = {}) => ({ ...top, Resources: { S: { Type: 'AWS::SecretsManager::Secret', Properties: props }, ...extra } });
+  const TEMPLATE = { SecretStringTemplate: '{"username":"admin"}', GenerateStringKey: 'password' };
+
+  test('secretsmanager GenerateSecretString: excluded types, lengths, template pairing', () => {
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { ExcludeLowercase: true, ExcludeUppercase: true, ExcludeNumbers: true, ExcludePunctuation: true } })))).toContain('pf-secretsmanager-generate-secret-string');
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { ExcludeCharacters: '0123456789' } })))).toContain('pf-secretsmanager-generate-secret-string');
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { ExcludeCharacters: '0123456789', RequireEachIncludedType: false } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { PasswordLength: 2, ExcludeNumbers: true, ExcludePunctuation: true } }))))
+      .toHaveLength(0);
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { PasswordLength: 0 } })))).toContain('pf-secretsmanager-generate-secret-string');
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { SecretStringTemplate: '{"u":"x"}' } })))).toContain('pf-secretsmanager-generate-secret-string');
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { SecretStringTemplate: '[1]', GenerateStringKey: 'password' } })))).toContain('pf-secretsmanager-generate-secret-string');
+    expect(ids(diagnoseTemplate(secret({ GenerateSecretString: { PasswordLength: 16, ...TEMPLATE } })))).toHaveLength(0);
+  });
+
+  test('secretsmanager replica regions, KMS key binding, name charset', () => {
+    expect(ids(diagnoseTemplate(secret({ ReplicaRegions: [{ Region: 'Tokyo' }] })))).toContain('pf-secretsmanager-replica-regions');
+    expect(ids(diagnoseTemplate(secret({ ReplicaRegions: [{ Region: 'us-east-1' }] }), 'us-east-1'))).toContain('pf-secretsmanager-replica-regions');
+    expect(ids(diagnoseTemplate(secret({ ReplicaRegions: [{ Region: 'us-west-2' }] }), 'us-east-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(secret({ KmsKeyId: 'arn:aws:kms:eu-west-1:123456789012:key/11111111-1111-1111-1111-111111111111' }), 'us-east-1'))).toContain('pf-secretsmanager-kms-key');
+    expect(ids(diagnoseTemplate(secret({ KmsKeyId: 'alias/aws/secretsmanager' }), 'us-east-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(secret({ Name: '秘密' })))).toContain('pf-secretsmanager-secret-name');
+  });
+
+  const ROT: Record<string, unknown> = {
+    Role: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }] } } },
+    Fn: { Type: 'AWS::Lambda::Function', Properties: { Runtime: 'python3.12', Handler: 'index.handler', Role: { 'Fn::GetAtt': ['Role', 'Arn'] }, Code: { ZipFile: 'def handler(e, c):\n    return None\n' } } },
+    S: { Type: 'AWS::SecretsManager::Secret', Properties: { GenerateSecretString: TEMPLATE } },
+  };
+  const LARN = { 'Fn::GetAtt': ['Fn', 'Arn'] };
+  const TR = { Transform: 'AWS::SecretsManager-2024-09-16' };
+  const rot = (props: Record<string, unknown>, top: Record<string, unknown> = {}) => ({ ...top, Resources: { ...ROT, R: { Type: 'AWS::SecretsManager::RotationSchedule', Properties: { SecretId: { Ref: 'S' }, ...props } } } });
+  const rules = (rr: Record<string, unknown>) => rot({ RotationLambdaARN: LARN, RotationRules: rr });
+
+  test('secretsmanager rotation rules: exclusivity, rate bounds, cron shape, duration', () => {
+    expect(ids(diagnoseTemplate(rules({ AutomaticallyAfterDays: 30, ScheduleExpression: 'rate(10 days)' })))).toContain('pf-secretsmanager-rotation-rules');
+    expect(ids(diagnoseTemplate(rules({ AutomaticallyAfterDays: 1001 })))).toContain('pf-secretsmanager-rotation-rules');
+    for (const bad of ['rate(30 minutes)', 'rate(2 weeks)', 'rate(24 hours)', 'cron(15 8 * * ? *)', 'cron(0 8 * * ?)', 'cron(0 * * * ? *)', 'cron(0 */2 * * ? *)', 'cron(0 8,10 * * ? *)', 'cron(0 8 * * ? 2030)', 'cron(0 8 1 * 1 *)', 'every day']) {
+      expect(ids(diagnoseTemplate(rules({ ScheduleExpression: bad })))).toContain('pf-secretsmanager-rotation-rules');
+    }
+    for (const ok of ['rate(4 hours)', 'rate(1000 days)', 'cron(0 0/4 * * ? *)', 'cron(0 8 ? * SAT *)', 'cron(0 8,16 * * ? *)']) {
+      expect(ids(diagnoseTemplate(rules({ ScheduleExpression: ok })))).toHaveLength(0);
+    }
+    expect(ids(diagnoseTemplate(rules({ ScheduleExpression: 'rate(4 hours)', Duration: '5h' })))).toContain('pf-secretsmanager-rotation-rules');
+    expect(ids(diagnoseTemplate(rules({ ScheduleExpression: 'rate(10 days)', Duration: '25h' })))).toContain('pf-secretsmanager-rotation-rules');
+    expect(ids(diagnoseTemplate(rules({ ScheduleExpression: 'rate(4 hours)', Duration: '2' })))).toContain('pf-secretsmanager-rotation-rules');
+    expect(ids(diagnoseTemplate(rules({ ScheduleExpression: 'cron(0 20 * * ? *)', Duration: '5h' })))).toContain('pf-secretsmanager-rotation-rules');
+    expect(ids(diagnoseTemplate(rules({ ScheduleExpression: 'cron(0 20 * * ? *)', Duration: '4h' })))).toHaveLength(0);
+  });
+
+  test('secretsmanager rotation lambda and hosted rotation', () => {
+    expect(ids(diagnoseTemplate(rot({ RotationRules: { AutomaticallyAfterDays: 30 } })))).toContain('pf-secretsmanager-rotation-lambda');
+    expect(ids(diagnoseTemplate(rot({ RotationLambdaARN: LARN, HostedRotationLambda: { RotationType: 'MySQLSingleUser' } }, TR)))).toContain('pf-secretsmanager-rotation-lambda');
+    expect(ids(diagnoseTemplate(rot({ RotationLambdaARN: 'my-function' })))).toContain('pf-secretsmanager-rotation-lambda');
+    expect(ids(diagnoseTemplate(rot({ HostedRotationLambda: { RotationType: 'Foo' } }, TR)))).toContain('pf-secretsmanager-hosted-rotation');
+    expect(ids(diagnoseTemplate(rot({ HostedRotationLambda: { RotationType: 'MySQLSingleUser', MasterSecretArn: { Ref: 'S' } } }, TR)))).toContain('pf-secretsmanager-hosted-rotation');
+    expect(ids(diagnoseTemplate(rot({ HostedRotationLambda: { RotationType: 'MySQLMultiUser', MasterSecretArn: { Ref: 'S' }, SuperuserSecretArn: { Ref: 'S' } } }, TR)))).toContain('pf-secretsmanager-hosted-rotation');
+    expect(ids(diagnoseTemplate(rot({ HostedRotationLambda: { RotationType: 'MySQLSingleUser', Runtime: 'python3.9' } }, TR)))).toContain('pf-secretsmanager-hosted-rotation');
+    expect(ids(diagnoseTemplate(rot({ HostedRotationLambda: { RotationType: 'MySQLMultiUser', SuperuserSecretArn: { Ref: 'S' } } }, TR)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(rot({ HostedRotationLambda: { RotationType: 'MySQLSingleUser' } }, { Transform: ['AWS::Serverless-2016-10-31', 'AWS::SecretsManager-2020-07-23'] })))).toHaveLength(0);
+  });
+
+  test('secretsmanager target attachment needs a JSON secret and a known TargetType', () => {
+    const att = (secretProps: Record<string, unknown>, targetType = 'AWS::RDS::DBInstance') => ({ Resources: { S: { Type: 'AWS::SecretsManager::Secret', Properties: secretProps }, A: { Type: 'AWS::SecretsManager::SecretTargetAttachment', Properties: { SecretId: { Ref: 'S' }, TargetId: 'db', TargetType: targetType } } } });
+    expect(ids(diagnoseTemplate(att({ GenerateSecretString: TEMPLATE }, 'AWS::RDS::Foo')))).toContain('pf-secretsmanager-target-attachment');
+    expect(ids(diagnoseTemplate(att({ SecretString: 'not json' })))).toContain('pf-secretsmanager-target-attachment');
+    expect(ids(diagnoseTemplate(att({ SecretString: '{"username":"u","password":"p"}' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(att({ GenerateSecretString: TEMPLATE })))).toHaveLength(0);
+  });
+
+  const param = (props: Record<string, unknown>) => ({ Resources: { P: { Type: 'AWS::SSM::Parameter', Properties: { Type: 'String', Value: 'v', ...props } } } });
+
+  test('ssm parameter name: prefixes, slashes, charset, region-dependent length', () => {
+    for (const bad of ['awsFoo', '/Aws/x', 'ssm-x', '/cdkpf/foo/', '//x', 'my param', 'a:b', 'パラメータ']) {
+      expect(ids(diagnoseTemplate(param({ Name: bad })))).toContain('pf-ssm-parameter-name');
+    }
+    expect(ids(diagnoseTemplate(param({ Name: '/cdkpf/awesome/x.y_z-1' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(param({ Name: '/' + 'a'.repeat(962) }), 'ap-northeast-1'))).toContain('pf-ssm-parameter-name');
+    expect(ids(diagnoseTemplate(param({ Name: '/' + 'a'.repeat(961) }), 'ap-northeast-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(param({ Name: '/' + 'a'.repeat(962) }), 'us-east-1'))).toHaveLength(0);
+  });
+
+  test('ssm parameter tier, allowed pattern, value and data type', () => {
+    expect(ids(diagnoseTemplate(param({ Value: 'x'.repeat(4097) })))).toContain('pf-ssm-parameter-tier');
+    expect(ids(diagnoseTemplate(param({ Tier: 'Advanced', Value: 'x'.repeat(4097) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(param({ Tier: 'Intelligent-Tiering', Value: 'x'.repeat(8193) })))).toContain('pf-ssm-parameter-tier');
+    expect(ids(diagnoseTemplate(param({ Type: 'StringList', Value: '1,abc', AllowedPattern: '^\\d+$' })))).toContain('pf-ssm-parameter-allowed-pattern');
+    expect(ids(diagnoseTemplate(param({ Value: 'abc', AllowedPattern: '([' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(param({ Value: 'abc', AllowedPattern: '^(?!x).*$' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(param({ Value: '' })))).toContain('pf-ssm-parameter-value');
+    expect(ids(diagnoseTemplate(param({ DataType: 'Text' })))).toContain('pf-ssm-parameter-value');
+    expect(ids(diagnoseTemplate(param({ Type: 'StringList', DataType: 'aws:ec2:image', Value: 'ami-0123456789abcdef0' })))).toContain('pf-ssm-parameter-value');
+    expect(ids(diagnoseTemplate(param({ DataType: 'aws:ec2:image', Value: 'not-an-ami' })))).toContain('pf-ssm-parameter-value');
+    expect(ids(diagnoseTemplate(param({ DataType: 'aws:ec2:image', Value: 'ami-0123456789abcdef0' })))).toHaveLength(0);
+  });
+
+  test('ssm parameter policies as string and as object', () => {
+    const pol = (p: unknown) => param({ Tier: 'Advanced', Policies: typeof p === 'string' ? p : JSON.stringify(p) });
+    const EXP = (ts = '2030-01-01T00:00:00.000Z') => ({ Type: 'Expiration', Version: '1.0', Attributes: { Timestamp: ts } });
+    expect(ids(diagnoseTemplate(pol('not json')))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol(EXP())))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol(Array.from({ length: 11 }, (_, i) => ({ Type: 'NoChangeNotification', Version: '1.0', Attributes: { After: String(i + 1), Unit: 'Days' } })))))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([EXP(), EXP('2031-01-01T00:00:00.000Z')])))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([{ Type: 'ExpirationNotification', Version: '1.0', Attributes: { Before: '1', Unit: 'Days' } }])))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([EXP('tomorrow')])))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([EXP(), { Type: 'ExpirationNotification', Version: '1.0', Attributes: { Before: '1', Unit: 'Weeks' } }])))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([EXP(), { Type: 'ExpirationNotification', Version: '1.0', Attributes: { Before: '0', Unit: 'Days' } }])))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([{ Type: 'Expiration', Version: '2.0', Attributes: { Timestamp: '2030-01-01T00:00:00Z' } }])))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(param({ Tier: 'Advanced', Policies: [{ Type: 'Foo', Version: '1.0', Attributes: {} }] })))).toContain('pf-ssm-parameter-policies');
+    expect(ids(diagnoseTemplate(pol([EXP('2030-01-01T00:00:00+09:00'), { Type: 'NoChangeNotification', Version: '1.0', Attributes: { After: 5, Unit: 'hours' } }])))).toHaveLength(0);
+  });
+
+  const CMD = (over: Record<string, unknown> = {}) => ({ schemaVersion: '2.2', description: 'd', mainSteps: [{ action: 'aws:runShellScript', name: 'run', inputs: { runCommand: ['echo hi'] } }], ...over });
+  const AUTO = (over: Record<string, unknown> = {}) => ({ schemaVersion: '0.3', description: 'd', mainSteps: [{ name: 'sleep', action: 'aws:sleep', inputs: { Duration: 'PT1S' } }], ...over });
+  const doc = (props: Record<string, unknown>) => ({ Resources: { D: { Type: 'AWS::SSM::Document', Properties: { Content: CMD(), DocumentType: 'Command', ...props } } } });
+
+  test('ssm document name and schema table', () => {
+    expect(ids(diagnoseTemplate(doc({ Name: 'Amazon-x' })))).toContain('pf-ssm-document-name');
+    expect(ids(diagnoseTemplate(doc({ Name: 'awsfoo' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate({ Resources: { D: { Type: 'AWS::SSM::Document', Properties: { Content: CMD() } } } }))).toContain('pf-ssm-document-schema');
+    expect(ids(diagnoseTemplate({ Resources: { D: { Type: 'AWS::SSM::Document', Properties: { Content: AUTO() } } } }))).toContain('pf-ssm-document-schema');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD(), DocumentType: 'Session' })))).toContain('pf-ssm-document-schema');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD(), DocumentType: 'ChangeCalendar' })))).toContain('pf-ssm-document-schema');
+    expect(ids(diagnoseTemplate(doc({ DocumentFormat: 'TEXT' })))).toContain('pf-ssm-document-schema');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD(), DocumentType: 'ApplicationConfiguration' })))).toContain('pf-ssm-document-schema');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ schemaVersion: '2.0', mainSteps: [{ action: 'aws:softwareInventory', name: 'inv', inputs: {} }] }), DocumentType: 'Policy' })))).toHaveLength(0);
+  });
+
+  test('ssm document content DSL', () => {
+    const yaml = 'schemaVersion: "2.2"\ndescription: d\nmainSteps:\n- action: aws:runShellScript\n  name: run\n  inputs:\n    runCommand:\n    - echo hi\n';
+    expect(ids(diagnoseTemplate(doc({ Content: yaml })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: yaml, DocumentFormat: 'YAML' })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(doc({ Content: JSON.stringify(CMD()) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(doc({ Content: { schemaVersion: '2.2', description: 'd' } })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ runtimeConfig: {} }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: { schemaVersion: '1.2', description: 'd' } })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: { schemaVersion: '1.2', description: 'd', runtimeConfig: { 'aws:nope': {} } } })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ mainSteps: [{ action: 'aws:runShellScript', name: 'run', inputs: {} }, { action: 'aws:runShellScript', name: 'run', inputs: {} }] }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ mainSteps: [{ action: 'aws:runShellScript', name: 'run step!', inputs: {} }] }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ mainSteps: [{ action: 'aws:runShellScript', inputs: {} }] }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ parameters: { my_param: { type: 'String' } } }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ parameters: { x: { type: 'Float' } } }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ parameters: { x: { default: 'a' } } }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ parameters: { x: { type: 'Boolean', default: 'true' } } }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ parameters: { x: { type: 'Integer', default: 'abc' } } }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ parameters: { x: { type: 'Integer', default: 5 }, y: { type: 'StringList', default: ['a'] }, z: { type: 'Boolean', default: true } } }) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ mainSteps: [{ action: 'aws:runShellScript', name: 'run', inputs: { runCommand: ['{{ nope }}'] } }] }) })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ mainSteps: [{ action: 'aws:runShellScript', name: 'run', inputs: { runCommand: ['{{ ssm:x }} {{ global:REGION }}'] } }] }) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(doc({ Content: CMD({ mainSteps: [{ action: 'aws:runShellScript', name: 'run', precondition: { StringEquals: ['platformType', 'linux'] }, inputs: { runCommand: ['echo'] } }] }) })))).toContain('pf-ssm-document-content');
+    const auto = (over: Record<string, unknown>) => doc({ Content: AUTO(over), DocumentType: 'Automation' });
+    expect(ids(diagnoseTemplate(auto({ mainSteps: [{ name: 's', action: 'aws:runShellScript', inputs: {} }] })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(auto({ mainSteps: [{ name: 's', action: 'aws:sleep', inputs: { Duration: 'PT1S' }, nextStep: 'nope' }] })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(auto({ mainSteps: [{ name: 's', action: 'aws:sleep', inputs: { Duration: 'PT1S' }, onFailure: 'step:nope' }] })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(auto({ mainSteps: [{ name: 's', action: 'aws:sleep', inputs: { Duration: 'PT1S' }, onFailure: 'Abort', isEnd: true }] })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(auto({ mainSteps: [{ name: 's', action: 'aws:sleep', inputs: { Duration: 'PT1S' }, isEnd: true, nextStep: 't' }, { name: 't', action: 'aws:sleep', inputs: { Duration: 'PT1S' } }] })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(auto({ outputs: ['nope.Out'] })))).toContain('pf-ssm-document-content');
+    const sess = (c: Record<string, unknown>) => doc({ Content: { schemaVersion: '1.0', description: 'd', ...c }, DocumentType: 'Session' });
+    expect(ids(diagnoseTemplate(sess({ inputs: {} })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(sess({ sessionType: 'Port' })))).toContain('pf-ssm-document-content');
+    expect(ids(diagnoseTemplate(sess({ sessionType: 'Port', properties: { portNumber: '22' } })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(sess({ sessionType: 'Standard_Stream', inputs: {} })))).toHaveLength(0);
+  });
+
+  const mw = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { W: { Type: 'AWS::SSM::MaintenanceWindow', Properties: { Name: 'cdkpf-probe', AllowUnassociatedTargets: false, Schedule: 'cron(0 4 ? * SUN *)', Duration: 4, Cutoff: 1, ...props } }, ...extra } });
+
+  test('ssm maintenance window schedule, offset, dates and time zone', () => {
+    for (const bad of ['every day', 'rate( 1 day )', 'rate(2  days)', 'rate(30 seconds)', 'rate(0 days)', 'at(2030-01-01T00:00:00Z)', 'at(2030-01-01)', 'cron(0 4)', 'cron(0 25 ? * SUN *)', 'cron(60 4 ? * SUN *)', 'cron(0 4 32 * ? *)', 'cron(0 4 ? 13 SUN *)', 'cron(0 4 ? * 8 *)', 'cron(0 4 ? * SUN#6 *)', 'cron(0 4 ? * ? *)', 'cron(0 4 1 * 1 *)', 'cron(0 4 * * * *)']) {
+      expect(ids(diagnoseTemplate(mw({ Schedule: bad })))).toContain('pf-ssm-maintenance-window-schedule');
+    }
+    for (const ok of ['rate(1minute)', 'Rate(1 day)', 'rate(4 minutes)', 'at(2030-01-01T00:00)', 'AT(2030-01-01T00:00:00)', 'cron( 0 4 ? * SUN * )', 'CRON(0 4 ? * SUN *)', 'cron(0 0 4 ? * SUN *)', 'cron(0 4 ? * SUN * * *)', 'cron(0 4 ? * MON-FRI *)', 'cron(0 4 L * ? *)', 'cron(0 4 3W * ? *)', 'cron(0 4 ? * 6L *)', 'cron(0 4 ? * SUN#5 *)', 'cron(0 4 ? jan sun *)', 'cron(0 4 ? * SUN 2200)']) {
+      expect(ids(diagnoseTemplate(mw({ Schedule: ok })))).toHaveLength(0);
+    }
+    expect(ids(diagnoseTemplate(mw({ Schedule: 'rate(1 day)', ScheduleOffset: 2 })))).toContain('pf-ssm-maintenance-window-schedule');
+    expect(ids(diagnoseTemplate(mw({ Schedule: 'cron(0 4 ? * SUN *)', ScheduleOffset: 2 })))).toContain('pf-ssm-maintenance-window-schedule');
+    expect(ids(diagnoseTemplate(mw({ Schedule: 'cron(0 4 ? * 6L *)', ScheduleOffset: 2 })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(mw({ StartDate: '2030/01/01' })))).toContain('pf-ssm-maintenance-window-schedule');
+    expect(ids(diagnoseTemplate(mw({ StartDate: '2030-01-01T00:00:00' })))).toContain('pf-ssm-maintenance-window-schedule');
+    expect(ids(diagnoseTemplate(mw({ StartDate: '2030-01-02T00:00:00Z', EndDate: '2030-01-01T00:00:00Z' })))).toContain('pf-ssm-maintenance-window-schedule');
+    expect(ids(diagnoseTemplate(mw({ StartDate: '2030-01-01T00:00:00Z', EndDate: '2030-01-01T00:00:00Z' })))).toContain('pf-ssm-maintenance-window-schedule');
+    expect(ids(diagnoseTemplate(mw({ StartDate: '2030-01-01T00:00:00+09:00', EndDate: '2030-06-01T00:00:00+09:00' })))).toHaveLength(0);
+    for (const bad of ['Tokyo', 'asia/tokyo', 'Asia/Tokyo ', 'America/New York', 'Asia/Tokyo/x', 'GMT+9', 'UTC+9']) {
+      expect(ids(diagnoseTemplate(mw({ ScheduleTimezone: bad })))).toContain('pf-ssm-maintenance-window-schedule');
+    }
+    for (const ok of ['Asia/Tokyo', 'Japan', 'UTC', 'Etc/GMT+9', 'US/Pacific', 'America/Argentina/Buenos_Aires', '+09:00', '-12:00', '+0900']) {
+      expect(ids(diagnoseTemplate(mw({ ScheduleTimezone: ok })))).toHaveLength(0);
+    }
+  });
+
+  test('ssm maintenance window task and target pairing', () => {
+    const task = (p: Record<string, unknown>) => mw({}, { T: { Type: 'AWS::SSM::MaintenanceWindowTask', Properties: { WindowId: { Ref: 'W' }, TaskType: 'RUN_COMMAND', TaskArn: 'AWS-RunShellScript', Priority: 1, ...p } } });
+    const TGT = [{ Key: 'InstanceIds', Values: ['i-0123456789abcdef0'] }];
+    expect(ids(diagnoseTemplate(task({ Targets: TGT, MaxErrors: '1' })))).toContain('pf-ssm-maintenance-window-task');
+    expect(ids(diagnoseTemplate(task({ TaskType: 'AUTOMATION', TaskArn: 'AWS-RestartEC2Instance', MaxConcurrency: '1' })))).toContain('pf-ssm-maintenance-window-task');
+    expect(ids(diagnoseTemplate(task({ Targets: TGT, MaxConcurrency: '1', MaxErrors: '1', TaskInvocationParameters: { MaintenanceWindowAutomationParameters: { DocumentVersion: '1' } } })))).toContain('pf-ssm-maintenance-window-task');
+    expect(ids(diagnoseTemplate(task({ Targets: [{ Key: 'tag:x', Values: ['y'] }], MaxConcurrency: '1', MaxErrors: '1' })))).toContain('pf-ssm-maintenance-window-task');
+    expect(ids(diagnoseTemplate(task({ Targets: TGT, MaxConcurrency: '1', MaxErrors: '1', TaskInvocationParameters: { MaintenanceWindowRunCommandParameters: { NotificationConfig: { NotificationArn: 'arn:aws:sns:us-east-1:123456789012:t' } } } })))).toContain('pf-ssm-maintenance-window-task');
+    expect(ids(diagnoseTemplate(task({ TaskType: 'AUTOMATION', TaskArn: 'AWS-RestartEC2Instance', TaskInvocationParameters: { MaintenanceWindowAutomationParameters: { DocumentVersion: '1' } } })))).toHaveLength(0);
+    const tgt = (p: Record<string, unknown>) => mw({}, { G: { Type: 'AWS::SSM::MaintenanceWindowTarget', Properties: { WindowId: { Ref: 'W' }, ResourceType: 'INSTANCE', ...p } } });
+    expect(ids(diagnoseTemplate(tgt({ Targets: [{ Key: 'InstanceIds', Values: ['i-0123456789abcdef0'] }, { Key: 'tag:x', Values: ['y'] }] })))).toContain('pf-ssm-maintenance-window-target');
+    expect(ids(diagnoseTemplate(tgt({ ResourceType: 'RESOURCE_GROUP', Targets: [{ Key: 'tag:x', Values: ['y'] }] })))).toContain('pf-ssm-maintenance-window-target');
+    expect(ids(diagnoseTemplate(tgt({ ResourceType: 'RESOURCE_GROUP', Targets: [{ Key: 'resource-groups:ResourceTypeFilters', Values: ['AWS::EC2::Instance'] }] })))).toContain('pf-ssm-maintenance-window-target');
+    expect(ids(diagnoseTemplate(tgt({ ResourceType: 'RESOURCE_GROUP', Targets: [{ Key: 'resource-groups:Name', Values: ['g'] }, { Key: 'resource-groups:ResourceTypeFilters', Values: ['AWS::EC2::Instance'] }] })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(tgt({ Targets: [{ Key: 'tag:x', Values: ['y'] }, { Key: 'tag-key', Values: ['z'] }] })))).toHaveLength(0);
+  });
+
+  const assoc = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { A: { Type: 'AWS::SSM::Association', Properties: { Name: 'AWS-RunShellScript', Targets: [{ Key: 'tag:cdkpf', Values: ['probe'] }], Parameters: { commands: ['echo hi'] }, ...props } }, ...extra } });
+
+  test('ssm association schedule acceptance set', () => {
+    for (const bad of ['rate(1 hours)', 'rate(2 hour)', 'rate(2 weeks)', 'rate(29 minutes)', 'every day', 'cron(0/10 * * * ? *)', 'cron(15/30 * * * ? *)', 'cron(0 8 ? * MON-FRI *)', 'cron(0 8 ? * MON,TUE *)', 'cron(0 8 ? 1 MON *)', 'cron(0 8 15 * ? *)', 'cron(0 8 L * ? *)', 'cron(0 8 ? * * 2030)', 'cron(0 0/3 * * ? *)', 'cron(0 2/4 * * ? *)', 'cron(0 8-10 ? * * *)', 'cron(0 0/2 ? * MON *)', 'cron(0 * * * ? *)', 'cron(0 8 * * SUN *)', 'cron(0 8 ? * ? *)', 'cron(0 8 * * * *)', 'cron(0 24 ? * MON *)', 'cron(0 8 ? * TUE#6 *)', 'cron(30 0 8 ? * SUN *)', 'cron(0 8)']) {
+      expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: bad })))).toContain('pf-ssm-association-schedule');
+    }
+    for (const ok of ['rate(30 minutes)', 'rate(45 minutes)', 'rate(1 hour)', 'rate(3 hours)', 'rate(30 days)', 'cron(0/30 * * * ? *)', 'cron(0 0/1 * * ? *)', 'cron(0 0/24 * * ? *)', 'cron(0 8 * * ? *)', 'cron(0 8 ? * * *)', 'cron(15 8 ? * SUN *)', 'cron(0 8 ? * 7 *)', 'cron(0 8 ? * mon *)', 'cron(0 8 ? * TUE#3 *)', 'cron(0 8 ? * 3L *)', 'cron(0 8 ? * SUNL *)', 'cron(0 8 1/1 * ? *)', 'cron(0 0 0/12 * * ? *)']) {
+      expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: ok })))).toHaveLength(0);
+    }
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'at(2030-01-01T00:00:00)' })))).toContain('pf-ssm-association-schedule');
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'at(2030-01-01T00:00:00Z)', ApplyOnlyAtCronInterval: true })))).toContain('pf-ssm-association-schedule');
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'at(2030-01-01T00:00)', ApplyOnlyAtCronInterval: true })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'rate(1 day)', ApplyOnlyAtCronInterval: true })))).toContain('pf-ssm-association-schedule');
+    expect(ids(diagnoseTemplate(assoc({ ApplyOnlyAtCronInterval: true })))).toContain('pf-ssm-association-schedule');
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'cron(0 0 ? * THU#2 *)', ScheduleOffset: 2 })))).toContain('pf-ssm-association-schedule');
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'cron(0 0 ? * THU *)', ApplyOnlyAtCronInterval: true, ScheduleOffset: 2 })))).toContain('pf-ssm-association-schedule');
+    expect(ids(diagnoseTemplate(assoc({ ScheduleExpression: 'cron(0 0 ? * 3L *)', ApplyOnlyAtCronInterval: true, ScheduleOffset: 2 })))).toHaveLength(0);
+  });
+
+  test('ssm association targets and document cross-checks', () => {
+    expect(ids(diagnoseTemplate(assoc({ Targets: undefined })))).toContain('pf-ssm-association-targets');
+    expect(ids(diagnoseTemplate(assoc({ Targets: [{ Key: 'tag:x', Values: [''] }] })))).toContain('pf-ssm-association-targets');
+    expect(ids(diagnoseTemplate(assoc({ Targets: [{ Key: 'InstanceIds', Values: ['abc'] }] })))).toContain('pf-ssm-association-targets');
+    expect(ids(diagnoseTemplate(assoc({ Targets: [{ Key: 'InstanceIds', Values: ['*'] }] })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(assoc({ Targets: [{ Key: 'resource-groups:name', Values: ['g'] }, { Key: 'tag-key', Values: ['k'] }] })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(assoc({ DocumentVersion: '$DEFAULT' })))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(assoc({ Name: 'arn:aws:ssm:us-west-2:123456789012:document/My-Doc' }), 'us-east-1'))).toContain('pf-ssm-association-document');
+    const withDoc = (assocProps: Record<string, unknown>, docProps: Record<string, unknown>) => assoc({ Name: { Ref: 'D' }, Parameters: undefined, ...assocProps }, { D: { Type: 'AWS::SSM::Document', Properties: { DocumentType: 'Command', Content: CMD(), ...docProps } } });
+    expect(ids(diagnoseTemplate(withDoc({}, { DocumentType: 'Session', Content: { schemaVersion: '1.0', description: 'd', sessionType: 'Standard_Stream', inputs: {} } })))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(withDoc({ DocumentVersion: '2' }, {})))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(withDoc({ DocumentVersion: '1' }, {})))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(withDoc({ Parameters: { foo: ['x'] } }, {})))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(withDoc({}, { Content: CMD({ parameters: { msg: { type: 'String' } }, mainSteps: [{ action: 'aws:runShellScript', name: 'run', inputs: { runCommand: ['{{ msg }}'] } }] }) })))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(withDoc({ Parameters: { msg: ['hi'] } }, { Content: CMD({ parameters: { msg: { type: 'String' } }, mainSteps: [{ action: 'aws:runShellScript', name: 'run', inputs: { runCommand: ['{{ msg }}'] } }] }) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(withDoc({ SyncCompliance: 'MANUAL' }, {})))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(withDoc({ SyncCompliance: 'MANUAL' }, { Content: CMD({ parameters: { AssociationId: { type: 'String', default: '' } } }) })))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(withDoc({}, { DocumentType: 'Automation', Content: AUTO() })))).toContain('pf-ssm-association-document');
+    expect(ids(diagnoseTemplate(withDoc({ AutomationTargetParameterName: 'InstanceId' }, { DocumentType: 'Automation', Content: AUTO({ parameters: { InstanceId: { type: 'String', default: '' } } }) })))).toHaveLength(0);
   });
 });

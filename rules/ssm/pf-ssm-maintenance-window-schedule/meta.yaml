@@ -1,0 +1,11 @@
+id: pf-ssm-maintenance-window-schedule
+service: ssm
+resourceTypes: [AWS::SSM::MaintenanceWindow]
+severity: ERROR
+title: "Schedule must be rate(N minutes|hours|days), a 6/7-field cron() with in-range fields and one of day-of-month/day-of-week as ?, or at(yyyy-MM-ddTHH:mm:ss); ScheduleOffset only with an nth-/last-weekday cron; StartDate/EndDate need a UTC offset with Start before End; ScheduleTimezone is an IANA name or ±HH:MM"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/userguide/reference-cron-and-rate-expressions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid CRON expression: error at position 0, details: Specifying both a day-of-week AND a day-of-month parameter is not supported.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

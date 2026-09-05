@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Alias": {
+      "Type": "AWS::KMS::Alias",
+      "Properties": {
+        "AliasName": "alias/cdkpf-probe-fail",
+        "TargetKeyId": {
+          "Fn::Sub": "arn:${AWS::Partition}:kms:eu-west-1:${AWS::AccountId}:key/11111111-1111-1111-1111-111111111111"
+        }
+      }
+    }
+  }
+}

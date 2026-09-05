@@ -1,0 +1,11 @@
+id: pf-kms-key-policy-statement
+service: kms
+resourceTypes: [AWS::KMS::Key, AWS::KMS::ReplicaKey]
+severity: ERROR
+title: "Every KeyPolicy statement needs Principal, Action and Resource, the Statement list must not be empty, and AWS principals must be *, an account id or an IAM/STS ARN"
+constraintSource: https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateKey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Policy contains a statement with no principal.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

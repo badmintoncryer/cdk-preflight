@@ -1,0 +1,11 @@
+id: pf-secretsmanager-kms-key
+service: secretsmanager
+resourceTypes: [AWS::SecretsManager::Secret]
+severity: ERROR
+title: "KmsKeyId must be a key in the deploy region, and AWS managed keys of other services (alias/aws/<service>) cannot encrypt a secret"
+constraintSource: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_CreateSecret.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Access to KMS is not allowed\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05
