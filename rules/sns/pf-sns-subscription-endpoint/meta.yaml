@@ -1,0 +1,11 @@
+id: pf-sns-subscription-endpoint
+service: sns
+resourceTypes: [AWS::SNS::Subscription, AWS::SNS::Topic]
+severity: ERROR
+title: "Subscription Protocol is one of the nine SNS protocols and the Endpoint matches it: an ARN of the right service for sqs/lambda/firehose/application, an email address, a URL with the same scheme for http/https, a phone number for sms"
+constraintSource: https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: SQS endpoint ARN\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

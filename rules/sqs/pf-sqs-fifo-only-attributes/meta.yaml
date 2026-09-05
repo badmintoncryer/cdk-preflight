@@ -1,0 +1,11 @@
+id: pf-sqs-fifo-only-attributes
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "ContentBasedDeduplication, DeduplicationScope and FifoThroughputLimit are FIFO-only queue attributes (and the two enums are messageGroup|queue and perQueue|perMessageGroupId)"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Unknown Attribute ContentBasedDeduplication.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

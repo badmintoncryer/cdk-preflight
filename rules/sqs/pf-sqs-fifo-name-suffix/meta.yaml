@@ -1,0 +1,11 @@
+id: pf-sqs-fifo-name-suffix
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "A QueueName ending in .fifo requires FifoQueue: true (a FIFO queue without the suffix is engine rule E2504)"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Can only include alphanumeric characters, hyphens, or underscores. 1 to 80 in length\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

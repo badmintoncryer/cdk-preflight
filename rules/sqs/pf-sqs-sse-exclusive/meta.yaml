@@ -1,0 +1,11 @@
+id: pf-sqs-sse-exclusive
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "SqsManagedSseEnabled: true and KmsMasterKeyId are mutually exclusive (one SSE type per queue)"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"You can use one type of server-side encryption (SSE) at one time. You can either enable KMS SSE or SQS SSE.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

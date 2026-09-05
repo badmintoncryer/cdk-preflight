@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "FifoTopic": true,
+        "TopicName": "cdkpf-fifo-proto.fifo"
+      }
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "https",
+        "Endpoint": "https://example.com/hook"
+      }
+    }
+  }
+}
