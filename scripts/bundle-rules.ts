@@ -33,6 +33,25 @@ const SEVERITIES = ['FATAL', 'ERROR', 'WARN', 'INFO'];
 const UPSTREAMS = ['none', 'pending-engine', 'engine-pr', 'retired'];
 const REPRO_METHODS = ['real-deploy', 'research-case', 'doc-only'];
 
+const ISO_DATE = /\d{4}-\d{2}-\d{2}/;
+const AWS_REGION = /\b(?:af|ap|ca|eu|il|me|sa|us)-[a-z]+-\d\b/;
+
+/**
+ * repro.evidence の最低要件。PR CI は実機デプロイを回さない（fork PR に自アカウントへの
+ * 任意デプロイを許すことになるため）ので、real-deploy 宣言には bench 実測行そのもの
+ * ——日付とリージョン——の貼り付けを機械的に要求して、口頭の「動作確認済み」を弾く。
+ * 問題があればメッセージを返す。
+ */
+export function evidenceProblem(repro: { method: string; evidence?: string }): string | undefined {
+  const ev = repro.evidence?.trim();
+  if (!ev) return 'meta.repro.evidence is required';
+  if (repro.method !== 'real-deploy') return undefined;
+  if (!ISO_DATE.test(ev) || !AWS_REGION.test(ev)) {
+    return 'meta.repro.method=real-deploy requires evidence quoting the bench run, with a YYYY-MM-DD date and a region (e.g. "bench 2026-09-03 ap-northeast-1: ... -> ROLLBACK_COMPLETE")';
+  }
+  return undefined;
+}
+
 export function collectRules(root: string): BundledRule[] {
   const rulesDir = path.join(root, 'rules');
   const out: BundledRule[] = [];
@@ -60,6 +79,8 @@ export function collectRules(root: string): BundledRule[] {
       if (!meta.repro || !REPRO_METHODS.includes(meta.repro.method)) {
         throw new Error(`${id}: meta.repro.method must be one of ${REPRO_METHODS.join('/')}`);
       }
+      const evProblem = evidenceProblem(meta.repro);
+      if (evProblem) throw new Error(`${id}: ${evProblem}`);
       if (!meta.constraintSource) throw new Error(`${id}: meta.constraintSource (doc URL) is required`);
       if (!Array.isArray(meta.resourceTypes) || meta.resourceTypes.length === 0) {
         throw new Error(`${id}: meta.resourceTypes must be a non-empty list`);
