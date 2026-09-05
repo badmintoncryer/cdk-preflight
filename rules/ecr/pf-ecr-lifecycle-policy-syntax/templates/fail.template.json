@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-lifecyclepolicysynta",
+        "EmptyOnDelete": true,
+        "LifecyclePolicy": {
+          "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"cdk-preflight fixture: the selection block is missing entirely\",\"action\":{\"type\":\"expire\"}}]}"
+        }
+      }
+    }
+  }
+}

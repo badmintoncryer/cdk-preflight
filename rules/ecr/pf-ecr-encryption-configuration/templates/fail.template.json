@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-encryptionconfigurat",
+        "EmptyOnDelete": true,
+        "EncryptionConfiguration": {
+          "EncryptionType": "AES256",
+          "KmsKey": "arn:aws:kms:ap-northeast-1:214794239830:key/11111111-2222-3333-4444-555555555555"
+        }
+      }
+    }
+  }
+}

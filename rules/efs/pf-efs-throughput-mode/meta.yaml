@@ -1,0 +1,11 @@
+id: pf-efs-throughput-mode
+service: efs
+resourceTypes: [AWS::EFS::FileSystem]
+severity: ERROR
+title: "ProvisionedThroughputInMibps belongs to ThroughputMode: provisioned and nothing else"
+constraintSource: https://docs.aws.amazon.com/efs/latest/APIReference/API_CreateFileSystem.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Provisioned throughput must be set for file systems that use provisioned throughput mode.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

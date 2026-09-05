@@ -1,0 +1,61 @@
+{
+  "Resources": {
+    "FS": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "AvailabilityZoneName": {
+          "Fn::Sub": "${AWS::Region}a"
+        },
+        "FileSystemTags": [
+          {
+            "Key": "cdkpf",
+            "Value": "bench"
+          }
+        ]
+      }
+    },
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}a"
+        }
+      }
+    },
+    "SG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "MT1": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "FS"
+        },
+        "SubnetId": {
+          "Ref": "SubA"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "SG"
+          }
+        ]
+      }
+    }
+  }
+}

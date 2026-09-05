@@ -1,0 +1,11 @@
+id: pf-efs-lifecycle-policy
+service: efs
+resourceTypes: [AWS::EFS::FileSystem]
+severity: ERROR
+title: "Each LifecyclePolicy object carries exactly one transition, transitions cannot repeat, Archive must be later than IA and needs elastic or provisioned throughput"
+constraintSource: https://docs.aws.amazon.com/efs/latest/APIReference/API_PutLifecycleConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"One or more LifecyclePolicy objects specified are malformed.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-lifecycleaction",
+        "EmptyOnDelete": true,
+        "LifecyclePolicy": {
+          "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"cdk-preflight fixture rule for the ECR lifecycle policy gate\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":30},\"action\":{\"type\":\"transition\"}}]}"
+        }
+      }
+    }
+  }
+}

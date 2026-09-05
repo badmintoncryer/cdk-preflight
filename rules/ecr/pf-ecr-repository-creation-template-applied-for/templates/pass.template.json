@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Tpl": {
+      "Type": "AWS::ECR::RepositoryCreationTemplate",
+      "Properties": {
+        "Prefix": "cdkpf-repositorycreationte",
+        "AppliedFor": [
+          "PULL_THROUGH_CACHE",
+          "CREATE_ON_PUSH"
+        ]
+      }
+    }
+  }
+}

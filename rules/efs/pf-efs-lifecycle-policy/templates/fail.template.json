@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "FS": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "cdkpf",
+            "Value": "bench"
+          }
+        ],
+        "ThroughputMode": "elastic",
+        "LifecyclePolicies": [
+          {
+            "TransitionToIA": "AFTER_30_DAYS",
+            "TransitionToArchive": "AFTER_90_DAYS"
+          }
+        ]
+      }
+    }
+  }
+}

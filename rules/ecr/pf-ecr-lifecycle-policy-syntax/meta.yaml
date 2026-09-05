@@ -1,0 +1,11 @@
+id: pf-ecr-lifecycle-policy-syntax
+service: ecr
+resourceTypes: [AWS::ECR::Repository, AWS::ECR::RepositoryCreationTemplate]
+severity: ERROR
+title: "The lifecycle policy must be a JSON document with 1-50 rules, each holding rulePriority, selection and action and no other keys"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/userguide/lifecycle_policy_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: object has missing required properties ([\"selection\"])\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06
