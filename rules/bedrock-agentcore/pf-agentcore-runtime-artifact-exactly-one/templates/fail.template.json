@@ -1,0 +1,78 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "agentcore",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "bedrock:InvokeModel",
+                    "logs:*",
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Runtime": {
+      "Type": "AWS::BedrockAgentCore::Runtime",
+      "Properties": {
+        "AgentRuntimeName": "cdkpf_rtart_fail",
+        "AgentRuntimeArtifact": {
+          "ContainerConfiguration": {
+            "ContainerUri": {
+              "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/my-agent:latest"
+            }
+          },
+          "CodeConfiguration": {
+            "Code": {
+              "S3": {
+                "Bucket": "my-agent-code",
+                "Prefix": "agent.zip"
+              }
+            },
+            "EntryPoint": [
+              "app.py"
+            ],
+            "Runtime": "PYTHON_3_12"
+          }
+        },
+        "NetworkConfiguration": {
+          "NetworkMode": "PUBLIC"
+        },
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-agentcore-resource-policy-document
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::ResourcePolicy]
+severity: ERROR
+title: A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_PutResourcePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe, on a Gateway ARN): non-JSON -> CREATE_FAILED (Bedrock AgentCore Control 400 ValidationException: This policy contains invalid Json); no Statement -> 400: Policy has no statements; statement without Principal -> 400: Missing required field Principal; Action s3:GetObject -> 400: Policy has invalid action; Resource '*' -> 400: Policy statement block must contain exactly one resource ARN that matches the provided resource ARN; all ROLLBACK_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-resource-policy-document.log"
+addedOn: 2026-09-05

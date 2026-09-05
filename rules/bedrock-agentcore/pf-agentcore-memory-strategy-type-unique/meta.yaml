@@ -1,0 +1,12 @@
+id: pf-agentcore-memory-strategy-type-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: A memory may carry at most one strategy of each built-in type
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_MemoryStrategyInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): seven SemanticMemoryStrategy entries -> CREATE_FAILED (BedrockAgentCoreControl 400: Validation failed during CreateMemory: Only one strategy of each type is allowed. Found multiple strategies of type: semanticMemoryStrategy) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-strategy-type-unique.log"
+addedOn: 2026-09-05

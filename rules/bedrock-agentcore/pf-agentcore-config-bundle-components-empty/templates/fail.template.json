@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Bundle": {
+      "Type": "AWS::BedrockAgentCore::ConfigurationBundle",
+      "Properties": {
+        "BundleName": "cdkpf_cb_fail",
+        "Components": {}
+      }
+    }
+  }
+}

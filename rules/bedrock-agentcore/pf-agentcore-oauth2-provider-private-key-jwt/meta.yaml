@@ -1,0 +1,12 @@
+id: pf-agentcore-oauth2-provider-private-key-jwt
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::OAuth2CredentialProvider]
+severity: ERROR
+title: ClientAuthenticationMethod PRIVATE_KEY_JWT cannot be satisfied through CloudFormation (PrivateKeyJwtConfig is not in the resource schema)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomOauth2ProviderConfigInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): ClientAuthenticationMethod: PRIVATE_KEY_JWT -> CREATE_FAILED (Bedrock AgentCore Control 400: privateKeyJwtConfig is required when clientAuthenticationMethod is PRIVATE_KEY_JWT.) -> ROLLBACK_COMPLETE; the AWS::BedrockAgentCore::OAuth2CredentialProvider schema has no PrivateKeyJwtConfig property (F3002 if added), so the method is unusable from a template. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-oauth2-provider-private-key-jwt.log"
+addedOn: 2026-09-05

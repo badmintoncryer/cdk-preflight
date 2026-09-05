@@ -421,15 +421,361 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_batchumf_cr(name) := cr if {\n\tcr := resolve(name, \"Properties.ComputeResources.Type\")\n\tis_string(cr)\n}\n\nviolation contains make_diag_full(\"pf-batch-unmanaged-fargate\", \"ERROR\", name,\n\t\"Properties.ComputeResources.Type\",\n\tsprintf(\"Type UNMANAGED cannot pair with ComputeResources.Type %s (\\\"Cannot create an UNMANAGED Fargate Compute Environment.\\\")\", [cr]),\n\t\"Use MANAGED for Fargate, or EC2 resources for UNMANAGED\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tresolve(name, \"Properties.Type\") == \"UNMANAGED\"\n\tcr := _pf_batchumf_cr(name)\n\tcr in {\"FARGATE\", \"FARGATE_SPOT\"}\n}\n"
   },
   {
-    "id": "pf-agentcore-gateway-jwt-authorizer",
+    "id": "pf-agentcore-apikey-provider-secret-source",
     "service": "bedrock-agentcore",
     "severity": "ERROR",
-    "title": "Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration",
+    "title": "An API key credential provider takes ApiKey when the secret is MANAGED and ApiKeySecretConfig when it is EXTERNAL, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::ApiKeyCredentialProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ApiKey, ApiKeySecretSource and ApiKeySecretConfig are three independent\n# optional fields in the schema; the service ties them together at create\n# time. Presence is read from the preprocessed document so a Ref / dynamic\n# reference still counts as present.\n_pf_akpsrc_url := \"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateApiKeyCredentialProvider.html\"\n\n_pf_akpsrc_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_akpsrc_external(name) if resolve(name, \"Properties.ApiKeySecretSource\") == \"EXTERNAL\"\n\nviolation contains make_diag_full(\"pf-agentcore-apikey-provider-secret-source\", \"ERROR\", name,\n\t\"Properties.ApiKey\",\n\t\"ApiKeySecretSource is MANAGED (the default) but ApiKey is missing; CreateApiKeyCredentialProvider fails with \\\"ApiKey is required when secret source is MANAGED or not specified\\\"\",\n\t\"Set ApiKey, or set ApiKeySecretSource: EXTERNAL and point ApiKeySecretConfig at a Secrets Manager secret\",\n\t_pf_akpsrc_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ApiKeyCredentialProvider\")\n\tnot _pf_akpsrc_external(name)\n\tnot _pf_akpsrc_has(name, \"ApiKey\")\n}\n\nviolation contains make_diag_full(\"pf-agentcore-apikey-provider-secret-source\", \"ERROR\", name,\n\t\"Properties.ApiKeySecretConfig\",\n\t\"ApiKeySecretSource is MANAGED (the default) but ApiKeySecretConfig is set; CreateApiKeyCredentialProvider fails with \\\"ApiKeySecretConfig must not be provided when secret source is MANAGED or not specified\\\"\",\n\t\"Remove ApiKeySecretConfig, or set ApiKeySecretSource: EXTERNAL and drop ApiKey\",\n\t_pf_akpsrc_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ApiKeyCredentialProvider\")\n\tnot _pf_akpsrc_external(name)\n\t_pf_akpsrc_has(name, \"ApiKeySecretConfig\")\n}\n\nviolation contains make_diag_full(\"pf-agentcore-apikey-provider-secret-source\", \"ERROR\", name,\n\t\"Properties.ApiKeySecretConfig\",\n\t\"ApiKeySecretSource is EXTERNAL but ApiKeySecretConfig is missing; CreateApiKeyCredentialProvider fails with \\\"ApiKeySecretConfig is required when secret source is EXTERNAL\\\"\",\n\t\"Add ApiKeySecretConfig (SecretId and JsonKey of the Secrets Manager secret holding the key)\",\n\t_pf_akpsrc_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ApiKeyCredentialProvider\")\n\t_pf_akpsrc_external(name)\n\tnot _pf_akpsrc_has(name, \"ApiKeySecretConfig\")\n}\n\nviolation contains make_diag_full(\"pf-agentcore-apikey-provider-secret-source\", \"ERROR\", name,\n\t\"Properties.ApiKey\",\n\t\"ApiKeySecretSource is EXTERNAL but ApiKey is also set; CreateApiKeyCredentialProvider fails with \\\"ApiKey must not be provided when secret source is EXTERNAL\\\"\",\n\t\"Remove ApiKey and keep only ApiKeySecretConfig\",\n\t_pf_akpsrc_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ApiKeyCredentialProvider\")\n\t_pf_akpsrc_external(name)\n\t_pf_akpsrc_has(name, \"ApiKey\")\n}\n"
+  },
+  {
+    "id": "pf-agentcore-config-bundle-components-empty",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A configuration bundle needs at least one component",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::ConfigurationBundle"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Components is required but the schema has no minProperties; an empty map\n# fails at CreateConfigurationBundle (\"Components map cannot be empty\").\nviolation contains make_diag_full(\"pf-agentcore-config-bundle-components-empty\", \"ERROR\", name,\n\t\"Properties.Components\",\n\t\"Components is empty; CreateConfigurationBundle fails with \\\"Components map cannot be empty. At least one component configuration is required\\\"\",\n\t\"Add at least one component (e.g. a harness configuration)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateConfigurationBundle.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ConfigurationBundle\")\n\tc := resolve(name, \"Properties.Components\")\n\tis_object(c)\n\tcount(c) == 0\n}\n"
+  },
+  {
+    "id": "pf-agentcore-dataset-source-exactly-one",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Dataset Source must hold exactly one of InlineExamples or S3Source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Dataset"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Source is documented as a union but the schema has no oneOf on it (measured\n# 2026-09-05: {} and both members pass the engine); CreateDataset rejects both\n# with \"Exactly one of source.inlineExamples or source.s3Source must be provided\".\nviolation contains make_diag_full(\"pf-agentcore-dataset-source-exactly-one\", \"ERROR\", name,\n\t\"Properties.Source\",\n\tsprintf(\"Source holds %d members; CreateDataset fails with \\\"Exactly one of source.inlineExamples or source.s3Source must be provided\\\"\", [n]),\n\t\"Set exactly one of Source.InlineExamples or Source.S3Source\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateDataset.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Dataset\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tsrc := object.get(props, \"Source\", null)\n\tis_object(src)\n\tn := count([1 | some k in [\"InlineExamples\", \"S3Source\"]; object.get(src, k, \"__pf_absent\") != \"__pf_absent\"])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-agentcore-evaluator-rating-scale-empty",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "An LLM-as-a-judge evaluator RatingScale must list at least one scale entry",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Evaluator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RatingScale is a oneOf (Numerical | Categorical) in the schema, which catches\n# both-or-neither (F3018), but neither array carries minItems: an empty\n# Categorical / Numerical list passes validation and CreateEvaluator rejects it\n# with \"RatingScale must contain at least one non-empty scale definition\".\nviolation contains make_diag_full(\"pf-agentcore-evaluator-rating-scale-empty\", \"ERROR\", name,\n\tsprintf(\"Properties.EvaluatorConfig.LlmAsAJudge.RatingScale.%s\", [key]),\n\tsprintf(\"RatingScale.%s is empty; CreateEvaluator fails with \\\"RatingScale must contain at least one non-empty scale definition (numerical or categorical)\\\"\", [key]),\n\t\"List at least one scale entry (Label, Definition, and Value for Numerical)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_RatingScale.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Evaluator\")\n\tsome key in [\"Numerical\", \"Categorical\"]\n\tarr := resolve(name, sprintf(\"Properties.EvaluatorConfig.LlmAsAJudge.RatingScale.%s\", [key]))\n\tis_array(arr)\n\tcount(arr) == 0\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-authorizer-config-unexpected",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateways with AuthorizerType AWS_IAM or NONE must not set AuthorizerConfiguration",
     "upstream": "none",
     "resourceTypes": [
       "AWS::BedrockAgentCore::Gateway"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gwjwt_has_config(name) if is_object(resolve(name, \"Properties.AuthorizerConfiguration\"))\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-jwt-authorizer\", \"ERROR\", name,\n\t\"Properties.AuthorizerConfiguration\",\n\t\"AuthorizerType is CUSTOM_JWT but AuthorizerConfiguration is missing; the CreateGateway API requires it and the deployment fails with a ValidationException\",\n\t\"Add AuthorizerConfiguration.CustomJWTAuthorizer (discoveryUrl and allowedAudience/allowedClients), or switch AuthorizerType to AWS_IAM\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGateway.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Gateway\")\n\tresolve(name, \"Properties.AuthorizerType\") == \"CUSTOM_JWT\"\n\tnot _pf_gwjwt_has_config(name)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Mirror of pf-agentcore-gateway-jwt-authorizer: CUSTOM_JWT needs the block,\n# AWS_IAM and NONE reject it (\"AuthorizerConfiguration should be null for\n# <type> AuthorizerType\"). AUTHENTICATE_ONLY accepts either (measured\n# 2026-09-05), so it is left alone. Presence is read from the preprocessed\n# document so an unresolvable value still counts as present.\nviolation contains make_diag_full(\"pf-agentcore-gateway-authorizer-config-unexpected\", \"ERROR\", name,\n\t\"Properties.AuthorizerConfiguration\",\n\tsprintf(\"AuthorizerType is %s but AuthorizerConfiguration is set; CreateGateway fails with \\\"AuthorizerConfiguration should be null for %s AuthorizerType\\\"\", [t, t]),\n\t\"Remove AuthorizerConfiguration, or switch AuthorizerType to CUSTOM_JWT if the JWT authorizer is intended\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGateway.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Gateway\")\n\tt := resolve(name, \"Properties.AuthorizerType\")\n\tt in {\"AWS_IAM\", \"NONE\"}\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"AuthorizerConfiguration\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-interceptor-point-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateway interceptors may bind each interception point (REQUEST / RESPONSE) only once",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Gateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema caps InterceptorConfigurations at 2 (F3032) but says nothing about\n# which interception point each one binds; CreateGateway rejects a point that is\n# bound twice — in one interceptor or across two — with \"Only one interceptor\n# configuration per interception point can be defined\".\n_pf_gwicpt_points(name) := [[c.index, p] |\n\tsome c in flatten_list(name, \"Properties.InterceptorConfigurations\")\n\tpts := object.get(c.value, \"InterceptionPoints\", [])\n\tis_array(pts)\n\tsome p in pts\n\tis_string(p)\n]\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-interceptor-point-unique\", \"ERROR\", name,\n\t\"Properties.InterceptorConfigurations\",\n\tsprintf(\"Interception point '%s' is bound by more than one interceptor configuration; CreateGateway fails with \\\"Only one interceptor configuration per interception point can be defined\\\"\", [p]),\n\t\"Bind each interception point (REQUEST, RESPONSE) to exactly one interceptor\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_GatewayInterceptorConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Gateway\")\n\tall := _pf_gwicpt_points(name)\n\tsome [_, p] in all\n\tcount([1 | some [_, q] in all; q == p]) > 1\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-jwt-authorizer",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateways and payment managers with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Gateway",
+      "AWS::BedrockAgentCore::PaymentManager"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gwjwt_has_config(name) if is_object(resolve(name, \"Properties.AuthorizerConfiguration\"))\n\n# PaymentManager shares the AuthorizerType / AuthorizerConfiguration pair and\n# the same error (\"AuthorizerConfiguration is required for CUSTOM_JWT\n# authorizer type\", measured 2026-09-05).\nviolation contains make_diag_full(\"pf-agentcore-gateway-jwt-authorizer\", \"ERROR\", name,\n\t\"Properties.AuthorizerConfiguration\",\n\t\"AuthorizerType is CUSTOM_JWT but AuthorizerConfiguration is missing; the create API requires it and the deployment fails with a ValidationException\",\n\t\"Add AuthorizerConfiguration.CustomJWTAuthorizer (discoveryUrl and allowedAudience/allowedClients), or switch AuthorizerType to AWS_IAM\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGateway.html\") if {\n\tsome t in [\"AWS::BedrockAgentCore::Gateway\", \"AWS::BedrockAgentCore::PaymentManager\"]\n\tsome name in resources_of_type(t)\n\tresolve(name, \"Properties.AuthorizerType\") == \"CUSTOM_JWT\"\n\tnot _pf_gwjwt_has_config(name)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-mcp-supported-versions",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateway MCP SupportedVersions must be MCP protocol versions the service supports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Gateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types SupportedVersions as free strings; CreateGateway rejects\n# anything outside the service's MCP protocol version list. Snapshot of that\n# list as observed 2026-09-05 (the error message enumerates it) — extend when\n# the service adds a version.\n_pf_gwmcpver_supported := {\"2025-03-26\", \"2025-06-18\", \"2025-11-25\", \"2026-07-28\"}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-mcp-supported-versions\", \"ERROR\", name,\n\tsprintf(\"Properties.ProtocolConfiguration.Mcp.SupportedVersions.%d\", [v.index]),\n\tsprintf(\"MCP protocol version '%s' is not supported by AgentCore Gateway; CreateGateway fails with \\\"Unsupported MCP Version(s) are provided in request\\\"\", [v.value]),\n\tsprintf(\"Use one of %s\", [concat(\", \", sort(_pf_gwmcpver_supported))]),\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-using.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Gateway\")\n\tsome v in flatten_list(name, \"Properties.ProtocolConfiguration.Mcp.SupportedVersions\")\n\tis_string(v.value)\n\tnot v.value in _pf_gwmcpver_supported\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-target-credential-provider-required",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CredentialProviderType and CredentialProvider are independent schema fields;\n# the pairing is only enforced by CreateGatewayTarget (\"OAuth credential\n# provider is required for OAUTH credential provider type\" / \"API key\n# credential provider is required for API_KEY credential provider type\").\n_pf_gwtcred_block := {\"OAUTH\": \"OauthCredentialProvider\", \"API_KEY\": \"ApiKeyCredentialProvider\"}\n\n_pf_gwtcred_has(c, key) if {\n\tcp := object.get(c, \"CredentialProvider\", null)\n\tis_object(cp)\n\tis_object(object.get(cp, key, null))\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-credential-provider-required\", \"ERROR\", name,\n\tsprintf(\"Properties.CredentialProviderConfigurations.%d.CredentialProvider\", [c.index]),\n\tsprintf(\"CredentialProviderType is %s but CredentialProvider.%s is missing; CreateGatewayTarget fails with \\\"%s credential provider is required for %s credential provider type\\\"\", [t, key, label, t]),\n\tsprintf(\"Add CredentialProvider.%s with the credential provider ProviderArn\", [key]),\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CredentialProviderConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tsome c in flatten_list(name, \"Properties.CredentialProviderConfigurations\")\n\tt := object.get(c.value, \"CredentialProviderType\", null)\n\tkey := _pf_gwtcred_block[t]\n\tlabel := {\"OAUTH\": \"OAuth\", \"API_KEY\": \"API key\"}[t]\n\tnot _pf_gwtcred_has(c.value, key)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-target-iam-credential-provider",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CredentialProvider is optional in the schema (GATEWAY_IAM_ROLE needs none for\n# Lambda targets), but an OpenAPI or MCP server target signed with the gateway\n# role must name the SigV4 service: \"IamCredentialProvider is required for\n# openApiSchema / mcpServer targets using IAM authentication\".\n_pf_gwtiam_kinds := [\"OpenApiSchema\", \"McpServer\"]\n\n_pf_gwtiam_has_iam(c) if {\n\tcp := object.get(c, \"CredentialProvider\", null)\n\tis_object(cp)\n\tis_object(object.get(cp, \"IamCredentialProvider\", null))\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-iam-credential-provider\", \"ERROR\", name,\n\tsprintf(\"Properties.CredentialProviderConfigurations.%d.CredentialProvider\", [c.index]),\n\tsprintf(\"%s target uses GATEWAY_IAM_ROLE without CredentialProvider.IamCredentialProvider; CreateGatewayTarget fails with \\\"IamCredentialProvider is required for %s targets using IAM authentication\\\"\", [kind, kind]),\n\t\"Add CredentialProvider.IamCredentialProvider with the Service to sign for (e.g. execute-api) and optionally its Region\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-authorization.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tsome kind in _pf_gwtiam_kinds\n\tis_object(resolve(name, sprintf(\"Properties.TargetConfiguration.Mcp.%s\", [kind])))\n\tsome c in flatten_list(name, \"Properties.CredentialProviderConfigurations\")\n\tobject.get(c.value, \"CredentialProviderType\", null) == \"GATEWAY_IAM_ROLE\"\n\tnot _pf_gwtiam_has_iam(c.value)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-target-lambda-credential-type",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Lambda gateway targets accept only the GATEWAY_IAM_ROLE credential provider",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The credential provider union is validated per entry by the schema, but the\n# target-type x credential-type compatibility table lives only in the dev\n# guide; CreateGatewayTarget rejects a Lambda target with anything but\n# GATEWAY_IAM_ROLE (\"Lambda target only supports GATEWAY_IAM_ROLE credential\n# provider type\").\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-lambda-credential-type\", \"ERROR\", name,\n\tsprintf(\"Properties.CredentialProviderConfigurations.%d.CredentialProviderType\", [c.index]),\n\tsprintf(\"Lambda targets accept only GATEWAY_IAM_ROLE but this target uses %s; CreateGatewayTarget fails with \\\"Lambda target only supports GATEWAY_IAM_ROLE credential provider type\\\"\", [t]),\n\t\"Use CredentialProviderType GATEWAY_IAM_ROLE, or switch to an OpenAPI / MCP server target for OAuth, API key, or JWT pass-through credentials\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-authorization.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tis_object(resolve(name, \"Properties.TargetConfiguration.Mcp.Lambda\"))\n\tsome c in flatten_list(name, \"Properties.CredentialProviderConfigurations\")\n\tt := object.get(c.value, \"CredentialProviderType\", null)\n\tis_string(t)\n\tt != \"GATEWAY_IAM_ROLE\"\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-target-lambda-tool-name-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Tool names in a Lambda gateway target's inline ToolSchema must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema checks each tool Name's pattern, not uniqueness. Duplicates are\n# rejected asynchronously: the target reaches status FAILED (\"Duplicate tool\n# found in target configuration\") and CloudFormation rolls back on\n# NotStabilized minutes later.\n_pf_gwttoolname_names(name) := [[t.index, n] |\n\tsome t in flatten_list(name, \"Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload\")\n\tn := object.get(t.value, \"Name\", null)\n\tis_string(n)\n]\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-lambda-tool-name-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.%d.Name\", [i]),\n\tsprintf(\"Tool name '%s' appears more than once; the target fails to stabilize with \\\"Duplicate tool found in target configuration\\\"\", [n]),\n\t\"Give every tool in the inline schema a distinct Name\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_ToolDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tall := _pf_gwttoolname_names(name)\n\tsome [i, n] in all\n\tcount([1 | some [_, m] in all; m == n]) > 1\n\ti == max([j | some [j, m] in all; m == n])\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-target-lambda-tool-schema-empty",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Lambda gateway targets need at least one tool in ToolSchema.InlinePayload",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# InlinePayload has no minItems in the schema; the service rejects an empty\n# tool list with \"No Lambda tool schema found in target configuration\".\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-lambda-tool-schema-empty\", \"ERROR\", name,\n\t\"Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload\",\n\t\"The Lambda target declares an empty tool list; CreateGatewayTarget fails with \\\"No Lambda tool schema found in target configuration\\\"\",\n\t\"Declare at least one tool (Name, Description, InputSchema) or point ToolSchema.S3 at a schema file\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_ToolDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\ttools := resolve(name, \"Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload\")\n\tis_array(tools)\n\tcount(tools) == 0\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-target-openapi-schema",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The InlinePayload is an opaque string to the schema. The service parses it\n# after CreateGatewayTarget returns, so a bad document surfaces as a target in\n# status FAILED and a NotStabilized rollback. Three checks measured to fail:\n# no top-level `openapi` (Swagger 2.0), no `servers`, an operation without\n# `operationId`. Non-JSON payloads are left alone (YAML is not measured).\n_pf_gwtoapi_doc(name) := doc if {\n\ts := resolve(name, \"Properties.TargetConfiguration.Mcp.OpenApiSchema.InlinePayload\")\n\tis_string(s)\n\tdoc := json.unmarshal(s)\n\tis_object(doc)\n}\n\n_pf_gwtoapi_url := \"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-openapi.html\"\n_pf_gwtoapi_path := \"Properties.TargetConfiguration.Mcp.OpenApiSchema.InlinePayload\"\n_pf_gwtoapi_methods := {\"get\", \"put\", \"post\", \"delete\", \"options\", \"head\", \"patch\", \"trace\"}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-openapi-schema\", \"ERROR\", name, _pf_gwtoapi_path,\n\t\"The inline OpenAPI document has no top-level `openapi` field (Swagger 2.0 is not accepted); the target fails to stabilize with \\\"Invalid OpenAPI schema: attribute openapi is missing\\\"\",\n\t\"Convert the document to OpenAPI 3.x (`openapi: 3.0.x`)\", _pf_gwtoapi_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tdoc := _pf_gwtoapi_doc(name)\n\tnot is_string(object.get(doc, \"openapi\", null))\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-openapi-schema\", \"ERROR\", name, _pf_gwtoapi_path,\n\t\"The inline OpenAPI document has no `servers` entry; the target fails to stabilize with \\\"Server URL must not be empty\\\"\",\n\t\"Add a `servers` list with the HTTPS base URL of the API\", _pf_gwtoapi_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tdoc := _pf_gwtoapi_doc(name)\n\tis_string(object.get(doc, \"openapi\", null))\n\tservers := object.get(doc, \"servers\", [])\n\tcount(servers) == 0\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-openapi-schema\", \"ERROR\", name, _pf_gwtoapi_path,\n\tsprintf(\"Operation %s %s has no operationId; the target fails to stabilize with \\\"Operation %s -> %s must have an operationId\\\"\", [upper(method), path, path, upper(method)]),\n\t\"Give every operation a unique operationId (it becomes the tool name)\", _pf_gwtoapi_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tdoc := _pf_gwtoapi_doc(name)\n\tis_string(object.get(doc, \"openapi\", null))\n\tpaths := object.get(doc, \"paths\", {})\n\tsome path, item in paths\n\tis_object(item)\n\tsome method, op in item\n\tmethod in _pf_gwtoapi_methods\n\tis_object(op)\n\tnot is_string(object.get(op, \"operationId\", null))\n}\n"
+  },
+  {
+    "id": "pf-agentcore-jwt-authorizer-claims",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Gateway",
+      "AWS::BedrockAgentCore::Runtime",
+      "AWS::BedrockAgentCore::Harness"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema rejects an *empty* AllowedAudience / AllowedClients array (F3018)\n# but not a CustomJWTAuthorizer that omits all four claim filters; the control\n# plane then fails with \"At least one of allowedAudience or allowedClients or\n# allowedScopes or CustomClaims must be defined for CUSTOM_JWT authorizer\"\n# (Gateway wording; Runtime and Harness say \"must be present with at least\n# one item\"). PaymentManager shares the shape but is not measured.\n_pf_jwtclaims_types := [\"AWS::BedrockAgentCore::Gateway\", \"AWS::BedrockAgentCore::Runtime\", \"AWS::BedrockAgentCore::Harness\"]\n\n_pf_jwtclaims_has_filter(jwt) if {\n\tsome key in [\"AllowedAudience\", \"AllowedClients\", \"AllowedScopes\", \"CustomClaims\"]\n\tobject.get(jwt, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-agentcore-jwt-authorizer-claims\", \"ERROR\", name,\n\t\"Properties.AuthorizerConfiguration.CustomJWTAuthorizer\",\n\t\"CustomJWTAuthorizer sets none of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims; the deployment fails with \\\"At least one of allowedAudience or allowedClients or allowedScopes or CustomClaims must be defined for CUSTOM_JWT authorizer\\\"\",\n\t\"Add at least one claim filter, e.g. AllowedClients with the OAuth client IDs that may call this resource\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html\") if {\n\tsome t in _pf_jwtclaims_types\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tauth := object.get(props, \"AuthorizerConfiguration\", null)\n\tis_object(auth)\n\tjwt := object.get(auth, \"CustomJWTAuthorizer\", null)\n\tis_object(jwt)\n\tnot _pf_jwtclaims_has_filter(jwt)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-memory-custom-strategy-execution-role",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Memories with a custom strategy require MemoryExecutionRoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Memory"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MemoryExecutionRoleArn is optional in the schema, but CreateMemory rejects a\n# memory that carries any CustomMemoryStrategy without it: \"Please provide\n# memoryExecutionRoleArn as memory contains one or more Custom strategies\".\n# Absence is proven on the preprocessed document (resolve() is undefined for\n# both a missing key and an unresolvable value; see AGENTS.md).\n_pf_memrole_absent(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"MemoryExecutionRoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-agentcore-memory-custom-strategy-execution-role\", \"ERROR\", name,\n\tsprintf(\"Properties.MemoryStrategies.%d.CustomMemoryStrategy\", [s.index]),\n\t\"The memory has a CustomMemoryStrategy but no MemoryExecutionRoleArn; CreateMemory fails with \\\"Please provide memoryExecutionRoleArn as memory contains one or more Custom strategies\\\"\",\n\t\"Set MemoryExecutionRoleArn to a role that bedrock-agentcore.amazonaws.com can assume (with bedrock:InvokeModel for the strategy's models)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-configuring-custom-strategies.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Memory\")\n\t_pf_memrole_absent(name)\n\tsome s in flatten_list(name, \"Properties.MemoryStrategies\")\n\tis_object(object.get(s.value, \"CustomMemoryStrategy\", null))\n}\n"
+  },
+  {
+    "id": "pf-agentcore-memory-strategy-exactly-one",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Each MemoryStrategies entry must hold exactly one strategy type, and a CustomMemoryStrategy exactly one Configuration override",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Memory"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema pins these unions with minProperties/maxProperties = 1;\n# CloudFormation's early validation enforces them and the stack rolls back\n# before any resource is touched. The bundled engine (1.7.0-beta) does not\n# evaluate min/maxProperties, so the template passes synth.\n_pf_memsone_url := \"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_MemoryStrategyInput.html\"\n\nviolation contains make_diag_full(\"pf-agentcore-memory-strategy-exactly-one\", \"ERROR\", name,\n\tsprintf(\"Properties.MemoryStrategies.%d\", [s.index]),\n\tsprintf(\"MemoryStrategies entry holds %d strategy types; exactly one is required and CloudFormation rejects the template (PROPERTY_VALIDATION: minimum size 1 / maximum size 1)\", [count(s.value)]),\n\t\"Put exactly one of SemanticMemoryStrategy, SummaryMemoryStrategy, UserPreferenceMemoryStrategy, EpisodicMemoryStrategy, or CustomMemoryStrategy in each entry\",\n\t_pf_memsone_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Memory\")\n\tsome s in flatten_list(name, \"Properties.MemoryStrategies\")\n\tis_object(s.value)\n\tcount(s.value) != 1\n}\n\nviolation contains make_diag_full(\"pf-agentcore-memory-strategy-exactly-one\", \"ERROR\", name,\n\tsprintf(\"Properties.MemoryStrategies.%d.CustomMemoryStrategy.Configuration\", [s.index]),\n\tsprintf(\"CustomMemoryStrategy.Configuration holds %d overrides; at most one is allowed and CloudFormation rejects the template (PROPERTY_VALIDATION: maximum size 1)\", [count(cfg)]),\n\t\"Keep a single override (SemanticOverride, SummaryOverride, UserPreferenceOverride, EpisodicOverride, or SelfManagedConfiguration) per custom strategy\",\n\t_pf_memsone_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Memory\")\n\tsome s in flatten_list(name, \"Properties.MemoryStrategies\")\n\tcustom := object.get(s.value, \"CustomMemoryStrategy\", null)\n\tis_object(custom)\n\tcfg := object.get(custom, \"Configuration\", null)\n\tis_object(cfg)\n\tcount(cfg) > 1\n}\n"
+  },
+  {
+    "id": "pf-agentcore-memory-strategy-name-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Memory strategy names must be unique within a memory",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Memory"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Each MemoryStrategies[] entry is a one-key union (SemanticMemoryStrategy,\n# SummaryMemoryStrategy, UserPreferenceMemoryStrategy, EpisodicMemoryStrategy,\n# CustomMemoryStrategy) carrying a Name. The schema validates each Name's\n# pattern but not uniqueness; CreateMemory rejects duplicates with\n# \"Duplicate memory strategy names were provided: [...]\".\n_pf_memsname_names(name) := [[s.index, n] |\n\tsome s in flatten_list(name, \"Properties.MemoryStrategies\")\n\tis_object(s.value)\n\tsome _, strat in s.value\n\tis_object(strat)\n\tn := object.get(strat, \"Name\", null)\n\tis_string(n)\n]\n\nviolation contains make_diag_full(\"pf-agentcore-memory-strategy-name-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.MemoryStrategies.%d\", [i]),\n\tsprintf(\"Memory strategy name '%s' is used more than once; CreateMemory fails with \\\"Duplicate memory strategy names were provided\\\"\", [n]),\n\t\"Give every memory strategy a distinct Name\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_MemoryStrategyInput.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Memory\")\n\tall := _pf_memsname_names(name)\n\tsome [i, n] in all\n\tcount([1 | some [_, m] in all; m == n]) > 1\n\ti == max([j | some [j, m] in all; m == n])\n}\n"
+  },
+  {
+    "id": "pf-agentcore-memory-strategy-namespaces-count",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A memory strategy accepts exactly one namespace",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Memory"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The API documents Namespaces as \"Fixed number of 1 item\" but the CloudFormation\n# schema carries no maxItems (an empty list is caught, F3032). Two namespaces\n# fail at CreateMemory with \"Member must have length less than or equal to 1\".\nviolation contains make_diag_full(\"pf-agentcore-memory-strategy-namespaces-count\", \"ERROR\", name,\n\tsprintf(\"Properties.MemoryStrategies.%d.%s.Namespaces\", [s.index, kind]),\n\tsprintf(\"Strategy '%s' lists %d namespaces but a strategy accepts exactly one; CreateMemory fails with \\\"Member must have length less than or equal to 1\\\"\", [object.get(strat, \"Name\", \"<unnamed>\"), count(ns)]),\n\t\"Keep one namespace per strategy; add another strategy for a second namespace\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_SemanticMemoryStrategyInput.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Memory\")\n\tsome s in flatten_list(name, \"Properties.MemoryStrategies\")\n\tis_object(s.value)\n\tsome kind, strat in s.value\n\tis_object(strat)\n\tns := object.get(strat, \"Namespaces\", [])\n\tis_array(ns)\n\tcount(ns) > 1\n}\n"
+  },
+  {
+    "id": "pf-agentcore-memory-strategy-type-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A memory may carry at most one strategy of each built-in type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Memory"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Nothing in the schema limits how many SemanticMemoryStrategy (or Summary /\n# UserPreference / Episodic) entries a memory carries; CreateMemory allows one\n# per type (\"Only one strategy of each type is allowed\"). Custom strategies\n# are exempt (the error names the built-in types; not measured for Custom).\n_pf_memstype_kinds(name) := [[s.index, kind] |\n\tsome s in flatten_list(name, \"Properties.MemoryStrategies\")\n\tis_object(s.value)\n\tsome kind, strat in s.value\n\tis_object(strat)\n\tkind != \"CustomMemoryStrategy\"\n]\n\nviolation contains make_diag_full(\"pf-agentcore-memory-strategy-type-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.MemoryStrategies.%d.%s\", [i, kind]),\n\tsprintf(\"More than one %s is declared; CreateMemory fails with \\\"Only one strategy of each type is allowed\\\"\", [kind]),\n\t\"Keep a single strategy per built-in type (use CustomMemoryStrategy for additional variants)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_MemoryStrategyInput.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Memory\")\n\tall := _pf_memstype_kinds(name)\n\tsome [i, kind] in all\n\tcount([1 | some [_, k] in all; k == kind]) > 1\n\ti == max([j | some [j, k] in all; k == kind])\n}\n"
+  },
+  {
+    "id": "pf-agentcore-oauth2-provider-client-secret",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A custom OAuth2 provider takes ClientSecret when the secret is MANAGED and ClientSecretConfig when it is EXTERNAL, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::OAuth2CredentialProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CustomOauth2ProviderConfig makes ClientSecret, ClientSecretSource and\n# ClientSecretConfig independent optional fields; the service ties them\n# together for the client-secret authentication methods (the default).\n# PRIVATE_KEY_JWT is handled by pf-agentcore-oauth2-provider-private-key-jwt.\n_pf_oacs_url := \"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomOauth2ProviderConfigInput.html\"\n_pf_oacs_path := \"Properties.Oauth2ProviderConfigInput.CustomOauth2ProviderConfig\"\n\n_pf_oacs_cfg(name) := cfg if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tinp := object.get(props, \"Oauth2ProviderConfigInput\", null)\n\tis_object(inp)\n\tcfg := object.get(inp, \"CustomOauth2ProviderConfig\", null)\n\tis_object(cfg)\n}\n\n_pf_oacs_has(cfg, key) if object.get(cfg, key, \"__pf_absent\") != \"__pf_absent\"\n\n_pf_oacs_secret_method(name) if {\n\tm := resolve(name, sprintf(\"%s.ClientAuthenticationMethod\", [_pf_oacs_path]))\n\tm in {\"CLIENT_SECRET_BASIC\", \"CLIENT_SECRET_POST\"}\n}\n\n_pf_oacs_secret_method(name) if {\n\tnot _pf_oacs_has(_pf_oacs_cfg(name), \"ClientAuthenticationMethod\")\n}\n\n_pf_oacs_external(name) if resolve(name, sprintf(\"%s.ClientSecretSource\", [_pf_oacs_path])) == \"EXTERNAL\"\n\nviolation contains make_diag_full(\"pf-agentcore-oauth2-provider-client-secret\", \"ERROR\", name,\n\tsprintf(\"%s.ClientSecret\", [_pf_oacs_path]),\n\t\"ClientSecretSource is MANAGED (the default) but ClientSecret is missing; CreateOauth2CredentialProvider fails with \\\"clientSecret is required for CLIENT_SECRET_BASIC and CLIENT_SECRET_POST authentication methods\\\"\",\n\t\"Set ClientSecret, or set ClientSecretSource: EXTERNAL and point ClientSecretConfig at a Secrets Manager secret\",\n\t_pf_oacs_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OAuth2CredentialProvider\")\n\tcfg := _pf_oacs_cfg(name)\n\t_pf_oacs_secret_method(name)\n\tnot _pf_oacs_external(name)\n\tnot _pf_oacs_has(cfg, \"ClientSecret\")\n}\n\nviolation contains make_diag_full(\"pf-agentcore-oauth2-provider-client-secret\", \"ERROR\", name,\n\tsprintf(\"%s.ClientSecretConfig\", [_pf_oacs_path]),\n\t\"ClientSecretSource is EXTERNAL but ClientSecretConfig is missing; CreateOauth2CredentialProvider fails with \\\"clientSecretConfig is required for CLIENT_SECRET_BASIC and CLIENT_SECRET_POST authentication methods\\\"\",\n\t\"Add ClientSecretConfig (SecretId and JsonKey of the Secrets Manager secret holding the client secret)\",\n\t_pf_oacs_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OAuth2CredentialProvider\")\n\tcfg := _pf_oacs_cfg(name)\n\t_pf_oacs_secret_method(name)\n\t_pf_oacs_external(name)\n\tnot _pf_oacs_has(cfg, \"ClientSecretConfig\")\n}\n\nviolation contains make_diag_full(\"pf-agentcore-oauth2-provider-client-secret\", \"ERROR\", name,\n\tsprintf(\"%s.ClientSecret\", [_pf_oacs_path]),\n\t\"ClientSecretSource is EXTERNAL but ClientSecret is also set; CreateOauth2CredentialProvider fails with \\\"ClientSecret must not be provided when secret source is EXTERNAL\\\"\",\n\t\"Remove ClientSecret and keep only ClientSecretConfig\",\n\t_pf_oacs_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OAuth2CredentialProvider\")\n\tcfg := _pf_oacs_cfg(name)\n\t_pf_oacs_external(name)\n\t_pf_oacs_has(cfg, \"ClientSecret\")\n}\n"
+  },
+  {
+    "id": "pf-agentcore-oauth2-provider-private-key-jwt",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "ClientAuthenticationMethod PRIVATE_KEY_JWT cannot be satisfied through CloudFormation (PrivateKeyJwtConfig is not in the resource schema)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::OAuth2CredentialProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The API needs privateKeyJwtConfig for this method, and the CloudFormation\n# resource has no such property (the schema rejects it with F3002), so every\n# template selecting PRIVATE_KEY_JWT fails at create time.\nviolation contains make_diag_full(\"pf-agentcore-oauth2-provider-private-key-jwt\", \"ERROR\", name,\n\t\"Properties.Oauth2ProviderConfigInput.CustomOauth2ProviderConfig.ClientAuthenticationMethod\",\n\t\"ClientAuthenticationMethod PRIVATE_KEY_JWT needs privateKeyJwtConfig, which the CloudFormation resource cannot express; CreateOauth2CredentialProvider fails with \\\"privateKeyJwtConfig is required when clientAuthenticationMethod is PRIVATE_KEY_JWT\\\"\",\n\t\"Use CLIENT_SECRET_BASIC or CLIENT_SECRET_POST, or create the provider outside CloudFormation\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomOauth2ProviderConfigInput.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OAuth2CredentialProvider\")\n\tresolve(name, \"Properties.Oauth2ProviderConfigInput.CustomOauth2ProviderConfig.ClientAuthenticationMethod\") == \"PRIVATE_KEY_JWT\"\n}\n"
+  },
+  {
+    "id": "pf-agentcore-oauth2-provider-vendor-config",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Oauth2ProviderConfigInput must contain the config block that matches CredentialProviderVendor",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::OAuth2CredentialProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The vendor enum and the config union are independent in the schema; the\n# service requires the matching block (\"Provided configuration does not match\n# selected type\"). Vendors without a dedicated block (Okta, Auth0, Cognito,\n# ...) use IncludedOauth2ProviderConfig.\n_pf_oavc_block := {\n\t\"CustomOauth2\": \"CustomOauth2ProviderConfig\",\n\t\"GoogleOauth2\": \"GoogleOauth2ProviderConfig\",\n\t\"GithubOauth2\": \"GithubOauth2ProviderConfig\",\n\t\"SlackOauth2\": \"SlackOauth2ProviderConfig\",\n\t\"SalesforceOauth2\": \"SalesforceOauth2ProviderConfig\",\n\t\"MicrosoftOauth2\": \"MicrosoftOauth2ProviderConfig\",\n\t\"AtlassianOauth2\": \"AtlassianOauth2ProviderConfig\",\n\t\"LinkedinOauth2\": \"LinkedinOauth2ProviderConfig\",\n}\n\n_pf_oavc_expected(vendor) := _pf_oavc_block[vendor]\n\n_pf_oavc_expected(vendor) := \"IncludedOauth2ProviderConfig\" if not _pf_oavc_block[vendor]\n\nviolation contains make_diag_full(\"pf-agentcore-oauth2-provider-vendor-config\", \"ERROR\", name,\n\t\"Properties.Oauth2ProviderConfigInput\",\n\tsprintf(\"CredentialProviderVendor is %s but Oauth2ProviderConfigInput has no %s; CreateOauth2CredentialProvider fails with \\\"Provided configuration does not match selected type: %s\\\"\", [vendor, expected, vendor]),\n\tsprintf(\"Add Oauth2ProviderConfigInput.%s (ClientId, ClientSecret, and for Custom / Included the OauthDiscovery)\", [expected]),\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OAuth2CredentialProvider\")\n\tvendor := resolve(name, \"Properties.CredentialProviderVendor\")\n\tis_string(vendor)\n\texpected := _pf_oavc_expected(vendor)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tinp := object.get(props, \"Oauth2ProviderConfigInput\", null)\n\tis_object(inp)\n\tobject.get(inp, expected, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-agentcore-online-eval-evaluator-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "An online evaluation config must not list the same evaluator twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::OnlineEvaluationConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema bounds Evaluators (1..10) and each EvaluatorId's pattern, not\n# uniqueness; CreateOnlineEvaluationConfig rejects repeats with\n# \"Duplicate evaluator ids detected\".\n_pf_oeevdup_ids(name) := [[e.index, id] |\n\tsome e in flatten_list(name, \"Properties.Evaluators\")\n\tid := object.get(e.value, \"EvaluatorId\", null)\n\tis_string(id)\n]\n\nviolation contains make_diag_full(\"pf-agentcore-online-eval-evaluator-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Evaluators.%d.EvaluatorId\", [i]),\n\tsprintf(\"Evaluator '%s' is listed more than once; CreateOnlineEvaluationConfig fails with \\\"Duplicate evaluator ids detected\\\"\", [id]),\n\t\"List each evaluator once\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOnlineEvaluationConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OnlineEvaluationConfig\")\n\tall := _pf_oeevdup_ids(name)\n\tsome [i, id] in all\n\tcount([1 | some [_, o] in all; o == id]) > 1\n\ti == max([j | some [j, o] in all; o == id])\n}\n"
+  },
+  {
+    "id": "pf-agentcore-online-eval-evaluators-or-insights",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "An online evaluation config needs a non-empty Evaluators list (or Insights)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::OnlineEvaluationConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Evaluators and Insights are both optional in the schema and Evaluators has\n# no minItems; CreateOnlineEvaluationConfig requires exactly one of them to be\n# non-empty (\"Exactly one of evaluators or insights must be provided\").\n_pf_oeevs_nonempty(props, key) if {\n\tv := object.get(props, key, null)\n\tis_array(v)\n\tcount(v) > 0\n}\n\nviolation contains make_diag_full(\"pf-agentcore-online-eval-evaluators-or-insights\", \"ERROR\", name,\n\t\"Properties.Evaluators\",\n\t\"Neither Evaluators nor Insights lists anything; CreateOnlineEvaluationConfig fails with \\\"Exactly one of evaluators or insights must be provided\\\"\",\n\t\"List at least one evaluator (e.g. EvaluatorId Builtin.Helpfulness) or configure Insights\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOnlineEvaluationConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::OnlineEvaluationConfig\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tnot _pf_oeevs_nonempty(props, \"Evaluators\")\n\tnot _pf_oeevs_nonempty(props, \"Insights\")\n}\n"
+  },
+  {
+    "id": "pf-agentcore-payment-credential-provider-vendor-config",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "ProviderConfigurationInput must contain the block matching CredentialProviderVendor (CoinbaseCDP / StripePrivy)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::PaymentCredentialProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same shape as pf-agentcore-oauth2-provider-vendor-config for the payment\n# vendors: the enum and the config union are independent in the schema.\n_pf_pcpvc_block := {\"CoinbaseCDP\": \"CoinbaseCdpConfiguration\", \"StripePrivy\": \"StripePrivyConfiguration\"}\n\nviolation contains make_diag_full(\"pf-agentcore-payment-credential-provider-vendor-config\", \"ERROR\", name,\n\t\"Properties.ProviderConfigurationInput\",\n\tsprintf(\"CredentialProviderVendor is %s but ProviderConfigurationInput has no %s; CreatePaymentCredentialProvider fails with \\\"%s vendor type requires %s in providerConfigurationInput\\\"\", [vendor, expected, vendor, lower(substring(expected, 0, 1))]),\n\tsprintf(\"Add ProviderConfigurationInput.%s with that vendor's credentials\", [expected]),\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreatePaymentCredentialProvider.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::PaymentCredentialProvider\")\n\tvendor := resolve(name, \"Properties.CredentialProviderVendor\")\n\texpected := _pf_pcpvc_block[vendor]\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tinp := object.get(props, \"ProviderConfigurationInput\", null)\n\tis_object(inp)\n\tobject.get(inp, expected, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-agentcore-policy-cedar-statement",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A Cedar policy statement must be a permit/forbid clause that constrains the resource and, for permit, carries a condition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Policy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Definition.Cedar.Statement is an opaque string (schema: length only). Two\n# shapes measured to fail at CreatePolicy: text that is not a permit/forbid\n# clause, a clause whose resource is unconstrained (bare `resource`), and a\n# permit with an unconstrained principal and no when/unless condition\n# (\"Overly Permissive\"). This is a cheap syntactic subset, not a Cedar parser.\n_pf_cedar_url := \"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy-getting-started.html\"\n_pf_cedar_path := \"Properties.Definition.Cedar.Statement\"\n_pf_cedar_head := `(?s)^\\s*(@[^\\n]*\\n\\s*)*(permit|forbid)\\s*\\(`\n\n_pf_cedar_stmt(name) := s if {\n\ts := resolve(name, _pf_cedar_path)\n\tis_string(s)\n}\n\nviolation contains make_diag_full(\"pf-agentcore-policy-cedar-statement\", \"ERROR\", name, _pf_cedar_path,\n\t\"The Cedar statement does not start with permit( or forbid(; CreatePolicy fails with \\\"When parsing the policy statement, the following errors occurred\\\"\",\n\t\"Write a Cedar clause such as permit(principal, action == AgentCore::Action::\\\"<Target>___<tool>\\\", resource == AgentCore::Gateway::\\\"<gateway-arn>\\\");\",\n\t_pf_cedar_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Policy\")\n\ts := _pf_cedar_stmt(name)\n\tnot regex.match(_pf_cedar_head, s)\n}\n\nviolation contains make_diag_full(\"pf-agentcore-policy-cedar-statement\", \"ERROR\", name, _pf_cedar_path,\n\t\"The Cedar statement leaves `resource` unconstrained; CreatePolicy fails with \\\"a wildcard resource was detected ... constrain the resource either to a specific AgentCore::Gateway resource or to the AgentCore::Gateway resource type\\\"\",\n\t\"Use resource == AgentCore::Gateway::\\\"<gateway-arn>\\\" or resource is AgentCore::Gateway in the clause head\",\n\t_pf_cedar_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Policy\")\n\ts := _pf_cedar_stmt(name)\n\tregex.match(_pf_cedar_head, s)\n\tregex.match(`(?s)^\\s*(@[^\\n]*\\n\\s*)*(permit|forbid)\\s*\\([^)]*,\\s*resource\\s*\\)`, s)\n}\n\nviolation contains make_diag_full(\"pf-agentcore-policy-cedar-statement\", \"ERROR\", name, _pf_cedar_path,\n\t\"The permit clause has an unconstrained principal and no when/unless condition; CreatePolicy fails with \\\"Overly Permissive: Policy Engine will allow every request for the specified principal ... action ... and resource combination\\\"\",\n\t\"Add a when { ... } condition on context.input (or constrain the principal)\",\n\t_pf_cedar_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Policy\")\n\ts := _pf_cedar_stmt(name)\n\tregex.match(`(?s)^\\s*(@[^\\n]*\\n\\s*)*permit\\s*\\(\\s*principal\\s*,`, s)\n\tnot regex.match(`(?s)^\\s*(@[^\\n]*\\n\\s*)*(permit|forbid)\\s*\\([^)]*,\\s*resource\\s*\\)`, s)\n\tnot regex.match(`(?s)\\)\\s*(when|unless)\\s*\\{`, s)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-required-union-empty",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Evaluator",
+      "AWS::BedrockAgentCore::GatewayTarget",
+      "AWS::BedrockAgentCore::Policy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# These properties are oneOf unions in the registry schema. The bundled engine\n# reports a two-member object (F3018) but not an empty one; CloudFormation's\n# early validation or the resource handler then rejects it. Table: [type, key].\n_pf_acunion_table := [\n\t[\"AWS::BedrockAgentCore::Evaluator\", \"EvaluatorConfig\"],\n\t[\"AWS::BedrockAgentCore::GatewayTarget\", \"TargetConfiguration\"],\n\t[\"AWS::BedrockAgentCore::Policy\", \"Definition\"],\n]\n\nviolation contains make_diag_full(\"pf-agentcore-required-union-empty\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"%s is an empty object; it must hold exactly one member and CloudFormation rejects the template (0 subschemas matched instead of one)\", [key]),\n\tsprintf(\"Set one member of %s\", [key]),\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_EvaluatorConfiguration.html\") if {\n\tsome [t, key] in _pf_acunion_table\n\tsome name in resources_of_type(t)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tv := object.get(props, key, null)\n\tis_object(v)\n\tcount(v) == 0\n}\n"
+  },
+  {
+    "id": "pf-agentcore-resource-policy-document",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::ResourcePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Policy is an opaque string in the schema (the existing pf-iam-policy-* rules\n# only look at AWS::IAM::* resources). PutResourcePolicy validates it: valid\n# JSON, at least one statement, Principal on every statement, actions in the\n# bedrock-agentcore namespace, and a single Resource ARN (no \"*\"). Policies\n# built with Fn::Sub / Fn::Join over resource references do not resolve and\n# are skipped.\n_pf_acrp_url := \"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_PutResourcePolicy.html\"\n\n_pf_acrp_doc(name) := doc if {\n\ts := resolve(name, \"Properties.Policy\")\n\tis_string(s)\n\tdoc := json.unmarshal(s)\n\tis_object(doc)\n}\n\n_pf_acrp_stmts(name) := [x | some x in _pf_acrp_list(object.get(_pf_acrp_doc(name), \"Statement\", null)); is_object(x)]\n\n_pf_acrp_list(v) := v if is_array(v)\n\n_pf_acrp_list(v) := [v] if is_object(v)\n\n_pf_acrp_list(v) := [v] if is_string(v)\n\n_pf_acrp_list(v) := [] if v == null\n\nviolation contains make_diag_full(\"pf-agentcore-resource-policy-document\", \"ERROR\", name, \"Properties.Policy\",\n\t\"Policy is not a JSON document; PutResourcePolicy fails with \\\"This policy contains invalid Json\\\"\",\n\t\"Pass a JSON policy document (as a string, or JSON.stringify of an object)\", _pf_acrp_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ResourcePolicy\")\n\ts := resolve(name, \"Properties.Policy\")\n\tis_string(s)\n\tnot json.is_valid(s)\n}\n\nviolation contains make_diag_full(\"pf-agentcore-resource-policy-document\", \"ERROR\", name, \"Properties.Policy\",\n\t\"Policy has no Statement; PutResourcePolicy fails with \\\"Policy has no statements\\\"\",\n\t\"Add a Statement list with at least one entry\", _pf_acrp_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ResourcePolicy\")\n\t_pf_acrp_doc(name)\n\tcount(_pf_acrp_stmts(name)) == 0\n}\n\nviolation contains make_diag_full(\"pf-agentcore-resource-policy-document\", \"ERROR\", name,\n\tsprintf(\"Properties.Policy.Statement[%d].Principal\", [i]),\n\t\"A statement has no Principal; PutResourcePolicy fails with \\\"Missing required field Principal\\\"\",\n\t\"Add Principal (e.g. {\\\"AWS\\\": \\\"arn:aws:iam::<account>:root\\\"}) to every statement\", _pf_acrp_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ResourcePolicy\")\n\tsome i, st in _pf_acrp_stmts(name)\n\tobject.get(st, \"Principal\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-agentcore-resource-policy-document\", \"ERROR\", name,\n\tsprintf(\"Properties.Policy.Statement[%d].Action\", [i]),\n\tsprintf(\"Action '%s' is outside the bedrock-agentcore namespace; PutResourcePolicy fails with \\\"Policy has invalid action\\\"\", [a]),\n\t\"Use bedrock-agentcore:* actions only (e.g. bedrock-agentcore:InvokeGateway)\", _pf_acrp_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ResourcePolicy\")\n\tsome i, st in _pf_acrp_stmts(name)\n\tsome a in _pf_acrp_list(object.get(st, \"Action\", null))\n\tis_string(a)\n\tnot startswith(a, \"bedrock-agentcore:\")\n}\n\nviolation contains make_diag_full(\"pf-agentcore-resource-policy-document\", \"ERROR\", name,\n\tsprintf(\"Properties.Policy.Statement[%d].Resource\", [i]),\n\t\"A statement must name exactly one Resource ARN equal to ResourceArn (\\\"*\\\" or a list is rejected); PutResourcePolicy fails with \\\"Policy statement block must contain exactly one resource ARN that matches the provided resource ARN\\\"\",\n\t\"Set Resource to the same ARN as ResourceArn (use Fn::Sub / Fn::GetAtt for a resource in the template)\", _pf_acrp_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::ResourcePolicy\")\n\tsome i, st in _pf_acrp_stmts(name)\n\tres := _pf_acrp_list(object.get(st, \"Resource\", null))\n\tnot _pf_acrp_single_arn(res)\n}\n\n_pf_acrp_single_arn(res) if {\n\tcount(res) == 1\n\tis_string(res[0])\n\tstartswith(res[0], \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-agentcore-runtime-artifact-exactly-one",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema has no oneOf on AgentRuntimeArtifact (measured 2026-09-05: both\n# blocks and an empty object pass the engine); CreateAgentRuntime rejects both\n# shapes with \"AgentArtifact must have exactly one configuration\".\nviolation contains make_diag_full(\"pf-agentcore-runtime-artifact-exactly-one\", \"ERROR\", name,\n\t\"Properties.AgentRuntimeArtifact\",\n\tsprintf(\"AgentRuntimeArtifact holds %d configurations; CreateAgentRuntime fails with \\\"AgentArtifact must have exactly one configuration\\\"\", [n]),\n\t\"Set exactly one of ContainerConfiguration (ECR image) or CodeConfiguration (S3 zip + EntryPoint + Runtime)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_AgentRuntimeArtifact.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tart := object.get(props, \"AgentRuntimeArtifact\", null)\n\tis_object(art)\n\tn := count([1 | some k in [\"ContainerConfiguration\", \"CodeConfiguration\"]; object.get(art, k, \"__pf_absent\") != \"__pf_absent\"])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-agentcore-runtime-code-entrypoint-extension",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# EntryPoint is a free string list in the schema; the service checks the file\n# extension against Runtime (\"Entrypoint file type does not match your\n# selected runtime\"). Only the Python family is measured; NODE_22 is left alone.\nviolation contains make_diag_full(\"pf-agentcore-runtime-code-entrypoint-extension\", \"ERROR\", name,\n\t\"Properties.AgentRuntimeArtifact.CodeConfiguration.EntryPoint\",\n\tsprintf(\"Runtime is %s but no EntryPoint element ends with .py; CreateAgentRuntime fails with \\\"Entrypoint file type does not match your selected runtime\\\"\", [runtime]),\n\t\"Point EntryPoint at the Python file to run (e.g. [\\\"app.py\\\"])\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-get-started-code-deploy-python.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\truntime := resolve(name, \"Properties.AgentRuntimeArtifact.CodeConfiguration.Runtime\")\n\tis_string(runtime)\n\tstartswith(runtime, \"PYTHON_\")\n\tentries := resolve(name, \"Properties.AgentRuntimeArtifact.CodeConfiguration.EntryPoint\")\n\tis_array(entries)\n\tcount(entries) > 0\n\tevery e in entries {\n\t\tis_string(e)\n\t\tnot endswith(e, \".py\")\n\t}\n}\n"
+  },
+  {
+    "id": "pf-agentcore-runtime-env-var-count",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "AgentCore Runtime EnvironmentVariables holds at most 50 entries",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema sets maxProperties: 50 on EnvironmentVariables and\n# CloudFormation's early validation rolls the stack back; the bundled engine\n# (1.7.0-beta) checks key patterns (F3002) but not the map size.\nviolation contains make_diag_full(\"pf-agentcore-runtime-env-var-count\", \"ERROR\", name,\n\t\"Properties.EnvironmentVariables\",\n\tsprintf(\"%d environment variables are set but the runtime accepts at most 50; CloudFormation rejects the template (PROPERTY_VALIDATION: maximum size 50)\", [count(env)]),\n\t\"Trim EnvironmentVariables to 50 entries or move configuration into a parameter store / config file\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tenv := resolve(name, \"Properties.EnvironmentVariables\")\n\tis_object(env)\n\tcount(env) > 50\n}\n"
   },
   {
     "id": "pf-agentcore-runtime-name",
@@ -441,6 +787,20 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::BedrockAgentCore::Runtime"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation スキーマは AgentRuntimeName のパターンを持たない（エンジン素通り、\n# 2026-09-01 に 1.7.0-beta で確認）が、CreateAgentRuntime API は\n# [a-zA-Z][a-zA-Z0-9_]{0,47} を強制する。ハイフン入りの CDK 風命名が定番の死因。\nviolation contains make_diag_full(\"pf-agentcore-runtime-name\", \"ERROR\", name,\n\t\"Properties.AgentRuntimeName\",\n\tsprintf(\"AgentRuntimeName '%s' is invalid: it must start with a letter and contain only letters, digits, and underscores (max 48 characters, hyphens are not allowed); CreateAgentRuntime fails at deploy time\", [n]),\n\t\"Use an underscore-separated name such as 'my_agent_runtime'\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tn := resolve(name, \"Properties.AgentRuntimeName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z][a-zA-Z0-9_]{0,47}$`, n)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-vpc-network-mode-config",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime",
+      "AWS::BedrockAgentCore::BrowserCustom",
+      "AWS::BedrockAgentCore::CodeInterpreterCustom",
+      "AWS::BedrockAgentCore::Harness"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Four resource types carry a {NetworkMode, <vpc block>} pair whose members are\n# independent in the schema. The control plane requires the block for VPC and\n# rejects it for PUBLIC (Runtime also for SANDBOX: \"not allowed for non-VPC\n# mode\"). Table: [type, path to the NetworkConfiguration object, block key].\n_pf_vpcnm_table := [\n\t[\"AWS::BedrockAgentCore::Runtime\", \"Properties.NetworkConfiguration\", \"NetworkModeConfig\"],\n\t[\"AWS::BedrockAgentCore::BrowserCustom\", \"Properties.NetworkConfiguration\", \"VpcConfig\"],\n\t[\"AWS::BedrockAgentCore::CodeInterpreterCustom\", \"Properties.NetworkConfiguration\", \"VpcConfig\"],\n\t[\"AWS::BedrockAgentCore::Harness\", \"Properties.Environment.AgentCoreRuntimeEnvironment.NetworkConfiguration\", \"NetworkModeConfig\"],\n]\n\n_pf_vpcnm_url := \"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_BrowserNetworkConfiguration.html\"\n\n# The raw NetworkConfiguration object from the preprocessed document, so that\n# a block whose values are unresolvable Refs still counts as present.\n_pf_vpcnm_raw(name, path) := obj if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tkeys := split(trim_prefix(path, \"Properties.\"), \".\")\n\tobj := _pf_vpcnm_walk(props, keys)\n\tis_object(obj)\n}\n\n# ponytail: Rego has no recursion; the deepest table path is 3 keys, so\n# unroll to 3. Add a branch when a deeper path enters the table.\n_pf_vpcnm_walk(o, keys) := o[keys[0]] if count(keys) == 1\n\n_pf_vpcnm_walk(o, keys) := o[keys[0]][keys[1]] if count(keys) == 2\n\n_pf_vpcnm_walk(o, keys) := o[keys[0]][keys[1]][keys[2]] if count(keys) == 3\n\nviolation contains make_diag_full(\"pf-agentcore-vpc-network-mode-config\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"NetworkMode is VPC but %s is missing; the create call fails with \\\"%s is required for VPC mode\\\"\", [key, key]),\n\tsprintf(\"Add %s with the Subnets and SecurityGroups to attach, or set NetworkMode to PUBLIC\", [key]),\n\t_pf_vpcnm_url) if {\n\tsome [t, path, key] in _pf_vpcnm_table\n\tsome name in resources_of_type(t)\n\tresolve(name, sprintf(\"%s.NetworkMode\", [path])) == \"VPC\"\n\tnc := _pf_vpcnm_raw(name, path)\n\tobject.get(nc, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-agentcore-vpc-network-mode-config\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"NetworkMode is %s but %s is set; the create call fails with \\\"%s is not allowed for %s mode\\\"\", [mode, key, key, mode]),\n\tsprintf(\"Remove %s, or set NetworkMode to VPC\", [key]),\n\t_pf_vpcnm_url) if {\n\tsome [t, path, key] in _pf_vpcnm_table\n\tsome name in resources_of_type(t)\n\tmode := resolve(name, sprintf(\"%s.NetworkMode\", [path]))\n\tis_string(mode)\n\tmode != \"VPC\"\n\tnc := _pf_vpcnm_raw(name, path)\n\tobject.get(nc, key, \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-cloudfront-acm-cert-region",

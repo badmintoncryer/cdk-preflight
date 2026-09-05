@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "Provider": {
+      "Type": "AWS::BedrockAgentCore::PaymentCredentialProvider",
+      "Properties": {
+        "Name": "cdkpf-pcpvc-pass",
+        "CredentialProviderVendor": "CoinbaseCDP",
+        "ProviderConfigurationInput": {
+          "CoinbaseCdpConfiguration": {
+            "ApiKeyId": "key-id",
+            "ApiKeySecret": "base64-ed25519-private-key",
+            "WalletSecret": "wallet-secret"
+          }
+        }
+      }
+    }
+  }
+}

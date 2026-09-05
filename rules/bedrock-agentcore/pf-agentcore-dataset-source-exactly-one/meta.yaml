@@ -1,0 +1,12 @@
+id: pf-agentcore-dataset-source-exactly-one
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Dataset]
+severity: ERROR
+title: Dataset Source must hold exactly one of InlineExamples or S3Source
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateDataset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): Source: {} -> CREATE_FAILED (AgentCoreEvaluationControlPlane 400 ValidationException: Exactly one of source.inlineExamples or source.s3Source must be provided); Source with both blocks -> same message; both ROLLBACK_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-dataset-source-exactly-one.log"
+addedOn: 2026-09-05

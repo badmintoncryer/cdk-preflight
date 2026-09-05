@@ -1,0 +1,72 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "agentcore",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "bedrock:InvokeModel",
+                    "logs:*",
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Gw": {
+      "Type": "AWS::BedrockAgentCore::Gateway",
+      "Properties": {
+        "Name": "cdkpf-acrp-pass",
+        "ProtocolType": "MCP",
+        "AuthorizerType": "AWS_IAM",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "ResourcePolicy": {
+      "Type": "AWS::BedrockAgentCore::ResourcePolicy",
+      "Properties": {
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Gw",
+            "GatewayArn"
+          ]
+        },
+        "Policy": {
+          "Fn::Sub": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"AWS\": \"arn:aws:iam::${AWS::AccountId}:root\"}, \"Action\": \"bedrock-agentcore:InvokeGateway\", \"Resource\": \"${Gw.GatewayArn}\"}]}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "agentcore",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "bedrock:InvokeModel",
+                    "logs:*",
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Runtime": {
+      "Type": "AWS::BedrockAgentCore::Runtime",
+      "Properties": {
+        "AgentRuntimeName": "cdkpf_rtenv_fail",
+        "AgentRuntimeArtifact": {
+          "ContainerConfiguration": {
+            "ContainerUri": {
+              "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/my-agent:latest"
+            }
+          }
+        },
+        "NetworkConfiguration": {
+          "NetworkMode": "PUBLIC"
+        },
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "EnvironmentVariables": {
+          "VAR_0": "v",
+          "VAR_1": "v",
+          "VAR_2": "v",
+          "VAR_3": "v",
+          "VAR_4": "v",
+          "VAR_5": "v",
+          "VAR_6": "v",
+          "VAR_7": "v",
+          "VAR_8": "v",
+          "VAR_9": "v",
+          "VAR_10": "v",
+          "VAR_11": "v",
+          "VAR_12": "v",
+          "VAR_13": "v",
+          "VAR_14": "v",
+          "VAR_15": "v",
+          "VAR_16": "v",
+          "VAR_17": "v",
+          "VAR_18": "v",
+          "VAR_19": "v",
+          "VAR_20": "v",
+          "VAR_21": "v",
+          "VAR_22": "v",
+          "VAR_23": "v",
+          "VAR_24": "v",
+          "VAR_25": "v",
+          "VAR_26": "v",
+          "VAR_27": "v",
+          "VAR_28": "v",
+          "VAR_29": "v",
+          "VAR_30": "v",
+          "VAR_31": "v",
+          "VAR_32": "v",
+          "VAR_33": "v",
+          "VAR_34": "v",
+          "VAR_35": "v",
+          "VAR_36": "v",
+          "VAR_37": "v",
+          "VAR_38": "v",
+          "VAR_39": "v",
+          "VAR_40": "v",
+          "VAR_41": "v",
+          "VAR_42": "v",
+          "VAR_43": "v",
+          "VAR_44": "v",
+          "VAR_45": "v",
+          "VAR_46": "v",
+          "VAR_47": "v",
+          "VAR_48": "v",
+          "VAR_49": "v",
+          "VAR_50": "v"
+        }
+      }
+    }
+  }
+}

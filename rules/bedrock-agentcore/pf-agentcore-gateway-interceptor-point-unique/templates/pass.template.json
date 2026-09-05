@@ -1,0 +1,86 @@
+{
+  "Resources": {
+    "GatewayRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Interceptor": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "GatewayRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return e\n"
+        }
+      }
+    },
+    "Gateway": {
+      "Type": "AWS::BedrockAgentCore::Gateway",
+      "Properties": {
+        "Name": "cdkpf-gwicpt-pass",
+        "ProtocolType": "MCP",
+        "AuthorizerType": "AWS_IAM",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "GatewayRole",
+            "Arn"
+          ]
+        },
+        "InterceptorConfigurations": [
+          {
+            "InterceptionPoints": [
+              "REQUEST"
+            ],
+            "Interceptor": {
+              "Lambda": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "Interceptor",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "InterceptionPoints": [
+              "RESPONSE"
+            ],
+            "Interceptor": {
+              "Lambda": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "Interceptor",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

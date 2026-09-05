@@ -1,0 +1,81 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "agentcore",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "bedrock:InvokeModel",
+                    "logs:*",
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Gw": {
+      "Type": "AWS::BedrockAgentCore::Gateway",
+      "Properties": {
+        "Name": "cdkpf-cdkpf-cedar-fail",
+        "ProtocolType": "MCP",
+        "AuthorizerType": "AWS_IAM",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Engine": {
+      "Type": "AWS::BedrockAgentCore::PolicyEngine",
+      "Properties": {
+        "Name": "cdkpf_cedar_fail_engine"
+      }
+    },
+    "Policy": {
+      "Type": "AWS::BedrockAgentCore::Policy",
+      "Properties": {
+        "Name": "cdkpf_cedar_fail",
+        "PolicyEngineId": {
+          "Fn::GetAtt": [
+            "Engine",
+            "PolicyEngineId"
+          ]
+        },
+        "Definition": {
+          "Cedar": {
+            "Statement": "permit(principal, action, resource);"
+          }
+        }
+      }
+    }
+  }
+}

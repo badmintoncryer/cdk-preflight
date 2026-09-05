@@ -1,0 +1,12 @@
+id: pf-agentcore-runtime-env-var-count
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: AgentCore Runtime EnvironmentVariables holds at most 50 entries
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe, fail-only): 51 environment variables -> stack VALIDATION_FAILED (CloudFormation PROPERTY_VALIDATION: #/EnvironmentVariables: maximum size: [50], found: [51]) -> ROLLBACK_COMPLETE. Pass template not deployed (a runtime needs a real ECR image). Registry schema maxProperties that engine 1.7.0-beta ignores. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE (fail-only). Log: bench/logs/pf-agentcore-runtime-env-var-count.log"
+addedOn: 2026-09-05

@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Bundle": {
+      "Type": "AWS::BedrockAgentCore::ConfigurationBundle",
+      "Properties": {
+        "BundleName": "cdkpf_cb_pass",
+        "Components": {
+          "harness": {
+            "Configuration": {
+              "model": {
+                "bedrockModelConfig": {
+                  "modelId": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

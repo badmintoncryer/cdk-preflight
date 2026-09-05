@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "GatewayRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock-agentcore.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Gateway": {
+      "Type": "AWS::BedrockAgentCore::Gateway",
+      "Properties": {
+        "Name": "cdkpf-gwmcpver-fail",
+        "ProtocolType": "MCP",
+        "AuthorizerType": "AWS_IAM",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "GatewayRole",
+            "Arn"
+          ]
+        },
+        "ProtocolConfiguration": {
+          "Mcp": {
+            "SupportedVersions": [
+              "2024-11-05"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

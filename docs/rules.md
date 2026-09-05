@@ -41,8 +41,40 @@
 | `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts may not exceed 10 | none |
 | `pf-batch-timeout-minimum` | AWS::Batch::JobDefinition | Timeout.AttemptDurationSeconds must be at least 60 | none |
 | `pf-batch-unmanaged-fargate` | AWS::Batch::ComputeEnvironment | UNMANAGED compute environments cannot be Fargate | none |
-| `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
+| `pf-agentcore-apikey-provider-secret-source` | AWS::BedrockAgentCore::ApiKeyCredentialProvider | An API key credential provider takes ApiKey when the secret is MANAGED and ApiKeySecretConfig when it is EXTERNAL, never both | none |
+| `pf-agentcore-config-bundle-components-empty` | AWS::BedrockAgentCore::ConfigurationBundle | A configuration bundle needs at least one component | none |
+| `pf-agentcore-dataset-source-exactly-one` | AWS::BedrockAgentCore::Dataset | Dataset Source must hold exactly one of InlineExamples or S3Source | none |
+| `pf-agentcore-evaluator-rating-scale-empty` | AWS::BedrockAgentCore::Evaluator | An LLM-as-a-judge evaluator RatingScale must list at least one scale entry | none |
+| `pf-agentcore-gateway-authorizer-config-unexpected` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType AWS_IAM or NONE must not set AuthorizerConfiguration | none |
+| `pf-agentcore-gateway-interceptor-point-unique` | AWS::BedrockAgentCore::Gateway | Gateway interceptors may bind each interception point (REQUEST / RESPONSE) only once | none |
+| `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::PaymentManager | Gateways and payment managers with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | none |
+| `pf-agentcore-gateway-mcp-supported-versions` | AWS::BedrockAgentCore::Gateway | Gateway MCP SupportedVersions must be MCP protocol versions the service supports | none |
+| `pf-agentcore-gateway-target-credential-provider-required` | AWS::BedrockAgentCore::GatewayTarget | Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block | none |
+| `pf-agentcore-gateway-target-iam-credential-provider` | AWS::BedrockAgentCore::GatewayTarget | OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service) | none |
+| `pf-agentcore-gateway-target-lambda-credential-type` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets accept only the GATEWAY_IAM_ROLE credential provider | none |
+| `pf-agentcore-gateway-target-lambda-tool-name-unique` | AWS::BedrockAgentCore::GatewayTarget | Tool names in a Lambda gateway target's inline ToolSchema must be unique | none |
+| `pf-agentcore-gateway-target-lambda-tool-schema-empty` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets need at least one tool in ToolSchema.InlinePayload | none |
+| `pf-agentcore-gateway-target-openapi-schema` | AWS::BedrockAgentCore::GatewayTarget | Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation | none |
+| `pf-agentcore-jwt-authorizer-claims` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::Harness | A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims | none |
+| `pf-agentcore-memory-custom-strategy-execution-role` | AWS::BedrockAgentCore::Memory | Memories with a custom strategy require MemoryExecutionRoleArn | none |
+| `pf-agentcore-memory-strategy-exactly-one` | AWS::BedrockAgentCore::Memory | Each MemoryStrategies entry must hold exactly one strategy type, and a CustomMemoryStrategy exactly one Configuration override | pending-engine |
+| `pf-agentcore-memory-strategy-name-unique` | AWS::BedrockAgentCore::Memory | Memory strategy names must be unique within a memory | none |
+| `pf-agentcore-memory-strategy-namespaces-count` | AWS::BedrockAgentCore::Memory | A memory strategy accepts exactly one namespace | none |
+| `pf-agentcore-memory-strategy-type-unique` | AWS::BedrockAgentCore::Memory | A memory may carry at most one strategy of each built-in type | none |
+| `pf-agentcore-oauth2-provider-client-secret` | AWS::BedrockAgentCore::OAuth2CredentialProvider | A custom OAuth2 provider takes ClientSecret when the secret is MANAGED and ClientSecretConfig when it is EXTERNAL, never both | none |
+| `pf-agentcore-oauth2-provider-private-key-jwt` | AWS::BedrockAgentCore::OAuth2CredentialProvider | ClientAuthenticationMethod PRIVATE_KEY_JWT cannot be satisfied through CloudFormation (PrivateKeyJwtConfig is not in the resource schema) | none |
+| `pf-agentcore-oauth2-provider-vendor-config` | AWS::BedrockAgentCore::OAuth2CredentialProvider | Oauth2ProviderConfigInput must contain the config block that matches CredentialProviderVendor | none |
+| `pf-agentcore-online-eval-evaluator-unique` | AWS::BedrockAgentCore::OnlineEvaluationConfig | An online evaluation config must not list the same evaluator twice | none |
+| `pf-agentcore-online-eval-evaluators-or-insights` | AWS::BedrockAgentCore::OnlineEvaluationConfig | An online evaluation config needs a non-empty Evaluators list (or Insights) | none |
+| `pf-agentcore-payment-credential-provider-vendor-config` | AWS::BedrockAgentCore::PaymentCredentialProvider | ProviderConfigurationInput must contain the block matching CredentialProviderVendor (CoinbaseCDP / StripePrivy) | none |
+| `pf-agentcore-policy-cedar-statement` | AWS::BedrockAgentCore::Policy | A Cedar policy statement must be a permit/forbid clause that constrains the resource and, for permit, carries a condition | none |
+| `pf-agentcore-required-union-empty` | AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::GatewayTarget<br>AWS::BedrockAgentCore::Policy | Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects | pending-engine |
+| `pf-agentcore-resource-policy-document` | AWS::BedrockAgentCore::ResourcePolicy | A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN | none |
+| `pf-agentcore-runtime-artifact-exactly-one` | AWS::BedrockAgentCore::Runtime | AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration | none |
+| `pf-agentcore-runtime-code-entrypoint-extension` | AWS::BedrockAgentCore::Runtime | A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*) | none |
+| `pf-agentcore-runtime-env-var-count` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime EnvironmentVariables holds at most 50 entries | pending-engine |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
+| `pf-agentcore-vpc-network-mode-config` | AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::BrowserCustom<br>AWS::BedrockAgentCore::CodeInterpreterCustom<br>AWS::BedrockAgentCore::Harness | NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness) | none |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
 | `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | none |
 | `pf-cloudfront-cache-policy-name` | AWS::CloudFront::CachePolicy | Cache policy names allow only alphanumerics, dash and underscore | none |

@@ -1,12 +1,12 @@
 id: pf-agentcore-gateway-jwt-authorizer
 service: bedrock-agentcore
 benchRegion: us-east-1
-resourceTypes: [AWS::BedrockAgentCore::Gateway]
+resourceTypes: [AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::PaymentManager]
 severity: ERROR
-title: Gateways with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration
+title: Gateways and payment managers with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration
 constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGateway.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (BedrockAgentCoreControl 400: AuthorizerConfiguration is required for CUSTOM_JWT authorizer type), pass template (AWS_IAM gateway) CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-jwt-authorizer.log"
+  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (BedrockAgentCoreControl 400: AuthorizerConfiguration is required for CUSTOM_JWT authorizer type), pass template (AWS_IAM gateway) CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-jwt-authorizer.log. PaymentManager 2026-09-05 us-east-1 (probe): CUSTOM_JWT without AuthorizerConfiguration -> CREATE_FAILED (Bedrock AgentCore Control 400: AuthorizerConfiguration is required for CUSTOM_JWT authorizer type); AWS_IAM with AuthorizerConfiguration CREATE_COMPLETE (so PaymentManager is not in pf-agentcore-gateway-authorizer-config-unexpected)"
 addedOn: 2026-09-01

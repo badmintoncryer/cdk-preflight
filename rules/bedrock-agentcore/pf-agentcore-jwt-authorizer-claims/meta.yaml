@@ -1,0 +1,12 @@
+id: pf-agentcore-jwt-authorizer-claims
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::Runtime, AWS::BedrockAgentCore::Harness]
+severity: ERROR
+title: A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomJWTAuthorizerConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe, Gateway): CREATE_FAILED (BedrockAgentCoreControl 400: At least one of allowedAudience or allowedClients or allowedScopes or CustomClaims must be defined for CUSTOM_JWT authorizer) -> ROLLBACK_COMPLETE; Runtime (probe, fail-only): CREATE_FAILED (400: Either allowedAudience, allowedClients, allowedScopes, or customClaims must be present with at least one item); Harness (probe): CREATE_FAILED (400: same message). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-jwt-authorizer-claims.log"
+addedOn: 2026-09-05

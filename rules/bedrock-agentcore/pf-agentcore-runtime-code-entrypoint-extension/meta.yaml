@@ -1,0 +1,12 @@
+id: pf-agentcore-runtime-code-entrypoint-extension
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-get-started-code-deploy-python.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe, fail-only): Runtime PYTHON_3_12 with EntryPoint [app.js] -> CREATE_FAILED (BedrockAgentCoreControl 400: Invalid request provided: Entrypoint file type does not match your selected runtime. For PYTHON_3_12 runtime, your file should end with .py extension.) -> ROLLBACK_COMPLETE. NODE_22 not measured. Pass template not deployed (a runtime needs real code in S3). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE (fail-only). Log: bench/logs/pf-agentcore-runtime-code-entrypoint-extension.log"
+addedOn: 2026-09-05

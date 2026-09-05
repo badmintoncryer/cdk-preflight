@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-target-iam-credential-provider
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayTarget]
+severity: ERROR
+title: OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-authorization.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): OpenAPI target + GATEWAY_IAM_ROLE without CredentialProvider.IamCredentialProvider -> CREATE_FAILED (BedrockAgentCoreControl 400: IamCredentialProvider is required for openApiSchema targets using IAM authentication); McpServer target same shape -> 400: IamCredentialProvider is required for mcpServer targets using IAM authentication; OpenAPI target with IamCredentialProvider.Service=execute-api CREATE_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-iam-credential-provider.log"
+addedOn: 2026-09-05

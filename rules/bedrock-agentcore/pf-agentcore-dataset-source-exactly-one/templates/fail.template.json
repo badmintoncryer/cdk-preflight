@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Dataset": {
+      "Type": "AWS::BedrockAgentCore::Dataset",
+      "Properties": {
+        "DatasetName": "cdkpf_dssrc_fail",
+        "SchemaType": "AGENTCORE_EVALUATION_PREDEFINED_V1",
+        "Source": {
+          "InlineExamples": {
+            "Examples": [
+              {
+                "scenario_id": "TC-01",
+                "turns": [
+                  {
+                    "input": "What is my balance?",
+                    "expected_response": "Your balance is $50."
+                  }
+                ]
+              }
+            ]
+          },
+          "S3Source": {
+            "S3Uri": "s3://my-eval-bucket/examples.jsonl"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Evaluator": {
+      "Type": "AWS::BedrockAgentCore::Evaluator",
+      "Properties": {
+        "EvaluatorName": "cdkpf_union_fail",
+        "Level": "TRACE",
+        "EvaluatorConfig": {}
+      }
+    }
+  }
+}

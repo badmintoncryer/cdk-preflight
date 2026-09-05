@@ -1,0 +1,12 @@
+id: pf-agentcore-payment-credential-provider-vendor-config
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::PaymentCredentialProvider]
+severity: ERROR
+title: ProviderConfigurationInput must contain the block matching CredentialProviderVendor (CoinbaseCDP / StripePrivy)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreatePaymentCredentialProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe, fail-only): CoinbaseCDP with only StripePrivyConfiguration -> CREATE_FAILED (Bedrock AgentCore Control 400: CoinbaseCDP vendor type requires coinbaseCdpConfiguration in providerConfigurationInput) -> ROLLBACK_COMPLETE. Pass template not deployed: a matching block needs a real base64 Ed25519 Coinbase API key (400: Invalid apiKeySecret format: Expected base64-encoded Ed25519 private key). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE (fail-only). Log: bench/logs/pf-agentcore-payment-credential-provider-vendor-config.log"
+addedOn: 2026-09-05

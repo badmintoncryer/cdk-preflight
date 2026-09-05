@@ -1,0 +1,12 @@
+id: pf-agentcore-config-bundle-components-empty
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::ConfigurationBundle]
+severity: ERROR
+title: A configuration bundle needs at least one component
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateConfigurationBundle.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): Components: {} -> CREATE_FAILED (Bedrock AgentCore Control 400 ValidationException: Components map cannot be empty. At least one component configuration is required) -> ROLLBACK_COMPLETE; a bundle with one harness component CREATE_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-config-bundle-components-empty.log"
+addedOn: 2026-09-05

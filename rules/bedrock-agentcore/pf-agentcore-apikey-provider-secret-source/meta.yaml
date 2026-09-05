@@ -1,0 +1,12 @@
+id: pf-agentcore-apikey-provider-secret-source
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::ApiKeyCredentialProvider]
+severity: ERROR
+title: An API key credential provider takes ApiKey when the secret is MANAGED and ApiKeySecretConfig when it is EXTERNAL, never both
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateApiKeyCredentialProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 us-east-1 (probe): no ApiKey (MANAGED/default) -> CREATE_FAILED (Bedrock AgentCore Control 400: ApiKey is required when secret source is MANAGED or not specified); ApiKey + ApiKeySecretConfig -> 400: ApiKeySecretConfig must not be provided when secret source is MANAGED or not specified; EXTERNAL without ApiKeySecretConfig -> 400: ApiKeySecretConfig is required when secret source is EXTERNAL; EXTERNAL with ApiKey -> 400: ApiKey must not be provided when secret source is EXTERNAL; EXTERNAL + ApiKeySecretConfig only CREATE_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-apikey-provider-secret-source.log"
+addedOn: 2026-09-05

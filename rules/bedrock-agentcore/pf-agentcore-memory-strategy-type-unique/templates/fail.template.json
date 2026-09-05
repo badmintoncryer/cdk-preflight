@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Memory": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_memstype_fail",
+        "EventExpiryDuration": 30,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "facts",
+              "Namespaces": [
+                "/actor/{actorId}/"
+              ]
+            }
+          },
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "more_facts",
+              "Namespaces": [
+                "/session/{sessionId}/"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Provider": {
+      "Type": "AWS::BedrockAgentCore::OAuth2CredentialProvider",
+      "Properties": {
+        "Name": "cdkpf-oavc-pass",
+        "CredentialProviderVendor": "GoogleOauth2",
+        "Oauth2ProviderConfigInput": {
+          "GoogleOauth2ProviderConfig": {
+            "ClientId": "my-client-id",
+            "ClientSecret": "my-client-secret"
+          }
+        }
+      }
+    }
+  }
+}
