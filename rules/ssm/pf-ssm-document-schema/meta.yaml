@@ -1,0 +1,11 @@
+id: pf-ssm-document-schema
+service: ssm
+resourceTypes: [AWS::SSM::Document]
+severity: ERROR
+title: "schemaVersion must match DocumentType (Command 1.0/1.2/2.0/2.2, Automation 0.3, Session 1.0, Policy 2.0/2.2), 2.2 needs an explicit DocumentType, ChangeCalendar needs DocumentFormat TEXT (and TEXT only ChangeCalendar), and ApplicationConfiguration needs Requires"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-schemas-features.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: 2.2 is not a valid schema version for Automation document type\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

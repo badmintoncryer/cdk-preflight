@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": "v",
+        "Name": "/cdkpf/policies-fail",
+        "Tier": "Advanced",
+        "Policies": "[{\"Type\":\"Foo\",\"Version\":\"1.0\",\"Attributes\":{}}]"
+      }
+    }
+  }
+}

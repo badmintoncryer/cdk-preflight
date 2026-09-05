@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "Origin": "EXTERNAL",
+        "KeySpec": "RSA_2048",
+        "KeyUsage": "SIGN_VERIFY"
+      }
+    }
+  }
+}

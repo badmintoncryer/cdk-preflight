@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeySpec": "ECC_NIST_P256",
+        "KeyUsage": "SIGN_VERIFY"
+      }
+    }
+  }
+}

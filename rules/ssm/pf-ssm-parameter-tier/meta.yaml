@@ -1,0 +1,11 @@
+id: pf-ssm-parameter-tier
+service: ssm
+resourceTypes: [AWS::SSM::Parameter]
+severity: ERROR
+title: "Standard-tier parameters (Tier omitted uses the account default, normally Standard) hold at most 4096 characters and no Policies; Advanced and Intelligent-Tiering hold at most 8192"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_PutParameter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error occurred during operation 'PutParameter'.\" (the CloudFormation handler masks the service error; the same input sent straight to the API is rejected with \"You can't assign parameter policies to a standard-parameter tier. You must upgrade the parameter to use the advanced-parameter tier.\"); pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

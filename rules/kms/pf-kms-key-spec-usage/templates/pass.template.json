@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeySpec": "HMAC_256",
+        "KeyUsage": "GENERATE_VERIFY_MAC"
+      }
+    }
+  }
+}

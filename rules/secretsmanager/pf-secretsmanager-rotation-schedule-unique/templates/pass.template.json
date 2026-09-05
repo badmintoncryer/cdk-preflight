@@ -1,0 +1,81 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          }
+        ]
+      }
+    },
+    "Fn": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return None\n"
+        }
+      }
+    },
+    "Perm": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Fn"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "secretsmanager.amazonaws.com"
+      }
+    },
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"admin\"}",
+          "GenerateStringKey": "password"
+        }
+      }
+    },
+    "R": {
+      "Type": "AWS::SecretsManager::RotationSchedule",
+      "DependsOn": [
+        "Perm"
+      ],
+      "Properties": {
+        "SecretId": {
+          "Ref": "S"
+        },
+        "RotationLambdaARN": {
+          "Fn::GetAtt": [
+            "Fn",
+            "Arn"
+          ]
+        },
+        "RotationRules": {
+          "AutomaticallyAfterDays": 30
+        }
+      }
+    }
+  }
+}

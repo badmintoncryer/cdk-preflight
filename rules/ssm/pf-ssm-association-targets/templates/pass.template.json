@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::SSM::Association",
+      "Properties": {
+        "Name": "AWS-RunShellScript",
+        "Targets": [
+          {
+            "Key": "tag:cdkpf",
+            "Values": [
+              "probe"
+            ]
+          }
+        ],
+        "Parameters": {
+          "commands": [
+            "echo hi"
+          ]
+        }
+      }
+    }
+  }
+}

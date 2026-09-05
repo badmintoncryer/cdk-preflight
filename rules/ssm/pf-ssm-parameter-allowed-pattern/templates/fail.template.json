@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": "abc",
+        "Name": "/cdkpf/pattern-fail",
+        "AllowedPattern": "^\\d+$"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "PasswordLength": 3
+        }
+      }
+    }
+  }
+}

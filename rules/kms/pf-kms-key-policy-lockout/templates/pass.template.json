@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "root",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

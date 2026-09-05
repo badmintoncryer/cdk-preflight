@@ -1,0 +1,11 @@
+id: pf-ssm-maintenance-window-target
+service: ssm
+resourceTypes: [AWS::SSM::MaintenanceWindowTarget]
+severity: ERROR
+title: "MaintenanceWindowTarget with ResourceType INSTANCE takes either a single InstanceIds target or up to five tag:/tag-key targets; RESOURCE_GROUP takes a resource-groups:Name target"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ssm-maintenancewindowtarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Target Type does not match with the provided target.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

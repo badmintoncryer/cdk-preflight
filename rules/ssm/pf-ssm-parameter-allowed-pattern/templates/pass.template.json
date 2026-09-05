@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": "123",
+        "Name": "/cdkpf/pattern-pass",
+        "AllowedPattern": "^\\d+$"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-secretsmanager-generate-secret-string
+service: secretsmanager
+resourceTypes: [AWS::SecretsManager::Secret]
+severity: ERROR
+title: "GenerateSecretString must leave at least one character type, a PasswordLength (1..4096) that fits every required type, ExcludeCharacters under 4096 chars that does not wipe out a required type, and SecretStringTemplate (a JSON object) together with GenerateStringKey"
+constraintSource: https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetRandomPassword.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Password length is too short based on the required types.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "MultiRegion": true,
+        "PendingWindowInDays": 7
+      }
+    },
+    "Replica": {
+      "Type": "AWS::KMS::ReplicaKey",
+      "Properties": {
+        "PrimaryKeyArn": {
+          "Fn::GetAtt": [
+            "Key",
+            "Arn"
+          ]
+        },
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "root",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        },
+        "PendingWindowInDays": 7
+      }
+    }
+  }
+}

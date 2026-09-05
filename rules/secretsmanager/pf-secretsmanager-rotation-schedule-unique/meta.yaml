@@ -1,0 +1,11 @@
+id: pf-secretsmanager-rotation-schedule-unique
+service: secretsmanager
+resourceTypes: [AWS::SecretsManager::RotationSchedule]
+severity: ERROR
+title: "A secret can have only one RotationSchedule"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-rotationschedule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"A previous rotation isn't complete. That rotation will be reattempted.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

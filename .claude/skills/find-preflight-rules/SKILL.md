@@ -87,6 +87,7 @@ EOL ランタイム、廃止インスタンスタイプ、リージョン非対�
    console.log(JSON.stringify(r.diagnostics, null, 2));"
    ```
    `ERROR` / `FATAL`（`source` が `SCHEMA` か `CFN_LINT`）が出たら**その候補は捨てる**。`WARN` クラスだけ、あるいは `INFO` だけならグレーゾーンなので、上流に severity の issue を出す候補として記録し、つなぎで実装するなら `upstream: pending-engine` を付ける
+   - **サービス API を直接叩けるものは先に叩く**（2026-09-05、KMS / Secrets Manager / SSM で実測）。CFN ハンドラが CreateKey / CreateAlias / ReplicateKey / GetRandomPassword / RotateSecret / PutParameter / CreateDocument / CreateMaintenanceWindow / CreateAssociation をそのまま呼ぶサービスでは、API の拒否＝スタックイベントの文面で、失敗した呼び出しは何も作らないのでタダ。ハンドラ独自の検査（`SecretString` と `GenerateSecretString` の排他、`HostedRotationLambda` の transform 要否など）だけスタックを立てる
 4. **issue に記録**。生き残った候補をチェックリストに、落ちた候補を理由つきで残す。落選理由を残すのが重要で、これが無いと次の担当が同じ調査を繰り返す
 5. **実装へ引き継ぐ**。採用候補 1 本ごとに `add-preflight-rule` を起動する。実機再現ゲートはそちら側の責務
 

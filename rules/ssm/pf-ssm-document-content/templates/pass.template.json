@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::SSM::Document",
+      "Properties": {
+        "Content": {
+          "schemaVersion": "2.2",
+          "description": "d",
+          "mainSteps": [
+            {
+              "action": "aws:runShellScript",
+              "name": "run",
+              "inputs": {
+                "runCommand": [
+                  "echo {{ msg }}"
+                ]
+              }
+            }
+          ],
+          "parameters": {
+            "msg": {
+              "type": "String",
+              "default": "hi"
+            }
+          }
+        },
+        "DocumentType": "Command"
+      }
+    }
+  }
+}

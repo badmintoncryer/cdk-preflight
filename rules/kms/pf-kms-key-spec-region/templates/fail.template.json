@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeySpec": "SM2",
+        "KeyUsage": "SIGN_VERIFY"
+      }
+    }
+  }
+}

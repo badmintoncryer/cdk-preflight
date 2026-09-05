@@ -1,0 +1,11 @@
+id: pf-kms-key-rotation
+service: kms
+resourceTypes: [AWS::KMS::Key]
+severity: ERROR
+title: "EnableKeyRotation is only valid for SYMMETRIC_DEFAULT keys with AWS_KMS key material (not asymmetric, HMAC, or Origin EXTERNAL)"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-kms-key.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: You cannot set the EnableKeyRotation property to true on asymmetric or external keys.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

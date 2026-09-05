@@ -1,0 +1,11 @@
+id: pf-kms-key-origin
+service: kms
+resourceTypes: [AWS::KMS::Key]
+severity: ERROR
+title: "Origin AWS_CLOUDHSM and EXTERNAL_KEY_STORE cannot be created by CloudFormation, and Origin EXTERNAL does not support ML-DSA key specs"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-kms-key.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"KeySpec ML_DSA_44 is not supported for Origin EXTERNAL\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

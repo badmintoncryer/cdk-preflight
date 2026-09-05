@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "PasswordLength": 16,
+          "SecretStringTemplate": "{\"username\":\"admin\"}",
+          "GenerateStringKey": "password"
+        }
+      }
+    }
+  }
+}
