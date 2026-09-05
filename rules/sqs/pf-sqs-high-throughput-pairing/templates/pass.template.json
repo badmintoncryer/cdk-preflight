@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "FifoQueue": true,
+        "FifoThroughputLimit": "perMessageGroupId",
+        "DeduplicationScope": "messageGroup"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "ContentBasedDeduplication": true
+      }
+    }
+  }
+}

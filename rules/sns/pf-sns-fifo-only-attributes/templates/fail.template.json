@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "ContentBasedDeduplication": true
+      }
+    }
+  }
+}

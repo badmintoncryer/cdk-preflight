@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "https",
+        "Endpoint": "https://example.com/hook"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "https",
+        "Endpoint": "https://example.com/hook",
+        "DeliveryPolicy": {
+          "healthyRetryPolicy": {
+            "minDelayTarget": 1,
+            "maxDelayTarget": 60,
+            "numRetries": 50,
+            "numNoDelayRetries": 3,
+            "numMinDelayRetries": 2,
+            "numMaxDelayRetries": 35,
+            "backoffFunction": "exponential"
+          },
+          "throttlePolicy": {
+            "maxReceivesPerSecond": 10
+          }
+        }
+      }
+    }
+  }
+}

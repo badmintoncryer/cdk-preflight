@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "firehose",
+        "Endpoint": {
+          "Fn::Sub": "arn:${AWS::Partition}:firehose:${AWS::Region}:${AWS::AccountId}:deliverystream/cdkpf-nope"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "SqsManagedSseEnabled": true,
+        "KmsMasterKeyId": "alias/aws/sqs"
+      }
+    }
+  }
+}

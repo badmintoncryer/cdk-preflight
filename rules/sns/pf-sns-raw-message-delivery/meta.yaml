@@ -1,0 +1,11 @@
+id: pf-sns-raw-message-delivery
+service: sns
+resourceTypes: [AWS::SNS::Subscription, AWS::SNS::Topic]
+severity: ERROR
+title: "RawMessageDelivery is only supported for sqs, http, https and firehose subscriptions"
+constraintSource: https://docs.aws.amazon.com/sns/latest/api/API_Subscribe.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: Attributes Reason: Delivery protocol [lambda] does not support raw message delivery.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

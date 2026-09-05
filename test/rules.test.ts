@@ -1881,3 +1881,113 @@ describe('ecs service and cloudwatch dashboard rules', () => {
     expect(ids(diagnoseTemplate(alarm(true)))).toHaveLength(0);
   });
 });
+
+/**
+ * SQS / SNS ルールのうち、fail フィクスチャ 1 枚では踏めない分岐:
+ * JSON 文字列形のポリシー、Topic 内インライン Subscription、リテラル ARN、
+ * リージョン束縛、Ref / Fn::GetAtt の区別。
+ */
+describe('sqs / sns rules', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const queue = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { Q: { Type: 'AWS::SQS::Queue', Properties: props }, ...extra } });
+  const topic = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { T: { Type: 'AWS::SNS::Topic', Properties: props }, ...extra } });
+  const sub = (props: Record<string, unknown>, topicProps: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => ({
+    Resources: { T: { Type: 'AWS::SNS::Topic', Properties: topicProps }, S: { Type: 'AWS::SNS::Subscription', Properties: { TopicArn: { Ref: 'T' }, ...props } }, ...extra },
+  });
+  const Q = { Q: { Type: 'AWS::SQS::Queue', Properties: {} } };
+  const QARN = { 'Fn::GetAtt': ['Q', 'Arn'] };
+
+  test('sqs policies are read both as objects and as JSON strings', () => {
+    expect(ids(diagnoseTemplate(queue({ RedrivePolicy: JSON.stringify({ deadLetterTargetArn: 'arn:aws:sqs:us-east-1:123456789012:dlq', maxReceiveCount: 1001 }) }))))
+      .toContain('pf-sqs-redrive-policy');
+    expect(ids(diagnoseTemplate(queue({ RedriveAllowPolicy: JSON.stringify({ redrivePermission: 'allowAll', sourceQueueArns: ['arn:aws:sqs:us-east-1:123456789012:s'] }) }))))
+      .toContain('pf-sqs-redrive-allow-policy');
+    expect(ids(diagnoseTemplate(queue({ RedrivePolicy: { deadLetterTargetArn: 'arn:aws:sns:us-east-1:123456789012:t', maxReceiveCount: '5' } }))))
+      .toContain('pf-sqs-redrive-policy');
+  });
+
+  test('sqs FIFO-only attributes: enum branch and the DeduplicationScope=queue pairing', () => {
+    expect(ids(diagnoseTemplate(queue({ FifoQueue: true, DeduplicationScope: 'foo' })))).toContain('pf-sqs-fifo-only-attributes');
+    expect(ids(diagnoseTemplate(queue({ FifoQueue: true, FifoThroughputLimit: 'perMessageGroupId', DeduplicationScope: 'queue' })))).toContain('pf-sqs-high-throughput-pairing');
+    expect(ids(diagnoseTemplate(queue({ FifoQueue: true, FifoThroughputLimit: 'perQueue', DeduplicationScope: 'queue' })))).toHaveLength(0);
+  });
+
+  test('sqs DLQ type via literal ARN, and region binding for DLQ / redrive-allow sources', () => {
+    expect(ids(diagnoseTemplate(queue({ FifoQueue: true, RedrivePolicy: { deadLetterTargetArn: 'arn:aws:sqs:us-east-1:123456789012:dlq', maxReceiveCount: 5 } }))))
+      .toContain('pf-sqs-dlq-same-type');
+    expect(ids(diagnoseTemplate(queue({ RedrivePolicy: { deadLetterTargetArn: 'arn:aws:sqs:us-east-1:123456789012:dlq', maxReceiveCount: 5 } }), 'ap-northeast-1')))
+      .toContain('pf-sqs-redrive-arn-region');
+    expect(ids(diagnoseTemplate(queue({ RedriveAllowPolicy: { redrivePermission: 'byQueue', sourceQueueArns: ['arn:aws:sqs:us-east-1:123456789012:s'] } }), 'ap-northeast-1')))
+      .toContain('pf-sqs-redrive-arn-region');
+    expect(ids(diagnoseTemplate(queue({ RedriveAllowPolicy: { redrivePermission: 'byQueue', sourceQueueArns: ['arn:aws:sqs:ap-northeast-1:123456789012:s'] } }), 'ap-northeast-1')))
+      .toHaveLength(0);
+  });
+
+  test('QueuePolicy.Queues: a literal ARN fires, Ref and URLs do not', () => {
+    const pol = (queues: unknown[]) => ({ Resources: { ...Q, P: { Type: 'AWS::SQS::QueuePolicy', Properties: { Queues: queues, PolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: '*', Action: 'sqs:SendMessage', Resource: '*' }] } } } } });
+    expect(ids(diagnoseTemplate(pol(['arn:aws:sqs:us-east-1:123456789012:q'])))).toContain('pf-sqs-queue-policy-queues');
+    expect(ids(diagnoseTemplate(pol([])))).toContain('pf-sqs-queue-policy-queues');
+    expect(ids(diagnoseTemplate(pol([{ Ref: 'Q' }, 'https://sqs.us-east-1.amazonaws.com/123456789012/q'])))).toHaveLength(0);
+  });
+
+  test('sns inline Topic.Subscription entries are judged like standalone subscriptions', () => {
+    expect(ids(diagnoseTemplate(topic({ Subscription: [{ Protocol: 'sqs', Endpoint: 'https://not-an-arn' }] })))).toContain('pf-sns-subscription-endpoint');
+    expect(ids(diagnoseTemplate(topic({ FifoTopic: true, TopicName: 't.fifo', Subscription: [{ Protocol: 'lambda', Endpoint: 'arn:aws:lambda:us-east-1:123456789012:function:f' }] })))).toContain('pf-sns-fifo-topic-protocol');
+    expect(ids(diagnoseTemplate(topic({ Subscription: [{ Protocol: 'email', Endpoint: 'a@example.com', RawMessageDelivery: true }] })))).toContain('pf-sns-raw-message-delivery');
+  });
+
+  test('sns endpoint shapes per protocol; resource references are skipped', () => {
+    const t = (p: string, e: unknown) => sub({ Protocol: p, Endpoint: e }, {}, Q);
+    expect(ids(diagnoseTemplate(t('lambda', 'arn:aws:sqs:us-east-1:123456789012:q')))).toContain('pf-sns-subscription-endpoint');
+    expect(ids(diagnoseTemplate(t('email', 'nope')))).toContain('pf-sns-subscription-endpoint');
+    expect(ids(diagnoseTemplate(t('https', 'http://example.com')))).toContain('pf-sns-subscription-endpoint');
+    expect(ids(diagnoseTemplate(t('sms', 'hello')))).toContain('pf-sns-subscription-endpoint');
+    expect(ids(diagnoseTemplate(t('foo', 'x')))).toContain('pf-sns-subscription-endpoint');
+    expect(ids(diagnoseTemplate(t('sqs', QARN)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(t('application', 'arn:aws:sns:us-east-1:123456789012:endpoint/GCM/app/1')))).toHaveLength(0);
+  });
+
+  test('sns FIFO topic / FIFO queue pairing through literal ARNs', () => {
+    const lit = (topicArn: string, endpoint: string) => ({ Resources: { S: { Type: 'AWS::SNS::Subscription', Properties: { TopicArn: topicArn, Protocol: 'sqs', Endpoint: endpoint } } } });
+    expect(ids(diagnoseTemplate(lit('arn:aws:sns:us-east-1:123456789012:t', 'arn:aws:sqs:us-east-1:123456789012:q.fifo')))).toContain('pf-sns-fifo-queue-on-standard-topic');
+    expect(ids(diagnoseTemplate(lit('arn:aws:sns:us-east-1:123456789012:t.fifo', 'arn:aws:sqs:us-east-1:123456789012:q')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate({ Resources: { S: { Type: 'AWS::SNS::Subscription', Properties: { TopicArn: 'arn:aws:sns:us-east-1:123456789012:t.fifo', Protocol: 'email', Endpoint: 'a@example.com' } } } }))).toContain('pf-sns-fifo-topic-protocol');
+  });
+
+  test('sns filter policy shapes', () => {
+    const fp = (policy: unknown, scope?: string) => sub({ Protocol: 'sqs', Endpoint: QARN, FilterPolicy: policy, ...(scope ? { FilterPolicyScope: scope } : {}) }, {}, Q);
+    expect(ids(diagnoseTemplate(fp({ a: 'x' })))).toContain('pf-sns-filter-policy');
+    expect(ids(diagnoseTemplate(fp({ a: [] })))).toContain('pf-sns-filter-policy');
+    expect(ids(diagnoseTemplate(fp({ a: [['x']] })))).toContain('pf-sns-filter-policy');
+    expect(ids(diagnoseTemplate(fp({ a: { b: ['x'] } })))).toContain('pf-sns-filter-policy');
+    expect(ids(diagnoseTemplate(fp({ a: { b: ['x'] } }, 'MessageBody')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(fp(JSON.stringify({ a: ['1'], b: ['1'], c: ['1'], d: ['1'], e: ['1'], f: ['1'] }))))).toContain('pf-sns-filter-policy');
+    expect(ids(diagnoseTemplate(fp({ a: ['1'] }, 'Foo')))).toContain('pf-sns-filter-policy');
+  });
+
+  test('sns delivery policy: phase total, min>max, backoff enum, topic-level http policy', () => {
+    const dp = (policy: unknown) => sub({ Protocol: 'https', Endpoint: 'https://example.com/h', DeliveryPolicy: policy });
+    expect(ids(diagnoseTemplate(dp({ healthyRetryPolicy: { minDelayTarget: 30, maxDelayTarget: 20, numRetries: 3 } })))).toContain('pf-sns-delivery-policy');
+    expect(ids(diagnoseTemplate(dp({ healthyRetryPolicy: { minDelayTarget: 1, maxDelayTarget: 20, numRetries: 3, numNoDelayRetries: 4 } })))).toContain('pf-sns-delivery-policy');
+    expect(ids(diagnoseTemplate(dp({ healthyRetryPolicy: { minDelayTarget: 1, maxDelayTarget: 20, numRetries: 3, backoffFunction: 'foo' } })))).toContain('pf-sns-delivery-policy');
+    expect(ids(diagnoseTemplate(dp({ throttlePolicy: { maxReceivesPerSecond: 0 } })))).toContain('pf-sns-delivery-policy');
+    expect(ids(diagnoseTemplate(topic({ DeliveryPolicy: { http: { defaultHealthyRetryPolicy: { minDelayTarget: 30, maxDelayTarget: 20, numRetries: 3 } } } })))).toContain('pf-sns-delivery-policy');
+  });
+
+  test('sns subscription redrive and region are bound to the deploy region', () => {
+    const rd = (arn: string) => sub({ Protocol: 'sqs', Endpoint: QARN, RedrivePolicy: { deadLetterTargetArn: arn } }, {}, Q);
+    expect(ids(diagnoseTemplate(rd('arn:aws:sqs:us-east-1:123456789012:dlq'), 'ap-northeast-1'))).toContain('pf-sns-subscription-redrive');
+    expect(ids(diagnoseTemplate(rd('arn:aws:sqs:ap-northeast-1:123456789012:dlq'), 'ap-northeast-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(sub({ Protocol: 'sqs', Endpoint: QARN, RedrivePolicy: {} }, {}, Q)))).toContain('pf-sns-subscription-redrive');
+    expect(ids(diagnoseTemplate(sub({ Protocol: 'sqs', Endpoint: QARN, Region: 'us-east-1' }, {}, Q), 'ap-northeast-1'))).toContain('pf-sns-subscription-region');
+    expect(ids(diagnoseTemplate(sub({ Protocol: 'sqs', Endpoint: QARN, Region: 'ap-northeast-1' }, {}, Q), 'ap-northeast-1'))).toHaveLength(0);
+    expect(ids(diagnoseTemplate({ Resources: { S: { Type: 'AWS::SNS::Subscription', Properties: { TopicArn: 'arn:aws:sns:us-east-1:123456789012:t', Protocol: 'https', Endpoint: 'https://example.com/h', Region: 'eu-west-1' } } } }))).toContain('pf-sns-subscription-region');
+  });
+
+  test('sns topic attribute values and TopicPolicy.Topics', () => {
+    expect(ids(diagnoseTemplate(topic({ SignatureVersion: '0' })))).toContain('pf-sns-topic-attribute-values');
+    expect(ids(diagnoseTemplate(topic({ TracingConfig: 'Foo' })))).toContain('pf-sns-topic-attribute-values');
+    expect(ids(diagnoseTemplate(topic({ FifoTopic: true, TopicName: 't.fifo', ArchivePolicy: { MessageRetentionPeriod: 366 } })))).toContain('pf-sns-fifo-only-attributes');
+    expect(ids(diagnoseTemplate(topic({}, { P: { Type: 'AWS::SNS::TopicPolicy', Properties: { Topics: ['my-topic'], PolicyDocument: {} } } })))).toContain('pf-sns-topic-policy-topics');
+  });
+});

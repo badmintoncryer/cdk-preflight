@@ -1,0 +1,11 @@
+id: pf-sqs-redrive-allow-policy
+service: sqs
+resourceTypes: [AWS::SQS::Queue]
+severity: ERROR
+title: "RedriveAllowPolicy: redrivePermission is required (allowAll|denyAll|byQueue); byQueue needs 1..10 sourceQueueArns and the other two forbid them"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_CreateQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Value {\"redrivePermission\":\"byQueue\"} for parameter RedriveAllowPolicy is invalid. Reason: Amazon SQS can't create the redrive allow policy. When you specify the byQueue permission type, you must also specify one or more sourceQueueArns values.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-05

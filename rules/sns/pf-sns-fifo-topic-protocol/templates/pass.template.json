@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "FifoTopic": true,
+        "TopicName": "cdkpf-fifo-proto-ok.fifo"
+      }
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "sqs",
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "Q",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "FifoQueue": true
+      }
+    }
+  }
+}

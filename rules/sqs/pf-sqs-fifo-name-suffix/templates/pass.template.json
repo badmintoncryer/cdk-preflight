@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "FifoQueue": true,
+        "QueueName": "cdkpf-suffix-ok.fifo"
+      }
+    }
+  }
+}

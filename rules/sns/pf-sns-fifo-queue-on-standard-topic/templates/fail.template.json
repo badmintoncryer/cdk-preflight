@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "T"
+        },
+        "Protocol": "sqs",
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "Q",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "FifoQueue": true
+      }
+    }
+  }
+}
