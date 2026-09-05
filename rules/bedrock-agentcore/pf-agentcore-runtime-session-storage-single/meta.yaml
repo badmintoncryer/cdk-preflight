@@ -1,0 +1,12 @@
+id: pf-agentcore-runtime-session-storage-single
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: An AgentCore Runtime allows at most one SessionStorage filesystem configuration
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (probe, real image): two SessionStorage entries with the same MountPath and with distinct MountPaths -> CREATE_FAILED (BedrockAgentCoreControl 400: Invalid request provided: At most one sessionStorage configuration is allowed) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-runtime-session-storage-single.log. Fixtures pull public.ecr.aws/docker/library/python:3.12-slim through a stack-owned ECR pull-through cache rule, so no pre-pushed image is needed."
+addedOn: 2026-09-06

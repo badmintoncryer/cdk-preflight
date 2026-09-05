@@ -1,0 +1,103 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "bedrock-agentcore.amazonaws.com",
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "agentcore",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "bedrock:InvokeModel",
+                    "logs:*",
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Gw": {
+      "Type": "AWS::BedrockAgentCore::Gateway",
+      "Properties": {
+        "Name": "cdkpf-gwtreg-fail",
+        "ProtocolType": "MCP",
+        "AuthorizerType": "AWS_IAM",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Target": {
+      "Type": "AWS::BedrockAgentCore::GatewayTarget",
+      "Properties": {
+        "GatewayIdentifier": {
+          "Fn::GetAtt": [
+            "Gw",
+            "GatewayIdentifier"
+          ]
+        },
+        "Name": "tools",
+        "TargetConfiguration": {
+          "Mcp": {
+            "Lambda": {
+              "LambdaArn": {
+                "Fn::Sub": "arn:${AWS::Partition}:lambda:us-west-2:${AWS::AccountId}:function:cdkpf-gwtreg-fail"
+              },
+              "ToolSchema": {
+                "InlinePayload": [
+                  {
+                    "Name": "get_weather",
+                    "Description": "Returns the weather",
+                    "InputSchema": {
+                      "Type": "object",
+                      "Properties": {
+                        "city": {
+                          "Type": "string"
+                        }
+                      },
+                      "Required": [
+                        "city"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "CredentialProviderConfigurations": [
+          {
+            "CredentialProviderType": "GATEWAY_IAM_ROLE"
+          }
+        ]
+      }
+    }
+  }
+}

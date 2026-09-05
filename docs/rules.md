@@ -52,6 +52,7 @@
 | `pf-agentcore-gateway-target-credential-provider-required` | AWS::BedrockAgentCore::GatewayTarget | Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block | none |
 | `pf-agentcore-gateway-target-iam-credential-provider` | AWS::BedrockAgentCore::GatewayTarget | OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service) | none |
 | `pf-agentcore-gateway-target-lambda-credential-type` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets accept only the GATEWAY_IAM_ROLE credential provider | none |
+| `pf-agentcore-gateway-target-lambda-region` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets must be in the gateway's own region | none |
 | `pf-agentcore-gateway-target-lambda-tool-name-unique` | AWS::BedrockAgentCore::GatewayTarget | Tool names in a Lambda gateway target's inline ToolSchema must be unique | none |
 | `pf-agentcore-gateway-target-lambda-tool-schema-empty` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets need at least one tool in ToolSchema.InlinePayload | none |
 | `pf-agentcore-gateway-target-openapi-schema` | AWS::BedrockAgentCore::GatewayTarget | Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation | none |
@@ -72,8 +73,11 @@
 | `pf-agentcore-resource-policy-document` | AWS::BedrockAgentCore::ResourcePolicy | A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN | none |
 | `pf-agentcore-runtime-artifact-exactly-one` | AWS::BedrockAgentCore::Runtime | AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration | none |
 | `pf-agentcore-runtime-code-entrypoint-extension` | AWS::BedrockAgentCore::Runtime | A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*) | none |
+| `pf-agentcore-runtime-endpoint-name-default` | AWS::BedrockAgentCore::RuntimeEndpoint | A RuntimeEndpoint cannot be named DEFAULT (the runtime already owns that endpoint) | none |
 | `pf-agentcore-runtime-env-var-count` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime EnvironmentVariables holds at most 50 entries | pending-engine |
+| `pf-agentcore-runtime-lifecycle-timeout-order` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime IdleRuntimeSessionTimeout must not exceed MaxLifetime | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | pending-engine |
+| `pf-agentcore-runtime-session-storage-single` | AWS::BedrockAgentCore::Runtime | An AgentCore Runtime allows at most one SessionStorage filesystem configuration | none |
 | `pf-agentcore-vpc-network-mode-config` | AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::BrowserCustom<br>AWS::BedrockAgentCore::CodeInterpreterCustom<br>AWS::BedrockAgentCore::Harness | NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness) | none |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
 | `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | none |

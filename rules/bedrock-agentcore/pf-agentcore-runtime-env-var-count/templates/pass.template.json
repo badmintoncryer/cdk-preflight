@@ -9,10 +9,7 @@
             {
               "Effect": "Allow",
               "Principal": {
-                "Service": [
-                  "bedrock-agentcore.amazonaws.com",
-                  "lambda.amazonaws.com"
-                ]
+                "Service": "bedrock-agentcore.amazonaws.com"
               },
               "Action": "sts:AssumeRole"
             }
@@ -20,17 +17,20 @@
         },
         "Policies": [
           {
-            "PolicyName": "agentcore",
+            "PolicyName": "runtime",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "lambda:InvokeFunction",
-                    "bedrock:InvokeModel",
-                    "logs:*",
-                    "secretsmanager:GetSecretValue"
+                    "ecr:BatchGetImage",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:GetAuthorizationToken",
+                    "ecr:BatchImportUpstreamImage",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                   ],
                   "Resource": "*"
                 }
@@ -40,28 +40,95 @@
         ]
       }
     },
+    "Ptc": {
+      "Type": "AWS::ECR::PullThroughCacheRule",
+      "Properties": {
+        "EcrRepositoryPrefix": "cdkpf-rtenv-pass",
+        "UpstreamRegistryUrl": "public.ecr.aws"
+      }
+    },
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-rtenv-pass/docker/library/python",
+        "EmptyOnDelete": true
+      }
+    },
     "Runtime": {
       "Type": "AWS::BedrockAgentCore::Runtime",
+      "DependsOn": [
+        "Ptc",
+        "Repo"
+      ],
       "Properties": {
         "AgentRuntimeName": "cdkpf_rtenv_pass",
-        "AgentRuntimeArtifact": {
-          "ContainerConfiguration": {
-            "ContainerUri": {
-              "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/my-agent:latest"
-            }
-          }
-        },
-        "NetworkConfiguration": {
-          "NetworkMode": "PUBLIC"
-        },
         "RoleArn": {
           "Fn::GetAtt": [
             "Role",
             "Arn"
           ]
         },
+        "NetworkConfiguration": {
+          "NetworkMode": "PUBLIC"
+        },
+        "AgentRuntimeArtifact": {
+          "ContainerConfiguration": {
+            "ContainerUri": {
+              "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repo}:3.12-slim"
+            }
+          }
+        },
         "EnvironmentVariables": {
-          "LOG_LEVEL": "info"
+          "K0": "v",
+          "K1": "v",
+          "K2": "v",
+          "K3": "v",
+          "K4": "v",
+          "K5": "v",
+          "K6": "v",
+          "K7": "v",
+          "K8": "v",
+          "K9": "v",
+          "K10": "v",
+          "K11": "v",
+          "K12": "v",
+          "K13": "v",
+          "K14": "v",
+          "K15": "v",
+          "K16": "v",
+          "K17": "v",
+          "K18": "v",
+          "K19": "v",
+          "K20": "v",
+          "K21": "v",
+          "K22": "v",
+          "K23": "v",
+          "K24": "v",
+          "K25": "v",
+          "K26": "v",
+          "K27": "v",
+          "K28": "v",
+          "K29": "v",
+          "K30": "v",
+          "K31": "v",
+          "K32": "v",
+          "K33": "v",
+          "K34": "v",
+          "K35": "v",
+          "K36": "v",
+          "K37": "v",
+          "K38": "v",
+          "K39": "v",
+          "K40": "v",
+          "K41": "v",
+          "K42": "v",
+          "K43": "v",
+          "K44": "v",
+          "K45": "v",
+          "K46": "v",
+          "K47": "v",
+          "K48": "v",
+          "K49": "v"
         }
       }
     }

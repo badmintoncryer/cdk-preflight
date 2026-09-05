@@ -1,0 +1,12 @@
+id: pf-agentcore-runtime-lifecycle-timeout-order
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: AgentCore Runtime IdleRuntimeSessionTimeout must not exceed MaxLifetime
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_LifecycleConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (probe, real image): IdleRuntimeSessionTimeout 3600 with MaxLifetime 600 -> CREATE_FAILED (BedrockAgentCoreControl 400: Invalid request provided: idleRuntimeSessionTimeout must be less than or equal to maxLifeTime) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-runtime-lifecycle-timeout-order.log. Fixtures pull public.ecr.aws/docker/library/python:3.12-slim through a stack-owned ECR pull-through cache rule, so no pre-pushed image is needed."
+addedOn: 2026-09-06
