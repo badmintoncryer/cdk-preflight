@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Scan": {
+      "Type": "AWS::ECR::RegistryScanningConfiguration",
+      "Properties": {
+        "ScanType": "BASIC",
+        "Rules": [
+          {
+            "ScanFrequency": "SCAN_ON_PUSH",
+            "RepositoryFilters": [
+              {
+                "Filter": "*",
+                "FilterType": "WILDCARD"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

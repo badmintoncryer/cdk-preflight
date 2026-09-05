@@ -2838,3 +2838,239 @@ describe('wafv2 rules', () => {
     silent(acl([rule('r', 1, bm({}, { Cookies: { MatchPattern: { ExcludedCookies: ['a', 'b'] }, MatchScope: 'ALL', OversizeHandling: 'CONTINUE' } }))]), SL);
   });
 });
+
+describe('ecr / efs rules', () => {
+  const R = 'ap-northeast-1';
+  const ACCT = '123456789012';
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const fires = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).toContain(id);
+  const silent = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).not.toContain(id);
+  type Obj = Record<string, unknown>;
+
+  // --- ECR ------------------------------------------------------------------
+  const repo = (props: Obj, extra: Obj = {}) => ({ Resources: { Repo: { Type: 'AWS::ECR::Repository', Properties: { RepositoryName: 'cdkpf', ...props } }, ...extra } });
+  const rct = (props: Obj) => ({ Resources: { Tpl: { Type: 'AWS::ECR::RepositoryCreationTemplate', Properties: { Prefix: 'cdkpf', AppliedFor: ['CREATE_ON_PUSH'], ...props } } } });
+  const lrule = (o: Obj = {}) => ({
+    rulePriority: 1,
+    description: 'inline test rule',
+    selection: { tagStatus: 'untagged', countType: 'sinceImagePushed', countUnit: 'days', countNumber: 14 },
+    action: { type: 'expire' },
+    ...o,
+  });
+  const pol = (...rules: Obj[]) => JSON.stringify({ rules });
+  const lp = (text: string) => repo({ LifecyclePolicy: { LifecyclePolicyText: text } });
+  const key = (region: string, acct = ACCT) => `arn:aws:kms:${region}:${acct}:key/11111111-2222-3333-4444-555555555555`;
+  const ptc = (props: Obj) => ({ Resources: { Rule: { Type: 'AWS::ECR::PullThroughCacheRule', Properties: { EcrRepositoryPrefix: 'cdkpf', ...props } } } });
+  const secret = (region: string, acct = ACCT) => `arn:aws:secretsmanager:${region}:${acct}:secret:ecr-pullthroughcache/x-AbCdEf`;
+
+  test('encryption-configuration: AES256 key, region binding', () => {
+    const ID = 'pf-ecr-encryption-configuration';
+    fires(repo({ EncryptionConfiguration: { EncryptionType: 'KMS', KmsKey: key('us-west-2') } }), ID);
+    fires(rct({ EncryptionConfiguration: { EncryptionType: 'AES256', KmsKey: key(R) } }), ID);
+    silent(repo({ EncryptionConfiguration: { EncryptionType: 'KMS', KmsKey: key(R) } }), ID);
+    silent(repo({ EncryptionConfiguration: { EncryptionType: 'AES256' } }), ID);
+    silent(repo({ EncryptionConfiguration: { EncryptionType: 'KMS', KmsKey: 'alias/my-key' } }), ID);
+  });
+
+  test('image-tag-mutability-filters: both directions', () => {
+    const ID = 'pf-ecr-image-tag-mutability-filters';
+    const f = [{ ImageTagMutabilityExclusionFilterType: 'WILDCARD', ImageTagMutabilityExclusionFilterValue: 'dev*' }];
+    fires(repo({ ImageTagMutability: 'MUTABLE_WITH_EXCLUSION' }), ID);
+    fires(rct({ ImageTagMutability: 'MUTABLE', ImageTagMutabilityExclusionFilters: f }), ID);
+    silent(repo({ ImageTagMutability: 'MUTABLE' }), ID);
+    silent(repo({ ImageTagMutability: 'MUTABLE_WITH_EXCLUSION', ImageTagMutabilityExclusionFilters: f }), ID);
+  });
+
+  test('lifecycle-policy-syntax: parse, rules array, required and unknown keys', () => {
+    const ID = 'pf-ecr-lifecycle-policy-syntax';
+    fires(lp('not json at all, but long enough to clear the hundred character minimum of LifecyclePolicyText ....'), ID);
+    fires(lp(JSON.stringify({ padding: 'x'.repeat(100) })), ID);
+    fires(lp(pol(...Array.from({ length: 51 }, (_, i) => lrule({ rulePriority: i + 1 })))), ID);
+    fires(lp(pol(lrule({ bogus: 1 }))), ID);
+    fires(lp(pol(lrule({ selection: { tagStatus: 'any', countType: 'imageCountMoreThan', countNumber: 1, bogus: 'x' } }))), ID);
+    fires(lp(pol(lrule({ selection: { tagStatus: 'any', countNumber: 1 } }))), ID);
+    fires(rct({ LifecyclePolicy: pol(lrule({ bogus: 1 })) }), ID);
+    silent(lp(pol(lrule())), ID);
+  });
+
+  test('lifecycle-rule-priority: duplicates, zero, any-rule ordering', () => {
+    const ID = 'pf-ecr-lifecycle-rule-priority';
+    const any = (p: number) => lrule({ rulePriority: p, selection: { tagStatus: 'any', countType: 'imageCountMoreThan', countNumber: 10 } });
+    fires(lp(pol(any(1), lrule({ rulePriority: 2 }))), ID);
+    fires(lp(pol(lrule({ rulePriority: 0 }))), ID);
+    fires(lp(pol(any(1), any(2))), ID);
+    silent(lp(pol(lrule({ rulePriority: 1 }), any(2))), ID);
+  });
+
+  test('lifecycle-tag-status: list pairing and wildcard budget', () => {
+    const ID = 'pf-ecr-lifecycle-tag-status';
+    const sel = (o: Obj) => lp(pol(lrule({ selection: { countType: 'imageCountMoreThan', countNumber: 10, ...o } })));
+    fires(sel({ tagStatus: 'untagged', tagPrefixList: ['prod'] }), ID);
+    fires(sel({ tagStatus: 'tagged', tagPrefixList: ['prod'], tagPatternList: ['prod*'] }), ID);
+    fires(sel({ tagStatus: 'tagged', tagPatternList: ['a*b*c*d*e*'] }), ID);
+    fires(sel({ tagStatus: 'TAGGED' }), ID);
+    silent(sel({ tagStatus: 'tagged', tagPatternList: ['a*b*c*d*'] }), ID);
+    silent(sel({ tagStatus: 'any' }), ID);
+  });
+
+  test('lifecycle-count: count type, unit, number and storage class', () => {
+    const ID = 'pf-ecr-lifecycle-count';
+    const sel = (o: Obj) => lp(pol(lrule({ selection: { tagStatus: 'any', ...o } })));
+    fires(sel({ countType: 'sinceImagePushed', countNumber: 10 }), ID);
+    fires(sel({ countType: 'sinceImagePushed', countUnit: 'hours', countNumber: 10 }), ID);
+    fires(sel({ countType: 'imageCountMoreThan', countNumber: 0 }), ID);
+    fires(sel({ countType: 'imageCountMoreThan', countNumber: 10, storageClass: 'archive' }), ID);
+    fires(sel({ countType: 'sinceLastPull', countNumber: 10 }), ID);
+    silent(sel({ countType: 'imageCountMoreThan', countNumber: 10 }), ID);
+    silent(sel({ countType: 'sinceImageTransitioned', countUnit: 'days', countNumber: 10, storageClass: 'archive' }), ID);
+  });
+
+  test('lifecycle-action: type and target storage class', () => {
+    const ID = 'pf-ecr-lifecycle-action';
+    fires(lp(pol(lrule({ action: { type: 'delete' } }))), ID);
+    fires(lp(pol(lrule({ action: { type: 'transition', targetStorageClass: 'standard' } }))), ID);
+    silent(lp(pol(lrule({ action: { type: 'transition', targetStorageClass: 'archive' } }))), ID);
+    silent(lp(pol(lrule())), ID);
+  });
+
+  test('replication-destination: self registry and partition', () => {
+    const ID = 'pf-ecr-replication-destination';
+    const repl = (dests: Obj[]) => ({ Resources: { Repl: { Type: 'AWS::ECR::ReplicationConfiguration', Properties: { ReplicationConfiguration: { Rules: [{ Destinations: dests }] } } } } });
+    fires(repl([{ Region: R, RegistryId: ACCT }]), ID);
+    fires(repl([{ Region: 'us-gov-west-1', RegistryId: ACCT }]), ID);
+    silent(repl([{ Region: 'us-west-2', RegistryId: ACCT }]), ID);
+    silent(repl([{ Region: R, RegistryId: '999999999999' }]), ID);
+  });
+
+  test('registry-scanning-configuration: BASIC frequency and duplicates', () => {
+    const ID = 'pf-ecr-registry-scanning-configuration';
+    const scan = (type: string, freqs: string[]) => ({ Resources: { S: { Type: 'AWS::ECR::RegistryScanningConfiguration', Properties: { ScanType: type, Rules: freqs.map((f) => ({ ScanFrequency: f, RepositoryFilters: [{ Filter: '*', FilterType: 'WILDCARD' }] })) } } } });
+    fires(scan('BASIC', ['CONTINUOUS_SCAN']), ID);
+    fires(scan('ENHANCED', ['SCAN_ON_PUSH', 'SCAN_ON_PUSH']), ID);
+    silent(scan('ENHANCED', ['SCAN_ON_PUSH', 'CONTINUOUS_SCAN']), ID);
+    silent(scan('BASIC', ['SCAN_ON_PUSH']), ID);
+  });
+
+  test('pull-through-cache-url: endpoint table and self registry', () => {
+    const ID = 'pf-ecr-pull-through-cache-url';
+    fires(ptc({ UpstreamRegistryUrl: 'registry.example.com' }), ID);
+    fires(ptc({ UpstreamRegistryUrl: 'Registry-1.Docker.IO' }), ID);
+    fires(ptc({ UpstreamRegistryUrl: `${ACCT}.dkr.ecr.${R}.amazonaws.com` }), ID);
+    silent(ptc({ UpstreamRegistryUrl: 'cdkpf.azurecr.io', CredentialArn: secret(R) }), ID);
+    silent(ptc({ UpstreamRegistryUrl: `${ACCT}.dkr.ecr.us-west-2.amazonaws.com` }), ID);
+    silent(ptc({ UpstreamRegistryUrl: 'public.ecr.aws' }), ID);
+  });
+
+  test('pull-through-cache-credential: auth classes and secret location', () => {
+    const ID = 'pf-ecr-pull-through-cache-credential';
+    fires(ptc({ UpstreamRegistryUrl: 'cdkpf.azurecr.io' }), ID);
+    fires(ptc({ UpstreamRegistryUrl: 'quay.io', CredentialArn: secret(R) }), ID);
+    fires(ptc({ UpstreamRegistryUrl: 'registry-1.docker.io', CredentialArn: secret(R), CustomRoleArn: `arn:aws:iam::${ACCT}:role/r` }), ID);
+    fires(ptc({ UpstreamRegistryUrl: 'registry-1.docker.io', CredentialArn: secret('us-west-2') }), ID);
+    fires(ptc({ UpstreamRegistryUrl: 'registry-1.docker.io', CredentialArn: secret(R, '999999999999') }), ID);
+    silent(ptc({ UpstreamRegistryUrl: 'registry.k8s.io' }), ID);
+    silent(ptc({ UpstreamRegistryUrl: `${ACCT}.dkr.ecr.us-west-2.amazonaws.com`, CustomRoleArn: `arn:aws:iam::${ACCT}:role/r` }), ID);
+  });
+
+  test('pull-through-cache-registry-match: only the authenticated endpoints', () => {
+    const ID = 'pf-ecr-pull-through-cache-registry-match';
+    fires(ptc({ UpstreamRegistry: 'docker-hub', UpstreamRegistryUrl: 'ghcr.io', CredentialArn: secret(R) }), ID);
+    fires(ptc({ UpstreamRegistry: 'k8s', UpstreamRegistryUrl: 'cdkpf.azurecr.io', CredentialArn: secret(R) }), ID);
+    silent(ptc({ UpstreamRegistry: 'k8s', UpstreamRegistryUrl: 'quay.io' }), ID);
+    silent(ptc({ UpstreamRegistry: 'github-container-registry', UpstreamRegistryUrl: 'ghcr.io', CredentialArn: secret(R) }), ID);
+  });
+
+  test('repository-creation-template-applied-for and signing profile region', () => {
+    fires(rct({ AppliedFor: ['CREATE_ON_PULL'] }), 'pf-ecr-repository-creation-template-applied-for');
+    silent(rct({ AppliedFor: ['CREATE_ON_PUSH', 'REPLICATION'] }), 'pf-ecr-repository-creation-template-applied-for');
+    const sign = (arn: string) => ({ Resources: { S: { Type: 'AWS::ECR::SigningConfiguration', Properties: { Rules: [{ SigningProfileArn: arn }] } } } });
+    fires(sign(`arn:aws:signer:us-west-2:${ACCT}:/signing-profiles/p`), 'pf-ecr-signing-profile-region');
+    silent(sign(`arn:aws:signer:${R}:${ACCT}:/signing-profiles/p`), 'pf-ecr-signing-profile-region');
+  });
+
+  // --- EFS ------------------------------------------------------------------
+  const efs = (props: Obj, extra: Obj = {}) => ({ Resources: { FS: { Type: 'AWS::EFS::FileSystem', Properties: props }, ...extra } });
+
+  test('kms-key, throughput and performance mode pairs', () => {
+    fires(efs({ Encrypted: true, KmsKeyId: key('us-west-2') }), 'pf-efs-kms-key');
+    silent(efs({ Encrypted: true, KmsKeyId: key(R) }), 'pf-efs-kms-key');
+    silent(efs({ Encrypted: true }), 'pf-efs-kms-key');
+    fires(efs({ KmsKeyId: key(R) }), 'pf-efs-kms-key');
+    fires(efs({ ThroughputMode: 'elastic', ProvisionedThroughputInMibps: 10 }), 'pf-efs-throughput-mode');
+    fires(efs({ ProvisionedThroughputInMibps: 10 }), 'pf-efs-throughput-mode');
+    fires(efs({ ThroughputMode: 'provisioned', ProvisionedThroughputInMibps: 4000 }), 'pf-efs-throughput-mode');
+    silent(efs({ ThroughputMode: 'provisioned', ProvisionedThroughputInMibps: 100 }), 'pf-efs-throughput-mode');
+    fires(efs({ PerformanceMode: 'maxIO', ThroughputMode: 'elastic' }), 'pf-efs-performance-mode');
+    silent(efs({ PerformanceMode: 'maxIO', ThroughputMode: 'bursting' }), 'pf-efs-performance-mode');
+    fires(efs({ AvailabilityZoneName: 'us-west-2a' }), 'pf-efs-availability-zone-region');
+    silent(efs({ AvailabilityZoneName: `${R}c` }), 'pf-efs-availability-zone-region');
+  });
+
+  test('lifecycle-policy: single transition, ordering and throughput mode', () => {
+    const ID = 'pf-efs-lifecycle-policy';
+    fires(efs({ ThroughputMode: 'elastic', LifecyclePolicies: [{ TransitionToIA: 'AFTER_30_DAYS', TransitionToArchive: 'AFTER_90_DAYS' }] }), ID);
+    fires(efs({ ThroughputMode: 'elastic', LifecyclePolicies: [{ TransitionToIA: 'AFTER_30_DAYS' }, { TransitionToIA: 'AFTER_60_DAYS' }] }), ID);
+    fires(efs({ ThroughputMode: 'elastic', LifecyclePolicies: [{ TransitionToIA: 'AFTER_90_DAYS' }, { TransitionToArchive: 'AFTER_90_DAYS' }] }), ID);
+    fires(efs({ LifecyclePolicies: [{ TransitionToIA: 'AFTER_30_DAYS' }, { TransitionToArchive: 'AFTER_90_DAYS' }] }), ID);
+    fires(efs({ ThroughputMode: 'bursting', LifecyclePolicies: [{ TransitionToArchive: 'AFTER_90_DAYS' }] }), ID);
+    silent(efs({ ThroughputMode: 'provisioned', ProvisionedThroughputInMibps: 100, LifecyclePolicies: [{ TransitionToIA: 'AFTER_30_DAYS' }, { TransitionToArchive: 'AFTER_90_DAYS' }] }), ID);
+    silent(efs({ LifecyclePolicies: [{ TransitionToIA: 'AFTER_30_DAYS' }, { TransitionToPrimaryStorageClass: 'AFTER_1_ACCESS' }] }), ID);
+  });
+
+  test('replication-destination and file system policy', () => {
+    const dest = (d: Obj) => efs({ ReplicationConfiguration: { Destinations: [d] } });
+    fires(dest({ Region: 'us-west-2', AvailabilityZoneName: 'us-east-1a' }), 'pf-efs-replication-destination');
+    fires(dest({ Region: 'us-west-2', KmsKeyId: key(R) }), 'pf-efs-replication-destination');
+    silent(dest({ Region: 'us-west-2', AvailabilityZoneName: 'us-west-2b', KmsKeyId: key('us-west-2') }), 'pf-efs-replication-destination');
+    const pol2 = (stmt: Obj, over: Obj = {}) => efs({ FileSystemPolicy: { Version: '2012-10-17', Statement: [stmt] }, ...over });
+    const deny = { Effect: 'Deny', Principal: '*', Action: 'elasticfilesystem:PutFileSystemPolicy', Resource: '*' };
+    fires(pol2({ Effect: 'Allow', Principal: { AWS: `arn:aws:iam::${ACCT}:root` }, Action: 'elasticfilesystem:ClientMount', Resource: `arn:aws:elasticfilesystem:${R}:${ACCT}:file-system/fs-0123456789abcdef0` }), 'pf-efs-file-system-policy');
+    fires(pol2(deny), 'pf-efs-file-system-policy');
+    silent(pol2(deny, { BypassPolicyLockoutSafetyCheck: true }), 'pf-efs-file-system-policy');
+    silent(pol2({ Effect: 'Allow', Principal: { AWS: `arn:aws:iam::${ACCT}:root` }, Action: 'elasticfilesystem:ClientMount', Resource: '*' }), 'pf-efs-file-system-policy');
+  });
+
+  test('mount target: zones, network and addresses', () => {
+    const net = (extra: Obj, fsProps: Obj = {}) => ({
+      Resources: {
+        FS: { Type: 'AWS::EFS::FileSystem', Properties: fsProps },
+        VPC: { Type: 'AWS::EC2::VPC', Properties: { CidrBlock: '10.0.0.0/16' } },
+        SubA: { Type: 'AWS::EC2::Subnet', Properties: { VpcId: { Ref: 'VPC' }, CidrBlock: '10.0.1.0/24', AvailabilityZone: `${R}a` } },
+        SubB: { Type: 'AWS::EC2::Subnet', Properties: { VpcId: { Ref: 'VPC' }, CidrBlock: '10.0.2.0/23', AvailabilityZone: `${R}c` } },
+        SG: { Type: 'AWS::EC2::SecurityGroup', Properties: { GroupDescription: 'x', VpcId: { Ref: 'VPC' } } },
+        ...extra,
+      },
+    });
+    const mt = (sub: string, props: Obj = {}) => ({ Type: 'AWS::EFS::MountTarget', Properties: { FileSystemId: { Ref: 'FS' }, SubnetId: { Ref: sub }, SecurityGroups: [{ Ref: 'SG' }], ...props } });
+    fires(net({ MT: mt('SubB') }, { AvailabilityZoneName: `${R}a` }), 'pf-efs-mount-target-availability-zone');
+    silent(net({ MT1: mt('SubA'), MT2: mt('SubB') }), 'pf-efs-mount-target-availability-zone');
+    silent(net({ MT: mt('SubA') }, { AvailabilityZoneName: `${R}a` }), 'pf-efs-mount-target-availability-zone');
+    fires(net({
+      VPC2: { Type: 'AWS::EC2::VPC', Properties: { CidrBlock: '10.1.0.0/16' } },
+      SG2: { Type: 'AWS::EC2::SecurityGroup', Properties: { GroupDescription: 'y', VpcId: { Ref: 'VPC2' } } },
+      MT: mt('SubA', { SecurityGroups: [{ Ref: 'SG2' }] }),
+    }), 'pf-efs-mount-target-network');
+    fires(net({
+      VPC2: { Type: 'AWS::EC2::VPC', Properties: { CidrBlock: '10.1.0.0/16' } },
+      Sub2: { Type: 'AWS::EC2::Subnet', Properties: { VpcId: { Ref: 'VPC2' }, CidrBlock: '10.1.1.0/24', AvailabilityZone: `${R}c` } },
+      SG2: { Type: 'AWS::EC2::SecurityGroup', Properties: { GroupDescription: 'y', VpcId: { Ref: 'VPC2' } } },
+      MT1: mt('SubA'),
+      MT2: mt('Sub2', { SecurityGroups: [{ Ref: 'SG2' }] }),
+    }), 'pf-efs-mount-target-network');
+    silent(net({ MT1: mt('SubA'), MT2: mt('SubB') }), 'pf-efs-mount-target-network');
+    fires(net({ MT: mt('SubA', { IpAddress: '10.0.9.5' }) }), 'pf-efs-mount-target-ip-address');
+    fires(net({ MT: mt('SubA', { Ipv6Address: '2001:db8::1' }) }), 'pf-efs-mount-target-ip-address');
+    fires(net({ MT: mt('SubA', { IpAddressType: 'IPV6_ONLY', IpAddress: '10.0.1.5' }) }), 'pf-efs-mount-target-ip-address');
+    fires(net({ MT: mt('SubA', { IpAddressType: 'IPV6_ONLY' }) }), 'pf-efs-mount-target-ip-address');
+    silent(net({ MT: mt('SubA', { IpAddress: '10.0.1.5' }) }), 'pf-efs-mount-target-ip-address');
+    silent(net({ MT: mt('SubB', { IpAddress: '10.0.3.5' }) }), 'pf-efs-mount-target-ip-address');
+  });
+
+  test('file system reference region', () => {
+    const ap = (props: Obj, extra: Obj = {}) => ({ Resources: { AP: { Type: 'AWS::EFS::AccessPoint', Properties: props }, ...extra } });
+    const arn = (region: string) => `arn:aws:elasticfilesystem:${region}:${ACCT}:file-system/fs-0123456789abcdef0`;
+    fires(ap({ FileSystemId: arn('us-west-2') }), 'pf-efs-file-system-reference-region');
+    silent(ap({ FileSystemId: arn(R) }), 'pf-efs-file-system-reference-region');
+    silent(ap({ FileSystemId: 'fs-0123456789abcdef0' }), 'pf-efs-file-system-reference-region');
+  });
+});

@@ -1,0 +1,11 @@
+id: pf-efs-replication-destination
+service: efs
+resourceTypes: [AWS::EFS::FileSystem]
+severity: ERROR
+title: "A replication destination pairs Region with an Availability Zone and a KMS key of that same region"
+constraintSource: https://docs.aws.amazon.com/efs/latest/APIReference/API_CreateReplicationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Region and Availability Zone must match.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

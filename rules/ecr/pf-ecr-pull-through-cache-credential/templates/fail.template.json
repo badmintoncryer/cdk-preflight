@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::ECR::PullThroughCacheRule",
+      "Properties": {
+        "EcrRepositoryPrefix": "cdkpf-pullthroughcachecred",
+        "UpstreamRegistry": "docker-hub",
+        "UpstreamRegistryUrl": "registry-1.docker.io"
+      }
+    }
+  }
+}

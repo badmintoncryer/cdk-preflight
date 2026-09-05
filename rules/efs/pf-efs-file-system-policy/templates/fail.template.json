@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "FS": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "cdkpf",
+            "Value": "bench"
+          }
+        ],
+        "FileSystemPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Mount",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::214794239830:root"
+              },
+              "Action": "elasticfilesystem:ClientMount",
+              "Resource": "arn:aws:elasticfilesystem:ap-northeast-1:214794239830:file-system/fs-00000000000000000"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

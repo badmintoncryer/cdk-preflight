@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Repl": {
+      "Type": "AWS::ECR::ReplicationConfiguration",
+      "Properties": {
+        "ReplicationConfiguration": {
+          "Rules": [
+            {
+              "Destinations": [
+                {
+                  "Region": "us-west-2",
+                  "RegistryId": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

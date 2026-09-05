@@ -1,0 +1,11 @@
+id: pf-ecr-lifecycle-count
+service: ecr
+resourceTypes: [AWS::ECR::Repository, AWS::ECR::RepositoryCreationTemplate]
+severity: ERROR
+title: "countUnit belongs to the sinceImage* count types only, countNumber must be positive and storageClass follows countType"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/userguide/lifecycle_policy_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: instance failed to match exactly one schema (matched 0 out of 4)\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

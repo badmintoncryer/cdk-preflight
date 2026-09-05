@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::ECR::PullThroughCacheRule",
+      "Properties": {
+        "EcrRepositoryPrefix": "cdkpf-pullthroughcacheregi",
+        "UpstreamRegistry": "github-container-registry",
+        "UpstreamRegistryUrl": "ghcr.io",
+        "CredentialArn": {
+          "Ref": "Secret"
+        }
+      }
+    },
+    "Secret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": [
+            "ecr-pullthroughcache/cdkpf-${Id}",
+            {
+              "Id": {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "SecretString": "{\"username\":\"cdkpf\",\"accessToken\":\"cdkpf\"}"
+      }
+    }
+  }
+}

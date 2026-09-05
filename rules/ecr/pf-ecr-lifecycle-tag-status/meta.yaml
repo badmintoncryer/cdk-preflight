@@ -1,0 +1,11 @@
+id: pf-ecr-lifecycle-tag-status
+service: ecr
+resourceTypes: [AWS::ECR::Repository, AWS::ECR::RepositoryCreationTemplate]
+severity: ERROR
+title: "tagStatus=tagged needs exactly one of tagPrefixList / tagPatternList, tagStatus=untagged or any takes neither"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/userguide/lifecycle_policy_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: Must specify tagPrefixList or tagPatternList when tagStatus=TAGGED.'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

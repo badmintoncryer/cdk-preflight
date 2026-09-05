@@ -1,0 +1,11 @@
+id: pf-ecr-repository-creation-template-applied-for
+service: ecr
+resourceTypes: [AWS::ECR::RepositoryCreationTemplate]
+severity: ERROR
+title: "AppliedFor accepts REPLICATION, PULL_THROUGH_CACHE and CREATE_ON_PUSH only"
+constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/APIReference/API_CreateRepositoryCreationTemplate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

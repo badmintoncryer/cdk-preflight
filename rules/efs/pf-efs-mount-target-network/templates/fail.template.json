@@ -1,0 +1,118 @@
+{
+  "Resources": {
+    "FS": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "cdkpf",
+            "Value": "bench"
+          }
+        ]
+      }
+    },
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}a"
+        }
+      }
+    },
+    "SG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "MT1": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "FS"
+        },
+        "SubnetId": {
+          "Ref": "SubA"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "SG"
+          },
+          {
+            "Ref": "SG2"
+          },
+          {
+            "Ref": "SG3"
+          },
+          {
+            "Ref": "SG4"
+          },
+          {
+            "Ref": "SG5"
+          },
+          {
+            "Ref": "SG6"
+          }
+        ]
+      }
+    },
+    "SG2": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 2",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG3": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 3",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG4": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 4",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG5": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 5",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG6": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 6",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    }
+  }
+}

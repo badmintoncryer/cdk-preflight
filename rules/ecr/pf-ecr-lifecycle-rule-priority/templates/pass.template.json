@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-lifecyclerulepriorit",
+        "EmptyOnDelete": true,
+        "LifecyclePolicy": {
+          "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"cdk-preflight fixture rule for the ECR lifecycle policy gate\",\"selection\":{\"tagStatus\":\"untagged\",\"countType\":\"sinceImagePushed\",\"countUnit\":\"days\",\"countNumber\":14},\"action\":{\"type\":\"expire\"}},{\"rulePriority\":2,\"description\":\"cdk-preflight fixture rule for the ECR lifecycle policy gate\",\"selection\":{\"tagStatus\":\"any\",\"countType\":\"imageCountMoreThan\",\"countNumber\":10},\"action\":{\"type\":\"expire\"}}]}"
+        }
+      }
+    }
+  }
+}
