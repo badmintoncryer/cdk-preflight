@@ -4,8 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import * as YAML from 'yaml';
-import { collectRules, renderDocs, renderGenerated } from '../scripts/bundle-rules';
+import { collectRules, evidenceProblem, renderDocs, renderGenerated } from '../scripts/bundle-rules';
 import { BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -40,13 +39,19 @@ test('every bundled rule declares the package cdk_preflight and rego.v1', () => 
   }
 });
 
-test('doc-only repro rules carry an explanation', () => {
-  for (const r of BUNDLED_RULES) {
-    const meta = YAML.parse(
-      fs.readFileSync(path.join(root, 'rules', r.service, r.id, 'meta.yaml'), 'utf8'),
-    );
-    if (meta.repro.method === 'doc-only') {
-      expect(meta.repro.evidence).toBeTruthy();
-    }
-  }
+test('repro evidence is required, and real-deploy must quote a bench run', () => {
+  // 実データ側: collectRules が全ルールを通す = 227 件すべて要件を満たしている
+  expect(evidenceProblem({ method: 'doc-only', evidence: 'schema says so' })).toBeUndefined();
+  expect(evidenceProblem({ method: 'research-case', evidence: 'issue #123, 2026-09-03' })).toBeUndefined();
+  expect(evidenceProblem({ method: 'real-deploy', evidence: '' })).toMatch(/required/);
+  expect(evidenceProblem({ method: 'doc-only' })).toMatch(/required/);
+  // 実機を回さずに real-deploy を自称するケースを弾く
+  expect(evidenceProblem({ method: 'real-deploy', evidence: 'verified locally' })).toMatch(/bench run/);
+  expect(evidenceProblem({ method: 'real-deploy', evidence: 'bench 2026-09-03: rolled back' })).toMatch(/bench run/);
+  expect(
+    evidenceProblem({
+      method: 'real-deploy',
+      evidence: 'bench 2026-09-03 ap-northeast-1: TTL 7200 -> CREATE_FAILED ROLLBACK_COMPLETE',
+    }),
+  ).toBeUndefined();
 });
