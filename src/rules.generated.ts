@@ -543,6 +543,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The credential provider union is validated per entry by the schema, but the\n# target-type x credential-type compatibility table lives only in the dev\n# guide; CreateGatewayTarget rejects a Lambda target with anything but\n# GATEWAY_IAM_ROLE (\"Lambda target only supports GATEWAY_IAM_ROLE credential\n# provider type\").\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-lambda-credential-type\", \"ERROR\", name,\n\tsprintf(\"Properties.CredentialProviderConfigurations.%d.CredentialProviderType\", [c.index]),\n\tsprintf(\"Lambda targets accept only GATEWAY_IAM_ROLE but this target uses %s; CreateGatewayTarget fails with \\\"Lambda target only supports GATEWAY_IAM_ROLE credential provider type\\\"\", [t]),\n\t\"Use CredentialProviderType GATEWAY_IAM_ROLE, or switch to an OpenAPI / MCP server target for OAuth, API key, or JWT pass-through credentials\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-authorization.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tis_object(resolve(name, \"Properties.TargetConfiguration.Mcp.Lambda\"))\n\tsome c in flatten_list(name, \"Properties.CredentialProviderConfigurations\")\n\tt := object.get(c.value, \"CredentialProviderType\", null)\n\tis_string(t)\n\tt != \"GATEWAY_IAM_ROLE\"\n}\n"
   },
   {
+    "id": "pf-agentcore-gateway-target-lambda-region",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Lambda gateway targets must be in the gateway's own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateGatewayTarget resolves the Lambda ARN only in the gateway's own\n# region: a function that really exists in another region is rejected with\n# the same \"Lambda function not found\" as a typo (measured 2026-09-06 with a\n# live function in us-west-2). data.cdk_preflight.deploy_region is defined\n# only in enforce mode with a concrete region; otherwise this rule skips.\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-lambda-region\", \"ERROR\", name,\n\t\"Properties.TargetConfiguration.Mcp.Lambda.LambdaArn\",\n\tsprintf(\"The Lambda target lives in '%s' but the gateway deploys to '%s'; CreateGatewayTarget only resolves functions in its own region and fails with \\\"Lambda function not found\\\"\", [fnRegion, region]),\n\t\"Deploy the function in the gateway's region (or the gateway in the function's region) and reference that ARN\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tarn := resolve(name, \"Properties.TargetConfiguration.Mcp.Lambda.LambdaArn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 7\n\tparts[0] == \"arn\"\n\tparts[2] == \"lambda\"\n\tfnRegion := parts[3]\n\tfnRegion != \"\"\n\tfnRegion != region\n}\n"
+  },
+  {
     "id": "pf-agentcore-gateway-target-lambda-tool-name-unique",
     "service": "bedrock-agentcore",
     "severity": "ERROR",
@@ -767,6 +778,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# EntryPoint is a free string list in the schema; the service checks the file\n# extension against Runtime (\"Entrypoint file type does not match your\n# selected runtime\"). Only the Python family is measured; NODE_22 is left alone.\nviolation contains make_diag_full(\"pf-agentcore-runtime-code-entrypoint-extension\", \"ERROR\", name,\n\t\"Properties.AgentRuntimeArtifact.CodeConfiguration.EntryPoint\",\n\tsprintf(\"Runtime is %s but no EntryPoint element ends with .py; CreateAgentRuntime fails with \\\"Entrypoint file type does not match your selected runtime\\\"\", [runtime]),\n\t\"Point EntryPoint at the Python file to run (e.g. [\\\"app.py\\\"])\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-get-started-code-deploy-python.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\truntime := resolve(name, \"Properties.AgentRuntimeArtifact.CodeConfiguration.Runtime\")\n\tis_string(runtime)\n\tstartswith(runtime, \"PYTHON_\")\n\tentries := resolve(name, \"Properties.AgentRuntimeArtifact.CodeConfiguration.EntryPoint\")\n\tis_array(entries)\n\tcount(entries) > 0\n\tevery e in entries {\n\t\tis_string(e)\n\t\tnot endswith(e, \".py\")\n\t}\n}\n"
   },
   {
+    "id": "pf-agentcore-runtime-endpoint-name-default",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A RuntimeEndpoint cannot be named DEFAULT (the runtime already owns that endpoint)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::RuntimeEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateAgentRuntime implicitly creates an endpoint named DEFAULT, so an\n# explicit RuntimeEndpoint with that name always collides (409 AlreadyExists,\n# measured 2026-09-06). The schema only checks the name pattern.\nviolation contains make_diag_full(\"pf-agentcore-runtime-endpoint-name-default\", \"ERROR\", name,\n\t\"Properties.Name\",\n\t\"Every AgentCore Runtime already owns an endpoint named DEFAULT, so this RuntimeEndpoint fails with \\\"An endpoint with the specified name already exists\\\" (409)\",\n\t\"Give the endpoint another name (for example prod), or drop the resource and invoke the runtime's built-in DEFAULT endpoint\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntimeEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::RuntimeEndpoint\")\n\tresolve(name, \"Properties.Name\") == \"DEFAULT\"\n}\n"
+  },
+  {
     "id": "pf-agentcore-runtime-env-var-count",
     "service": "bedrock-agentcore",
     "severity": "ERROR",
@@ -778,6 +800,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema sets maxProperties: 50 on EnvironmentVariables and\n# CloudFormation's early validation rolls the stack back; the bundled engine\n# (1.7.0-beta) checks key patterns (F3002) but not the map size.\nviolation contains make_diag_full(\"pf-agentcore-runtime-env-var-count\", \"ERROR\", name,\n\t\"Properties.EnvironmentVariables\",\n\tsprintf(\"%d environment variables are set but the runtime accepts at most 50; CloudFormation rejects the template (PROPERTY_VALIDATION: maximum size 50)\", [count(env)]),\n\t\"Trim EnvironmentVariables to 50 entries or move configuration into a parameter store / config file\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tenv := resolve(name, \"Properties.EnvironmentVariables\")\n\tis_object(env)\n\tcount(env) > 50\n}\n"
   },
   {
+    "id": "pf-agentcore-runtime-lifecycle-timeout-order",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "AgentCore Runtime IdleRuntimeSessionTimeout must not exceed MaxLifetime",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both fields carry the same 60..1209600 range in the schema; the ordering\n# between them is enforced only by CreateAgentRuntime\n# (\"idleRuntimeSessionTimeout must be less than or equal to maxLifeTime\",\n# measured 2026-09-06).\nviolation contains make_diag_full(\"pf-agentcore-runtime-lifecycle-timeout-order\", \"ERROR\", name,\n\t\"Properties.LifecycleConfiguration.IdleRuntimeSessionTimeout\",\n\tsprintf(\"IdleRuntimeSessionTimeout (%v) exceeds MaxLifetime (%v); CreateAgentRuntime fails with \\\"idleRuntimeSessionTimeout must be less than or equal to maxLifeTime\\\"\", [idle, max_lifetime]),\n\t\"Lower IdleRuntimeSessionTimeout to at most MaxLifetime, or raise MaxLifetime\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_LifecycleConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tidle := to_number(resolve(name, \"Properties.LifecycleConfiguration.IdleRuntimeSessionTimeout\"))\n\tmax_lifetime := to_number(resolve(name, \"Properties.LifecycleConfiguration.MaxLifetime\"))\n\tidle > max_lifetime\n}\n"
+  },
+  {
     "id": "pf-agentcore-runtime-name",
     "service": "bedrock-agentcore",
     "severity": "ERROR",
@@ -787,6 +820,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::BedrockAgentCore::Runtime"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation スキーマは AgentRuntimeName のパターンを持たない（エンジン素通り、\n# 2026-09-01 に 1.7.0-beta で確認）が、CreateAgentRuntime API は\n# [a-zA-Z][a-zA-Z0-9_]{0,47} を強制する。ハイフン入りの CDK 風命名が定番の死因。\nviolation contains make_diag_full(\"pf-agentcore-runtime-name\", \"ERROR\", name,\n\t\"Properties.AgentRuntimeName\",\n\tsprintf(\"AgentRuntimeName '%s' is invalid: it must start with a letter and contain only letters, digits, and underscores (max 48 characters, hyphens are not allowed); CreateAgentRuntime fails at deploy time\", [n]),\n\t\"Use an underscore-separated name such as 'my_agent_runtime'\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tn := resolve(name, \"Properties.AgentRuntimeName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z][a-zA-Z0-9_]{0,47}$`, n)\n}\n"
+  },
+  {
+    "id": "pf-agentcore-runtime-session-storage-single",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "An AgentCore Runtime allows at most one SessionStorage filesystem configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::Runtime"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# FilesystemConfigurations is a list of single-key union entries; the schema\n# validates each entry but only CreateAgentRuntime knows that SessionStorage\n# may appear once per runtime (\"At most one sessionStorage configuration is\n# allowed\", measured 2026-09-06 with distinct mount paths).\n_pf_rtss_entries(name) := [it |\n\tsome it in flatten_list(name, \"Properties.FilesystemConfigurations\")\n\tis_object(object.get(it.value, \"SessionStorage\", null))\n]\n\nviolation contains make_diag_full(\"pf-agentcore-runtime-session-storage-single\", \"ERROR\", name,\n\tsprintf(\"Properties.FilesystemConfigurations.%d.SessionStorage\", [last]),\n\tsprintf(\"FilesystemConfigurations carries %d SessionStorage entries but a runtime allows at most one; CreateAgentRuntime fails with \\\"At most one sessionStorage configuration is allowed\\\"\", [count(all)]),\n\t\"Keep a single SessionStorage entry (one MountPath); use EfsAccessPoint or S3FilesAccessPoint entries for additional mounts\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Runtime\")\n\tall := _pf_rtss_entries(name)\n\tcount(all) > 1\n\tlast := max([it.index | some it in all])\n}\n"
   },
   {
     "id": "pf-agentcore-vpc-network-mode-config",

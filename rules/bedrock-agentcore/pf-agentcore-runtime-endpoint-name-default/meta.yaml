@@ -1,0 +1,12 @@
+id: pf-agentcore-runtime-endpoint-name-default
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::RuntimeEndpoint]
+severity: ERROR
+title: A RuntimeEndpoint cannot be named DEFAULT (the runtime already owns that endpoint)
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntimeEndpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (probe, real image): RuntimeEndpoint Name DEFAULT on a READY runtime -> CREATE_FAILED (BedrockAgentCoreControl 409 AlreadyExists: An endpoint with the specified name already exists. Check the request and try again.) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-runtime-endpoint-name-default.log. Fixtures pull public.ecr.aws/docker/library/python:3.12-slim through a stack-owned ECR pull-through cache rule, so no pre-pushed image is needed."
+addedOn: 2026-09-06

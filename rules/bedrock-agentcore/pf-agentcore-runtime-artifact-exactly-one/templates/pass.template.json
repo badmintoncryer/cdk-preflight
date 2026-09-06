@@ -9,10 +9,7 @@
             {
               "Effect": "Allow",
               "Principal": {
-                "Service": [
-                  "bedrock-agentcore.amazonaws.com",
-                  "lambda.amazonaws.com"
-                ]
+                "Service": "bedrock-agentcore.amazonaws.com"
               },
               "Action": "sts:AssumeRole"
             }
@@ -20,17 +17,20 @@
         },
         "Policies": [
           {
-            "PolicyName": "agentcore",
+            "PolicyName": "runtime",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "lambda:InvokeFunction",
-                    "bedrock:InvokeModel",
-                    "logs:*",
-                    "secretsmanager:GetSecretValue"
+                    "ecr:BatchGetImage",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:GetAuthorizationToken",
+                    "ecr:BatchImportUpstreamImage",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                   ],
                   "Resource": "*"
                 }
@@ -40,25 +40,43 @@
         ]
       }
     },
+    "Ptc": {
+      "Type": "AWS::ECR::PullThroughCacheRule",
+      "Properties": {
+        "EcrRepositoryPrefix": "cdkpf-rtart-pass",
+        "UpstreamRegistryUrl": "public.ecr.aws"
+      }
+    },
+    "Repo": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "cdkpf-rtart-pass/docker/library/python",
+        "EmptyOnDelete": true
+      }
+    },
     "Runtime": {
       "Type": "AWS::BedrockAgentCore::Runtime",
+      "DependsOn": [
+        "Ptc",
+        "Repo"
+      ],
       "Properties": {
         "AgentRuntimeName": "cdkpf_rtart_pass",
-        "AgentRuntimeArtifact": {
-          "ContainerConfiguration": {
-            "ContainerUri": {
-              "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/my-agent:latest"
-            }
-          }
-        },
-        "NetworkConfiguration": {
-          "NetworkMode": "PUBLIC"
-        },
         "RoleArn": {
           "Fn::GetAtt": [
             "Role",
             "Arn"
           ]
+        },
+        "NetworkConfiguration": {
+          "NetworkMode": "PUBLIC"
+        },
+        "AgentRuntimeArtifact": {
+          "ContainerConfiguration": {
+            "ContainerUri": {
+              "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repo}:3.12-slim"
+            }
+          }
         }
       }
     }

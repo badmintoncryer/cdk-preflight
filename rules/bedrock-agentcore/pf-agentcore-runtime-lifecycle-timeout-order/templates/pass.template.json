@@ -43,14 +43,14 @@
     "Ptc": {
       "Type": "AWS::ECR::PullThroughCacheRule",
       "Properties": {
-        "EcrRepositoryPrefix": "cdkpf-rtname-pass",
+        "EcrRepositoryPrefix": "cdkpf-rtlc-pass",
         "UpstreamRegistryUrl": "public.ecr.aws"
       }
     },
     "Repo": {
       "Type": "AWS::ECR::Repository",
       "Properties": {
-        "RepositoryName": "cdkpf-rtname-pass/docker/library/python",
+        "RepositoryName": "cdkpf-rtlc-pass/docker/library/python",
         "EmptyOnDelete": true
       }
     },
@@ -61,7 +61,7 @@
         "Repo"
       ],
       "Properties": {
-        "AgentRuntimeName": "cdkpf_runtime_ok",
+        "AgentRuntimeName": "cdkpf_rtlc_pass",
         "RoleArn": {
           "Fn::GetAtt": [
             "Role",
@@ -77,6 +77,10 @@
               "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repo}:3.12-slim"
             }
           }
+        },
+        "LifecycleConfiguration": {
+          "IdleRuntimeSessionTimeout": 600,
+          "MaxLifetime": 3600
         }
       }
     }

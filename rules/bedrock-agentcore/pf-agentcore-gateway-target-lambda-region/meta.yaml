@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-target-lambda-region
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayTarget]
+severity: ERROR
+title: Lambda gateway targets must be in the gateway's own region
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (probe): GatewayTarget pointing at a real function in us-west-2 (cdkpf-xregion-Fn-x9y1ZQVMgmSx) -> CREATE_FAILED (BedrockAgentCoreControl 400: Lambda function not found: arn:aws:lambda:us-west-2:...:function:cdkpf-xregion-Fn-x9y1ZQVMgmSx. Verify the function ARN is correct and retry) -> ROLLBACK_COMPLETE, the same message as for a nonexistent ARN, so the fail template uses a nonexistent us-west-2 ARN; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-lambda-region.log. Evaluates only in enforce mode with a concrete app region (deploy_region injection); silent otherwise. Test fixtures assume the harness region us-east-1."
+addedOn: 2026-09-06
