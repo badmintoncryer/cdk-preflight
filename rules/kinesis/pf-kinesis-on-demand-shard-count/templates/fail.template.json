@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "StreamModeDetails": {
+          "StreamMode": "ON_DEMAND"
+        },
+        "ShardCount": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1,
+        "WarmThroughputMiBps": 100
+      }
+    }
+  }
+}

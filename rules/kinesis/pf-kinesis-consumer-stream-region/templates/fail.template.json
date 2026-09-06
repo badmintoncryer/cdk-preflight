@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Kinesis::StreamConsumer",
+      "Properties": {
+        "ConsumerName": "cdkpf-consumer",
+        "StreamARN": "arn:aws:kinesis:us-west-2:123456789012:stream/cdkpf-elsewhere"
+      }
+    }
+  }
+}

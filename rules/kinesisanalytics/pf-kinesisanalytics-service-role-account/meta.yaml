@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-service-role-account
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "ServiceExecutionRole must belong to the deploying account"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplication.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Cross-account pass role is not allowed, The role should belong to account '214794239830'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

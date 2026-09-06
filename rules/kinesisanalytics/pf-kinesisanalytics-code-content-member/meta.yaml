@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-code-content-member
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "CodeContent must carry exactly the member its type names"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CodeContent.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"You have provided ZIPFILE code content type, but have provided other code contents. Please specify either ZipFileContent or S3ContentLocation.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

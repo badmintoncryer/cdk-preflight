@@ -3203,3 +3203,166 @@ describe('elasticache / memorydb rules', () => {
     silent(mu({ Type: 'iam' }), 'pf-memorydb-user-password');
   });
 });
+
+describe('kinesis / managed flink rules', () => {
+  const R = 'ap-northeast-1';
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const fires = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).toContain(id);
+  const silent = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).not.toContain(id);
+  type Obj = Record<string, unknown>;
+
+  const stream = (props: Obj) => ({ Resources: { S: { Type: 'AWS::Kinesis::Stream', Properties: props } } });
+  const SARN = { 'Fn::GetAtt': ['S', 'Arn'] };
+  const rp = (statement: Obj, arn: unknown = SARN) => ({
+    Resources: {
+      S: { Type: 'AWS::Kinesis::Stream', Properties: { ShardCount: 1 } },
+      RP: {
+        Type: 'AWS::Kinesis::ResourcePolicy',
+        Properties: { ResourceArn: arn, ResourcePolicy: { Version: '2012-10-17', Statement: [statement] } },
+      },
+    },
+  });
+  const ROLE = {
+    Type: 'AWS::IAM::Role',
+    Properties: {
+      AssumeRolePolicyDocument: {
+        Version: '2012-10-17',
+        Statement: [{ Effect: 'Allow', Principal: { Service: 'kinesisanalytics.amazonaws.com' }, Action: 'sts:AssumeRole' }],
+      },
+    },
+  };
+  const app = (props: Obj, extra: Obj = {}) => ({
+    Resources: {
+      Role: ROLE,
+      App: {
+        Type: 'AWS::KinesisAnalyticsV2::Application',
+        Properties: { RuntimeEnvironment: 'FLINK-1_20', ServiceExecutionRole: { 'Fn::GetAtt': ['Role', 'Arn'] }, ...props },
+      },
+      ...extra,
+    },
+  });
+
+  test('stream mode drives ShardCount and warm throughput', () => {
+    fires(stream({ StreamModeDetails: { StreamMode: 'ON_DEMAND' }, ShardCount: 1 }), 'pf-kinesis-on-demand-shard-count');
+    fires(stream({ StreamModeDetails: { StreamMode: 'PROVISIONED' } }), 'pf-kinesis-provisioned-shard-count');
+    // neither property set at all is the service default and creates fine
+    silent(stream({}), 'pf-kinesis-provisioned-shard-count');
+    silent(stream({ ShardCount: 1 }), 'pf-kinesis-provisioned-shard-count');
+    fires(stream({ ShardCount: 1, WarmThroughputMiBps: 100 }), 'pf-kinesis-warm-throughput-shard-count');
+    fires(stream({ StreamModeDetails: { StreamMode: 'PROVISIONED' }, WarmThroughputMiBps: 100 }), 'pf-kinesis-warm-throughput-shard-count');
+    silent(stream({ StreamModeDetails: { StreamMode: 'ON_DEMAND' }, WarmThroughputMiBps: 100 }), 'pf-kinesis-warm-throughput-shard-count');
+  });
+
+  test('shard-level metrics and the encryption key region', () => {
+    fires(stream({ ShardCount: 1, DesiredShardLevelMetrics: ['IncomingBytes', 'ALL'] }), 'pf-kinesis-shard-level-metrics-all');
+    silent(stream({ ShardCount: 1, DesiredShardLevelMetrics: ['ALL'] }), 'pf-kinesis-shard-level-metrics-all');
+    const key = (region: string) => stream({ ShardCount: 1, StreamEncryption: { EncryptionType: 'KMS', KeyId: `arn:aws:kms:${region}:123456789012:key/11111111-2222-3333-4444-555555555555` } });
+    fires(key('us-west-2'), 'pf-kinesis-encryption-key-region');
+    silent(key(R), 'pf-kinesis-encryption-key-region');
+    silent(stream({ ShardCount: 1, StreamEncryption: { EncryptionType: 'KMS', KeyId: 'alias/aws/kinesis' } }), 'pf-kinesis-encryption-key-region');
+  });
+
+  test('consumers: region binding and per-stream name uniqueness', () => {
+    const consumer = (logical: string, name: string, arn: unknown) => ({ [logical]: { Type: 'AWS::Kinesis::StreamConsumer', Properties: { ConsumerName: name, StreamARN: arn } } });
+    const two = (a: Obj, b: Obj) => ({ Resources: { S: { Type: 'AWS::Kinesis::Stream', Properties: { ShardCount: 1 } }, S2: { Type: 'AWS::Kinesis::Stream', Properties: { ShardCount: 1 } }, ...a, ...b } });
+    fires(two(consumer('C1', 'dup', SARN), consumer('C2', 'dup', SARN)), 'pf-kinesis-consumer-duplicate-name');
+    // the same name on two different streams is fine — the pair is what must be unique
+    silent(two(consumer('C1', 'dup', SARN), consumer('C2', 'dup', { 'Fn::GetAtt': ['S2', 'Arn'] })), 'pf-kinesis-consumer-duplicate-name');
+    silent(two(consumer('C1', 'one', SARN), consumer('C2', 'two', SARN)), 'pf-kinesis-consumer-duplicate-name');
+    fires({ Resources: consumer('C1', 'x', 'arn:aws:kinesis:us-west-2:123456789012:stream/other') }, 'pf-kinesis-consumer-stream-region');
+    silent({ Resources: consumer('C1', 'x', `arn:aws:kinesis:${R}:123456789012:stream/other`) }, 'pf-kinesis-consumer-stream-region');
+  });
+
+  test('resource policy: target, actions and principal', () => {
+    const base = { Sid: 'cdkpf', Effect: 'Allow', Principal: { AWS: '123456789012' }, Action: 'kinesis:GetRecords', Resource: SARN };
+    silent(rp(base), 'pf-kinesis-resource-policy-resource');
+    fires(rp({ ...base, Resource: '*' }), 'pf-kinesis-resource-policy-resource');
+    fires(rp({ ...base, Resource: [SARN, 'arn:aws:kinesis:us-east-1:123456789012:stream/other'] }), 'pf-kinesis-resource-policy-resource');
+    silent(rp({ ...base, Resource: [SARN] }), 'pf-kinesis-resource-policy-resource');
+    // wildcards are rejected outright, even under the kinesis prefix
+    fires(rp({ ...base, Action: 'kinesis:*' }), 'pf-kinesis-resource-policy-action');
+    fires(rp({ ...base, Action: '*' }), 'pf-kinesis-resource-policy-action');
+    fires(rp({ ...base, Action: ['kinesis:GetRecords', 'logs:PutLogEvents'] }), 'pf-kinesis-resource-policy-action');
+    silent(rp({ ...base, Action: ['kinesis:GetRecords'] }), 'pf-kinesis-resource-policy-action');
+    fires(rp({ Sid: 'cdkpf', Effect: 'Allow', Action: 'kinesis:GetRecords', Resource: SARN }), 'pf-kinesis-resource-policy-principal');
+    fires(rp({ ...base, Principal: undefined, NotPrincipal: { AWS: '123456789012' } }), 'pf-kinesis-resource-policy-principal');
+    silent(rp(base), 'pf-kinesis-resource-policy-principal');
+    fires(rp(base, 'arn:aws:kinesis:us-west-2:123456789012:stream/other'), 'pf-kinesis-resource-policy-region');
+    silent(rp(base, `arn:aws:kinesis:${R}:123456789012:stream/other`), 'pf-kinesis-resource-policy-region');
+  });
+
+  test('flink configuration blocks need ConfigurationType CUSTOM', () => {
+    const flink = (fc: Obj) => app({ ApplicationConfiguration: { FlinkApplicationConfiguration: fc } });
+    fires(flink({ CheckpointConfiguration: { ConfigurationType: 'DEFAULT', MinPauseBetweenCheckpoints: 1000 } }), 'pf-kinesisanalytics-checkpoint-configuration-type');
+    silent(flink({ CheckpointConfiguration: { ConfigurationType: 'DEFAULT' } }), 'pf-kinesisanalytics-checkpoint-configuration-type');
+    fires(flink({ ParallelismConfiguration: { ConfigurationType: 'DEFAULT', AutoScalingEnabled: true } }), 'pf-kinesisanalytics-parallelism-configuration-type');
+    fires(flink({ MonitoringConfiguration: { ConfigurationType: 'DEFAULT', MetricsLevel: 'TASK' } }), 'pf-kinesisanalytics-monitoring-configuration-type');
+    silent(flink({ MonitoringConfiguration: { ConfigurationType: 'CUSTOM', MetricsLevel: 'TASK' } }), 'pf-kinesisanalytics-monitoring-configuration-type');
+    fires(flink({ ParallelismConfiguration: { ConfigurationType: 'CUSTOM', ParallelismPerKPU: 16 } }), 'pf-kinesisanalytics-parallelism-per-kpu');
+    silent(flink({ ParallelismConfiguration: { ConfigurationType: 'CUSTOM', ParallelismPerKPU: 8 } }), 'pf-kinesisanalytics-parallelism-per-kpu');
+  });
+
+  test('runtime environment gates the mode and the configuration blocks', () => {
+    for (const rt of ['FLINK-1_6', 'FLINK-1_8', 'FLINK-1_11', 'ZEPPELIN-FLINK-2_0']) {
+      fires(app({ RuntimeEnvironment: rt, ApplicationMode: rt.startsWith('ZEPPELIN') ? 'INTERACTIVE' : 'STREAMING' }), 'pf-kinesisanalytics-runtime-deprecated');
+    }
+    silent(app({ RuntimeEnvironment: 'FLINK-1_18' }), 'pf-kinesisanalytics-runtime-deprecated');
+    fires(app({ RuntimeEnvironment: 'SQL-1_0' }), 'pf-kinesisanalytics-sql-runtime-unsupported');
+    fires(app({ ApplicationMode: 'INTERACTIVE' }), 'pf-kinesisanalytics-application-mode-runtime');
+    fires(app({ RuntimeEnvironment: 'ZEPPELIN-FLINK-3_0', ApplicationConfiguration: { ZeppelinApplicationConfiguration: {} } }), 'pf-kinesisanalytics-application-mode-runtime');
+    silent(app({ RuntimeEnvironment: 'ZEPPELIN-FLINK-3_0', ApplicationMode: 'INTERACTIVE', ApplicationConfiguration: { ZeppelinApplicationConfiguration: {} } }), 'pf-kinesisanalytics-application-mode-runtime');
+    silent(app({ ApplicationMode: 'STREAMING' }), 'pf-kinesisanalytics-application-mode-runtime');
+    fires(app({ ApplicationConfiguration: { SqlApplicationConfiguration: {} } }), 'pf-kinesisanalytics-sql-configuration-runtime');
+    fires(app({ ApplicationConfiguration: { ZeppelinApplicationConfiguration: {} } }), 'pf-kinesisanalytics-zeppelin-configuration-runtime');
+    fires(app({ RuntimeEnvironment: 'ZEPPELIN-FLINK-3_0', ApplicationMode: 'INTERACTIVE', ApplicationConfiguration: { ZeppelinApplicationConfiguration: {}, ApplicationSnapshotConfiguration: { SnapshotsEnabled: true } } }), 'pf-kinesisanalytics-snapshot-runtime');
+    silent(app({ ApplicationConfiguration: { ApplicationSnapshotConfiguration: { SnapshotsEnabled: true } } }), 'pf-kinesisanalytics-snapshot-runtime');
+    fires(app({ RuntimeEnvironment: 'ZEPPELIN-FLINK-3_0', ApplicationMode: 'INTERACTIVE', ApplicationConfiguration: { ZeppelinApplicationConfiguration: {}, ApplicationSystemRollbackConfiguration: { RollbackEnabled: true } } }), 'pf-kinesisanalytics-system-rollback-runtime');
+  });
+
+  test('application code: content type, member and Studio note JSON', () => {
+    const code = (rt: string, mode: Obj, cfg: Obj) => app({ RuntimeEnvironment: rt, ...mode, ApplicationConfiguration: { ApplicationCodeConfiguration: cfg, ...(rt.startsWith('ZEPPELIN') ? { ZeppelinApplicationConfiguration: {} } : {}) } });
+    const S3 = { S3ContentLocation: { BucketARN: 'arn:aws:s3:::cdkpf', FileKey: 'app.jar' } };
+    fires(code('FLINK-1_20', {}, { CodeContentType: 'PLAINTEXT', CodeContent: { TextContent: 'x' } }), 'pf-kinesisanalytics-code-content-type');
+    silent(code('FLINK-1_20', {}, { CodeContentType: 'ZIPFILE', CodeContent: S3 }), 'pf-kinesisanalytics-code-content-type');
+    fires(code('ZEPPELIN-FLINK-3_0', { ApplicationMode: 'INTERACTIVE' }, { CodeContentType: 'ZIPFILE', CodeContent: S3 }), 'pf-kinesisanalytics-code-content-type');
+    fires(code('FLINK-1_20', {}, { CodeContentType: 'ZIPFILE', CodeContent: { TextContent: 'x' } }), 'pf-kinesisanalytics-code-content-member');
+    fires(code('FLINK-1_20', {}, { CodeContentType: 'ZIPFILE', CodeContent: {} }), 'pf-kinesisanalytics-code-content-member');
+    silent(code('FLINK-1_20', {}, { CodeContentType: 'ZIPFILE', CodeContent: S3 }), 'pf-kinesisanalytics-code-content-member');
+    const note = (text: string) => code('ZEPPELIN-FLINK-3_0', { ApplicationMode: 'INTERACTIVE' }, { CodeContentType: 'PLAINTEXT', CodeContent: { TextContent: text } });
+    fires(note('%flink.ssql SELECT 1'), 'pf-kinesisanalytics-zeppelin-note-json');
+    fires(note('{"paragraphs":[]}'), 'pf-kinesisanalytics-zeppelin-note-json');
+    silent(note('{"id":"2A94M5J1Z","name":"cdkpf","paragraphs":[]}'), 'pf-kinesisanalytics-zeppelin-note-json');
+  });
+
+  test('encryption key type, Studio artifacts and the Glue catalog region', () => {
+    const enc = (cfg: Obj) => app({ ApplicationConfiguration: { ApplicationEncryptionConfiguration: cfg } });
+    fires(enc({ KeyType: 'AWS_OWNED_KEY', KeyId: 'alias/aws/kinesisanalytics' }), 'pf-kinesisanalytics-encryption-key-type');
+    fires(enc({ KeyType: 'CUSTOMER_MANAGED_KEY' }), 'pf-kinesisanalytics-encryption-key-type');
+    silent(enc({ KeyType: 'CUSTOMER_MANAGED_KEY', KeyId: 'alias/cdkpf' }), 'pf-kinesisanalytics-encryption-key-type');
+    silent(enc({ KeyType: 'AWS_OWNED_KEY' }), 'pf-kinesisanalytics-encryption-key-type');
+    const studio = (cfg: Obj) => app({ RuntimeEnvironment: 'ZEPPELIN-FLINK-3_0', ApplicationMode: 'INTERACTIVE', ApplicationConfiguration: { ZeppelinApplicationConfiguration: cfg } });
+    const maven = { GroupId: 'org.apache.flink', ArtifactId: 'flink-connector-kafka', Version: '1.15.4' };
+    fires(studio({ CustomArtifactsConfiguration: [{ ArtifactType: 'UDF' }] }), 'pf-kinesisanalytics-custom-artifact-source');
+    silent(studio({ CustomArtifactsConfiguration: [{ ArtifactType: 'DEPENDENCY_JAR', MavenReference: maven }] }), 'pf-kinesisanalytics-custom-artifact-source');
+    fires(studio({ CustomArtifactsConfiguration: [{ ArtifactType: 'UDF', MavenReference: maven }] }), 'pf-kinesisanalytics-maven-artifact-type');
+    silent(studio({ CustomArtifactsConfiguration: [{ ArtifactType: 'DEPENDENCY_JAR', MavenReference: maven }] }), 'pf-kinesisanalytics-maven-artifact-type');
+    const glue = (region: string) => studio({ CatalogConfiguration: { GlueDataCatalogConfiguration: { DatabaseARN: `arn:aws:glue:${region}:123456789012:database/cdkpf` } } });
+    fires(glue('eu-west-1'), 'pf-kinesisanalytics-glue-database-region');
+    silent(glue(R), 'pf-kinesisanalytics-glue-database-region');
+  });
+
+  test('property groups, log streams, the service role account and SQL-only resources', () => {
+    const groups = (gs: Obj[]) => app({ ApplicationConfiguration: { EnvironmentProperties: { PropertyGroups: gs } } });
+    fires(groups([{ PropertyGroupId: 'a', PropertyMap: { k: '1' } }, { PropertyGroupId: 'a', PropertyMap: { k: '2' } }]), 'pf-kinesisanalytics-property-group-duplicate');
+    silent(groups([{ PropertyGroupId: 'a', PropertyMap: { k: '1' } }, { PropertyGroupId: 'b', PropertyMap: { k: '2' } }]), 'pf-kinesisanalytics-property-group-duplicate');
+    const log = (arn: string) => app({}, { Log: { Type: 'AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption', Properties: { ApplicationName: { Ref: 'App' }, CloudWatchLoggingOption: { LogStreamARN: arn } } } });
+    fires(log(`arn:aws:logs:${R}:123456789012:log-group:cdkpf`), 'pf-kinesisanalytics-log-stream-arn');
+    silent(log(`arn:aws:logs:${R}:123456789012:log-group:cdkpf:log-stream:s`), 'pf-kinesisanalytics-log-stream-arn');
+    fires(app({ ServiceExecutionRole: 'arn:aws:iam::999988887777:role/other' }), 'pf-kinesisanalytics-service-role-account');
+    silent(app({ ServiceExecutionRole: 'arn:aws:iam::123456789012:role/own' }), 'pf-kinesisanalytics-service-role-account');
+    const refData = app({}, { Ref1: { Type: 'AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource', Properties: { ApplicationName: { Ref: 'App' }, ReferenceDataSource: { TableName: 'REF', S3ReferenceDataSource: { BucketARN: 'arn:aws:s3:::cdkpf', FileKey: 'r.csv' }, ReferenceSchema: { RecordFormat: { RecordFormatType: 'JSON', MappingParameters: { JSONMappingParameters: { RecordRowPath: '$' } } }, RecordColumns: [{ Name: 'C', SqlType: 'VARCHAR(4)' }] } } } } });
+    fires(refData, 'pf-kinesisanalytics-sql-only-resource');
+    // an application imported by name carries no runtime to judge
+    silent({ Resources: { Ref1: { ...refData.Resources.Ref1, Properties: { ...(refData.Resources.Ref1 as any).Properties, ApplicationName: 'imported-app' } } } }, 'pf-kinesisanalytics-sql-only-resource');
+  });
+});

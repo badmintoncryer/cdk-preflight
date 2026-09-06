@@ -252,6 +252,39 @@
 | `pf-iam-policy-version` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy Version must be 2012-10-17 or 2008-10-17 | none |
 | `pf-iam-trust-policy-no-resource` | AWS::IAM::Role | Trust policies cannot carry a Resource field | none |
 | `pf-iam-trust-policy-service-principal` | AWS::IAM::Role | Service principals live under amazonaws.com | none |
+| `pf-kinesis-consumer-duplicate-name` | AWS::Kinesis::StreamConsumer | Two consumers of one stream cannot share a ConsumerName | none |
+| `pf-kinesis-consumer-stream-region` | AWS::Kinesis::StreamConsumer | A stream consumer must reference a stream in its own region | none |
+| `pf-kinesis-encryption-key-region` | AWS::Kinesis::Stream | The stream encryption key must live in the stream region | none |
+| `pf-kinesis-on-demand-shard-count` | AWS::Kinesis::Stream | An on-demand stream cannot set ShardCount | none |
+| `pf-kinesis-provisioned-shard-count` | AWS::Kinesis::Stream | A provisioned stream must set ShardCount | none |
+| `pf-kinesis-resource-policy-action` | AWS::Kinesis::ResourcePolicy | Resource policy actions must be plain kinesis: actions | none |
+| `pf-kinesis-resource-policy-principal` | AWS::Kinesis::ResourcePolicy | Every policy statement needs a Principal (and no NotPrincipal) | none |
+| `pf-kinesis-resource-policy-region` | AWS::Kinesis::ResourcePolicy | A resource policy must target a stream in its own region | none |
+| `pf-kinesis-resource-policy-resource` | AWS::Kinesis::ResourcePolicy | Every policy statement Resource must equal the ResourceArn | none |
+| `pf-kinesis-shard-level-metrics-all` | AWS::Kinesis::Stream | DesiredShardLevelMetrics cannot mix ALL with named metrics | none |
+| `pf-kinesis-warm-throughput-shard-count` | AWS::Kinesis::Stream | WarmThroughputMiBps cannot be combined with ShardCount or provisioned mode | none |
+| `pf-kinesisanalytics-application-mode-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationMode must match the runtime family | none |
+| `pf-kinesisanalytics-checkpoint-configuration-type` | AWS::KinesisAnalyticsV2::Application | CheckpointConfiguration needs ConfigurationType CUSTOM to carry values | none |
+| `pf-kinesisanalytics-code-content-member` | AWS::KinesisAnalyticsV2::Application | CodeContent must carry exactly the member its type names | none |
+| `pf-kinesisanalytics-code-content-type` | AWS::KinesisAnalyticsV2::Application | CodeContentType must match the runtime family | none |
+| `pf-kinesisanalytics-custom-artifact-source` | AWS::KinesisAnalyticsV2::Application | Every Studio custom artifact needs an S3 location or a Maven reference | none |
+| `pf-kinesisanalytics-encryption-key-type` | AWS::KinesisAnalyticsV2::Application | KeyId presence must match the encryption KeyType | none |
+| `pf-kinesisanalytics-glue-database-region` | AWS::KinesisAnalyticsV2::Application | The Studio Glue catalog database must be in the application region | none |
+| `pf-kinesisanalytics-log-stream-arn` | AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption | LogStreamARN must name a log stream, not a log group | none |
+| `pf-kinesisanalytics-maven-artifact-type` | AWS::KinesisAnalyticsV2::Application | MavenReference is only valid for DEPENDENCY_JAR artifacts | none |
+| `pf-kinesisanalytics-monitoring-configuration-type` | AWS::KinesisAnalyticsV2::Application | MonitoringConfiguration needs ConfigurationType CUSTOM to carry values | none |
+| `pf-kinesisanalytics-parallelism-configuration-type` | AWS::KinesisAnalyticsV2::Application | ParallelismConfiguration needs ConfigurationType CUSTOM to carry values | none |
+| `pf-kinesisanalytics-parallelism-per-kpu` | AWS::KinesisAnalyticsV2::Application | ParallelismPerKPU cannot exceed 8 | none |
+| `pf-kinesisanalytics-property-group-duplicate` | AWS::KinesisAnalyticsV2::Application | PropertyGroupId must be unique within an application | none |
+| `pf-kinesisanalytics-runtime-deprecated` | AWS::KinesisAnalyticsV2::Application | Deprecated runtime environments can no longer be created | none |
+| `pf-kinesisanalytics-service-role-account` | AWS::KinesisAnalyticsV2::Application | ServiceExecutionRole must belong to the deploying account | none |
+| `pf-kinesisanalytics-snapshot-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationSnapshotConfiguration is not applicable to Studio runtimes | none |
+| `pf-kinesisanalytics-sql-configuration-runtime` | AWS::KinesisAnalyticsV2::Application | SqlApplicationConfiguration belongs to the SQL runtime only | none |
+| `pf-kinesisanalytics-sql-only-resource` | AWS::KinesisAnalyticsV2::ApplicationOutput<br>AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource | Outputs and reference data sources need a SQL application | none |
+| `pf-kinesisanalytics-sql-runtime-unsupported` | AWS::KinesisAnalyticsV2::Application | SQL applications can no longer be created | none |
+| `pf-kinesisanalytics-system-rollback-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationSystemRollbackConfiguration is not applicable to Studio runtimes | none |
+| `pf-kinesisanalytics-zeppelin-configuration-runtime` | AWS::KinesisAnalyticsV2::Application | ZeppelinApplicationConfiguration belongs to Studio runtimes only | none |
+| `pf-kinesisanalytics-zeppelin-note-json` | AWS::KinesisAnalyticsV2::Application | Studio TextContent must be a Zeppelin note JSON | none |
 | `pf-kms-alias-name` | AWS::KMS::Alias | AliasName must not start with alias/aws/ (reserved for AWS managed keys) and may not contain a colon (the CloudFormation schema allows it, CreateAlias does not) | none |
 | `pf-kms-alias-target` | AWS::KMS::Alias | TargetKeyId must be a key id or key ARN (not an alias) of a key in the same account and region | none |
 | `pf-kms-key-origin` | AWS::KMS::Key | Origin AWS_CLOUDHSM and EXTERNAL_KEY_STORE cannot be created by CloudFormation, and Origin EXTERNAL does not support ML-DSA key specs | none |

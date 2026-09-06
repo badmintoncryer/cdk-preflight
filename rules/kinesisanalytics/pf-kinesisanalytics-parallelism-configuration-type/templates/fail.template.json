@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "kinesisanalytics.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "App": {
+      "Type": "AWS::KinesisAnalyticsV2::Application",
+      "Properties": {
+        "RuntimeEnvironment": "FLINK-1_20",
+        "ServiceExecutionRole": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "ApplicationConfiguration": {
+          "FlinkApplicationConfiguration": {
+            "ParallelismConfiguration": {
+              "ConfigurationType": "DEFAULT",
+              "Parallelism": 4
+            }
+          }
+        }
+      }
+    }
+  }
+}

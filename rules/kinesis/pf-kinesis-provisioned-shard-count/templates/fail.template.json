@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "StreamModeDetails": {
+          "StreamMode": "PROVISIONED"
+        }
+      }
+    }
+  }
+}

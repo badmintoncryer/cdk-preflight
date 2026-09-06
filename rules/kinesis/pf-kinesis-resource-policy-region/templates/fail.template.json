@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "RP": {
+      "Type": "AWS::Kinesis::ResourcePolicy",
+      "Properties": {
+        "ResourceArn": "arn:aws:kinesis:us-west-2:123456789012:stream/cdkpf-elsewhere",
+        "ResourcePolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "cdkpf",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kinesis:GetRecords",
+              "Resource": "arn:aws:kinesis:us-west-2:123456789012:stream/cdkpf-elsewhere"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
