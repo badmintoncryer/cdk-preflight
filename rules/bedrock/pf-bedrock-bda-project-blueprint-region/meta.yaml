@@ -1,0 +1,12 @@
+id: pf-bedrock-bda-project-blueprint-region
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataAutomationProject]
+severity: ERROR
+title: Blueprints must live in the project's Region
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_BlueprintItem.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): blueprint ARN in us-west-2 (a real blueprint) attached from us-east-1 -> CreateDataAutomationProject 400 ValidationException: Incorrect Blueprint Arn or Version provided in the custom configuration. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-blueprint-region.log"
+addedOn: 2026-09-06

@@ -1,0 +1,12 @@
+id: pf-bedrock-kb-sql-storage-configuration
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: A Redshift storage configuration needs the block matching its Type
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_RedshiftQueryEngineStorageConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): StorageConfigurations [{Type: AWS_DATA_CATALOG}] without AwsDataCatalogConfiguration -> CreateKnowledgeBase 400 ValidationException: KnowledgeBase type SQL with query engine type REDSHIFT must specify exactly one storage configuration; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-sql-storage-configuration.log"
+addedOn: 2026-09-06

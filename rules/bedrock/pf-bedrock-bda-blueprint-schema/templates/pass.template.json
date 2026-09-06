@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Bp": {
+      "Type": "AWS::Bedrock::Blueprint",
+      "Properties": {
+        "BlueprintName": "cdkpf-bbsc-pass",
+        "Type": "DOCUMENT",
+        "Schema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "class": "invoice",
+          "description": "An invoice",
+          "type": "object",
+          "definitions": {},
+          "properties": {
+            "total": {
+              "type": "number",
+              "inferenceType": "explicit",
+              "instruction": "Total amount"
+            }
+          }
+        }
+      }
+    }
+  }
+}

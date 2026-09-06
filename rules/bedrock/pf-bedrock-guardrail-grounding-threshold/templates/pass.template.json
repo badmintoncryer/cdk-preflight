@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-ggth-pass",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "HATE",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            }
+          ]
+        },
+        "ContextualGroundingPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "GROUNDING",
+              "Threshold": 0.99
+            }
+          ]
+        }
+      }
+    }
+  }
+}

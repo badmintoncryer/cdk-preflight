@@ -1,0 +1,12 @@
+id: pf-bedrock-kb-embedding-dimensions
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: Embedding Dimensions must be a size the embedding model supports
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Titan Text Embeddings V2 with Dimensions 768 -> CreateKnowledgeBase 400 ValidationException: The specified embedding dimensions is not supported by the model …titan-embed-text-v2:0; Titan v1 with Dimensions 512 -> The specified model … does not support configurable dimensions; Dimensions 1024 deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-embedding-dimensions.log"
+addedOn: 2026-09-06

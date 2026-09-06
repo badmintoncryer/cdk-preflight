@@ -1,0 +1,12 @@
+id: pf-bedrock-automated-reasoning-policy-names-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::AutomatedReasoningPolicy]
+severity: ERROR
+title: Names and ids inside a policy definition must be unique
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_AutomatedReasoningPolicyDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two Types named Color -> CreateAutomatedReasoningPolicy 400 ValidationException: Duplicate name found in policy definition: \"Color\"; two Variables named vv -> Duplicate name found…; two Rules with id R00000000001 -> Duplicate id found in policy definition; a type with value red twice -> Type \"Color\" has duplicate values; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-automated-reasoning-policy-names-unique.log"
+addedOn: 2026-09-06

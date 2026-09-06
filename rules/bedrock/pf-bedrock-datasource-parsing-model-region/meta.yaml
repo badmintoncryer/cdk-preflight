@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-parsing-model-region
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource]
+severity: ERROR
+title: The parsing model must be reachable from the data source's Region
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): BedrockFoundationModelConfiguration.ModelArn in us-west-2 from us-east-1 -> CreateDataSource 400 ValidationException: Provided Bedrock Foundation Model is in a different region; apac. inference-profile ARN from us-east-1 -> Knowledge base is not able to get the Inference Profile Model: The specified inference profile … does not exist. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-parsing-model-region.log"
+addedOn: 2026-09-06

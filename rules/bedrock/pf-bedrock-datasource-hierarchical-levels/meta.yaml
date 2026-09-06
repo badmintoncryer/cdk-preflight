@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-hierarchical-levels
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource]
+severity: ERROR
+title: Hierarchical chunking levels must descend and OverlapTokens must stay below the child size
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_HierarchicalChunkingConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): LevelConfigurations [300, 1500] -> CreateDataSource 400 ValidationException: Max tokens for each level in hierarchical chunking must be in descending order. Actual: [300, 1500] (equal sizes fail too); OverlapTokens 300 with child 300 -> Overlap tokens (actual: 300) in hierarchical chunking must be smaller than the bottom level max tokens (actual: 300); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-hierarchical-levels.log"
+addedOn: 2026-09-06

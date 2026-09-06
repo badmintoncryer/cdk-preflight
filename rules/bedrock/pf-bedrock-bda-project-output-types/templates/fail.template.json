@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "Project": {
+      "Type": "AWS::Bedrock::DataAutomationProject",
+      "Properties": {
+        "ProjectName": "cdkpf-bot-fail",
+        "StandardOutputConfiguration": {
+          "Document": {
+            "Extraction": {
+              "Granularity": {
+                "Types": []
+              },
+              "BoundingBox": {
+                "State": "DISABLED"
+              }
+            },
+            "GenerativeField": {
+              "State": "DISABLED"
+            },
+            "OutputFormat": {
+              "TextFormat": {
+                "Types": [
+                  "MARKDOWN"
+                ]
+              },
+              "AdditionalFileFormat": {
+                "State": "DISABLED"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

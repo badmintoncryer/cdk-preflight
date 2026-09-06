@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-type-configuration
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource]
+severity: ERROR
+title: DataSourceConfiguration.Type needs its matching configuration block
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateDataSource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type S3 without S3Configuration -> CreateDataSource 400 ValidationException: s3Configuration is required when data source type is S3; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-type-configuration.log"
+addedOn: 2026-09-06

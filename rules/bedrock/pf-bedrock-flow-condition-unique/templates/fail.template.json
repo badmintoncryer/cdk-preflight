@@ -1,0 +1,184 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "bedrock:*",
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Flow": {
+      "Type": "AWS::Bedrock::Flow",
+      "Properties": {
+        "Name": "cdkpf-fcu-fail",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Definition": {
+          "Nodes": [
+            {
+              "Name": "FlowInputNode",
+              "Type": "Input",
+              "Configuration": {
+                "Input": {}
+              },
+              "Outputs": [
+                {
+                  "Name": "document",
+                  "Type": "String"
+                }
+              ]
+            },
+            {
+              "Name": "Cond1",
+              "Type": "Condition",
+              "Configuration": {
+                "Condition": {
+                  "Conditions": [
+                    {
+                      "Name": "cond1",
+                      "Expression": "data == \"a\""
+                    },
+                    {
+                      "Name": "cond2",
+                      "Expression": "data == \"a\""
+                    },
+                    {
+                      "Name": "default"
+                    }
+                  ]
+                }
+              },
+              "Inputs": [
+                {
+                  "Name": "data",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ]
+            },
+            {
+              "Name": "FlowOutputNode",
+              "Type": "Output",
+              "Configuration": {
+                "Output": {}
+              },
+              "Inputs": [
+                {
+                  "Name": "document",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ]
+            },
+            {
+              "Name": "Out2",
+              "Type": "Output",
+              "Configuration": {
+                "Output": {}
+              },
+              "Inputs": [
+                {
+                  "Name": "document",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ]
+            }
+          ],
+          "Connections": [
+            {
+              "Name": "c1",
+              "Type": "Data",
+              "Source": "FlowInputNode",
+              "Target": "Cond1",
+              "Configuration": {
+                "Data": {
+                  "SourceOutput": "document",
+                  "TargetInput": "data"
+                }
+              }
+            },
+            {
+              "Name": "c2",
+              "Type": "Data",
+              "Source": "FlowInputNode",
+              "Target": "FlowOutputNode",
+              "Configuration": {
+                "Data": {
+                  "SourceOutput": "document",
+                  "TargetInput": "document"
+                }
+              }
+            },
+            {
+              "Name": "c3",
+              "Type": "Data",
+              "Source": "FlowInputNode",
+              "Target": "Out2",
+              "Configuration": {
+                "Data": {
+                  "SourceOutput": "document",
+                  "TargetInput": "document"
+                }
+              }
+            },
+            {
+              "Name": "cc1",
+              "Type": "Conditional",
+              "Source": "Cond1",
+              "Target": "FlowOutputNode",
+              "Configuration": {
+                "Conditional": {
+                  "Condition": "cond1"
+                }
+              }
+            },
+            {
+              "Name": "cc2",
+              "Type": "Conditional",
+              "Source": "Cond1",
+              "Target": "Out2",
+              "Configuration": {
+                "Conditional": {
+                  "Condition": "default"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

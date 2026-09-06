@@ -1,0 +1,12 @@
+id: pf-bedrock-prompt-default-variant
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Prompt]
+severity: ERROR
+title: DefaultVariant must name one of the prompt's variants
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreatePrompt.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): DefaultVariant nope with a single variant v1 -> CreatePrompt 400 ValidationException: Default variant must be present in the variants list; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-default-variant.log"
+addedOn: 2026-09-06

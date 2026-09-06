@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-policy-required
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: A guardrail needs at least one policy
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateGuardrail.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): guardrail with only Name and the two blocked messages -> CreateGuardrail 400 ValidationException: Guardrail must have at least one policy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-policy-required.log"
+addedOn: 2026-09-06

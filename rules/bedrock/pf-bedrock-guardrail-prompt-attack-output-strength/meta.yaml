@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-prompt-attack-output-strength
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: The PROMPT_ATTACK content filter must use OutputStrength NONE
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-content-filters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): PROMPT_ATTACK filter with OutputStrength HIGH -> CreateGuardrail 400 ValidationException: PROMPT ATTACK content filter strength for response must be NONE; OutputStrength NONE deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-prompt-attack-output-strength.log"
+addedOn: 2026-09-06

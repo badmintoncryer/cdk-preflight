@@ -1,0 +1,12 @@
+id: pf-bedrock-flow-connection-name-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Flow]
+severity: ERROR
+title: Flow connection names must be unique
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConnection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two connections named c1 -> CreateFlow 400 ValidationException: Connection name c1 must be unique; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-connection-name-unique.log"
+addedOn: 2026-09-06

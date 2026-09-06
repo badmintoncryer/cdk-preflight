@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Prompt": {
+      "Type": "AWS::Bedrock::Prompt",
+      "Properties": {
+        "Name": "cdkpf-pvtt-pass",
+        "DefaultVariant": "v1",
+        "Variants": [
+          {
+            "Name": "v1",
+            "TemplateType": "CHAT",
+            "TemplateConfiguration": {
+              "Chat": {
+                "Messages": [
+                  {
+                    "Role": "user",
+                    "Content": [
+                      {
+                        "Text": "Say hello"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "ModelId": "amazon.nova-micro-v1:0"
+          }
+        ]
+      }
+    }
+  }
+}

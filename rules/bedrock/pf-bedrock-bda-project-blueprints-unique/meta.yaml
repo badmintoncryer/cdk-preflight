@@ -1,0 +1,12 @@
+id: pf-bedrock-bda-project-blueprints-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataAutomationProject, AWS::Bedrock::Blueprint]
+severity: ERROR
+title: A project must not attach the same blueprint twice
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_CreateDataAutomationProject.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): CustomOutputConfiguration.Blueprints with the same blueprint ARN twice -> CreateDataAutomationProject 400 ValidationException: Invalid Project Configuration. Cannot contain more than 1 version of 1 Blueprint or duplicate Blueprints; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-blueprints-unique.log"
+addedOn: 2026-09-06

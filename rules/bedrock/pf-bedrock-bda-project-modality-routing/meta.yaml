@@ -1,0 +1,12 @@
+id: pf-bedrock-bda-project-modality-routing
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataAutomationProject]
+severity: ERROR
+title: Modality routing overrides must fit the file type
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_ModalityRoutingConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): OverrideConfiguration.ModalityRouting jpeg: VIDEO -> CreateDataAutomationProject 400 ValidationException: Invalid modality routing override config. Modality override is invalid for the given file type; same for png: AUDIO and mp4: DOCUMENT; jpeg: DOCUMENT deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-modality-routing.log"
+addedOn: 2026-09-06

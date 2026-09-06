@@ -1,0 +1,124 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3vectors:*",
+                    "bedrock:InvokeModel",
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "VB": {
+      "Type": "AWS::S3Vectors::VectorBucket",
+      "Properties": {}
+    },
+    "Idx": {
+      "Type": "AWS::S3Vectors::Index",
+      "Properties": {
+        "VectorBucketArn": {
+          "Fn::GetAtt": [
+            "VB",
+            "VectorBucketArn"
+          ]
+        },
+        "IndexName": "cdkpf-idx",
+        "DataType": "float32",
+        "Dimension": 1024,
+        "DistanceMetric": "cosine"
+      }
+    },
+    "KB": {
+      "Type": "AWS::Bedrock::KnowledgeBase",
+      "Properties": {
+        "Name": "cdkpf-kb-datasource-parsing-model-region-pass",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "KnowledgeBaseConfiguration": {
+          "Type": "VECTOR",
+          "VectorKnowledgeBaseConfiguration": {
+            "EmbeddingModelArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+            }
+          }
+        },
+        "StorageConfiguration": {
+          "Type": "S3_VECTORS",
+          "S3VectorsConfiguration": {
+            "IndexArn": {
+              "Fn::GetAtt": [
+                "Idx",
+                "IndexArn"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "DS": {
+      "Type": "AWS::Bedrock::DataSource",
+      "Properties": {
+        "Name": "cdkpf-ds",
+        "KnowledgeBaseId": {
+          "Ref": "KB"
+        },
+        "DataSourceConfiguration": {
+          "Type": "S3",
+          "S3Configuration": {
+            "BucketArn": {
+              "Fn::GetAtt": [
+                "Bucket",
+                "Arn"
+              ]
+            }
+          }
+        },
+        "VectorIngestionConfiguration": {
+          "ParsingConfiguration": {
+            "ParsingStrategy": "BEDROCK_FOUNDATION_MODEL",
+            "BedrockFoundationModelConfiguration": {
+              "ModelArn": {
+                "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-bedrock-kb-vector-store-region
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: An S3 Vectors index must live in the knowledge base's Region
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_S3VectorsConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): S3VectorsConfiguration.IndexArn in us-west-2 from us-east-1 -> CreateKnowledgeBase 400 ValidationException: The knowledge base storage configuration provided is invalid. The vector store must be in the same region as the knowledge base. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-vector-store-region.log"
+addedOn: 2026-09-06

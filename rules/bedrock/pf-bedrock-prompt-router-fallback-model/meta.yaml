@@ -1,0 +1,12 @@
+id: pf-bedrock-prompt-router-fallback-model
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::IntelligentPromptRouter]
+severity: ERROR
+title: The prompt router's fallback model must be one of its routed models
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreatePromptRouter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): FallbackModel not in Models -> CreatePromptRouter 400 ValidationException: The fallback model is not present in the list of models for routing; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-router-fallback-model.log"
+addedOn: 2026-09-06

@@ -1,0 +1,12 @@
+id: pf-bedrock-bda-project-blueprint-stage
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataAutomationProject, AWS::Bedrock::Blueprint]
+severity: ERROR
+title: Blueprint references must name a stage or version the blueprint has
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_BlueprintItem.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): BlueprintStage DEVELOPMENT for a blueprint created by CloudFormation (always LIVE) -> CreateDataAutomationProject 400 ValidationException: Incorrect Blueprint Arn or Version provided in the custom configuration; BlueprintStage + BlueprintVersion together -> same message; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-blueprint-stage.log"
+addedOn: 2026-09-06

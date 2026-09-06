@@ -1,0 +1,44 @@
+{
+  "Resources": {
+    "Project": {
+      "Type": "AWS::Bedrock::DataAutomationProject",
+      "Properties": {
+        "ProjectName": "cdkpf-bbr-fail",
+        "StandardOutputConfiguration": {
+          "Document": {
+            "Extraction": {
+              "Granularity": {
+                "Types": [
+                  "PAGE"
+                ]
+              },
+              "BoundingBox": {
+                "State": "DISABLED"
+              }
+            },
+            "GenerativeField": {
+              "State": "DISABLED"
+            },
+            "OutputFormat": {
+              "TextFormat": {
+                "Types": [
+                  "MARKDOWN"
+                ]
+              },
+              "AdditionalFileFormat": {
+                "State": "DISABLED"
+              }
+            }
+          }
+        },
+        "CustomOutputConfiguration": {
+          "Blueprints": [
+            {
+              "BlueprintArn": "arn:aws:bedrock:us-west-2:123456789012:blueprint/abcdef012345"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "Resources": {
+    "Project": {
+      "Type": "AWS::Bedrock::DataAutomationProject",
+      "Properties": {
+        "ProjectName": "cdkpf-bbs-fail",
+        "StandardOutputConfiguration": {
+          "Document": {
+            "Extraction": {
+              "Granularity": {
+                "Types": [
+                  "PAGE"
+                ]
+              },
+              "BoundingBox": {
+                "State": "DISABLED"
+              }
+            },
+            "GenerativeField": {
+              "State": "DISABLED"
+            },
+            "OutputFormat": {
+              "TextFormat": {
+                "Types": [
+                  "MARKDOWN"
+                ]
+              },
+              "AdditionalFileFormat": {
+                "State": "DISABLED"
+              }
+            }
+          }
+        },
+        "CustomOutputConfiguration": {
+          "Blueprints": [
+            {
+              "BlueprintArn": {
+                "Fn::GetAtt": [
+                  "Bp",
+                  "BlueprintArn"
+                ]
+              },
+              "BlueprintStage": "DEVELOPMENT"
+            }
+          ]
+        }
+      }
+    },
+    "Bp": {
+      "Type": "AWS::Bedrock::Blueprint",
+      "Properties": {
+        "BlueprintName": "cdkpf-bbs-fail-bp",
+        "Type": "DOCUMENT",
+        "Schema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "class": "invoice",
+          "description": "An invoice",
+          "type": "object",
+          "definitions": {},
+          "properties": {
+            "total": {
+              "type": "number",
+              "inferenceType": "explicit",
+              "instruction": "Total amount"
+            }
+          }
+        }
+      }
+    }
+  }
+}

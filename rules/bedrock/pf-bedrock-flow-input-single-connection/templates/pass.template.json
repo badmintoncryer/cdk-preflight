@@ -1,0 +1,140 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "bedrock:*",
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Flow": {
+      "Type": "AWS::Bedrock::Flow",
+      "Properties": {
+        "Name": "cdkpf-fisc-pass",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Definition": {
+          "Nodes": [
+            {
+              "Name": "FlowInputNode",
+              "Type": "Input",
+              "Configuration": {
+                "Input": {}
+              },
+              "Outputs": [
+                {
+                  "Name": "document",
+                  "Type": "String"
+                }
+              ]
+            },
+            {
+              "Name": "Prompt1",
+              "Type": "Prompt",
+              "Configuration": {
+                "Prompt": {
+                  "SourceConfiguration": {
+                    "Inline": {
+                      "ModelId": "amazon.nova-micro-v1:0",
+                      "TemplateType": "TEXT",
+                      "TemplateConfiguration": {
+                        "Text": {
+                          "Text": "Say hi to {{document}}"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "Inputs": [
+                {
+                  "Name": "document",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ],
+              "Outputs": [
+                {
+                  "Name": "modelCompletion",
+                  "Type": "String"
+                }
+              ]
+            },
+            {
+              "Name": "FlowOutputNode",
+              "Type": "Output",
+              "Configuration": {
+                "Output": {}
+              },
+              "Inputs": [
+                {
+                  "Name": "document",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ]
+            }
+          ],
+          "Connections": [
+            {
+              "Name": "c1",
+              "Type": "Data",
+              "Source": "FlowInputNode",
+              "Target": "Prompt1",
+              "Configuration": {
+                "Data": {
+                  "SourceOutput": "document",
+                  "TargetInput": "document"
+                }
+              }
+            },
+            {
+              "Name": "c2",
+              "Type": "Data",
+              "Source": "Prompt1",
+              "Target": "FlowOutputNode",
+              "Configuration": {
+                "Data": {
+                  "SourceOutput": "modelCompletion",
+                  "TargetInput": "document"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

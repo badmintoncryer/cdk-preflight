@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Bedrock::AutomatedReasoningPolicy",
+      "Properties": {
+        "Name": "cdkpf-arnu-fail",
+        "PolicyDefinition": {
+          "Version": "1.0",
+          "Types": [
+            {
+              "Name": "Color",
+              "Values": [
+                {
+                  "Value": "red"
+                },
+                {
+                  "Value": "blue"
+                }
+              ]
+            },
+            {
+              "Name": "Color",
+              "Values": [
+                {
+                  "Value": "red"
+                },
+                {
+                  "Value": "blue"
+                }
+              ]
+            }
+          ],
+          "Rules": [],
+          "Variables": []
+        }
+      }
+    }
+  }
+}

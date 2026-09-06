@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-gpaos-fail",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "PROMPT_ATTACK",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Profile": {
+      "Type": "AWS::Bedrock::ApplicationInferenceProfile",
+      "Properties": {
+        "InferenceProfileName": "cdkpf-amsr-fail"
+      }
+    }
+  }
+}

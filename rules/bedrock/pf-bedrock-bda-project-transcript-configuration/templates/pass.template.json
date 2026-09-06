@@ -1,0 +1,57 @@
+{
+  "Resources": {
+    "Project": {
+      "Type": "AWS::Bedrock::DataAutomationProject",
+      "Properties": {
+        "ProjectName": "cdkpf-btc-pass",
+        "StandardOutputConfiguration": {
+          "Document": {
+            "Extraction": {
+              "Granularity": {
+                "Types": [
+                  "PAGE"
+                ]
+              },
+              "BoundingBox": {
+                "State": "DISABLED"
+              }
+            },
+            "GenerativeField": {
+              "State": "DISABLED"
+            },
+            "OutputFormat": {
+              "TextFormat": {
+                "Types": [
+                  "MARKDOWN"
+                ]
+              },
+              "AdditionalFileFormat": {
+                "State": "DISABLED"
+              }
+            }
+          },
+          "Audio": {
+            "Extraction": {
+              "Category": {
+                "State": "ENABLED",
+                "Types": [
+                  "TRANSCRIPT"
+                ],
+                "TypeConfiguration": {
+                  "Transcript": {
+                    "SpeakerLabeling": {
+                      "State": "ENABLED"
+                    }
+                  }
+                }
+              }
+            },
+            "GenerativeField": {
+              "State": "DISABLED"
+            }
+          }
+        }
+      }
+    }
+  }
+}

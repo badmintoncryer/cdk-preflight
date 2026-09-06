@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-chunk-max-tokens
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource]
+severity: ERROR
+title: Fixed-size and semantic chunks are limited to 8192 tokens
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FixedSizeChunkingConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): FixedSizeChunkingConfiguration.MaxTokens 9000 -> CreateDataSource 400 ValidationException: Value '9000' at '…fixedSizeChunkingConfiguration.maxTokens' failed to satisfy constraint: Member must have value less than or equal to 8192; same for semanticChunkingConfiguration.maxTokens; 8192 deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-chunk-max-tokens.log"
+addedOn: 2026-09-06

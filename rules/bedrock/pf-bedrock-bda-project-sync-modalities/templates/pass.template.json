@@ -1,0 +1,38 @@
+{
+  "Resources": {
+    "Project": {
+      "Type": "AWS::Bedrock::DataAutomationProject",
+      "Properties": {
+        "ProjectName": "cdkpf-bsm-pass",
+        "StandardOutputConfiguration": {
+          "Document": {
+            "Extraction": {
+              "Granularity": {
+                "Types": [
+                  "PAGE"
+                ]
+              },
+              "BoundingBox": {
+                "State": "DISABLED"
+              }
+            },
+            "GenerativeField": {
+              "State": "DISABLED"
+            },
+            "OutputFormat": {
+              "TextFormat": {
+                "Types": [
+                  "MARKDOWN"
+                ]
+              },
+              "AdditionalFileFormat": {
+                "State": "DISABLED"
+              }
+            }
+          }
+        },
+        "ProjectType": "SYNC"
+      }
+    }
+  }
+}

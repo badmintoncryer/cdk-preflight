@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-gwdl-pass",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "HATE",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            }
+          ]
+        },
+        "WordPolicyConfig": {
+          "WordsConfig": [
+            {
+              "Text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

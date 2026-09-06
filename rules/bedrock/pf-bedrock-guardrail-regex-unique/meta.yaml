@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-regex-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: Guardrail regex filters must have unique names and unique patterns
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailRegexConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two regexes with the same name -> CreateGuardrail 400 ValidationException: All regex patterns must be unique. All regex names must be unique; two names with the same pattern -> All regex patterns must be unique; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-regex-unique.log"
+addedOn: 2026-09-06

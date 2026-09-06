@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-gtnu-fail",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "HATE",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            }
+          ]
+        },
+        "TopicPolicyConfig": {
+          "TopicsConfig": [
+            {
+              "Name": "t1",
+              "Definition": "A denied topic definition",
+              "Type": "DENY"
+            },
+            {
+              "Name": "t1",
+              "Definition": "A denied topic definition",
+              "Type": "DENY"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

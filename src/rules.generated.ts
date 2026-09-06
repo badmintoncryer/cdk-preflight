@@ -421,6 +421,904 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_batchumf_cr(name) := cr if {\n\tcr := resolve(name, \"Properties.ComputeResources.Type\")\n\tis_string(cr)\n}\n\nviolation contains make_diag_full(\"pf-batch-unmanaged-fargate\", \"ERROR\", name,\n\t\"Properties.ComputeResources.Type\",\n\tsprintf(\"Type UNMANAGED cannot pair with ComputeResources.Type %s (\\\"Cannot create an UNMANAGED Fargate Compute Environment.\\\")\", [cr]),\n\t\"Use MANAGED for Fargate, or EC2 resources for UNMANAGED\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tresolve(name, \"Properties.Type\") == \"UNMANAGED\"\n\tcr := _pf_batchumf_cr(name)\n\tcr in {\"FARGATE\", \"FARGATE_SPOT\"}\n}\n"
   },
   {
+    "id": "pf-bedrock-automated-reasoning-policy-names-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Names and ids inside a policy definition must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::AutomatedReasoningPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_arnu_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_AutomatedReasoningPolicyDefinition.html\"\n\n_pf_arnu_def(name) := pd if {\n\tpd := object.get(_pf_bedrocklib_props(name), \"PolicyDefinition\", null)\n\tis_object(pd)\n}\n\n# [list key, field, message]\n_pf_arnu_lists := [[\"Types\", \"Name\", \"Duplicate name found in policy definition\"], [\"Variables\", \"Name\", \"Duplicate name found in policy definition\"], [\"Rules\", \"Id\", \"Duplicate id found in policy definition\"]]\n\nviolation contains make_diag_full(\"pf-bedrock-automated-reasoning-policy-names-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.PolicyDefinition.%s[%d].%s\", [l[0], i, l[1]]),\n\tsprintf(\"%s entry '%s' is declared more than once; CreateAutomatedReasoningPolicy fails with \\\"%s\\\"\", [l[0], v, l[2]]),\n\t\"Use distinct names for types and variables and distinct ids for rules\",\n\t_pf_arnu_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::AutomatedReasoningPolicy\")\n\tpd := _pf_arnu_def(name)\n\tsome l in _pf_arnu_lists\n\txs := object.get(pd, l[0], [])\n\tsome i, x in xs\n\tis_object(x)\n\tv := object.get(x, l[1], null)\n\tis_string(v)\n\tsome j, y in xs\n\tj < i\n\tobject.get(y, l[1], null) == v\n}\n\nviolation contains make_diag_full(\"pf-bedrock-automated-reasoning-policy-names-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.PolicyDefinition.Types[%d].Values[%d].Value\", [i, j]),\n\tsprintf(\"Type '%s' lists value '%s' more than once; CreateAutomatedReasoningPolicy fails with \\\"Type … has duplicate values\\\"\", [t.Name, v]),\n\t\"List each value of a type once\",\n\t_pf_arnu_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::AutomatedReasoningPolicy\")\n\tpd := _pf_arnu_def(name)\n\tsome i, t in object.get(pd, \"Types\", [])\n\tis_object(t)\n\tvs := object.get(t, \"Values\", [])\n\tsome j, x in vs\n\tis_object(x)\n\tv := x.Value\n\tis_string(v)\n\tsome k, y in vs\n\tk < j\n\tobject.get(y, \"Value\", null) == v\n}\n"
+  },
+  {
+    "id": "pf-bedrock-automated-reasoning-policy-variable-type",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Policy variables must use a type declared in PolicyDefinition.Types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::AutomatedReasoningPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Variable types are the names of PolicyDefinition.Types entries, nothing else\n# (even bool/int/real/string are rejected, measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-automated-reasoning-policy-variable-type\", \"ERROR\", name,\n\tsprintf(\"Properties.PolicyDefinition.Variables[%d].Type\", [i]),\n\tsprintf(\"Variable '%s' uses type '%s', which PolicyDefinition.Types does not declare; CreateAutomatedReasoningPolicy fails with \\\"Variable … uses a type that is not defined\\\"\", [v.Name, t]),\n\t\"Declare the type under PolicyDefinition.Types (Name + Values) and reference that Name\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_AutomatedReasoningPolicyDefinitionVariable.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::AutomatedReasoningPolicy\")\n\tpd := object.get(_pf_bedrocklib_props(name), \"PolicyDefinition\", {})\n\ttypes := {x.Name | some x in object.get(pd, \"Types\", []); is_object(x); is_string(x.Name)}\n\tsome i, v in object.get(pd, \"Variables\", [])\n\tis_object(v)\n\tt := v.Type\n\tis_string(t)\n\tnot types[t]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-automated-reasoning-policy-version",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "PolicyDefinition.Version must be 1.0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::AutomatedReasoningPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types Version as a free string; the service recognises only\n# \"1.0\" (measured 2026-09-06; omitting it is fine).\nviolation contains make_diag_full(\"pf-bedrock-automated-reasoning-policy-version\", \"ERROR\", name,\n\t\"Properties.PolicyDefinition.Version\",\n\tsprintf(\"PolicyDefinition.Version '%s' is not a recognised definition version; CreateAutomatedReasoningPolicy fails with \\\"Unrecognized version\\\"\", [v]),\n\t\"Set Version to \\\"1.0\\\" or omit it\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_AutomatedReasoningPolicyDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::AutomatedReasoningPolicy\")\n\tv := resolve(name, \"Properties.PolicyDefinition.Version\")\n\tis_string(v)\n\tv != \"1.0\"\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-blueprint-schema",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A blueprint schema needs class, description and properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Blueprint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema type is a free object; CreateBlueprint requires the blueprint\n# JSON-schema envelope: class, description and a properties map (measured\n# 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-bda-blueprint-schema\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%s\", [k]),\n\tsprintf(\"The blueprint schema has no '%s'; CreateBlueprint fails with \\\"Request has invalid blueprint schema\\\"\", [k]),\n\t\"Give the schema class, description, type: object and a properties map of fields (each with type, inferenceType and instruction)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/bda-blueprint-info.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Blueprint\")\n\ts := object.get(_pf_bedrocklib_props(name), \"Schema\", null)\n\tis_object(s)\n\tsome k in [\"class\", \"description\", \"properties\"]\n\tnot _pf_bedrocklib_has(s, k)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-blueprint-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Blueprints must live in the project's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Blueprints are looked up in the project's own Region (measured 2026-09-06\n# with a real blueprint in us-west-2). Needs deploy_region.\nviolation contains make_diag_full(\"pf-bedrock-bda-project-blueprint-region\", \"ERROR\", name,\n\tsprintf(\"Properties.CustomOutputConfiguration.Blueprints[%d].BlueprintArn\", [it.index]),\n\tsprintf(\"The blueprint lives in '%s' but the project deploys to '%s'; CreateDataAutomationProject fails with \\\"Incorrect Blueprint Arn or Version provided in the custom configuration\\\"\", [r, region]),\n\t\"Reference a blueprint created in the project's own Region\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_BlueprintItem.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tregion := _pf_bedrocklib_region\n\tsome it in flatten_list(name, \"Properties.CustomOutputConfiguration.Blueprints\")\n\tr := _pf_bedrocklib_arn_region(it.value.BlueprintArn)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-blueprint-stage",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Blueprint references must name a stage or version the blueprint has",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject",
+      "AWS::Bedrock::Blueprint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# AWS::Bedrock::Blueprint creates the LIVE stage only (BlueprintStage is\n# read-only on it), and a blueprint item may carry either a stage or a\n# version, not both (measured 2026-09-06).\n_pf_bbs_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_BlueprintItem.html\"\n\n_pf_bbs_items(name) := bps if {\n\tbps := object.get(object.get(_pf_bedrocklib_props(name), \"CustomOutputConfiguration\", {}), \"Blueprints\", [])\n\tis_array(bps)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-bda-project-blueprint-stage\", \"ERROR\", name,\n\tsprintf(\"Properties.CustomOutputConfiguration.Blueprints[%d].BlueprintStage\", [i]),\n\tsprintf(\"Blueprint '%s' is created by this template and therefore only has a LIVE stage, but the project asks for DEVELOPMENT; CreateDataAutomationProject fails with \\\"Incorrect Blueprint Arn or Version provided in the custom configuration\\\"\", [bp]),\n\t\"Drop BlueprintStage (LIVE is the default) for blueprints managed by CloudFormation\",\n\t_pf_bbs_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tsome i, b in _pf_bbs_items(name)\n\tis_object(b)\n\tb.BlueprintStage == \"DEVELOPMENT\"\n\tbp := _pf_bedrocklib_ref_target(object.get(b, \"BlueprintArn\", null), \"AWS::Bedrock::Blueprint\")\n}\n\nviolation contains make_diag_full(\"pf-bedrock-bda-project-blueprint-stage\", \"ERROR\", name,\n\tsprintf(\"Properties.CustomOutputConfiguration.Blueprints[%d].BlueprintVersion\", [i]),\n\t\"The blueprint item sets both BlueprintStage and BlueprintVersion; CreateDataAutomationProject fails with \\\"Incorrect Blueprint Arn or Version provided in the custom configuration\\\"\",\n\t\"Keep either BlueprintStage or BlueprintVersion\",\n\t_pf_bbs_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tsome i, b in _pf_bbs_items(name)\n\tis_object(b)\n\t_pf_bedrocklib_has(b, \"BlueprintStage\")\n\t_pf_bedrocklib_has(b, \"BlueprintVersion\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-blueprints-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A project must not attach the same blueprint twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject",
+      "AWS::Bedrock::Blueprint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Compared as literal ARNs or as the same in-template Blueprint (Ref / GetAtt).\n_pf_bbu_key(v) := v if is_string(v)\n\n_pf_bbu_key(v) := k if {\n\tis_object(v)\n\tref := object.get(v, \"__ref\", null)\n\tis_string(ref)\n\tk := sprintf(\"ref:%s\", [ref])\n}\n\nviolation contains make_diag_full(\"pf-bedrock-bda-project-blueprints-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.CustomOutputConfiguration.Blueprints[%d].BlueprintArn\", [i]),\n\t\"The same blueprint is attached more than once; CreateDataAutomationProject fails with \\\"Cannot contain more than 1 version of 1 Blueprint or duplicate Blueprints\\\"\",\n\t\"Attach each blueprint once\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_CreateDataAutomationProject.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tbps := object.get(object.get(_pf_bedrocklib_props(name), \"CustomOutputConfiguration\", {}), \"Blueprints\", [])\n\tsome i, b in bps\n\tis_object(b)\n\tk := _pf_bbu_key(object.get(b, \"BlueprintArn\", null))\n\tsome j, c in bps\n\tj < i\n\tis_object(c)\n\t_pf_bbu_key(object.get(c, \"BlueprintArn\", null)) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-modality-routing",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Modality routing overrides must fit the file type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema gives every file type the full DOCUMENT|IMAGE|VIDEO|AUDIO enum;\n# the service accepts only DOCUMENT/IMAGE for jpeg/png and VIDEO/AUDIO for\n# mp4/mov (measured 2026-09-06).\n_pf_bmr_allowed := {\"jpeg\": {\"DOCUMENT\", \"IMAGE\"}, \"png\": {\"DOCUMENT\", \"IMAGE\"}, \"mp4\": {\"VIDEO\", \"AUDIO\"}, \"mov\": {\"VIDEO\", \"AUDIO\"}}\n\nviolation contains make_diag_full(\"pf-bedrock-bda-project-modality-routing\", \"ERROR\", name,\n\tsprintf(\"Properties.OverrideConfiguration.ModalityRouting.%s\", [ft]),\n\tsprintf(\"%s files cannot be routed to %s (allowed: %v); CreateDataAutomationProject fails with \\\"Modality override is invalid for the given file type\\\"\", [ft, m, _pf_bmr_allowed[ft]]),\n\t\"Route image files to DOCUMENT or IMAGE and video files to VIDEO or AUDIO\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_ModalityRoutingConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tmr := object.get(object.get(_pf_bedrocklib_props(name), \"OverrideConfiguration\", {}), \"ModalityRouting\", null)\n\tis_object(mr)\n\tsome ft, m in mr\n\tis_string(m)\n\tallowed := _pf_bmr_allowed[ft]\n\tnot allowed[m]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-output-types",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Document granularity and text-format type lists must not be empty",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both lists lack minItems in the schema; the service requires at least one\n# entry when the list is given (measured 2026-09-06).\n_pf_bot_lists := {\"Properties.StandardOutputConfiguration.Document.Extraction.Granularity.Types\": \"Document Granularity Type\", \"Properties.StandardOutputConfiguration.Document.OutputFormat.TextFormat.Types\": \"Document Text Output Format Type\"}\n\n_pf_bot_get(p, path) := v if {\n\tparts := split(path, \".\")\n\tv := object.get(p, array.slice(parts, 1, count(parts)), null)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-bda-project-output-types\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"The list is empty; CreateDataAutomationProject fails with \\\"At least 1 %s should be present\\\"\", [what]),\n\t\"List at least one type, or omit the block to keep the defaults\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_DocumentStandardOutputConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tsome path, what in _pf_bot_lists\n\tv := _pf_bot_get(_pf_bedrocklib_props(name), path)\n\tis_array(v)\n\tcount(v) == 0\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-standard-output-required",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A Data Automation project needs StandardOutputConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Required by CreateDataAutomationProject, optional in the schema (measured\n# 2026-09-06). An empty object is accepted and gives default settings.\nviolation contains make_diag_full(\"pf-bedrock-bda-project-standard-output-required\", \"ERROR\", name,\n\t\"Properties.StandardOutputConfiguration\",\n\t\"StandardOutputConfiguration is missing; CreateDataAutomationProject fails with \\\"Value at 'standardOutputConfiguration' failed to satisfy constraint: Member must not be null\\\"\",\n\t\"Add StandardOutputConfiguration ({} keeps the default settings)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_CreateDataAutomationProject.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tnot _pf_bedrocklib_has(_pf_bedrocklib_props(name), \"StandardOutputConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-sync-modalities",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A SYNC project cannot configure audio or video standard output",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The synchronous API only handles documents and images; the project creation\n# refuses audio/video blocks on a SYNC project (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-bda-project-sync-modalities\", \"ERROR\", name,\n\tsprintf(\"Properties.StandardOutputConfiguration.%s\", [m]),\n\tsprintf(\"ProjectType SYNC configures %s standard output; CreateDataAutomationProject fails with \\\"Sync project does not support video/audio modality in Standard Output Configuration\\\"\", [m]),\n\t\"Remove the Audio / Video blocks, or use ProjectType ASYNC\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_CreateDataAutomationProject.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tresolve(name, \"Properties.ProjectType\") == \"SYNC\"\n\tstd := object.get(_pf_bedrocklib_props(name), \"StandardOutputConfiguration\", {})\n\tsome m in [\"Audio\", \"Video\"]\n\t_pf_bedrocklib_has(std, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-bda-project-transcript-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Audio transcript settings need TRANSCRIPT among the extraction types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataAutomationProject"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-bedrock-bda-project-transcript-configuration\", \"ERROR\", name,\n\t\"Properties.StandardOutputConfiguration.Audio.Extraction.Category.TypeConfiguration.Transcript\",\n\t\"Transcript settings are configured but TRANSCRIPT is not among Audio.Extraction.Category.Types; CreateDataAutomationProject fails with \\\"Type configuration requires TRANSCRIPT type to be selected in the extraction types\\\"\",\n\t\"Add TRANSCRIPT to Audio.Extraction.Category.Types or drop the transcript settings\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_AudioExtractionCategoryTypeConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataAutomationProject\")\n\tcat := object.get(object.get(object.get(_pf_bedrocklib_props(name), \"StandardOutputConfiguration\", {}), \"Audio\", {}), \"Extraction\", {}).Category\n\tis_object(cat)\n\t_pf_bedrocklib_has(object.get(cat, \"TypeConfiguration\", {}), \"Transcript\")\n\ttypes := object.get(cat, \"Types\", [])\n\tis_array(types)\n\tnot \"TRANSCRIPT\" in types\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-chunk-max-tokens",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Fixed-size and semantic chunks are limited to 8192 tokens",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The API caps maxTokens at 8192 for fixed-size and semantic chunking; the\n# schema carries the cap only for the hierarchical levels (measured 2026-09-06).\n_pf_dsmt_paths := [\"Properties.VectorIngestionConfiguration.ChunkingConfiguration.FixedSizeChunkingConfiguration.MaxTokens\", \"Properties.VectorIngestionConfiguration.ChunkingConfiguration.SemanticChunkingConfiguration.MaxTokens\"]\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-chunk-max-tokens\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"MaxTokens %v exceeds the 8192-token maximum; CreateDataSource fails with \\\"Member must have value less than or equal to 8192\\\"\", [n]),\n\t\"Use at most 8192 tokens per chunk (and no more than the embedding model accepts)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FixedSizeChunkingConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tsome path in _pf_dsmt_paths\n\tn := to_number(resolve(name, path))\n\tn > 8192\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-chunk-tokens-embedding-limit",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Chunk size must not exceed the embedding model's token limit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource",
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cohere Embed accepts 512 tokens per chunk (Titan 8192, which the API cap\n# already enforces); CreateDataSource checks the fixed / semantic size and the\n# hierarchical child level against the knowledge base's model (measured\n# 2026-09-06). Judged when KnowledgeBaseId references a KnowledgeBase in the\n# same template.\n_pf_dsel_limit := {\"cohere.embed-\": 512}\n\n_pf_dsel_prefix := \"Properties.VectorIngestionConfiguration.ChunkingConfiguration\"\n\n_pf_dsel_paths := [sprintf(\"%s.FixedSizeChunkingConfiguration.MaxTokens\", [_pf_dsel_prefix]), sprintf(\"%s.SemanticChunkingConfiguration.MaxTokens\", [_pf_dsel_prefix]), sprintf(\"%s.HierarchicalChunkingConfiguration.LevelConfigurations[1].MaxTokens\", [_pf_dsel_prefix])]\n\n_pf_dsel_cc(name) := cc if {\n\tcc := object.get(object.get(_pf_bedrocklib_props(name), \"VectorIngestionConfiguration\", {}), \"ChunkingConfiguration\", null)\n\tis_object(cc)\n}\n\n# Chunk size CreateDataSource checks for a given property path.\n_pf_dsel_size(name, path) := n if {\n\tpath == _pf_dsel_paths[0]\n\tn := to_number(object.get(object.get(_pf_dsel_cc(name), \"FixedSizeChunkingConfiguration\", {}), \"MaxTokens\", null))\n}\n\n_pf_dsel_size(name, path) := n if {\n\tpath == _pf_dsel_paths[1]\n\tn := to_number(object.get(object.get(_pf_dsel_cc(name), \"SemanticChunkingConfiguration\", {}), \"MaxTokens\", null))\n}\n\n_pf_dsel_size(name, path) := n if {\n\tpath == _pf_dsel_paths[2]\n\tls := object.get(object.get(_pf_dsel_cc(name), \"HierarchicalChunkingConfiguration\", {}), \"LevelConfigurations\", [])\n\tcount(ls) == 2\n\tn := to_number(ls[1].MaxTokens)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-chunk-tokens-embedding-limit\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"MaxTokens %v exceeds the %v-token limit of embedding model %s (knowledge base '%s'); CreateDataSource fails with \\\"exceeds the embedding model … limit\\\"\", [n, limit, model, kb]),\n\t\"Lower the chunk size to the embedding model's limit (512 tokens for Cohere Embed)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tkb := _pf_bedrocklib_ds_kb(name)\n\tmodel := _pf_bedrocklib_kb_embed_model(kb)\n\tsome prefix, limit in _pf_dsel_limit\n\tstartswith(model, prefix)\n\tsome path in _pf_dsel_paths\n\tn := _pf_dsel_size(name, path)\n\tn > limit\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-chunking-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "ChunkingStrategy needs its matching configuration block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema requires only ChunkingStrategy; CreateDataSource requires the\n# block named after it for FIXED_SIZE / HIERARCHICAL / SEMANTIC (measured\n# 2026-09-06; NONE takes no block but tolerates one).\n_pf_dscc_member := {\"FIXED_SIZE\": \"FixedSizeChunkingConfiguration\", \"HIERARCHICAL\": \"HierarchicalChunkingConfiguration\", \"SEMANTIC\": \"SemanticChunkingConfiguration\"}\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-chunking-configuration\", \"ERROR\", name,\n\tsprintf(\"Properties.VectorIngestionConfiguration.ChunkingConfiguration.%s\", [m]),\n\tsprintf(\"ChunkingStrategy is %s but %s is missing; CreateDataSource fails with \\\"%s%s is required when chunking strategy is %s\\\"\", [t, m, lower(substring(m, 0, 1)), substring(m, 1, -1), t]),\n\tsprintf(\"Add ChunkingConfiguration.%s\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_ChunkingConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tcc := object.get(object.get(_pf_bedrocklib_props(name), \"VectorIngestionConfiguration\", {}), \"ChunkingConfiguration\", null)\n\tis_object(cc)\n\tt := cc.ChunkingStrategy\n\tm := _pf_dscc_member[t]\n\tnot _pf_bedrocklib_has(cc, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-context-enrichment-neptune",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Context enrichment is only available on Neptune Analytics knowledge bases",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource",
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# GraphRAG entity extraction only exists for Neptune Analytics stores;\n# CreateDataSource rejects the block on any other vector store (measured\n# 2026-09-06). Judged when KnowledgeBaseId references a KnowledgeBase in the\n# same template.\nviolation contains make_diag_full(\"pf-bedrock-datasource-context-enrichment-neptune\", \"ERROR\", name,\n\t\"Properties.VectorIngestionConfiguration.ContextEnrichmentConfiguration\",\n\tsprintf(\"ContextEnrichmentConfiguration is set but knowledge base '%s' stores vectors in %s; CreateDataSource fails with \\\"ContextEnrichmentConfiguration is only supported when using Neptune Analytics as a Knowledge Base\\\"\", [kb, st]),\n\t\"Remove ContextEnrichmentConfiguration, or use a knowledge base with StorageConfiguration.Type NEPTUNE_ANALYTICS\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_ContextEnrichmentConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\t_pf_bedrocklib_has(object.get(_pf_bedrocklib_props(name), \"VectorIngestionConfiguration\", {}), \"ContextEnrichmentConfiguration\")\n\tkb := _pf_bedrocklib_ds_kb(name)\n\tst := resolve(kb, \"Properties.StorageConfiguration.Type\")\n\tis_string(st)\n\tst != \"NEPTUNE_ANALYTICS\"\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-hierarchical-levels",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Hierarchical chunking levels must descend and OverlapTokens must stay below the child size",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both orderings are enforced only by CreateDataSource (measured 2026-09-06):\n# parent MaxTokens > child MaxTokens, and OverlapTokens < child MaxTokens.\n_pf_dshl_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_HierarchicalChunkingConfiguration.html\"\n_pf_dshl_path := \"Properties.VectorIngestionConfiguration.ChunkingConfiguration.HierarchicalChunkingConfiguration\"\n\n_pf_dshl_cfg(name) := h if {\n\tp := _pf_bedrocklib_props(name)\n\th := object.get(object.get(object.get(p, \"VectorIngestionConfiguration\", {}), \"ChunkingConfiguration\", {}), \"HierarchicalChunkingConfiguration\", null)\n\tis_object(h)\n}\n\n_pf_dshl_levels(name) := [parent, child] if {\n\tls := object.get(_pf_dshl_cfg(name), \"LevelConfigurations\", [])\n\tcount(ls) == 2\n\tparent := to_number(ls[0].MaxTokens)\n\tchild := to_number(ls[1].MaxTokens)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-hierarchical-levels\", \"ERROR\", name,\n\tsprintf(\"%s.LevelConfigurations\", [_pf_dshl_path]),\n\tsprintf(\"Parent level MaxTokens %v is not larger than child level MaxTokens %v; CreateDataSource fails with \\\"Max tokens for each level in hierarchical chunking must be in descending order\\\"\", [l[0], l[1]]),\n\t\"Give the first (parent) level a larger MaxTokens than the second (child) level\",\n\t_pf_dshl_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tl := _pf_dshl_levels(name)\n\tl[0] <= l[1]\n}\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-hierarchical-levels\", \"ERROR\", name,\n\tsprintf(\"%s.OverlapTokens\", [_pf_dshl_path]),\n\tsprintf(\"OverlapTokens %v is not smaller than the child level MaxTokens %v; CreateDataSource fails with \\\"Overlap tokens … must be smaller than the bottom level max tokens\\\"\", [o, l[1]]),\n\t\"Lower OverlapTokens below the child level MaxTokens\",\n\t_pf_dshl_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tl := _pf_dshl_levels(name)\n\to := to_number(object.get(_pf_dshl_cfg(name), \"OverlapTokens\", null))\n\to >= l[1]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-multimodal-supplemental-storage",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Multimodal parsing needs supplemental data storage on the knowledge base",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource",
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Images extracted by a multimodal parser need a place to live; CreateDataSource\n# rejects MULTIMODAL parsing when the knowledge base has no supplemental data\n# storage (measured 2026-09-06). Judged when KnowledgeBaseId references a\n# KnowledgeBase in the same template.\n_pf_dsms_paths := [\"Properties.VectorIngestionConfiguration.ParsingConfiguration.BedrockFoundationModelConfiguration.ParsingModality\", \"Properties.VectorIngestionConfiguration.ParsingConfiguration.BedrockDataAutomationConfiguration.ParsingModality\"]\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-multimodal-supplemental-storage\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"ParsingModality MULTIMODAL is used with knowledge base '%s', which has no SupplementalDataStorageConfiguration; CreateDataSource fails with \\\"Knowledge base must have supplementalDataStorageConfiguration to use specified parsing configuration\\\"\", [kb]),\n\t\"Add VectorKnowledgeBaseConfiguration.SupplementalDataStorageConfiguration (an S3 bucket root, separate from the data bucket) to the knowledge base\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/kb-multimodal.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tsome path in _pf_dsms_paths\n\tresolve(name, path) == \"MULTIMODAL\"\n\tkb := _pf_bedrocklib_ds_kb(name)\n\tvc := object.get(object.get(_pf_bedrocklib_props(kb), \"KnowledgeBaseConfiguration\", {}), \"VectorKnowledgeBaseConfiguration\", null)\n\tis_object(vc)\n\tnot _pf_bedrocklib_has(vc, \"SupplementalDataStorageConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-parsing-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "BEDROCK_FOUNDATION_MODEL parsing needs BedrockFoundationModelConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema requires only ParsingStrategy; the foundation-model parser needs\n# its ModelArn block (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-datasource-parsing-configuration\", \"ERROR\", name,\n\t\"Properties.VectorIngestionConfiguration.ParsingConfiguration.BedrockFoundationModelConfiguration\",\n\t\"ParsingStrategy is BEDROCK_FOUNDATION_MODEL but BedrockFoundationModelConfiguration is missing; CreateDataSource fails with \\\"Bedrock Foundation Model Configuration is required for this parsing strategy\\\"\",\n\t\"Add BedrockFoundationModelConfiguration.ModelArn (a Claude / Nova vision model of the deploy Region)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_ParsingConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tpc := object.get(object.get(_pf_bedrocklib_props(name), \"VectorIngestionConfiguration\", {}), \"ParsingConfiguration\", null)\n\tis_object(pc)\n\tpc.ParsingStrategy == \"BEDROCK_FOUNDATION_MODEL\"\n\tnot _pf_bedrocklib_has(pc, \"BedrockFoundationModelConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-parsing-model-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The parsing model must be reachable from the data source's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateDataSource resolves the parser model in its own Region only (measured\n# 2026-09-06). Needs data.cdk_preflight.deploy_region.\nviolation contains make_diag_full(\"pf-bedrock-datasource-parsing-model-region\", \"ERROR\", name,\n\t\"Properties.VectorIngestionConfiguration.ParsingConfiguration.BedrockFoundationModelConfiguration.ModelArn\",\n\tsprintf(\"Parsing model '%s' cannot be served from Region '%s'; CreateDataSource fails with \\\"Provided Bedrock Foundation Model is in a different region\\\" / \\\"inference profile … does not exist\\\"\", [_pf_bedrocklib_model_id(arn), region]),\n\t\"Reference the model ARN of the deploy Region, or a cross-Region profile of its geography\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tregion := _pf_bedrocklib_region\n\tarn := resolve(name, \"Properties.VectorIngestionConfiguration.ParsingConfiguration.BedrockFoundationModelConfiguration.ModelArn\")\n\t_pf_bedrocklib_model_region_mismatch(arn, region)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-supplemental-bucket-overlap",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A data source must not share its bucket with the knowledge base's supplemental storage unless it has an inclusion prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource",
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Extracted media written back into the data bucket would be re-ingested, so\n# CreateDataSource refuses the overlap unless InclusionPrefixes narrows the\n# crawl (measured 2026-09-06). Buckets are compared as literal names or as\n# the same in-template bucket (Ref / GetAtt / ${Bucket} in a Fn::Sub).\n_pf_dssb_bucket(v) := b if {\n\tb := _pf_bedrocklib_bucket_expr(v)\n}\n\n_pf_dssb_bucket(v) := b if {\n\tis_object(v)\n\tref := object.get(v, \"__ref\", null)\n\tis_string(ref)\n\tb := sprintf(\"${%s}\", [ref])\n}\n\n_pf_dssb_norm(b) := replace(b, \".Arn}\", \"}\")\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-supplemental-bucket-overlap\", \"ERROR\", name,\n\t\"Properties.DataSourceConfiguration.S3Configuration.BucketArn\",\n\tsprintf(\"The data source bucket is also the supplemental data storage of knowledge base '%s' and no InclusionPrefixes is set; CreateDataSource fails with \\\"Your data source and multimodal storage destination use the same S3 bucket\\\"\", [kb]),\n\t\"Use a separate bucket for supplemental data storage, or set S3Configuration.InclusionPrefixes\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/kb-multimodal.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tp := _pf_bedrocklib_props(name)\n\ts3 := object.get(object.get(p, \"DataSourceConfiguration\", {}), \"S3Configuration\", null)\n\tis_object(s3)\n\tnot _pf_bedrocklib_has(s3, \"InclusionPrefixes\")\n\tdsb := _pf_dssb_norm(_pf_dssb_bucket(object.get(s3, \"BucketArn\", null)))\n\tkb := _pf_bedrocklib_ds_kb(name)\n\tlocs := object.get(object.get(object.get(object.get(_pf_bedrocklib_props(kb), \"KnowledgeBaseConfiguration\", {}), \"VectorKnowledgeBaseConfiguration\", {}), \"SupplementalDataStorageConfiguration\", {}), \"SupplementalDataStorageLocations\", [])\n\tsome l in locs\n\tis_object(l)\n\tsb := _pf_dssb_norm(_pf_dssb_bucket(object.get(object.get(l, \"S3Location\", {}), \"URI\", null)))\n\tsb == dsb\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-transformation-bucket",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Custom transformation intermediate storage must not use the data source bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateDataSource refuses the intermediate bucket being the data bucket\n# (measured 2026-09-06). Buckets are compared as literal names or as the same\n# in-template bucket (Ref / GetAtt / ${Bucket} in a Fn::Sub).\n_pf_dstb_bucket(v) := b if {\n\tb := _pf_bedrocklib_bucket_expr(v)\n}\n\n_pf_dstb_bucket(v) := b if {\n\tis_object(v)\n\tref := object.get(v, \"__ref\", null)\n\tis_string(ref)\n\tb := sprintf(\"${%s}\", [ref])\n}\n\n_pf_dstb_norm(b) := replace(b, \".Arn}\", \"}\")\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-transformation-bucket\", \"ERROR\", name,\n\t\"Properties.VectorIngestionConfiguration.CustomTransformationConfiguration.IntermediateStorage.S3Location.URI\",\n\t\"The intermediate storage URI is on the data source bucket; CreateDataSource fails with \\\"A custom transformation configuration cannot have the same s3 bucket for intermediate storage as the data source\\\"\",\n\t\"Point IntermediateStorage at a separate bucket\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CustomTransformationConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tp := _pf_bedrocklib_props(name)\n\tdsb := _pf_dstb_norm(_pf_dstb_bucket(object.get(object.get(object.get(p, \"DataSourceConfiguration\", {}), \"S3Configuration\", {}), \"BucketArn\", null)))\n\turi := object.get(object.get(object.get(object.get(object.get(p, \"VectorIngestionConfiguration\", {}), \"CustomTransformationConfiguration\", {}), \"IntermediateStorage\", {}), \"S3Location\", {}), \"URI\", null)\n\t_pf_dstb_norm(_pf_dstb_bucket(uri)) == dsb\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-type-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "DataSourceConfiguration.Type needs its matching configuration block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema requires only Type; CreateDataSource requires the connector block\n# named after it (\"s3Configuration is required when data source type is S3\",\n# measured 2026-09-06).\n_pf_dstc_member := {\"S3\": \"S3Configuration\", \"WEB\": \"WebConfiguration\", \"CONFLUENCE\": \"ConfluenceConfiguration\", \"SALESFORCE\": \"SalesforceConfiguration\", \"SHAREPOINT\": \"SharePointConfiguration\"}\n\nviolation contains make_diag_full(\"pf-bedrock-datasource-type-configuration\", \"ERROR\", name,\n\tsprintf(\"Properties.DataSourceConfiguration.%s\", [m]),\n\tsprintf(\"DataSourceConfiguration.Type is %s but %s is missing; CreateDataSource fails with \\\"%s%s is required when data source type is %s\\\"\", [t, m, lower(substring(m, 0, 1)), substring(m, 1, -1), t]),\n\tsprintf(\"Add DataSourceConfiguration.%s, or change Type\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateDataSource.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tcfg := object.get(_pf_bedrocklib_props(name), \"DataSourceConfiguration\", null)\n\tis_object(cfg)\n\tt := cfg.Type\n\tm := _pf_dstc_member[t]\n\tnot _pf_bedrocklib_has(cfg, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-datasource-web-vector-store",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A web crawler data source needs an OpenSearch Serverless knowledge base",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::DataSource",
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateDataSource refuses a WEB connector on any vector store other than\n# OpenSearch Serverless (measured 2026-09-06 with S3 Vectors). Judged when\n# KnowledgeBaseId references a KnowledgeBase in the same template.\nviolation contains make_diag_full(\"pf-bedrock-datasource-web-vector-store\", \"ERROR\", name,\n\t\"Properties.DataSourceConfiguration.Type\",\n\tsprintf(\"A WEB data source is attached to knowledge base '%s' whose vector store is %s; CreateDataSource fails with \\\"WEB data source is currently only supported for knowledge bases created with an Amazon OpenSearch Serverless vector database\\\"\", [kb, st]),\n\t\"Use a knowledge base with StorageConfiguration.Type OPENSEARCH_SERVERLESS for web crawling\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/webcrawl-data-source-connector.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::DataSource\")\n\tresolve(name, \"Properties.DataSourceConfiguration.Type\") == \"WEB\"\n\tkb := _pf_bedrocklib_ds_kb(name)\n\tst := resolve(kb, \"Properties.StorageConfiguration.Type\")\n\tis_string(st)\n\tst != \"OPENSEARCH_SERVERLESS\"\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-condition-default",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A Condition node needs a default condition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PrepareFlow requires every Condition node to carry a condition named\n# \"default\" (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-flow-condition-default\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Configuration.Condition.Conditions\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Condition node '%s' has no condition named 'default'; PrepareFlow fails with \\\"is missing a default condition\\\"\", [n.Name]),\n\t\"Add {Name: default} (no Expression) as the last condition and connect it\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, n in _pf_bedrocklib_flow_nodes(name)\n\tn.Type == \"Condition\"\n\tis_object(n.Configuration)\n\tnot _pf_bedrocklib_node_conditions(n)[\"default\"]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-condition-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Conditions within a Condition node need unique names and expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fcu_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowCondition.html\"\n\n_pf_fcu_conds(n) := cs if {\n\tn.Type == \"Condition\"\n\tcs := n.Configuration.Condition.Conditions\n\tis_array(cs)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-flow-condition-unique\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Configuration.Condition.Conditions[%d].%s\", [_pf_bedrocklib_flow_prop(name), i, j, field]),\n\tsprintf(\"Condition node '%s' repeats the %s '%s'; %s\", [n.Name, lower(field), v, why[field]]),\n\t\"Give every condition a distinct Name and a distinct Expression\",\n\t_pf_fcu_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, n in _pf_bedrocklib_flow_nodes(name)\n\tcs := _pf_fcu_conds(n)\n\tsome field in [\"Name\", \"Expression\"]\n\twhy := {\"Name\": \"CreateFlow fails with \\\"Condition name … must be unique\\\"\", \"Expression\": \"PrepareFlow fails with \\\"has multiple conditions with the same expression\\\"\"}\n\tsome j, c in cs\n\tv := object.get(c, field, null)\n\tis_string(v)\n\tsome k, d in cs\n\tk < j\n\tobject.get(d, field, null) == v\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-connection-condition",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A Conditional connection must leave a Condition node through one of its conditions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PrepareFlow resolves Configuration.Conditional.Condition against the source\n# node's conditions; a non-Condition source has none (measured 2026-09-06).\n# The engine's preprocessor treats the {\"Condition\": <name>} object as a\n# template condition reference and replaces it with {\"__dynamic\": \"condition\n# reference: <name>\"}, so both shapes are read.\n_pf_fcc_cond(c) := v if {\n\tv := c.Configuration.Conditional.Condition\n\tis_string(v)\n}\n\n_pf_fcc_cond(c) := v if {\n\td := c.Configuration.Conditional\n\tis_object(d)\n\tt := object.get(d, \"__dynamic\", null)\n\tis_string(t)\n\tstartswith(t, \"condition reference: \")\n\tv := substring(t, count(\"condition reference: \"), -1)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-flow-connection-condition\", \"ERROR\", name,\n\tsprintf(\"%s.Connections[%d].Configuration.Conditional.Condition\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Conditional connection '%s' names condition '%s', which node '%s' does not define; PrepareFlow fails with \\\"references an unknown condition\\\"\", [c.Name, cond, c.Source]),\n\t\"Start Conditional connections at a Condition node and name one of its Conditions[].Name\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConditionalConnectionConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, c in _pf_bedrocklib_flow_conns(name)\n\tc.Type == \"Conditional\"\n\tcond := _pf_fcc_cond(c)\n\tsome src in _pf_bedrocklib_flow_nodes(name)\n\tsrc.Name == c.Source\n\tnot _pf_bedrocklib_node_conditions(src)[cond]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-connection-name-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Flow connection names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-bedrock-flow-connection-name-unique\", \"ERROR\", name,\n\tsprintf(\"%s.Connections[%d].Name\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Connection name '%s' is used more than once; CreateFlow fails with \\\"Connection name %s must be unique\\\"\", [cn, cn]),\n\t\"Give every connection a distinct Name\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConnection.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tconns := _pf_bedrocklib_flow_conns(name)\n\tsome i, x in conns\n\tcn := x.Name\n\tis_string(cn)\n\tsome j, y in conns\n\tj < i\n\ty.Name == cn\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-connection-nodes",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Flow connections must reference nodes that exist",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PrepareFlow (run by the CloudFormation handler) rejects connections whose\n# Source or Target names no node (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-flow-connection-nodes\", \"ERROR\", name,\n\tsprintf(\"%s.Connections[%d].%s\", [_pf_bedrocklib_flow_prop(name), i, end]),\n\tsprintf(\"Connection '%s' names %s node '%s', which is not defined; PrepareFlow fails with \\\"references an unknown %s node\\\"\", [c.Name, lower(end), nn, lower(end)]),\n\t\"Point Source / Target at the Name of a node in the same definition\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConnection.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tnames := _pf_bedrocklib_flow_node_names(name)\n\tsome i, c in _pf_bedrocklib_flow_conns(name)\n\tsome end in [\"Source\", \"Target\"]\n\tnn := c[end]\n\tis_string(nn)\n\tnot names[nn]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-connection-ports",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Data connections must use outputs and inputs the nodes declare",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PrepareFlow checks that a Data connection's SourceOutput is declared on the\n# source node and TargetInput on the target node (measured 2026-09-06).\n_pf_fcp_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowDataConnectionConfiguration.html\"\n\n_pf_fcp_node(name, nn) := n if {\n\tsome n in _pf_bedrocklib_flow_nodes(name)\n\tn.Name == nn\n\tcount([x | some x in _pf_bedrocklib_flow_nodes(name); x.Name == nn]) == 1\n}\n\nviolation contains make_diag_full(\"pf-bedrock-flow-connection-ports\", \"ERROR\", name,\n\tsprintf(\"%s.Connections[%d].Configuration.Data.SourceOutput\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Connection '%s' reads output '%s' which node '%s' does not declare; PrepareFlow fails with \\\"references an unknown source output\\\"\", [c.Name, so, c.Source]),\n\t\"Use one of the source node's Outputs[].Name\",\n\t_pf_fcp_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, c in _pf_bedrocklib_flow_conns(name)\n\tc.Type == \"Data\"\n\tso := c.Configuration.Data.SourceOutput\n\tis_string(so)\n\tsrc := _pf_fcp_node(name, c.Source)\n\tnot _pf_bedrocklib_node_outputs(src)[so]\n}\n\nviolation contains make_diag_full(\"pf-bedrock-flow-connection-ports\", \"ERROR\", name,\n\tsprintf(\"%s.Connections[%d].Configuration.Data.TargetInput\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Connection '%s' feeds input '%s' which node '%s' does not declare; PrepareFlow fails with \\\"references an unknown target input\\\"\", [c.Name, ti, c.Target]),\n\t\"Use one of the target node's Inputs[].Name\",\n\t_pf_fcp_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, c in _pf_bedrocklib_flow_conns(name)\n\tc.Type == \"Data\"\n\tti := c.Configuration.Data.TargetInput\n\tis_string(ti)\n\ttgt := _pf_fcp_node(name, c.Target)\n\tnot _pf_bedrocklib_node_inputs(tgt)[ti]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-definition-source",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A flow takes exactly one of Definition, DefinitionString or DefinitionS3Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The three definition carriers are all optional in the schema (no oneOf);\n# the CloudFormation handler rejects more than one (measured 2026-09-06).\n_pf_fdsrc_keys := [\"Definition\", \"DefinitionString\", \"DefinitionS3Location\"]\n\nviolation contains make_diag_full(\"pf-bedrock-flow-definition-source\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"%d of Definition / DefinitionString / DefinitionS3Location are set; the stack fails with \\\"you can only specify one of Definition, DefinitionString or DefinitionS3Location\\\"\", [n]),\n\t\"Keep exactly one definition carrier\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-bedrock-flow.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tp := _pf_bedrocklib_props(name)\n\tn := count([k | some k in _pf_fdsrc_keys; _pf_bedrocklib_has(p, k)])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-definition-string-json",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "DefinitionString must be JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DefinitionString is an opaque string to the schema; the handler parses it as\n# JSON before CreateFlow (measured 2026-09-06). Intrinsics that resolve() cannot\n# flatten are skipped.\nviolation contains make_diag_full(\"pf-bedrock-flow-definition-string-json\", \"ERROR\", name,\n\t\"Properties.DefinitionString\",\n\t\"DefinitionString is not valid JSON; the stack fails with \\\"Could not parse DefinitionString to valid flow resource definition\\\"\",\n\t\"Provide the flow definition as a JSON document (Nodes / Connections, CloudFormation property names)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-bedrock-flow.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\ts := resolve(name, \"Properties.DefinitionString\")\n\tis_string(s)\n\tnot json.is_valid(s)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-input-expression",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A node input Expression must start with $.data",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Input expressions address the incoming payload as $.data[...]; PrepareFlow\n# rejects anything else (measured 2026-09-06). The schema only bounds the length.\nviolation contains make_diag_full(\"pf-bedrock-flow-input-expression\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Inputs[%d].Expression\", [_pf_bedrocklib_flow_prop(name), i, j]),\n\tsprintf(\"Input '%s' of node '%s' has expression '%s'; PrepareFlow fails with \\\"Expression must start with $.data\\\"\", [inp.Name, n.Name, e]),\n\t\"Use $.data for the whole payload or $.data.<key> / $.data[<index>] for a part of it\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/flows-expressions.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, n in _pf_bedrocklib_flow_nodes(name)\n\tsome j, inp in object.get(n, \"Inputs\", [])\n\tis_object(inp)\n\te := inp.Expression\n\tis_string(e)\n\tnot regex.match(`^\\$\\.data($|[.\\[])`, e)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-input-node",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A flow has exactly one Input node",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The CloudFormation handler prepares the flow after creating it and fails the\n# resource on validation errors (measured 2026-09-06); a missing Input node is\n# one of them, a second Input node is refused by CreateFlow itself.\nviolation contains make_diag_full(\"pf-bedrock-flow-input-node\", \"ERROR\", name,\n\t_pf_bedrocklib_flow_prop(name),\n\tsprintf(\"The flow defines %d Input nodes; it needs exactly one (PrepareFlow: \\\"The flow is missing a required Flow Input node\\\" / CreateFlow: \\\"max-number-flow-input-nodes is 1\\\")\", [n]),\n\t\"Define exactly one node of Type Input\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tnodes := _pf_bedrocklib_flow_nodes(name)\n\tn := count([x | some x in nodes; x.Type == \"Input\"])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-input-node-output",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The Input node exposes a single output named document",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Input node's only output is `document`; PrepareFlow rejects any other\n# output name on it (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-flow-input-node-output\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Outputs[%d].Name\", [_pf_bedrocklib_flow_prop(name), i, j]),\n\tsprintf(\"Input node '%s' declares output '%s'; PrepareFlow fails with \\\"has an unknown output '%s' that is not supported by this node type\\\"\", [n.Name, o.Name, o.Name]),\n\t\"Declare only Outputs: [{Name: document, Type: …}] on the Input node\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, n in _pf_bedrocklib_flow_nodes(name)\n\tn.Type == \"Input\"\n\tsome j, o in object.get(n, \"Outputs\", [])\n\tis_object(o)\n\tis_string(o.Name)\n\to.Name != \"document\"\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-input-single-connection",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A node input accepts a single incoming connection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PrepareFlow rejects a second connection into the same target input, which\n# also covers duplicate connections (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-flow-input-single-connection\", \"ERROR\", name,\n\tsprintf(\"%s.Connections[%d]\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Connection '%s' is the second connection into input '%s' of node '%s'; PrepareFlow fails with \\\"has multiple incoming connections\\\"\", [c.Name, ti, c.Target]),\n\t\"Keep one incoming connection per node input\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConnection.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tconns := _pf_bedrocklib_flow_conns(name)\n\tsome i, c in conns\n\tc.Type == \"Data\"\n\tti := c.Configuration.Data.TargetInput\n\tis_string(ti)\n\tsome j, d in conns\n\tj < i\n\td.Type == \"Data\"\n\td.Target == c.Target\n\td.Configuration.Data.TargetInput == ti\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-node-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A flow node needs the Configuration member named after its Type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# FlowNodeConfiguration is a union keyed exactly like the node Type\n# (Input, Output, Prompt, …); the schema's oneOf only guarantees one member.\n# A mismatch fails CreateFlow, an absent block fails PrepareFlow (measured\n# 2026-09-06).\n_pf_fnc_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowNode.html\"\n\nviolation contains make_diag_full(\"pf-bedrock-flow-node-configuration\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Configuration\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Node '%s' of Type %s has no Configuration; PrepareFlow fails with \\\"is missing its required configuration\\\"\", [n.Name, t]),\n\tsprintf(\"Add Configuration.%s to the node\", [t]),\n\t_pf_fnc_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, n in _pf_bedrocklib_flow_nodes(name)\n\tt := n.Type\n\tis_string(t)\n\tnot _pf_bedrocklib_has(n, \"Configuration\")\n}\n\nviolation contains make_diag_full(\"pf-bedrock-flow-node-configuration\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Configuration\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Node '%s' of Type %s carries Configuration.%v instead of Configuration.%s; CreateFlow fails with \\\"Configuration must be provided for node %s\\\"\", [n.Name, t, keys, t, n.Name]),\n\tsprintf(\"Use the Configuration.%s member\", [t]),\n\t_pf_fnc_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tsome i, n in _pf_bedrocklib_flow_nodes(name)\n\tt := n.Type\n\tis_string(t)\n\tcfg := n.Configuration\n\tis_object(cfg)\n\tkeys := object.keys(cfg)\n\tcount(keys) > 0\n\tnot _pf_bedrocklib_has(cfg, t)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-flow-node-name-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Flow node names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Flow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-bedrock-flow-node-name-unique\", \"ERROR\", name,\n\tsprintf(\"%s.Nodes[%d].Name\", [_pf_bedrocklib_flow_prop(name), i]),\n\tsprintf(\"Node name '%s' is used more than once; CreateFlow fails with \\\"Node name %s must be unique\\\"\", [nn, nn]),\n\t\"Give every node a distinct Name\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowNode.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Flow\")\n\tnodes := _pf_bedrocklib_flow_nodes(name)\n\tsome i, x in nodes\n\tnn := x.Name\n\tis_string(nn)\n\tsome j, y in nodes\n\tj < i\n\ty.Name == nn\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-automated-reasoning-cross-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Automated Reasoning checks need CrossRegionConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Automated Reasoning checks run on cross-Region compute, so a guardrail that\n# attaches policies must also carry CrossRegionConfig (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-guardrail-automated-reasoning-cross-region\", \"ERROR\", name,\n\t\"Properties.AutomatedReasoningPolicyConfig\",\n\t\"AutomatedReasoningPolicyConfig is set but the guardrail has no CrossRegionConfig; CreateGuardrail fails with \\\"To use Automated Reasoning checks, your guardrail must have a cross-Region inference profile\\\"\",\n\t\"Add CrossRegionConfig.GuardrailProfileArn (e.g. the us.guardrail.v1:0 profile of the deploy Region)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-automated-reasoning-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tp := _pf_bedrocklib_props(name)\n\t_pf_bedrocklib_has(p, \"AutomatedReasoningPolicyConfig\")\n\tnot _pf_bedrocklib_has(p, \"CrossRegionConfig\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-automated-reasoning-policy-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "An Automated Reasoning policy must live in the guardrail's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateGuardrail resolves policy ARNs only in its own Region; an ARN whose\n# Region field differs fails with \"The provided automated reasoning policy\n# ARN is invalid for the service region\" (measured 2026-09-06 with a real\n# policy in us-west-2). Needs data.cdk_preflight.deploy_region.\nviolation contains make_diag_full(\"pf-bedrock-guardrail-automated-reasoning-policy-region\", \"ERROR\", name,\n\tsprintf(\"Properties.AutomatedReasoningPolicyConfig.Policies[%d]\", [it.index]),\n\tsprintf(\"The Automated Reasoning policy lives in '%s' but the guardrail deploys to '%s'; CreateGuardrail fails with \\\"The provided automated reasoning policy ARN is invalid for the service region\\\"\", [r, region]),\n\t\"Reference a policy created in the guardrail's own Region\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-automated-reasoning-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tregion := _pf_bedrocklib_region\n\tsome it in flatten_list(name, \"Properties.AutomatedReasoningPolicyConfig.Policies\")\n\tr := _pf_bedrocklib_arn_region(it.value)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-content-filter-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail content policy must not list the same filter type twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gcfu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"ContentPolicyConfig\", {}), \"FiltersConfig\", [])\n\tis_array(xs)\n}\n\n_pf_gcfu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"Type\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-content-filter-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.ContentPolicyConfig.FiltersConfig[%d].Type\", [i]),\n\tsprintf(\"Content filter type '%s' appears more than once; CreateGuardrail fails with \\\"Content policy must not include duplicate filters\\\"\", [k]),\n\t\"Keep one FiltersConfig entry per harmful category\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailContentFilterConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\txs := _pf_gcfu_items(name)\n\tsome i, x in xs\n\tk := _pf_gcfu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_gcfu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-grounding-filter-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A contextual grounding policy must not list the same filter type twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ggfu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"ContextualGroundingPolicyConfig\", {}), \"FiltersConfig\", [])\n\tis_array(xs)\n}\n\n_pf_ggfu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"Type\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-grounding-filter-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.ContextualGroundingPolicyConfig.FiltersConfig[%d].Type\", [i]),\n\tsprintf(\"Contextual grounding filter type '%s' appears more than once; CreateGuardrail fails with \\\"The Contextual Grounding policy cannot have duplicate types\\\"\", [k]),\n\t\"Keep one FiltersConfig entry each for GROUNDING and RELEVANCE\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailContextualGroundingFilterConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\txs := _pf_ggfu_items(name)\n\tsome i, x in xs\n\tk := _pf_ggfu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_ggfu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-grounding-threshold",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A contextual grounding threshold must be below 1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema only sets minimum 0 on Threshold; CreateGuardrail rejects 1 and\n# above (\"cannot be greater than or equal to 1\", measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-guardrail-grounding-threshold\", \"ERROR\", name,\n\tsprintf(\"Properties.ContextualGroundingPolicyConfig.FiltersConfig[%d].Threshold\", [i]),\n\tsprintf(\"Contextual grounding threshold %v is not below 1; CreateGuardrail fails with \\\"grounding threshold cannot be greater than or equal to 1\\\"\", [t]),\n\t\"Use a threshold in the range 0 to 0.99\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailContextualGroundingFilterConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tp := _pf_bedrocklib_props(name)\n\tfs := object.get(object.get(p, \"ContextualGroundingPolicyConfig\", {}), \"FiltersConfig\", [])\n\tsome i, f in fs\n\tis_object(f)\n\tt := to_number(f.Threshold)\n\tt >= 1\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-managed-word-list-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail must not list the same managed word list twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gmwu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"WordPolicyConfig\", {}), \"ManagedWordListsConfig\", [])\n\tis_array(xs)\n}\n\n_pf_gmwu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"Type\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-managed-word-list-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.WordPolicyConfig.ManagedWordListsConfig[%d].Type\", [i]),\n\tsprintf(\"Managed word list '%s' appears more than once; CreateGuardrail fails with \\\"Managed words cannot have duplicates\\\"\", [k]),\n\t\"Keep one ManagedWordListsConfig entry per list type\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailManagedWordsConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\txs := _pf_gmwu_items(name)\n\tsome i, x in xs\n\tk := _pf_gmwu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_gmwu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-pii-entity-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail must not configure the same PII entity type twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gpiu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"SensitiveInformationPolicyConfig\", {}), \"PiiEntitiesConfig\", [])\n\tis_array(xs)\n}\n\n_pf_gpiu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"Type\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-pii-entity-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.SensitiveInformationPolicyConfig.PiiEntitiesConfig[%d].Type\", [i]),\n\tsprintf(\"PII entity type '%s' appears more than once; CreateGuardrail fails with \\\"The PII entity configs cannot have duplicates\\\"\", [k]),\n\t\"Keep one PiiEntitiesConfig entry per entity type\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailPiiEntityConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\txs := _pf_gpiu_items(name)\n\tsome i, x in xs\n\tk := _pf_gpiu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_gpiu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-policy-required",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail needs at least one policy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every policy block is optional in the schema; CreateGuardrail needs at least\n# one (\"Guardrail must have at least one policy\", measured 2026-09-06).\n_pf_gpol_keys := [\"ContentPolicyConfig\", \"TopicPolicyConfig\", \"WordPolicyConfig\", \"SensitiveInformationPolicyConfig\", \"ContextualGroundingPolicyConfig\", \"AutomatedReasoningPolicyConfig\"]\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-policy-required\", \"ERROR\", name,\n\t\"Properties\",\n\t\"The guardrail configures no policy; CreateGuardrail fails with \\\"Guardrail must have at least one policy\\\"\",\n\t\"Add at least one of ContentPolicyConfig, TopicPolicyConfig, WordPolicyConfig, SensitiveInformationPolicyConfig, ContextualGroundingPolicyConfig or AutomatedReasoningPolicyConfig\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateGuardrail.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tp := _pf_bedrocklib_props(name)\n\tcount([k | some k in _pf_gpol_keys; _pf_bedrocklib_has(p, k)]) == 0\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-profile-account",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail profile ARN must carry the deploying account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The profile is account-scoped: an ARN with another account id is refused\n# (\"The provided resource ARN is from a different account\" / CloudFormation\n# \"Access denied\", measured 2026-09-06). Needs data.cdk_preflight.deploy_account.\nviolation contains make_diag_full(\"pf-bedrock-guardrail-profile-account\", \"ERROR\", name,\n\t\"Properties.CrossRegionConfig.GuardrailProfileArn\",\n\tsprintf(\"The guardrail profile ARN names account '%s' but the stack deploys to account '%s'; CreateGuardrail fails with \\\"The provided resource ARN is from a different account\\\"\", [a, account]),\n\t\"Build the profile ARN with ${AWS::AccountId}\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-cross-region-support.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\taccount := _pf_bedrocklib_account\n\tarn := resolve(name, \"Properties.CrossRegionConfig.GuardrailProfileArn\")\n\ta := _pf_bedrocklib_arn_account(arn)\n\ta != account\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-profile-geo",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail profile must belong to the deploy Region's geography",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Guardrail profiles are bound to a geography and can only be used from that\n# geography's source Regions (guardrails-cross-region-support.html, read\n# 2026-09-06); any other pairing fails CreateGuardrail with \"Guardrail\n# cross-Region profile ID is invalid\". Unknown Regions / prefixes are not judged.\n_pf_gpge_sources := {\n\t\"us\": {\"us-east-1\", \"us-east-2\", \"us-west-1\", \"us-west-2\"},\n\t\"eu\": {\"eu-central-1\", \"eu-west-1\", \"eu-west-3\", \"eu-north-1\", \"eu-south-1\", \"eu-south-2\", \"il-central-1\"},\n\t\"uk\": {\"eu-west-2\"},\n\t\"au\": {\"ap-southeast-2\"},\n\t\"ca\": {\"ca-central-1\"},\n\t\"apac\": {\"ap-south-1\", \"ap-northeast-1\", \"ap-northeast-2\", \"ap-southeast-1\", \"ap-southeast-2\", \"ap-southeast-3\", \"ap-southeast-4\", \"ap-southeast-5\", \"ap-southeast-7\", \"ap-east-2\", \"me-central-1\"},\n}\n\n# Every Region the table knows about, so a Region outside it is skipped.\n_pf_gpge_known := {r | some g, rs in _pf_gpge_sources; some r in rs}\n\n_pf_gpge_geo(arn) := g if {\n\tis_string(arn)\n\tparts := split(arn, \"guardrail-profile/\")\n\tcount(parts) == 2\n\tg := split(parts[1], \".\")[0]\n}\n\n_pf_gpge_bad(g, region) if {\n\t_pf_gpge_known[region]\n\tsrcs := _pf_gpge_sources[g]\n\tnot srcs[region]\n}\n\n_pf_gpge_bad(g, region) if {\n\tg == \"us-gov\"\n\tnot startswith(region, \"us-gov-\")\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-profile-geo\", \"ERROR\", name,\n\t\"Properties.CrossRegionConfig.GuardrailProfileArn\",\n\tsprintf(\"Guardrail profile '%s' is not usable from Region '%s'; CreateGuardrail fails with \\\"Guardrail cross-Region profile ID is invalid. Specify a guardrail profile ID that's supported in your current AWS Region\\\"\", [g, region]),\n\t\"Use the profile of the deploy Region's geography (us., eu., uk., au., ca., apac. or us-gov.)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-cross-region-support.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tregion := _pf_bedrocklib_region\n\tg := _pf_gpge_geo(resolve(name, \"Properties.CrossRegionConfig.GuardrailProfileArn\"))\n\t_pf_gpge_bad(g, region)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-profile-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail profile ARN must carry the guardrail's own Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The profile ARN is arn:…:bedrock:<source-region>:<account>:guardrail-profile/<id>;\n# CreateGuardrail rejects any other Region field (\"The provided ARN is invalid\n# for the service region\", measured 2026-09-06). Needs deploy_region.\nviolation contains make_diag_full(\"pf-bedrock-guardrail-profile-region\", \"ERROR\", name,\n\t\"Properties.CrossRegionConfig.GuardrailProfileArn\",\n\tsprintf(\"The guardrail profile ARN names Region '%s' but the guardrail deploys to '%s'; CreateGuardrail fails with \\\"The provided ARN is invalid for the service region\\\"\", [r, region]),\n\t\"Build the profile ARN with ${AWS::Region} (arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail-profile/<id>)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-cross-region-support.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tregion := _pf_bedrocklib_region\n\tarn := resolve(name, \"Properties.CrossRegionConfig.GuardrailProfileArn\")\n\tr := _pf_bedrocklib_arn_region(arn)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-prompt-attack-output-strength",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The PROMPT_ATTACK content filter must use OutputStrength NONE",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema gives every filter the same NONE|LOW|MEDIUM|HIGH enum for both\n# strengths; only CreateGuardrail knows that prompt attacks are an input-only\n# check (\"PROMPT ATTACK content filter strength for response must be NONE\",\n# measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-guardrail-prompt-attack-output-strength\", \"ERROR\", name,\n\tsprintf(\"Properties.ContentPolicyConfig.FiltersConfig[%d].OutputStrength\", [i]),\n\tsprintf(\"The PROMPT_ATTACK content filter has OutputStrength '%s'; CreateGuardrail fails with \\\"PROMPT ATTACK content filter strength for response must be NONE\\\"\", [s]),\n\t\"Set OutputStrength: NONE on the PROMPT_ATTACK filter (prompt attacks are only evaluated on the input side)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-content-filters.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tp := _pf_bedrocklib_props(name)\n\tfs := object.get(object.get(p, \"ContentPolicyConfig\", {}), \"FiltersConfig\", [])\n\tsome i, f in fs\n\tis_object(f)\n\tf.Type == \"PROMPT_ATTACK\"\n\ts := f.OutputStrength\n\tis_string(s)\n\ts != \"NONE\"\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-regex-pattern-length",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail regex pattern is limited to 500 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The API documents a 500-character maximum on Pattern; the schema only has\n# minLength 1 (measured 2026-09-06: 501 characters fail).\nviolation contains make_diag_full(\"pf-bedrock-guardrail-regex-pattern-length\", \"ERROR\", name,\n\tsprintf(\"Properties.SensitiveInformationPolicyConfig.RegexesConfig[%d].Pattern\", [i]),\n\tsprintf(\"Regex pattern is %d characters (maximum 500); CreateGuardrail fails with \\\"Regex length in sensitive information policy exceeds quota limit\\\"\", [n]),\n\t\"Shorten the pattern to 500 characters or split it into several regex filters\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailRegexConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"SensitiveInformationPolicyConfig\", {}), \"RegexesConfig\", [])\n\tsome i, x in xs\n\tis_object(x)\n\tpat := x.Pattern\n\tis_string(pat)\n\tn := count(pat)\n\tn > 500\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-regex-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Guardrail regex filters must have unique names and unique patterns",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateGuardrail requires both the names and the patterns of the regex\n# filters to be unique (measured 2026-09-06); the schema has no uniqueItems.\n_pf_grxu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"SensitiveInformationPolicyConfig\", {}), \"RegexesConfig\", [])\n\tis_array(xs)\n}\n\n_pf_grxu_dup(name, field) := [i, v] if {\n\txs := _pf_grxu_items(name)\n\tsome i, x in xs\n\tis_object(x)\n\tv := object.get(x, field, null)\n\tis_string(v)\n\tsome j, y in xs\n\tj < i\n\tobject.get(y, field, null) == v\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-regex-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.SensitiveInformationPolicyConfig.RegexesConfig[%d].%s\", [d[0], field]),\n\tsprintf(\"Regex filter %s '%s' is used more than once; CreateGuardrail fails with \\\"All regex %ss must be unique\\\"\", [lower(field), d[1], lower(field)]),\n\t\"Give every RegexesConfig entry a distinct Name and a distinct Pattern\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailRegexConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tsome field in [\"Name\", \"Pattern\"]\n\td := _pf_grxu_dup(name, field)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-standard-tier-cross-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The STANDARD safeguard tier needs CrossRegionConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The STANDARD tier runs on cross-Region compute, so the guardrail must carry\n# a CrossRegionConfig (measured 2026-09-06 for both the content-filter and the\n# denied-topic tier).\n_pf_gstc_tier(name) := [\"Properties.ContentPolicyConfig.ContentFiltersTierConfig.TierName\", \"content filters\"] if {\n\tresolve(name, \"Properties.ContentPolicyConfig.ContentFiltersTierConfig.TierName\") == \"STANDARD\"\n}\n\n_pf_gstc_tier(name) := [\"Properties.TopicPolicyConfig.TopicsTierConfig.TierName\", \"denied topics\"] if {\n\tresolve(name, \"Properties.TopicPolicyConfig.TopicsTierConfig.TierName\") == \"STANDARD\"\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-standard-tier-cross-region\", \"ERROR\", name,\n\tt[0],\n\tsprintf(\"The %s use the STANDARD tier but the guardrail has no CrossRegionConfig; CreateGuardrail fails with \\\"Enable cross-Region inference for your guardrail to use Standard tier\\\"\", [t[1]]),\n\t\"Add CrossRegionConfig.GuardrailProfileArn (e.g. the us.guardrail.v1:0 profile of the deploy Region), or use the CLASSIC tier\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-tiers.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tt := _pf_gstc_tier(name)\n\tnot _pf_bedrocklib_has(_pf_bedrocklib_props(name), \"CrossRegionConfig\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-topic-definition-length",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A denied topic definition is limited to 200 characters on the CLASSIC tier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema allows 1000 characters (the STANDARD tier limit); the default\n# CLASSIC tier stops at 200 and CreateGuardrail rejects longer definitions\n# (measured 2026-09-06: 201 chars fails, 200 deploys, 300 deploys once\n# TopicsTierConfig.TierName is STANDARD).\n_pf_gtdl_standard(name) if {\n\tresolve(name, \"Properties.TopicPolicyConfig.TopicsTierConfig.TierName\") == \"STANDARD\"\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-topic-definition-length\", \"ERROR\", name,\n\tsprintf(\"Properties.TopicPolicyConfig.TopicsConfig[%d].Definition\", [i]),\n\tsprintf(\"Topic definition is %d characters but the CLASSIC tier allows 200; CreateGuardrail fails with \\\"One or more of your guardrail topic definitions exceeds the maximum allowed length\\\"\", [n]),\n\t\"Shorten the definition to 200 characters, or set TopicPolicyConfig.TopicsTierConfig.TierName: STANDARD (needs CrossRegionConfig)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-denied-topics.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tnot _pf_gtdl_standard(name)\n\tp := _pf_bedrocklib_props(name)\n\tts := object.get(object.get(p, \"TopicPolicyConfig\", {}), \"TopicsConfig\", [])\n\tsome i, t in ts\n\tis_object(t)\n\td := t.Definition\n\tis_string(d)\n\tn := count(d)\n\tn > 200\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-topic-name-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Denied topic names within a guardrail must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gtnu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"TopicPolicyConfig\", {}), \"TopicsConfig\", [])\n\tis_array(xs)\n}\n\n_pf_gtnu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"Name\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-topic-name-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.TopicPolicyConfig.TopicsConfig[%d].Name\", [i]),\n\tsprintf(\"Denied topic name '%s' is used more than once; CreateGuardrail fails with \\\"Topic policy topic names are not unique\\\"\", [k]),\n\t\"Give every TopicsConfig entry a distinct Name\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailTopicConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\txs := _pf_gtnu_items(name)\n\tsome i, x in xs\n\tk := _pf_gtnu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_gtnu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-word-length",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A guardrail custom word is limited to 100 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The API documents a 100-character maximum on Text; the schema only has\n# minLength 1 (measured 2026-09-06: 101 characters fail).\nviolation contains make_diag_full(\"pf-bedrock-guardrail-word-length\", \"ERROR\", name,\n\tsprintf(\"Properties.WordPolicyConfig.WordsConfig[%d].Text\", [i]),\n\tsprintf(\"Custom word is %d characters (maximum 100); CreateGuardrail fails with \\\"The custom word length in this Word policy exceeds quota limit\\\"\", [n]),\n\t\"Shorten the word or phrase to 100 characters\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailWordConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"WordPolicyConfig\", {}), \"WordsConfig\", [])\n\tsome i, x in xs\n\tis_object(x)\n\tt := x.Text\n\tis_string(t)\n\tn := count(t)\n\tn > 100\n}\n"
+  },
+  {
+    "id": "pf-bedrock-guardrail-word-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Guardrail custom words must be unique (case-insensitively)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Guardrail"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gwdu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(object.get(p, \"WordPolicyConfig\", {}), \"WordsConfig\", [])\n\tis_array(xs)\n}\n\n_pf_gwdu_key(x) := lower(k) if {\n\tis_object(x)\n\tk := object.get(x, \"Text\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-guardrail-word-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.WordPolicyConfig.WordsConfig[%d].Text\", [i]),\n\tsprintf(\"Custom word '%s' appears more than once (case-insensitively); CreateGuardrail fails with \\\"Custom words cannot have case-insensitive duplicates\\\"\", [k]),\n\t\"List each custom word or phrase once\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailWordConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Guardrail\")\n\txs := _pf_gwdu_items(name)\n\tsome i, x in xs\n\tk := _pf_gwdu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_gwdu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-inference-profile-model-source-required",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "An application inference profile needs ModelSource",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::ApplicationInferenceProfile"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ModelSource is createOnly but not required in the schema; CreateInferenceProfile\n# requires it and the CloudFormation handler crashes on the missing value\n# (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-inference-profile-model-source-required\", \"ERROR\", name,\n\t\"Properties.ModelSource\",\n\t\"ModelSource is missing; CreateInferenceProfile requires modelSource.copyFrom and the stack fails\",\n\t\"Set ModelSource.CopyFrom to the ARN of a foundation model or a system-defined inference profile\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateInferenceProfile.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::ApplicationInferenceProfile\")\n\tnot _pf_bedrocklib_has(_pf_bedrocklib_props(name), \"ModelSource\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-inference-profile-source-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "An application inference profile copies from a model or profile of its own Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::ApplicationInferenceProfile"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateInferenceProfile looks the source up in its own Region only: another\n# Region field (\"Model not found\") or a cross-Region profile of another\n# geography (\"Inference profile not found\") fails (measured 2026-09-06 with\n# models that exist in the other Region). Needs deploy_region.\nviolation contains make_diag_full(\"pf-bedrock-inference-profile-source-region\", \"ERROR\", name,\n\t\"Properties.ModelSource.CopyFrom\",\n\tsprintf(\"Source '%s' cannot be served from Region '%s'; CreateInferenceProfile fails with \\\"Model not found\\\" / \\\"Inference profile not found\\\"\", [_pf_bedrocklib_model_id(arn), region]),\n\t\"Copy from the model ARN of the deploy Region (arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/<id>) or from a profile of its geography\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateInferenceProfile.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::ApplicationInferenceProfile\")\n\tregion := _pf_bedrocklib_region\n\tarn := resolve(name, \"Properties.ModelSource.CopyFrom\")\n\t_pf_bedrocklib_model_region_mismatch(arn, region)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-embedding-binary",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "BINARY embeddings need a model and a vector store that support them",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Binary vectors are supported by Titan Text Embeddings V2 and Cohere Embed\n# but not by Titan Embeddings G1 - Text, and S3 Vectors indexes store float32\n# only (both measured 2026-09-06).\n_pf_kbeb_url := \"https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html\"\n_pf_kbeb_path := \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelConfiguration.BedrockEmbeddingModelConfiguration.EmbeddingDataType\"\n\nviolation contains make_diag_full(\"pf-bedrock-kb-embedding-binary\", \"ERROR\", name,\n\t_pf_kbeb_path,\n\t\"EmbeddingDataType BINARY is combined with an S3_VECTORS store; CreateKnowledgeBase fails with \\\"The embedding type provided BINARY is invalid for storage type S3_VECTORS\\\"\",\n\t\"Use FLOAT32 embeddings with S3 Vectors, or a vector store that accepts binary vectors (e.g. OpenSearch Serverless)\",\n\t_pf_kbeb_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tresolve(name, _pf_kbeb_path) == \"BINARY\"\n\tresolve(name, \"Properties.StorageConfiguration.Type\") == \"S3_VECTORS\"\n}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-embedding-binary\", \"ERROR\", name,\n\t_pf_kbeb_path,\n\tsprintf(\"EmbeddingDataType BINARY is not supported by %s; CreateKnowledgeBase fails with \\\"embeddingDataType BINARY not supported for embedding model\\\"\", [id]),\n\t\"Use FLOAT32, or switch to Titan Text Embeddings V2 / Cohere Embed which support binary vectors\",\n\t_pf_kbeb_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tresolve(name, _pf_kbeb_path) == \"BINARY\"\n\tid := _pf_bedrocklib_kb_embed_model(name)\n\tstartswith(id, \"amazon.titan-embed-text-v1\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-embedding-dimensions",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Embedding Dimensions must be a size the embedding model supports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Supported vector sizes per model (knowledge-base-supported.html, 2026-09-06):\n# Titan Text Embeddings V2 256/512/1024, Titan Embeddings G1 - Text fixed 1536\n# (no configurable dimensions), Cohere Embed 1024. The schema allows 0..4096.\n_pf_kbed_sizes := {\"amazon.titan-embed-text-v2\": {256, 512, 1024}, \"cohere.embed-english-v3\": {1024}, \"cohere.embed-multilingual-v3\": {1024}}\n\n_pf_kbed_family(id) := f if {\n\tsome f, _ in _pf_kbed_sizes\n\tstartswith(id, f)\n}\n\n_pf_kbed_url := \"https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html\"\n_pf_kbed_path := \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelConfiguration.BedrockEmbeddingModelConfiguration.Dimensions\"\n\nviolation contains make_diag_full(\"pf-bedrock-kb-embedding-dimensions\", \"ERROR\", name,\n\t_pf_kbed_path,\n\tsprintf(\"Dimensions %v is not supported by %s (allowed: %v); CreateKnowledgeBase fails with \\\"The specified embedding dimensions is not supported by the model\\\"\", [d, id, _pf_kbed_sizes[f]]),\n\t\"Pick one of the model's supported vector sizes\",\n\t_pf_kbed_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tid := _pf_bedrocklib_kb_embed_model(name)\n\tf := _pf_kbed_family(id)\n\td := to_number(resolve(name, _pf_kbed_path))\n\tnot _pf_kbed_sizes[f][d]\n}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-embedding-dimensions\", \"ERROR\", name,\n\t_pf_kbed_path,\n\tsprintf(\"%s has a fixed 1536-dimension output; CreateKnowledgeBase fails with \\\"The specified model … does not support configurable dimensions\\\"\", [id]),\n\t\"Remove Dimensions, or switch to Titan Text Embeddings V2 (256/512/1024)\",\n\t_pf_kbed_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tid := _pf_bedrocklib_kb_embed_model(name)\n\tstartswith(id, \"amazon.titan-embed-text-v1\")\n\tresolve(name, _pf_kbed_path)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-embedding-model-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The embedding model ARN must carry the knowledge base's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateKnowledgeBase rejects an embedding model ARN of another Region (\"is in\n# a different region\", measured 2026-09-06). Needs deploy_region.\nviolation contains make_diag_full(\"pf-bedrock-kb-embedding-model-region\", \"ERROR\", name,\n\t\"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelArn\",\n\tsprintf(\"The embedding model ARN names Region '%s' but the knowledge base deploys to '%s'; CreateKnowledgeBase fails with \\\"The embedding model ARN … is in a different region\\\"\", [r, region]),\n\t\"Build the ARN with ${AWS::Region} (arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/<id>)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateKnowledgeBase.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tregion := _pf_bedrocklib_region\n\tarn := resolve(name, \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelArn\")\n\tr := _pf_bedrocklib_arn_region(arn)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-s3-vectors-index-dimension",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The embedding size must equal the S3 Vectors index Dimension",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateKnowledgeBase probes the index with a vector of the model's size; a\n# size that differs from the index Dimension fails (\"Query vector … is\n# invalid for this index\", measured 2026-09-06). Only judged when the\n# IndexArn is a Fn::GetAtt of an AWS::S3Vectors::Index in the same template.\n_pf_kbsd_default := {\"amazon.titan-embed-text-v2\": 1024, \"amazon.titan-embed-text-v1\": 1536, \"cohere.embed-\": 1024}\n\n_pf_kbsd_size(name) := d if {\n\td := to_number(resolve(name, \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelConfiguration.BedrockEmbeddingModelConfiguration.Dimensions\"))\n}\n\n_pf_kbsd_size(name) := d if {\n\tnot resolve(name, \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelConfiguration.BedrockEmbeddingModelConfiguration.Dimensions\")\n\tid := _pf_bedrocklib_kb_embed_model(name)\n\tsome prefix, d in _pf_kbsd_default\n\tstartswith(id, prefix)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-s3-vectors-index-dimension\", \"ERROR\", name,\n\t\"Properties.StorageConfiguration.S3VectorsConfiguration.IndexArn\",\n\tsprintf(\"The embeddings are %v-dimensional but index '%s' has Dimension %v; CreateKnowledgeBase fails with \\\"Query vector … is invalid for this index\\\"\", [kbDim, idx, idxDim]),\n\t\"Create the index with Dimension equal to the embedding size (Titan V2: Dimensions or 1024; Titan G1: 1536; Cohere: 1024)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_S3VectorsConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tp := _pf_bedrocklib_props(name)\n\traw := object.get(object.get(object.get(p, \"StorageConfiguration\", {}), \"S3VectorsConfiguration\", {}), \"IndexArn\", null)\n\tidx := _pf_bedrocklib_ref_target(raw, \"AWS::S3Vectors::Index\")\n\tidxDim := to_number(resolve(idx, \"Properties.Dimension\"))\n\tkbDim := _pf_kbsd_size(name)\n\tkbDim != idxDim\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-sql-auth-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Redshift AuthConfiguration must carry exactly the fields its Type needs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateKnowledgeBase pairs the auth Type with its credential field\n# (measured 2026-09-06): USERNAME_PASSWORD needs UsernamePasswordSecretArn,\n# USERNAME (provisioned) needs DatabaseUser, IAM accepts neither.\n_pf_kbsa_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_RedshiftServerlessAuthConfiguration.html\"\n_pf_kbsa_base := \"Properties.KnowledgeBaseConfiguration.SqlKnowledgeBaseConfiguration.RedshiftConfiguration.QueryEngineConfiguration\"\n\n_pf_kbsa_auth(name) := [kind, a] if {\n\tp := _pf_bedrocklib_props(name)\n\tqe := object.get(object.get(object.get(object.get(p, \"KnowledgeBaseConfiguration\", {}), \"SqlKnowledgeBaseConfiguration\", {}), \"RedshiftConfiguration\", {}), \"QueryEngineConfiguration\", {})\n\tsome kind in [\"ServerlessConfiguration\", \"ProvisionedConfiguration\"]\n\ta := object.get(object.get(qe, kind, {}), \"AuthConfiguration\", null)\n\tis_object(a)\n}\n\n_pf_kbsa_needs := {\"USERNAME_PASSWORD\": \"UsernamePasswordSecretArn\", \"USERNAME\": \"DatabaseUser\"}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-sql-auth-configuration\", \"ERROR\", name,\n\tsprintf(\"%s.%s.AuthConfiguration.%s\", [_pf_kbsa_base, k[0], need]),\n\tsprintf(\"AuthConfiguration.Type %s needs %s; CreateKnowledgeBase fails with \\\"%s auth type must provide %s%s\\\"\", [t, need, t, lower(substring(need, 0, 1)), substring(need, 1, -1)]),\n\tsprintf(\"Set AuthConfiguration.%s\", [need]),\n\t_pf_kbsa_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tk := _pf_kbsa_auth(name)\n\tt := k[1].Type\n\tneed := _pf_kbsa_needs[t]\n\tnot _pf_bedrocklib_has(k[1], need)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-sql-auth-configuration\", \"ERROR\", name,\n\tsprintf(\"%s.%s.AuthConfiguration.%s\", [_pf_kbsa_base, k[0], extra]),\n\tsprintf(\"AuthConfiguration.Type IAM carries %s; CreateKnowledgeBase fails with \\\"IAM auth type must provide no additional properties\\\"\", [extra]),\n\t\"Remove the credential field, or change Type to USERNAME_PASSWORD / USERNAME\",\n\t_pf_kbsa_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tk := _pf_kbsa_auth(name)\n\tk[1].Type == \"IAM\"\n\tsome extra in [\"UsernamePasswordSecretArn\", \"DatabaseUser\"]\n\t_pf_bedrocklib_has(k[1], extra)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-sql-query-engine-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A Redshift query engine needs the block matching its Type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema requires only Type; CreateKnowledgeBase requires ServerlessConfiguration\n# for SERVERLESS and ProvisionedConfiguration for PROVISIONED (measured 2026-09-06).\n_pf_kbqe_member := {\"SERVERLESS\": \"ServerlessConfiguration\", \"PROVISIONED\": \"ProvisionedConfiguration\"}\n_pf_kbqe_path := \"Properties.KnowledgeBaseConfiguration.SqlKnowledgeBaseConfiguration.RedshiftConfiguration.QueryEngineConfiguration\"\n\nviolation contains make_diag_full(\"pf-bedrock-kb-sql-query-engine-configuration\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [_pf_kbqe_path, m]),\n\tsprintf(\"QueryEngineConfiguration.Type is %s but %s is missing; CreateKnowledgeBase fails with \\\"query engine type REDSHIFT with %s type must provide %s%s\\\"\", [t, m, t, lower(substring(m, 0, 1)), substring(m, 1, -1)]),\n\tsprintf(\"Add QueryEngineConfiguration.%s, or change Type\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_RedshiftQueryEngineConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tp := _pf_bedrocklib_props(name)\n\tqe := object.get(object.get(object.get(object.get(p, \"KnowledgeBaseConfiguration\", {}), \"SqlKnowledgeBaseConfiguration\", {}), \"RedshiftConfiguration\", {}), \"QueryEngineConfiguration\", null)\n\tis_object(qe)\n\tt := qe.Type\n\tm := _pf_kbqe_member[t]\n\tnot _pf_bedrocklib_has(qe, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-sql-storage-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A Redshift storage configuration needs the block matching its Type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema requires only Type per storage entry; CreateKnowledgeBase needs the\n# matching block (RedshiftConfiguration for REDSHIFT, AwsDataCatalogConfiguration\n# for AWS_DATA_CATALOG — \"must specify exactly one storage configuration\",\n# measured 2026-09-06).\n_pf_kbss_member := {\"REDSHIFT\": \"RedshiftConfiguration\", \"AWS_DATA_CATALOG\": \"AwsDataCatalogConfiguration\"}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-sql-storage-configuration\", \"ERROR\", name,\n\tsprintf(\"Properties.KnowledgeBaseConfiguration.SqlKnowledgeBaseConfiguration.RedshiftConfiguration.StorageConfigurations[%d].%s\", [i, m]),\n\tsprintf(\"Storage configuration Type %s has no %s; CreateKnowledgeBase fails with \\\"query engine type REDSHIFT must specify exactly one storage configuration\\\"\", [t, m]),\n\tsprintf(\"Add %s to the storage configuration entry\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_RedshiftQueryEngineStorageConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tp := _pf_bedrocklib_props(name)\n\tscs := object.get(object.get(object.get(object.get(p, \"KnowledgeBaseConfiguration\", {}), \"SqlKnowledgeBaseConfiguration\", {}), \"RedshiftConfiguration\", {}), \"StorageConfigurations\", [])\n\tsome i, sc in scs\n\tis_object(sc)\n\tt := sc.Type\n\tm := _pf_kbss_member[t]\n\tnot _pf_bedrocklib_has(sc, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-storage-not-allowed",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "KENDRA and SQL knowledge bases must not carry StorageConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Kendra and structured-data knowledge bases bring their own store; CreateKnowledgeBase\n# rejects a StorageConfiguration next to them (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-kb-storage-not-allowed\", \"ERROR\", name,\n\t\"Properties.StorageConfiguration\",\n\tsprintf(\"A %s knowledge base carries StorageConfiguration; CreateKnowledgeBase fails with \\\"You can't provide a storage configuration if the type of your knowledge base is %s\\\"\", [t, t]),\n\t\"Remove StorageConfiguration (the Kendra index / Redshift store is configured inside KnowledgeBaseConfiguration)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateKnowledgeBase.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tt := resolve(name, \"Properties.KnowledgeBaseConfiguration.Type\")\n\tt in {\"KENDRA\", \"SQL\"}\n\t_pf_bedrocklib_has(_pf_bedrocklib_props(name), \"StorageConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-storage-type-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "StorageConfiguration.Type needs its matching configuration block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema's oneOf guarantees exactly one vector-store block but not that it\n# is the one named by Type; CreateKnowledgeBase requires the pairing\n# (\"<Block> is required when storage type is <Type>\", measured 2026-09-06).\n_pf_kbst_member := {\n\t\"OPENSEARCH_SERVERLESS\": \"OpensearchServerlessConfiguration\",\n\t\"PINECONE\": \"PineconeConfiguration\",\n\t\"RDS\": \"RdsConfiguration\",\n\t\"MONGO_DB_ATLAS\": \"MongoDbAtlasConfiguration\",\n\t\"NEPTUNE_ANALYTICS\": \"NeptuneAnalyticsConfiguration\",\n\t\"S3_VECTORS\": \"S3VectorsConfiguration\",\n\t\"OPENSEARCH_MANAGED_CLUSTER\": \"OpensearchManagedClusterConfiguration\",\n}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-storage-type-configuration\", \"ERROR\", name,\n\tsprintf(\"Properties.StorageConfiguration.%s\", [m]),\n\tsprintf(\"StorageConfiguration.Type is %s but %s is missing; CreateKnowledgeBase fails with \\\"%s is required when storage type is %s\\\"\", [t, m, m, t]),\n\tsprintf(\"Add StorageConfiguration.%s, or change Type to match the block you configured\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateKnowledgeBase.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tsc := object.get(_pf_bedrocklib_props(name), \"StorageConfiguration\", null)\n\tis_object(sc)\n\tt := sc.Type\n\tm := _pf_kbst_member[t]\n\tnot _pf_bedrocklib_has(sc, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-supplemental-storage-uri",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Supplemental data storage must point at an S3 bucket root",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The storage location takes a whole bucket: a key prefix in the URI fails\n# (\"contains a sub-folder which is not supported\") and S3Location itself is\n# mandatory although the schema leaves it optional (both measured 2026-09-06).\n_pf_kbsu_url := \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_SupplementalDataStorageConfiguration.html\"\n\n_pf_kbsu_locs(name) := ls if {\n\tp := _pf_bedrocklib_props(name)\n\tls := object.get(object.get(object.get(object.get(p, \"KnowledgeBaseConfiguration\", {}), \"VectorKnowledgeBaseConfiguration\", {}), \"SupplementalDataStorageConfiguration\", {}), \"SupplementalDataStorageLocations\", [])\n\tis_array(ls)\n}\n\n_pf_kbsu_path(i) := sprintf(\"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.SupplementalDataStorageConfiguration.SupplementalDataStorageLocations[%d].S3Location\", [i])\n\nviolation contains make_diag_full(\"pf-bedrock-kb-supplemental-storage-uri\", \"ERROR\", name,\n\t_pf_kbsu_path(i),\n\t\"The supplemental data storage location has no S3Location; CreateKnowledgeBase fails with \\\"s3Location cannot be null\\\"\",\n\t\"Set S3Location.URI to s3://<bucket>\",\n\t_pf_kbsu_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tsome i, l in _pf_kbsu_locs(name)\n\tis_object(l)\n\tnot _pf_bedrocklib_has(l, \"S3Location\")\n}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-supplemental-storage-uri\", \"ERROR\", name,\n\tsprintf(\"%s.URI\", [_pf_kbsu_path(i)]),\n\tsprintf(\"Supplemental storage URI '%s' names a key prefix inside the bucket; CreateKnowledgeBase fails with \\\"The S3 URI for the provided supplemental data storage bucket contains a sub-folder which is not supported\\\"\", [t]),\n\t\"Point the URI at the bucket root (s3://<bucket>), using a dedicated bucket for extracted media\",\n\t_pf_kbsu_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tsome i, l in _pf_kbsu_locs(name)\n\tis_object(l)\n\tt := _pf_bedrocklib_bucket_text(object.get(object.get(l, \"S3Location\", {}), \"URI\", null))\n\tstartswith(t, \"s3://\")\n\trest := split(substring(t, 5, -1), \"/\")\n\tcount(rest) >= 2\n\ttail := concat(\"/\", array.slice(rest, 1, count(rest)))\n\ttail != \"\"\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-type-configuration",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "KnowledgeBaseConfiguration.Type needs its matching configuration block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema requires only Type; CreateKnowledgeBase requires the block named\n# after it for VECTOR / KENDRA / SQL (\"<Block> is required when knowledgeBase\n# type is <Type>\", measured 2026-09-06; MANAGED has no such requirement).\n_pf_kbtc_member := {\"VECTOR\": \"VectorKnowledgeBaseConfiguration\", \"KENDRA\": \"KendraKnowledgeBaseConfiguration\", \"SQL\": \"SqlKnowledgeBaseConfiguration\"}\n\nviolation contains make_diag_full(\"pf-bedrock-kb-type-configuration\", \"ERROR\", name,\n\tsprintf(\"Properties.KnowledgeBaseConfiguration.%s\", [m]),\n\tsprintf(\"KnowledgeBaseConfiguration.Type is %s but %s is missing; CreateKnowledgeBase fails with \\\"%s is required when knowledgeBase type is %s\\\"\", [t, m, m, t]),\n\tsprintf(\"Add KnowledgeBaseConfiguration.%s, or change Type\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateKnowledgeBase.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tcfg := object.get(_pf_bedrocklib_props(name), \"KnowledgeBaseConfiguration\", null)\n\tis_object(cfg)\n\tt := cfg.Type\n\tm := _pf_kbtc_member[t]\n\tnot _pf_bedrocklib_has(cfg, m)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-vector-storage-required",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A VECTOR knowledge base needs StorageConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# StorageConfiguration is optional in the schema because KENDRA / SQL / MANAGED\n# knowledge bases have none; a VECTOR one cannot be created without it\n# (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-kb-vector-storage-required\", \"ERROR\", name,\n\t\"Properties.StorageConfiguration\",\n\t\"A VECTOR knowledge base has no StorageConfiguration; CreateKnowledgeBase fails with \\\"You must provide a storage configuration if you create a VECTOR knowledge base\\\"\",\n\t\"Add StorageConfiguration (Type OPENSEARCH_SERVERLESS, S3_VECTORS, RDS, …) pointing at the vector store\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreateKnowledgeBase.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tp := _pf_bedrocklib_props(name)\n\tresolve(name, \"Properties.KnowledgeBaseConfiguration.Type\") == \"VECTOR\"\n\tnot _pf_bedrocklib_has(p, \"StorageConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-kb-vector-store-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "An S3 Vectors index must live in the knowledge base's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::KnowledgeBase"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateKnowledgeBase requires the vector store to be in its own Region (\"The\n# vector store must be in the same region as the knowledge base\", measured\n# 2026-09-06 with S3 Vectors). Needs deploy_region.\n_pf_kbvr_paths := [\"Properties.StorageConfiguration.S3VectorsConfiguration.IndexArn\", \"Properties.StorageConfiguration.S3VectorsConfiguration.VectorBucketArn\"]\n\nviolation contains make_diag_full(\"pf-bedrock-kb-vector-store-region\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"The vector store ARN names Region '%s' but the knowledge base deploys to '%s'; CreateKnowledgeBase fails with \\\"The vector store must be in the same region as the knowledge base\\\"\", [r, region]),\n\t\"Reference an S3 Vectors bucket / index created in the knowledge base's own Region\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_S3VectorsConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::KnowledgeBase\")\n\tregion := _pf_bedrocklib_region\n\tsome path in _pf_kbvr_paths\n\tr := _pf_bedrocklib_arn_region(resolve(name, path))\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-default-variant",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "DefaultVariant must name one of the prompt's variants",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Prompt"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Documented (\"This value must match the name field in the relevant\n# PromptVariant\") and enforced only by CreatePrompt (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-prompt-default-variant\", \"ERROR\", name,\n\t\"Properties.DefaultVariant\",\n\tsprintf(\"DefaultVariant '%s' is not one of the variant names %v; CreatePrompt fails with \\\"Default variant must be present in the variants list\\\"\", [dv, names]),\n\t\"Set DefaultVariant to the Name of one of the Variants entries\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_CreatePrompt.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Prompt\")\n\tdv := resolve(name, \"Properties.DefaultVariant\")\n\tis_string(dv)\n\tvs := object.get(_pf_bedrocklib_props(name), \"Variants\", [])\n\tis_array(vs)\n\tcount(vs) > 0\n\tnames := {v.Name | some v in vs; is_object(v); is_string(v.Name)}\n\tcount(names) == count(vs)\n\tnot names[dv]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-router-fallback-model",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "The prompt router's fallback model must be one of its routed models",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::IntelligentPromptRouter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Documented as a separate field; CreatePromptRouter requires it to be one of\n# the Models entries (measured 2026-09-06). Literal ARNs only — intrinsics are\n# marker objects and are skipped.\nviolation contains make_diag_full(\"pf-bedrock-prompt-router-fallback-model\", \"ERROR\", name,\n\t\"Properties.FallbackModel.ModelArn\",\n\tsprintf(\"Fallback model '%s' is not in Models; CreatePromptRouter fails with \\\"The fallback model is not present in the list of models for routing\\\"\", [fb]),\n\t\"Use one of the Models entries as the FallbackModel\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreatePromptRouter.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::IntelligentPromptRouter\")\n\tp := _pf_bedrocklib_props(name)\n\tfb := object.get(object.get(p, \"FallbackModel\", {}), \"ModelArn\", null)\n\tis_string(fb)\n\tms := object.get(p, \"Models\", [])\n\tis_array(ms)\n\tcount(ms) > 0\n\tarns := {m.ModelArn | some m in ms; is_object(m); is_string(m.ModelArn)}\n\tcount(arns) == count(ms)\n\tnot arns[fb]\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-router-model-provider",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A prompt router's models must come from the same provider",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::IntelligentPromptRouter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Routing works \"between different foundational models within the same model\n# family\"; CreatePromptRouter rejects a mix of providers (measured 2026-09-06).\n# Provider = model id prefix (behind an optional us./eu./apac. geo prefix).\nviolation contains make_diag_full(\"pf-bedrock-prompt-router-model-provider\", \"ERROR\", name,\n\t\"Properties.Models\",\n\tsprintf(\"Models mix providers %v; CreatePromptRouter fails with \\\"is from a different provider than the other models\\\"\", [provs]),\n\t\"Route between two models of the same provider (e.g. two Anthropic Claude models)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::IntelligentPromptRouter\")\n\tms := object.get(_pf_bedrocklib_props(name), \"Models\", [])\n\tprovs := {pr | some m in ms; is_object(m); pr := _pf_bedrocklib_model_provider(m.ModelArn)}\n\tcount(provs) > 1\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-router-model-region",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Prompt router models must be reachable from the deploy Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::IntelligentPromptRouter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Model ARNs are resolved in the router's own Region: another Region field\n# (\"Unsupported model type\") or a cross-Region profile of another geography\n# (\"Inference profile … not Found or invalid\") fails CreatePromptRouter\n# (measured 2026-09-06). Needs data.cdk_preflight.deploy_region.\n_pf_rmr_url := \"https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html\"\n\nviolation contains make_diag_full(\"pf-bedrock-prompt-router-model-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Models[%d].ModelArn\", [it.index]),\n\tsprintf(\"Model '%s' cannot be served from Region '%s'; CreatePromptRouter fails with \\\"Unsupported model type\\\" / \\\"Inference profile … not Found or invalid\\\"\", [_pf_bedrocklib_model_id(arn), region]),\n\t\"Reference the model (or a cross-Region profile of the deploy Region's geography) in the deploy Region\",\n\t_pf_rmr_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::IntelligentPromptRouter\")\n\tregion := _pf_bedrocklib_region\n\tsome it in flatten_list(name, \"Properties.Models\")\n\tarn := it.value.ModelArn\n\t_pf_bedrocklib_model_region_mismatch(arn, region)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-prompt-router-model-region\", \"ERROR\", name,\n\t\"Properties.FallbackModel.ModelArn\",\n\tsprintf(\"Fallback model '%s' cannot be served from Region '%s'; CreatePromptRouter fails with \\\"Unsupported model type\\\" / \\\"Inference profile … not Found or invalid\\\"\", [_pf_bedrocklib_model_id(arn), region]),\n\t\"Reference the model (or a cross-Region profile of the deploy Region's geography) in the deploy Region\",\n\t_pf_rmr_url) if {\n\tsome name in resources_of_type(\"AWS::Bedrock::IntelligentPromptRouter\")\n\tregion := _pf_bedrocklib_region\n\tarn := resolve(name, \"Properties.FallbackModel.ModelArn\")\n\t_pf_bedrocklib_model_region_mismatch(arn, region)\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-router-models-count",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A prompt router routes between exactly two models",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::IntelligentPromptRouter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema has no minItems/maxItems on Models; CreatePromptRouter accepts\n# exactly two (\"Prompt router limited to 2 models exactly\", measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-prompt-router-models-count\", \"ERROR\", name,\n\t\"Properties.Models\",\n\tsprintf(\"Models lists %d entries; CreatePromptRouter fails with \\\"Prompt router limited to 2 models exactly\\\"\", [n]),\n\t\"List exactly two models (the fallback model must be one of them)\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreatePromptRouter.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::IntelligentPromptRouter\")\n\tms := object.get(_pf_bedrocklib_props(name), \"Models\", [])\n\tis_array(ms)\n\tn := count(ms)\n\tn != 2\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-router-models-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A prompt router must not list the same model twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::IntelligentPromptRouter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rmu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(p, \"Models\", [])\n\tis_array(xs)\n}\n\n_pf_rmu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"ModelArn\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-prompt-router-models-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Models[%d].ModelArn\", [i]),\n\tsprintf(\"Model '%s' is listed more than once; CreatePromptRouter fails with \\\"Duplicate foundation models have been identified in the list of models\\\"\", [k]),\n\t\"List two different models\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreatePromptRouter.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::IntelligentPromptRouter\")\n\txs := _pf_rmu_items(name)\n\tsome i, x in xs\n\tk := _pf_rmu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_rmu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-variant-model-or-agent",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A prompt variant takes either ModelId or GenAiResource, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Prompt"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members are optional in the schema; CreatePrompt rejects the pair\n# (\"You can include either a modelId or a genAiResource, but not both\",\n# measured 2026-09-06).\nviolation contains make_diag_full(\"pf-bedrock-prompt-variant-model-or-agent\", \"ERROR\", name,\n\tsprintf(\"Properties.Variants[%d].GenAiResource\", [i]),\n\tsprintf(\"Variant '%s' sets both ModelId and GenAiResource; CreatePrompt fails with \\\"You can include either a modelId or a genAiResource, but not both\\\"\", [v.Name]),\n\t\"Remove ModelId (the agent supplies the model) or remove GenAiResource\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_PromptVariant.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Prompt\")\n\tvs := object.get(_pf_bedrocklib_props(name), \"Variants\", [])\n\tsome i, v in vs\n\tis_object(v)\n\t_pf_bedrocklib_has(v, \"ModelId\")\n\t_pf_bedrocklib_has(v, \"GenAiResource\")\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-variant-name-unique",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "Prompt variant names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Prompt"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pvnu_items(name) := xs if {\n\tp := _pf_bedrocklib_props(name)\n\txs := object.get(p, \"Variants\", [])\n\tis_array(xs)\n}\n\n_pf_pvnu_key(x) := k if {\n\tis_object(x)\n\tk := object.get(x, \"Name\", null)\n\tis_string(k)\n}\n\nviolation contains make_diag_full(\"pf-bedrock-prompt-variant-name-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Variants[%d].Name\", [i]),\n\tsprintf(\"Variant name '%s' is used more than once; CreatePrompt fails with \\\"All variant names in the prompt must be unique\\\"\", [k]),\n\t\"Give every Variants entry a distinct Name\",\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_PromptVariant.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Prompt\")\n\txs := _pf_pvnu_items(name)\n\tsome i, x in xs\n\tk := _pf_pvnu_key(x)\n\tsome j, y in xs\n\tj < i\n\t_pf_pvnu_key(y) == k\n}\n"
+  },
+  {
+    "id": "pf-bedrock-prompt-variant-template-type",
+    "service": "bedrock",
+    "severity": "ERROR",
+    "title": "A prompt variant's TemplateConfiguration must match its TemplateType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Bedrock::Prompt"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema's oneOf only guarantees a single TemplateConfiguration member;\n# the pairing with TemplateType is checked by CreatePrompt (measured 2026-09-06).\n_pf_pvtt_member := {\"TEXT\": \"Text\", \"CHAT\": \"Chat\"}\n\nviolation contains make_diag_full(\"pf-bedrock-prompt-variant-template-type\", \"ERROR\", name,\n\tsprintf(\"Properties.Variants[%d].TemplateConfiguration\", [i]),\n\tsprintf(\"Variant '%s' has TemplateType %s but no TemplateConfiguration.%s; CreatePrompt fails with \\\"%sTemplateConfig cannot be null when PromptTemplateType is %s\\\"\", [v.Name, t, m, lower(m), t]),\n\tsprintf(\"Provide TemplateConfiguration.%s, or change TemplateType\", [m]),\n\t\"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_PromptVariant.html\") if {\n\tsome name in resources_of_type(\"AWS::Bedrock::Prompt\")\n\tvs := object.get(_pf_bedrocklib_props(name), \"Variants\", [])\n\tsome i, v in vs\n\tis_object(v)\n\tt := v.TemplateType\n\tm := _pf_pvtt_member[t]\n\ttc := object.get(v, \"TemplateConfiguration\", null)\n\tis_object(tc)\n\tnot _pf_bedrocklib_has(tc, m)\n}\n"
+  },
+  {
     "id": "pf-agentcore-apikey-provider-secret-source",
     "service": "bedrock-agentcore",
     "severity": "ERROR",
@@ -4816,6 +5714,10 @@ export interface BundledLibData {
 
 /** Shared helper modules (rules/_lib). Always loaded before the rules. */
 export const BUNDLED_LIBS: BundledLibData[] = [
+  {
+    "name": "_lib/bedrock",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the Amazon Bedrock rules (Guardrail, Prompt, Flow,\n# KnowledgeBase, DataSource, IntelligentPromptRouter, ApplicationInferenceProfile,\n# Data Automation). Loaded ahead of every rule (BUNDLED_LIBS); never emits\n# diagnostics.\n\n# Raw (preprocessed) properties object of a resource — the sanctioned way to\n# prove a key absent. Intrinsics inside are marker objects, never strings.\n_pf_bedrocklib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_bedrocklib_has(obj, key) if {\n\tis_object(obj)\n\tobject.get(obj, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_bedrocklib_region := r if {\n\tr := data.cdk_preflight.deploy_region\n\tis_string(r)\n}\n\n_pf_bedrocklib_account := a if {\n\ta := data.cdk_preflight.deploy_account\n\tis_string(a)\n}\n\n# Region / account fields of an ARN string; undefined for non-ARNs, empty\n# fields and marker objects (is_string fails).\n_pf_bedrocklib_arn_region(arn) := r if {\n\tis_string(arn)\n\tp := split(arn, \":\")\n\tcount(p) >= 6\n\tp[0] == \"arn\"\n\tr := p[3]\n\tr != \"\"\n}\n\n_pf_bedrocklib_arn_account(arn) := a if {\n\tis_string(arn)\n\tp := split(arn, \":\")\n\tcount(p) >= 6\n\tp[0] == \"arn\"\n\ta := p[4]\n\ta != \"\"\n}\n\n# Model / inference-profile identifier: the part after the last \"/\" of an\n# ARN, or the bare id.\n_pf_bedrocklib_model_id(v) := id if {\n\tis_string(v)\n\tcontains(v, \"/\")\n\tparts := split(v, \"/\")\n\tid := parts[count(parts) - 1]\n}\n\n_pf_bedrocklib_model_id(v) := v if {\n\tis_string(v)\n\tnot contains(v, \"/\")\n}\n\n# Geographic prefixes of cross-Region (system-defined) inference profiles.\n# Source Regions of a geo profile never change (inference-profiles-support.html),\n# so a prefix that does not match the deploy Region is a deploy-time\n# \"Inference profile not found\". Unknown prefixes are not judged.\n_pf_bedrocklib_geo_prefixes := {\"us\", \"us-gov\", \"eu\", \"apac\", \"global\"}\n\n_pf_bedrocklib_geo(id) := g if {\n\tis_string(id)\n\tg := split(id, \".\")[0]\n\t_pf_bedrocklib_geo_prefixes[g]\n}\n\n_pf_bedrocklib_geo_ok(g, r) if g == \"global\"\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"us\"\n\tstartswith(r, \"us-\")\n\tnot startswith(r, \"us-gov-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"us-gov\"\n\tstartswith(r, \"us-gov-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"eu\"\n\tstartswith(r, \"eu-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"eu\"\n\tr == \"il-central-1\"\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"apac\"\n\tstartswith(r, \"ap-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"apac\"\n\tr == \"me-central-1\"\n}\n\n# True when a model / profile reference (bare id or ARN) cannot be served from\n# the deploy Region: the ARN carries another Region, or the geo prefix of a\n# cross-Region profile does not cover the Region.\n_pf_bedrocklib_model_region_mismatch(v, region) if {\n\tr := _pf_bedrocklib_arn_region(v)\n\tr != region\n}\n\n_pf_bedrocklib_model_region_mismatch(v, region) if {\n\tg := _pf_bedrocklib_geo(_pf_bedrocklib_model_id(v))\n\tnot _pf_bedrocklib_geo_ok(g, region)\n}\n\n# Provider of a model id (\"anthropic\" for anthropic.claude-…, also behind a\n# geo prefix such as us.anthropic.…).\n_pf_bedrocklib_model_provider(v) := p if {\n\tsegs := split(_pf_bedrocklib_model_id(v), \".\")\n\tcount(segs) >= 3\n\t_pf_bedrocklib_geo_prefixes[segs[0]]\n\tp := segs[1]\n}\n\n_pf_bedrocklib_model_provider(v) := p if {\n\tsegs := split(_pf_bedrocklib_model_id(v), \".\")\n\tcount(segs) >= 2\n\tnot _pf_bedrocklib_geo_prefixes[segs[0]]\n\tp := segs[0]\n}\n\n# Logical id of an in-template resource of `type` that a property value\n# points at: resolve() turns {\"Ref\": X} into \"X\"; raw marker objects carry\n# __ref for both Ref and Fn::GetAtt.\n_pf_bedrocklib_ref_target(v, type) := t if {\n\tis_string(v)\n\tv in resources_of_type(type)\n\tt := v\n}\n\n_pf_bedrocklib_ref_target(v, type) := t if {\n\tis_object(v)\n\tt := object.get(v, \"__ref\", null)\n\tis_string(t)\n\tt in resources_of_type(type)\n}\n\n# The KnowledgeBase logical id a DataSource points at (Ref / GetAtt in the\n# same template); undefined for literal ids.\n_pf_bedrocklib_ds_kb(name) := kb if {\n\tkb := _pf_bedrocklib_ref_target(resolve(name, \"Properties.KnowledgeBaseId\"), \"AWS::Bedrock::KnowledgeBase\")\n}\n\n_pf_bedrocklib_ds_kb(name) := kb if {\n\tnot resolve(name, \"Properties.KnowledgeBaseId\")\n\tp := _pf_bedrocklib_props(name)\n\tkb := _pf_bedrocklib_ref_target(object.get(p, \"KnowledgeBaseId\", null), \"AWS::Bedrock::KnowledgeBase\")\n}\n\n# Embedding model id of a vector knowledge base (literal ARN or a Fn::Sub the\n# engine could flatten); undefined otherwise.\n_pf_bedrocklib_kb_embed_model(kb) := id if {\n\tid := _pf_bedrocklib_model_id(resolve(kb, \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelArn\"))\n}\n\n# Bucket expression of an S3 reference: a literal name, or the token text of a\n# Fn::Sub (\"${Bucket}\") so two references to the same in-template bucket compare\n# equal. Accepts \"s3://bucket[/...]\" and \"arn:aws:s3:::bucket\".\n_pf_bedrocklib_bucket_text(v) := v if is_string(v)\n\n_pf_bedrocklib_bucket_text(v) := t if {\n\tis_object(v)\n\td := object.get(v, \"__dynamic\", null)\n\tis_string(d)\n\tstartswith(d, \"Sub:\")\n\tt := substring(d, 4, -1)\n}\n\n_pf_bedrocklib_bucket_expr(v) := b if {\n\tt := _pf_bedrocklib_bucket_text(v)\n\tstartswith(t, \"s3://\")\n\tb := split(substring(t, 5, -1), \"/\")[0]\n\tb != \"\"\n}\n\n_pf_bedrocklib_bucket_expr(v) := b if {\n\tt := _pf_bedrocklib_bucket_text(v)\n\tregex.match(`^arn:[^:]*:s3:::`, t)\n\tb := split(split(t, \":::\")[1], \"/\")[0]\n\tb != \"\"\n}\n\n# Flow definition: the Definition object, or DefinitionString parsed as JSON\n# (CloudFormation-cased keys, same as FlowDefinition). Undefined when the\n# string is not JSON (pf-bedrock-flow-definition-string-json reports that) or\n# carries unresolved intrinsics.\n_pf_bedrocklib_flow_def(name) := d if {\n\tp := _pf_bedrocklib_props(name)\n\td := object.get(p, \"Definition\", null)\n\tis_object(d)\n}\n\n_pf_bedrocklib_flow_def(name) := d if {\n\tp := _pf_bedrocklib_props(name)\n\tnot _pf_bedrocklib_has(p, \"Definition\")\n\ts := resolve(name, \"Properties.DefinitionString\")\n\tis_string(s)\n\tjson.is_valid(s)\n\td := json.unmarshal(s)\n\tis_object(d)\n}\n\n_pf_bedrocklib_flow_prop(name) := \"Properties.Definition\" if {\n\t_pf_bedrocklib_has(_pf_bedrocklib_props(name), \"Definition\")\n}\n\n_pf_bedrocklib_flow_prop(name) := \"Properties.DefinitionString\" if {\n\tnot _pf_bedrocklib_has(_pf_bedrocklib_props(name), \"Definition\")\n}\n\n_pf_bedrocklib_flow_nodes(name) := [n | some n in object.get(_pf_bedrocklib_flow_def(name), \"Nodes\", []); is_object(n)]\n\n_pf_bedrocklib_flow_conns(name) := [c | some c in object.get(_pf_bedrocklib_flow_def(name), \"Connections\", []); is_object(c)]\n\n_pf_bedrocklib_flow_node_names(name) := {n.Name | some n in _pf_bedrocklib_flow_nodes(name); is_string(n.Name)}\n\n# Names of the outputs / inputs declared on a node.\n_pf_bedrocklib_node_outputs(n) := {o.Name | some o in object.get(n, \"Outputs\", []); is_object(o); is_string(o.Name)}\n\n_pf_bedrocklib_node_inputs(n) := {i.Name | some i in object.get(n, \"Inputs\", []); is_object(i); is_string(i.Name)}\n\n# Condition names declared on a Condition node.\n_pf_bedrocklib_node_conditions(n) := {c.Name | some c in object.get(object.get(object.get(n, \"Configuration\", {}), \"Condition\", {}), \"Conditions\", []); is_object(c); is_string(c.Name)}\n"
+  },
   {
     "name": "_lib/cache",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ElastiCache and MemoryDB rules. Both services use the\n# same maintenance / snapshot window grammar, the same endpoint port range and\n# the same identifier rules, so the parsing lives here once.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# to_number(\"03\") is undefined in the engine's Rego build, so digits go\n# through a lookup table (same trick as pf-rds-window-overlap).\n_pf_cachelib_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_cachelib_days := {\"sun\": 0, \"mon\": 1, \"tue\": 2, \"wed\": 3, \"thu\": 4, \"fri\": 5, \"sat\": 6}\n\n# \"HH:MM\" -> minutes of day; undefined for anything else.\n_pf_cachelib_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_cachelib_digit[substring(t, 0, 1)] * 10) + _pf_cachelib_digit[substring(t, 1, 1)]\n\tmi := (_pf_cachelib_digit[substring(t, 3, 1)] * 10) + _pf_cachelib_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# \"ddd:hh24:mi-ddd:hh24:mi\" -> [start day, start minutes, end day, end minutes].\n_pf_cachelib_window(w) := [d1, m1, d2, m2] if {\n\tis_string(w)\n\tparts := split(lower(w), \"-\")\n\tcount(parts) == 2\n\tp1 := split(parts[0], \":\")\n\tp2 := split(parts[1], \":\")\n\tcount(p1) == 3\n\tcount(p2) == 3\n\td1 := _pf_cachelib_days[p1[0]]\n\td2 := _pf_cachelib_days[p2[0]]\n\tm1 := _pf_cachelib_min(sprintf(\"%s:%s\", [p1[1], p1[2]]))\n\tm2 := _pf_cachelib_min(sprintf(\"%s:%s\", [p2[1], p2[2]]))\n}\n\n# Length of a maintenance window in minutes (wrapping around the week).\n_pf_cachelib_window_minutes(w) := n if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(w)\n\tstart := (d1 * 1440) + m1\n\tend := (d2 * 1440) + m2\n\tn := ((end - start) + 10080) % 10080\n}\n\n# \"hh24:mi-hh24:mi\" -> [start minutes, end minutes] of a daily window.\n_pf_cachelib_daily(w) := [s, e] if {\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_cachelib_min(parts[0])\n\te := _pf_cachelib_min(parts[1])\n}\n\n# The snapshot window recurs daily, so a same-day maintenance window overlaps\n# whenever the two time-of-day intervals intersect (mirrors pf-rds-window-overlap;\n# a window that spans two days is left alone).\n_pf_cachelib_overlap(mw, sw) if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(mw)\n\td1 == d2\n\tm1 < m2\n\t[s, e] := _pf_cachelib_daily(sw)\n\ts < e\n\ts < m2\n\tm1 < e\n}\n\n# ElastiCache and MemoryDB both accept 1150-8004 and 8006-65535.\n_pf_cachelib_port_ok(p) if {\n\tp >= 1150\n\tp <= 8004\n}\n\n_pf_cachelib_port_ok(p) if {\n\tp >= 8006\n\tp <= 65535\n}\n\n# Identifiers: begin with a letter, letters/digits/hyphens only, no two\n# consecutive hyphens and no trailing hyphen.\n_pf_cachelib_identifier_ok(s) if regex.match(`^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$`, s)\n\n# Data tiering is only supported on the r6gd families (cache.r6gd.* / db.r6gd.*).\n_pf_cachelib_r6gd(t) if {\n\tis_string(t)\n\tparts := split(t, \".\")\n\tcount(parts) >= 2\n\tparts[1] == \"r6gd\"\n}\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_cachelib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# A literal string a user wrote, not a resolved Ref / GetAtt logical id.\n_pf_cachelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_cachelib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"

@@ -1,0 +1,12 @@
+id: pf-bedrock-flow-input-node
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Flow]
+severity: ERROR
+title: A flow has exactly one Input node
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): no Input node -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The flow is missing a required Flow Input node. Add an Input node to define the flow's starting point and input parameters…]; two Input nodes -> CreateFlow 400: The limit for max-number-flow-input-nodes is 1, but the requested value is 2; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-input-node.log"
+addedOn: 2026-09-06

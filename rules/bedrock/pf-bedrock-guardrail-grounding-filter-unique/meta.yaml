@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-grounding-filter-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: A contextual grounding policy must not list the same filter type twice
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailContextualGroundingFilterConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two GROUNDING filters -> CreateGuardrail 400 ValidationException: The Contextual Grounding policy cannot have duplicate types; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-grounding-filter-unique.log"
+addedOn: 2026-09-06

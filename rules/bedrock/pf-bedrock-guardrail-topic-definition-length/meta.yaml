@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-topic-definition-length
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: A denied topic definition is limited to 200 characters on the CLASSIC tier
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-denied-topics.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Definition of 201 chars without TopicsTierConfig -> CreateGuardrail 400 ValidationException: One or more of your guardrail topic definitions exceeds the maximum allowed length. Shorten your topic definitions or update your guardrail topic policy configuration to support longer definitions; 200 chars deploys, 300 chars deploys on the STANDARD tier; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-topic-definition-length.log"
+addedOn: 2026-09-06

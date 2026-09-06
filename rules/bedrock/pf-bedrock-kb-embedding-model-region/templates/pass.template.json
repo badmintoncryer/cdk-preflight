@@ -1,0 +1,90 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3vectors:*",
+                    "bedrock:InvokeModel",
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "VB": {
+      "Type": "AWS::S3Vectors::VectorBucket",
+      "Properties": {}
+    },
+    "Idx": {
+      "Type": "AWS::S3Vectors::Index",
+      "Properties": {
+        "VectorBucketArn": {
+          "Fn::GetAtt": [
+            "VB",
+            "VectorBucketArn"
+          ]
+        },
+        "IndexName": "cdkpf-idx",
+        "DataType": "float32",
+        "Dimension": 1024,
+        "DistanceMetric": "cosine"
+      }
+    },
+    "KB": {
+      "Type": "AWS::Bedrock::KnowledgeBase",
+      "Properties": {
+        "Name": "cdkpf-kb-kb-embedding-model-region-pass",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "KnowledgeBaseConfiguration": {
+          "Type": "VECTOR",
+          "VectorKnowledgeBaseConfiguration": {
+            "EmbeddingModelArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+            }
+          }
+        },
+        "StorageConfiguration": {
+          "Type": "S3_VECTORS",
+          "S3VectorsConfiguration": {
+            "IndexArn": {
+              "Fn::GetAtt": [
+                "Idx",
+                "IndexArn"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-chunk-tokens-embedding-limit
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource, AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: Chunk size must not exceed the embedding model's token limit
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-supported.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Cohere Embed knowledge base + FIXED_SIZE MaxTokens 1000 -> CreateDataSource 400 ValidationException: The specified maxTokens 1000 in chunkingConfiguration exceeds the embedding model cohere.embed-english-v3 limit of 512; same for semantic and for the child level of hierarchical chunking; 512 deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-chunk-tokens-embedding-limit.log"
+addedOn: 2026-09-06

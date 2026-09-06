@@ -1,0 +1,12 @@
+id: pf-bedrock-prompt-router-model-region
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::IntelligentPromptRouter]
+severity: ERROR
+title: Prompt router models must be reachable from the deploy Region
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): model ARNs in us-west-2 from us-east-1 -> CreatePromptRouter 400 ValidationException: Unsupported model type: arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-3-haiku-20240307-v1:0; eu. inference-profile ARNs from us-east-1 -> ResourceNotFoundException: Inference profile … not Found or invalid; ${AWS::Region} ARNs deploy. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-router-model-region.log"
+addedOn: 2026-09-06

@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Router": {
+      "Type": "AWS::Bedrock::IntelligentPromptRouter",
+      "Properties": {
+        "PromptRouterName": "cdkpf-rmr-pass",
+        "Models": [
+          {
+            "ModelArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+            }
+          },
+          {
+            "ModelArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0"
+            }
+          }
+        ],
+        "FallbackModel": {
+          "ModelArn": {
+            "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0"
+          }
+        },
+        "RoutingCriteria": {
+          "ResponseQualityDifference": 10
+        }
+      }
+    }
+  }
+}

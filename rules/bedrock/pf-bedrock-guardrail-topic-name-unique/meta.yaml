@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-topic-name-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: Denied topic names within a guardrail must be unique
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailTopicConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two topics named t1 -> CreateGuardrail 400 ValidationException: Topic policy topic names are not unique; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-topic-name-unique.log"
+addedOn: 2026-09-06

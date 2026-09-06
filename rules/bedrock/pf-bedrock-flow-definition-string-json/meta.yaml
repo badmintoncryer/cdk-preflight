@@ -1,0 +1,12 @@
+id: pf-bedrock-flow-definition-string-json
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Flow]
+severity: ERROR
+title: DefinitionString must be JSON
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-bedrock-flow.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): DefinitionString 'not json {' -> CloudFormation CREATE_FAILED: Invalid request provided: Could not parse DefinitionString to valid flow resource definition; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-definition-string-json.log"
+addedOn: 2026-09-06

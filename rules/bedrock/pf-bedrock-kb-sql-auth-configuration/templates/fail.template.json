@@ -1,0 +1,77 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3vectors:*",
+                    "bedrock:InvokeModel",
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "KB": {
+      "Type": "AWS::Bedrock::KnowledgeBase",
+      "Properties": {
+        "Name": "cdkpf-kb-kb-sql-auth-configuration-fail",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "KnowledgeBaseConfiguration": {
+          "Type": "SQL",
+          "SqlKnowledgeBaseConfiguration": {
+            "Type": "REDSHIFT",
+            "RedshiftConfiguration": {
+              "QueryEngineConfiguration": {
+                "Type": "SERVERLESS",
+                "ServerlessConfiguration": {
+                  "WorkgroupArn": "arn:aws:redshift-serverless:us-east-1:123456789012:workgroup/12345678-1234-1234-1234-123456789012",
+                  "AuthConfiguration": {
+                    "Type": "USERNAME_PASSWORD"
+                  }
+                }
+              },
+              "StorageConfigurations": [
+                {
+                  "Type": "REDSHIFT",
+                  "RedshiftConfiguration": {
+                    "DatabaseName": "dev"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

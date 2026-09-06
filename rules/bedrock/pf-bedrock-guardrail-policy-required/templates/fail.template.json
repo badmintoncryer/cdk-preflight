@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-gpol-fail",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked"
+      }
+    }
+  }
+}
