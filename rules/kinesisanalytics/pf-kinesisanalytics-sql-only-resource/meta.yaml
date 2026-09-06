@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-sql-only-resource
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::ApplicationOutput, AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource]
+severity: ERROR
+title: "Outputs and reference data sources need a SQL application"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_AddApplicationOutput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"You cannot add sql configuration to a Flink application.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

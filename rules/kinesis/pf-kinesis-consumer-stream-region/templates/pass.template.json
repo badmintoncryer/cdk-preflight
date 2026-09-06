@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1
+      }
+    },
+    "C": {
+      "Type": "AWS::Kinesis::StreamConsumer",
+      "Properties": {
+        "ConsumerName": "cdkpf-consumer",
+        "StreamARN": {
+          "Fn::GetAtt": [
+            "S",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

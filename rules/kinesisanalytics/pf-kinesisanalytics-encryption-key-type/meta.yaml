@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-encryption-key-type
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "KeyId presence must match the encryption KeyType"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationEncryptionConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"keyId cannot be provided with the AWS_OWNED_KEY keyType.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

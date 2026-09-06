@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1
+      }
+    },
+    "RP": {
+      "Type": "AWS::Kinesis::ResourcePolicy",
+      "Properties": {
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "S",
+            "Arn"
+          ]
+        },
+        "ResourcePolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "cdkpf",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": [
+                "kinesis:GetRecords",
+                "kinesis:GetShardIterator"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "S",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

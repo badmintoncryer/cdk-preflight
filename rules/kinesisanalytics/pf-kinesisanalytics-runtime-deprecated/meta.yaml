@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-runtime-deprecated
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "Deprecated runtime environments can no longer be created"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/java/release-version-list.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Runtime FLINK-1_13 is deprecated. Please choose a valid version from: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplication.html#APIReference-CreateApplication-request-RuntimeEnvironment\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

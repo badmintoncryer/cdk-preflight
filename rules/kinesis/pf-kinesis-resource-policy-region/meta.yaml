@@ -1,0 +1,11 @@
+id: pf-kinesis-resource-policy-region
+service: kinesis
+resourceTypes: [AWS::Kinesis::ResourcePolicy]
+severity: ERROR
+title: "A resource policy must target a stream in its own region"
+constraintSource: https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The region specified in the ARN 'arn:aws:kinesis:us-west-2:123456789012:stream/cdkpf-elsewhere' does not match the endpoint region\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-parallelism-configuration-type
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "ParallelismConfiguration needs ConfigurationType CUSTOM to carry values"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ParallelismConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"You are trying to provide custom values for the parallelism configuration. Please use ConfigurationType as CUSTOM if you intend to use custom values for parallelism configuration.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

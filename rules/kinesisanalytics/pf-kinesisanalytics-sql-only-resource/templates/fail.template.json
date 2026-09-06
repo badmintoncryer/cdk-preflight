@@ -1,0 +1,61 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "kinesisanalytics.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "App": {
+      "Type": "AWS::KinesisAnalyticsV2::Application",
+      "Properties": {
+        "RuntimeEnvironment": "FLINK-1_20",
+        "ServiceExecutionRole": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Out": {
+      "Type": "AWS::KinesisAnalyticsV2::ApplicationOutput",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "Output": {
+          "Name": "DESTINATION",
+          "DestinationSchema": {
+            "RecordFormatType": "JSON"
+          },
+          "KinesisStreamsOutput": {
+            "ResourceARN": {
+              "Fn::GetAtt": [
+                "S",
+                "Arn"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "S": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": 1
+      }
+    }
+  }
+}
