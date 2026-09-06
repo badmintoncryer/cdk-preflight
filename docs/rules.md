@@ -190,6 +190,25 @@
 | `pf-efs-performance-mode` | AWS::EFS::FileSystem | PerformanceMode maxIO works with neither One Zone storage nor elastic throughput | none |
 | `pf-efs-replication-destination` | AWS::EFS::FileSystem | A replication destination pairs Region with an Availability Zone and a KMS key of that same region | none |
 | `pf-efs-throughput-mode` | AWS::EFS::FileSystem | ProvisionedThroughputInMibps belongs to ThroughputMode: provisioned and nothing else | none |
+| `pf-elasticache-auth-token` | AWS::ElastiCache::ReplicationGroup | AuthToken needs in-transit encryption and must be 16-128 printable characters without slash, quotes or at-sign | none |
+| `pf-elasticache-cache-cluster-nodes` | AWS::ElastiCache::CacheCluster | A Redis cluster holds one node and cross-az needs at least two | none |
+| `pf-elasticache-cluster-mode-parameter-group` | AWS::ElastiCache::ReplicationGroup | More than one node group needs a parameter group with cluster-enabled set to yes | none |
+| `pf-elasticache-data-tiering-node-type` | AWS::ElastiCache::ReplicationGroup | DataTieringEnabled only works on r6gd node types | none |
+| `pf-elasticache-engine` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | Replication groups do not run Memcached and cache clusters do not run Valkey | none |
+| `pf-elasticache-identifier` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | A replication group or cluster name starts with a letter and holds no consecutive or trailing hyphens | none |
+| `pf-elasticache-kms-key` | AWS::ElastiCache::ReplicationGroup | KmsKeyId needs AtRestEncryptionEnabled and a key in the deploy region | none |
+| `pf-elasticache-maintenance-window` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | PreferredMaintenanceWindow must be ddd:hh24:mi-ddd:hh24:mi and span at least 60 minutes | none |
+| `pf-elasticache-port` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | Port must be in 1150-8004 or 8006-65535 | none |
+| `pf-elasticache-preferred-availability-zones` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | The preferred Availability Zone list must have exactly one entry per node | none |
+| `pf-elasticache-replication-group-clusters` | AWS::ElastiCache::ReplicationGroup | Automatic failover needs at least two cache clusters (CloudFormation turns it on by default), and NumCacheClusters cannot be combined with NumNodeGroups | none |
+| `pf-elasticache-snapshot-retention` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | SnapshotRetentionLimit is 0-35 days and Memcached does not support snapshots at all | none |
+| `pf-elasticache-snapshot-source-engine` | AWS::ElastiCache::CacheCluster | SnapshotArns and SnapshotName only restore Redis clusters | none |
+| `pf-elasticache-snapshot-window` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | none |
+| `pf-elasticache-snapshotting-cluster` | AWS::ElastiCache::ReplicationGroup | SnapshottingClusterId cannot be set on a cluster mode enabled replication group | none |
+| `pf-elasticache-user-access-string` | AWS::ElastiCache::User | The access string uses Redis ACL rules; password rules and reset are rejected and categories must exist | none |
+| `pf-elasticache-user-authentication` | AWS::ElastiCache::User | A user needs exactly one authentication mode, and passwords are 16-128 characters with at most two per user | none |
+| `pf-elasticache-user-group-default-user` | AWS::ElastiCache::UserGroup | A Redis user group must contain a user named default, and a Valkey group rejects password-less users | none |
+| `pf-elasticache-user-group-transit-encryption` | AWS::ElastiCache::ReplicationGroup | UserGroupIds requires in-transit encryption | none |
 | `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | none |
 | `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | none |
 | `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | none |
@@ -253,6 +272,15 @@
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |
 | `pf-logs-metric-dimensions-default-exclusive` | AWS::Logs::MetricFilter | Dimensions and DefaultValue are mutually exclusive | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | none |
+| `pf-memorydb-data-tiering-node-type` | AWS::MemoryDB::Cluster | DataTiering only works on r6gd node types | none |
+| `pf-memorydb-engine` | AWS::MemoryDB::Cluster | MemoryDB runs Valkey or Redis, not Memcached | none |
+| `pf-memorydb-kms-key-region` | AWS::MemoryDB::Cluster | KmsKeyId must name a key in the deploy region | none |
+| `pf-memorydb-maintenance-window` | AWS::MemoryDB::Cluster | MaintenanceWindow must be ddd:hh24:mi-ddd:hh24:mi and span at least 60 minutes | none |
+| `pf-memorydb-port` | AWS::MemoryDB::Cluster | Port must be in 1150-8004 or 8006-65535 | none |
+| `pf-memorydb-replicas-per-shard` | AWS::MemoryDB::Cluster | NumReplicasPerShard is 0-5 | none |
+| `pf-memorydb-snapshot-retention` | AWS::MemoryDB::Cluster | SnapshotRetentionLimit is 0-35 days | none |
+| `pf-memorydb-snapshot-window` | AWS::MemoryDB::Cluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | none |
+| `pf-memorydb-user-password` | AWS::MemoryDB::User | A password user needs passwords of 16-128 characters | none |
 | `pf-rds-backtrack` | AWS::RDS::DBCluster | Backtrack only works on aurora-mysql, with a window of at most 259200 seconds | none |
 | `pf-rds-backup-retention-range` | AWS::RDS::DBInstance | BackupRetentionPeriod must be at most 35 days | none |
 | `pf-rds-backup-window-duration` | AWS::RDS::DBInstance | The backup window must be at least 30 minutes | none |

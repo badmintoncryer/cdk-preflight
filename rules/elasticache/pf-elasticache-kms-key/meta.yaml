@@ -1,0 +1,11 @@
+id: pf-elasticache-kms-key
+service: elasticache
+resourceTypes: [AWS::ElastiCache::ReplicationGroup]
+severity: ERROR
+title: "KmsKeyId needs AtRestEncryptionEnabled and a key in the deploy region"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Please enable encryption at rest to use Customer Managed CMK\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,11 @@
+id: pf-elasticache-preferred-availability-zones
+service: elasticache
+resourceTypes: [AWS::ElastiCache::ReplicationGroup, AWS::ElastiCache::CacheCluster]
+severity: ERROR
+title: "The preferred Availability Zone list must have exactly one entry per node"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"When specifying preferred availability zones, the number of cache clusters must be specified and must match the number of preferred availability zones.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

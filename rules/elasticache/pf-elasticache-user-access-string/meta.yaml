@@ -1,0 +1,11 @@
+id: pf-elasticache-user-access-string
+service: elasticache
+resourceTypes: [AWS::ElastiCache::User]
+severity: ERROR
+title: "The access string uses Redis ACL rules; password rules and reset are rejected and categories must exist"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateUser.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Password rules are not supported in Elasticache access string. Please use Passwords parameter to set/modify user password.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "RG": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-clustermodeparameter",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumNodeGroups": 2,
+        "ReplicasPerNodeGroup": 0,
+        "CacheParameterGroupName": {
+          "Ref": "PG"
+        }
+      }
+    },
+    "PG": {
+      "Type": "AWS::ElastiCache::ParameterGroup",
+      "Properties": {
+        "CacheParameterGroupFamily": "redis7",
+        "Description": "cdk-preflight bench"
+      }
+    }
+  }
+}

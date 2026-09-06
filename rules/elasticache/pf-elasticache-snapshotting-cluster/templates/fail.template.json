@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "RG": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-snapshottingcluster",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumNodeGroups": 2,
+        "ReplicasPerNodeGroup": 0,
+        "SnapshottingClusterId": "cdkpf-bench-0001-001"
+      }
+    }
+  }
+}

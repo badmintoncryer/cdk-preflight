@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::MemoryDB::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-snapshotwindow",
+        "NodeType": "db.t4g.small",
+        "ACLName": "open-access",
+        "NumShards": 1,
+        "NumReplicasPerShard": 0,
+        "SnapshotRetentionLimit": 1,
+        "MaintenanceWindow": "sun:05:00-sun:07:00",
+        "SnapshotWindow": "05:00-09:00"
+      }
+    }
+  }
+}

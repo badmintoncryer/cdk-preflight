@@ -1,0 +1,11 @@
+id: pf-elasticache-replication-group-clusters
+service: elasticache
+resourceTypes: [AWS::ElastiCache::ReplicationGroup]
+severity: ERROR
+title: "Automatic failover needs at least two cache clusters (CloudFormation turns it on by default), and NumCacheClusters cannot be combined with NumNodeGroups"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Automatic failover requires 2 or more cache clusters. Create more cache clusters or disable automatic failover.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

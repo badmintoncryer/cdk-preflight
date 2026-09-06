@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "U": {
+      "Type": "AWS::MemoryDB::User",
+      "Properties": {
+        "UserName": "cdkpf-userpassword",
+        "AccessString": "on ~* &* +@all",
+        "AuthenticationMode": {
+          "Type": "password",
+          "Passwords": [
+            "tooshort"
+          ]
+        }
+      }
+    }
+  }
+}

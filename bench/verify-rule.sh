@@ -19,7 +19,9 @@ LOG="bench/logs/$RULE.log"
 
 poll_terminal() { # stack -> echo final status
   local stack=$1
-  for _ in $(seq 1 90); do
+  # 30 分。ElastiCache / MemoryDB のクラスタは作成にも削除にも 10-25 分かかるので、
+  # 15 分では pass テンプレートが TIMEOUT=INCONCLUSIVE になる（2026-09-06 実測）。
+  for _ in $(seq 1 180); do
     st=$(aws cloudformation describe-stacks --stack-name "$stack" --region "$REGION" \
       --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo GONE)
     case "$st" in
