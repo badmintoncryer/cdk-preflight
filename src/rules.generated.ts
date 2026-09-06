@@ -2296,6 +2296,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound (minimum 3 characters) is enforced. The 255-char\n# maximum and the character pattern were not measured. Note resolve() turns a\n# Ref-to-resource into the target's logical ID; a logical ID short enough to\n# trip this rule while feeding a TableName is treated as the bug it almost\n# certainly is.\nviolation contains make_diag_full(\"pf-dynamodb-table-name-length\", \"ERROR\", name,\n\t\"Properties.TableName\",\n\tsprintf(\"TableName '%s' is shorter than 3 characters; CreateTable fails with \\\"Member must have length greater than or equal to 3\\\"\", [tn]),\n\t\"Use a table name of at least 3 characters, or omit TableName and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\ttn := resolve(name, \"Properties.TableName\")\n\tis_string(tn)\n\tcount(tn) < 3\n}\n"
   },
   {
+    "id": "pf-ec2-client-vpn-auth-type-config",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Client VPN AuthenticationOptions.Type must match the provided authentication sub-block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cvpnauth_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\"\n\n# Each authentication type carries exactly one sub-block; the schema keeps every\n# sub-block optional, so a type/sub-block mismatch only surfaces at CreateClientVpnEndpoint.\n_pf_cvpnauth_block := {\n\t\"certificate-authentication\": \"MutualAuthentication\",\n\t\"directory-service-authentication\": \"ActiveDirectory\",\n\t\"federated-authentication\": \"FederatedAuthentication\",\n}\n\n_pf_cvpnauth_has(opt, key) if object.get(opt, key, \"__pf_absent\") != \"__pf_absent\"\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-auth-type-config\", \"ERROR\", name,\n\tsprintf(\"Properties.AuthenticationOptions.%d.%s\", [item.index, want]),\n\tsprintf(\"AuthenticationOptions.Type '%s' requires the %s block\", [t, want]),\n\tsprintf(\"Add the %s block, or change Type\", [want]), _pf_cvpnauth_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tsome item in flatten_list(name, \"Properties.AuthenticationOptions\")\n\tt := object.get(item.value, \"Type\", null)\n\twant := _pf_cvpnauth_block[t]\n\tnot _pf_cvpnauth_has(item.value, want)\n}\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-auth-type-config\", \"ERROR\", name,\n\tsprintf(\"Properties.AuthenticationOptions.%d.%s\", [item.index, extra]),\n\tsprintf(\"AuthenticationOptions.Type '%s' does not take the %s block\", [t, extra]),\n\tsprintf(\"Remove the %s block, or change Type\", [extra]), _pf_cvpnauth_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tsome item in flatten_list(name, \"Properties.AuthenticationOptions\")\n\tt := object.get(item.value, \"Type\", null)\n\twant := _pf_cvpnauth_block[t]\n\tsome other, extra in _pf_cvpnauth_block\n\tother != t\n\textra != want\n\t_pf_cvpnauth_has(item.value, extra)\n}\n"
+  },
+  {
+    "id": "pf-ec2-client-vpn-authorization-rule-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Client VPN authorization rule cannot set both AccessGroupId and AuthorizeAllGroups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnAuthorizationRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cvpnare_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# Both properties are optional in the schema, so nothing rejects setting both;\n# EC2 refuses the pair at create time.\nviolation contains make_diag_full(\"pf-ec2-client-vpn-authorization-rule-exclusive\", \"ERROR\", name,\n\t\"Properties.AccessGroupId\",\n\t\"AccessGroupId and AuthorizeAllGroups are mutually exclusive (\\\"You can specify either access-group-id or authorize-all-groups, not both\\\")\",\n\t\"Drop AccessGroupId, or set AuthorizeAllGroups to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-clientvpnauthorizationrule.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnAuthorizationRule\")\n\tresolve(name, \"Properties.AuthorizeAllGroups\") == true\n\tnot _pf_cvpnare_absent(name, \"AccessGroupId\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-client-vpn-cidr-size",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Client VPN ClientCidrBlock must be between /12 and /22",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cvpncidr_out(p) if p < 12\n\n_pf_cvpncidr_out(p) if p > 22\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-cidr-size\", \"ERROR\", name,\n\t\"Properties.ClientCidrBlock\",\n\tsprintf(\"ClientCidrBlock '%s' has netmask /%v; a Client VPN endpoint requires /12 through /22 (\\\"Client cidr block must be of size /12 or smaller\\\")\", [c, p]),\n\t\"Use a netmask between /12 and /22\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tc := resolve(name, \"Properties.ClientCidrBlock\")\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\t_pf_cvpncidr_out(p)\n}\n"
+  },
+  {
+    "id": "pf-ec2-client-vpn-connection-log",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Client VPN ConnectionLogOptions.Enabled requires CloudwatchLogGroup",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-connection-log\", \"ERROR\", name,\n\t\"Properties.ConnectionLogOptions.CloudwatchLogGroup\",\n\t\"ConnectionLogOptions.Enabled is true but no CloudwatchLogGroup is set (\\\"Please provide a cloudwatch log group\\\")\",\n\t\"Set ConnectionLogOptions.CloudwatchLogGroup, or turn connection logging off\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\topts := resolve(name, \"Properties.ConnectionLogOptions\")\n\tis_object(opts)\n\tobject.get(opts, \"Enabled\", false) == true\n\tobject.get(opts, \"CloudwatchLogGroup\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-ec2-client-vpn-port",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Client VPN VpnPort must be 443 or 1194",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-port\", \"ERROR\", name,\n\t\"Properties.VpnPort\",\n\tsprintf(\"VpnPort %v is not accepted (\\\"Vpn port you provided is not valid; valid values are [443, 1194]\\\")\", [n]),\n\t\"Use 443 or 1194\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tn := to_number(resolve(name, \"Properties.VpnPort\"))\n\tnot n in {443, 1194}\n}\n"
+  },
+  {
+    "id": "pf-ec2-client-vpn-session-timeout",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Client VPN SessionTimeoutHours must be 8, 10, 12 or 24",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-session-timeout\", \"ERROR\", name,\n\t\"Properties.SessionTimeoutHours\",\n\tsprintf(\"SessionTimeoutHours %v is not accepted (\\\"Session Timeout you provided is not valid; valid values are [8, 10, 12, 24]\\\")\", [n]),\n\t\"Use 8, 10, 12 or 24\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tn := to_number(resolve(name, \"Properties.SessionTimeoutHours\"))\n\tnot n in {8, 10, 12, 24}\n}\n"
+  },
+  {
     "id": "pf-ec2-instance-ami-arch",
     "service": "ec2",
     "severity": "ERROR",
@@ -2426,6 +2492,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_subnetcidr_len(c) := to_number(parts[1]) if {\n\tparts := split(c, \"/\")\n\tcount(parts) == 2\n}\n\nviolation contains make_diag_full(\"pf-ec2-subnet-cidr-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"Subnet CIDR '%s' has a /%d netmask; EC2 accepts /16 through /28 and rejects the create call otherwise\", [c, n]),\n\t\"Resize the subnet CIDR to a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Subnet\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tn := _pf_subnetcidr_len(c)\n\t_pf_subnetcidr_out(n)\n}\n\n_pf_subnetcidr_out(n) if n < 16\n\n_pf_subnetcidr_out(n) if n > 28\n"
   },
   {
+    "id": "pf-ec2-tgw-amazon-side-asn",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "TransitGateway AmazonSideAsn must be in 64512-65534 or 4200000000-4294967294",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::TransitGateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_tgwasn_ok(n) if {\n\tn >= 64512\n\tn <= 65534\n}\n\n_pf_tgwasn_ok(n) if {\n\tn >= 4200000000\n\tn <= 4294967294\n}\n\nviolation contains make_diag_full(\"pf-ec2-tgw-amazon-side-asn\", \"ERROR\", name,\n\t\"Properties.AmazonSideAsn\",\n\tsprintf(\"AmazonSideAsn %v is outside the private ASN ranges 64512-65534 and 4200000000-4294967294\", [n]),\n\t\"Use a private ASN such as 64512\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TransitGatewayRequestOptions.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::TransitGateway\")\n\tn := to_number(resolve(name, \"Properties.AmazonSideAsn\"))\n\tnot _pf_tgwasn_ok(n)\n}\n"
+  },
+  {
+    "id": "pf-ec2-tgw-cidr-block-size",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "TransitGatewayCidrBlocks must be /24 or larger for IPv4",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::TransitGateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-tgw-cidr-block-size\", \"ERROR\", name,\n\tsprintf(\"Properties.TransitGatewayCidrBlocks.%d\", [item.index]),\n\tsprintf(\"Transit gateway CIDR block '%s' has netmask /%v; the IPv4 block must be /24 or larger\", [c, p]),\n\t\"Widen the block to /24 or larger\",\n\t\"https://docs.aws.amazon.com/vpc/latest/tgw/tgw-transit-gateways.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::TransitGateway\")\n\tsome item in flatten_list(name, \"Properties.TransitGatewayCidrBlocks\")\n\tc := item.value\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\tp > 24\n}\n"
+  },
+  {
     "id": "pf-ec2-userdata-size",
     "service": "ec2",
     "severity": "ERROR",
@@ -2524,6 +2612,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPCEndpoint"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vtc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html\"\n\n_pf_ec2vtc_type(name) := t if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tt := object.get(props, \"VpcEndpointType\", \"Gateway\")\n}\n\n_pf_ec2vtc_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\t\"A Gateway endpoint cannot take SubnetIds (\\\"Subnet IDs are only supported for Interface and GatewayLoadBalancer type VPC Endpoints.\\\")\",\n\t\"Remove SubnetIds, or set VpcEndpointType: Interface\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\t_pf_ec2vtc_type(name) == \"Gateway\"\n\t_pf_ec2vtc_has(name, \"SubnetIds\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.RouteTableIds\",\n\tsprintf(\"A %s endpoint cannot take RouteTableIds; only Gateway endpoints attach to route tables\", [t]),\n\t\"Remove RouteTableIds, or set VpcEndpointType: Gateway\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tt := _pf_ec2vtc_type(name)\n\tt != \"Gateway\"\n\tis_string(t)\n\t_pf_ec2vtc_has(name, \"RouteTableIds\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpn-phase-lifetime-order",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "VPN Phase2LifetimeSeconds must be less than Phase1LifetimeSeconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPNConnection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both values can sit inside their own documented ranges (F3034 covers those)\n# and still be rejected, because phase 2 must expire before phase 1.\nviolation contains make_diag_full(\"pf-ec2-vpn-phase-lifetime-order\", \"ERROR\", name,\n\tsprintf(\"Properties.VpnTunnelOptionsSpecifications.%d.Phase2LifetimeSeconds\", [item.index]),\n\tsprintf(\"Phase2LifetimeSeconds (%v) must be less than Phase1LifetimeSeconds (%v)\", [p2, p1]),\n\t\"Lower Phase2LifetimeSeconds below Phase1LifetimeSeconds\",\n\t\"https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPNConnection\")\n\tsome item in flatten_list(name, \"Properties.VpnTunnelOptionsSpecifications\")\n\tp1 := to_number(object.get(item.value, \"Phase1LifetimeSeconds\", null))\n\tp2 := to_number(object.get(item.value, \"Phase2LifetimeSeconds\", null))\n\tp2 > p1\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpn-pre-shared-key",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "VPN tunnel PreSharedKey must be 8-64 characters of [A-Za-z0-9._] and must not start with 0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPNConnection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_vpnpsk_url := \"https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html\"\n\n_pf_vpnpsk_fix := \"Use 8-64 characters of A-Z a-z 0-9 . _ and do not start with 0\"\n\n_pf_vpnpsk_bad(s) if count(s) < 8\n\n_pf_vpnpsk_bad(s) if count(s) > 64\n\n_pf_vpnpsk_bad(s) if not regex.match(`^[A-Za-z0-9._]+$`, s)\n\n_pf_vpnpsk_bad(s) if startswith(s, \"0\")\n\nviolation contains make_diag_full(\"pf-ec2-vpn-pre-shared-key\", \"ERROR\", name,\n\tsprintf(\"Properties.VpnTunnelOptionsSpecifications.%d.PreSharedKey\", [item.index]),\n\tsprintf(\"PreSharedKey '%s' is not accepted: it must be 8-64 characters of [A-Za-z0-9._] and must not start with 0\", [psk]),\n\t_pf_vpnpsk_fix, _pf_vpnpsk_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPNConnection\")\n\tsome item in flatten_list(name, \"Properties.VpnTunnelOptionsSpecifications\")\n\tpsk := object.get(item.value, \"PreSharedKey\", null)\n\tis_string(psk)\n\t_pf_vpnpsk_bad(psk)\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpn-rekey-margin",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "VPN RekeyMarginTimeSeconds must be less than half of Phase2LifetimeSeconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPNConnection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-vpn-rekey-margin\", \"ERROR\", name,\n\tsprintf(\"Properties.VpnTunnelOptionsSpecifications.%d.RekeyMarginTimeSeconds\", [item.index]),\n\tsprintf(\"RekeyMarginTimeSeconds (%v) must be less than half of Phase2LifetimeSeconds (%v)\", [m, p2]),\n\t\"Lower RekeyMarginTimeSeconds below half of Phase2LifetimeSeconds\",\n\t\"https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPNConnection\")\n\tsome item in flatten_list(name, \"Properties.VpnTunnelOptionsSpecifications\")\n\tm := to_number(object.get(item.value, \"RekeyMarginTimeSeconds\", null))\n\tp2 := to_number(object.get(item.value, \"Phase2LifetimeSeconds\", null))\n\tm * 2 > p2\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpn-tunnel-inside-cidr",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "VPN TunnelInsideCidr must be a /30 inside 169.254.0.0/16 and not one of the reserved ranges",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPNConnection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_vpntic_url := \"https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html\"\n\n_pf_vpntic_fix := \"Use an unused /30 inside 169.254.0.0/16, for example 169.254.100.0/30\"\n\n_pf_vpntic_reserved := {\n\t\"169.254.0.0/30\", \"169.254.1.0/30\", \"169.254.2.0/30\", \"169.254.3.0/30\",\n\t\"169.254.4.0/30\", \"169.254.5.0/30\", \"169.254.169.252/30\",\n}\n\n_pf_vpntic_outside(c) if not startswith(c, \"169.254.\")\n\n_pf_vpntic_outside(c) if to_number(split(c, \"/\")[1]) != 30\n\n_pf_vpntic_cidr(item) := c if {\n\tc := object.get(item.value, \"TunnelInsideCidr\", null)\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpn-tunnel-inside-cidr\", \"ERROR\", name,\n\tsprintf(\"Properties.VpnTunnelOptionsSpecifications.%d.TunnelInsideCidr\", [item.index]),\n\tsprintf(\"TunnelInsideCidr '%s' must be a /30 inside 169.254.0.0/16\", [c]),\n\t_pf_vpntic_fix, _pf_vpntic_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPNConnection\")\n\tsome item in flatten_list(name, \"Properties.VpnTunnelOptionsSpecifications\")\n\tc := _pf_vpntic_cidr(item)\n\t_pf_vpntic_outside(c)\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpn-tunnel-inside-cidr\", \"ERROR\", name,\n\tsprintf(\"Properties.VpnTunnelOptionsSpecifications.%d.TunnelInsideCidr\", [item.index]),\n\tsprintf(\"TunnelInsideCidr '%s' is reserved by AWS and cannot be used for a tunnel\", [c]),\n\t_pf_vpntic_fix, _pf_vpntic_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPNConnection\")\n\tsome item in flatten_list(name, \"Properties.VpnTunnelOptionsSpecifications\")\n\tc := _pf_vpntic_cidr(item)\n\tc in _pf_vpntic_reserved\n}\n"
   },
   {
     "id": "pf-ecr-encryption-configuration",

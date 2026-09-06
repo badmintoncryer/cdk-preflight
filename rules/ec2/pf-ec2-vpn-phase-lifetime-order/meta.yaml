@@ -1,0 +1,11 @@
+id: pf-ec2-vpn-phase-lifetime-order
+service: ec2
+resourceTypes: [AWS::EC2::VPNConnection]
+severity: ERROR
+title: VPN Phase2LifetimeSeconds must be less than Phase1LifetimeSeconds
+constraintSource: https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE, "Invalid value specified for Phase2LifetimeSeconds."; pass template -> CREATE_COMPLETE'
+addedOn: 2026-09-06

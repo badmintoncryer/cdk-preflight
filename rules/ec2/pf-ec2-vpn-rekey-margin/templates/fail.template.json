@@ -1,0 +1,40 @@
+{
+  "Resources": {
+    "Cgw": {
+      "Type": "AWS::EC2::CustomerGateway",
+      "Properties": {
+        "BgpAsn": 65000,
+        "IpAddress": "203.0.113.8",
+        "Type": "ipsec.1"
+      }
+    },
+    "Vgw": {
+      "Type": "AWS::EC2::VPNGateway",
+      "Properties": {
+        "Type": "ipsec.1"
+      }
+    },
+    "Vpn": {
+      "Type": "AWS::EC2::VPNConnection",
+      "Properties": {
+        "Type": "ipsec.1",
+        "CustomerGatewayId": {
+          "Ref": "Cgw"
+        },
+        "StaticRoutesOnly": true,
+        "VpnTunnelOptionsSpecifications": [
+          {
+            "PreSharedKey": "cdkpf.PassKey123",
+            "TunnelInsideCidr": "169.254.100.0/30",
+            "Phase1LifetimeSeconds": 28800,
+            "Phase2LifetimeSeconds": 1800,
+            "RekeyMarginTimeSeconds": 1000
+          }
+        ],
+        "VpnGatewayId": {
+          "Ref": "Vgw"
+        }
+      }
+    }
+  }
+}
