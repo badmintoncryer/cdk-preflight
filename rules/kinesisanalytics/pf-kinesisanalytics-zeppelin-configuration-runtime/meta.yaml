@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-zeppelin-configuration-runtime
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "ZeppelinApplicationConfiguration belongs to Studio runtimes only"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid configuration provided. ZeppelinApplicationConfiguration is not applicable to runtime environment : FLINK-1_20\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

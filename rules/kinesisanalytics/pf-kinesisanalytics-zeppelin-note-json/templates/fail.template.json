@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "kinesisanalytics.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "App": {
+      "Type": "AWS::KinesisAnalyticsV2::Application",
+      "Properties": {
+        "RuntimeEnvironment": "ZEPPELIN-FLINK-3_0",
+        "ServiceExecutionRole": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "ApplicationMode": "INTERACTIVE",
+        "ApplicationConfiguration": {
+          "ZeppelinApplicationConfiguration": {},
+          "ApplicationCodeConfiguration": {
+            "CodeContentType": "PLAINTEXT",
+            "CodeContent": {
+              "TextContent": "%flink.ssql SELECT * FROM orders"
+            }
+          }
+        }
+      }
+    }
+  }
+}

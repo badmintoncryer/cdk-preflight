@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-system-rollback-runtime
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::Application]
+severity: ERROR
+title: "ApplicationSystemRollbackConfiguration is not applicable to Studio runtimes"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid configuration provided. SystemRollbacksEnabled is not applicable to runtime environment : ZEPPELIN-FLINK-3_0\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

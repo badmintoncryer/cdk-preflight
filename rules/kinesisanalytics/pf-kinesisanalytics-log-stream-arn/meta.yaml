@@ -1,0 +1,11 @@
+id: pf-kinesisanalytics-log-stream-arn
+service: kinesisanalytics
+resourceTypes: [AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption]
+severity: ERROR
+title: "LogStreamARN must name a log stream, not a log group"
+constraintSource: https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CloudWatchLoggingOption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"CloudWatch log stream ARN arn:aws:logs:us-east-1:123456789012:log-group:cdkpf-managed-flink is invalid.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

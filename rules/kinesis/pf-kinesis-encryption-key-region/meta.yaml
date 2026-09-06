@@ -1,0 +1,11 @@
+id: pf-kinesis-encryption-key-region
+service: kinesis
+resourceTypes: [AWS::Kinesis::Stream]
+severity: ERROR
+title: "The stream encryption key must live in the stream region"
+constraintSource: https://docs.aws.amazon.com/kinesis/latest/APIReference/API_StartStreamEncryption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid arn us-west-2\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

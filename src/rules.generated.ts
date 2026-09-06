@@ -2808,6 +2808,370 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shape check only: every service principal ends in .amazonaws.com (or\n# .amazonaws.com.cn in the China partition). Whether a well-shaped name\n# exists is left to the service.\n_pf_itsp_trust(name) := d if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\td := object.get(props, \"AssumeRolePolicyDocument\", \"__pf_absent\")\n\tis_object(d)\n}\n\n_pf_itsp_stmts(d) := [[0, s]] if {\n\ts := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_object(s)\n}\n\n_pf_itsp_stmts(d) := out if {\n\tarr := object.get(d, \"Statement\", \"__pf_absent\")\n\tis_array(arr)\n\tout := [[i, s] | some i, s in arr]\n}\n\n_pf_itsp_vals(v) := [v] if is_string(v)\n\n_pf_itsp_vals(v) := v if is_array(v)\n\n_pf_itsp_ok(sp) if endswith(sp, \".amazonaws.com\")\n\n_pf_itsp_ok(sp) if endswith(sp, \".amazonaws.com.cn\")\n\nviolation contains make_diag_full(\"pf-iam-trust-policy-service-principal\", \"ERROR\", name,\n\tsprintf(\"Properties.AssumeRolePolicyDocument.Statement.%d.Principal.Service\", [i]),\n\tsprintf(\"Service principal '%s' is not an amazonaws.com domain; the role create fails with 'Invalid principal in policy: \\\"SERVICE\\\":\\\"%s\\\"'\", [sp, sp]),\n\t\"Use the service principal name, e.g. lambda.amazonaws.com\",\n\t\"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html\") if {\n\tsome name in resources_of_type(\"AWS::IAM::Role\")\n\td := _pf_itsp_trust(name)\n\tsome [i, s] in _pf_itsp_stmts(d)\n\tis_object(s)\n\tp := object.get(s, \"Principal\", {})\n\tis_object(p)\n\tsome sp in _pf_itsp_vals(object.get(p, \"Service\", []))\n\tis_string(sp)\n\tnot _pf_itsp_ok(sp)\n}\n"
   },
   {
+    "id": "pf-kinesis-consumer-duplicate-name",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "Two consumers of one stream cannot share a ConsumerName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::StreamConsumer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# E3019 only guards a type's primary identifier, and a consumer's is its\n# ConsumerARN — the (stream, name) pair it is really keyed by is not checked.\nviolation contains make_diag_full(\"pf-kinesis-consumer-duplicate-name\", \"ERROR\", b,\n\t\"Properties.ConsumerName\",\n\tsprintf(\"consumer name '%v' is already registered on the same stream by resource %v; the stack fails with \\\"Consumer %v under stream ... already exists\\\"\", [cn, a, cn]),\n\t\"Give each consumer of a stream a distinct ConsumerName\",\n\t\"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_RegisterStreamConsumer.html\") if {\n\tsome a in resources_of_type(\"AWS::Kinesis::StreamConsumer\")\n\tsome b in resources_of_type(\"AWS::Kinesis::StreamConsumer\")\n\ta < b\n\tcn := resolve(a, \"Properties.ConsumerName\")\n\tis_string(cn)\n\tresolve(b, \"Properties.ConsumerName\") == cn\n\tsa := resolve(a, \"Properties.StreamARN\")\n\tis_string(sa)\n\tresolve(b, \"Properties.StreamARN\") == sa\n}\n"
+  },
+  {
+    "id": "pf-kinesis-consumer-stream-region",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "A stream consumer must reference a stream in its own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::StreamConsumer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesis-consumer-stream-region\", \"ERROR\", name,\n\t\"Properties.StreamARN\",\n\tsprintf(\"the stream is in '%v' but the consumer deploys to '%v'; RegisterStreamConsumer fails with \\\"The region specified in the ARN ... does not match the endpoint region\\\"\", [sr, region]),\n\t\"Register the consumer in the stream's own region\",\n\t\"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_RegisterStreamConsumer.html\") if {\n\tsome name in resources_of_type(\"AWS::Kinesis::StreamConsumer\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsr := _pf_kinlib_arn_region(resolve(name, \"Properties.StreamARN\"), \"kinesis\")\n\tsr != region\n}\n"
+  },
+  {
+    "id": "pf-kinesis-encryption-key-region",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "The stream encryption key must live in the stream region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::Stream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise.\nviolation contains make_diag_full(\"pf-kinesis-encryption-key-region\", \"ERROR\", name,\n\t\"Properties.StreamEncryption.KeyId\",\n\tsprintf(\"the KMS key is in '%v' but the stream deploys to '%v'; the stack fails with \\\"KMSNotFoundException: Invalid arn %v\\\"\", [kr, region, kr]),\n\t\"Point StreamEncryption.KeyId at a key in the stream's own region (or use the alias alias/aws/kinesis)\",\n\t\"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_StartStreamEncryption.html\") if {\n\tsome name in resources_of_type(\"AWS::Kinesis::Stream\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tkr := _pf_kinlib_arn_region(resolve(name, \"Properties.StreamEncryption.KeyId\"), \"kms\")\n\tkr != region\n}\n"
+  },
+  {
+    "id": "pf-kinesis-on-demand-shard-count",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "An on-demand stream cannot set ShardCount",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::Stream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinods_url := \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_CreateStream.html\"\n\nviolation contains make_diag_full(\"pf-kinesis-on-demand-shard-count\", \"ERROR\", name,\n\t\"Properties.ShardCount\",\n\t\"the stream is ON_DEMAND but also sets ShardCount; the stack fails with \\\"ShardCount is not expected when StreamMode=ON_DEMAND\\\"\",\n\t\"Drop ShardCount, or set StreamModeDetails.StreamMode to PROVISIONED\",\n\t_pf_kinods_url) if {\n\tsome name in resources_of_type(\"AWS::Kinesis::Stream\")\n\tresolve(name, \"Properties.StreamModeDetails.StreamMode\") == \"ON_DEMAND\"\n\t_pf_kinlib_has(_pf_kinlib_props(name), \"ShardCount\")\n}\n"
+  },
+  {
+    "id": "pf-kinesis-provisioned-shard-count",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "A provisioned stream must set ShardCount",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::Stream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinpsc_url := \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_CreateStream.html\"\n\n# Only an explicit PROVISIONED mode is a violation: a stream with neither\n# StreamModeDetails nor ShardCount creates fine on the service default.\nviolation contains make_diag_full(\"pf-kinesis-provisioned-shard-count\", \"ERROR\", name,\n\t\"Properties.ShardCount\",\n\t\"StreamMode is PROVISIONED but ShardCount is missing; the stack fails with \\\"ShardCount is expected when StreamMode=PROVISIONED\\\"\",\n\t\"Set ShardCount, or switch StreamModeDetails.StreamMode to ON_DEMAND\",\n\t_pf_kinpsc_url) if {\n\tsome name in resources_of_type(\"AWS::Kinesis::Stream\")\n\tresolve(name, \"Properties.StreamModeDetails.StreamMode\") == \"PROVISIONED\"\n\tnot _pf_kinlib_has(_pf_kinlib_props(name), \"ShardCount\")\n}\n"
+  },
+  {
+    "id": "pf-kinesis-resource-policy-action",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "Resource policy actions must be plain kinesis: actions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::ResourcePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinrpa_fix := \"List explicit kinesis: actions — Kinesis rejects other vendors and every wildcard, including kinesis:*\"\n\n# A statement Action that is not a literal kinesis:<Operation>: another\n# vendor's prefix (\"Action field includes AWS services that are inconsistent\n# with specified vendor\") or any wildcard (\"cannot contain invalid actions\").\n_pf_kinrpa_bad(a) if {\n\tis_string(a)\n\tnot startswith(a, \"kinesis:\")\n}\n\n_pf_kinrpa_bad(a) if {\n\tis_string(a)\n\tindexof(a, \"*\") != -1\n}\n\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-action\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.Statement.%v.Action\", [i]),\n\tsprintf(\"statement %v allows '%v'; PutResourcePolicy rejects it (only explicit kinesis: actions are accepted)\", [i, a]),\n\t_pf_kinrpa_fix, \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome [name, i, s] in _pf_kinlib_statements\n\ta := object.get(s, \"Action\", null)\n\t_pf_kinrpa_bad(a)\n}\n\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-action\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.Statement.%v.Action.%v\", [i, j]),\n\tsprintf(\"statement %v allows '%v'; PutResourcePolicy rejects it (only explicit kinesis: actions are accepted)\", [i, a]),\n\t_pf_kinrpa_fix, \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome [name, i, s] in _pf_kinlib_statements\n\tacts := object.get(s, \"Action\", null)\n\tis_array(acts)\n\tsome j, a in acts\n\t_pf_kinrpa_bad(a)\n}\n"
+  },
+  {
+    "id": "pf-kinesis-resource-policy-principal",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "Every policy statement needs a Principal (and no NotPrincipal)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::ResourcePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinrpp_fix := \"Name the sharing account or role in Principal; NotPrincipal is rejected outright\"\n\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-principal\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.Statement.%v\", [i]),\n\tsprintf(\"statement %v has no Principal; PutResourcePolicy fails with \\\"Policy validation error: Missing required field Principal\\\"\", [i]),\n\t_pf_kinrpp_fix, \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome [name, i, s] in _pf_kinlib_statements\n\tnot _pf_kinlib_has(s, \"Principal\")\n\tnot _pf_kinlib_has(s, \"NotPrincipal\")\n}\n\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-principal\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.Statement.%v.NotPrincipal\", [i]),\n\tsprintf(\"statement %v uses NotPrincipal; PutResourcePolicy fails with \\\"Policy validation error: Has prohibited field NotPrincipal\\\"\", [i]),\n\t_pf_kinrpp_fix, \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome [name, i, s] in _pf_kinlib_statements\n\t_pf_kinlib_has(s, \"NotPrincipal\")\n}\n"
+  },
+  {
+    "id": "pf-kinesis-resource-policy-region",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "A resource policy must target a stream in its own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::ResourcePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-region\", \"ERROR\", name,\n\t\"Properties.ResourceArn\",\n\tsprintf(\"the target stream is in '%v' but the policy deploys to '%v'; PutResourcePolicy fails with \\\"The region specified in the ARN ... does not match the endpoint region\\\"\", [ar, region]),\n\t\"Attach the resource policy in the stream's own region\",\n\t\"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Kinesis::ResourcePolicy\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tar := _pf_kinlib_arn_region(resolve(name, \"Properties.ResourceArn\"), \"kinesis\")\n\tar != region\n}\n"
+  },
+  {
+    "id": "pf-kinesis-resource-policy-resource",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "Every policy statement Resource must equal the ResourceArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::ResourcePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinrpr_fix := \"Write the same ARN as ResourceArn in every statement Resource — Kinesis rejects wildcards and any other ARN\"\n\n# Both sides go through resolve(), so a GetAtt-wired ResourceArn and a\n# GetAtt-wired Resource compare equal as the same logical id.\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-resource\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.Statement.%v.Resource\", [i]),\n\tsprintf(\"statement %v targets '%v' but the policy is attached to '%v'; PutResourcePolicy fails with \\\"The resource policy's resource must be the same as the resource ARN.\\\"\", [i, r, ra]),\n\t_pf_kinrpr_fix, \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome [name, i, s] in _pf_kinlib_statements\n\tra := resolve(name, \"Properties.ResourceArn\")\n\tis_string(ra)\n\tis_string(object.get(s, \"Resource\", null))\n\tr := resolve(name, sprintf(\"Properties.ResourcePolicy.Statement.%v.Resource\", [i]))\n\tis_string(r)\n\tr != ra\n}\n\nviolation contains make_diag_full(\"pf-kinesis-resource-policy-resource\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.Statement.%v.Resource.%v\", [i, j]),\n\tsprintf(\"statement %v targets '%v' but the policy is attached to '%v'; PutResourcePolicy fails with \\\"The resource policy's resource must be the same as the resource ARN.\\\"\", [i, r, ra]),\n\t_pf_kinrpr_fix, \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutResourcePolicy.html\") if {\n\tsome [name, i, s] in _pf_kinlib_statements\n\tra := resolve(name, \"Properties.ResourceArn\")\n\tis_string(ra)\n\trs := object.get(s, \"Resource\", null)\n\tis_array(rs)\n\tsome j, _ in rs\n\tr := resolve(name, sprintf(\"Properties.ResourcePolicy.Statement.%v.Resource.%v\", [i, j]))\n\tis_string(r)\n\tr != ra\n}\n"
+  },
+  {
+    "id": "pf-kinesis-shard-level-metrics-all",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "DesiredShardLevelMetrics cannot mix ALL with named metrics",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::Stream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesis-shard-level-metrics-all\", \"ERROR\", name,\n\t\"Properties.DesiredShardLevelMetrics\",\n\tsprintf(\"DesiredShardLevelMetrics lists ALL together with %v other metric(s); the stack fails with \\\"DesiredShardLevelMetrics cannot have ALL with other metric names\\\"\", [count(ms) - 1]),\n\t\"List ALL on its own, or drop ALL and name the metrics you want\",\n\t\"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_EnableEnhancedMonitoring.html\") if {\n\tsome name in resources_of_type(\"AWS::Kinesis::Stream\")\n\tms := object.get(_pf_kinlib_props(name), \"DesiredShardLevelMetrics\", null)\n\tis_array(ms)\n\t\"ALL\" in ms\n\tcount(ms) > 1\n}\n"
+  },
+  {
+    "id": "pf-kinesis-warm-throughput-shard-count",
+    "service": "kinesis",
+    "severity": "ERROR",
+    "title": "WarmThroughputMiBps cannot be combined with ShardCount or provisioned mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Kinesis::Stream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinwt_url := \"https://docs.aws.amazon.com/kinesis/latest/APIReference/API_CreateStream.html\"\n\n_pf_kinwt_fix := \"Drop WarmThroughputMiBps, or make the stream on-demand and remove ShardCount\"\n\nviolation contains make_diag_full(\"pf-kinesis-warm-throughput-shard-count\", \"ERROR\", name,\n\t\"Properties.WarmThroughputMiBps\",\n\t\"the stream sets both WarmThroughputMiBps and ShardCount; the stack fails with \\\"WarmThroughputMiBps can only be set for ON_DEMAND streams\\\" (CreateStream answers \\\"Either 'warmThroughputMiBps' or 'shardCount' can be set but not both\\\")\",\n\t_pf_kinwt_fix, _pf_kinwt_url) if {\n\tsome name in resources_of_type(\"AWS::Kinesis::Stream\")\n\t_pf_kinlib_has(_pf_kinlib_props(name), \"WarmThroughputMiBps\")\n\t_pf_kinlib_has(_pf_kinlib_props(name), \"ShardCount\")\n}\n\nviolation contains make_diag_full(\"pf-kinesis-warm-throughput-shard-count\", \"ERROR\", name,\n\t\"Properties.WarmThroughputMiBps\",\n\t\"warm throughput is an on-demand feature but StreamMode is PROVISIONED; CreateStream fails with \\\"WarmThroughputMiBps cannot be set while creating stream in Provisioned StreamMode\\\"\",\n\t_pf_kinwt_fix, _pf_kinwt_url) if {\n\tsome name in resources_of_type(\"AWS::Kinesis::Stream\")\n\t_pf_kinlib_has(_pf_kinlib_props(name), \"WarmThroughputMiBps\")\n\tresolve(name, \"Properties.StreamModeDetails.StreamMode\") == \"PROVISIONED\"\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-application-mode-runtime",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ApplicationMode must match the runtime family",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinamr_url := \"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplication.html\"\n\n_pf_kinamr_interactive(name) if resolve(name, \"Properties.ApplicationMode\") == \"INTERACTIVE\"\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-application-mode-runtime\", \"ERROR\", name,\n\t\"Properties.ApplicationMode\",\n\tsprintf(\"runtime %v is a Studio notebook and needs ApplicationMode INTERACTIVE; CreateApplication fails with \\\"ApplicationMode ... is not applicable to runtime environment : %v\\\"\", [rt, rt]),\n\t\"Set ApplicationMode to INTERACTIVE for ZEPPELIN-FLINK runtimes\",\n\t_pf_kinamr_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\trt := _pf_kinlib_runtime(name)\n\t_pf_kinlib_zeppelin(rt)\n\tnot _pf_kinamr_interactive(name)\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-application-mode-runtime\", \"ERROR\", name,\n\t\"Properties.ApplicationMode\",\n\tsprintf(\"ApplicationMode INTERACTIVE is a Studio notebook mode but the runtime is %v; CreateApplication fails with \\\"ApplicationMode 'INTERACTIVE' is not applicable to runtime environment : %v\\\"\", [rt, rt]),\n\t\"Use STREAMING (or leave ApplicationMode out) for FLINK runtimes\",\n\t_pf_kinamr_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\trt := _pf_kinlib_runtime(name)\n\t_pf_kinlib_flink(rt)\n\t_pf_kinamr_interactive(name)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-checkpoint-configuration-type",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "CheckpointConfiguration needs ConfigurationType CUSTOM to carry values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinck_keys := [\"CheckpointingEnabled\",\"CheckpointInterval\",\"MinPauseBetweenCheckpoints\"]\n\n# DEFAULT does not mean \"these values are ignored\" — CreateApplication rejects\n# the whole request when a value is present next to it.\nviolation contains make_diag_full(\"pf-kinesisanalytics-checkpoint-configuration-type\", \"ERROR\", name,\n\tsprintf(\"Properties.ApplicationConfiguration.FlinkApplicationConfiguration.CheckpointConfiguration.%v\", [k]),\n\tsprintf(\"CheckpointConfiguration sets %v while ConfigurationType is DEFAULT; CreateApplication fails with \\\"You are trying to provide custom values for the checkpoint configuration. Please use ConfigurationType as CUSTOM\\\"\", [k]),\n\t\"Set ConfigurationType to CUSTOM, or drop the custom values\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CheckpointConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tcfg := _pf_kinlib_obj(_pf_kinlib_flinkcfg(name), \"CheckpointConfiguration\")\n\tobject.get(cfg, \"ConfigurationType\", \"\") == \"DEFAULT\"\n\tsome k in _pf_kinck_keys\n\t_pf_kinlib_has(cfg, k)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-code-content-member",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "CodeContent must carry exactly the member its type names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinccm_url := \"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CodeContent.html\"\n\n_pf_kinccm_content(name) := cc if {\n\tcc := _pf_kinlib_obj(_pf_kinlib_obj(_pf_kinlib_appcfg(name), \"ApplicationCodeConfiguration\"), \"CodeContent\")\n}\n\n_pf_kinccm_any(cc) if {\n\tsome k in [\"S3ContentLocation\", \"TextContent\", \"ZipFileContent\"]\n\t_pf_kinlib_has(cc, k)\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-code-content-member\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContent.TextContent\",\n\t\"CodeContentType is ZIPFILE but CodeContent carries TextContent; CreateApplication fails with \\\"You have provided ZIPFILE code content type, but have provided other code contents. Please specify either ZipFileContent or S3ContentLocation.\\\"\",\n\t\"Point CodeContent at S3ContentLocation (or ZipFileContent) for ZIPFILE code\",\n\t_pf_kinccm_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tresolve(name, \"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContentType\") == \"ZIPFILE\"\n\t_pf_kinlib_has(_pf_kinccm_content(name), \"TextContent\")\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-code-content-member\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContent\",\n\t\"CodeContent is empty; CreateApplication fails with \\\"You have provided an empty CodeContent. Please provide a valid CodeContent.\\\"\",\n\t\"Set one of S3ContentLocation, TextContent or ZipFileContent\",\n\t_pf_kinccm_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tcc := _pf_kinccm_content(name)\n\tnot _pf_kinccm_any(cc)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-code-content-type",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "CodeContentType must match the runtime family",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kincct_url := \"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationCodeConfiguration.html\"\n\n_pf_kincct_type(name) := ct if {\n\tct := resolve(name, \"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContentType\")\n\tis_string(ct)\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-code-content-type\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContentType\",\n\tsprintf(\"runtime %v only accepts ZIPFILE code but CodeContentType is %v; CreateApplication fails with \\\"Flink application only supports ZIPFILE for application code content\\\"\", [rt, ct]),\n\t\"Package the application as a ZIPFILE in Amazon S3\",\n\t_pf_kincct_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\trt := _pf_kinlib_runtime(name)\n\t_pf_kinlib_flink(rt)\n\tct := _pf_kincct_type(name)\n\tct != \"ZIPFILE\"\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-code-content-type\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContentType\",\n\tsprintf(\"Studio runtime %v only accepts PLAINTEXT code but CodeContentType is %v; CreateApplication fails with \\\"Zeppelin application only supports PLAINTEXT for application code content\\\"\", [rt, ct]),\n\t\"Pass the notebook as PLAINTEXT\",\n\t_pf_kincct_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\trt := _pf_kinlib_runtime(name)\n\t_pf_kinlib_zeppelin(rt)\n\tct := _pf_kincct_type(name)\n\tct != \"PLAINTEXT\"\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-custom-artifact-source",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "Every Studio custom artifact needs an S3 location or a Maven reference",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinart_source(a) if {\n\tsome k in [\"S3ContentLocation\", \"MavenReference\"]\n\t_pf_kinlib_has(a, k)\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-custom-artifact-source\", \"ERROR\", name,\n\tsprintf(\"Properties.ApplicationConfiguration.ZeppelinApplicationConfiguration.CustomArtifactsConfiguration.%v\", [i]),\n\tsprintf(\"custom artifact %v names neither S3ContentLocation nor MavenReference; CreateApplication fails with \\\"Must define S3ContentLocation or MavenReference for CustomArtifact.\\\"\", [i]),\n\t\"Give the artifact an S3ContentLocation, or a MavenReference for a dependency JAR\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CustomArtifactConfiguration.html\") if {\n\tsome [name, i, a] in _pf_kinlib_artifacts\n\tnot _pf_kinart_source(a)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-encryption-key-type",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "KeyId presence must match the encryption KeyType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinenc_url := \"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationEncryptionConfiguration.html\"\n\n_pf_kinenc_cfg(name) := enc if {\n\tenc := _pf_kinlib_obj(_pf_kinlib_appcfg(name), \"ApplicationEncryptionConfiguration\")\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-encryption-key-type\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationEncryptionConfiguration.KeyId\",\n\t\"KeyType is AWS_OWNED_KEY but KeyId is set; CreateApplication fails with \\\"keyId cannot be provided with the AWS_OWNED_KEY keyType.\\\"\",\n\t\"Drop KeyId, or switch KeyType to CUSTOMER_MANAGED_KEY\",\n\t_pf_kinenc_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tenc := _pf_kinenc_cfg(name)\n\tobject.get(enc, \"KeyType\", \"\") == \"AWS_OWNED_KEY\"\n\t_pf_kinlib_has(enc, \"KeyId\")\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-encryption-key-type\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationEncryptionConfiguration.KeyId\",\n\t\"KeyType is CUSTOMER_MANAGED_KEY but no KeyId is given; CreateApplication fails with \\\"You have selected CUSTOMER_MANAGED_KEY for keyType. Please provide a valid key id.\\\"\",\n\t\"Set KeyId to the customer managed key, or switch KeyType to AWS_OWNED_KEY\",\n\t_pf_kinenc_url) if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tenc := _pf_kinenc_cfg(name)\n\tobject.get(enc, \"KeyType\", \"\") == \"CUSTOMER_MANAGED_KEY\"\n\tnot _pf_kinlib_has(enc, \"KeyId\")\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-glue-database-region",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "The Studio Glue catalog database must be in the application region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-glue-database-region\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ZeppelinApplicationConfiguration.CatalogConfiguration.GlueDataCatalogConfiguration.DatabaseARN\",\n\tsprintf(\"the Glue database is in '%v' but the notebook deploys to '%v'; CreateApplication fails with \\\"Incorrect region in DatabaseArn, expecting '%v' but found '%v'.\\\"\", [dr, region, region, dr]),\n\t\"Point DatabaseARN at a Glue database in the application's own region\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_GlueDataCatalogConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tdr := _pf_kinlib_arn_region(resolve(name, \"Properties.ApplicationConfiguration.ZeppelinApplicationConfiguration.CatalogConfiguration.GlueDataCatalogConfiguration.DatabaseARN\"), \"glue\")\n\tdr != region\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-log-stream-arn",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "LogStreamARN must name a log stream, not a log group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The property name says stream, and a log-group ARN is the natural mistake\n# (that is what CDK's LogGroup.logGroupArn hands you).\nviolation contains make_diag_full(\"pf-kinesisanalytics-log-stream-arn\", \"ERROR\", name,\n\t\"Properties.CloudWatchLoggingOption.LogStreamARN\",\n\tsprintf(\"'%v' is a log-group ARN; CreateApplication fails with \\\"CloudWatch log stream ARN ... is invalid.\\\"\", [arn]),\n\t\"Use the log stream ARN (.../log-group:<group>:log-stream:<stream>)\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CloudWatchLoggingOption.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption\")\n\tarn := resolve(name, \"Properties.CloudWatchLoggingOption.LogStreamARN\")\n\t_pf_kinlib_arn_region(arn, \"logs\")\n\tindexof(arn, \":log-stream:\") == -1\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-maven-artifact-type",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "MavenReference is only valid for DEPENDENCY_JAR artifacts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-maven-artifact-type\", \"ERROR\", name,\n\tsprintf(\"Properties.ApplicationConfiguration.ZeppelinApplicationConfiguration.CustomArtifactsConfiguration.%v.MavenReference\", [i]),\n\tsprintf(\"artifact %v is a %v but carries a MavenReference; CreateApplication fails with \\\"MavenReference can only be used for ArtifactType: DEPENDENCY_JAR\\\"\", [i, at]),\n\t\"Upload UDF artifacts to Amazon S3 and reference them with S3ContentLocation\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CustomArtifactConfiguration.html\") if {\n\tsome [name, i, a] in _pf_kinlib_artifacts\n\t_pf_kinlib_has(a, \"MavenReference\")\n\tat := object.get(a, \"ArtifactType\", null)\n\tis_string(at)\n\tat != \"DEPENDENCY_JAR\"\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-monitoring-configuration-type",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "MonitoringConfiguration needs ConfigurationType CUSTOM to carry values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinmon_keys := [\"LogLevel\",\"MetricsLevel\"]\n\n# DEFAULT does not mean \"these values are ignored\" — CreateApplication rejects\n# the whole request when a value is present next to it.\nviolation contains make_diag_full(\"pf-kinesisanalytics-monitoring-configuration-type\", \"ERROR\", name,\n\tsprintf(\"Properties.ApplicationConfiguration.FlinkApplicationConfiguration.MonitoringConfiguration.%v\", [k]),\n\tsprintf(\"MonitoringConfiguration sets %v while ConfigurationType is DEFAULT; CreateApplication fails with \\\"You are trying to provide custom values for the monitoring configuration. Please use ConfigurationType as CUSTOM\\\"\", [k]),\n\t\"Set ConfigurationType to CUSTOM, or drop the custom values\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_MonitoringConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tcfg := _pf_kinlib_obj(_pf_kinlib_flinkcfg(name), \"MonitoringConfiguration\")\n\tobject.get(cfg, \"ConfigurationType\", \"\") == \"DEFAULT\"\n\tsome k in _pf_kinmon_keys\n\t_pf_kinlib_has(cfg, k)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-parallelism-configuration-type",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ParallelismConfiguration needs ConfigurationType CUSTOM to carry values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinpar_keys := [\"AutoScalingEnabled\",\"Parallelism\",\"ParallelismPerKPU\"]\n\n# DEFAULT does not mean \"these values are ignored\" — CreateApplication rejects\n# the whole request when a value is present next to it.\nviolation contains make_diag_full(\"pf-kinesisanalytics-parallelism-configuration-type\", \"ERROR\", name,\n\tsprintf(\"Properties.ApplicationConfiguration.FlinkApplicationConfiguration.ParallelismConfiguration.%v\", [k]),\n\tsprintf(\"ParallelismConfiguration sets %v while ConfigurationType is DEFAULT; CreateApplication fails with \\\"You are trying to provide custom values for the parallelism configuration. Please use ConfigurationType as CUSTOM\\\"\", [k]),\n\t\"Set ConfigurationType to CUSTOM, or drop the custom values\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ParallelismConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tcfg := _pf_kinlib_obj(_pf_kinlib_flinkcfg(name), \"ParallelismConfiguration\")\n\tobject.get(cfg, \"ConfigurationType\", \"\") == \"DEFAULT\"\n\tsome k in _pf_kinpar_keys\n\t_pf_kinlib_has(cfg, k)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-parallelism-per-kpu",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ParallelismPerKPU cannot exceed 8",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema carries the minimum (1) but no maximum; the service caps it at 8.\nviolation contains make_diag_full(\"pf-kinesisanalytics-parallelism-per-kpu\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.FlinkApplicationConfiguration.ParallelismConfiguration.ParallelismPerKPU\",\n\tsprintf(\"ParallelismPerKPU is %v; CreateApplication fails with \\\"FlinkApplicationParallelismPerKPU ... should not be larger than the supported limit 8\\\"\", [n]),\n\t\"Use 8 or fewer parallel tasks per KPU\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ParallelismConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tp := resolve(name, \"Properties.ApplicationConfiguration.FlinkApplicationConfiguration.ParallelismConfiguration.ParallelismPerKPU\")\n\tn := to_number(p)\n\tn > 8\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-property-group-duplicate",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "PropertyGroupId must be unique within an application",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinpg contains [name, i, id] if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tep := _pf_kinlib_obj(_pf_kinlib_appcfg(name), \"EnvironmentProperties\")\n\tgs := object.get(ep, \"PropertyGroups\", null)\n\tis_array(gs)\n\tsome i, g in gs\n\tis_object(g)\n\tid := object.get(g, \"PropertyGroupId\", null)\n\tis_string(id)\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-property-group-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.ApplicationConfiguration.EnvironmentProperties.PropertyGroups.%v.PropertyGroupId\", [i]),\n\tsprintf(\"PropertyGroupId '%v' is already used by group %v; CreateApplication fails with \\\"Found a duplicate PropertyGroupId : '%v'.\\\"\", [id, j, id]),\n\t\"Give every property group a distinct PropertyGroupId\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_EnvironmentProperties.html\") if {\n\tsome [name, i, id] in _pf_kinpg\n\tsome [other, j, id2] in _pf_kinpg\n\tother == name\n\tid2 == id\n\tj < i\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-runtime-deprecated",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "Deprecated runtime environments can no longer be created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Still in the CloudFormation enum, gone from the service: Flink 1.6 / 1.8 /\n# 1.11 stopped being creatable in February 2025 and 1.13 in October 2025, and\n# the two older Studio runtimes went with them.\n_pf_kinrtd_dead := {\"FLINK-1_6\", \"FLINK-1_8\", \"FLINK-1_11\", \"FLINK-1_13\", \"ZEPPELIN-FLINK-1_0\", \"ZEPPELIN-FLINK-2_0\"}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-runtime-deprecated\", \"ERROR\", name,\n\t\"Properties.RuntimeEnvironment\",\n\tsprintf(\"runtime %v is deprecated; CreateApplication fails with \\\"Runtime %v is deprecated.\\\"\", [rt, rt]),\n\t\"Move to a supported runtime (FLINK-1_20 for applications, ZEPPELIN-FLINK-3_0 for Studio notebooks)\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/java/release-version-list.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\trt := _pf_kinlib_runtime(name)\n\trt in _pf_kinrtd_dead\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-service-role-account",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ServiceExecutionRole must belong to the deploying account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_account is injected only when the app's account is\n# concrete; the rule skips otherwise.\nviolation contains make_diag_full(\"pf-kinesisanalytics-service-role-account\", \"ERROR\", name,\n\t\"Properties.ServiceExecutionRole\",\n\tsprintf(\"the role belongs to account %v but the application deploys into %v; CreateApplication fails with \\\"Cross-account pass role is not allowed, The role should belong to account '%v'\\\"\", [ra, account, account]),\n\t\"Create the service execution role in the application's own account\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplication.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\taccount := data.cdk_preflight.deploy_account\n\tis_string(account)\n\tra := _pf_kinlib_arn_account(resolve(name, \"Properties.ServiceExecutionRole\"), \"iam\")\n\tra != account\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-snapshot-runtime",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ApplicationSnapshotConfiguration is not applicable to Studio runtimes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-snapshot-runtime\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationSnapshotConfiguration\",\n\tsprintf(\"ApplicationSnapshotConfiguration is set on Studio runtime %v; CreateApplication fails with \\\"SnapshotsEnabled is not applicable to runtime environment : %v\\\"\", [rt, rt]),\n\t\"Drop ApplicationSnapshotConfiguration for Studio notebooks\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\t_pf_kinlib_has(_pf_kinlib_appcfg(name), \"ApplicationSnapshotConfiguration\")\n\trt := _pf_kinlib_runtime(name)\n\t_pf_kinlib_zeppelin(rt)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-sql-configuration-runtime",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "SqlApplicationConfiguration belongs to the SQL runtime only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-sql-configuration-runtime\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.SqlApplicationConfiguration\",\n\tsprintf(\"SqlApplicationConfiguration is set on runtime %v; CreateApplication fails with \\\"SQLApplicationConfiguration is not valid with a FLINK runtime environment type\\\"\", [rt]),\n\t\"Drop SqlApplicationConfiguration — Flink applications configure sources and sinks in their own code\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\t_pf_kinlib_has(_pf_kinlib_appcfg(name), \"SqlApplicationConfiguration\")\n\trt := _pf_kinlib_runtime(name)\n\trt != \"SQL-1_0\"\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-sql-only-resource",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "Outputs and reference data sources need a SQL application",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::ApplicationOutput",
+      "AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinsor_types := [\"AWS::KinesisAnalyticsV2::ApplicationOutput\", \"AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource\"]\n\n# These two resources only exist for the SQL runtime, which the service no\n# longer creates — so in practice they always fail. Firing on the runtime of\n# the application they point at keeps the message actionable.\nviolation contains make_diag_full(\"pf-kinesisanalytics-sql-only-resource\", \"ERROR\", name,\n\t\"Properties.ApplicationName\",\n\tsprintf(\"application %v runs %v, and SQL-only configuration cannot be attached to it; the stack fails with \\\"You cannot add sql configuration to a Flink application.\\\"\", [target, rt]),\n\t\"Model sources and sinks in the Flink application code instead\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_AddApplicationOutput.html\") if {\n\tsome t in _pf_kinsor_types\n\tsome name in resources_of_type(t)\n\ttarget := resolve(name, \"Properties.ApplicationName\")\n\tis_string(target)\n\trt := _pf_kinlib_runtime(target)\n\trt != \"SQL-1_0\"\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-sql-runtime-unsupported",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "SQL applications can no longer be created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SQL-1_0 is still a valid enum value in the CloudFormation schema, but\n# CreateApplication refuses it in every region (measured us-east-1 and\n# ap-northeast-1, 2026-09-06).\nviolation contains make_diag_full(\"pf-kinesisanalytics-sql-runtime-unsupported\", \"ERROR\", name,\n\t\"Properties.RuntimeEnvironment\",\n\t\"RuntimeEnvironment is SQL-1_0; CreateApplication fails with \\\"CreateApplication is not supported for SQL applications in this Region. You can use KDA Studio to build streaming applications with Flink SQL.\\\"\",\n\t\"Use a FLINK runtime, or a ZEPPELIN-FLINK Studio notebook for Flink SQL\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CreateApplication.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\t_pf_kinlib_runtime(name) == \"SQL-1_0\"\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-system-rollback-runtime",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ApplicationSystemRollbackConfiguration is not applicable to Studio runtimes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-system-rollback-runtime\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationSystemRollbackConfiguration\",\n\tsprintf(\"ApplicationSystemRollbackConfiguration is set on Studio runtime %v; CreateApplication fails with \\\"SystemRollbacksEnabled is not applicable to runtime environment : %v\\\"\", [rt, rt]),\n\t\"Drop ApplicationSystemRollbackConfiguration for Studio notebooks\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\t_pf_kinlib_has(_pf_kinlib_appcfg(name), \"ApplicationSystemRollbackConfiguration\")\n\trt := _pf_kinlib_runtime(name)\n\t_pf_kinlib_zeppelin(rt)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-zeppelin-configuration-runtime",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "ZeppelinApplicationConfiguration belongs to Studio runtimes only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-zeppelin-configuration-runtime\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ZeppelinApplicationConfiguration\",\n\tsprintf(\"ZeppelinApplicationConfiguration is set on runtime %v; CreateApplication fails with \\\"ZeppelinApplicationConfiguration is not applicable to runtime environment : %v\\\"\", [rt, rt]),\n\t\"Use a ZEPPELIN-FLINK runtime for Studio notebooks, or drop the Zeppelin configuration\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ApplicationConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\t_pf_kinlib_has(_pf_kinlib_appcfg(name), \"ZeppelinApplicationConfiguration\")\n\trt := _pf_kinlib_runtime(name)\n\tnot _pf_kinlib_zeppelin(rt)\n}\n"
+  },
+  {
+    "id": "pf-kinesisanalytics-zeppelin-note-json",
+    "service": "kinesisanalytics",
+    "severity": "ERROR",
+    "title": "Studio TextContent must be a Zeppelin note JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisAnalyticsV2::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kinznj_note(txt) if {\n\to := json.unmarshal(txt)\n\tis_object(o)\n\t_pf_kinlib_has(o, \"id\")\n\t_pf_kinlib_has(o, \"name\")\n}\n\nviolation contains make_diag_full(\"pf-kinesisanalytics-zeppelin-note-json\", \"ERROR\", name,\n\t\"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContent.TextContent\",\n\t\"the Studio notebook code is not a Zeppelin note object; CreateApplication fails with \\\"Zeppelin application code provided in TextContent must be a valid Zeppelin note JSON object containing 'id' and 'name' fields\\\"\",\n\t\"Pass an exported Zeppelin note JSON (an object with id and name), not raw SQL or Python\",\n\t\"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_CodeContent.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\t_pf_kinlib_zeppelin(_pf_kinlib_runtime(name))\n\ttxt := resolve(name, \"Properties.ApplicationConfiguration.ApplicationCodeConfiguration.CodeContent.TextContent\")\n\t_pf_kinlib_lit(txt)\n\tnot _pf_kinznj_note(txt)\n}\n"
+  },
+  {
     "id": "pf-kms-alias-name",
     "service": "kms",
     "severity": "ERROR",
@@ -4827,6 +5191,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/efs",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the EFS rules (rules/efs/pf-efs-*).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_efslib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n_pf_efslib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The file system resource a mount target / access point points at, when it is\n# declared in the same template (Ref or Fn::GetAtt both resolve to the id).\n_pf_efslib_fs_of(name) := fs if {\n\tfs := resolve(name, \"Properties.FileSystemId\")\n\tfs in resources_of_type(\"AWS::EFS::FileSystem\")\n}\n\n# The subnet a mount target uses, when the subnet is in the same template.\n_pf_efslib_subnet_of(name) := sub if {\n\tsub := resolve(name, \"Properties.SubnetId\")\n\tsub in resources_of_type(\"AWS::EC2::Subnet\")\n}\n\n# Availability zone of that subnet, when it is written as a literal.\n_pf_efslib_subnet_az(name) := az if {\n\taz := resolve(_pf_efslib_subnet_of(name), \"Properties.AvailabilityZone\")\n\tis_string(az)\n\tnot input.resources[az]\n}\n\n_pf_efslib_vpc_of(res) := vpc if {\n\tvpc := resolve(res, \"Properties.VpcId\")\n\tvpc in resources_of_type(\"AWS::EC2::VPC\")\n}\n\n# ponytail: IPv4 only — the engine has no net.cidr_* builtins and an Ipv6Address\n# outside the subnet is rarer than a hand-picked IPv4. IPv6 addresses are skipped.\n# IPv4 dotted quad as a number; undefined for anything else.\n_pf_efslib_ip(s) := n if {\n\tis_string(s)\n\tparts := split(s, \".\")\n\tcount(parts) == 4\n\ta := to_number(parts[0])\n\tb := to_number(parts[1])\n\tc := to_number(parts[2])\n\td := to_number(parts[3])\n\tn := (((a * 16777216) + (b * 65536)) + (c * 256)) + d\n}\n\n# [network number, block size] of an IPv4 CIDR; undefined for anything else.\n_pf_efslib_cidr(s) := [base, size] if {\n\tis_string(s)\n\tparts := split(s, \"/\")\n\tcount(parts) == 2\n\tbase := _pf_efslib_ip(parts[0])\n\tprefix := to_number(parts[1])\n\tprefix >= 0\n\tprefix <= 32\n\tsize := bits.lsh(1, 32 - prefix)\n}\n\n_pf_efslib_in_cidr(ip, cidr) if {\n\t[base, size] := _pf_efslib_cidr(cidr)\n\tn := _pf_efslib_ip(ip)\n\tfloor(n / size) == floor(base / size)\n}\n"
+  },
+  {
+    "name": "_lib/kinesis",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the Kinesis Data Streams and Managed Service for Apache\n# Flink rules: ARN segment access, traversal of the raw document (resolve()\n# cannot prove a key absent) and the runtime-environment families that drive\n# the Managed Flink configuration tables.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_kinlib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_kinlib_arn(v) := parts if {\n\t_pf_kinlib_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# region / account of an ARN belonging to `service`; undefined otherwise.\n_pf_kinlib_arn_region(v, service) := r if {\n\tparts := _pf_kinlib_arn(v)\n\tparts[2] == service\n\tr := parts[3]\n\tr != \"\"\n}\n\n_pf_kinlib_arn_account(v, service) := a if {\n\tparts := _pf_kinlib_arn(v)\n\tparts[2] == service\n\ta := parts[4]\n\ta != \"\"\n}\n\n# Raw properties of a resource. The preprocessed document is the only place\n# where \"the key is absent\" can be told apart from \"the value is a token\".\n_pf_kinlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_kinlib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_kinlib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_kinlib_appcfg(name) := c if c := _pf_kinlib_obj(_pf_kinlib_props(name), \"ApplicationConfiguration\")\n\n_pf_kinlib_flinkcfg(name) := c if c := _pf_kinlib_obj(_pf_kinlib_appcfg(name), \"FlinkApplicationConfiguration\")\n\n_pf_kinlib_runtime(name) := rt if {\n\trt := resolve(name, \"Properties.RuntimeEnvironment\")\n\tis_string(rt)\n}\n\n_pf_kinlib_flink(rt) if startswith(rt, \"FLINK-\")\n\n_pf_kinlib_zeppelin(rt) if startswith(rt, \"ZEPPELIN-FLINK-\")\n\n# [logical id, index, artifact] for every Studio custom artifact.\n_pf_kinlib_artifacts contains [name, i, a] if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tz := _pf_kinlib_obj(_pf_kinlib_appcfg(name), \"ZeppelinApplicationConfiguration\")\n\tarts := object.get(z, \"CustomArtifactsConfiguration\", null)\n\tis_array(arts)\n\tsome i, a in arts\n\tis_object(a)\n}\n\n# [logical id, index, statement] for every Kinesis resource-policy statement.\n_pf_kinlib_statements contains [name, i, s] if {\n\tsome name in resources_of_type(\"AWS::Kinesis::ResourcePolicy\")\n\tpol := _pf_kinlib_obj(_pf_kinlib_props(name), \"ResourcePolicy\")\n\tsts := object.get(pol, \"Statement\", null)\n\tis_array(sts)\n\tsome i, s in sts\n\tis_object(s)\n}\n"
   },
   {
     "name": "_lib/sfn",
