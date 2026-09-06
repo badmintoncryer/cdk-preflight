@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Prompt": {
+      "Type": "AWS::Bedrock::Prompt",
+      "Properties": {
+        "Name": "cdkpf-pvtt-fail",
+        "DefaultVariant": "v1",
+        "Variants": [
+          {
+            "Name": "v1",
+            "TemplateType": "CHAT",
+            "TemplateConfiguration": {
+              "Text": {
+                "Text": "Say hello to {{name}}",
+                "InputVariables": [
+                  {
+                    "Name": "name"
+                  }
+                ]
+              }
+            },
+            "ModelId": "amazon.nova-micro-v1:0"
+          }
+        ]
+      }
+    }
+  }
+}

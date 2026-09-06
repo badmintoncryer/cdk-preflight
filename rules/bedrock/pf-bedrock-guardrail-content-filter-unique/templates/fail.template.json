@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-gcfu-fail",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "HATE",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            },
+            {
+              "Type": "HATE",
+              "InputStrength": "LOW",
+              "OutputStrength": "LOW"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

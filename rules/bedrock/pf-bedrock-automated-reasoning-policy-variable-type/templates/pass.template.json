@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Bedrock::AutomatedReasoningPolicy",
+      "Properties": {
+        "Name": "cdkpf-arvt-pass",
+        "PolicyDefinition": {
+          "Version": "1.0",
+          "Types": [
+            {
+              "Name": "Color",
+              "Values": [
+                {
+                  "Value": "red"
+                },
+                {
+                  "Value": "blue"
+                }
+              ]
+            }
+          ],
+          "Rules": [],
+          "Variables": [
+            {
+              "Name": "shade",
+              "Type": "Color",
+              "Description": "The shade"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

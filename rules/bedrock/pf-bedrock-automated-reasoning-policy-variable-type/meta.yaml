@@ -1,0 +1,12 @@
+id: pf-bedrock-automated-reasoning-policy-variable-type
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::AutomatedReasoningPolicy]
+severity: ERROR
+title: Policy variables must use a type declared in PolicyDefinition.Types
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_AutomatedReasoningPolicyDefinitionVariable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Variable of Type Foo with no Types -> CreateAutomatedReasoningPolicy 400 ValidationException: Variable \"vv\" uses a type that is not defined; bool/int/real/string are refused the same way; a variable of a declared custom type deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-automated-reasoning-policy-variable-type.log"
+addedOn: 2026-09-06

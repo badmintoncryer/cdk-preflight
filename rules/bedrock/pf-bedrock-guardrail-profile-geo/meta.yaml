@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-profile-geo
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: A guardrail profile must belong to the deploy Region's geography
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-cross-region-support.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): eu.guardrail.v1:0 deployed in us-east-1 -> CreateGuardrail 400 ValidationException: Guardrail cross-Region profile ID is invalid. Specify a guardrail profile ID that's supported in your current AWS Region; us.guardrail.v1:0 deploys. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-profile-geo.log"
+addedOn: 2026-09-06

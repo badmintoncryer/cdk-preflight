@@ -1,0 +1,110 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "bedrock:*",
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Flow": {
+      "Type": "AWS::Bedrock::Flow",
+      "Properties": {
+        "Name": "cdkpf-fnnu-fail",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Definition": {
+          "Nodes": [
+            {
+              "Name": "FlowInputNode",
+              "Type": "Input",
+              "Configuration": {
+                "Input": {}
+              },
+              "Outputs": [
+                {
+                  "Name": "document",
+                  "Type": "String"
+                }
+              ]
+            },
+            {
+              "Name": "FlowOutputNode",
+              "Type": "Output",
+              "Configuration": {
+                "Output": {}
+              },
+              "Inputs": [
+                {
+                  "Name": "document",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ]
+            },
+            {
+              "Name": "FlowOutputNode",
+              "Type": "Output",
+              "Configuration": {
+                "Output": {}
+              },
+              "Inputs": [
+                {
+                  "Name": "document",
+                  "Type": "String",
+                  "Expression": "$.data"
+                }
+              ]
+            }
+          ],
+          "Connections": [
+            {
+              "Name": "c1",
+              "Type": "Data",
+              "Source": "FlowInputNode",
+              "Target": "FlowOutputNode",
+              "Configuration": {
+                "Data": {
+                  "SourceOutput": "document",
+                  "TargetInput": "document"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

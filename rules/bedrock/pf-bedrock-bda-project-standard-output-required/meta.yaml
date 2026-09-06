@@ -1,0 +1,12 @@
+id: pf-bedrock-bda-project-standard-output-required
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataAutomationProject]
+severity: ERROR
+title: A Data Automation project needs StandardOutputConfiguration
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_CreateDataAutomationProject.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): project with only ProjectName -> CloudFormation CREATE_FAILED: 1 validation error detected: Value at 'standardOutputConfiguration' failed to satisfy constraint: Member must not be null; an empty {} block deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-standard-output-required.log"
+addedOn: 2026-09-06

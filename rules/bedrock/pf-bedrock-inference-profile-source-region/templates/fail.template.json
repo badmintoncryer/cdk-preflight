@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Profile": {
+      "Type": "AWS::Bedrock::ApplicationInferenceProfile",
+      "Properties": {
+        "InferenceProfileName": "cdkpf-aisr-fail",
+        "ModelSource": {
+          "CopyFrom": "arn:aws:bedrock:us-west-2::foundation-model/amazon.nova-micro-v1:0"
+        }
+      }
+    }
+  }
+}

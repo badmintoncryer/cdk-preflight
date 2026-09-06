@@ -1,0 +1,77 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "bedrock",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3vectors:*",
+                    "bedrock:InvokeModel",
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "KB": {
+      "Type": "AWS::Bedrock::KnowledgeBase",
+      "Properties": {
+        "Name": "cdkpf-kb-kb-sql-query-engine-configuration-fail",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "KnowledgeBaseConfiguration": {
+          "Type": "SQL",
+          "SqlKnowledgeBaseConfiguration": {
+            "Type": "REDSHIFT",
+            "RedshiftConfiguration": {
+              "QueryEngineConfiguration": {
+                "Type": "SERVERLESS",
+                "ProvisionedConfiguration": {
+                  "ClusterIdentifier": "c",
+                  "AuthConfiguration": {
+                    "Type": "IAM"
+                  }
+                }
+              },
+              "StorageConfigurations": [
+                {
+                  "Type": "REDSHIFT",
+                  "RedshiftConfiguration": {
+                    "DatabaseName": "dev"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

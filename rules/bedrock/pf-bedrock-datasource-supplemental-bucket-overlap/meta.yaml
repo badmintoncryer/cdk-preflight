@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-supplemental-bucket-overlap
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource, AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: A data source must not share its bucket with the knowledge base's supplemental storage unless it has an inclusion prefix
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/kb-multimodal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): S3 data source on the bucket that also backs the knowledge base's SupplementalDataStorageConfiguration, no InclusionPrefixes -> CreateDataSource 400 ValidationException: Your data source and multimodal storage destination use the same S3 bucket. This creates a risk of re-ingesting extracted media. Specify an inclusion prefix to limit ingested content, or use separate S3 buckets; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-supplemental-bucket-overlap.log"
+addedOn: 2026-09-06

@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Profile": {
+      "Type": "AWS::Bedrock::ApplicationInferenceProfile",
+      "Properties": {
+        "InferenceProfileName": "cdkpf-amsr-pass",
+        "ModelSource": {
+          "CopyFrom": {
+            "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/amazon.nova-micro-v1:0"
+          }
+        }
+      }
+    }
+  }
+}

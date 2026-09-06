@@ -1,0 +1,12 @@
+id: pf-bedrock-bda-project-output-types
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataAutomationProject]
+severity: ERROR
+title: Document granularity and text-format type lists must not be empty
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_data-automation_DocumentStandardOutputConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Document.Extraction.Granularity.Types [] -> CreateDataAutomationProject 400 ValidationException: Invalid Project Configuration. At least 1 Document Granularity Type should be present; Document.OutputFormat.TextFormat.Types [] -> At least 1 Document Text Output Format Type should be present; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-output-types.log"
+addedOn: 2026-09-06

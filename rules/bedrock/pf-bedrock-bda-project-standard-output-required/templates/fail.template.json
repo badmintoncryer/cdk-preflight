@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Project": {
+      "Type": "AWS::Bedrock::DataAutomationProject",
+      "Properties": {
+        "ProjectName": "cdkpf-bsor-fail"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-bedrock-guardrail-word-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Guardrail]
+severity: ERROR
+title: Guardrail custom words must be unique (case-insensitively)
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GuardrailWordConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): WordsConfig with foo twice -> CreateGuardrail 400 ValidationException: Custom words cannot have case-insensitive duplicates; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-word-unique.log"
+addedOn: 2026-09-06

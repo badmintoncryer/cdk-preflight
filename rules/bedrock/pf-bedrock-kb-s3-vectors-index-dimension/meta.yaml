@@ -1,0 +1,12 @@
+id: pf-bedrock-kb-s3-vectors-index-dimension
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: The embedding size must equal the S3 Vectors index Dimension
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_S3VectorsConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Titan V2 with Dimensions 512 on a 1024-dimension index -> CreateKnowledgeBase 400 ValidationException: The knowledge base storage configuration provided is invalid... Query vector contains invalid values or is invalid for this index (Service: S3Vectors, Status Code: 400); same for Titan G1 (1536) on a 1024 index; matching sizes deploy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-s3-vectors-index-dimension.log"
+addedOn: 2026-09-06

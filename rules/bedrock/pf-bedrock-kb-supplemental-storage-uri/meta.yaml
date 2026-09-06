@@ -1,0 +1,12 @@
+id: pf-bedrock-kb-supplemental-storage-uri
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: Supplemental data storage must point at an S3 bucket root
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_SupplementalDataStorageConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): S3Location URI s3://<bucket>/supp/ -> CreateKnowledgeBase 400 ValidationException: The S3 URI for the provided supplemental data storage bucket contains a sub-folder which is not supported; a location without S3Location -> s3Location cannot be null; s3://<bucket> and s3://<bucket>/ deploy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-supplemental-storage-uri.log"
+addedOn: 2026-09-06

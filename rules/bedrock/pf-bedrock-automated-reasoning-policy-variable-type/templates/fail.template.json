@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Bedrock::AutomatedReasoningPolicy",
+      "Properties": {
+        "Name": "cdkpf-arvt-fail",
+        "PolicyDefinition": {
+          "Version": "1.0",
+          "Types": [],
+          "Rules": [],
+          "Variables": [
+            {
+              "Name": "shade",
+              "Type": "Foo",
+              "Description": "The shade"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

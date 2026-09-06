@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Bp": {
+      "Type": "AWS::Bedrock::Blueprint",
+      "Properties": {
+        "BlueprintName": "cdkpf-bbsc-fail",
+        "Type": "DOCUMENT",
+        "Schema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-bedrock-flow-connection-condition
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Flow]
+severity: ERROR
+title: A Conditional connection must leave a Condition node through one of its conditions
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConditionalConnectionConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Conditional connection naming condition nope -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: […references an unknown condition 'nope'…]; a Conditional connection out of an Input node fails the same way (the node has no conditions); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-connection-condition.log"
+addedOn: 2026-09-06

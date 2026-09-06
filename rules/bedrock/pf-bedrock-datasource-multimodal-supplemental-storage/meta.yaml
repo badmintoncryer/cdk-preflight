@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-multimodal-supplemental-storage
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource, AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: Multimodal parsing needs supplemental data storage on the knowledge base
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/kb-multimodal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): ParsingModality MULTIMODAL (foundation-model or Data Automation parser) on a knowledge base without SupplementalDataStorageConfiguration -> CreateDataSource 400 ValidationException: Knowledge base must have supplementalDataStorageConfiguration to use specified parsing configuration; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-multimodal-supplemental-storage.log"
+addedOn: 2026-09-06

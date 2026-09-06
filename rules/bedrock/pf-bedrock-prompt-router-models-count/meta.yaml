@@ -1,0 +1,12 @@
+id: pf-bedrock-prompt-router-models-count
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::IntelligentPromptRouter]
+severity: ERROR
+title: A prompt router routes between exactly two models
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreatePromptRouter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Models with one entry -> CreatePromptRouter 400 ValidationException: Prompt router limited to 2 models exactly; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-router-models-count.log"
+addedOn: 2026-09-06

@@ -1,0 +1,12 @@
+id: pf-bedrock-prompt-variant-name-unique
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Prompt]
+severity: ERROR
+title: Prompt variant names must be unique
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_PromptVariant.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two variants named v1 -> CreatePrompt 400 ValidationException: All variant names in the prompt must be unique; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-variant-name-unique.log"
+addedOn: 2026-09-06

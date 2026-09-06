@@ -41,6 +41,87 @@
 | `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts may not exceed 10 | none |
 | `pf-batch-timeout-minimum` | AWS::Batch::JobDefinition | Timeout.AttemptDurationSeconds must be at least 60 | none |
 | `pf-batch-unmanaged-fargate` | AWS::Batch::ComputeEnvironment | UNMANAGED compute environments cannot be Fargate | none |
+| `pf-bedrock-automated-reasoning-policy-names-unique` | AWS::Bedrock::AutomatedReasoningPolicy | Names and ids inside a policy definition must be unique | none |
+| `pf-bedrock-automated-reasoning-policy-variable-type` | AWS::Bedrock::AutomatedReasoningPolicy | Policy variables must use a type declared in PolicyDefinition.Types | none |
+| `pf-bedrock-automated-reasoning-policy-version` | AWS::Bedrock::AutomatedReasoningPolicy | PolicyDefinition.Version must be 1.0 | none |
+| `pf-bedrock-bda-blueprint-schema` | AWS::Bedrock::Blueprint | A blueprint schema needs class, description and properties | none |
+| `pf-bedrock-bda-project-blueprint-region` | AWS::Bedrock::DataAutomationProject | Blueprints must live in the project's Region | none |
+| `pf-bedrock-bda-project-blueprint-stage` | AWS::Bedrock::DataAutomationProject<br>AWS::Bedrock::Blueprint | Blueprint references must name a stage or version the blueprint has | none |
+| `pf-bedrock-bda-project-blueprints-unique` | AWS::Bedrock::DataAutomationProject<br>AWS::Bedrock::Blueprint | A project must not attach the same blueprint twice | none |
+| `pf-bedrock-bda-project-modality-routing` | AWS::Bedrock::DataAutomationProject | Modality routing overrides must fit the file type | none |
+| `pf-bedrock-bda-project-output-types` | AWS::Bedrock::DataAutomationProject | Document granularity and text-format type lists must not be empty | none |
+| `pf-bedrock-bda-project-standard-output-required` | AWS::Bedrock::DataAutomationProject | A Data Automation project needs StandardOutputConfiguration | none |
+| `pf-bedrock-bda-project-sync-modalities` | AWS::Bedrock::DataAutomationProject | A SYNC project cannot configure audio or video standard output | none |
+| `pf-bedrock-bda-project-transcript-configuration` | AWS::Bedrock::DataAutomationProject | Audio transcript settings need TRANSCRIPT among the extraction types | none |
+| `pf-bedrock-datasource-chunk-max-tokens` | AWS::Bedrock::DataSource | Fixed-size and semantic chunks are limited to 8192 tokens | none |
+| `pf-bedrock-datasource-chunk-tokens-embedding-limit` | AWS::Bedrock::DataSource<br>AWS::Bedrock::KnowledgeBase | Chunk size must not exceed the embedding model's token limit | none |
+| `pf-bedrock-datasource-chunking-configuration` | AWS::Bedrock::DataSource | ChunkingStrategy needs its matching configuration block | none |
+| `pf-bedrock-datasource-context-enrichment-neptune` | AWS::Bedrock::DataSource<br>AWS::Bedrock::KnowledgeBase | Context enrichment is only available on Neptune Analytics knowledge bases | none |
+| `pf-bedrock-datasource-hierarchical-levels` | AWS::Bedrock::DataSource | Hierarchical chunking levels must descend and OverlapTokens must stay below the child size | none |
+| `pf-bedrock-datasource-multimodal-supplemental-storage` | AWS::Bedrock::DataSource<br>AWS::Bedrock::KnowledgeBase | Multimodal parsing needs supplemental data storage on the knowledge base | none |
+| `pf-bedrock-datasource-parsing-configuration` | AWS::Bedrock::DataSource | BEDROCK_FOUNDATION_MODEL parsing needs BedrockFoundationModelConfiguration | none |
+| `pf-bedrock-datasource-parsing-model-region` | AWS::Bedrock::DataSource | The parsing model must be reachable from the data source's Region | none |
+| `pf-bedrock-datasource-supplemental-bucket-overlap` | AWS::Bedrock::DataSource<br>AWS::Bedrock::KnowledgeBase | A data source must not share its bucket with the knowledge base's supplemental storage unless it has an inclusion prefix | none |
+| `pf-bedrock-datasource-transformation-bucket` | AWS::Bedrock::DataSource | Custom transformation intermediate storage must not use the data source bucket | none |
+| `pf-bedrock-datasource-type-configuration` | AWS::Bedrock::DataSource | DataSourceConfiguration.Type needs its matching configuration block | none |
+| `pf-bedrock-datasource-web-vector-store` | AWS::Bedrock::DataSource<br>AWS::Bedrock::KnowledgeBase | A web crawler data source needs an OpenSearch Serverless knowledge base | none |
+| `pf-bedrock-flow-condition-default` | AWS::Bedrock::Flow | A Condition node needs a default condition | none |
+| `pf-bedrock-flow-condition-unique` | AWS::Bedrock::Flow | Conditions within a Condition node need unique names and expressions | none |
+| `pf-bedrock-flow-connection-condition` | AWS::Bedrock::Flow | A Conditional connection must leave a Condition node through one of its conditions | none |
+| `pf-bedrock-flow-connection-name-unique` | AWS::Bedrock::Flow | Flow connection names must be unique | none |
+| `pf-bedrock-flow-connection-nodes` | AWS::Bedrock::Flow | Flow connections must reference nodes that exist | none |
+| `pf-bedrock-flow-connection-ports` | AWS::Bedrock::Flow | Data connections must use outputs and inputs the nodes declare | none |
+| `pf-bedrock-flow-definition-source` | AWS::Bedrock::Flow | A flow takes exactly one of Definition, DefinitionString or DefinitionS3Location | none |
+| `pf-bedrock-flow-definition-string-json` | AWS::Bedrock::Flow | DefinitionString must be JSON | none |
+| `pf-bedrock-flow-input-expression` | AWS::Bedrock::Flow | A node input Expression must start with $.data | none |
+| `pf-bedrock-flow-input-node` | AWS::Bedrock::Flow | A flow has exactly one Input node | none |
+| `pf-bedrock-flow-input-node-output` | AWS::Bedrock::Flow | The Input node exposes a single output named document | none |
+| `pf-bedrock-flow-input-single-connection` | AWS::Bedrock::Flow | A node input accepts a single incoming connection | none |
+| `pf-bedrock-flow-node-configuration` | AWS::Bedrock::Flow | A flow node needs the Configuration member named after its Type | none |
+| `pf-bedrock-flow-node-name-unique` | AWS::Bedrock::Flow | Flow node names must be unique | none |
+| `pf-bedrock-guardrail-automated-reasoning-cross-region` | AWS::Bedrock::Guardrail | Automated Reasoning checks need CrossRegionConfig | none |
+| `pf-bedrock-guardrail-automated-reasoning-policy-region` | AWS::Bedrock::Guardrail | An Automated Reasoning policy must live in the guardrail's Region | none |
+| `pf-bedrock-guardrail-content-filter-unique` | AWS::Bedrock::Guardrail | A guardrail content policy must not list the same filter type twice | none |
+| `pf-bedrock-guardrail-grounding-filter-unique` | AWS::Bedrock::Guardrail | A contextual grounding policy must not list the same filter type twice | none |
+| `pf-bedrock-guardrail-grounding-threshold` | AWS::Bedrock::Guardrail | A contextual grounding threshold must be below 1 | none |
+| `pf-bedrock-guardrail-managed-word-list-unique` | AWS::Bedrock::Guardrail | A guardrail must not list the same managed word list twice | none |
+| `pf-bedrock-guardrail-pii-entity-unique` | AWS::Bedrock::Guardrail | A guardrail must not configure the same PII entity type twice | none |
+| `pf-bedrock-guardrail-policy-required` | AWS::Bedrock::Guardrail | A guardrail needs at least one policy | none |
+| `pf-bedrock-guardrail-profile-account` | AWS::Bedrock::Guardrail | A guardrail profile ARN must carry the deploying account | none |
+| `pf-bedrock-guardrail-profile-geo` | AWS::Bedrock::Guardrail | A guardrail profile must belong to the deploy Region's geography | none |
+| `pf-bedrock-guardrail-profile-region` | AWS::Bedrock::Guardrail | A guardrail profile ARN must carry the guardrail's own Region | none |
+| `pf-bedrock-guardrail-prompt-attack-output-strength` | AWS::Bedrock::Guardrail | The PROMPT_ATTACK content filter must use OutputStrength NONE | none |
+| `pf-bedrock-guardrail-regex-pattern-length` | AWS::Bedrock::Guardrail | A guardrail regex pattern is limited to 500 characters | none |
+| `pf-bedrock-guardrail-regex-unique` | AWS::Bedrock::Guardrail | Guardrail regex filters must have unique names and unique patterns | none |
+| `pf-bedrock-guardrail-standard-tier-cross-region` | AWS::Bedrock::Guardrail | The STANDARD safeguard tier needs CrossRegionConfig | none |
+| `pf-bedrock-guardrail-topic-definition-length` | AWS::Bedrock::Guardrail | A denied topic definition is limited to 200 characters on the CLASSIC tier | none |
+| `pf-bedrock-guardrail-topic-name-unique` | AWS::Bedrock::Guardrail | Denied topic names within a guardrail must be unique | none |
+| `pf-bedrock-guardrail-word-length` | AWS::Bedrock::Guardrail | A guardrail custom word is limited to 100 characters | none |
+| `pf-bedrock-guardrail-word-unique` | AWS::Bedrock::Guardrail | Guardrail custom words must be unique (case-insensitively) | none |
+| `pf-bedrock-inference-profile-model-source-required` | AWS::Bedrock::ApplicationInferenceProfile | An application inference profile needs ModelSource | none |
+| `pf-bedrock-inference-profile-source-region` | AWS::Bedrock::ApplicationInferenceProfile | An application inference profile copies from a model or profile of its own Region | none |
+| `pf-bedrock-kb-embedding-binary` | AWS::Bedrock::KnowledgeBase | BINARY embeddings need a model and a vector store that support them | none |
+| `pf-bedrock-kb-embedding-dimensions` | AWS::Bedrock::KnowledgeBase | Embedding Dimensions must be a size the embedding model supports | none |
+| `pf-bedrock-kb-embedding-model-region` | AWS::Bedrock::KnowledgeBase | The embedding model ARN must carry the knowledge base's Region | none |
+| `pf-bedrock-kb-s3-vectors-index-dimension` | AWS::Bedrock::KnowledgeBase | The embedding size must equal the S3 Vectors index Dimension | none |
+| `pf-bedrock-kb-sql-auth-configuration` | AWS::Bedrock::KnowledgeBase | Redshift AuthConfiguration must carry exactly the fields its Type needs | none |
+| `pf-bedrock-kb-sql-query-engine-configuration` | AWS::Bedrock::KnowledgeBase | A Redshift query engine needs the block matching its Type | none |
+| `pf-bedrock-kb-sql-storage-configuration` | AWS::Bedrock::KnowledgeBase | A Redshift storage configuration needs the block matching its Type | none |
+| `pf-bedrock-kb-storage-not-allowed` | AWS::Bedrock::KnowledgeBase | KENDRA and SQL knowledge bases must not carry StorageConfiguration | none |
+| `pf-bedrock-kb-storage-type-configuration` | AWS::Bedrock::KnowledgeBase | StorageConfiguration.Type needs its matching configuration block | none |
+| `pf-bedrock-kb-supplemental-storage-uri` | AWS::Bedrock::KnowledgeBase | Supplemental data storage must point at an S3 bucket root | none |
+| `pf-bedrock-kb-type-configuration` | AWS::Bedrock::KnowledgeBase | KnowledgeBaseConfiguration.Type needs its matching configuration block | none |
+| `pf-bedrock-kb-vector-storage-required` | AWS::Bedrock::KnowledgeBase | A VECTOR knowledge base needs StorageConfiguration | none |
+| `pf-bedrock-kb-vector-store-region` | AWS::Bedrock::KnowledgeBase | An S3 Vectors index must live in the knowledge base's Region | none |
+| `pf-bedrock-prompt-default-variant` | AWS::Bedrock::Prompt | DefaultVariant must name one of the prompt's variants | none |
+| `pf-bedrock-prompt-router-fallback-model` | AWS::Bedrock::IntelligentPromptRouter | The prompt router's fallback model must be one of its routed models | none |
+| `pf-bedrock-prompt-router-model-provider` | AWS::Bedrock::IntelligentPromptRouter | A prompt router's models must come from the same provider | none |
+| `pf-bedrock-prompt-router-model-region` | AWS::Bedrock::IntelligentPromptRouter | Prompt router models must be reachable from the deploy Region | none |
+| `pf-bedrock-prompt-router-models-count` | AWS::Bedrock::IntelligentPromptRouter | A prompt router routes between exactly two models | none |
+| `pf-bedrock-prompt-router-models-unique` | AWS::Bedrock::IntelligentPromptRouter | A prompt router must not list the same model twice | none |
+| `pf-bedrock-prompt-variant-model-or-agent` | AWS::Bedrock::Prompt | A prompt variant takes either ModelId or GenAiResource, not both | none |
+| `pf-bedrock-prompt-variant-name-unique` | AWS::Bedrock::Prompt | Prompt variant names must be unique | none |
+| `pf-bedrock-prompt-variant-template-type` | AWS::Bedrock::Prompt | A prompt variant's TemplateConfiguration must match its TemplateType | none |
 | `pf-agentcore-apikey-provider-secret-source` | AWS::BedrockAgentCore::ApiKeyCredentialProvider | An API key credential provider takes ApiKey when the secret is MANAGED and ApiKeySecretConfig when it is EXTERNAL, never both | none |
 | `pf-agentcore-config-bundle-components-empty` | AWS::BedrockAgentCore::ConfigurationBundle | A configuration bundle needs at least one component | none |
 | `pf-agentcore-dataset-source-exactly-one` | AWS::BedrockAgentCore::Dataset | Dataset Source must hold exactly one of InlineExamples or S3Source | none |

@@ -1,0 +1,12 @@
+id: pf-bedrock-flow-node-configuration
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::Flow]
+severity: ERROR
+title: A flow node needs the Configuration member named after its Type
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowNode.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Prompt node with Configuration.Input -> CreateFlow 400 ValidationException: Configuration must be provided for node Prompt1 of type PROMPT_NODE; Prompt node without Configuration -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The node 'Prompt1' is missing its required configuration…]; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-node-configuration.log"
+addedOn: 2026-09-06

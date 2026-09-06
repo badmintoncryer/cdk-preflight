@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-web-vector-store
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource, AWS::Bedrock::KnowledgeBase]
+severity: ERROR
+title: A web crawler data source needs an OpenSearch Serverless knowledge base
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/webcrawl-data-source-connector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type WEB on a knowledge base with S3_VECTORS storage -> CreateDataSource 400 ValidationException: WEB data source is currently only supported for knowledge bases created with an Amazon OpenSearch Serverless vector database; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-web-vector-store.log"
+addedOn: 2026-09-06

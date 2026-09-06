@@ -1,0 +1,12 @@
+id: pf-bedrock-datasource-chunking-configuration
+service: bedrock
+benchRegion: us-east-1
+resourceTypes: [AWS::Bedrock::DataSource]
+severity: ERROR
+title: ChunkingStrategy needs its matching configuration block
+constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_ChunkingConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): FIXED_SIZE without FixedSizeChunkingConfiguration -> CreateDataSource 400 ValidationException: fixedSizeChunkingConfiguration is required when chunking strategy is FIXED_SIZE; same for HIERARCHICAL and SEMANTIC; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-chunking-configuration.log"
+addedOn: 2026-09-06

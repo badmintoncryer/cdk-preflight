@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-garc-fail",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "HATE",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            }
+          ]
+        },
+        "AutomatedReasoningPolicyConfig": {
+          "Policies": [
+            {
+              "Fn::GetAtt": [
+                "Arp",
+                "PolicyArn"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "Arp": {
+      "Type": "AWS::Bedrock::AutomatedReasoningPolicy",
+      "Properties": {
+        "Name": "cdkpf-arp",
+        "PolicyDefinition": {
+          "Version": "1.0",
+          "Types": [],
+          "Rules": [],
+          "Variables": []
+        }
+      }
+    }
+  }
+}

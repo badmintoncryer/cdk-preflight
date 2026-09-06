@@ -1,0 +1,48 @@
+{
+  "Resources": {
+    "Guardrail": {
+      "Type": "AWS::Bedrock::Guardrail",
+      "Properties": {
+        "Name": "cdkpf-garr-pass",
+        "BlockedInputMessaging": "blocked",
+        "BlockedOutputsMessaging": "blocked",
+        "ContentPolicyConfig": {
+          "FiltersConfig": [
+            {
+              "Type": "HATE",
+              "InputStrength": "HIGH",
+              "OutputStrength": "HIGH"
+            }
+          ]
+        },
+        "AutomatedReasoningPolicyConfig": {
+          "Policies": [
+            {
+              "Fn::GetAtt": [
+                "Arp",
+                "PolicyArn"
+              ]
+            }
+          ]
+        },
+        "CrossRegionConfig": {
+          "GuardrailProfileArn": {
+            "Fn::Sub": "arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail-profile/us.guardrail.v1:0"
+          }
+        }
+      }
+    },
+    "Arp": {
+      "Type": "AWS::Bedrock::AutomatedReasoningPolicy",
+      "Properties": {
+        "Name": "cdkpf-arp",
+        "PolicyDefinition": {
+          "Version": "1.0",
+          "Types": [],
+          "Rules": [],
+          "Variables": []
+        }
+      }
+    }
+  }
+}
