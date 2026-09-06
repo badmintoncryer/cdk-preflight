@@ -15,6 +15,7 @@ The pack aims at **every deploy-time failure that no existing CDK mechanism alre
 ```bash
 npm i -D cdk-preflight
 npx cdk-preflight init   # inserts Preflight.apply(app) into your CDK app
+                         # (`npx cdkpf init` is the same command, shorter)
 ```
 
 or add one line yourself:
@@ -73,7 +74,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table. Highlights:
 To add cdk-preflight to a CDK app:
 
 1. `npm i -D cdk-preflight`
-2. `npx cdk-preflight init` (finds the entry point via `cdk.json` and inserts `Preflight.apply(app)`; use `--dry-run` to preview)
+2. `npx cdk-preflight init` — or the shorter alias `npx cdkpf init` (finds the entry point via `cdk.json` and inserts `Preflight.apply(app)`; use `--dry-run` to preview)
 3. Run `cdk synth`. Violations fail the synth with a validation report; each finding carries a rule id, the actual value, and a suggested fix
 4. To fix a finding, prefer correcting the resource. To opt out instead: `exclude: ['<rule-id>']` disables one rule, `enforce: false` switches to warn-only reporting
 
