@@ -6,7 +6,8 @@
     "url": "https://github.com/badmintoncryer/cdk-preflight.git"
   },
   "bin": {
-    "cdk-preflight": "lib/cli.js"
+    "cdk-preflight": "lib/cli.js",
+    "cdkpf": "lib/cli.js"
   },
   "scripts": {
     "build": "projen build",

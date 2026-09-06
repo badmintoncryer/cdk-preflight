@@ -51,7 +51,7 @@ const bundleRules = project.addTask('bundle-rules', {
 project.preCompileTask.spawn(bundleRules);
 
 // `npx cdk-preflight init` codemod
-project.package.addBin({ 'cdk-preflight': 'lib/cli.js' });
+project.package.addBin({ 'cdk-preflight': 'lib/cli.js', cdkpf: 'lib/cli.js' });
 
 // projen 0.103 は legacy .eslintrc.json を生成するが eslint は ^9 のため、
 // v9 のレガシー設定サポートを明示的に有効化する
