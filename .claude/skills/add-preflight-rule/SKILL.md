@@ -1,6 +1,6 @@
 ---
 name: add-preflight-rule
-description: cdk-preflight に新しいルールを追加する半自動パイプライン。制約の抽出（ドキュメント/エラーメッセージ）→ rule.rego と fail/pass テンプレート生成 → 重複ガードテスト → 実機再現ゲート → meta.yaml 記録 → PR 準備までを 1 セッションで行う。
+description: cdk-preflight に新しいルールを追加する半自動パイプライン。制約の抽出（ドキュメント/エラーメッセージ）→ rule.rego と fail/pass テンプレート生成 → 重複ガードテスト → 実機再現ゲート → meta.yaml 記録 → PR 準備まで。候補が複数ある場合はフェーズごとにセッションを分ける（「セッションの切り方」参照）。
 ---
 
 # add-preflight-rule
@@ -33,3 +33,20 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    - **予想と違う理由**で失敗した場合（他アカウントの ARN、ドメイン所有権の検証など）は証拠にならない。サービスエラーが対象の制約そのものを名指しするまでテンプレートを作り直すか、除去できない交絡は `evidence` に明記する
    - `doc-only` は「再現に安価に作れないリソース（検証済み ACM 証明書、所有ドメイン等）が要る」場合に限る最終手段であって、まだ試していない制約への近道ではない。詳細は AGENTS.md の "A doc sentence is a hypothesis, not evidence" に従う
 6. **仕上げ**: `npx projen build` 全緑 → ブランチ作成 → conventional commit（`feat(rules): add <rule-id>`）→ PR 本文に: 制約の出典 / 重複チェック結果 / 実機再現ログ。
+
+## セッションの切り方（コンテキスト予算）
+
+API コストは **`往復回数 × 平均コンテキスト長`** でほぼ決まる（実測 2026-09-06: cache_read がトークン総量の 96%、AgentCore 回は 1,289 往復 × 平均 365k = 471M）。**1 サービスぶんを 1 セッションで通さない**。`find-preflight-rules` から `candidates.json` を受け取り、下の境界で `/clear` して scratchpad の `<service>/` 配下のファイルだけを引き継ぐ:
+
+| フェーズ | 入口 | 出口 |
+|---|---|---|
+| ⑤ ルール生成＋ローカルゲート | `candidates.json` | `rules/<service>/*`、`pending.txt`（実機ゲート待ちの rule id） |
+| ⑥ 実機ゲート | `pending.txt` | `bench-out/<rule-id>.log`、`meta.yaml#repro.evidence` |
+| ⑦ 仕上げ | ⑥ のログ | `pr-body.md` → commit / PR |
+
+守ること:
+
+- **rule.rego と fail/pass テンプレートを 1 本ずつヒアドキュメントで書かない**。`candidates.json` を読むジェネレータ（`rgen.py` 相当）を 1 個置き、直しはジェネレータ側に入れて再生成する。実測では打ち込んだコマンド文字列のコストが Bash 出力とほぼ同額（$318 対 $389）で、その 73% が 4k 超のヒアドキュメント
+- **書いたファイルを `cat` で読み返さない**。確認は `npx projen bundle-rules` と `npx jest` の結果だけで足りる
+- **実機ゲートは 1 本ずつ対話で回さない**。`pending.txt` を回す 1 スクリプトをバックグラウンドで走らせ、ログは `bench-out/<rule-id>.log` に書かせて、戻すのは 1 行のサマリだけにする。完了待ちのポーリングを 1 往復 1 回やらない（1 往復 ≒ 平均コンテキスト長ぶんの再読み込み）
+- ⑤ で候補が数十本あるなら、ジェネレータの入力（`candidates.json`）を直すサイクルに寄せる。個別ルールのデバッグは失敗した数本に絞る
