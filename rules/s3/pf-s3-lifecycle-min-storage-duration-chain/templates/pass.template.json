@@ -1,0 +1,28 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "r1",
+              "Status": "Enabled",
+              "Transitions": [
+                {
+                  "StorageClass": "GLACIER_IR",
+                  "TransitionInDays": 30
+                },
+                {
+                  "StorageClass": "DEEP_ARCHIVE",
+                  "TransitionInDays": 120
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

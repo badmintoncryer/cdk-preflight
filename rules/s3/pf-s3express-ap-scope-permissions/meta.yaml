@@ -1,0 +1,12 @@
+id: pf-s3express-ap-scope-permissions
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::AccessPoint]
+severity: ERROR
+title: "Access point scope permissions are bare API names, not s3: actions"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-accesspoint-scope.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\"; pass template -> CREATE_COMPLETE. CONFOUND: the stack message is the early-validation rollup; a change set names the hook as AWS::EarlyValidation::PropertyValidation, and a direct s3control create-access-point with the same Scope returns InvalidRequest \"Request invalid\". fail and pass differ only in the s3: prefix on Permissions"
+addedOn: 2026-09-06

@@ -1,0 +1,13 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3Express::DirectoryBucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3xlocf-b0--usw2-az1--x-s3",
+        "DataRedundancy": "SingleAvailabilityZone",
+        "LocationName": "usw2-az1"
+      }
+    }
+  }
+}

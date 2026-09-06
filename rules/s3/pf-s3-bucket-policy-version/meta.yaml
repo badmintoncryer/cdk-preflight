@@ -1,0 +1,12 @@
+id: pf-s3-bucket-policy-version
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::BucketPolicy]
+severity: ERROR
+title: "A policy document Version must be a known IAM policy language version"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-s3-bucketpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The policy must contain a valid version string\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,12 @@
+id: pf-s3-notification-destination-region
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A notification destination must live in the bucket region"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketNotificationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The notification destination service region is not valid for the bucket location constraint\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

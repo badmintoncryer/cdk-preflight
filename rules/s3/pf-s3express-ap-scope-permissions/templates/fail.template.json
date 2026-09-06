@@ -1,0 +1,30 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "AP": {
+      "Type": "AWS::S3Express::AccessPoint",
+      "Properties": {
+        "Bucket": {
+          "Ref": "PfB0"
+        },
+        "Name": "cdkpf-s3xapsf-ap--use1-az4--xa-s3",
+        "Scope": {
+          "Permissions": [
+            "s3:GetObject"
+          ],
+          "Prefixes": [
+            "logs/"
+          ]
+        }
+      }
+    },
+    "PfB0": {
+      "Type": "AWS::S3Express::DirectoryBucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3xapsf-b0--use1-az4--x-s3",
+        "DataRedundancy": "SingleAvailabilityZone",
+        "LocationName": "use1-az4"
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "ReplicationConfiguration": {
+          "Role": {
+            "Fn::GetAtt": [
+              "PfRole",
+              "Arn"
+            ]
+          },
+          "Rules": [
+            {
+              "Status": "Enabled",
+              "Priority": 1,
+              "DeleteMarkerReplication": {
+                "Status": "Disabled"
+              },
+              "Filter": {
+                "Prefix": "logs/"
+              },
+              "Destination": {
+                "Bucket": {
+                  "Fn::GetAtt": [
+                    "PfDest",
+                    "Arn"
+                  ]
+                },
+                "ReplicationTime": {
+                  "Status": "Enabled",
+                  "Time": {
+                    "Minutes": 30
+                  }
+                },
+                "Metrics": {
+                  "Status": "Enabled",
+                  "EventThreshold": {
+                    "Minutes": 30
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "PfRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "s3.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "PfDest": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    }
+  }
+}

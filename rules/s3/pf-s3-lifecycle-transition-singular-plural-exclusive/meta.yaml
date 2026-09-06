@@ -1,0 +1,12 @@
+id: pf-s3-lifecycle-transition-singular-plural-exclusive
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A lifecycle rule must not use both the singular and the plural transition property"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-lifecycleconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: Both Transition and Transitions cannot be specified\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

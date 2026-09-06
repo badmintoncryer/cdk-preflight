@@ -1,0 +1,12 @@
+id: pf-s3express-bucket-redundancy-location
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::DirectoryBucket]
+severity: ERROR
+title: "DataRedundancy must match the kind of zone LocationName names"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-s3express-directorybucket.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid Data Redundancy value for Bucket configuration.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

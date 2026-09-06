@@ -1,0 +1,26 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "IntelligentTieringConfigurations": [
+          {
+            "Id": "t1",
+            "Status": "Enabled",
+            "Tierings": [
+              {
+                "AccessTier": "ARCHIVE_ACCESS",
+                "Days": 90
+              },
+              {
+                "AccessTier": "ARCHIVE_ACCESS",
+                "Days": 180
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

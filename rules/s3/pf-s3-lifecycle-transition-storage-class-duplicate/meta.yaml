@@ -1,0 +1,12 @@
+id: pf-s3-lifecycle-transition-storage-class-duplicate
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A lifecycle rule must not transition to the same storage class twice"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'StorageClass' must be different for 'Transition' actions in same 'Rule' with filter '(prefix=)'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,35 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3bpv-b0"
+      }
+    },
+    "P": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "B"
+        },
+        "PolicyDocument": {
+          "Version": "2024-01-01",
+          "Statement": [
+            {
+              "Sid": "Reader",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::cdkpf-s3bpv-b0/*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

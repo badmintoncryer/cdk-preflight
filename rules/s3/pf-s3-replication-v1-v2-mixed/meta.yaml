@@ -1,0 +1,12 @@
+id: pf-s3-replication-v1-v2-mixed
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A replication rule must not mix the V1 Prefix with the V2 Filter"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The XML you provided was not well-formed or did not validate against our published schema\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

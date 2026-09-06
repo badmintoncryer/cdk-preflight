@@ -1,0 +1,12 @@
+id: pf-s3-notification-duplicate-filter-type
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A notification filter may hold one prefix rule and one suffix rule"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Cannot specify more than one prefix rule in a filter.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

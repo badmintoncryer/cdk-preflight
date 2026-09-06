@@ -1,0 +1,24 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3Express::DirectoryBucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3xlszp-b0--use1-az4--x-s3",
+        "DataRedundancy": "SingleAvailabilityZone",
+        "LocationName": "use1-az4",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "r1",
+              "Status": "Enabled",
+              "ExpirationInDays": 30,
+              "ObjectSizeGreaterThan": "1000",
+              "ObjectSizeLessThan": "5000"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

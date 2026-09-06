@@ -1,0 +1,12 @@
+id: pf-s3-storagelens-prefix-delimiter-length
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::StorageLens]
+severity: ERROR
+title: "PrefixDelimiter is a single character"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: TDD173TCEY07A0J8, Extended Request ID: We5YOPuoQ5rrFvi6pNJOs0emHz4CIsqT0aiW1aclmnIouja2A9FrQkay9UArKD4wurNgC5qbjh9SxPwwYJ9EM4jZwZQzEW0w)\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

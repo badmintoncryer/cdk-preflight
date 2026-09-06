@@ -1,0 +1,12 @@
+id: pf-s3-acl-public-blocked
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A public canned ACL cannot be applied while Block Public Access is on"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Bucket cannot have public ACLs set with BlockPublicAccess enabled\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

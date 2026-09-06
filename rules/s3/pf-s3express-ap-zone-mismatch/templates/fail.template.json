@@ -1,0 +1,23 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "AP": {
+      "Type": "AWS::S3Express::AccessPoint",
+      "Properties": {
+        "Bucket": "cdkpf-s3xapzf-b0--use1-az4--x-s3",
+        "Name": "cdkpf-s3xapzf-ap--use1-az5--xa-s3"
+      },
+      "DependsOn": [
+        "PfB0"
+      ]
+    },
+    "PfB0": {
+      "Type": "AWS::S3Express::DirectoryBucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3xapzf-b0--use1-az4--x-s3",
+        "DataRedundancy": "SingleAvailabilityZone",
+        "LocationName": "use1-az4"
+      }
+    }
+  }
+}

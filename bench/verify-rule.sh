@@ -32,6 +32,16 @@ poll_terminal() { # stack -> echo final status
   echo TIMEOUT
 }
 
+reason_of() { # リソースの CREATE_FAILED を優先。無ければスタックレベル（早期検証の失敗はこちらにしか出ない）
+  local q r
+  for q in "ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack'" "ResourceStatus=='CREATE_FAILED'"; do
+    r=$(aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
+      --query "StackEvents[?$q]|[-1].ResourceStatusReason" --output text 2>/dev/null)
+    [ -n "$r" ] && [ "$r" != "None" ] && { echo "$r"; return; }
+  done
+  echo "$r"
+}
+
 cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除まで自動で撃つ
   local stack=$1
   aws cloudformation describe-stacks --stack-name "$stack" --region "$REGION" >/dev/null 2>&1 || return 0
@@ -56,7 +66,6 @@ echo "=== $RULE: fail template ($REGION) ===" | tee -a "$LOG"
 FSTACK="cdkpf-$RULE-fail"
 if ! aws cloudformation create-stack --stack-name "$FSTACK" --region "$REGION" \
   --template-body "file://$DIR/templates/fail.template.json" \
-  --tags Key=cdkpf,Value="$RULE" \
   --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1; then
   # ponytail: API レベルの拒否は throttle/認証エラーと本物の制約発火を区別できないので
   # 一律 INCONCLUSIVE。毎月これに落ち続けるルールが出たら期待エラー文の白判定を個別に足す
@@ -66,8 +75,7 @@ if ! aws cloudformation create-stack --stack-name "$FSTACK" --region "$REGION" \
   exit 4
 fi
 FSTATUS=$(poll_terminal "$FSTACK")
-REASON=$(aws cloudformation describe-stack-events --stack-name "$FSTACK" --region "$REGION" \
-  --query "StackEvents[?ResourceStatus=='CREATE_FAILED']|[-1].ResourceStatusReason" --output text 2>/dev/null)
+REASON=$(reason_of "$FSTACK")
 echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
 echo "fail: reason=$REASON" | tee -a "$LOG"
 cleanup "$FSTACK"
@@ -85,10 +93,11 @@ if [ "$FAIL_ONLY" != "--fail-only" ]; then
   PSTACK="cdkpf-$RULE-pass"
   aws cloudformation create-stack --stack-name "$PSTACK" --region "$REGION" \
     --template-body "file://$DIR/templates/pass.template.json" \
-    --tags Key=cdkpf,Value="$RULE" \
-    --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1
+      --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1
   PSTATUS=$(poll_terminal "$PSTACK")
+  PREASON=$(reason_of "$PSTACK")
   echo "pass: finalStatus=$PSTATUS" | tee -a "$LOG"
+  echo "pass: reason=$PREASON" | tee -a "$LOG"
   cleanup "$PSTACK"
   [ "$PSTATUS" != "CREATE_COMPLETE" ] && { echo "!! pass template failed to deploy — fixture is not clean" | tee -a "$LOG"; exit 3; }
 fi

@@ -1,0 +1,12 @@
+id: pf-s3-storagelens-buckets-arn
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::StorageLens]
+severity: ERROR
+title: "Storage Lens scope buckets are given as ARNs"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: GKDZGYE73PGTK262, Extended Request ID: D6gowFt5jdJW8gCPPCPSGwoGmDotNaWhDGH/vVhjJs7Uev4wDnDi5xk3UODdm6SZj7XTeqe1Ei2+wOE23ixi3k6/zoGRwTps)\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06
