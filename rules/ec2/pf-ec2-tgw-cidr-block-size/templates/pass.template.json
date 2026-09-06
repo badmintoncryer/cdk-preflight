@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Tgw": {
+      "Type": "AWS::EC2::TransitGateway",
+      "Properties": {
+        "AmazonSideAsn": 64512,
+        "TransitGatewayCidrBlocks": [
+          "10.0.0.0/24"
+        ]
+      }
+    }
+  }
+}

@@ -210,6 +210,12 @@
 | `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | none |
 | `pf-dynamodb-table-name-format` | AWS::DynamoDB::Table<br>AWS::DynamoDB::GlobalTable | Table names allow only letters, numbers, underscore, dot and hyphen (max 255) | none |
 | `pf-dynamodb-table-name-length` | AWS::DynamoDB::Table | TableName must be at least 3 characters | pending-engine |
+| `pf-ec2-client-vpn-auth-type-config` | AWS::EC2::ClientVpnEndpoint | Client VPN AuthenticationOptions.Type must match the provided authentication sub-block | none |
+| `pf-ec2-client-vpn-authorization-rule-exclusive` | AWS::EC2::ClientVpnAuthorizationRule | Client VPN authorization rule cannot set both AccessGroupId and AuthorizeAllGroups | none |
+| `pf-ec2-client-vpn-cidr-size` | AWS::EC2::ClientVpnEndpoint | Client VPN ClientCidrBlock must be between /12 and /22 | none |
+| `pf-ec2-client-vpn-connection-log` | AWS::EC2::ClientVpnEndpoint | Client VPN ConnectionLogOptions.Enabled requires CloudwatchLogGroup | none |
+| `pf-ec2-client-vpn-port` | AWS::EC2::ClientVpnEndpoint | Client VPN VpnPort must be 443 or 1194 | none |
+| `pf-ec2-client-vpn-session-timeout` | AWS::EC2::ClientVpnEndpoint | Client VPN SessionTimeoutHours must be 8, 10, 12 or 24 | none |
 | `pf-ec2-instance-ami-arch` | AWS::EC2::Instance | Instance type architecture must match the SSM public-parameter AMI architecture | none |
 | `pf-ec2-launch-template-name` | AWS::EC2::LaunchTemplate | Launch template names are 3-128 chars of letters, numbers and -()./_ | none |
 | `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |
@@ -221,6 +227,8 @@
 | `pf-ec2-sg-rule-description` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule descriptions are limited to 255 chars of a restricted ASCII set | none |
 | `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | none |
 | `pf-ec2-subnet-cidr-size` | AWS::EC2::Subnet | Subnet IPv4 CIDR netmask must be between /16 and /28 | none |
+| `pf-ec2-tgw-amazon-side-asn` | AWS::EC2::TransitGateway | TransitGateway AmazonSideAsn must be in 64512-65534 or 4200000000-4294967294 | none |
+| `pf-ec2-tgw-cidr-block-size` | AWS::EC2::TransitGateway | TransitGatewayCidrBlocks must be /24 or larger for IPv4 | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
 | `pf-ec2-volume-iops-required` | AWS::EC2::Volume | io1 and io2 volumes require the Iops property | none |
@@ -230,6 +238,10 @@
 | `pf-ec2-vpce-gateway-service` | AWS::EC2::VPCEndpoint | Gateway VPC endpoints only exist for S3 and DynamoDB | none |
 | `pf-ec2-vpce-service-region` | AWS::EC2::VPCEndpoint | VPC endpoint service names must use the deploy region unless ServiceRegion is set | none |
 | `pf-ec2-vpce-type-config` | AWS::EC2::VPCEndpoint | SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway) | none |
+| `pf-ec2-vpn-phase-lifetime-order` | AWS::EC2::VPNConnection | VPN Phase2LifetimeSeconds must be less than Phase1LifetimeSeconds | none |
+| `pf-ec2-vpn-pre-shared-key` | AWS::EC2::VPNConnection | VPN tunnel PreSharedKey must be 8-64 characters of [A-Za-z0-9._] and must not start with 0 | none |
+| `pf-ec2-vpn-rekey-margin` | AWS::EC2::VPNConnection | VPN RekeyMarginTimeSeconds must be less than half of Phase2LifetimeSeconds | none |
+| `pf-ec2-vpn-tunnel-inside-cidr` | AWS::EC2::VPNConnection | VPN TunnelInsideCidr must be a /30 inside 169.254.0.0/16 and not one of the reserved ranges | none |
 | `pf-ecr-encryption-configuration` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | KmsKey is only valid with EncryptionType KMS/KMS_DSSE and must live in the deploy region | none |
 | `pf-ecr-image-tag-mutability-filters` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | ImageTagMutabilityExclusionFilters requires a *_WITH_EXCLUSION mutability setting, and vice versa | none |
 | `pf-ecr-lifecycle-action` | AWS::ECR::Repository<br>AWS::ECR::RepositoryCreationTemplate | The action type is expire or transition, and transition requires targetStorageClass: archive | none |
