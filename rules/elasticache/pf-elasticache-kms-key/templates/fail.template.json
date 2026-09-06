@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "RG": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-kmskey",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumCacheClusters": 1,
+        "AutomaticFailoverEnabled": false,
+        "KmsKeyId": {
+          "Fn::Sub": "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/11111111-2222-3333-4444-555555555555"
+        },
+        "AtRestEncryptionEnabled": false
+      }
+    }
+  }
+}

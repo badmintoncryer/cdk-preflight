@@ -1,0 +1,11 @@
+id: pf-elasticache-cluster-mode-parameter-group
+service: elasticache
+resourceTypes: [AWS::ElastiCache::ReplicationGroup]
+severity: ERROR
+title: "More than one node group needs a parameter group with cluster-enabled set to yes"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Use a parameter group with cluster-enabled parameter to create more than one node group.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

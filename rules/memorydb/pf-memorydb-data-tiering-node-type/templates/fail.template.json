@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::MemoryDB::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-datatieringnodetype",
+        "NodeType": "db.t4g.small",
+        "ACLName": "open-access",
+        "NumShards": 1,
+        "NumReplicasPerShard": 0,
+        "DataTiering": "true"
+      }
+    }
+  }
+}

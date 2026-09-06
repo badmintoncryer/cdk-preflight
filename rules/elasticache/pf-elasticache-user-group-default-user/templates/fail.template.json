@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "U": {
+      "Type": "AWS::ElastiCache::User",
+      "Properties": {
+        "Engine": "redis",
+        "UserId": "cdkpf-u-usergroupdefaultuser",
+        "UserName": "cdkpfu",
+        "NoPasswordRequired": true,
+        "AccessString": "on ~* +@all"
+      }
+    },
+    "UG": {
+      "Type": "AWS::ElastiCache::UserGroup",
+      "Properties": {
+        "Engine": "redis",
+        "UserGroupId": "cdkpf-usergroupdefaultuser",
+        "UserIds": [
+          {
+            "Ref": "U"
+          }
+        ]
+      }
+    }
+  }
+}

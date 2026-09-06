@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "U": {
+      "Type": "AWS::ElastiCache::User",
+      "Properties": {
+        "Engine": "redis",
+        "UserId": "cdkpf-u-useraccessstring",
+        "UserName": "cdkpfu",
+        "NoPasswordRequired": true,
+        "AccessString": "on ~* +@all resetpass"
+      }
+    }
+  }
+}

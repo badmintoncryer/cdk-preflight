@@ -1,0 +1,90 @@
+{
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SubB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SNG": {
+      "Type": "AWS::ElastiCache::SubnetGroup",
+      "Properties": {
+        "Description": "cdk-preflight bench",
+        "SubnetIds": [
+          {
+            "Ref": "SubA"
+          },
+          {
+            "Ref": "SubB"
+          }
+        ]
+      }
+    },
+    "SG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "CC": {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-snapshotsourceengine",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "memcached",
+        "NumCacheNodes": 1,
+        "CacheSubnetGroupName": {
+          "Ref": "SNG"
+        },
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "SG",
+              "GroupId"
+            ]
+          }
+        ],
+        "SnapshotArns": [
+          "arn:aws:s3:::cdkpf-bench/snapshot1.rdb"
+        ]
+      }
+    }
+  }
+}

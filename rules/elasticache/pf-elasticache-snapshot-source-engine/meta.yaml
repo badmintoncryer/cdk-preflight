@@ -1,0 +1,11 @@
+id: pf-elasticache-snapshot-source-engine
+service: elasticache
+resourceTypes: [AWS::ElastiCache::CacheCluster]
+severity: ERROR
+title: "SnapshotArns and SnapshotName only restore Redis clusters"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateCacheCluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Restoring a snapshot is not supported for this engine type\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

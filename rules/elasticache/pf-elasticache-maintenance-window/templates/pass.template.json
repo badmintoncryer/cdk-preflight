@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "RG": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-maintenancewindow",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumCacheClusters": 1,
+        "AutomaticFailoverEnabled": false,
+        "PreferredMaintenanceWindow": "sun:23:00-mon:01:30"
+      }
+    }
+  }
+}

@@ -2132,6 +2132,222 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_efstm_url := \"https://docs.aws.amazon.com/efs/latest/APIReference/API_CreateFileSystem.html\"\n\n_pf_efstm_fix := \"Set ThroughputMode: provisioned together with ProvisionedThroughputInMibps (1-3414), or drop the number and use bursting / elastic\"\n\n_pf_efstm_mode(name) := m if {\n\tm := resolve(name, \"Properties.ThroughputMode\")\n\tis_string(m)\n}\n\n_pf_efstm_mode(name) := \"bursting\" if _pf_efslib_absent(name, \"ThroughputMode\")\n\nviolation contains make_diag_full(\"pf-efs-throughput-mode\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughputInMibps\",\n\t\"ThroughputMode is provisioned but ProvisionedThroughputInMibps is missing; CreateFileSystem fails with \\\"Provisioned throughput must be set for file systems that use provisioned throughput mode.\\\"\",\n\t_pf_efstm_fix, _pf_efstm_url) if {\n\tsome name in resources_of_type(\"AWS::EFS::FileSystem\")\n\tresolve(name, \"Properties.ThroughputMode\") == \"provisioned\"\n\t_pf_efslib_absent(name, \"ProvisionedThroughputInMibps\")\n}\n\nviolation contains make_diag_full(\"pf-efs-throughput-mode\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughputInMibps\",\n\tsprintf(\"ProvisionedThroughputInMibps is set but ThroughputMode is %s; CreateFileSystem fails with \\\"Provisioned throughput can't be set for file systems that use %s throughput mode.\\\"\", [m, m]),\n\t_pf_efstm_fix, _pf_efstm_url) if {\n\tsome name in resources_of_type(\"AWS::EFS::FileSystem\")\n\tnot _pf_efslib_absent(name, \"ProvisionedThroughputInMibps\")\n\tm := _pf_efstm_mode(name)\n\tm != \"provisioned\"\n}\n\nviolation contains make_diag_full(\"pf-efs-throughput-mode\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughputInMibps\",\n\tsprintf(\"ProvisionedThroughputInMibps is %v; the documented ceiling is 3414 MiBps and most regions cap lower (CreateFileSystem fails with ThroughputLimitExceeded)\", [v]),\n\t_pf_efstm_fix, _pf_efstm_url) if {\n\tsome name in resources_of_type(\"AWS::EFS::FileSystem\")\n\tv := to_number(resolve(name, \"Properties.ProvisionedThroughputInMibps\"))\n\tv > 3414\n}\n"
   },
   {
+    "id": "pf-elasticache-auth-token",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "AuthToken needs in-transit encryption and must be 16-128 printable characters without slash, quotes or at-sign",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecauth_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-elasticache-replicationgroup.html\"\n\n_pf_ecauth_fix := \"Set TransitEncryptionEnabled: true next to AuthToken and use 16-128 printable ASCII characters; slash, quote, double quote and at-sign are rejected\"\n\nviolation contains make_diag_full(\"pf-elasticache-auth-token\", \"ERROR\", name,\n\t\"Properties.AuthToken\",\n\t\"AuthToken is set but TransitEncryptionEnabled is not true; the create call fails with \\\"The AUTH token is only supported when encryption-in-transit is enabled\\\"\",\n\t_pf_ecauth_fix, _pf_ecauth_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tnot _pf_cachelib_absent(name, \"AuthToken\")\n\tnot _pf_ecauth_transit(name)\n}\n\n_pf_ecauth_transit(name) if resolve(name, \"Properties.TransitEncryptionEnabled\") == true\n\nviolation contains make_diag_full(\"pf-elasticache-auth-token\", \"ERROR\", name,\n\t\"Properties.AuthToken\",\n\tsprintf(\"the AUTH token is %d characters; the create call fails with \\\"Invalid AuthToken provided\\\" outside 16-128\", [count(tok)]),\n\t_pf_ecauth_fix, _pf_ecauth_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\ttok := resolve(name, \"Properties.AuthToken\")\n\t_pf_cachelib_lit(tok)\n\t_pf_ecauth_bad_length(count(tok))\n}\n\n_pf_ecauth_bad_length(n) if n < 16\n\n_pf_ecauth_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-elasticache-auth-token\", \"ERROR\", name,\n\t\"Properties.AuthToken\",\n\tsprintf(\"the AUTH token contains '%s'; the create call fails with \\\"Invalid AuthToken provided\\\" (/ ' \\\" @ are not accepted)\", [ch]),\n\t_pf_ecauth_fix, _pf_ecauth_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\ttok := resolve(name, \"Properties.AuthToken\")\n\t_pf_cachelib_lit(tok)\n\tsome ch in [\"/\", \"'\", \"\\\"\", \"@\"]\n\tcontains(tok, ch)\n}\n"
+  },
+  {
+    "id": "pf-elasticache-cache-cluster-nodes",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "A Redis cluster holds one node and cross-az needs at least two",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_eccn_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateCacheCluster.html\"\n\n_pf_eccn_fix := \"Keep NumCacheNodes at 1 for Redis (use a replication group for replicas), and give AZMode cross-az at least two nodes\"\n\nviolation contains make_diag_full(\"pf-elasticache-cache-cluster-nodes\", \"ERROR\", name,\n\t\"Properties.NumCacheNodes\",\n\tsprintf(\"a Redis cluster asks for %v nodes; the create call fails with \\\"Cannot create a Redis cluster with a NumCacheNodes parameter greater than 1.\\\"\", [n]),\n\t_pf_eccn_fix, _pf_eccn_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::CacheCluster\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"redis\"\n\tn := to_number(resolve(name, \"Properties.NumCacheNodes\"))\n\tn > 1\n}\n\nviolation contains make_diag_full(\"pf-elasticache-cache-cluster-nodes\", \"ERROR\", name,\n\t\"Properties.AZMode\",\n\tsprintf(\"AZMode is cross-az with %v node; the create call fails with \\\"Must specify at least two cache nodes in order to specify AZ Mode of 'cross-az'.\\\"\", [n]),\n\t_pf_eccn_fix, _pf_eccn_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::CacheCluster\")\n\tresolve(name, \"Properties.AZMode\") == \"cross-az\"\n\tn := to_number(resolve(name, \"Properties.NumCacheNodes\"))\n\tn < 2\n}\n"
+  },
+  {
+    "id": "pf-elasticache-cluster-mode-parameter-group",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "More than one node group needs a parameter group with cluster-enabled set to yes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_eccmpg_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_eccmpg_fix := \"Point CacheParameterGroupName at a parameter group whose Properties set cluster-enabled: yes (or use a default.*.cluster.on group)\"\n\n# The parameter group usually lives in the same template, so the cluster-enabled\n# parameter can be read directly; a group that is only referenced by name is left\n# alone.\n_pf_eccmpg_cluster_on(pgname) if {\n\tprops := resolve(pgname, \"Properties.Properties\")\n\tis_object(props)\n\tlower(object.get(props, \"cluster-enabled\", \"no\")) == \"yes\"\n}\n\nviolation contains make_diag_full(\"pf-elasticache-cluster-mode-parameter-group\", \"ERROR\", name,\n\t\"Properties.CacheParameterGroupName\",\n\tsprintf(\"NumNodeGroups is %v but parameter group '%s' does not set cluster-enabled: yes; the deployment fails with \\\"Use a parameter group with cluster-enabled parameter to create more than one node group.\\\"\", [n, pgname]),\n\t_pf_eccmpg_fix, _pf_eccmpg_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tn := to_number(resolve(name, \"Properties.NumNodeGroups\"))\n\tn > 1\n\tpgname := resolve(name, \"Properties.CacheParameterGroupName\")\n\tpgname in resources_of_type(\"AWS::ElastiCache::ParameterGroup\")\n\tnot _pf_eccmpg_cluster_on(pgname)\n}\n"
+  },
+  {
+    "id": "pf-elasticache-data-tiering-node-type",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "DataTieringEnabled only works on r6gd node types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecdt_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecdt_fix := \"Use an r6gd node type (cache.r6gd.xlarge and larger) for data tiering, or drop DataTieringEnabled\"\n\nviolation contains make_diag_full(\"pf-elasticache-data-tiering-node-type\", \"ERROR\", name,\n\t\"Properties.DataTieringEnabled\",\n\tsprintf(\"data tiering is enabled on node type %s; the create call fails with \\\"Data tiering is not supported for the node type %s.\\\"\", [nt, nt]),\n\t_pf_ecdt_fix, _pf_ecdt_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tresolve(name, \"Properties.DataTieringEnabled\") == true\n\tnt := resolve(name, \"Properties.CacheNodeType\")\n\t_pf_cachelib_lit(nt)\n\tnot _pf_cachelib_r6gd(nt)\n}\n"
+  },
+  {
+    "id": "pf-elasticache-engine",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "Replication groups do not run Memcached and cache clusters do not run Valkey",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_eceng_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_eceng_fix := \"Use AWS::ElastiCache::CacheCluster for Memcached and AWS::ElastiCache::ReplicationGroup for Valkey\"\n\nviolation contains make_diag_full(\"pf-elasticache-engine\", \"ERROR\", name,\n\t\"Properties.Engine\",\n\t\"a replication group cannot run Memcached; the create call fails with \\\"Specified engine does not support replication.\\\"\",\n\t_pf_eceng_fix, _pf_eceng_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"memcached\"\n}\n\nviolation contains make_diag_full(\"pf-elasticache-engine\", \"ERROR\", name,\n\t\"Properties.Engine\",\n\t\"AWS::ElastiCache::CacheCluster cannot run Valkey; the create call fails with \\\"This API doesn't support Valkey engine. Please use CreateReplicationGroup API for Valkey cluster creation.\\\"\",\n\t_pf_eceng_fix, _pf_eceng_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::CacheCluster\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"valkey\"\n}\n"
+  },
+  {
+    "id": "pf-elasticache-identifier",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "A replication group or cluster name starts with a letter and holds no consecutive or trailing hyphens",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecid_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecid_fix := \"Start the identifier with a letter, use letters, digits and single hyphens, and do not end with a hyphen\"\n\n_pf_ecid_table := [\n\t[\"AWS::ElastiCache::ReplicationGroup\", \"ReplicationGroupId\", 40],\n\t[\"AWS::ElastiCache::CacheCluster\", \"ClusterName\", 50],\n]\n\nviolation contains make_diag_full(\"pf-elasticache-identifier\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"'%s' is not a valid identifier; the create call fails with \\\"Identifiers must begin with a letter; must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens\\\"\", [v]),\n\t_pf_ecid_fix, _pf_ecid_url) if {\n\tsome [t, key, _] in _pf_ecid_table\n\tsome name in resources_of_type(t)\n\tv := resolve(name, sprintf(\"Properties.%s\", [key]))\n\t_pf_cachelib_lit(v)\n\tnot _pf_cachelib_identifier_ok(v)\n}\n\nviolation contains make_diag_full(\"pf-elasticache-identifier\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"'%s' is %d characters; the identifier is capped at %d\", [v, count(v), cap]),\n\t_pf_ecid_fix, _pf_ecid_url) if {\n\tsome [t, key, cap] in _pf_ecid_table\n\tsome name in resources_of_type(t)\n\tv := resolve(name, sprintf(\"Properties.%s\", [key]))\n\t_pf_cachelib_lit(v)\n\tcount(v) > cap\n}\n"
+  },
+  {
+    "id": "pf-elasticache-kms-key",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "KmsKeyId needs AtRestEncryptionEnabled and a key in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_eckms_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_eckms_fix := \"Set AtRestEncryptionEnabled: true next to KmsKeyId and point it at a key in the same region as the replication group\"\n\nviolation contains make_diag_full(\"pf-elasticache-kms-key\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\t\"KmsKeyId is set but AtRestEncryptionEnabled is not true; the create call fails with \\\"Please enable encryption at rest to use Customer Managed CMK\\\"\",\n\t_pf_eckms_fix, _pf_eckms_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tnot _pf_cachelib_absent(name, \"KmsKeyId\")\n\tnot _pf_eckms_atrest(name)\n}\n\n_pf_eckms_atrest(name) if resolve(name, \"Properties.AtRestEncryptionEnabled\") == true\n\nviolation contains make_diag_full(\"pf-elasticache-kms-key\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\tsprintf(\"the key is in region '%s' but the replication group deploys to '%s'; the create call fails with \\\"KMS key does not exist with key id\\\"\", [parts[3], region]),\n\t_pf_eckms_fix, _pf_eckms_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tparts := _pf_cachelib_arn(resolve(name, \"Properties.KmsKeyId\"))\n\tparts[2] == \"kms\"\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-elasticache-maintenance-window",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "PreferredMaintenanceWindow must be ddd:hh24:mi-ddd:hh24:mi and span at least 60 minutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecmw_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecmw_fix := \"Write the window as ddd:hh24:mi-ddd:hh24:mi in UTC (e.g. sun:23:00-mon:01:30) and give it at least 60 minutes\"\n\n_pf_ecmw_types := [\"AWS::ElastiCache::ReplicationGroup\", \"AWS::ElastiCache::CacheCluster\"]\n\nviolation contains make_diag_full(\"pf-elasticache-maintenance-window\", \"ERROR\", name,\n\t\"Properties.PreferredMaintenanceWindow\",\n\tsprintf(\"'%s' is not ddd:hh24:mi-ddd:hh24:mi; the create call fails with \\\"Invalid maintenance window format. Should be specified as a range ddd:hh24:mi-ddd:hh24:mi (24H Clock UTC)\\\"\", [w]),\n\t_pf_ecmw_fix, _pf_ecmw_url) if {\n\tsome t in _pf_ecmw_types\n\tsome name in resources_of_type(t)\n\tw := resolve(name, \"Properties.PreferredMaintenanceWindow\")\n\t_pf_cachelib_lit(w)\n\tnot _pf_cachelib_window(w)\n}\n\nviolation contains make_diag_full(\"pf-elasticache-maintenance-window\", \"ERROR\", name,\n\t\"Properties.PreferredMaintenanceWindow\",\n\tsprintf(\"the maintenance window '%s' is %d minutes long; the create call fails with \\\"Maintenance window must be at least 60 minutes.\\\"\", [w, n]),\n\t_pf_ecmw_fix, _pf_ecmw_url) if {\n\tsome t in _pf_ecmw_types\n\tsome name in resources_of_type(t)\n\tw := resolve(name, \"Properties.PreferredMaintenanceWindow\")\n\tn := _pf_cachelib_window_minutes(w)\n\tn < 60\n}\n"
+  },
+  {
+    "id": "pf-elasticache-port",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "Port must be in 1150-8004 or 8006-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecport_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecport_fix := \"Pick a port in 1150-8004 or 8006-65535 (8005 is reserved)\"\n\n_pf_ecport_types := [\"AWS::ElastiCache::ReplicationGroup\", \"AWS::ElastiCache::CacheCluster\"]\n\nviolation contains make_diag_full(\"pf-elasticache-port\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"Port %v is outside the accepted range; the create call fails with \\\"Invalid endpoint port: %v. Valid range is 1150-8004,8006-65535\\\"\", [p, p]),\n\t_pf_ecport_fix, _pf_ecport_url) if {\n\tsome t in _pf_ecport_types\n\tsome name in resources_of_type(t)\n\tp := to_number(resolve(name, \"Properties.Port\"))\n\tnot _pf_cachelib_port_ok(p)\n}\n"
+  },
+  {
+    "id": "pf-elasticache-preferred-availability-zones",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "The preferred Availability Zone list must have exactly one entry per node",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecaz_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecaz_fix := \"List one Availability Zone per node — the list length must equal NumCacheClusters (replication group) or NumCacheNodes (cluster)\"\n\n_pf_ecaz_table := [\n\t[\"AWS::ElastiCache::ReplicationGroup\", \"PreferredCacheClusterAZs\", \"NumCacheClusters\"],\n\t[\"AWS::ElastiCache::CacheCluster\", \"PreferredAvailabilityZones\", \"NumCacheNodes\"],\n]\n\nviolation contains make_diag_full(\"pf-elasticache-preferred-availability-zones\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"%d Availability Zones are listed for %v nodes; the create call fails with \\\"Must specify the same number of preferred availability zones as requested number of nodes\\\"\", [count(azs), n]),\n\t_pf_ecaz_fix, _pf_ecaz_url) if {\n\tsome [t, key, countKey] in _pf_ecaz_table\n\tsome name in resources_of_type(t)\n\tazs := resolve(name, sprintf(\"Properties.%s\", [key]))\n\tis_array(azs)\n\tn := to_number(resolve(name, sprintf(\"Properties.%s\", [countKey])))\n\tcount(azs) != n\n}\n"
+  },
+  {
+    "id": "pf-elasticache-replication-group-clusters",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "Automatic failover needs at least two cache clusters (CloudFormation turns it on by default), and NumCacheClusters cannot be combined with NumNodeGroups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecrgc_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecrgc_fix := \"Give an automatic-failover group NumCacheClusters >= 2, set AutomaticFailoverEnabled: false for a single-cluster group, and never set NumCacheClusters together with NumNodeGroups\"\n\nviolation contains make_diag_full(\"pf-elasticache-replication-group-clusters\", \"ERROR\", name,\n\t\"Properties.NumCacheClusters\",\n\tsprintf(\"AutomaticFailoverEnabled is true but NumCacheClusters is %v; the deployment fails with \\\"Automatic failover requires 2 or more cache clusters. Create more cache clusters or disable automatic failover.\\\"\", [n]),\n\t_pf_ecrgc_fix, _pf_ecrgc_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tresolve(name, \"Properties.AutomaticFailoverEnabled\") == true\n\tn := to_number(resolve(name, \"Properties.NumCacheClusters\"))\n\tn < 2\n}\n\n# CloudFormation's own handler turns automatic failover on unless the template\n# says otherwise, so a single-cluster group without the explicit false fails\n# even though the CreateReplicationGroup API accepts it (measured 2026-09-06).\nviolation contains make_diag_full(\"pf-elasticache-replication-group-clusters\", \"ERROR\", name,\n\t\"Properties.AutomaticFailoverEnabled\",\n\t\"NumCacheClusters is 1 and AutomaticFailoverEnabled is not set; the CloudFormation handler enables failover and the deployment fails with \\\"When using automatic failover, there must be at least 2 cache clusters in the replication group.\\\"\",\n\t_pf_ecrgc_fix, _pf_ecrgc_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\t_pf_cachelib_absent(name, \"AutomaticFailoverEnabled\")\n\tto_number(resolve(name, \"Properties.NumCacheClusters\")) == 1\n}\n\nviolation contains make_diag_full(\"pf-elasticache-replication-group-clusters\", \"ERROR\", name,\n\t\"Properties.NumCacheClusters\",\n\t\"NumCacheClusters and NumNodeGroups are both set; the create call fails with \\\"NumCacheClusters can only be specified for one node group\\\"\",\n\t_pf_ecrgc_fix, _pf_ecrgc_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tnot _pf_cachelib_absent(name, \"NumCacheClusters\")\n\tn := to_number(resolve(name, \"Properties.NumNodeGroups\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elasticache-snapshot-retention",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "SnapshotRetentionLimit is 0-35 days and Memcached does not support snapshots at all",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsr_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecsr_fix := \"Keep SnapshotRetentionLimit between 0 and 35, and drop it entirely on a Memcached cluster\"\n\n_pf_ecsr_types := [\"AWS::ElastiCache::ReplicationGroup\", \"AWS::ElastiCache::CacheCluster\"]\n\nviolation contains make_diag_full(\"pf-elasticache-snapshot-retention\", \"ERROR\", name,\n\t\"Properties.SnapshotRetentionLimit\",\n\tsprintf(\"SnapshotRetentionLimit is %v; the create call fails with \\\"Invalid snapshot retention limit: %v. Retention limit must be between 0 and 35.\\\"\", [v, v]),\n\t_pf_ecsr_fix, _pf_ecsr_url) if {\n\tsome t in _pf_ecsr_types\n\tsome name in resources_of_type(t)\n\tv := to_number(resolve(name, \"Properties.SnapshotRetentionLimit\"))\n\t_pf_ecsr_out_of_range(v)\n}\n\n_pf_ecsr_out_of_range(v) if v < 0\n\n_pf_ecsr_out_of_range(v) if v > 35\n\nviolation contains make_diag_full(\"pf-elasticache-snapshot-retention\", \"ERROR\", name,\n\t\"Properties.SnapshotRetentionLimit\",\n\t\"the cluster runs Memcached, which has no snapshots; the create call fails with \\\"Engine does not support snapshotting. Snapshot retention limit parameter should not be specified.\\\"\",\n\t_pf_ecsr_fix, _pf_ecsr_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::CacheCluster\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"memcached\"\n\tnot _pf_cachelib_absent(name, \"SnapshotRetentionLimit\")\n}\n"
+  },
+  {
+    "id": "pf-elasticache-snapshot-source-engine",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "SnapshotArns and SnapshotName only restore Redis clusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsse_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateCacheCluster.html\"\n\n_pf_ecsse_fix := \"Restore from a snapshot only on a Redis cluster; Memcached has no snapshots\"\n\nviolation contains make_diag_full(\"pf-elasticache-snapshot-source-engine\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"%s is set on a Memcached cluster; the create call fails with \\\"Restoring a snapshot is not supported for this engine type\\\"\", [key]),\n\t_pf_ecsse_fix, _pf_ecsse_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::CacheCluster\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"memcached\"\n\tsome key in [\"SnapshotArns\", \"SnapshotName\"]\n\tnot _pf_cachelib_absent(name, key)\n}\n"
+  },
+  {
+    "id": "pf-elasticache-snapshot-window",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup",
+      "AWS::ElastiCache::CacheCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsw_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecsw_fix := \"Write the snapshot window as hh24:mi-hh24:mi in UTC (e.g. 05:00-09:00) and keep it clear of PreferredMaintenanceWindow\"\n\n_pf_ecsw_types := [\"AWS::ElastiCache::ReplicationGroup\", \"AWS::ElastiCache::CacheCluster\"]\n\nviolation contains make_diag_full(\"pf-elasticache-snapshot-window\", \"ERROR\", name,\n\t\"Properties.SnapshotWindow\",\n\tsprintf(\"'%s' is not hh24:mi-hh24:mi; the create call fails with \\\"Invalid backup window format. Should be specified as a range hh24:mi-hh24:mi (24H Clock UTC)\\\"\", [w]),\n\t_pf_ecsw_fix, _pf_ecsw_url) if {\n\tsome t in _pf_ecsw_types\n\tsome name in resources_of_type(t)\n\tw := resolve(name, \"Properties.SnapshotWindow\")\n\t_pf_cachelib_lit(w)\n\tnot _pf_cachelib_daily(w)\n}\n\n# The snapshot window recurs daily, so it collides with a maintenance window\n# that covers the same clock time on its day.\nviolation contains make_diag_full(\"pf-elasticache-snapshot-window\", \"ERROR\", name,\n\t\"Properties.SnapshotWindow\",\n\tsprintf(\"snapshot window %s overlaps maintenance window %s; the create call fails with \\\"The snapshot window and maintenance window must not overlap.\\\"\", [sw, mw]),\n\t_pf_ecsw_fix, _pf_ecsw_url) if {\n\tsome t in _pf_ecsw_types\n\tsome name in resources_of_type(t)\n\tsw := resolve(name, \"Properties.SnapshotWindow\")\n\tmw := resolve(name, \"Properties.PreferredMaintenanceWindow\")\n\t_pf_cachelib_overlap(mw, sw)\n}\n"
+  },
+  {
+    "id": "pf-elasticache-snapshotting-cluster",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "SnapshottingClusterId cannot be set on a cluster mode enabled replication group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsc_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecsc_fix := \"Drop SnapshottingClusterId when the group has more than one node group — cluster mode enabled groups snapshot every shard\"\n\nviolation contains make_diag_full(\"pf-elasticache-snapshotting-cluster\", \"ERROR\", name,\n\t\"Properties.SnapshottingClusterId\",\n\t\"SnapshottingClusterId is set on a cluster mode enabled replication group (NumNodeGroups > 1); the deployment fails with \\\"Cannot set snapshotting cluster for cluster mode enabled replication group.\\\"\",\n\t_pf_ecsc_fix, _pf_ecsc_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tnot _pf_cachelib_absent(name, \"SnapshottingClusterId\")\n\tn := to_number(resolve(name, \"Properties.NumNodeGroups\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elasticache-user-access-string",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "The access string uses Redis ACL rules; password rules and reset are rejected and categories must exist",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::User"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecas_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateUser.html\"\n\n_pf_ecas_fix := \"Build the access string from on/off, ~key patterns, &channel patterns and +/- commands or @categories — passwords are set with the Passwords property, not in the string\"\n\n# Category names ElastiCache accepts (Redis ACL categories, measured 2026-09-06).\n_pf_ecas_categories := {\n\t\"all\", \"admin\", \"bitmap\", \"blocking\", \"connection\", \"dangerous\", \"fast\",\n\t\"geo\", \"hash\", \"hyperloglog\", \"keyspace\", \"list\", \"pubsub\", \"read\",\n\t\"scripting\", \"set\", \"sortedset\", \"slow\", \"stream\", \"string\", \"transaction\", \"write\",\n}\n\n# Bare keywords the service accepts next to the +/-/~/& rules.\n_pf_ecas_keywords := {\"on\", \"off\", \"allkeys\", \"allchannels\", \"allcommands\", \"nocommands\", \"sanitize-payload\", \"skip-sanitize-payload\", \"clearselectors\"}\n\n# Password / reset rules belong to Redis but not to the ElastiCache user API.\n_pf_ecas_rejected := {\"nopass\", \"resetpass\", \"reset\", \"resetkeys\", \"resetchannels\"}\n\n_pf_ecas_tokens(name) := ts if {\n\ts := resolve(name, \"Properties.AccessString\")\n\t_pf_cachelib_lit(s)\n\tts := [t | some t in split(lower(s), \" \"); t != \"\"]\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-access-string\", \"ERROR\", name,\n\t\"Properties.AccessString\",\n\tsprintf(\"the access string contains '%s'; the create call fails with \\\"Password rules are not supported in Elasticache access string\\\" (or \\\"reset rule is not supported in Elasticache user api\\\")\", [tok]),\n\t_pf_ecas_fix, _pf_ecas_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\tsome tok in _pf_ecas_tokens(name)\n\ttok in _pf_ecas_rejected\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-access-string\", \"ERROR\", name,\n\t\"Properties.AccessString\",\n\tsprintf(\"'%s' is not an access-string rule; the create call fails with \\\"The access-string is invalid.\\\"\", [tok]),\n\t_pf_ecas_fix, _pf_ecas_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\tsome tok in _pf_ecas_tokens(name)\n\tnot tok in _pf_ecas_rejected\n\tnot tok in _pf_ecas_keywords\n\tnot startswith(tok, \"~\")\n\tnot startswith(tok, \"&\")\n\tnot startswith(tok, \"+\")\n\tnot startswith(tok, \"-\")\n\tnot startswith(tok, \"%\")\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-access-string\", \"ERROR\", name,\n\t\"Properties.AccessString\",\n\tsprintf(\"'%s' is not a Redis ACL category; the create call fails with \\\"Access string contains invalid category(s)\\\"\", [tok]),\n\t_pf_ecas_fix, _pf_ecas_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\tsome tok in _pf_ecas_tokens(name)\n\tsome prefix in [\"+@\", \"-@\"]\n\tstartswith(tok, prefix)\n\tcat := substring(tok, 2, -1)\n\tnot cat in _pf_ecas_categories\n}\n"
+  },
+  {
+    "id": "pf-elasticache-user-authentication",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "A user needs exactly one authentication mode, and passwords are 16-128 characters with at most two per user",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::User"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecua_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateUser.html\"\n\n_pf_ecua_fix := \"Set NoPasswordRequired: true, or give the user one or two passwords of 16-128 characters (or AuthenticationMode with Type iam)\"\n\n_pf_ecua_passwords(name) := p if {\n\tp := resolve(name, \"Properties.Passwords\")\n\tis_array(p)\n}\n\n_pf_ecua_authmode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-authentication\", \"ERROR\", name,\n\t\"Properties.Passwords\",\n\t\"Passwords are set together with NoPasswordRequired; the create call fails with \\\"Password field is not allowed with authentication type: no-password-required\\\"\",\n\t_pf_ecua_fix, _pf_ecua_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\tresolve(name, \"Properties.NoPasswordRequired\") == true\n\tcount(_pf_ecua_passwords(name)) > 0\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-authentication\", \"ERROR\", name,\n\t\"Properties.Passwords\",\n\tsprintf(\"a password is %d characters; the create call fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_ecua_fix, _pf_ecua_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\tsome p in _pf_ecua_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_ecua_bad_length(count(p))\n}\n\n_pf_ecua_bad_length(n) if n < 16\n\n_pf_ecua_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-elasticache-user-authentication\", \"ERROR\", name,\n\t\"Properties.Passwords\",\n\tsprintf(\"%d passwords are set; the create call fails with \\\"Maximum number of passwords allowed in this service is 2.\\\"\", [count(ps)]),\n\t_pf_ecua_fix, _pf_ecua_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\tps := _pf_ecua_passwords(name)\n\tcount(ps) > 2\n}\n\n# Neither Passwords, NoPasswordRequired nor AuthenticationMode leaves the user\n# without an authentication type at all.\nviolation contains make_diag_full(\"pf-elasticache-user-authentication\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"the user sets no authentication mode; the create call fails with \\\"Input Authentication type: null is not in the allowed list: [password,no-password-required,iam]\\\"\",\n\t_pf_ecua_fix, _pf_ecua_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::User\")\n\t_pf_cachelib_absent(name, \"AuthenticationMode\")\n\t_pf_cachelib_absent(name, \"NoPasswordRequired\")\n\t_pf_cachelib_absent(name, \"Passwords\")\n}\n"
+  },
+  {
+    "id": "pf-elasticache-user-group-default-user",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "A Redis user group must contain a user named default, and a Valkey group rejects password-less users",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::UserGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecugd_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateUserGroup.html\"\n\n_pf_ecugd_fix := \"Add a user whose UserName is default to a Redis user group; give Valkey group members a password or IAM authentication\"\n\n# UserIds resolve to the logical ids of AWS::ElastiCache::User resources in the\n# same template, which is where the user name and auth mode can be read.\n_pf_ecugd_members(name) := ids if {\n\tids := resolve(name, \"Properties.UserIds\")\n\tis_array(ids)\n}\n\n_pf_ecugd_has_default(name) if {\n\tsome uid in _pf_ecugd_members(name)\n\tuid in resources_of_type(\"AWS::ElastiCache::User\")\n\tlower(resolve(uid, \"Properties.UserName\")) == \"default\"\n}\n\n# A member the template does not declare could still be the default user.\n_pf_ecugd_has_default(name) if {\n\tsome uid in _pf_ecugd_members(name)\n\tnot uid in resources_of_type(\"AWS::ElastiCache::User\")\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-group-default-user\", \"ERROR\", name,\n\t\"Properties.UserIds\",\n\t\"the Redis user group has no member named default; CreateUserGroup fails with \\\"Redis user group needs to contain a user with the user name default.\\\"\",\n\t_pf_ecugd_fix, _pf_ecugd_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::UserGroup\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"redis\"\n\tnot _pf_ecugd_has_default(name)\n}\n\nviolation contains make_diag_full(\"pf-elasticache-user-group-default-user\", \"ERROR\", name,\n\t\"Properties.UserIds\",\n\tsprintf(\"user '%s' needs no password but the group runs Valkey; CreateUserGroup fails with \\\"No password user %s cannot be added to user group with engine Valkey\\\"\", [uid, uid]),\n\t_pf_ecugd_fix, _pf_ecugd_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::UserGroup\")\n\tlower(resolve(name, \"Properties.Engine\")) == \"valkey\"\n\tsome uid in _pf_ecugd_members(name)\n\tuid in resources_of_type(\"AWS::ElastiCache::User\")\n\tresolve(uid, \"Properties.NoPasswordRequired\") == true\n}\n"
+  },
+  {
+    "id": "pf-elasticache-user-group-transit-encryption",
+    "service": "elasticache",
+    "severity": "ERROR",
+    "title": "UserGroupIds requires in-transit encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElastiCache::ReplicationGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecugt_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecugt_fix := \"Set TransitEncryptionEnabled: true on a replication group that uses UserGroupIds\"\n\nviolation contains make_diag_full(\"pf-elasticache-user-group-transit-encryption\", \"ERROR\", name,\n\t\"Properties.UserGroupIds\",\n\t\"UserGroupIds is set but TransitEncryptionEnabled is not true; the create call fails with \\\"User group based access control requires encryption-in-transit to be enabled on the replication group.\\\"\",\n\t_pf_ecugt_fix, _pf_ecugt_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tgroups := resolve(name, \"Properties.UserGroupIds\")\n\tis_array(groups)\n\tcount(groups) > 0\n\tnot _pf_ecugt_transit(name)\n}\n\n_pf_ecugt_transit(name) if resolve(name, \"Properties.TransitEncryptionEnabled\") == true\n"
+  },
+  {
     "id": "pf-elbv2-alb-subnet-count",
     "service": "elbv2",
     "severity": "ERROR",
@@ -2858,6 +3074,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Logs::SubscriptionFilter"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgskr_url := \"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\"\n\n# The destination is provably Kinesis two ways: a literal\n# arn:<partition>:kinesis: string, or a Ref/GetAtt that resolve() turns into\n# the logical ID of an in-template AWS::Kinesis::Stream. Scoped to Kinesis —\n# the bench error names \"vendor kinesis\"; other vendors were not measured.\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\tparts := split(d, \":\")\n\tcount(parts) >= 3\n\tparts[0] == \"arn\"\n\tparts[2] == \"kinesis\"\n}\n\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\td in resources_of_type(\"AWS::Kinesis::Stream\")\n}\n\n# True absence of RoleArn needs the preprocessed document (see AGENTS.md).\n_pf_lgskr_role_absent(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-logs-subscription-kinesis-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"The subscription filter targets a Kinesis stream but sets no RoleArn; the service rejects it with \\\"destinationArn for vendor kinesis cannot be used without roleArn\\\"\",\n\t\"Add a RoleArn for a role that logs.amazonaws.com can assume with kinesis:PutRecord on the stream\",\n\t_pf_lgskr_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lgskr_kinesis_dest(name)\n\t_pf_lgskr_role_absent(name)\n}\n"
+  },
+  {
+    "id": "pf-memorydb-data-tiering-node-type",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "DataTiering only works on r6gd node types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbdt_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbdt_fix := \"Use an r6gd node type (db.r6gd.xlarge and larger) for data tiering, or drop DataTiering\"\n\nviolation contains make_diag_full(\"pf-memorydb-data-tiering-node-type\", \"ERROR\", name,\n\t\"Properties.DataTiering\",\n\tsprintf(\"data tiering is enabled on node type %s; CreateCluster fails with \\\"Data tiering is not supported for the node type %s.\\\"\", [nt, nt]),\n\t_pf_mdbdt_fix, _pf_mdbdt_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\t_pf_mdbdt_on(resolve(name, \"Properties.DataTiering\"))\n\tnt := resolve(name, \"Properties.NodeType\")\n\t_pf_cachelib_lit(nt)\n\tnot _pf_cachelib_r6gd(nt)\n}\n\n# The property is typed as a string enum (\"true\" / \"false\") but a boolean\n# reaches the template just as often.\n_pf_mdbdt_on(v) if v == true\n\n_pf_mdbdt_on(v) if v == \"true\"\n"
+  },
+  {
+    "id": "pf-memorydb-engine",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "MemoryDB runs Valkey or Redis, not Memcached",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbeng_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbeng_fix := \"Leave Engine unset or set it to valkey / redis\"\n\nviolation contains make_diag_full(\"pf-memorydb-engine\", \"ERROR\", name,\n\t\"Properties.Engine\",\n\tsprintf(\"Engine is '%s'; CreateCluster fails with \\\"Specified engine does not support replication.\\\"\", [e]),\n\t_pf_mdbeng_fix, _pf_mdbeng_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\te := resolve(name, \"Properties.Engine\")\n\t_pf_cachelib_lit(e)\n\tnot lower(e) in {\"valkey\", \"redis\"}\n}\n"
+  },
+  {
+    "id": "pf-memorydb-kms-key-region",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "KmsKeyId must name a key in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbkms_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbkms_fix := \"Point KmsKeyId at a key in the same region as the cluster\"\n\nviolation contains make_diag_full(\"pf-memorydb-kms-key-region\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\tsprintf(\"the key is in region '%s' but the cluster deploys to '%s'; CreateCluster fails with \\\"KMS key does not exist with key id\\\"\", [parts[3], region]),\n\t_pf_mdbkms_fix, _pf_mdbkms_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tparts := _pf_cachelib_arn(resolve(name, \"Properties.KmsKeyId\"))\n\tparts[2] == \"kms\"\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-memorydb-maintenance-window",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "MaintenanceWindow must be ddd:hh24:mi-ddd:hh24:mi and span at least 60 minutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbmw_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbmw_fix := \"Write the window as ddd:hh24:mi-ddd:hh24:mi in UTC (e.g. sun:23:00-mon:01:30) and give it at least 60 minutes\"\n\nviolation contains make_diag_full(\"pf-memorydb-maintenance-window\", \"ERROR\", name,\n\t\"Properties.MaintenanceWindow\",\n\tsprintf(\"'%s' is not ddd:hh24:mi-ddd:hh24:mi; CreateCluster fails with \\\"Invalid maintenance window format. Should be specified as a range ddd:hh24:mi-ddd:hh24:mi (24H Clock UTC)\\\"\", [w]),\n\t_pf_mdbmw_fix, _pf_mdbmw_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tw := resolve(name, \"Properties.MaintenanceWindow\")\n\t_pf_cachelib_lit(w)\n\tnot _pf_cachelib_window(w)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-maintenance-window\", \"ERROR\", name,\n\t\"Properties.MaintenanceWindow\",\n\tsprintf(\"the maintenance window '%s' is %d minutes long; CreateCluster fails with \\\"Maintenance window must be at least 60 minutes.\\\"\", [w, n]),\n\t_pf_mdbmw_fix, _pf_mdbmw_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tw := resolve(name, \"Properties.MaintenanceWindow\")\n\tn := _pf_cachelib_window_minutes(w)\n\tn < 60\n}\n"
+  },
+  {
+    "id": "pf-memorydb-port",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "Port must be in 1150-8004 or 8006-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbport_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbport_fix := \"Pick a port in 1150-8004 or 8006-65535 (8005 is reserved)\"\n\nviolation contains make_diag_full(\"pf-memorydb-port\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"Port %v is outside the accepted range; CreateCluster fails with \\\"Invalid endpoint port: %v. Valid range is 1150-8004,8006-65535\\\"\", [p, p]),\n\t_pf_mdbport_fix, _pf_mdbport_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tp := to_number(resolve(name, \"Properties.Port\"))\n\tnot _pf_cachelib_port_ok(p)\n}\n"
+  },
+  {
+    "id": "pf-memorydb-replicas-per-shard",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "NumReplicasPerShard is 0-5",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbrep_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbrep_fix := \"Keep NumReplicasPerShard between 0 and 5\"\n\nviolation contains make_diag_full(\"pf-memorydb-replicas-per-shard\", \"ERROR\", name,\n\t\"Properties.NumReplicasPerShard\",\n\tsprintf(\"NumReplicasPerShard is %v; CreateCluster fails with \\\"The number of replicas per shard must be within 0 and 5.\\\"\", [v]),\n\t_pf_mdbrep_fix, _pf_mdbrep_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tv := to_number(resolve(name, \"Properties.NumReplicasPerShard\"))\n\t_pf_mdbrep_out_of_range(v)\n}\n\n_pf_mdbrep_out_of_range(v) if v < 0\n\n_pf_mdbrep_out_of_range(v) if v > 5\n"
+  },
+  {
+    "id": "pf-memorydb-snapshot-retention",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "SnapshotRetentionLimit is 0-35 days",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbsr_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbsr_fix := \"Keep SnapshotRetentionLimit between 0 and 35 days\"\n\nviolation contains make_diag_full(\"pf-memorydb-snapshot-retention\", \"ERROR\", name,\n\t\"Properties.SnapshotRetentionLimit\",\n\tsprintf(\"SnapshotRetentionLimit is %v; CreateCluster fails with \\\"Invalid snapshot retention limit: %v. Retention limit must be between 0 and 35.\\\"\", [v, v]),\n\t_pf_mdbsr_fix, _pf_mdbsr_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tv := to_number(resolve(name, \"Properties.SnapshotRetentionLimit\"))\n\t_pf_mdbsr_out_of_range(v)\n}\n\n_pf_mdbsr_out_of_range(v) if v < 0\n\n_pf_mdbsr_out_of_range(v) if v > 35\n"
+  },
+  {
+    "id": "pf-memorydb-snapshot-window",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbsw_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateCluster.html\"\n\n_pf_mdbsw_fix := \"Write the snapshot window as hh24:mi-hh24:mi in UTC and keep it clear of MaintenanceWindow\"\n\nviolation contains make_diag_full(\"pf-memorydb-snapshot-window\", \"ERROR\", name,\n\t\"Properties.SnapshotWindow\",\n\tsprintf(\"'%s' is not hh24:mi-hh24:mi; CreateCluster fails with \\\"Invalid backup window format. Should be specified as a range hh24:mi-hh24:mi (24H Clock UTC)\\\"\", [w]),\n\t_pf_mdbsw_fix, _pf_mdbsw_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tw := resolve(name, \"Properties.SnapshotWindow\")\n\t_pf_cachelib_lit(w)\n\tnot _pf_cachelib_daily(w)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-snapshot-window\", \"ERROR\", name,\n\t\"Properties.SnapshotWindow\",\n\tsprintf(\"snapshot window %s overlaps maintenance window %s; CreateCluster fails with \\\"The snapshot window and maintenance window must not overlap.\\\"\", [sw, mw]),\n\t_pf_mdbsw_fix, _pf_mdbsw_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::Cluster\")\n\tsw := resolve(name, \"Properties.SnapshotWindow\")\n\tmw := resolve(name, \"Properties.MaintenanceWindow\")\n\t_pf_cachelib_overlap(mw, sw)\n}\n"
+  },
+  {
+    "id": "pf-memorydb-user-password",
+    "service": "memorydb",
+    "severity": "ERROR",
+    "title": "A password user needs passwords of 16-128 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MemoryDB::User"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
     "id": "pf-rds-backtrack",
@@ -4501,6 +4816,10 @@ export interface BundledLibData {
 
 /** Shared helper modules (rules/_lib). Always loaded before the rules. */
 export const BUNDLED_LIBS: BundledLibData[] = [
+  {
+    "name": "_lib/cache",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ElastiCache and MemoryDB rules. Both services use the\n# same maintenance / snapshot window grammar, the same endpoint port range and\n# the same identifier rules, so the parsing lives here once.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# to_number(\"03\") is undefined in the engine's Rego build, so digits go\n# through a lookup table (same trick as pf-rds-window-overlap).\n_pf_cachelib_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_cachelib_days := {\"sun\": 0, \"mon\": 1, \"tue\": 2, \"wed\": 3, \"thu\": 4, \"fri\": 5, \"sat\": 6}\n\n# \"HH:MM\" -> minutes of day; undefined for anything else.\n_pf_cachelib_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_cachelib_digit[substring(t, 0, 1)] * 10) + _pf_cachelib_digit[substring(t, 1, 1)]\n\tmi := (_pf_cachelib_digit[substring(t, 3, 1)] * 10) + _pf_cachelib_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# \"ddd:hh24:mi-ddd:hh24:mi\" -> [start day, start minutes, end day, end minutes].\n_pf_cachelib_window(w) := [d1, m1, d2, m2] if {\n\tis_string(w)\n\tparts := split(lower(w), \"-\")\n\tcount(parts) == 2\n\tp1 := split(parts[0], \":\")\n\tp2 := split(parts[1], \":\")\n\tcount(p1) == 3\n\tcount(p2) == 3\n\td1 := _pf_cachelib_days[p1[0]]\n\td2 := _pf_cachelib_days[p2[0]]\n\tm1 := _pf_cachelib_min(sprintf(\"%s:%s\", [p1[1], p1[2]]))\n\tm2 := _pf_cachelib_min(sprintf(\"%s:%s\", [p2[1], p2[2]]))\n}\n\n# Length of a maintenance window in minutes (wrapping around the week).\n_pf_cachelib_window_minutes(w) := n if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(w)\n\tstart := (d1 * 1440) + m1\n\tend := (d2 * 1440) + m2\n\tn := ((end - start) + 10080) % 10080\n}\n\n# \"hh24:mi-hh24:mi\" -> [start minutes, end minutes] of a daily window.\n_pf_cachelib_daily(w) := [s, e] if {\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_cachelib_min(parts[0])\n\te := _pf_cachelib_min(parts[1])\n}\n\n# The snapshot window recurs daily, so a same-day maintenance window overlaps\n# whenever the two time-of-day intervals intersect (mirrors pf-rds-window-overlap;\n# a window that spans two days is left alone).\n_pf_cachelib_overlap(mw, sw) if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(mw)\n\td1 == d2\n\tm1 < m2\n\t[s, e] := _pf_cachelib_daily(sw)\n\ts < e\n\ts < m2\n\tm1 < e\n}\n\n# ElastiCache and MemoryDB both accept 1150-8004 and 8006-65535.\n_pf_cachelib_port_ok(p) if {\n\tp >= 1150\n\tp <= 8004\n}\n\n_pf_cachelib_port_ok(p) if {\n\tp >= 8006\n\tp <= 65535\n}\n\n# Identifiers: begin with a letter, letters/digits/hyphens only, no two\n# consecutive hyphens and no trailing hyphen.\n_pf_cachelib_identifier_ok(s) if regex.match(`^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$`, s)\n\n# Data tiering is only supported on the r6gd families (cache.r6gd.* / db.r6gd.*).\n_pf_cachelib_r6gd(t) if {\n\tis_string(t)\n\tparts := split(t, \".\")\n\tcount(parts) >= 2\n\tparts[1] == \"r6gd\"\n}\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_cachelib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# A literal string a user wrote, not a resolved Ref / GetAtt logical id.\n_pf_cachelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_cachelib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
   {
     "name": "_lib/ecr",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ECR rules (rules/ecr/pf-ecr-*).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n#\n# The lifecycle policy is an opaque JSON string in both places it can appear:\n# AWS::ECR::Repository LifecyclePolicy.LifecyclePolicyText and\n# AWS::ECR::RepositoryCreationTemplate LifecyclePolicy. PutLifecyclePolicy\n# validates the document itself, so the rules parse it here.\n\n_pf_ecrlib_text(name) := s if {\n\tname in resources_of_type(\"AWS::ECR::Repository\")\n\ts := resolve(name, \"Properties.LifecyclePolicy.LifecyclePolicyText\")\n\tis_string(s)\n}\n\n_pf_ecrlib_text(name) := s if {\n\tname in resources_of_type(\"AWS::ECR::RepositoryCreationTemplate\")\n\ts := resolve(name, \"Properties.LifecyclePolicy\")\n\tis_string(s)\n}\n\n_pf_ecrlib_prop(name) := \"Properties.LifecyclePolicy.LifecyclePolicyText\" if {\n\tname in resources_of_type(\"AWS::ECR::Repository\")\n}\n\n_pf_ecrlib_prop(name) := \"Properties.LifecyclePolicy\" if {\n\tname in resources_of_type(\"AWS::ECR::RepositoryCreationTemplate\")\n}\n\n# Parsed policy document; undefined when the text is not JSON or not an object.\n_pf_ecrlib_policy(name) := pol if {\n\tpol := json.unmarshal(_pf_ecrlib_text(name))\n\tis_object(pol)\n}\n\n_pf_ecrlib_rule_list(name) := rules if {\n\trules := object.get(_pf_ecrlib_policy(name), \"rules\", null)\n\tis_array(rules)\n}\n\n# [name, index, rule object] for every rule of every lifecycle policy.\n_pf_ecrlib_rules contains [name, i, r] if {\n\tsome name, _ in input.resources\n\tsome i, r in _pf_ecrlib_rule_list(name)\n\tis_object(r)\n}\n\n_pf_ecrlib_selection(r) := s if {\n\ts := object.get(r, \"selection\", null)\n\tis_object(s)\n}\n\n_pf_ecrlib_action(r) := a if {\n\ta := object.get(r, \"action\", null)\n\tis_object(a)\n}\n\n_pf_ecrlib_get(o, key) := v if {\n\tv := object.get(o, key, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_ecrlib_absent(o, key) if object.get(o, key, \"__pf_absent\") == \"__pf_absent\"\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_ecrlib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# Resource types that carry EncryptionConfiguration / ImageTagMutability.\n_pf_ecrlib_repo_types := [\"AWS::ECR::Repository\", \"AWS::ECR::RepositoryCreationTemplate\"]\n\n# Upstream registry URLs a pull through cache rule accepts (measured\n# 2026-09-05 in ap-northeast-1; the check is case sensitive and any other URL\n# is rejected with \"The upstream registry URL <url> is invalid\").\n# The three \"open\" registries take no credential at all; the five \"secret\"\n# ones require a Secrets Manager ARN; the ECR form authenticates with an IAM\n# role instead.\n_pf_ecrlib_ptc_secret_url := {\n\t\"registry-1.docker.io\": \"docker-hub\",\n\t\"ghcr.io\": \"github-container-registry\",\n\t\"registry.gitlab.com\": \"gitlab-container-registry\",\n\t\"cgr.dev\": \"chainguard\",\n}\n\n_pf_ecrlib_ptc_open_url := {\n\t\"public.ecr.aws\": \"ecr-public\",\n\t\"registry.k8s.io\": \"k8s\",\n\t\"quay.io\": \"quay\",\n}\n\n_pf_ecrlib_ptc_registry(url) := _pf_ecrlib_ptc_secret_url[url]\n\n_pf_ecrlib_ptc_registry(url) := _pf_ecrlib_ptc_open_url[url]\n\n_pf_ecrlib_ptc_registry(url) := \"azure-container-registry\" if {\n\tis_string(url)\n\tendswith(url, \".azurecr.io\")\n\tcount(url) > count(\".azurecr.io\")\n}\n\n_pf_ecrlib_ptc_registry(url) := \"ecr\" if {\n\tis_string(url)\n\tregex.match(`^[0-9]{12}\\.dkr\\.ecr\\.[a-z0-9-]+\\.amazonaws\\.com$`, url)\n}\n\n# Registries that authenticate with a Secrets Manager secret.\n_pf_ecrlib_ptc_needs_secret(url) if _pf_ecrlib_ptc_secret_url[url]\n\n_pf_ecrlib_ptc_needs_secret(url) if _pf_ecrlib_ptc_registry(url) == \"azure-container-registry\"\n"

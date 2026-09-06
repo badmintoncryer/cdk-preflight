@@ -1,0 +1,11 @@
+id: pf-elasticache-data-tiering-node-type
+service: elasticache
+resourceTypes: [AWS::ElastiCache::ReplicationGroup]
+severity: ERROR
+title: "DataTieringEnabled only works on r6gd node types"
+constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Data tiering is not supported for the node type cache.t4g.micro.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

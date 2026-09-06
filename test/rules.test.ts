@@ -3074,3 +3074,132 @@ describe('ecr / efs rules', () => {
     silent(ap({ FileSystemId: 'fs-0123456789abcdef0' }), 'pf-efs-file-system-reference-region');
   });
 });
+
+describe('elasticache / memorydb rules', () => {
+  const R = 'ap-northeast-1';
+  const ACCT = '123456789012';
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const fires = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).toContain(id);
+  const silent = (tpl: unknown, id: string, region = R) => expect(ids(diagnoseTemplate(tpl, region))).not.toContain(id);
+  type Obj = Record<string, unknown>;
+
+  const rg = (props: Obj) => ({ Resources: { RG: { Type: 'AWS::ElastiCache::ReplicationGroup', Properties: { ReplicationGroupId: 'cdkpf', ReplicationGroupDescription: 'x', CacheNodeType: 'cache.t4g.micro', Engine: 'redis', NumCacheClusters: 1, ...props } } } });
+  const cc = (props: Obj) => ({ Resources: { CC: { Type: 'AWS::ElastiCache::CacheCluster', Properties: { ClusterName: 'cdkpf', CacheNodeType: 'cache.t4g.micro', Engine: 'memcached', NumCacheNodes: 1, ...props } } } });
+  const mdb = (props: Obj) => ({ Resources: { C: { Type: 'AWS::MemoryDB::Cluster', Properties: { ClusterName: 'cdkpf', NodeType: 'db.t4g.small', ACLName: 'open-access', ...props } } } });
+  const user = (props: Obj, extra: Obj = {}) => ({ Resources: { U: { Type: 'AWS::ElastiCache::User', Properties: { Engine: 'redis', UserId: 'cdkpf-u', UserName: 'cdkpfu', ...props } }, ...extra } });
+
+  test('maintenance window: format and duration, both services', () => {
+    fires(cc({ PreferredMaintenanceWindow: 'sunday:23:00-mon:01:30' }), 'pf-elasticache-maintenance-window');
+    fires(cc({ PreferredMaintenanceWindow: 'sun:23:00-sun:23:59' }), 'pf-elasticache-maintenance-window');
+    fires(rg({ PreferredMaintenanceWindow: 'sun:25:00-mon:01:30' }), 'pf-elasticache-maintenance-window');
+    silent(cc({ PreferredMaintenanceWindow: 'sun:23:00-mon:00:00' }), 'pf-elasticache-maintenance-window');
+    silent(cc({ PreferredMaintenanceWindow: { Ref: 'AWS::NoValue' } }), 'pf-elasticache-maintenance-window');
+    fires(mdb({ MaintenanceWindow: 'sun:23:00-sun:23:30' }), 'pf-memorydb-maintenance-window');
+    silent(mdb({ MaintenanceWindow: 'sat:03:00-sat:05:00' }), 'pf-memorydb-maintenance-window');
+  });
+
+  test('snapshot window: format and overlap with the maintenance window', () => {
+    fires(cc({ SnapshotWindow: '5am-9am' }), 'pf-elasticache-snapshot-window');
+    fires(rg({ PreferredMaintenanceWindow: 'sun:05:00-sun:07:00', SnapshotWindow: '06:00-08:00' }), 'pf-elasticache-snapshot-window');
+    fires(rg({ PreferredMaintenanceWindow: 'sun:05:00-sun:07:00', SnapshotWindow: '04:00-06:00' }), 'pf-elasticache-snapshot-window');
+    silent(rg({ PreferredMaintenanceWindow: 'sun:05:00-sun:07:00', SnapshotWindow: '07:00-09:00' }), 'pf-elasticache-snapshot-window');
+    silent(rg({ PreferredMaintenanceWindow: 'sun:23:00-mon:01:00', SnapshotWindow: '05:00-07:00' }), 'pf-elasticache-snapshot-window');
+    fires(mdb({ MaintenanceWindow: 'sun:05:00-sun:07:00', SnapshotWindow: '06:00-08:00' }), 'pf-memorydb-snapshot-window');
+    silent(mdb({ MaintenanceWindow: 'sun:05:00-sun:07:00', SnapshotWindow: '10:00-12:00' }), 'pf-memorydb-snapshot-window');
+  });
+
+  test('retention, port and identifiers', () => {
+    fires(rg({ SnapshotRetentionLimit: 36 }), 'pf-elasticache-snapshot-retention');
+    fires(cc({ SnapshotRetentionLimit: 1 }), 'pf-elasticache-snapshot-retention');
+    silent(cc({ Engine: 'redis', SnapshotRetentionLimit: 1 }), 'pf-elasticache-snapshot-retention');
+    silent(rg({ SnapshotRetentionLimit: 35 }), 'pf-elasticache-snapshot-retention');
+    fires(mdb({ SnapshotRetentionLimit: 36 }), 'pf-memorydb-snapshot-retention');
+    fires(cc({ Port: 8005 }), 'pf-elasticache-port');
+    fires(cc({ Port: 1149 }), 'pf-elasticache-port');
+    silent(cc({ Port: 8004 }), 'pf-elasticache-port');
+    silent(cc({ Port: 8006 }), 'pf-elasticache-port');
+    fires(mdb({ Port: 100 }), 'pf-memorydb-port');
+    fires(rg({ ReplicationGroupId: '1cdkpf' }), 'pf-elasticache-identifier');
+    fires(rg({ ReplicationGroupId: 'cdkpf-' }), 'pf-elasticache-identifier');
+    fires(cc({ ClusterName: 'cdkpf--x' }), 'pf-elasticache-identifier');
+    fires(rg({ ReplicationGroupId: 'c'.repeat(41) }), 'pf-elasticache-identifier');
+    silent(rg({ ReplicationGroupId: 'cdkpf-probe-1' }), 'pf-elasticache-identifier');
+    silent(rg({ ReplicationGroupId: { Ref: 'AWS::StackName' } }), 'pf-elasticache-identifier');
+  });
+
+  test('replication group combinations', () => {
+    fires(rg({ AuthToken: 'cdkpfBenchToken12345', TransitEncryptionEnabled: false }), 'pf-elasticache-auth-token');
+    fires(rg({ AuthToken: 'short', TransitEncryptionEnabled: true }), 'pf-elasticache-auth-token');
+    fires(rg({ AuthToken: 'cdkpf/BenchToken1234', TransitEncryptionEnabled: true }), 'pf-elasticache-auth-token');
+    fires(rg({ AuthToken: 'cdkpf@BenchToken1234', TransitEncryptionEnabled: true }), 'pf-elasticache-auth-token');
+    silent(rg({ AuthToken: 'cdkpfBenchToken12345', TransitEncryptionEnabled: true }), 'pf-elasticache-auth-token');
+    fires(rg({ AutomaticFailoverEnabled: true, NumCacheClusters: 1 }), 'pf-elasticache-replication-group-clusters');
+    fires(rg({ NumCacheClusters: 2, NumNodeGroups: 2 }), 'pf-elasticache-replication-group-clusters');
+    silent(rg({ AutomaticFailoverEnabled: true, NumCacheClusters: 2 }), 'pf-elasticache-replication-group-clusters');
+    fires(rg({ KmsKeyId: `arn:aws:kms:${R}:${ACCT}:key/11111111-2222-3333-4444-555555555555` }), 'pf-elasticache-kms-key');
+    fires(rg({ AtRestEncryptionEnabled: true, KmsKeyId: `arn:aws:kms:us-west-2:${ACCT}:key/11111111-2222-3333-4444-555555555555` }), 'pf-elasticache-kms-key');
+    silent(rg({ AtRestEncryptionEnabled: true, KmsKeyId: `arn:aws:kms:${R}:${ACCT}:key/11111111-2222-3333-4444-555555555555` }), 'pf-elasticache-kms-key');
+    fires(rg({ UserGroupIds: ['g'], TransitEncryptionEnabled: false }), 'pf-elasticache-user-group-transit-encryption');
+    silent(rg({ UserGroupIds: ['g'], TransitEncryptionEnabled: true }), 'pf-elasticache-user-group-transit-encryption');
+    fires(rg({ DataTieringEnabled: true }), 'pf-elasticache-data-tiering-node-type');
+    silent(rg({ DataTieringEnabled: true, CacheNodeType: 'cache.r6gd.xlarge' }), 'pf-elasticache-data-tiering-node-type');
+    fires(rg({ Engine: 'memcached' }), 'pf-elasticache-engine');
+    fires(cc({ Engine: 'valkey' }), 'pf-elasticache-engine');
+    silent(cc({ Engine: 'redis', NumCacheNodes: 1 }), 'pf-elasticache-engine');
+    fires(rg({ NumNodeGroups: 2, SnapshottingClusterId: 'x-0001-001' }), 'pf-elasticache-snapshotting-cluster');
+    silent(rg({ NumNodeGroups: 1, SnapshottingClusterId: 'x-0001-001' }), 'pf-elasticache-snapshotting-cluster');
+  });
+
+  test('cache cluster nodes, zones and snapshot sources', () => {
+    fires(cc({ Engine: 'redis', NumCacheNodes: 2 }), 'pf-elasticache-cache-cluster-nodes');
+    fires(cc({ AZMode: 'cross-az', NumCacheNodes: 1 }), 'pf-elasticache-cache-cluster-nodes');
+    silent(cc({ AZMode: 'cross-az', NumCacheNodes: 2 }), 'pf-elasticache-cache-cluster-nodes');
+    fires(cc({ NumCacheNodes: 2, PreferredAvailabilityZones: [`${R}a`] }), 'pf-elasticache-preferred-availability-zones');
+    fires(rg({ NumCacheClusters: 2, PreferredCacheClusterAZs: [`${R}a`] }), 'pf-elasticache-preferred-availability-zones');
+    silent(cc({ NumCacheNodes: 2, PreferredAvailabilityZones: [`${R}a`, `${R}c`] }), 'pf-elasticache-preferred-availability-zones');
+    fires(cc({ SnapshotName: 'cdkpf-snap' }), 'pf-elasticache-snapshot-source-engine');
+    fires(cc({ SnapshotArns: ['arn:aws:s3:::b/s.rdb'] }), 'pf-elasticache-snapshot-source-engine');
+    silent(cc({ Engine: 'redis', NumCacheNodes: 1, SnapshotName: 'cdkpf-snap' }), 'pf-elasticache-snapshot-source-engine');
+  });
+
+  test('users, access strings and user groups', () => {
+    fires(user({ NoPasswordRequired: true, Passwords: ['cdkpfBenchPassword1'] }), 'pf-elasticache-user-authentication');
+    fires(user({ Passwords: ['short'] }), 'pf-elasticache-user-authentication');
+    fires(user({ Passwords: ['a'.repeat(16), 'b'.repeat(16), 'c'.repeat(16)] }), 'pf-elasticache-user-authentication');
+    fires(user({ AccessString: 'on ~* +@all' }), 'pf-elasticache-user-authentication');
+    silent(user({ NoPasswordRequired: true, AccessString: 'on ~* +@all' }), 'pf-elasticache-user-authentication');
+    silent(user({ Passwords: ['cdkpfBenchPassword1'] }), 'pf-elasticache-user-authentication');
+    const acc = (s: string) => user({ NoPasswordRequired: true, AccessString: s });
+    fires(acc('on ~* +@all nopass'), 'pf-elasticache-user-access-string');
+    fires(acc('reset'), 'pf-elasticache-user-access-string');
+    fires(acc('on ~* +@all extra-token'), 'pf-elasticache-user-access-string');
+    fires(acc('on ~* +@notacategory'), 'pf-elasticache-user-access-string');
+    silent(acc('on ~* +@all'), 'pf-elasticache-user-access-string');
+    silent(acc('on ~key:* &* -@dangerous +get +@read'), 'pf-elasticache-user-access-string');
+    silent(acc('off allkeys allcommands'), 'pf-elasticache-user-access-string');
+    const group = (eng: string, uid: unknown, uname = 'cdkpfu', extra: Obj = {}) => user({ UserName: uname, NoPasswordRequired: true, AccessString: 'on ~* +@all', ...extra }, {
+      UG: { Type: 'AWS::ElastiCache::UserGroup', Properties: { Engine: eng, UserGroupId: 'cdkpf', UserIds: [uid] } },
+    });
+    fires(group('redis', { Ref: 'U' }), 'pf-elasticache-user-group-default-user');
+    silent(group('redis', { Ref: 'U' }, 'default'), 'pf-elasticache-user-group-default-user');
+    silent(group('redis', 'default'), 'pf-elasticache-user-group-default-user');
+    fires(group('valkey', { Ref: 'U' }), 'pf-elasticache-user-group-default-user');
+  });
+
+  test('memorydb cluster and user branches', () => {
+    fires(mdb({ NumReplicasPerShard: 6 }), 'pf-memorydb-replicas-per-shard');
+    silent(mdb({ NumReplicasPerShard: 5 }), 'pf-memorydb-replicas-per-shard');
+    fires(mdb({ DataTiering: 'true' }), 'pf-memorydb-data-tiering-node-type');
+    fires(mdb({ DataTiering: true }), 'pf-memorydb-data-tiering-node-type');
+    silent(mdb({ DataTiering: 'true', NodeType: 'db.r6gd.xlarge' }), 'pf-memorydb-data-tiering-node-type');
+    fires(mdb({ KmsKeyId: `arn:aws:kms:us-west-2:${ACCT}:key/11111111-2222-3333-4444-555555555555` }), 'pf-memorydb-kms-key-region');
+    silent(mdb({ KmsKeyId: `arn:aws:kms:${R}:${ACCT}:key/11111111-2222-3333-4444-555555555555` }), 'pf-memorydb-kms-key-region');
+    fires(mdb({ Engine: 'memcached' }), 'pf-memorydb-engine');
+    silent(mdb({ Engine: 'redis' }), 'pf-memorydb-engine');
+    const mu = (mode: Obj) => ({ Resources: { U: { Type: 'AWS::MemoryDB::User', Properties: { UserName: 'cdkpf', AccessString: 'on ~* &* +@all', AuthenticationMode: mode } } } });
+    fires(mu({ Type: 'password', Passwords: ['short'] }), 'pf-memorydb-user-password');
+    fires(mu({ Type: 'password' }), 'pf-memorydb-user-password');
+    silent(mu({ Type: 'password', Passwords: ['cdkpfBenchPassword1'] }), 'pf-memorydb-user-password');
+    silent(mu({ Type: 'iam' }), 'pf-memorydb-user-password');
+  });
+});
