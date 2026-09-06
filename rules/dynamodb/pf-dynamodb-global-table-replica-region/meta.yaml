@@ -1,5 +1,6 @@
 id: pf-dynamodb-global-table-replica-region
 service: dynamodb
+benchRegion: us-east-1
 resourceTypes: [AWS::DynamoDB::GlobalTable]
 severity: ERROR
 title: GlobalTable Replicas must include the deployment region
