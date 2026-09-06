@@ -10,6 +10,9 @@ cdk-preflight is a curated [Rego rule pack](docs/rules.md) for exactly those con
 
 The pack aims at **every deploy-time failure that no existing CDK mechanism already catches** — nothing narrower. Every bundled rule is backed by a `fail`/`pass` template pair, and the failure has been reproduced against real AWS (or is explicitly marked `doc-only`). Rules that the built-in validation engine already covers are deliberately **not** duplicated — a test suite enforces this.
 
+> **Requires `aws-cdk-lib` >= 2.267.0** (released 2026-08-27) — the first release that bundles
+> the CloudFormation validation engine. On older versions the rules cannot run at all.
+
 ## Quick start
 
 ```bash
@@ -120,7 +123,7 @@ Constraints that *can* be expressed in schemas or generic engine rules also make
 
 ## Requirements
 
-- `aws-cdk-lib` >= 2.267.0 (the first release that bundles the built-in CloudFormation validator)
+- `aws-cdk-lib` >= 2.267.0, released 2026-08-27 (the first release that bundles the built-in CloudFormation validator). This is a recent release — an existing CDK app may need an upgrade before cdk-preflight can run.
 
 ## Contributing
 
