@@ -1,0 +1,20 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "AP": {
+      "Type": "AWS::S3::AccessPoint",
+      "Properties": {
+        "Bucket": {
+          "Ref": "PfB0"
+        },
+        "Name": "reports-s3alias"
+      }
+    },
+    "PfB0": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3apa-b0"
+      }
+    }
+  }
+}

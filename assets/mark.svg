@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="mark-title">
+  <title id="mark-title">cdk-preflight</title>
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="256">
+      <stop offset="0" stop-color="#2F4054"/>
+      <stop offset="1" stop-color="#18202B"/>
+    </linearGradient>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="176" cy="80" r="150">
+      <stop offset="0" stop-color="#FF9900" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#FF9900" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wing" gradientUnits="userSpaceOnUse" x1="32" y1="162" x2="224" y2="40">
+      <stop offset="0" stop-color="#FF8A00"/>
+      <stop offset="1" stop-color="#FFC24D"/>
+    </linearGradient>
+    <linearGradient id="fold" gradientUnits="userSpaceOnUse" x1="131" y1="216" x2="224" y2="40">
+      <stop offset="0" stop-color="#B85C05"/>
+      <stop offset="1" stop-color="#E8890C"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="60" fill="url(#bg)"/>
+  <rect width="256" height="256" rx="60" fill="url(#glow)"/>
+  <rect x=".75" y=".75" width="254.5" height="254.5" rx="59.25" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="1.5"/>
+
+  <path d="M32 148 L224 40 L131 161 Z" fill="url(#wing)"/>
+  <path d="M131 161 L224 40 L169 216 Z" fill="url(#fold)"/>
+  <path d="M32 148 L131 161 L224 40" stroke="#1B2430" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

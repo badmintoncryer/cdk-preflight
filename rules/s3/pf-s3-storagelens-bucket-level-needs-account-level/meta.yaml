@@ -1,0 +1,12 @@
+id: pf-s3-storagelens-bucket-level-needs-account-level
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::StorageLens]
+severity: ERROR
+title: "A bucket-level advanced metric must also be enabled at the account level"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_lens_basics_metrics_recommendations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: GKDJ2XT1Q5DJWY2R, Extended Request ID: uoP5OTAwA5FZOxp+Dam2cFn/5qgt0bdncRDKZ7iYYJKElYk2mbhr/jhHllGJB0cr3KYZvi8UBO67Y9WCkFzQ9zJH8C4TxZO9)\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

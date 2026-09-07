@@ -1,0 +1,12 @@
+id: pf-s3-policy-public-with-block-public-policy
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::BucketPolicy, AWS::S3::Bucket]
+severity: ERROR
+title: "A public bucket policy cannot be put on a bucket that blocks public policies"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: s3:PutBucketPolicy on resource: \"arn:aws:s3:::cdkpf-s3pbp-b0\" because public policies are prevented by the BlockPublicPolicy setting in S3 Block Public Access.\"; pass template -> CREATE_COMPLETE. CONFOUND: the account also has Block Public Access enabled, so this run cannot separate the bucket-level BlockPublicPolicy from the account-level setting"
+addedOn: 2026-09-06

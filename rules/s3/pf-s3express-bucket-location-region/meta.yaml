@@ -1,0 +1,12 @@
+id: pf-s3express-bucket-location-region
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::DirectoryBucket]
+severity: ERROR
+title: "LocationName must name a zone in the region the stack deploys to"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-s3express-directorybucket.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_FAILED \"The specified bucket is not valid.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -5421,6 +5421,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Transfer Acceleration endpoints are DNS-based, so bucket names containing\n# periods are rejected at creation. Only a literal BucketName is checkable;\n# CDK-generated names never contain periods anyway.\nviolation contains make_diag_full(\"pf-s3-accelerate-dotted-name\", \"ERROR\", name,\n\t\"Properties.AccelerateConfiguration.AccelerationStatus\",\n\tsprintf(\"Bucket name '%s' contains periods, which Transfer Acceleration does not support; CreateBucket fails with \\\"S3 Transfer Acceleration is not supported for buckets with periods (.) in their names\\\"\", [bn]),\n\t\"Rename the bucket without periods, or drop AccelerateConfiguration\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/transfer-acceleration.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tresolve(name, \"Properties.AccelerateConfiguration.AccelerationStatus\") == \"Enabled\"\n\tbn := resolve(name, \"Properties.BucketName\")\n\tis_string(bn)\n\tcontains(bn, \".\")\n}\n"
   },
   {
+    "id": "pf-s3-acl-public-blocked",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A public canned ACL cannot be applied while Block Public Access is on",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3acp_fix := \"Drop the public canned ACL, or turn off BlockPublicAcls for the bucket\"\n\n_pf_s3acp_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html\"\n\nviolation contains make_diag_full(\"pf-s3-acl-public-blocked\", \"ERROR\", name, \"Properties.AccessControl\",\n\tsprintf(\"AccessControl '%v' is a public canned ACL; new buckets have Block Public Access on by default and CreateBucket rejects it\", [acl]),\n\t_pf_s3acp_fix, _pf_s3acp_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tacl := resolve(name, \"Properties.AccessControl\")\n\tacl in {\"PublicRead\", \"PublicReadWrite\"}\n\tnot _pf_s3acp_acls_unblocked(name)\n}\n\n_pf_s3acp_acls_unblocked(name) if {\n\tresolve(name, \"Properties.PublicAccessBlockConfiguration.BlockPublicAcls\") == false\n}\n"
+  },
+  {
+    "id": "pf-s3-ap-name-alias-suffix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "An access point name must not end with an alias suffix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::AccessPoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3apa_fix := \"Drop the -s3alias or -ext-s3alias suffix from the access point name\"\n\n_pf_s3apa_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-s3-accesspoint.html\"\n\nviolation contains make_diag_full(\"pf-s3-ap-name-alias-suffix\", \"ERROR\", name, \"Properties.Name\",\n\tsprintf(\"access point name '%v' ends with the reserved suffix '%v'\", [n, s]),\n\t_pf_s3apa_fix, _pf_s3apa_url) if {\n\tsome name in resources_of_type(\"AWS::S3::AccessPoint\")\n\tn := _pf_s3lib_lit(resolve(name, \"Properties.Name\"))\n\tsome s in {\"-s3alias\", \"-ext-s3alias\"}\n\tendswith(n, s)\n}\n"
+  },
+  {
+    "id": "pf-s3-bucket-name-double-dot",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A bucket name must not contain two adjacent periods",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ndd_fix := \"Collapse the consecutive periods in the bucket name\"\n\n_pf_s3ndd_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html\"\n\nviolation contains make_diag_full(\"pf-s3-bucket-name-double-dot\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"bucket name '%v' contains two adjacent periods\", [b]),\n\t_pf_s3ndd_fix, _pf_s3ndd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tb := _pf_s3lib_lit(resolve(name, \"Properties.BucketName\"))\n\tcontains(b, \"..\")\n}\n"
+  },
+  {
+    "id": "pf-s3-bucket-name-ip-address",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A bucket name must not look like an IP address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3nip_fix := \"Use a name that is not formatted as four dot-separated numbers\"\n\n_pf_s3nip_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html\"\n\nviolation contains make_diag_full(\"pf-s3-bucket-name-ip-address\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"bucket name '%v' is formatted as an IP address; S3 rejects such names\", [b]),\n\t_pf_s3nip_fix, _pf_s3nip_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tb := _pf_s3lib_lit(resolve(name, \"Properties.BucketName\"))\n\tregex.match(\"^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$\", b)\n}\n"
+  },
+  {
+    "id": "pf-s3-bucket-name-reserved-prefix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A bucket name must not start with a reserved prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3npx_fix := \"Drop the xn--, sthree- or amzn-s3-demo- prefix from the bucket name\"\n\n_pf_s3npx_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html\"\n\nviolation contains make_diag_full(\"pf-s3-bucket-name-reserved-prefix\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"bucket name '%v' starts with the reserved prefix '%v'\", [b, p]),\n\t_pf_s3npx_fix, _pf_s3npx_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tb := _pf_s3lib_lit(resolve(name, \"Properties.BucketName\"))\n\tsome p in {\"xn--\", \"sthree-\", \"amzn-s3-demo-\"}\n\tstartswith(b, p)\n}\n"
+  },
+  {
+    "id": "pf-s3-bucket-name-reserved-suffix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A bucket name must not end with a reserved suffix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3nsx_fix := \"Drop the -s3alias, --ol-s3, .mrap, --x-s3 or --table-s3 suffix from the bucket name\"\n\n_pf_s3nsx_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html\"\n\nviolation contains make_diag_full(\"pf-s3-bucket-name-reserved-suffix\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"bucket name '%v' ends with the reserved suffix '%v'\", [b, s]),\n\t_pf_s3nsx_fix, _pf_s3nsx_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tb := _pf_s3lib_lit(resolve(name, \"Properties.BucketName\"))\n\tsome s in {\"-s3alias\", \"--ol-s3\", \".mrap\", \"--x-s3\", \"--table-s3\"}\n\tendswith(b, s)\n}\n"
+  },
+  {
+    "id": "pf-s3-bucket-namespace-account-regional-name",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "An account-regional bucket takes a BucketNamePrefix, not a BucketName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3bns_fix := \"Replace BucketName with BucketNamePrefix for a BucketNamespace of account-regional\"\n\n_pf_s3bns_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-s3-bucket.html\"\n\nviolation contains make_diag_full(\"pf-s3-bucket-namespace-account-regional-name\", \"ERROR\", name, \"Properties.BucketName\",\n\t\"BucketNamespace is account-regional, where S3 derives the name; use BucketNamePrefix instead of BucketName\",\n\t_pf_s3bns_fix, _pf_s3bns_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tresolve(name, \"Properties.BucketNamespace\") == \"account-regional\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"BucketName\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-s3-bucket-policy-action-resource",
     "service": "s3",
     "severity": "ERROR",
@@ -5443,6 +5520,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Resource-based policies require Principal (or NotPrincipal) in every\n# statement — unlike identity policies, where cfn-lint-grade checks are\n# tuned. An unresolvable Principal value still counts as present.\nviolation contains make_diag_full(\"pf-s3-bucket-policy-principal\", \"ERROR\", name,\n\tsprintf(\"Properties.PolicyDocument.Statement.%d\", [st.index]),\n\t\"The statement has neither Principal nor NotPrincipal; S3 rejects the policy with \\\"Missing required field Principal\\\"\",\n\t\"Add a Principal (or NotPrincipal) to the statement — bucket policies always name who they apply to\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-policies.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::BucketPolicy\")\n\tsome st in flatten_list(name, \"Properties.PolicyDocument.Statement\")\n\tis_object(st.value)\n\tobject.get(st.value, \"Principal\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(st.value, \"NotPrincipal\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-s3-bucket-policy-version",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A policy document Version must be a known IAM policy language version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::BucketPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3bpv_fix := \"Set PolicyDocument.Version to 2012-10-17\"\n\n_pf_s3bpv_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-s3-bucketpolicy.html\"\n\nviolation contains make_diag_full(\"pf-s3-bucket-policy-version\", \"ERROR\", p, \"Properties.PolicyDocument.Version\",\n\tsprintf(\"PolicyDocument.Version is '%v'; IAM only knows 2012-10-17 and 2008-10-17\", [v]),\n\t_pf_s3bpv_fix, _pf_s3bpv_url) if {\n\tsome p in resources_of_type(\"AWS::S3::BucketPolicy\")\n\tv := _pf_s3lib_lit(resolve(p, \"Properties.PolicyDocument.Version\"))\n\tnot v in {\"2012-10-17\", \"2008-10-17\"}\n}\n"
+  },
+  {
+    "id": "pf-s3-encryption-kms-key-with-aes256",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "KMSMasterKeyID is only valid with a KMS server-side encryption algorithm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3eka_fix := \"Set SSEAlgorithm to aws:kms (or aws:kms:dsse), or drop KMSMasterKeyID\"\n\n_pf_s3eka_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-serversideencryptionbydefault.html\"\n\nviolation contains make_diag_full(\"pf-s3-encryption-kms-key-with-aes256\", \"ERROR\", name,\n\tsprintf(\"Properties.BucketEncryption.ServerSideEncryptionConfiguration.%d.ServerSideEncryptionByDefault.KMSMasterKeyID\", [c.index]),\n\tsprintf(\"KMSMasterKeyID is set while SSEAlgorithm is '%v'; the key is only accepted with aws:kms or aws:kms:dsse\", [alg]),\n\t_pf_s3eka_fix, _pf_s3eka_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in flatten_list(name, \"Properties.BucketEncryption.ServerSideEncryptionConfiguration\")\n\tis_object(c.value)\n\td := object.get(c.value, \"ServerSideEncryptionByDefault\", {})\n\tis_object(d)\n\talg := object.get(d, \"SSEAlgorithm\", \"\")\n\tnot alg in {\"aws:kms\", \"aws:kms:dsse\"}\n\tobject.get(d, \"KMSMasterKeyID\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-intelligent-tiering-archive-before-deep",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ARCHIVE_ACCESS must come before DEEP_ARCHIVE_ACCESS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3itd_fix := \"Set the ARCHIVE_ACCESS Days below the DEEP_ARCHIVE_ACCESS Days\"\n\n_pf_s3itd_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-intelligenttieringconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-intelligent-tiering-archive-before-deep\", \"ERROR\", name,\n\tsprintf(\"Properties.IntelligentTieringConfigurations.%d.Tierings\", [c.index]),\n\tsprintf(\"ARCHIVE_ACCESS is set to %v days but DEEP_ARCHIVE_ACCESS to %v; the archive tier must come first\", [a, d]),\n\t_pf_s3itd_fix, _pf_s3itd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in flatten_list(name, \"Properties.IntelligentTieringConfigurations\")\n\tis_object(c.value)\n\ttiers := object.get(c.value, \"Tierings\", [])\n\tis_array(tiers)\n\tsome t1 in tiers\n\tsome t2 in tiers\n\tis_object(t1)\n\tis_object(t2)\n\tobject.get(t1, \"AccessTier\", \"\") == \"ARCHIVE_ACCESS\"\n\tobject.get(t2, \"AccessTier\", \"\") == \"DEEP_ARCHIVE_ACCESS\"\n\trawa := object.get(t1, \"Days\", null)\n\trawa != null\n\trawd := object.get(t2, \"Days\", null)\n\trawd != null\n\ta := to_number(rawa)\n\td := to_number(rawd)\n\ta >= d\n}\n"
+  },
+  {
+    "id": "pf-s3-intelligent-tiering-duplicate-tier",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "An Intelligent-Tiering configuration must not repeat an access tier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3itt_fix := \"Declare each access tier at most once per configuration\"\n\n_pf_s3itt_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-intelligenttieringconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-intelligent-tiering-duplicate-tier\", \"ERROR\", name,\n\tsprintf(\"Properties.IntelligentTieringConfigurations.%d.Tierings\", [c.index]),\n\tsprintf(\"access tier '%v' appears more than once in the same configuration\", [tier]),\n\t_pf_s3itt_fix, _pf_s3itt_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in flatten_list(name, \"Properties.IntelligentTieringConfigurations\")\n\tis_object(c.value)\n\ttiers := object.get(c.value, \"Tierings\", [])\n\tis_array(tiers)\n\tsome i, j\n\ttiers[i]\n\ttiers[j]\n\ti < j\n\tis_object(tiers[i])\n\tis_object(tiers[j])\n\ttier := object.get(tiers[i], \"AccessTier\", \"\")\n\ttier != \"\"\n\ttier == object.get(tiers[j], \"AccessTier\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-abort-mpu-with-tag-filter",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "AbortIncompleteMultipartUpload cannot be used in a tag-filtered rule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lab_fix := \"Move AbortIncompleteMultipartUpload into a rule that filters by prefix only\"\n\n_pf_s3lab_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-abort-mpu-with-tag-filter\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.AbortIncompleteMultipartUpload\", [rule.index]),\n\t\"AbortIncompleteMultipartUpload is set on a rule that filters by tag; S3 supports the abort action only on prefix-filtered rules\",\n\t_pf_s3lab_fix, _pf_s3lab_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\tobject.get(rule.value, \"AbortIncompleteMultipartUpload\", \"__pf_absent\") != \"__pf_absent\"\n\ttags := object.get(rule.value, \"TagFilters\", [])\n\tis_array(tags)\n\tcount(tags) > 0\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-date-days-mix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A lifecycle rule must not mix day-based and date-based schedules",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ldm_fix := \"Express every action in the rule with days, or every action with dates\"\n\n_pf_s3ldm_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html\"\n\n_pf_s3ldm_days(rv) if {\n\tobject.get(rv, \"ExpirationInDays\", \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_s3ldm_days(rv) if {\n\ttl := object.get(rv, \"Transitions\", [])\n\tis_array(tl)\n\tsome t in tl\n\tis_object(t)\n\tobject.get(t, \"TransitionInDays\", \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_s3ldm_date(rv) if {\n\tobject.get(rv, \"ExpirationDate\", \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_s3ldm_date(rv) if {\n\ttl := object.get(rv, \"Transitions\", [])\n\tis_array(tl)\n\tsome t in tl\n\tis_object(t)\n\tobject.get(t, \"TransitionDate\", \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-date-days-mix\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d\", [rule.index]),\n\t\"the rule mixes day-based and date-based actions; every action in one rule must use the same time unit\",\n\t_pf_s3ldm_fix, _pf_s3ldm_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\t_pf_s3ldm_days(rule.value)\n\t_pf_s3ldm_date(rule.value)\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-date-midnight-utc",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Lifecycle dates must be UTC midnight",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lmn_fix := \"Round the date to midnight UTC, e.g. 2030-01-01T00:00:00Z\"\n\n_pf_s3lmn_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html\"\n\n_pf_s3lmn_bad(d) if {\n\tis_string(d)\n\tnot endswith(d, \"T00:00:00Z\")\n\tnot endswith(d, \"T00:00:00.000Z\")\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-date-midnight-utc\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpirationDate\", [rule.index]),\n\tsprintf(\"ExpirationDate '%v' is not midnight UTC; S3 accepts lifecycle dates only at 00:00:00Z\", [d]),\n\t_pf_s3lmn_fix, _pf_s3lmn_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\td := object.get(rule.value, \"ExpirationDate\", null)\n\t_pf_s3lmn_bad(d)\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-date-midnight-utc\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [rule.index]),\n\tsprintf(\"TransitionDate '%v' is not midnight UTC; S3 accepts lifecycle dates only at 00:00:00Z\", [d]),\n\t_pf_s3lmn_fix, _pf_s3lmn_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\ttl := object.get(rule.value, \"Transitions\", [])\n\tis_array(tl)\n\tsome t in tl\n\tis_object(t)\n\td := object.get(t, \"TransitionDate\", null)\n\t_pf_s3lmn_bad(d)\n}\n"
+  },
+  {
     "id": "pf-s3-lifecycle-days-order",
     "service": "s3",
     "severity": "ERROR",
@@ -5452,6 +5606,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::S3::Bucket"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ord_fix := \"Order the lifecycle days so archive transitions come at least 30 days after IA transitions and expiration comes after every transition\"\n\n_pf_s3ord_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-days-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [r.index]),\n\tsprintf(\"Transition to %s at %v days is less than 30 days after the %s transition at %v days; S3 requires objects to stay at least 30 days in IA storage\", [sc2, d2, sc1, d1]),\n\t_pf_s3ord_fix, _pf_s3ord_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\ttrans := object.get(r.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t1 in trans\n\tis_object(t1)\n\tsc1 := object.get(t1, \"StorageClass\", \"\")\n\tsc1 in {\"STANDARD_IA\", \"ONEZONE_IA\"}\n\traw1 := object.get(t1, \"TransitionInDays\", null)\n\traw1 != null # to_number(null) は 0 になる\n\td1 := to_number(raw1)\n\tsome t2 in trans\n\tis_object(t2)\n\tsc2 := object.get(t2, \"StorageClass\", \"\")\n\tsc2 in {\"GLACIER\", \"DEEP_ARCHIVE\"}\n\traw2 := object.get(t2, \"TransitionInDays\", null)\n\traw2 != null\n\td2 := to_number(raw2)\n\td2 < d1 + 30\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-days-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpirationInDays\", [r.index]),\n\tsprintf(\"ExpirationInDays (%v) must be greater than TransitionInDays (%v); S3 rejects lifecycle rules that expire objects before or when they transition\", [e, d]),\n\t_pf_s3ord_fix, _pf_s3ord_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\trawe := object.get(r.value, \"ExpirationInDays\", null)\n\trawe != null # to_number(null) は 0 になる\n\te := to_number(rawe)\n\ttrans := object.get(r.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t in trans\n\tis_object(t)\n\trawd := object.get(t, \"TransitionInDays\", null)\n\trawd != null\n\td := to_number(rawd)\n\te <= d\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-delete-marker-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ExpiredObjectDeleteMarker cannot be combined with an expiration or a tag filter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ldx_fix := \"Put ExpiredObjectDeleteMarker in its own untagged rule\"\n\n_pf_s3ldx_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-delete-marker-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpiredObjectDeleteMarker\", [rule.index]),\n\tsprintf(\"ExpiredObjectDeleteMarker is set together with %v; S3 rejects that combination\", [k]),\n\t_pf_s3ldx_fix, _pf_s3ldx_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\tobject.get(rule.value, \"ExpiredObjectDeleteMarker\", false) == true\n\tsome k in [\"ExpirationInDays\", \"ExpirationDate\", \"TagFilters\"]\n\tobject.get(rule.value, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-s3-lifecycle-expiration-positive",
@@ -5465,6 +5630,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types ExpirationInDays as a bare integer with no\n# minimum, so 0 and negatives reach the service. Only the Expiration action\n# was bench-verified; other day fields are left alone.\nviolation contains make_diag_full(\"pf-s3-lifecycle-expiration-positive\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ExpirationInDays\", [r.index]),\n\tsprintf(\"ExpirationInDays is %v; S3 rejects the rule with \\\"'Days' for Expiration action must be a positive integer\\\"\", [d]),\n\t\"Use an ExpirationInDays of 1 or more\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-rule.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\traw := object.get(r.value, \"ExpirationInDays\", null)\n\traw != null\n\td := to_number(raw)\n\td <= 0\n}\n"
   },
   {
+    "id": "pf-s3-lifecycle-min-storage-duration-chain",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A transition must wait out the minimum storage duration of the class it leaves",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lmd_fix := \"Leave at least the minimum storage duration (90 days for GLACIER_IR and GLACIER) between the two transitions\"\n\n_pf_s3lmd_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-min-storage-duration-chain\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [rule.index]),\n\tsprintf(\"the transition to '%v' at %v days leaves '%v' after only %v days, but '%v' bills a %v day minimum storage duration\", [sc2, d2, sc1, d2 - d1, sc1, mind]),\n\t_pf_s3lmd_fix, _pf_s3lmd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\ttrans := object.get(rule.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t1 in trans\n\tsome t2 in trans\n\tis_object(t1)\n\tis_object(t2)\n\tsc1 := object.get(t1, \"StorageClass\", \"\")\n\tsc2 := object.get(t2, \"StorageClass\", \"\")\n\tmind := _pf_s3lib_mindur[sc1]\n\t_pf_s3lib_rank[sc2] > _pf_s3lib_rank[sc1]\n\traw1 := object.get(t1, \"TransitionInDays\", null)\n\traw1 != null\n\traw2 := object.get(t2, \"TransitionInDays\", null)\n\traw2 != null\n\td1 := to_number(raw1)\n\td2 := to_number(raw2)\n\td2 - d1 < mind\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-object-size-order",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3los_fix := \"Set ObjectSizeGreaterThan below ObjectSizeLessThan so the size range is not empty\"\n\n_pf_s3los_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-object-size-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ObjectSizeGreaterThan\", [rule.index]),\n\tsprintf(\"ObjectSizeGreaterThan (%v) is not smaller than ObjectSizeLessThan (%v); the rule would match no object\", [gt, lt]),\n\t_pf_s3los_fix, _pf_s3los_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\trawg := object.get(rule.value, \"ObjectSizeGreaterThan\", null)\n\trawg != null # to_number(null) is 0\n\trawl := object.get(rule.value, \"ObjectSizeLessThan\", null)\n\trawl != null\n\tgt := to_number(rawg)\n\tlt := to_number(rawl)\n\tgt >= lt\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-rule-id-duplicate",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Lifecycle rule ids must be unique within a bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lid_fix := \"Give every lifecycle rule its own Id\"\n\n_pf_s3lid_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-lifecycleconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-rule-id-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Id\", [r2.index]),\n\tsprintf(\"lifecycle rule id '%v' is used by rule %d as well; ids must be unique within the configuration\", [id, r1.index]),\n\t_pf_s3lid_fix, _pf_s3lid_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r1 in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tsome r2 in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tr1.index < r2.index\n\tis_object(r1.value)\n\tis_object(r2.value)\n\tid := object.get(r1.value, \"Id\", \"\")\n\tid != \"\"\n\tid == object.get(r2.value, \"Id\", \"\")\n}\n"
+  },
+  {
     "id": "pf-s3-lifecycle-rule-no-action",
     "service": "s3",
     "severity": "ERROR",
@@ -5474,6 +5672,138 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::S3::Bucket"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The ten action fields, verbatim from the service error. A field whose value\n# is an unresolvable intrinsic still counts as present (fail closed).\n_pf_s3lna_actions := {\n\t\"AbortIncompleteMultipartUpload\",\n\t\"ExpirationDate\",\n\t\"ExpirationInDays\",\n\t\"ExpiredObjectDeleteMarker\",\n\t\"NoncurrentVersionExpiration\",\n\t\"NoncurrentVersionExpirationInDays\",\n\t\"NoncurrentVersionTransition\",\n\t\"NoncurrentVersionTransitions\",\n\t\"Transition\",\n\t\"Transitions\",\n}\n\n_pf_s3lna_has_action(rule) if {\n\tsome k in _pf_s3lna_actions\n\tobject.get(rule, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-rule-no-action\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d\", [r.index]),\n\t\"The lifecycle rule specifies no action; S3 rejects it with \\\"At least one of [ExpirationDate,ExpirationInDays,AbortIncompleteMultipartUpload,Transition,...] needs to be specified\\\"\",\n\t\"Add an expiration, transition, or abort-incomplete-multipart-upload action to the rule, or remove the rule\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-rule.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\tnot _pf_s3lna_has_action(r.value)\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-tag-key-duplicate",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Lifecycle tag filter keys must be unique within a rule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ltk_fix := \"Use each tag key at most once per lifecycle rule\"\n\n_pf_s3ltk_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-tag-key-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.TagFilters\", [rule.index]),\n\tsprintf(\"tag key '%v' appears twice in the same filter; S3 ANDs the filter tags and rejects a repeated key\", [key]),\n\t_pf_s3ltk_fix, _pf_s3ltk_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\ttags := object.get(rule.value, \"TagFilters\", [])\n\tis_array(tags)\n\tsome i, j\n\ttags[i]\n\ttags[j]\n\ti < j\n\tis_object(tags[i])\n\tis_object(tags[j])\n\tkey := object.get(tags[i], \"Key\", \"\")\n\tkey != \"\"\n\tkey == object.get(tags[j], \"Key\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-transition-singular-plural-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A lifecycle rule must not use both the singular and the plural transition property",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lsp_fix := \"Keep only Transitions (or only NoncurrentVersionTransitions) in the rule\"\n\n_pf_s3lsp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-lifecycleconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-transition-singular-plural-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.%v\", [rule.index, pair[0]]),\n\tsprintf(\"the rule sets both %v and %v; S3 accepts only one of the pair\", [pair[0], pair[1]]),\n\t_pf_s3lsp_fix, _pf_s3lsp_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\tsome pair in [[\"Transition\", \"Transitions\"], [\"NoncurrentVersionTransition\", \"NoncurrentVersionTransitions\"]]\n\tobject.get(rule.value, pair[0], \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(rule.value, pair[1], \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-transition-storage-class-duplicate",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A lifecycle rule must not transition to the same storage class twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lsc_fix := \"Keep one transition per storage class, or split the rule\"\n\n_pf_s3lsc_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-transition-storage-class-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [rule.index]),\n\tsprintf(\"the rule transitions to '%v' more than once; a storage class may appear only once per rule\", [sc]),\n\t_pf_s3lsc_fix, _pf_s3lsc_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\ttrans := object.get(rule.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome i, j\n\ttrans[i]\n\ttrans[j]\n\ti < j\n\tis_object(trans[i])\n\tis_object(trans[j])\n\tsc := object.get(trans[i], \"StorageClass\", \"\")\n\tsc != \"\"\n\tsc == object.get(trans[j], \"StorageClass\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-s3-lifecycle-transition-waterfall-order",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Lifecycle transitions may only move down the storage-class waterfall",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3lwf_fix := \"Order the transitions STANDARD -> STANDARD_IA -> INTELLIGENT_TIERING -> ONEZONE_IA -> GLACIER_IR -> GLACIER -> DEEP_ARCHIVE\"\n\n_pf_s3lwf_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html\"\n\nviolation contains make_diag_full(\"pf-s3-lifecycle-transition-waterfall-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.Transitions\", [rule.index]),\n\tsprintf(\"the rule transitions to '%v' at %v days and then to '%v' at %v days; S3 transitions follow a waterfall and never move back up\", [sc1, d1, sc2, d2]),\n\t_pf_s3lwf_fix, _pf_s3lwf_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(rule.value)\n\ttrans := object.get(rule.value, \"Transitions\", [])\n\tis_array(trans)\n\tsome t1 in trans\n\tsome t2 in trans\n\tis_object(t1)\n\tis_object(t2)\n\tsc1 := object.get(t1, \"StorageClass\", \"\")\n\tsc2 := object.get(t2, \"StorageClass\", \"\")\n\traw1 := object.get(t1, \"TransitionInDays\", null)\n\traw1 != null\n\traw2 := object.get(t2, \"TransitionInDays\", null)\n\traw2 != null\n\td1 := to_number(raw1)\n\td2 := to_number(raw2)\n\td1 < d2\n\t_pf_s3lib_rank[sc2] <= _pf_s3lib_rank[sc1]\n}\n"
+  },
+  {
+    "id": "pf-s3-metadata-kms-requires-key",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A KMS-encrypted metadata table needs a KmsKeyArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3mkk_fix := \"Set EncryptionConfiguration.KmsKeyArn when SseAlgorithm is aws:kms\"\n\n_pf_s3mkk_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-metadataconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-metadata-kms-requires-key\", \"ERROR\", name,\n\tsprintf(\"Properties.MetadataConfiguration.%v.EncryptionConfiguration.KmsKeyArn\", [k]),\n\t\"the metadata table asks for aws:kms encryption without a KmsKeyArn\",\n\t_pf_s3mkk_fix, _pf_s3mkk_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome k in [\"JournalTableConfiguration\", \"InventoryTableConfiguration\"]\n\ttc := resolve(name, sprintf(\"Properties.MetadataConfiguration.%v\", [k]))\n\tis_object(tc)\n\te := object.get(tc, \"EncryptionConfiguration\", {})\n\tis_object(e)\n\tobject.get(e, \"SseAlgorithm\", \"\") == \"aws:kms\"\n\tobject.get(e, \"KmsKeyArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-metadata-record-expiration-days",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Metadata journal record expiration must be at least 7 days",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3mrd_fix := \"Set RecordExpiration.Days to 7 or more\"\n\n_pf_s3mrd_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-metadataconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-metadata-record-expiration-days\", \"ERROR\", name,\n\t\"Properties.MetadataConfiguration.JournalTableConfiguration.RecordExpiration.Days\",\n\tsprintf(\"RecordExpiration.Days is %v; S3 metadata journal tables keep records for at least 7 days\", [d]),\n\t_pf_s3mrd_fix, _pf_s3mrd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tre := resolve(name, \"Properties.MetadataConfiguration.JournalTableConfiguration.RecordExpiration\")\n\tis_object(re)\n\tobject.get(re, \"Expiration\", \"\") == \"ENABLED\"\n\traw := object.get(re, \"Days\", null)\n\traw != null\n\td := to_number(raw)\n\td < 7\n}\n"
+  },
+  {
+    "id": "pf-s3-metadata-v1-v2-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "MetadataConfiguration and MetadataTableConfiguration cannot both be set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3mdx_fix := \"Keep MetadataConfiguration (V2) and drop the older MetadataTableConfiguration\"\n\n_pf_s3mdx_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-metadataconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-metadata-v1-v2-exclusive\", \"ERROR\", name, \"Properties.MetadataTableConfiguration\",\n\t\"the bucket sets both MetadataConfiguration and the older MetadataTableConfiguration; S3 accepts one metadata configuration per bucket\",\n\t_pf_s3mdx_fix, _pf_s3mdx_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"MetadataConfiguration\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(props, \"MetadataTableConfiguration\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-notification-destination-region",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A notification destination must live in the bucket region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ndr_fix := \"Use a queue, topic or function in the region the stack deploys to\"\n\n_pf_s3ndr_url := \"https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketNotificationConfiguration.html\"\n\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise.\nviolation contains make_diag_full(\"pf-s3-notification-destination-region\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfiguration.%v.%d.%v\", [c.k, c.i, prop]),\n\tsprintf(\"the notification destination is in '%v' but the bucket deploys to '%v'; S3 requires the destination in the bucket region\", [dr, region]),\n\t_pf_s3ndr_fix, _pf_s3ndr_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in _pf_s3lib_notifs(name)\n\tprop := _pf_s3lib_notif_dest[c.k]\n\tdr := _pf_s3lib_arn_region(object.get(c.v, prop, null))\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tdr != region\n}\n"
+  },
+  {
+    "id": "pf-s3-notification-duplicate-filter-type",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A notification filter may hold one prefix rule and one suffix rule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3ndf_fix := \"Keep at most one prefix and one suffix rule per filter; split the rest into separate configurations\"\n\n_pf_s3ndf_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-filtering.html\"\n\nviolation contains make_diag_full(\"pf-s3-notification-duplicate-filter-type\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfiguration.%v.%d.Filter.S3Key.Rules\", [c.k, c.i]),\n\tsprintf(\"the filter declares '%v' twice; S3 accepts at most one prefix and one suffix rule per filter\", [n]),\n\t_pf_s3ndf_fix, _pf_s3ndf_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in _pf_s3lib_notifs(name)\n\tf := object.get(c.v, \"Filter\", {})\n\tis_object(f)\n\tkey := object.get(f, \"S3Key\", {})\n\tis_object(key)\n\trules := object.get(key, \"Rules\", [])\n\tis_array(rules)\n\tsome i, j\n\trules[i]\n\trules[j]\n\ti < j\n\tis_object(rules[i])\n\tis_object(rules[j])\n\tn := lower(object.get(rules[i], \"Name\", \"\"))\n\tn != \"\"\n\tn == lower(object.get(rules[j], \"Name\", \"\"))\n}\n"
+  },
+  {
+    "id": "pf-s3-notification-event-name",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "The notification Event must be an S3 event type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3nev_fix := \"Use an event name from the S3 event type list, e.g. s3:ObjectCreated:Put\"\n\n_pf_s3nev_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html\"\n\n_pf_s3nev_events := {\n\t\"s3:ObjectCreated:*\",\n\t\"s3:ObjectCreated:Put\",\n\t\"s3:ObjectCreated:Post\",\n\t\"s3:ObjectCreated:Copy\",\n\t\"s3:ObjectCreated:CompleteMultipartUpload\",\n\t\"s3:ObjectRemoved:*\",\n\t\"s3:ObjectRemoved:Delete\",\n\t\"s3:ObjectRemoved:DeleteMarkerCreated\",\n\t\"s3:ObjectRestore:*\",\n\t\"s3:ObjectRestore:Post\",\n\t\"s3:ObjectRestore:Completed\",\n\t\"s3:ObjectRestore:Delete\",\n\t\"s3:ObjectAcl:Put\",\n\t\"s3:ObjectTagging:*\",\n\t\"s3:ObjectTagging:Put\",\n\t\"s3:ObjectTagging:Delete\",\n\t\"s3:ReducedRedundancyLostObject\",\n\t\"s3:Replication:*\",\n\t\"s3:Replication:OperationFailedReplication\",\n\t\"s3:Replication:OperationMissedThreshold\",\n\t\"s3:Replication:OperationReplicatedAfterThreshold\",\n\t\"s3:Replication:OperationNotTracked\",\n\t\"s3:LifecycleExpiration:*\",\n\t\"s3:LifecycleExpiration:Delete\",\n\t\"s3:LifecycleExpiration:DeleteMarkerCreated\",\n\t\"s3:LifecycleTransition\",\n\t\"s3:IntelligentTiering\",\n}\n\nviolation contains make_diag_full(\"pf-s3-notification-event-name\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfiguration.%v.%d.Event\", [c.k, c.i]),\n\tsprintf(\"'%v' is not an S3 event type\", [ev]),\n\t_pf_s3nev_fix, _pf_s3nev_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in _pf_s3lib_notifs(name)\n\tev := _pf_s3lib_lit(object.get(c.v, \"Event\", null))\n\tnot _pf_s3nev_events[ev]\n}\n"
+  },
+  {
+    "id": "pf-s3-notification-fifo-queue",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "S3 event notifications cannot target a FIFO SQS queue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3nfq_fix := \"Point the notification at a standard SQS queue\"\n\n_pf_s3nfq_url := \"https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketNotificationConfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-notification-fifo-queue\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfiguration.QueueConfigurations.%d.Queue\", [c.index]),\n\tsprintf(\"'%v' is a FIFO queue; S3 event notifications only support standard queues\", [arn]),\n\t_pf_s3nfq_fix, _pf_s3nfq_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in flatten_list(name, \"Properties.NotificationConfiguration.QueueConfigurations\")\n\tis_object(c.value)\n\tarn := _pf_s3lib_lit(object.get(c.value, \"Queue\", null))\n\tendswith(arn, \".fifo\")\n}\n"
+  },
+  {
+    "id": "pf-s3-notification-fifo-topic",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "S3 event notifications cannot target a FIFO SNS topic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3nft_fix := \"Point the notification at a standard SNS topic\"\n\n_pf_s3nft_url := \"https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketNotificationConfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-notification-fifo-topic\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfiguration.TopicConfigurations.%d.Topic\", [c.index]),\n\tsprintf(\"'%v' is a FIFO topic; S3 event notifications only support standard topics\", [arn]),\n\t_pf_s3nft_fix, _pf_s3nft_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome c in flatten_list(name, \"Properties.NotificationConfiguration.TopicConfigurations\")\n\tis_object(c.value)\n\tarn := _pf_s3lib_lit(object.get(c.value, \"Topic\", null))\n\tendswith(arn, \".fifo\")\n}\n"
   },
   {
     "id": "pf-s3-notification-overlapping-filters",
@@ -5498,6 +5828,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ObjectLockConfiguration on its own does NOT require ObjectLockEnabled —\n# S3 accepts Object Lock on an existing versioned bucket (bench s05b deployed\n# clean). What it does require is versioning. When ObjectLockEnabled is true\n# the bucket is created lock-enabled and versioning comes with it, so the rule\n# fires only when lock-enablement is provably off (key literally absent or\n# literal false) and versioning is provably not enabled.\n_pf_s3olrv_no_lock_enabled(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"ObjectLockEnabled\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3olrv_no_lock_enabled(name) if {\n\tcoerce_to_bool(resolve(name, \"Properties.ObjectLockEnabled\")) == false\n}\n\n_pf_s3olrv_bad_versioning(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"VersioningConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3olrv_bad_versioning(name) if {\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-objectlock-requires-versioning\", \"ERROR\", name,\n\t\"Properties.ObjectLockConfiguration\",\n\t\"ObjectLockConfiguration is set on a bucket whose versioning is not enabled; S3 rejects it with \\\"Versioning must be 'Enabled' on the bucket to apply a Object Lock configuration\\\"\",\n\t\"Set VersioningConfiguration.Status to 'Enabled', or set ObjectLockEnabled: true to create the bucket lock-enabled\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tis_object(resolve(name, \"Properties.ObjectLockConfiguration\"))\n\t_pf_s3olrv_no_lock_enabled(name)\n\t_pf_s3olrv_bad_versioning(name)\n}\n"
   },
   {
+    "id": "pf-s3-objectlock-retention-days-years-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "DefaultRetention takes exactly one of Days or Years",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3oldy_fix := \"Express the default retention period either in Days or in Years, not both\"\n\n_pf_s3oldy_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-objectlockconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-objectlock-retention-days-years-exclusive\", \"ERROR\", name,\n\t\"Properties.ObjectLockConfiguration.Rule.DefaultRetention\",\n\tsprintf(\"DefaultRetention sets %d of Days / Years; S3 requires exactly one\", [n]),\n\t_pf_s3oldy_fix, _pf_s3oldy_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tdr := resolve(name, \"Properties.ObjectLockConfiguration.Rule.DefaultRetention\")\n\tis_object(dr)\n\tn := count([k | some k in [\"Days\", \"Years\"]; object.get(dr, k, \"__pf_absent\") != \"__pf_absent\"])\n\tn != 1\n}\n"
+  },
+  {
     "id": "pf-s3-objectlock-versioning-suspended",
     "service": "s3",
     "severity": "ERROR",
@@ -5507,6 +5848,29 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::S3::Bucket"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Object Lock force-enables versioning at creation, so a template that also\n# suspends versioning contradicts itself and the handler's PutBucketVersioning\n# call is rejected. Fires only on a literal \"Suspended\".\nviolation contains make_diag_full(\"pf-s3-objectlock-versioning-suspended\", \"ERROR\", name,\n\t\"Properties.VersioningConfiguration.Status\",\n\t\"ObjectLockEnabled is true but VersioningConfiguration suspends versioning; S3 rejects it with \\\"An Object Lock configuration is present on this bucket, so the versioning state cannot be changed.\\\"\",\n\t\"Set VersioningConfiguration.Status to 'Enabled' (or drop it — Object Lock enables versioning itself)\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tcoerce_to_bool(resolve(name, \"Properties.ObjectLockEnabled\")) == true\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n"
+  },
+  {
+    "id": "pf-s3-policy-public-with-block-public-policy",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A public bucket policy cannot be put on a bucket that blocks public policies",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::BucketPolicy",
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3pbp_fix := \"Scope the statement to a concrete principal, or set BlockPublicPolicy to false\"\n\n_pf_s3pbp_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html\"\n\n_pf_s3pbp_anyone(pr) if pr == \"*\"\n\n_pf_s3pbp_anyone(pr) if {\n\tis_object(pr)\n\tobject.get(pr, \"AWS\", \"\") == \"*\"\n}\n\n_pf_s3pbp_anyone(pr) if {\n\tis_object(pr)\n\tl := object.get(pr, \"AWS\", [])\n\tis_array(l)\n\tsome a in l\n\ta == \"*\"\n}\n\nviolation contains make_diag_full(\"pf-s3-policy-public-with-block-public-policy\", \"ERROR\", p,\n\tsprintf(\"Properties.PolicyDocument.Statement.%d.Principal\", [st.index]),\n\t\"the statement allows every principal while the bucket sets BlockPublicPolicy: true; PutBucketPolicy rejects it\",\n\t_pf_s3pbp_fix, _pf_s3pbp_url) if {\n\tsome p in resources_of_type(\"AWS::S3::BucketPolicy\")\n\tb := resolve(p, \"Properties.Bucket\")\n\tb in resources_of_type(\"AWS::S3::Bucket\")\n\tresolve(b, \"Properties.PublicAccessBlockConfiguration.BlockPublicPolicy\") == true\n\tsome st in flatten_list(p, \"Properties.PolicyDocument.Statement\")\n\tis_object(st.value)\n\tobject.get(st.value, \"Effect\", \"\") == \"Allow\"\n\tobject.get(st.value, \"Condition\", \"__pf_absent\") == \"__pf_absent\"\n\t_pf_s3pbp_anyone(object.get(st.value, \"Principal\", null))\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-acl-translation-needs-account",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "AccessControlTranslation requires the destination Account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rat_fix := \"Set Destination.Account to the destination bucket owner account id\"\n\n_pf_s3rat_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationdestination.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-acl-translation-needs-account\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.AccessControlTranslation\", [rule.index]),\n\t\"AccessControlTranslation is set but Destination.Account is missing; S3 needs the expected destination bucket owner\",\n\t_pf_s3rat_fix, _pf_s3rat_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\td := object.get(rule.value, \"Destination\", {})\n\tis_object(d)\n\tobject.get(d, \"AccessControlTranslation\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(d, \"Account\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-s3-replication-dest-versioning",
@@ -5520,6 +5884,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The destination side of what pf-s3-replication-requires-versioning checks on\n# the source. Destination.Bucket is normally Fn::GetAtt/Ref to an in-template\n# bucket; resolve() turns both into the target's logical ID, so the\n# destination's own properties are readable. External destination ARNs resolve\n# to strings that are not logical IDs and skip. Versioning is \"not enabled\"\n# when VersioningConfiguration is literally absent (proven via\n# input.resources, see AGENTS.md) or Status resolves to \"Suspended\"; an\n# unresolvable Status skips.\n_pf_s3rdv_bad_versioning(dest) if {\n\tprops := input.resources[dest].properties\n\tis_object(props)\n\tobject.get(props, \"VersioningConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3rdv_bad_versioning(dest) if {\n\tresolve(dest, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-dest-versioning\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.Bucket\", [r.index]),\n\tsprintf(\"Replication destination bucket '%s' does not have versioning enabled; S3 rejects the configuration with \\\"Destination bucket must have versioning enabled\\\"\", [dest]),\n\t\"Set VersioningConfiguration.Status to 'Enabled' on the destination bucket\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tdest := resolve(name, sprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.Bucket\", [r.index]))\n\tis_string(dest)\n\tdest in resources_of_type(\"AWS::S3::Bucket\")\n\t_pf_s3rdv_bad_versioning(dest)\n}\n"
   },
   {
+    "id": "pf-s3-replication-destination-bucket-arn",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "The replication destination must be a bucket ARN, not a bucket name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rda_fix := \"Write the destination as arn:aws:s3:::<bucket>\"\n\n_pf_s3rda_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationdestination.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-destination-bucket-arn\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.Bucket\", [rule.index]),\n\tsprintf(\"Destination.Bucket is '%v'; S3 expects the destination bucket ARN, not its name\", [b]),\n\t_pf_s3rda_fix, _pf_s3rda_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\td := object.get(rule.value, \"Destination\", {})\n\tis_object(d)\n\tb := _pf_s3lib_lit(object.get(d, \"Bucket\", null))\n\tnot startswith(b, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-filter-requires-delete-marker",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A V2 replication rule with a Filter must also set Priority and DeleteMarkerReplication",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rfd_fix := \"Add Priority and DeleteMarkerReplication to every replication rule that uses Filter\"\n\n_pf_s3rfd_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationrule.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-filter-requires-delete-marker\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.%v\", [rule.index, k]),\n\tsprintf(\"the rule uses Filter (schema V2) but omits %v; V2 rules must carry both Priority and DeleteMarkerReplication\", [k]),\n\t_pf_s3rfd_fix, _pf_s3rfd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\tobject.get(rule.value, \"Filter\", \"__pf_absent\") != \"__pf_absent\"\n\tsome k in [\"Priority\", \"DeleteMarkerReplication\"]\n\tobject.get(rule.value, k, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-priority-duplicate",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Replication rule priorities must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rpd_fix := \"Give every replication rule its own Priority\"\n\n_pf_s3rpd_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationrule.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-priority-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Priority\", [r2.index]),\n\tsprintf(\"priority %v is already used by rule %d; replication priorities must be unique\", [p, r1.index]),\n\t_pf_s3rpd_fix, _pf_s3rpd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r1 in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tsome r2 in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tr1.index < r2.index\n\tis_object(r1.value)\n\tis_object(r2.value)\n\traw := object.get(r1.value, \"Priority\", null)\n\traw != null\n\tp := to_number(raw)\n\tother := object.get(r2.value, \"Priority\", null)\n\tother != null\n\tp == to_number(other)\n}\n"
+  },
+  {
     "id": "pf-s3-replication-requires-versioning",
     "service": "s3",
     "severity": "ERROR",
@@ -5531,6 +5928,182 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 違反にするのは VersioningConfiguration が文字どおり不在（input.resources で\n# 証明、AGENTS.md 参照）か、Status がリテラルで \"Suspended\" のときだけ。\n# 未解決トークンは OK 扱い（resolve() はキー不在と未解決の両方で undefined に\n# なるため、`not resolve(...)` では不在を証明できない — 2026-09-02 実測）。\n_pf_s3repl_bad_versioning(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"VersioningConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_s3repl_bad_versioning(name) if {\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-requires-versioning\", \"ERROR\", name,\n\t\"Properties.ReplicationConfiguration\",\n\t\"ReplicationConfiguration is set but bucket versioning is not enabled; S3 rejects the replication configuration at deploy time (InvalidRequest: Versioning must be 'Enabled' on the bucket)\",\n\t\"Set VersioningConfiguration.Status to 'Enabled' on the source bucket\",\n\t\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-requirements.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tis_object(resolve(name, \"Properties.ReplicationConfiguration\"))\n\t_pf_s3repl_bad_versioning(name)\n}\n"
   },
   {
+    "id": "pf-s3-replication-rtc-minutes-15",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Replication Time Control accepts only 15 minutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rm15_fix := \"Set the ReplicationTime and Metrics thresholds to 15 minutes\"\n\n_pf_s3rm15_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationtime.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-rtc-minutes-15\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.%v\", [rule.index, spot[0]]),\n\tsprintf(\"%v.%v.Minutes is %v; S3 accepts only 15\", [spot[0], spot[1], m]),\n\t_pf_s3rm15_fix, _pf_s3rm15_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\td := object.get(rule.value, \"Destination\", {})\n\tis_object(d)\n\tsome spot in [[\"ReplicationTime\", \"Time\"], [\"Metrics\", \"EventThreshold\"]]\n\touter := object.get(d, spot[0], {})\n\tis_object(outer)\n\tinner := object.get(outer, spot[1], {})\n\tis_object(inner)\n\traw := object.get(inner, \"Minutes\", null)\n\traw != null\n\tm := to_number(raw)\n\tm != 15\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-rtc-needs-metrics",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Replication Time Control needs Metrics, and Metrics needs ReplicationTime",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rrm_fix := \"Set Destination.ReplicationTime and Destination.Metrics together\"\n\n_pf_s3rrm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationtime.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-rtc-needs-metrics\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.%v\", [rule.index, present]),\n\tsprintf(\"Destination sets %v without %v; Replication Time Control requires both blocks\", [present, missing]),\n\t_pf_s3rrm_fix, _pf_s3rrm_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\td := object.get(rule.value, \"Destination\", {})\n\tis_object(d)\n\tsome pair in [[\"ReplicationTime\", \"Metrics\"], [\"Metrics\", \"ReplicationTime\"]]\n\tpresent := pair[0]\n\tmissing := pair[1]\n\tobject.get(d, present, \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(d, missing, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-sse-kms-needs-replica-key",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Replicating SSE-KMS objects requires a replica KMS key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rsk_fix := \"Set Destination.EncryptionConfiguration.ReplicaKmsKeyID when SseKmsEncryptedObjects is Enabled\"\n\n_pf_s3rsk_url := \"https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketReplication.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-sse-kms-needs-replica-key\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Destination.EncryptionConfiguration\", [rule.index]),\n\t\"SourceSelectionCriteria enables SSE-KMS replication but Destination.EncryptionConfiguration.ReplicaKmsKeyID is missing\",\n\t_pf_s3rsk_fix, _pf_s3rsk_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\tssc := object.get(rule.value, \"SourceSelectionCriteria\", {})\n\tis_object(ssc)\n\tsse := object.get(ssc, \"SseKmsEncryptedObjects\", {})\n\tis_object(sse)\n\tobject.get(sse, \"Status\", \"\") == \"Enabled\"\n\td := object.get(rule.value, \"Destination\", {})\n\tis_object(d)\n\tenc := object.get(d, \"EncryptionConfiguration\", {})\n\tis_object(enc)\n\tobject.get(enc, \"ReplicaKmsKeyID\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-tag-filter-delete-marker",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A tag-filtered replication rule must disable delete marker replication",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rtd_fix := \"Set DeleteMarkerReplication.Status to Disabled on rules whose filter includes a tag\"\n\n_pf_s3rtd_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationrule.html\"\n\n_pf_s3rtd_tagged(f) if {\n\tobject.get(f, \"TagFilter\", \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_s3rtd_tagged(f) if {\n\ta := object.get(f, \"And\", {})\n\tis_object(a)\n\tobject.get(a, \"TagFilters\", \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-s3-replication-tag-filter-delete-marker\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.DeleteMarkerReplication.Status\", [rule.index]),\n\t\"the rule filters by tag, so DeleteMarkerReplication.Status must be Disabled; S3 does not replicate delete markers for tag-based rules\",\n\t_pf_s3rtd_fix, _pf_s3rtd_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\tf := object.get(rule.value, \"Filter\", {})\n\tis_object(f)\n\t_pf_s3rtd_tagged(f)\n\td := object.get(rule.value, \"DeleteMarkerReplication\", {})\n\tis_object(d)\n\tobject.get(d, \"Status\", \"\") == \"Enabled\"\n}\n"
+  },
+  {
+    "id": "pf-s3-replication-v1-v2-mixed",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A replication rule must not mix the V1 Prefix with the V2 Filter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3rmx_fix := \"Drop the rule-level Prefix and express it as Filter.Prefix\"\n\n_pf_s3rmx_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationrule.html\"\n\nviolation contains make_diag_full(\"pf-s3-replication-v1-v2-mixed\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationConfiguration.Rules.%d.Prefix\", [rule.index]),\n\t\"the rule sets both the V1 Prefix and the V2 Filter; S3 accepts one schema version per rule\",\n\t_pf_s3rmx_fix, _pf_s3rmx_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome rule in flatten_list(name, \"Properties.ReplicationConfiguration.Rules\")\n\tis_object(rule.value)\n\tobject.get(rule.value, \"Prefix\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(rule.value, \"Filter\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelens-bucket-level-needs-account-level",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A bucket-level advanced metric must also be enabled at the account level",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLens"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3sla_fix := \"Enable the same metric under AccountLevel as well as under AccountLevel.BucketLevel\"\n\n_pf_s3sla_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_lens_basics_metrics_recommendations.html\"\n\n_pf_s3sla_account(name, m) if {\n\tal := resolve(name, sprintf(\"Properties.StorageLensConfiguration.AccountLevel.%v\", [m]))\n\tis_object(al)\n\tobject.get(al, \"IsEnabled\", false) == true\n}\n\nviolation contains make_diag_full(\"pf-s3-storagelens-bucket-level-needs-account-level\", \"ERROR\", name,\n\tsprintf(\"Properties.StorageLensConfiguration.AccountLevel.BucketLevel.%v\", [m]),\n\tsprintf(\"%v is enabled for buckets but not at the account level; Storage Lens requires the account-level metric first\", [m]),\n\t_pf_s3sla_fix, _pf_s3sla_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLens\")\n\tsome m in [\"AdvancedCostOptimizationMetrics\", \"AdvancedDataProtectionMetrics\", \"DetailedStatusCodesMetrics\"]\n\tbl := resolve(name, sprintf(\"Properties.StorageLensConfiguration.AccountLevel.BucketLevel.%v\", [m]))\n\tis_object(bl)\n\tobject.get(bl, \"IsEnabled\", false) == true\n\tnot _pf_s3sla_account(name, m)\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelens-buckets-arn",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Storage Lens scope buckets are given as ARNs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLens"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3slb_fix := \"Write each scope bucket as arn:aws:s3:::<bucket>\"\n\n_pf_s3slb_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-storagelens-buckets-arn\", \"ERROR\", name,\n\tsprintf(\"Properties.StorageLensConfiguration.%v.Buckets.%d\", [k, c.index]),\n\tsprintf(\"'%v' is a bucket name; the Storage Lens scope takes bucket ARNs\", [b]),\n\t_pf_s3slb_fix, _pf_s3slb_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLens\")\n\tsome k in [\"Include\", \"Exclude\"]\n\tsome c in flatten_list(name, sprintf(\"Properties.StorageLensConfiguration.%v.Buckets\", [k]))\n\tb := _pf_s3lib_lit(c.value)\n\tnot startswith(b, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelens-include-empty",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A Storage Lens Include or Exclude must list at least one bucket or region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLens"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3sle_fix := \"List buckets or regions in the scope filter, or drop the filter entirely\"\n\n_pf_s3sle_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html\"\n\n_pf_s3sle_entries(sel) := [x |\n\tsome f in [\"Buckets\", \"Regions\"]\n\tl := object.get(sel, f, [])\n\tis_array(l)\n\tsome x in l\n]\n\nviolation contains make_diag_full(\"pf-s3-storagelens-include-empty\", \"ERROR\", name,\n\tsprintf(\"Properties.StorageLensConfiguration.%v\", [k]),\n\tsprintf(\"%v lists neither a bucket nor a region; Storage Lens rejects an empty scope filter\", [k]),\n\t_pf_s3sle_fix, _pf_s3sle_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLens\")\n\tsome k in [\"Include\", \"Exclude\"]\n\tsel := resolve(name, sprintf(\"Properties.StorageLensConfiguration.%v\", [k]))\n\tis_object(sel)\n\tcount(_pf_s3sle_entries(sel)) == 0\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelens-include-exclude-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A Storage Lens configuration takes either Include or Exclude",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLens"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3slx_fix := \"Keep one of Include / Exclude in the Storage Lens configuration\"\n\n_pf_s3slx_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-storagelens-include-exclude-exclusive\", \"ERROR\", name,\n\t\"Properties.StorageLensConfiguration.Exclude\",\n\t\"the configuration sets both Include and Exclude; Storage Lens accepts only one scope filter\",\n\t_pf_s3slx_fix, _pf_s3slx_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLens\")\n\tcfg := resolve(name, \"Properties.StorageLensConfiguration\")\n\tis_object(cfg)\n\tobject.get(cfg, \"Include\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(cfg, \"Exclude\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelens-prefix-delimiter-length",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "PrefixDelimiter is a single character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLens"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3slp_fix := \"Use one character as the prefix delimiter\"\n\n_pf_s3slp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-s3-storagelens-prefix-delimiter-length\", \"ERROR\", name,\n\t\"Properties.StorageLensConfiguration.PrefixDelimiter\",\n\tsprintf(\"PrefixDelimiter '%v' is %d characters; Storage Lens accepts a single character\", [pd, count(pd)]),\n\t_pf_s3slp_fix, _pf_s3slp_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLens\")\n\tpd := _pf_s3lib_lit(resolve(name, \"Properties.StorageLensConfiguration.PrefixDelimiter\"))\n\tcount(pd) > 1\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelensgroup-match-any-max",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A Storage Lens group match list holds at most 10 entries",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLensGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3sgm_fix := \"Keep at most 10 prefixes, suffixes or tags per match list\"\n\n_pf_s3sgm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelensgroup-filter.html\"\n\nviolation contains make_diag_full(\"pf-s3-storagelensgroup-match-any-max\", \"ERROR\", name,\n\tsprintf(\"Properties.Filter.%v\", [k]),\n\tsprintf(\"%v holds %d entries; Storage Lens groups accept at most 10\", [k, n]),\n\t_pf_s3sgm_fix, _pf_s3sgm_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLensGroup\")\n\tsome k in [\"MatchAnyPrefix\", \"MatchAnySuffix\", \"MatchAnyTag\"]\n\tn := count(flatten_list(name, sprintf(\"Properties.Filter.%v\", [k])))\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelensgroup-object-age-order",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "MatchObjectAge DaysGreaterThan must be smaller than DaysLessThan",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLensGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3sga_fix := \"Set DaysGreaterThan below DaysLessThan\"\n\n_pf_s3sga_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelensgroup-filter.html\"\n\nviolation contains make_diag_full(\"pf-s3-storagelensgroup-object-age-order\", \"ERROR\", name,\n\t\"Properties.Filter.MatchObjectAge\",\n\tsprintf(\"DaysGreaterThan (%v) is not smaller than DaysLessThan (%v); the group would match no object\", [gt, lt]),\n\t_pf_s3sga_fix, _pf_s3sga_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLensGroup\")\n\tm := resolve(name, \"Properties.Filter.MatchObjectAge\")\n\tis_object(m)\n\trawg := object.get(m, \"DaysGreaterThan\", null)\n\trawg != null\n\trawl := object.get(m, \"DaysLessThan\", null)\n\trawl != null\n\tgt := to_number(rawg)\n\tlt := to_number(rawl)\n\tgt >= lt\n}\n"
+  },
+  {
+    "id": "pf-s3-storagelensgroup-object-size-order",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "MatchObjectSize BytesGreaterThan must be smaller than BytesLessThan",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::StorageLensGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3sgs_fix := \"Set BytesGreaterThan below BytesLessThan\"\n\n_pf_s3sgs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelensgroup-filter.html\"\n\nviolation contains make_diag_full(\"pf-s3-storagelensgroup-object-size-order\", \"ERROR\", name,\n\t\"Properties.Filter.MatchObjectSize\",\n\tsprintf(\"BytesGreaterThan (%v) is not smaller than BytesLessThan (%v); the group would match no object\", [gt, lt]),\n\t_pf_s3sgs_fix, _pf_s3sgs_url) if {\n\tsome name in resources_of_type(\"AWS::S3::StorageLensGroup\")\n\tm := resolve(name, \"Properties.Filter.MatchObjectSize\")\n\tis_object(m)\n\trawg := object.get(m, \"BytesGreaterThan\", null)\n\trawg != null\n\trawl := object.get(m, \"BytesLessThan\", null)\n\trawl != null\n\tgt := to_number(rawg)\n\tlt := to_number(rawl)\n\tgt >= lt\n}\n"
+  },
+  {
+    "id": "pf-s3-versioning-suspended-with-replication",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A replicating bucket must keep versioning enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3vsr_fix := \"Set VersioningConfiguration.Status to Enabled on the replication source bucket\"\n\n_pf_s3vsr_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-add-config.html\"\n\nviolation contains make_diag_full(\"pf-s3-versioning-suspended-with-replication\", \"ERROR\", name,\n\t\"Properties.VersioningConfiguration.Status\",\n\t\"the bucket suspends versioning while a ReplicationConfiguration is attached; S3 requires versioning to stay enabled on a replication source\",\n\t_pf_s3vsr_fix, _pf_s3vsr_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tresolve(name, \"Properties.VersioningConfiguration.Status\") == \"Suspended\"\n\tis_object(resolve(name, \"Properties.ReplicationConfiguration\"))\n}\n"
+  },
+  {
+    "id": "pf-s3-website-empty-condition",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A RoutingRuleCondition needs a key prefix or an HTTP error code",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3wec_fix := \"Give the condition KeyPrefixEquals or HttpErrorCodeReturnedEquals, or drop it\"\n\n_pf_s3wec_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-routingrule.html\"\n\nviolation contains make_diag_full(\"pf-s3-website-empty-condition\", \"ERROR\", name,\n\tsprintf(\"Properties.WebsiteConfiguration.RoutingRules.%d.RoutingRuleCondition\", [r.index]),\n\t\"the routing rule condition sets neither KeyPrefixEquals nor HttpErrorCodeReturnedEquals\",\n\t_pf_s3wec_fix, _pf_s3wec_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.WebsiteConfiguration.RoutingRules\")\n\tis_object(r.value)\n\tc := object.get(r.value, \"RoutingRuleCondition\", \"__pf_absent\")\n\tis_object(c)\n\tobject.get(c, \"KeyPrefixEquals\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(c, \"HttpErrorCodeReturnedEquals\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-website-empty-redirect-rule",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A RedirectRule must carry at least one element",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3wer_fix := \"Give the redirect rule a HostName, Protocol, ReplaceKeyWith, ReplaceKeyPrefixWith or HttpRedirectCode\"\n\n_pf_s3wer_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-routingrule.html\"\n\nviolation contains make_diag_full(\"pf-s3-website-empty-redirect-rule\", \"ERROR\", name,\n\tsprintf(\"Properties.WebsiteConfiguration.RoutingRules.%d.RedirectRule\", [r.index]),\n\t\"the redirect rule is empty; PutBucketWebsite requires at least one redirect element\",\n\t_pf_s3wer_fix, _pf_s3wer_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.WebsiteConfiguration.RoutingRules\")\n\tis_object(r.value)\n\trr := object.get(r.value, \"RedirectRule\", \"__pf_absent\")\n\tis_object(rr)\n\tcount(rr) == 0\n}\n"
+  },
+  {
     "id": "pf-s3-website-redirect-exclusive",
     "service": "s3",
     "severity": "ERROR",
@@ -5540,6 +6113,182 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::S3::Bucket"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RedirectAllRequestsTo redirects the whole site, so S3 rejects any sibling\n# website setting alongside it.\nviolation contains make_diag_full(\"pf-s3-website-redirect-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.WebsiteConfiguration.%s\", [k]),\n\tsprintf(\"WebsiteConfiguration combines RedirectAllRequestsTo with %s; S3 rejects it with \\\"[IndexDocument, ErrorDocument, RoutingRules] should not be specified if RedirectAllRequestsTo is specified\\\"\", [k]),\n\t\"Keep RedirectAllRequestsTo alone, or drop it and configure the website with IndexDocument/ErrorDocument/RoutingRules\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-websiteconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\twc := resolve(name, \"Properties.WebsiteConfiguration\")\n\tis_object(wc)\n\tobject.get(wc, \"RedirectAllRequestsTo\", \"__pf_absent\") != \"__pf_absent\"\n\tsome k in {\"IndexDocument\", \"ErrorDocument\", \"RoutingRules\"}\n\tobject.get(wc, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-website-replace-key-exclusive",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ReplaceKeyWith and ReplaceKeyPrefixWith are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3wrk_fix := \"Keep either ReplaceKeyWith or ReplaceKeyPrefixWith in the redirect rule\"\n\n_pf_s3wrk_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-routingrule.html\"\n\nviolation contains make_diag_full(\"pf-s3-website-replace-key-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.WebsiteConfiguration.RoutingRules.%d.RedirectRule\", [r.index]),\n\t\"the redirect rule sets both ReplaceKeyWith and ReplaceKeyPrefixWith; S3 accepts only one\",\n\t_pf_s3wrk_fix, _pf_s3wrk_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tsome r in flatten_list(name, \"Properties.WebsiteConfiguration.RoutingRules\")\n\tis_object(r.value)\n\trr := object.get(r.value, \"RedirectRule\", {})\n\tis_object(rr)\n\tobject.get(rr, \"ReplaceKeyWith\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(rr, \"ReplaceKeyPrefixWith\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3-website-routing-rules-need-index",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "RoutingRules require an IndexDocument",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3::Bucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3wri_fix := \"Add WebsiteConfiguration.IndexDocument next to the routing rules\"\n\n_pf_s3wri_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-routingrule.html\"\n\n_pf_s3wri_has_index(name) if {\n\tis_string(resolve(name, \"Properties.WebsiteConfiguration.IndexDocument\"))\n}\n\nviolation contains make_diag_full(\"pf-s3-website-routing-rules-need-index\", \"ERROR\", name,\n\t\"Properties.WebsiteConfiguration.RoutingRules\",\n\t\"the website configuration declares RoutingRules without an IndexDocument; PutBucketWebsite requires one\",\n\t_pf_s3wri_fix, _pf_s3wri_url) if {\n\tsome name in resources_of_type(\"AWS::S3::Bucket\")\n\tcount(flatten_list(name, \"Properties.WebsiteConfiguration.RoutingRules\")) > 0\n\tnot _pf_s3wri_has_index(name)\n}\n"
+  },
+  {
+    "id": "pf-s3express-ap-name-suffix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "An S3 Express access point name must end with --<availability-zone-id>--xa-s3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::AccessPoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xapn_fix := \"Name the access point <base>--<availability-zone-id>--xa-s3, e.g. myap--use1-az4--xa-s3\"\n\n_pf_s3xapn_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-directory-buckets-restrictions-limitations-naming-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3express-ap-name-suffix\", \"ERROR\", name, \"Properties.Name\",\n\tsprintf(\"access point name '%v' does not end with --<availability-zone-id>--xa-s3; CreateAccessPoint rejects it\", [n]),\n\t_pf_s3xapn_fix, _pf_s3xapn_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::AccessPoint\")\n\tn := _pf_s3xlib_lit(name, \"Properties.Name\")\n\tnot regex.match(\"--[a-z0-9-]+--xa-s3$\", n)\n}\n"
+  },
+  {
+    "id": "pf-s3express-ap-scope-permissions",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "Access point scope permissions are bare API names, not s3: actions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::AccessPoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xaps_fix := \"List the permissions without the s3: prefix, e.g. GetObject instead of s3:GetObject\"\n\n_pf_s3xaps_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-accesspoint-scope.html\"\n\n_pf_s3xaps_allowed := {\n\t\"GetObject\",\n\t\"GetObjectAttributes\",\n\t\"ListMultipartUploadParts\",\n\t\"ListBucket\",\n\t\"PutObject\",\n\t\"DeleteObject\",\n\t\"AbortMultipartUpload\",\n\t\"*\",\n}\n\nviolation contains make_diag_full(\"pf-s3express-ap-scope-permissions\", \"ERROR\", name,\n\tsprintf(\"Properties.Scope.Permissions.%d\", [p.index]),\n\tsprintf(\"'%v' is not an access point scope permission; the scope takes bare API names such as GetObject, not s3: actions\", [p.value]),\n\t_pf_s3xaps_fix, _pf_s3xaps_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::AccessPoint\")\n\tsome p in flatten_list(name, \"Properties.Scope.Permissions\")\n\tis_string(p.value)\n\tnot _pf_s3xaps_allowed[p.value]\n}\n"
+  },
+  {
+    "id": "pf-s3express-ap-zone-mismatch",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "An S3 Express access point must carry the same zone id as its bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::AccessPoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xapz_fix := \"Use the bucket zone id in the access point name suffix\"\n\n_pf_s3xapz_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-directory-buckets-restrictions-limitations-naming-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3express-ap-zone-mismatch\", \"ERROR\", name, \"Properties.Name\",\n\tsprintf(\"the access point name encodes zone '%v' but its bucket lives in '%v'; an access point must sit in the bucket zone\", [z, bz]),\n\t_pf_s3xapz_fix, _pf_s3xapz_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::AccessPoint\")\n\tn := _pf_s3xlib_lit(name, \"Properties.Name\")\n\tz := _pf_s3xlib_zone(n)\n\tbz := _pf_s3xlib_zone(_pf_s3xlib_bucketname(name, \"Properties.Bucket\"))\n\tz != bz\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-key-enabled-false",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A directory bucket must keep BucketKeyEnabled true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xbke_fix := \"Remove BucketKeyEnabled or set it to true; directory buckets always use S3 Bucket Keys\"\n\n_pf_s3xbke_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-serversideencryptionrule.html\"\n\nviolation contains make_diag_full(\"pf-s3express-bucket-key-enabled-false\", \"ERROR\", name,\n\tsprintf(\"Properties.BucketEncryption.ServerSideEncryptionConfiguration.%d.BucketKeyEnabled\", [c.index]),\n\t\"BucketKeyEnabled is false; directory buckets always use S3 Bucket Keys and reject false\",\n\t_pf_s3xbke_fix, _pf_s3xbke_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tsome c in flatten_list(name, \"Properties.BucketEncryption.ServerSideEncryptionConfiguration\")\n\tis_object(c.value)\n\tobject.get(c.value, \"BucketKeyEnabled\", true) == false\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-location-region",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "LocationName must name a zone in the region the stack deploys to",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xloc_fix := \"Use a zone id from the stack's own region (its ids all share the region prefix)\"\n\n_pf_s3xloc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-s3express-directorybucket.html\"\n\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise.\nviolation contains make_diag_full(\"pf-s3express-bucket-location-region\", \"ERROR\", name, \"Properties.LocationName\",\n\tsprintf(\"LocationName '%v' belongs to another region; this stack deploys to '%v', whose zone ids start with '%v'\", [loc, region, want]),\n\t_pf_s3xloc_fix, _pf_s3xloc_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tloc := _pf_s3xlib_lit(name, \"Properties.LocationName\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\twant := _pf_s3xlib_zoneprefix(region)\n\tparts := split(loc, \"-\")\n\tcount(parts) > 1\n\tparts[0] != want\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-name-dot",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A directory bucket name must not contain a period",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xdot_fix := \"Remove the periods from the directory bucket name\"\n\n_pf_s3xdot_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3express-bucket-name-dot\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"directory bucket name '%v' contains a period; directory bucket names accept only lowercase letters, digits and hyphens\", [bn]),\n\t_pf_s3xdot_fix, _pf_s3xdot_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tbn := _pf_s3xlib_lit(name, \"Properties.BucketName\")\n\tcontains(bn, \".\")\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-name-reserved-prefix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A directory bucket name must not start with a reserved prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xrsv_fix := \"Drop the xn--, sthree- or amzn-s3-demo- prefix from the bucket name\"\n\n_pf_s3xrsv_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3express-bucket-name-reserved-prefix\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"directory bucket name '%v' starts with the reserved prefix '%v'\", [bn, p]),\n\t_pf_s3xrsv_fix, _pf_s3xrsv_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tbn := _pf_s3xlib_lit(name, \"Properties.BucketName\")\n\tsome p in {\"xn--\", \"sthree-\", \"amzn-s3-demo-\"}\n\tstartswith(bn, p)\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-name-suffix",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A directory bucket name must end with --<availability-zone-id>--x-s3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xsfx_fix := \"Name the directory bucket <base>--<availability-zone-id>--x-s3, e.g. mybucket--use1-az4--x-s3\"\n\n_pf_s3xsfx_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3express-bucket-name-suffix\", \"ERROR\", name, \"Properties.BucketName\",\n\tsprintf(\"directory bucket name '%v' does not end with --<availability-zone-id>--x-s3; CreateBucket rejects it\", [bn]),\n\t_pf_s3xsfx_fix, _pf_s3xsfx_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tbn := _pf_s3xlib_lit(name, \"Properties.BucketName\")\n\tnot regex.match(\"--[a-z0-9-]+--x-s3$\", bn)\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-redundancy-location",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "DataRedundancy must match the kind of zone LocationName names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xred_fix := \"Pair DataRedundancy SingleAvailabilityZone with an Availability Zone id, and SingleLocalZone with a Local Zone id\"\n\n_pf_s3xred_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-s3express-directorybucket.html\"\n\nviolation contains make_diag_full(\"pf-s3express-bucket-redundancy-location\", \"ERROR\", name, \"Properties.DataRedundancy\",\n\tsprintf(\"DataRedundancy is 'SingleAvailabilityZone' but LocationName '%v' is a Local Zone id; use SingleLocalZone\", [loc]),\n\t_pf_s3xred_fix, _pf_s3xred_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tresolve(name, \"Properties.DataRedundancy\") == \"SingleAvailabilityZone\"\n\tloc := _pf_s3xlib_lit(name, \"Properties.LocationName\")\n\tregex.match(\"^[a-z0-9]+-[a-z0-9]+-az[0-9]+$\", loc)\n}\n\nviolation contains make_diag_full(\"pf-s3express-bucket-redundancy-location\", \"ERROR\", name, \"Properties.DataRedundancy\",\n\tsprintf(\"DataRedundancy is 'SingleLocalZone' but LocationName '%v' is an Availability Zone id; use SingleAvailabilityZone\", [loc]),\n\t_pf_s3xred_fix, _pf_s3xred_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tresolve(name, \"Properties.DataRedundancy\") == \"SingleLocalZone\"\n\tloc := _pf_s3xlib_lit(name, \"Properties.LocationName\")\n\tregex.match(\"^[a-z0-9]+-az[0-9]+$\", loc)\n}\n"
+  },
+  {
+    "id": "pf-s3express-bucket-zone-mismatch",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "The zone id in a directory bucket name must equal LocationName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xzmm_fix := \"Use the same availability zone id in the bucket name suffix and in LocationName\"\n\n_pf_s3xzmm_url := \"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\"\n\nviolation contains make_diag_full(\"pf-s3express-bucket-zone-mismatch\", \"ERROR\", name, \"Properties.LocationName\",\n\tsprintf(\"the bucket name encodes zone '%v' but LocationName is '%v'; the two must name the same availability zone\", [z, loc]),\n\t_pf_s3xzmm_fix, _pf_s3xzmm_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tbn := _pf_s3xlib_lit(name, \"Properties.BucketName\")\n\tz := _pf_s3xlib_zone(bn)\n\tloc := _pf_s3xlib_lit(name, \"Properties.LocationName\")\n\tloc != z\n}\n"
+  },
+  {
+    "id": "pf-s3express-kms-key-alias",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A directory bucket KMS key must be given as a key id or ARN, not an alias",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xkal_fix := \"Replace the alias with the KMS key id or key ARN\"\n\n_pf_s3xkal_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-serversideencryptionbydefault.html\"\n\nviolation contains make_diag_full(\"pf-s3express-kms-key-alias\", \"ERROR\", name,\n\tsprintf(\"Properties.BucketEncryption.ServerSideEncryptionConfiguration.%d.ServerSideEncryptionByDefault.KMSMasterKeyID\", [c.index]),\n\tsprintf(\"KMSMasterKeyID '%v' is an alias; directory buckets accept only a KMS key id or key ARN\", [kid]),\n\t_pf_s3xkal_fix, _pf_s3xkal_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tsome c in flatten_list(name, \"Properties.BucketEncryption.ServerSideEncryptionConfiguration\")\n\tis_object(c.value)\n\td := object.get(c.value, \"ServerSideEncryptionByDefault\", {})\n\tis_object(d)\n\tkid := object.get(d, \"KMSMasterKeyID\", \"\")\n\tis_string(kid)\n\tstartswith(kid, \"alias/\")\n}\n"
+  },
+  {
+    "id": "pf-s3express-kms-key-with-aes256",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "KMSMasterKeyID is only valid when SSEAlgorithm is aws:kms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xkae_fix := \"Either set SSEAlgorithm to aws:kms or drop KMSMasterKeyID\"\n\n_pf_s3xkae_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-serversideencryptionbydefault.html\"\n\nviolation contains make_diag_full(\"pf-s3express-kms-key-with-aes256\", \"ERROR\", name,\n\tsprintf(\"Properties.BucketEncryption.ServerSideEncryptionConfiguration.%d.ServerSideEncryptionByDefault.KMSMasterKeyID\", [c.index]),\n\t\"KMSMasterKeyID is set while SSEAlgorithm is AES256; the key is only accepted with SSEAlgorithm aws:kms\",\n\t_pf_s3xkae_fix, _pf_s3xkae_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tsome c in flatten_list(name, \"Properties.BucketEncryption.ServerSideEncryptionConfiguration\")\n\tis_object(c.value)\n\td := object.get(c.value, \"ServerSideEncryptionByDefault\", {})\n\tis_object(d)\n\tobject.get(d, \"SSEAlgorithm\", \"\") == \"AES256\"\n\tobject.get(d, \"KMSMasterKeyID\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-s3express-lifecycle-object-size-order",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xlsz_fix := \"Set ObjectSizeGreaterThan below ObjectSizeLessThan so the size range is not empty\"\n\n_pf_s3xlsz_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-rule.html\"\n\nviolation contains make_diag_full(\"pf-s3express-lifecycle-object-size-order\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d.ObjectSizeGreaterThan\", [r.index]),\n\tsprintf(\"ObjectSizeGreaterThan (%v) is not smaller than ObjectSizeLessThan (%v); the rule would match no object\", [gt, lt]),\n\t_pf_s3xlsz_fix, _pf_s3xlsz_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\trawg := object.get(r.value, \"ObjectSizeGreaterThan\", null)\n\trawg != null # to_number(null) is 0\n\trawl := object.get(r.value, \"ObjectSizeLessThan\", null)\n\trawl != null\n\tgt := to_number(rawg)\n\tlt := to_number(rawl)\n\tgt >= lt\n}\n"
+  },
+  {
+    "id": "pf-s3express-lifecycle-rule-no-action",
+    "service": "s3",
+    "severity": "ERROR",
+    "title": "A directory bucket lifecycle rule must declare an expiration or an abort action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::S3Express::DirectoryBucket"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_s3xlna_fix := \"Give the rule ExpirationInDays or AbortIncompleteMultipartUpload\"\n\n_pf_s3xlna_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-rule.html\"\n\nviolation contains make_diag_full(\"pf-s3express-lifecycle-rule-no-action\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleConfiguration.Rules.%d\", [r.index]),\n\t\"the lifecycle rule declares neither ExpirationInDays nor AbortIncompleteMultipartUpload; a directory bucket rule must carry at least one action\",\n\t_pf_s3xlna_fix, _pf_s3xlna_url) if {\n\tsome name in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\tsome r in flatten_list(name, \"Properties.LifecycleConfiguration.Rules\")\n\tis_object(r.value)\n\tobject.get(r.value, \"ExpirationInDays\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(r.value, \"AbortIncompleteMultipartUpload\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-scheduler-flexible-window",
@@ -6796,6 +7545,14 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/lambda",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::Lambda::EventSourceMapping rules: literal-vs-token\n# discrimination, ARN segments, raw-document access (resolve() cannot prove a key\n# absent) and — the one every rule needs — which event source a mapping points at.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_lam_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_lam_arn(v) := parts if {\n\t_pf_lam_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# Raw properties. The preprocessed document is the only place where \"the key is\n# absent\" can be told apart from \"the value is a token\".\n_pf_lam_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_lam_has(name, k) if {\n\tobject.get(_pf_lam_props(name), k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_lam_get(name, k) := v if {\n\tv := object.get(_pf_lam_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_lam_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_lam_esm := resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\n# --- which event source does this mapping read from? ------------------------\n# The config blocks are decisive: they exist only for one source family each.\n\n_pf_lam_is(name, \"docdb\") if _pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\n_pf_lam_is(name, \"selfkafka\") if _pf_lam_has(name, \"SelfManagedEventSource\")\n\n_pf_lam_is(name, \"kafka\") if _pf_lam_has(name, \"AmazonManagedKafkaEventSourceConfig\")\n\n# An in-template source resource: resolve() hands back the logical id.\n_pf_lam_src_type := {\n\t\"AWS::SQS::Queue\": \"sqs\",\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::DynamoDB::Table\": \"dynamodb\",\n\t\"AWS::DynamoDB::GlobalTable\": \"dynamodb\",\n\t\"AWS::MSK::Cluster\": \"kafka\",\n\t\"AWS::MSK::ServerlessCluster\": \"kafka\",\n\t\"AWS::AmazonMQ::Broker\": \"mq\",\n\t\"AWS::DocDB::DBCluster\": \"docdb\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tsrc := resolve(name, \"Properties.EventSourceArn\")\n\tsome t, k in _pf_lam_src_type\n\tsrc in resources_of_type(t)\n\tk == kind\n}\n\n# A literal ARN: the service segment names the source. DocumentDB clusters carry\n# an rds ARN, so they are only recognised through DocumentDBEventSourceConfig.\n_pf_lam_arn_kind := {\n\t\"sqs\": \"sqs\",\n\t\"kinesis\": \"kinesis\",\n\t\"dynamodb\": \"dynamodb\",\n\t\"kafka\": \"kafka\",\n\t\"mq\": \"mq\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\t_pf_lam_arn_kind[parts[2]] == kind\n}\n\n# The union: what the mapping reads from, by config block or by source ARN.\n_pf_lam_is(name, kind) if _pf_lam_srcarn(name, kind)\n\n# The source ARN names something other than `kind`. Unlike _pf_lam_not this\n# ignores the config blocks, so a rule can say \"this block is on the wrong ARN\".\n_pf_lam_arn_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_srcarn(name, other)\n}\n\n# Stream sources: the family that accepts StartingPosition, offsets and shard state.\n_pf_lam_stream(name) if _pf_lam_is(name, \"kinesis\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"dynamodb\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"kafka\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"selfkafka\")\n\n# The mapping's source is known to be something other than `kind`.\n_pf_lam_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"selfkafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_is(name, other)\n}\n\n# --- event filter patterns --------------------------------------------------\n# Filters[].Pattern is a JSON *string* holding an EventBridge pattern. There is\n# no walk builtin and Rego forbids recursion, so the traversal is unrolled to\n# four object levels: DynamoDB patterns are the deepest in practice\n# (dynamodb.NewImage.<attribute>.<type>).\n# ponytail: depth-capped at 4, deepen only if a real pattern nests further.\n\n_pf_lam_filters(name) := f if {\n\tf := object.get(_pf_lam_obj(_pf_lam_props(name), \"FilterCriteria\"), \"Filters\", [])\n\tis_array(f)\n}\n\n_pf_lam_pat(f) := o if {\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"\")\n\tis_string(p)\n\to := json.unmarshal(p)\n\tis_object(o)\n}\n\n_pf_lam_scalar(v) if {\n\tnot is_object(v)\n\tnot is_array(v)\n}\n\n# [path, value] for every scalar sitting where the pattern grammar wants an array.\n_pf_lam_pat_scalars(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], v] | some k, v in o; _pf_lam_scalar(v)],\n\t\t[[[k1, k2], v] | some k1, o1 in o; is_object(o1); some k2, v in o1; _pf_lam_scalar(v)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, v in o2; _pf_lam_scalar(v)],\n\t\t[[[k1, k2, k3, k4], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, v in o3; _pf_lam_scalar(v)],\n\t),\n)\n\n# Objects nested inside a match array: these are the operator objects\n# ({\"prefix\": \"a\"}, {\"numeric\": [\">\", 1]}, ...).\n_pf_lam_pat_ops(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], x] | some k, a in o; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2], x] | some k1, o1 in o; is_object(o1); some k2, a in o1; is_array(a); some x in a; is_object(x)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, a in o2; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2, k3, k4], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, a in o3; is_array(a); some x in a; is_object(x)],\n\t),\n)\n\n_pf_lam_has_key(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A property that CloudFormation accepts as either a scalar or a list.\n_pf_lam_list(v) := v if is_array(v)\n\n_pf_lam_list(v) := [v] if is_string(v)\n\n_pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\")\n"
+  },
+  {
+    "name": "_lib/s3",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A value that is a user-written literal string (a Ref/GetAtt to a template\n# resource resolves to the target logical id, which is not a name or an ARN).\n_pf_s3lib_lit(v) := v if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# The region segment of an ARN, or undefined for anything else.\n_pf_s3lib_arn_region(v) := r if {\n\ts := _pf_s3lib_lit(v)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tr != \"\"\n}\n\n# The S3 lifecycle \"waterfall\": a transition may only move down this ladder.\n_pf_s3lib_rank := {\n\t\"STANDARD\": 0,\n\t\"STANDARD_IA\": 1,\n\t\"INTELLIGENT_TIERING\": 2,\n\t\"ONEZONE_IA\": 3,\n\t\"GLACIER_IR\": 4,\n\t\"GLACIER\": 5,\n\t\"DEEP_ARCHIVE\": 6,\n}\n\n# Minimum storage duration billed by a class, for the classes that\n# pf-s3-lifecycle-days-order does not already own (STANDARD_IA / ONEZONE_IA).\n_pf_s3lib_mindur := {\n\t\"GLACIER_IR\": 90,\n\t\"GLACIER\": 90,\n}\n\n# Every notification configuration of a bucket, tagged with the list it came\n# from so a rule can report the exact property path.\n_pf_s3lib_notifs(name) := [{\"k\": k, \"i\": c.index, \"v\": c.value} |\n\tsome k in [\"QueueConfigurations\", \"TopicConfigurations\", \"LambdaConfigurations\"]\n\tsome c in flatten_list(name, concat(\"\", [\"Properties.NotificationConfiguration.\", k]))\n\tis_object(c.value)\n]\n\n# The property that carries the destination ARN in each configuration kind.\n_pf_s3lib_notif_dest := {\n\t\"QueueConfigurations\": \"Queue\",\n\t\"TopicConfigurations\": \"Topic\",\n\t\"LambdaConfigurations\": \"Function\",\n}\n"
+  },
+  {
+    "name": "_lib/s3express",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A property value that is a user-written literal string (a Ref/GetAtt to a\n# template resource resolves to the target logical id, which is not a name).\n_pf_s3xlib_lit(name, path) := s if {\n\ts := resolve(name, path)\n\tis_string(s)\n\tnot input.resources[s]\n}\n\n# The zone id embedded in a directory bucket name (`<base>--<zone>--x-s3`)\n# or an S3 Express access point name (`<base>--<zone>--xa-s3`).\n_pf_s3xlib_zone(s) := z if {\n\tparts := split(s, \"--\")\n\tcount(parts) == 3\n\tparts[2] in {\"x-s3\", \"xa-s3\"}\n\tz := parts[1]\n}\n\n# The bucket name behind a property that takes either the literal name or a Ref.\n_pf_s3xlib_bucketname(name, path) := s if {\n\ts := _pf_s3xlib_lit(name, path)\n}\n\n_pf_s3xlib_bucketname(name, path) := s if {\n\tt := resolve(name, path)\n\tt in resources_of_type(\"AWS::S3Express::DirectoryBucket\")\n\ts := _pf_s3xlib_lit(t, \"Properties.BucketName\")\n}\n\n_pf_s3xlib_dir := {\n\t\"east\": \"e\",\n\t\"west\": \"w\",\n\t\"north\": \"n\",\n\t\"south\": \"s\",\n\t\"central\": \"c\",\n\t\"northeast\": \"ne\",\n\t\"northwest\": \"nw\",\n\t\"southeast\": \"se\",\n\t\"southwest\": \"sw\",\n}\n\n# us-west-2 -> usw2, ap-northeast-1 -> apne1: the prefix every zone id in that\n# region carries.\n_pf_s3xlib_zoneprefix(region) := p if {\n\tparts := split(region, \"-\")\n\tcount(parts) == 3\n\td := _pf_s3xlib_dir[parts[1]]\n\tp := concat(\"\", [parts[0], d, parts[2]])\n}\n"
   },
   {
     "name": "_lib/sfn",

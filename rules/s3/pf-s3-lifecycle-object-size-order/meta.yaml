@@ -1,0 +1,12 @@
+id: pf-s3-lifecycle-object-size-order
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'ObjectSizeLessThan' has to be a value greater than 'ObjectSizeGreaterThan'.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

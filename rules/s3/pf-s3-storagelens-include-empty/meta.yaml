@@ -1,0 +1,12 @@
+id: pf-s3-storagelens-include-empty
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::StorageLens]
+severity: ERROR
+title: "A Storage Lens Include or Exclude must list at least one bucket or region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelens-storagelensconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: ETZBRHFK70PV1BTM, Extended Request ID: WpFagB82Q63UEC19gaWxPRzb9TDEdqYp9yinjguK02uqBUWmpyTisgr2M9w1jSmQvFd4q+XSItw=)\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

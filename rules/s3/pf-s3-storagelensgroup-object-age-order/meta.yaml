@@ -1,0 +1,12 @@
+id: pf-s3-storagelensgroup-object-age-order
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::StorageLensGroup]
+severity: ERROR
+title: "MatchObjectAge DaysGreaterThan must be smaller than DaysLessThan"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-storagelensgroup-filter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"This object age combination isn't valid.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

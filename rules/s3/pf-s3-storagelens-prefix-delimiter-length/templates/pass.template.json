@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "SL": {
+      "Type": "AWS::S3::StorageLens",
+      "Properties": {
+        "StorageLensConfiguration": {
+          "Id": "cdkpfs3slp",
+          "IsEnabled": true,
+          "AccountLevel": {
+            "BucketLevel": {}
+          },
+          "PrefixDelimiter": "/"
+        }
+      }
+    }
+  }
+}

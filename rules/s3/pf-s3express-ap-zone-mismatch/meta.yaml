@@ -1,0 +1,12 @@
+id: pf-s3express-ap-zone-mismatch
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::AccessPoint]
+severity: ERROR
+title: "An S3 Express access point must carry the same zone id as its bucket"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-directory-buckets-restrictions-limitations-naming-rules.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Amazon S3 AccessPoint can only be created for bucket in the same AZ\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

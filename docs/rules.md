@@ -488,17 +488,85 @@
 | `pf-route53-weight-range` | AWS::Route53::RecordSet | Weight must be between 0 and 255 | pending-engine |
 | `pf-route53-zonename-trailing-dot` | AWS::Route53::RecordSet | HostedZoneName must end with a trailing dot | none |
 | `pf-s3-accelerate-dotted-name` | AWS::S3::Bucket | Transfer Acceleration rejects bucket names with periods | none |
+| `pf-s3-acl-public-blocked` | AWS::S3::Bucket | A public canned ACL cannot be applied while Block Public Access is on | none |
+| `pf-s3-ap-name-alias-suffix` | AWS::S3::AccessPoint | An access point name must not end with an alias suffix | none |
+| `pf-s3-bucket-name-double-dot` | AWS::S3::Bucket | A bucket name must not contain two adjacent periods | none |
+| `pf-s3-bucket-name-ip-address` | AWS::S3::Bucket | A bucket name must not look like an IP address | none |
+| `pf-s3-bucket-name-reserved-prefix` | AWS::S3::Bucket | A bucket name must not start with a reserved prefix | none |
+| `pf-s3-bucket-name-reserved-suffix` | AWS::S3::Bucket | A bucket name must not end with a reserved suffix | none |
+| `pf-s3-bucket-namespace-account-regional-name` | AWS::S3::Bucket | An account-regional bucket takes a BucketNamePrefix, not a BucketName | none |
 | `pf-s3-bucket-policy-action-resource` | AWS::S3::BucketPolicy | Object-level actions need an object-level Resource | none |
 | `pf-s3-bucket-policy-principal` | AWS::S3::BucketPolicy | Bucket policy statements need a Principal | none |
+| `pf-s3-bucket-policy-version` | AWS::S3::BucketPolicy | A policy document Version must be a known IAM policy language version | none |
+| `pf-s3-encryption-kms-key-with-aes256` | AWS::S3::Bucket | KMSMasterKeyID is only valid with a KMS server-side encryption algorithm | none |
+| `pf-s3-intelligent-tiering-archive-before-deep` | AWS::S3::Bucket | ARCHIVE_ACCESS must come before DEEP_ARCHIVE_ACCESS | none |
+| `pf-s3-intelligent-tiering-duplicate-tier` | AWS::S3::Bucket | An Intelligent-Tiering configuration must not repeat an access tier | none |
+| `pf-s3-lifecycle-abort-mpu-with-tag-filter` | AWS::S3::Bucket | AbortIncompleteMultipartUpload cannot be used in a tag-filtered rule | none |
+| `pf-s3-lifecycle-date-days-mix` | AWS::S3::Bucket | A lifecycle rule must not mix day-based and date-based schedules | none |
+| `pf-s3-lifecycle-date-midnight-utc` | AWS::S3::Bucket | Lifecycle dates must be UTC midnight | none |
 | `pf-s3-lifecycle-days-order` | AWS::S3::Bucket | Lifecycle archive transitions must come 30+ days after IA, and expiration after every transition | none |
+| `pf-s3-lifecycle-delete-marker-exclusive` | AWS::S3::Bucket | ExpiredObjectDeleteMarker cannot be combined with an expiration or a tag filter | none |
 | `pf-s3-lifecycle-expiration-positive` | AWS::S3::Bucket | ExpirationInDays must be a positive integer | pending-engine |
+| `pf-s3-lifecycle-min-storage-duration-chain` | AWS::S3::Bucket | A transition must wait out the minimum storage duration of the class it leaves | none |
+| `pf-s3-lifecycle-object-size-order` | AWS::S3::Bucket | ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan | none |
+| `pf-s3-lifecycle-rule-id-duplicate` | AWS::S3::Bucket | Lifecycle rule ids must be unique within a bucket | none |
 | `pf-s3-lifecycle-rule-no-action` | AWS::S3::Bucket | A lifecycle rule needs at least one action | none |
+| `pf-s3-lifecycle-tag-key-duplicate` | AWS::S3::Bucket | Lifecycle tag filter keys must be unique within a rule | none |
+| `pf-s3-lifecycle-transition-singular-plural-exclusive` | AWS::S3::Bucket | A lifecycle rule must not use both the singular and the plural transition property | none |
+| `pf-s3-lifecycle-transition-storage-class-duplicate` | AWS::S3::Bucket | A lifecycle rule must not transition to the same storage class twice | none |
+| `pf-s3-lifecycle-transition-waterfall-order` | AWS::S3::Bucket | Lifecycle transitions may only move down the storage-class waterfall | none |
+| `pf-s3-metadata-kms-requires-key` | AWS::S3::Bucket | A KMS-encrypted metadata table needs a KmsKeyArn | none |
+| `pf-s3-metadata-record-expiration-days` | AWS::S3::Bucket | Metadata journal record expiration must be at least 7 days | none |
+| `pf-s3-metadata-v1-v2-exclusive` | AWS::S3::Bucket | MetadataConfiguration and MetadataTableConfiguration cannot both be set | none |
+| `pf-s3-notification-destination-region` | AWS::S3::Bucket | A notification destination must live in the bucket region | none |
+| `pf-s3-notification-duplicate-filter-type` | AWS::S3::Bucket | A notification filter may hold one prefix rule and one suffix rule | none |
+| `pf-s3-notification-event-name` | AWS::S3::Bucket | The notification Event must be an S3 event type | none |
+| `pf-s3-notification-fifo-queue` | AWS::S3::Bucket | S3 event notifications cannot target a FIFO SQS queue | none |
+| `pf-s3-notification-fifo-topic` | AWS::S3::Bucket | S3 event notifications cannot target a FIFO SNS topic | none |
 | `pf-s3-notification-overlapping-filters` | AWS::S3::Bucket | Notification entries must not overlap for the same event type | none |
 | `pf-s3-objectlock-requires-versioning` | AWS::S3::Bucket | ObjectLockConfiguration needs versioning enabled | none |
+| `pf-s3-objectlock-retention-days-years-exclusive` | AWS::S3::Bucket | DefaultRetention takes exactly one of Days or Years | none |
 | `pf-s3-objectlock-versioning-suspended` | AWS::S3::Bucket | Object Lock forbids suspending versioning | none |
+| `pf-s3-policy-public-with-block-public-policy` | AWS::S3::BucketPolicy<br>AWS::S3::Bucket | A public bucket policy cannot be put on a bucket that blocks public policies | none |
+| `pf-s3-replication-acl-translation-needs-account` | AWS::S3::Bucket | AccessControlTranslation requires the destination Account | none |
 | `pf-s3-replication-dest-versioning` | AWS::S3::Bucket | The replication destination bucket needs versioning enabled | none |
+| `pf-s3-replication-destination-bucket-arn` | AWS::S3::Bucket | The replication destination must be a bucket ARN, not a bucket name | none |
+| `pf-s3-replication-filter-requires-delete-marker` | AWS::S3::Bucket | A V2 replication rule with a Filter must also set Priority and DeleteMarkerReplication | none |
+| `pf-s3-replication-priority-duplicate` | AWS::S3::Bucket | Replication rule priorities must be unique | none |
 | `pf-s3-replication-requires-versioning` | AWS::S3::Bucket | ReplicationConfiguration requires versioning to be enabled on the source bucket | none |
+| `pf-s3-replication-rtc-minutes-15` | AWS::S3::Bucket | Replication Time Control accepts only 15 minutes | none |
+| `pf-s3-replication-rtc-needs-metrics` | AWS::S3::Bucket | Replication Time Control needs Metrics, and Metrics needs ReplicationTime | none |
+| `pf-s3-replication-sse-kms-needs-replica-key` | AWS::S3::Bucket | Replicating SSE-KMS objects requires a replica KMS key | none |
+| `pf-s3-replication-tag-filter-delete-marker` | AWS::S3::Bucket | A tag-filtered replication rule must disable delete marker replication | none |
+| `pf-s3-replication-v1-v2-mixed` | AWS::S3::Bucket | A replication rule must not mix the V1 Prefix with the V2 Filter | none |
+| `pf-s3-storagelens-bucket-level-needs-account-level` | AWS::S3::StorageLens | A bucket-level advanced metric must also be enabled at the account level | none |
+| `pf-s3-storagelens-buckets-arn` | AWS::S3::StorageLens | Storage Lens scope buckets are given as ARNs | none |
+| `pf-s3-storagelens-include-empty` | AWS::S3::StorageLens | A Storage Lens Include or Exclude must list at least one bucket or region | none |
+| `pf-s3-storagelens-include-exclude-exclusive` | AWS::S3::StorageLens | A Storage Lens configuration takes either Include or Exclude | none |
+| `pf-s3-storagelens-prefix-delimiter-length` | AWS::S3::StorageLens | PrefixDelimiter is a single character | none |
+| `pf-s3-storagelensgroup-match-any-max` | AWS::S3::StorageLensGroup | A Storage Lens group match list holds at most 10 entries | none |
+| `pf-s3-storagelensgroup-object-age-order` | AWS::S3::StorageLensGroup | MatchObjectAge DaysGreaterThan must be smaller than DaysLessThan | none |
+| `pf-s3-storagelensgroup-object-size-order` | AWS::S3::StorageLensGroup | MatchObjectSize BytesGreaterThan must be smaller than BytesLessThan | none |
+| `pf-s3-versioning-suspended-with-replication` | AWS::S3::Bucket | A replicating bucket must keep versioning enabled | none |
+| `pf-s3-website-empty-condition` | AWS::S3::Bucket | A RoutingRuleCondition needs a key prefix or an HTTP error code | none |
+| `pf-s3-website-empty-redirect-rule` | AWS::S3::Bucket | A RedirectRule must carry at least one element | none |
 | `pf-s3-website-redirect-exclusive` | AWS::S3::Bucket | RedirectAllRequestsTo excludes every other website setting | none |
+| `pf-s3-website-replace-key-exclusive` | AWS::S3::Bucket | ReplaceKeyWith and ReplaceKeyPrefixWith are mutually exclusive | none |
+| `pf-s3-website-routing-rules-need-index` | AWS::S3::Bucket | RoutingRules require an IndexDocument | none |
+| `pf-s3express-ap-name-suffix` | AWS::S3Express::AccessPoint | An S3 Express access point name must end with --<availability-zone-id>--xa-s3 | none |
+| `pf-s3express-ap-scope-permissions` | AWS::S3Express::AccessPoint | Access point scope permissions are bare API names, not s3: actions | none |
+| `pf-s3express-ap-zone-mismatch` | AWS::S3Express::AccessPoint | An S3 Express access point must carry the same zone id as its bucket | none |
+| `pf-s3express-bucket-key-enabled-false` | AWS::S3Express::DirectoryBucket | A directory bucket must keep BucketKeyEnabled true | none |
+| `pf-s3express-bucket-location-region` | AWS::S3Express::DirectoryBucket | LocationName must name a zone in the region the stack deploys to | none |
+| `pf-s3express-bucket-name-dot` | AWS::S3Express::DirectoryBucket | A directory bucket name must not contain a period | none |
+| `pf-s3express-bucket-name-reserved-prefix` | AWS::S3Express::DirectoryBucket | A directory bucket name must not start with a reserved prefix | none |
+| `pf-s3express-bucket-name-suffix` | AWS::S3Express::DirectoryBucket | A directory bucket name must end with --<availability-zone-id>--x-s3 | none |
+| `pf-s3express-bucket-redundancy-location` | AWS::S3Express::DirectoryBucket | DataRedundancy must match the kind of zone LocationName names | none |
+| `pf-s3express-bucket-zone-mismatch` | AWS::S3Express::DirectoryBucket | The zone id in a directory bucket name must equal LocationName | none |
+| `pf-s3express-kms-key-alias` | AWS::S3Express::DirectoryBucket | A directory bucket KMS key must be given as a key id or ARN, not an alias | none |
+| `pf-s3express-kms-key-with-aes256` | AWS::S3Express::DirectoryBucket | KMSMasterKeyID is only valid when SSEAlgorithm is aws:kms | none |
+| `pf-s3express-lifecycle-object-size-order` | AWS::S3Express::DirectoryBucket | ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan | none |
+| `pf-s3express-lifecycle-rule-no-action` | AWS::S3Express::DirectoryBucket | A directory bucket lifecycle rule must declare an expiration or an abort action | none |
 | `pf-scheduler-flexible-window` | AWS::Scheduler::Schedule | FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it | none |
 | `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | none |
 | `pf-secretsmanager-generate-secret-string` | AWS::SecretsManager::Secret | GenerateSecretString must leave at least one character type, a PasswordLength (1..4096) that fits every required type, ExcludeCharacters under 4096 chars that does not wipe out a required type, and SecretStringTemplate (a JSON object) together with GenerateStringKey | none |

@@ -1,0 +1,12 @@
+id: pf-s3-lifecycle-min-storage-duration-chain
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "A transition must wait out the minimum storage duration of the class it leaves"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-transition-general-considerations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'Days' in the 'Transition' action for StorageClass 'DEEP_ARCHIVE' for filter '(prefix=)' must be 90 days more than 'filter '(prefix=)'' in the 'Transition' action for StorageClass 'GLACIER_IR'\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

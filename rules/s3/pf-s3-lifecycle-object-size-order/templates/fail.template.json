@@ -1,0 +1,21 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "r1",
+              "Status": "Enabled",
+              "ExpirationInDays": 30,
+              "ObjectSizeGreaterThan": "5000",
+              "ObjectSizeLessThan": "1000"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

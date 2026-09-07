@@ -1,8 +1,18 @@
-# cdk-preflight
+<p align="center">
+  <img src="https://raw.githubusercontent.com/badmintoncryer/cdk-preflight/main/assets/logo.png" alt="cdk-preflight" width="104" height="104">
+</p>
 
-[![monthly real-deploy verification](https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg)](https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml)
+<h1 align="center">cdk-preflight</h1>
 
-**Catch deploy-time CloudFormation failures at `cdk synth` time.**
+<p align="center">
+  <strong>Catch deploy-time CloudFormation failures at <code>cdk synth</code> time.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
+  <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
+</p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
 
@@ -17,7 +27,7 @@ The pack aims at **every deploy-time failure that no existing CDK mechanism alre
 
 ```bash
 npm i -D cdk-preflight
-npx cdk-preflight init   # inserts Preflight.apply(app) into your CDK app
+npx cdkpf init   # inserts Preflight.apply(app) into your CDK app
                          # (`npx cdkpf init` is the same command, shorter)
 ```
 
@@ -52,6 +62,11 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
    MyStack/Alb (Alb) aws-cdk-lib.aws_elasticloadbalancingv2.CfnLoadBalancer
    Acknowledge with 'CloudFormation-Validate::pf-elbv2-lb-idle-timeout-range'
 ```
+
+> **Known limitation with stages.** The AWS CDK CLI drops validation findings for stacks nested in a `Stage`
+> before printing them, so in observe-only mode those findings appear **only** in `cdk.out/validation-report.json`
+> and never on the console. Enforce mode is not affected: cdk-preflight reports such findings itself and fails
+> synthesis. This is a CLI-side bug (present since aws-cdk 2.1128.1), not a rule evaluation problem.
 
 | Option | Default | Effect |
 |---|---|---|

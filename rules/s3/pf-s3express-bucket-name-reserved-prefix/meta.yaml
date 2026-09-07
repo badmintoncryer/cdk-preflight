@@ -1,0 +1,12 @@
+id: pf-s3express-bucket-name-reserved-prefix
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::DirectoryBucket]
+severity: ERROR
+title: "A directory bucket name must not start with a reserved prefix"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Encountered a permissions error performing a tagging operation, please add required tag permissions. See https://repost.aws/knowledge-center/cloudformation-tagging-permission-error for how to resolve. Resource handler returned message: \"The requested bucket name starts with a reserved prefix\"; pass template -> CREATE_COMPLETE. CONFOUND: the CFN provider masks the create error with a tagging-permission message; a direct s3api create-bucket with the same name returns AccessDenied \"The requested bucket name starts with a reserved prefix\""
+addedOn: 2026-09-06
