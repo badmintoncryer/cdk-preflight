@@ -3577,6 +3577,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The AuthParameters block must match AuthorizationType, and an OAuth\n# authorization endpoint must be HTTPS. Measured 2026-09-07,\n# events:CreateConnection, us-east-1: BASIC with ApiKeyAuthParameters gives\n# \"Parameter BasicAuthParameters is not valid. Reason: Missing required\n# field(s)\", and an http:// endpoint gives \"Parameter AuthorizationEndpoint\n# is not valid\".\n_pf_evconn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-connection-authparameters.html\"\n\n_pf_evconn_block := {\n\t\"BASIC\": \"BasicAuthParameters\",\n\t\"API_KEY\": \"ApiKeyAuthParameters\",\n\t\"OAUTH_CLIENT_CREDENTIALS\": \"OAuthParameters\",\n}\n\nviolation contains make_diag_full(\"pf-events-connection-auth-parameters\", \"ERROR\", name,\n\tsprintf(\"Properties.AuthParameters.%s\", [block]),\n\tsprintf(\"AuthorizationType is %s but AuthParameters has no %s; CreateConnection fails with \\\"Parameter %s is not valid. Reason: Missing required field(s)\\\"\", [t, block, block]),\n\tsprintf(\"Add AuthParameters.%s\", [block]),\n\t_pf_evconn_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Connection\")\n\tt := resolve(name, \"Properties.AuthorizationType\")\n\tblock := _pf_evconn_block[t]\n\tap := input.resources[name].properties.AuthParameters\n\tis_object(ap)\n\tobject.get(ap, block, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-events-connection-auth-parameters\", \"ERROR\", name,\n\t\"Properties.AuthParameters.OAuthParameters.AuthorizationEndpoint\",\n\tsprintf(\"'%s' is not HTTPS; CreateConnection fails with \\\"Parameter AuthorizationEndpoint is not valid\\\"\", [ep]),\n\t\"Use an https:// authorization endpoint\",\n\t_pf_evconn_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Connection\")\n\tep := resolve(name, \"Properties.AuthParameters.OAuthParameters.AuthorizationEndpoint\")\n\tis_string(ep)\n\tnot startswith(ep, \"https://\")\n}\n"
   },
   {
+    "id": "pf-events-endpoint-buses",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "A global endpoint needs two same-named buses in two Regions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Endpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A global endpoint fronts exactly two same-named buses in two Regions, and\n# the failover secondary Route must be the second bus's Region. Measured\n# 2026-09-07, events:CreateEndpoint, us-east-1: listing the same bus twice or\n# routing to a Region with no bus gives \"An event bus must be provided in\n# both the primary and secondary regions\", and differing bus names give\n# \"Event bus names must match in the primary and secondary regions\". These\n# checks run before the health check is looked up, so they surface on their\n# own.\n_pf_evep_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-endpoint.html\"\n\n_pf_evep_arns(name) := [a |\n\tsome b in flatten_list(name, \"Properties.EventBuses\")\n\tis_object(b.value)\n\ta := object.get(b.value, \"EventBusArn\", null)\n\tis_string(a)\n]\n\n_pf_evep_part(arn, i) := parts[i] if {\n\tparts := split(arn, \":\")\n\tcount(parts) > i\n}\n\n_pf_evep_bus_name(arn) := n if {\n\tparts := split(arn, \"/\")\n\tcount(parts) > 1\n\tn := parts[count(parts) - 1]\n}\n\nviolation contains make_diag_full(\"pf-events-endpoint-buses\", \"ERROR\", name,\n\t\"Properties.EventBuses\",\n\tsprintf(\"Both event buses are in '%s'; CreateEndpoint fails with \\\"An event bus must be provided in both the primary and secondary regions\\\"\", [_pf_evep_part(arns[0], 3)]),\n\t\"Reference one bus in each of the two Regions\",\n\t_pf_evep_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Endpoint\")\n\tarns := _pf_evep_arns(name)\n\tcount(arns) == 2\n\t_pf_evep_part(arns[0], 3) == _pf_evep_part(arns[1], 3)\n}\n\nviolation contains make_diag_full(\"pf-events-endpoint-buses\", \"ERROR\", name,\n\t\"Properties.EventBuses\",\n\tsprintf(\"The buses are named '%s' and '%s'; CreateEndpoint fails with \\\"Event bus names must match in the primary and secondary regions\\\"\", [_pf_evep_bus_name(arns[0]), _pf_evep_bus_name(arns[1])]),\n\t\"Use the same bus name in both Regions\",\n\t_pf_evep_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Endpoint\")\n\tarns := _pf_evep_arns(name)\n\tcount(arns) == 2\n\t_pf_evep_bus_name(arns[0]) != _pf_evep_bus_name(arns[1])\n}\n\nviolation contains make_diag_full(\"pf-events-endpoint-buses\", \"ERROR\", name,\n\t\"Properties.RoutingConfig.FailoverConfig.Secondary.Route\",\n\tsprintf(\"The secondary route is '%s' but neither bus lives there; CreateEndpoint fails with \\\"An event bus must be provided in both the primary and secondary regions\\\"\", [route]),\n\t\"Set Secondary.Route to the Region of the second event bus\",\n\t_pf_evep_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Endpoint\")\n\tarns := _pf_evep_arns(name)\n\tcount(arns) == 2\n\troute := resolve(name, \"Properties.RoutingConfig.FailoverConfig.Secondary.Route\")\n\tis_string(route)\n\tregions := {r | some a in arns; r := _pf_evep_part(a, 3)}\n\tnot route in regions\n}\n"
+  },
+  {
+    "id": "pf-events-endpoint-replication-role",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Endpoint replication needs a RoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Endpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"When replication is enabled, role cannot be empty.\" Measured 2026-09-07,\n# events:CreateEndpoint, us-east-1. Replication defaults to ENABLED, but only\n# an explicit ENABLED is reported here — that is what was measured.\nviolation contains make_diag_full(\"pf-events-endpoint-replication-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"ReplicationConfig is ENABLED but no RoleArn is set; CreateEndpoint fails with \\\"When replication is enabled, role cannot be empty\\\"\",\n\t\"Set RoleArn to a role EventBridge can assume, or disable replication\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-endpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Endpoint\")\n\tresolve(name, \"Properties.ReplicationConfig.State\") == \"ENABLED\"\n\tobject.get(input.resources[name].properties, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-events-input-path-jsonpath",
     "service": "events",
     "severity": "ERROR",
@@ -3678,6 +3700,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Events::Archive"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key, at any depth\n# ({\"detail\": {\"a\": {\"b\": {\"c\": \"plain\"}}}} gives the same message —\n# measured 2026-09-07 via events:PutRule). AWS::Events::Archive runs the same\n# validator. The node walk in rules/_lib/events.rego only descends through\n# object *values* and $or branches, so matcher objects like {\"prefix\": \"...\"}\n# — which are array elements and legally carry scalars — are never visited.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome rt in [\"AWS::Events::Rule\", \"AWS::Events::Archive\"]\n\tsome name in resources_of_type(rt)\n\tsome n in _pf_evlib_nodes(_pf_evlib_pattern(name, \"Properties.EventPattern\"))\n\tsome k, v in n\n\t_pf_evpsv_scalar(v)\n}\n"
+  },
+  {
+    "id": "pf-events-rule-cron-fields",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "cron() fields must stay in range and keep",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's E3027 already covers rate() and the cron() basics for\n# AWS::Events::Rule, but two holes were measured on 2026-09-07 via\n# events:PutRule in us-east-1 and confirmed to pass the bare engine: a '#'\n# outside day-of-week, and a numeric field outside its range. Both give\n# \"Parameter ScheduleExpression is not valid.\" The year field is NOT checked\n# here: cron(0 20 * * ? 2500) deploys, so the documented 1970-2199 range is\n# not enforced (BROKEN-EXPECTATION).\n_pf_evcron_url := \"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html\"\n\n_pf_evcron_fields(name) := f if {\n\te := resolve(name, \"Properties.ScheduleExpression\")\n\tis_string(e)\n\tstartswith(lower(e), \"cron(\")\n\tendswith(e, \")\")\n\tf := split(substring(e, 5, count(e) - 6), \" \")\n\tcount(f) == 6\n\tevery x in f {\n\t\tcount(x) > 0\n\t}\n}\n\n_pf_evcron_ranges := {0: [0, 59], 1: [0, 23], 2: [1, 31], 3: [1, 12], 4: [1, 7]}\n\n_pf_evcron_in_range(v, r) if {\n\tv >= r[0]\n\tv <= r[1]\n}\n\nviolation contains make_diag_full(\"pf-events-rule-cron-fields\", \"ERROR\", name,\n\t\"Properties.ScheduleExpression\",\n\tsprintf(\"'#' selects the nth weekday and only belongs in the day-of-week field, but it appears in field %d ('%s'); PutRule fails with \\\"Parameter ScheduleExpression is not valid\\\"\", [i + 1, f[i]]),\n\t\"Move the # expression into the day-of-week field\",\n\t_pf_evcron_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tf := _pf_evcron_fields(name)\n\tsome i in [0, 1, 2, 3, 5]\n\tcontains(f[i], \"#\")\n}\n\nviolation contains make_diag_full(\"pf-events-rule-cron-fields\", \"ERROR\", name,\n\t\"Properties.ScheduleExpression\",\n\tsprintf(\"cron() field %d is '%s', outside the allowed %d-%d; PutRule fails with \\\"Parameter ScheduleExpression is not valid\\\"\", [i + 1, f[i], r[0], r[1]]),\n\t\"Use a value inside the field's range\",\n\t_pf_evcron_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tf := _pf_evcron_fields(name)\n\tsome i, r in _pf_evcron_ranges\n\tv := to_number(f[i])\n\tnot _pf_evcron_in_range(v, r)\n}\n"
+  },
+  {
+    "id": "pf-events-rule-name-duplicate",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Two rules in one template may not share a name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Two rules in one template cannot claim the same name: the second create\n# fails because the rule already exists. Only explicit names collide — a rule\n# without Name gets a generated one. Measured 2026-09-07 (bench, us-east-1).\nviolation contains make_diag_full(\"pf-events-rule-name-duplicate\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"Rule name '%s' is used by more than one rule in this template; the second create fails because the rule already exists\", [n]),\n\t\"Give each rule its own Name, or leave Name unset and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-rule.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnames := [x |\n\t\tsome other in resources_of_type(\"AWS::Events::Rule\")\n\t\tx := resolve(other, \"Properties.Name\")\n\t\tis_string(x)\n\t]\n\tcount([x | some x in names; x == n]) > 1\n}\n"
+  },
+  {
+    "id": "pf-events-rule-pattern-size",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "An event pattern may not exceed 2048 bytes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Parameter EventPattern for rule <name> exceeds limit of 2048.\" Measured\n# 2026-09-07, events:PutRule, us-east-1: 2015 bytes deploy and 2107 do not.\n# The CloudFormation schema says Maximum 4096 and the quota page says 2,048 —\n# the quota page is right, and above 4096 the request model rejects it first.\nviolation contains make_diag_full(\"pf-events-rule-pattern-size\", \"ERROR\", name,\n\t\"Properties.EventPattern\",\n\tsprintf(\"The event pattern serialises to %d bytes; PutRule fails with \\\"Parameter EventPattern for rule ... exceeds limit of 2048\\\" (the CloudFormation schema's 4096 is wrong)\", [n]),\n\t\"Shorten the pattern, or split the rule\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-quota.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := _pf_evlib_pattern(name, \"Properties.EventPattern\")\n\tn := count(json.marshal(ep))\n\tn > 2048\n}\n"
+  },
+  {
+    "id": "pf-events-rule-schedule-default-bus",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "A scheduled rule only works on the default event bus",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"ScheduleExpression is supported only on the default event bus.\" Measured\n# 2026-09-07, events:PutRule, us-east-1, against a real custom bus; the same\n# expression on the default bus deploys.\nviolation contains make_diag_full(\"pf-events-rule-schedule-default-bus\", \"ERROR\", name,\n\t\"Properties.ScheduleExpression\",\n\tsprintf(\"A scheduled rule must live on the default bus, but EventBusName is '%s'; PutRule fails with \\\"ScheduleExpression is supported only on the default event bus\\\"\", [bus]),\n\t\"Drop EventBusName, or use EventBridge Scheduler for a schedule on a custom bus\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tis_string(resolve(name, \"Properties.ScheduleExpression\"))\n\tbus := resolve(name, \"Properties.EventBusName\")\n\tis_string(bus)\n\tbus != \"default\"\n}\n"
   },
   {
     "id": "pf-events-target-batch-parameters",
