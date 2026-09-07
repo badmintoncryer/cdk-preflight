@@ -1,0 +1,48 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "R1": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "cdkpf.test"
+     ]
+    },
+    "State": "DISABLED",
+    "Targets": [
+     {
+      "Id": "t1",
+      "Arn": "arn:aws:kinesis:us-east-1:214794239830:stream/cdkpf-nonexistent",
+      "KinesisParameters": {
+       "PartitionKeyPath": "$.detail.k"
+      },
+      "RoleArn": {
+       "Fn::GetAtt": [
+        "Role",
+        "Arn"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

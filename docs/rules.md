@@ -322,6 +322,13 @@
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule | Event pattern values must be arrays or objects, not scalars | none |
+| `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | none |
+| `pf-events-target-id-duplicate` | AWS::Events::Rule | Target ids must be unique within a rule | none |
+| `pf-events-target-input-exclusive` | AWS::Events::Rule | Input, InputPath and InputTransformer are mutually exclusive | none |
+| `pf-events-target-input-json` | AWS::Events::Rule | Target Input must be valid JSON | none |
+| `pf-events-target-parameters-mismatch` | AWS::Events::Rule | Target parameter blocks must match the target's resource type | none |
+| `pf-events-target-parameters-required` | AWS::Events::Rule | ECS, Batch and FIFO queue targets require their parameter block | none |
+| `pf-events-target-role-required` | AWS::Events::Rule | Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn | none |
 | `pf-firehose-dfcc-required-configs` | AWS::KinesisFirehose::DeliveryStream | Enabled format conversion needs input, output, and schema configs | none |
 | `pf-firehose-dynamic-partitioning-buffer` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs a 64 MB buffer floor | none |
 | `pf-firehose-dynamic-partitioning-prefix` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs partition namespaces in the prefix | none |
@@ -569,6 +576,7 @@
 | `pf-s3express-lifecycle-rule-no-action` | AWS::S3Express::DirectoryBucket | A directory bucket lifecycle rule must declare an expiration or an abort action | none |
 | `pf-scheduler-flexible-window` | AWS::Scheduler::Schedule | FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it | none |
 | `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | none |
+| `pf-scheduler-schedule-expression` | AWS::Scheduler::Schedule | Schedule expression must parse as a valid rate(), cron() or at() | none |
 | `pf-secretsmanager-generate-secret-string` | AWS::SecretsManager::Secret | GenerateSecretString must leave at least one character type, a PasswordLength (1..4096) that fits every required type, ExcludeCharacters under 4096 chars that does not wipe out a required type, and SecretStringTemplate (a JSON object) together with GenerateStringKey | none |
 | `pf-secretsmanager-hosted-rotation` | AWS::SecretsManager::RotationSchedule | HostedRotationLambda needs the AWS::SecretsManager transform, a known RotationType, MasterSecretArn/SuperuserSecretArn only for *MultiUser types (never both), and no Runtime with the 2024-09-16 transform | none |
 | `pf-secretsmanager-kms-key` | AWS::SecretsManager::Secret | KmsKeyId must be a key in the deploy region, and AWS managed keys of other services (alias/aws/<service>) cannot encrypt a secret | none |

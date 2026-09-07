@@ -1,0 +1,12 @@
+id: pf-events-target-role-required
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-use-resource-based.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Events::Rule with a Kinesis target and no RoleArn -> ROLLBACK_COMPLETE. Boundary measured the same day by calling events:PutTargets directly on a scratch rule with same-account ARNs: kinesis/firehose/ecs/batch/states/ssm/ssm-incidents/events(api-destination, event-bus)/redshift/sagemaker/inspector/codebuild/codepipeline/glue all raise ValidationException (\"RoleArn is required for target <arn>\"; Kinesis words it \"Rule <name> does not have RoleArn assigned to invoke target <arn>\"), while lambda/sns/sqs/logs accept the target with FailedEntryCount 0. AppSync excluded: its ARN format check fires before the RoleArn check."
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-events-target-input-json
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Target Input must be valid JSON
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Input '{not json' -> ROLLBACK_COMPLETE \"JSON syntax error in input for target t1\". Measured the same day via events:PutTargets: a bare word ('hello') is refused, a quoted string ('\\\"hello\\\"') is accepted, so the check is JSON validity and not object-ness."
+addedOn: 2026-09-07

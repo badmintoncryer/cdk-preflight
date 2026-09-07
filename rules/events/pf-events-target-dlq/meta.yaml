@@ -1,0 +1,12 @@
+id: pf-events-target-dlq
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: A target dead-letter queue must be a standard SQS queue in the rule's Region
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-dlq.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: DeadLetterConfig.Arn pointing at an SNS topic -> ROLLBACK_COMPLETE \"sns is not supported as a dead letter resource\". Measured the same day via events:PutTargets: a Lambda ARN gives the same shape, a .fifo queue gives \"SQS FIFO is not supported by Dead Letter Queues\", and the Region check was isolated by creating two queues with identical events.amazonaws.com SendMessage policies -- the us-east-1 queue was accepted and the us-west-2 queue refused."
+addedOn: 2026-09-07

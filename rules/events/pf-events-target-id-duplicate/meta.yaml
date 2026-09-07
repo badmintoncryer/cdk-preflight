@@ -1,0 +1,12 @@
+id: pf-events-target-id-duplicate
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Target ids must be unique within a rule
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutTargets.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: two targets with Id 'same' -> ROLLBACK_COMPLETE \"Parameter targets is not valid. Reason: More than one target with Id 'same' is provided.\""
+addedOn: 2026-09-07

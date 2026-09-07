@@ -1,0 +1,12 @@
+id: pf-events-target-parameters-required
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: ECS, Batch and FIFO queue targets require their parameter block
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: an ECS cluster target with no EcsParameters -> ROLLBACK_COMPLETE \"Parameter(s) EcsParameters must be specified for target: t1\". Batch behaves the same, and an sqs .fifo target without SqsParameters gives \"Parameter(s) SqsParameters must be specified for target: t1\" (the same queue with SqsParameters.MessageGroupId is accepted). Measured the same day via events:PutTargets. A Kinesis stream target without KinesisParameters is accepted, so it is not reported."
+addedOn: 2026-09-07
