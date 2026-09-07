@@ -1,0 +1,45 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "E1": {
+   "Type": "AWS::Events::Endpoint",
+   "Properties": {
+    "EventBuses": [
+     {
+      "EventBusArn": "arn:aws:events:us-east-1:214794239830:event-bus/default"
+     },
+     {
+      "EventBusArn": "arn:aws:events:us-west-2:214794239830:event-bus/default"
+     }
+    ],
+    "RoutingConfig": {
+     "FailoverConfig": {
+      "Primary": {
+       "HealthCheck": {
+        "Fn::Sub": "arn:aws:route53:::healthcheck/${HC}"
+       }
+      },
+      "Secondary": {
+       "Route": "us-west-2"
+      }
+     }
+    },
+    "ReplicationConfig": {
+     "State": "ENABLED"
+    }
+   }
+  },
+  "HC": {
+   "Type": "AWS::Route53::HealthCheck",
+   "Properties": {
+    "HealthCheckConfig": {
+     "Type": "HTTPS",
+     "FullyQualifiedDomainName": "example.com",
+     "Port": 443,
+     "RequestInterval": 30,
+     "FailureThreshold": 3
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,12 @@
+id: pf-events-endpoint-replication-role
+service: events
+resourceTypes: [AWS::Events::Endpoint]
+severity: ERROR
+title: Endpoint replication needs a RoleArn
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-endpoint.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: ReplicationConfig State ENABLED with no RoleArn -> ROLLBACK_COMPLETE \"When replication is enabled, role cannot be empty.\""
+addedOn: 2026-09-07

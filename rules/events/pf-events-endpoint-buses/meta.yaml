@@ -1,0 +1,12 @@
+id: pf-events-endpoint-buses
+service: events
+resourceTypes: [AWS::Events::Endpoint]
+severity: ERROR
+title: A global endpoint needs two same-named buses in two Regions
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-endpoint.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: buses named 'default' and 'other' -> ROLLBACK_COMPLETE \"Parameter EventBuses is not valid. Reason: Event bus names must match in the primary and secondary regions.\" Measured the same day via events:CreateEndpoint: listing the same bus twice, and a secondary Route of eu-west-1 with no bus there, both give \"An event bus must be provided in both the primary and secondary regions\". All three checks run before the health check is resolved, so each surfaces on its own."
+addedOn: 2026-09-07
