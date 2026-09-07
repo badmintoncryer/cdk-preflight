@@ -30,6 +30,13 @@ test('inserts import and Preflight.apply after new App(...)', () => {
   expect(out).toContain('const app = new cdk.App();\nPreflight.apply(app);');
 });
 
+test('keeps the shebang on the first line', () => {
+  const dir = makeFixture(`#!/usr/bin/env node\n${BASIC_APP}`);
+  expect(runCli(['init', '--dir', dir])).toBe(0);
+  const out = fs.readFileSync(path.join(dir, 'bin', 'app.ts'), 'utf8');
+  expect(out.startsWith("#!/usr/bin/env node\nimport { Preflight } from 'cdk-preflight';\n")).toBe(true);
+});
+
 test('is idempotent', () => {
   const dir = makeFixture(BASIC_APP);
   expect(runCli(['init', '--dir', dir])).toBe(0);
