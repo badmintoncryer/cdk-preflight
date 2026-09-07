@@ -1,0 +1,12 @@
+id: pf-events-archive-source
+service: events
+resourceTypes: [AWS::Events::Archive]
+severity: ERROR
+title: An archive source must be an event bus in the archive's Region
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-archive.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: SourceArn pointing at an SQS queue -> ROLLBACK_COMPLETE, eventSourceArn fails its pattern constraint. The Region half was isolated the same day via events:CreateArchive by actually creating a bus in us-west-2: archiving it from us-east-1 still reports \"Event bus cdkpf-bus-west does not exist\", while a same-Region bus is accepted."
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-events-bus-name
+service: events
+resourceTypes: [AWS::Events::EventBus]
+severity: ERROR
+title: An event bus name may not be 'default' or contain '/', and a partner bus must match its source
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-eventbus.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Name 'team/bus' -> ROLLBACK_COMPLETE \"Event bus name must not contain '/'.\" Measured the same day via events:CreateEventBus: Name 'default' gives \"Event bus default already exists\", and Name 'aws.partner/example.com/1/a' with EventSourceName '...\\/b' gives \"Event bus name must match event source name\"."
+addedOn: 2026-09-07

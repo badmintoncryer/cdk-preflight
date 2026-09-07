@@ -319,9 +319,14 @@
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
 | `pf-elbv2-tg-name` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group names are at most 32 alphanumeric/hyphen chars and cannot start or end with a hyphen | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
+| `pf-events-apidestination-endpoint` | AWS::Events::ApiDestination | An API destination needs an HTTPS endpoint and a same-Region connection | none |
+| `pf-events-archive-source` | AWS::Events::Archive | An archive source must be an event bus in the archive's Region | none |
+| `pf-events-bus-dlq-arn-type` | AWS::Events::EventBus | An event bus dead-letter queue must be an SQS queue | none |
+| `pf-events-bus-name` | AWS::Events::EventBus | An event bus name may not be 'default' or contain '/', and a partner bus must match its source | none |
+| `pf-events-connection-auth-parameters` | AWS::Events::Connection | AuthParameters must carry the block that AuthorizationType names, and OAuth endpoints must be HTTPS | none |
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
-| `pf-events-pattern-scalar-value` | AWS::Events::Rule | Event pattern values must be arrays or objects, not scalars | none |
+| `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | none |
 | `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | none |
 | `pf-events-target-id-duplicate` | AWS::Events::Rule | Target ids must be unique within a rule | none |
 | `pf-events-target-input-exclusive` | AWS::Events::Rule | Input, InputPath and InputTransformer are mutually exclusive | none |

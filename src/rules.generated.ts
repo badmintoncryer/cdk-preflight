@@ -3522,6 +3522,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_slow_start_out(n) if n < 0\n\n_pf_slow_start_out(n) if {\n\tn > 0\n\tn < 30\n}\n\n_pf_slow_start_out(n) if n > 900\n\nviolation contains make_diag_full(\"pf-elbv2-tg-slow-start-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [item.index]),\n\tsprintf(\"slow_start.duration_seconds is %v but must be 0 (disabled) or between 30 and 900 seconds\", [num]),\n\t\"Set slow_start.duration_seconds to 0 or a value between 30 and 900\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#slow-start-mode\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"slow_start.duration_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_slow_start_out(num)\n}\n"
   },
   {
+    "id": "pf-events-apidestination-endpoint",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "An API destination needs an HTTPS endpoint and a same-Region connection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::ApiDestination"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An API destination posts over HTTPS and can only use a connection from its\n# own Region. Measured 2026-09-07, events:CreateApiDestination, us-east-1: an\n# http:// endpoint gives \"Parameter InvocationEndpoint is not valid. Reason:\n# Endpoint '...' is not valid\", and a us-west-2 connection ARN gives\n# \"Invalid ARN: 'arn:aws:events:us-west-2:...'\".\n_pf_evapid_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-apidestination.html\"\n\nviolation contains make_diag_full(\"pf-events-apidestination-endpoint\", \"ERROR\", name,\n\t\"Properties.InvocationEndpoint\",\n\tsprintf(\"'%s' is not HTTPS; CreateApiDestination fails with \\\"Parameter InvocationEndpoint is not valid\\\"\", [ep]),\n\t\"Use an https:// invocation endpoint\",\n\t_pf_evapid_url) if {\n\tsome name in resources_of_type(\"AWS::Events::ApiDestination\")\n\tep := resolve(name, \"Properties.InvocationEndpoint\")\n\tis_string(ep)\n\tnot startswith(ep, \"https://\")\n}\n\nviolation contains make_diag_full(\"pf-events-apidestination-endpoint\", \"ERROR\", name,\n\t\"Properties.ConnectionArn\",\n\tsprintf(\"The connection is in '%s' but the API destination deploys to '%s'; CreateApiDestination fails with \\\"Invalid ARN: '%s'\\\"\", [r, region, arn]),\n\t\"Use a connection in the API destination's own Region\",\n\t_pf_evapid_url) if {\n\tsome name in resources_of_type(\"AWS::Events::ApiDestination\")\n\tregion := data.cdk_preflight.deploy_region\n\tarn := resolve(name, \"Properties.ConnectionArn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tr != \"\"\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-events-archive-source",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "An archive source must be an event bus in the archive's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Archive"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An archive records one event bus, in its own Region. Measured 2026-09-07,\n# events:CreateArchive, us-east-1: an SQS ARN fails the eventSourceArn\n# pattern, and a bus in us-west-2 is reported as \"Event bus <name> does not\n# exist\" even when that bus really exists there — isolated by creating the\n# bus in us-west-2 and confirming the same-Region control is accepted.\n_pf_evarch_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-archive.html\"\n\n_pf_evarch_arn(name) := a if {\n\ta := resolve(name, \"Properties.SourceArn\")\n\tis_string(a)\n\tstartswith(a, \"arn:\")\n}\n\nviolation contains make_diag_full(\"pf-events-archive-source\", \"ERROR\", name,\n\t\"Properties.SourceArn\",\n\tsprintf(\"'%s' is not an event bus; CreateArchive rejects it because eventSourceArn must be an event bus ARN\", [arn]),\n\t\"Point SourceArn at an AWS::Events::EventBus ARN\",\n\t_pf_evarch_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Archive\")\n\tarn := _pf_evarch_arn(name)\n\tnot contains(arn, \":event-bus/\")\n}\n\nviolation contains make_diag_full(\"pf-events-archive-source\", \"ERROR\", name,\n\t\"Properties.SourceArn\",\n\tsprintf(\"The event bus is in '%s' but the archive deploys to '%s'; CreateArchive fails with \\\"Event bus ... does not exist\\\" because it only looks in its own Region\", [r, region]),\n\t\"Archive a bus in the archive's own Region\",\n\t_pf_evarch_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Archive\")\n\tregion := data.cdk_preflight.deploy_region\n\tarn := _pf_evarch_arn(name)\n\tcontains(arn, \":event-bus/\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tr != \"\"\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-events-bus-dlq-arn-type",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "An event bus dead-letter queue must be an SQS queue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::EventBus"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An event bus dead-letter queue must be SQS, the same rule the target-level\n# DeadLetterConfig follows. Measured 2026-09-07, events:CreateEventBus,\n# us-east-1: an SNS ARN gives \"sns is not supported as a dead letter resource\".\nviolation contains make_diag_full(\"pf-events-bus-dlq-arn-type\", \"ERROR\", name,\n\t\"Properties.DeadLetterConfig.Arn\",\n\tsprintf(\"A dead-letter queue must be an SQS queue, but '%s' is a %s resource; CreateEventBus fails with \\\"%s is not supported as a dead letter resource\\\"\", [arn, svc, svc]),\n\t\"Point DeadLetterConfig.Arn at an SQS queue\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-eventbus.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::EventBus\")\n\tarn := resolve(name, \"Properties.DeadLetterConfig.Arn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n\tsvc := parts[2]\n\tsvc != \"sqs\"\n}\n"
+  },
+  {
+    "id": "pf-events-bus-name",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "An event bus name may not be 'default' or contain '/', and a partner bus must match its source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::EventBus"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A custom bus may not take the reserved 'default' name, may not contain a\n# slash unless it is a partner bus, and a partner bus's Name must equal its\n# EventSourceName. Measured 2026-09-07, events:CreateEventBus, us-east-1:\n# 'default' gives \"Event bus default already exists\", 'team/bus' gives\n# \"Event bus name must not contain '/'\", and a mismatched pair gives\n# \"Event bus name must match event source name\".\n_pf_evbusname_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-eventbus.html\"\n\n_pf_evbusname(name) := n if {\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n}\n\n_pf_evbussource(name) := s if {\n\ts := resolve(name, \"Properties.EventSourceName\")\n\tis_string(s)\n}\n\nviolation contains make_diag_full(\"pf-events-bus-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\t\"'default' is the account's built-in bus, so creating it fails with \\\"Event bus default already exists\\\"\",\n\t\"Give the custom bus its own name\",\n\t_pf_evbusname_url) if {\n\tsome name in resources_of_type(\"AWS::Events::EventBus\")\n\t_pf_evbusname(name) == \"default\"\n}\n\nviolation contains make_diag_full(\"pf-events-bus-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"'%s' contains '/', which only a partner bus may do; CreateEventBus fails with \\\"Event bus name must not contain '/'\\\"\", [n]),\n\t\"Remove the slash, or set EventSourceName for a partner event source\",\n\t_pf_evbusname_url) if {\n\tsome name in resources_of_type(\"AWS::Events::EventBus\")\n\tn := _pf_evbusname(name)\n\tcontains(n, \"/\")\n\tnot _pf_evbussource(name)\n}\n\nviolation contains make_diag_full(\"pf-events-bus-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"A partner bus must be named after its event source, but Name is '%s' and EventSourceName is '%s'; CreateEventBus fails with \\\"Event bus name must match event source name\\\"\", [n, s]),\n\t\"Set Name to the same value as EventSourceName\",\n\t_pf_evbusname_url) if {\n\tsome name in resources_of_type(\"AWS::Events::EventBus\")\n\tn := _pf_evbusname(name)\n\ts := _pf_evbussource(name)\n\tn != s\n}\n"
+  },
+  {
+    "id": "pf-events-connection-auth-parameters",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "AuthParameters must carry the block that AuthorizationType names, and OAuth endpoints must be HTTPS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Connection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The AuthParameters block must match AuthorizationType, and an OAuth\n# authorization endpoint must be HTTPS. Measured 2026-09-07,\n# events:CreateConnection, us-east-1: BASIC with ApiKeyAuthParameters gives\n# \"Parameter BasicAuthParameters is not valid. Reason: Missing required\n# field(s)\", and an http:// endpoint gives \"Parameter AuthorizationEndpoint\n# is not valid\".\n_pf_evconn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-connection-authparameters.html\"\n\n_pf_evconn_block := {\n\t\"BASIC\": \"BasicAuthParameters\",\n\t\"API_KEY\": \"ApiKeyAuthParameters\",\n\t\"OAUTH_CLIENT_CREDENTIALS\": \"OAuthParameters\",\n}\n\nviolation contains make_diag_full(\"pf-events-connection-auth-parameters\", \"ERROR\", name,\n\tsprintf(\"Properties.AuthParameters.%s\", [block]),\n\tsprintf(\"AuthorizationType is %s but AuthParameters has no %s; CreateConnection fails with \\\"Parameter %s is not valid. Reason: Missing required field(s)\\\"\", [t, block, block]),\n\tsprintf(\"Add AuthParameters.%s\", [block]),\n\t_pf_evconn_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Connection\")\n\tt := resolve(name, \"Properties.AuthorizationType\")\n\tblock := _pf_evconn_block[t]\n\tap := input.resources[name].properties.AuthParameters\n\tis_object(ap)\n\tobject.get(ap, block, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-events-connection-auth-parameters\", \"ERROR\", name,\n\t\"Properties.AuthParameters.OAuthParameters.AuthorizationEndpoint\",\n\tsprintf(\"'%s' is not HTTPS; CreateConnection fails with \\\"Parameter AuthorizationEndpoint is not valid\\\"\", [ep]),\n\t\"Use an https:// authorization endpoint\",\n\t_pf_evconn_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Connection\")\n\tep := resolve(name, \"Properties.AuthParameters.OAuthParameters.AuthorizationEndpoint\")\n\tis_string(ep)\n\tnot startswith(ep, \"https://\")\n}\n"
+  },
+  {
     "id": "pf-events-input-transformer-placeholders",
     "service": "events",
     "severity": "ERROR",
@@ -3550,9 +3605,10 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "title": "Event pattern values must be arrays or objects, not scalars",
     "upstream": "none",
     "resourceTypes": [
-      "AWS::Events::Rule"
+      "AWS::Events::Rule",
+      "AWS::Events::Archive"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key. Only the top level is\n# checked — that is the bench-verified scope, and it dodges operator objects\n# like {\"prefix\": \"...\"} that legally carry scalars deeper down.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tsome k, v in ep\n\t_pf_evpsv_scalar(v)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key. AWS::Events::Archive runs\n# the same validator (measured 2026-09-07 via events:CreateArchive:\n# {\"source\": \"app.x\"} gives the same message). Only the top level is\n# checked — that is the bench-verified scope, and it dodges operator objects\n# like {\"prefix\": \"...\"} that legally carry scalars deeper down.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome rt in [\"AWS::Events::Rule\", \"AWS::Events::Archive\"]\n\tsome name in resources_of_type(rt)\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tsome k, v in ep\n\t_pf_evpsv_scalar(v)\n}\n"
   },
   {
     "id": "pf-events-target-dlq",

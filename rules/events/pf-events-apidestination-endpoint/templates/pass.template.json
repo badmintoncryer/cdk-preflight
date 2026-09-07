@@ -1,0 +1,30 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Conn": {
+   "Type": "AWS::Events::Connection",
+   "Properties": {
+    "AuthorizationType": "API_KEY",
+    "AuthParameters": {
+     "ApiKeyAuthParameters": {
+      "ApiKeyName": "k",
+      "ApiKeyValue": "v"
+     }
+    }
+   }
+  },
+  "D": {
+   "Type": "AWS::Events::ApiDestination",
+   "Properties": {
+    "ConnectionArn": {
+     "Fn::GetAtt": [
+      "Conn",
+      "Arn"
+     ]
+    },
+    "HttpMethod": "POST",
+    "InvocationEndpoint": "https://example.com/x"
+   }
+  }
+ }
+}
