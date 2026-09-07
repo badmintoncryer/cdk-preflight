@@ -1,0 +1,12 @@
+id: pf-lambda-s3-storage-mode-zip-only
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "S3ObjectStorageMode belongs to .zip functions"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Do not include S3ObjectStorageMode when the function PackageType is Image."'
+addedOn: 2026-09-07

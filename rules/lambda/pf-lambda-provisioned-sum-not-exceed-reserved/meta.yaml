@@ -1,0 +1,12 @@
+id: pf-lambda-provisioned-sum-not-exceed-reserved
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Provisioned concurrency fits inside the reserved concurrency"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Requested Provisioned Concurrency should not be greater than the reservedConcurrentExecution for function"'
+addedOn: 2026-09-07

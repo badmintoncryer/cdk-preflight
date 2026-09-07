@@ -1,0 +1,12 @@
+id: pf-lambda-runtime-manual-requires-arn
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Manual runtime updates need a runtime version ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-runtimemanagementconfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Missing runtime version ARN. A runtime version ARN is required when UpdateRuntimeVersionOn=Manual. Provide a valid runtime version ARN and retry the request."'
+addedOn: 2026-09-07

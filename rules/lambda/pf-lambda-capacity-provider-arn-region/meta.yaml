@@ -1,0 +1,12 @@
+id: pf-lambda-capacity-provider-arn-region
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A capacity provider lives in the deploy region"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_LambdaManagedInstancesCapacityProviderConfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-08): "Capacity provider arn invalid: capacity-provider:arn:aws:lambda:eu-west-1:214794239830:capacity-provider:cp" The same ARN with the deploy region answers "Capacity provider not found" instead, so the region alone is what makes it invalid. The pass template was not deployed: a valid ARN has to name a real Lambda Managed Instances capacity provider, which launches billable compute instances.'
+addedOn: 2026-09-07

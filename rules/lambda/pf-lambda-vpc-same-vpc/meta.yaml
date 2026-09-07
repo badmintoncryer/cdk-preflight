@@ -1,0 +1,12 @@
+id: pf-lambda-vpc-same-vpc
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Subnets and security groups belong to one VPC"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/foundation-networking.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Subnets and Security Groups must belong to the same VPC."'
+addedOn: 2026-09-07

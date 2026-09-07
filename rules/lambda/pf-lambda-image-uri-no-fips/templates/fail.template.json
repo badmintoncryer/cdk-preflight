@@ -1,0 +1,63 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "base",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DeleteNetworkInterface",
+                    "elasticfilesystem:ClientMount",
+                    "elasticfilesystem:ClientWrite",
+                    "sqs:SendMessage",
+                    "sns:Publish"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": {
+          "Fn::GetAtt": [
+            "R",
+            "Arn"
+          ]
+        },
+        "PackageType": "Image",
+        "Code": {
+          "ImageUri": "111122223333.dkr.ecr-fips.us-east-1.amazonaws.com/repo:latest"
+        }
+      }
+    }
+  }
+}

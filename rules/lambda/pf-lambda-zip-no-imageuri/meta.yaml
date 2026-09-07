@@ -1,0 +1,12 @@
+id: pf-lambda-zip-no-imageuri
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A .zip function cannot carry Code.ImageUri"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Please provide a source for function code."'
+addedOn: 2026-09-07

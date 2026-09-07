@@ -1,0 +1,167 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "base",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DeleteNetworkInterface",
+                    "elasticfilesystem:ClientMount",
+                    "elasticfilesystem:ClientWrite",
+                    "sqs:SendMessage",
+                    "sns:Publish"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SUBA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": "us-east-1a"
+      }
+    },
+    "SUBB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": "us-east-1b"
+      }
+    },
+    "SG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "g",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "FS": {
+      "Type": "AWS::EFS::FileSystem"
+    },
+    "MTA": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "FS"
+        },
+        "SubnetId": {
+          "Ref": "SUBA"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "SG"
+          }
+        ]
+      }
+    },
+    "AP": {
+      "Type": "AWS::EFS::AccessPoint",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "FS"
+        },
+        "PosixUser": {
+          "Uid": "1000",
+          "Gid": "1000"
+        },
+        "RootDirectory": {
+          "Path": "/lambda",
+          "CreationInfo": {
+            "OwnerUid": "1000",
+            "OwnerGid": "1000",
+            "Permissions": "755"
+          }
+        }
+      }
+    },
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": {
+          "Fn::GetAtt": [
+            "R",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "x"
+        },
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "VpcConfig": {
+          "SubnetIds": [
+            {
+              "Ref": "SUBA"
+            },
+            {
+              "Ref": "SUBB"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "SG"
+            }
+          ]
+        },
+        "FileSystemConfigs": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "AP",
+                "Arn"
+              ]
+            },
+            "LocalMountPath": "/mnt/data"
+          }
+        ]
+      },
+      "DependsOn": [
+        "MTA"
+      ]
+    }
+  }
+}

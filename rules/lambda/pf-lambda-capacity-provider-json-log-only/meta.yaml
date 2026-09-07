@@ -1,0 +1,12 @@
+id: pf-lambda-capacity-provider-json-log-only
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Managed-instance functions log in JSON"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs-logformat.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "LogLevel is not supported when LogFormat is set to "Text". Remove LogLevel from your request or change the LogFormat to "JSON" and try again." CONFOUND: the service names LogLevel rather than the capacity provider, because Lambda sets a log level for managed-instance functions itself.'
+addedOn: 2026-09-07

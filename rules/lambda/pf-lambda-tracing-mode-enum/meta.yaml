@@ -1,0 +1,12 @@
+id: pf-lambda-tracing-mode-enum
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "TracingConfig.Mode takes Active or PassThrough"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_TracingConfig.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): the stack rolled back at CloudFormation early validation ("Validation failed with 1 error(s)"). The enum is enforced before the API call, while the bundled engine only reports it as W3030.'
+addedOn: 2026-09-07

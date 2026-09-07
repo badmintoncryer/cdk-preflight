@@ -1,0 +1,12 @@
+id: pf-lambda-env-key-start-letter
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "An environment variable name starts with a letter"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "1 validation error detected: Value at ''environment.variables'' failed to satisfy constraint: Map keys must satisfy constraint: [Member must satisfy regular expression pattern: [a-zA-Z]([a-zA-Z0-9_])+]"'
+addedOn: 2026-09-07

@@ -215,3 +215,63 @@ _pf_lam_csc_profiles contains [name, arn] if {
 	some arn in _pf_lam_list(object.get(pubs, "SigningProfileVersionArns", []))
 	is_string(arn)
 }
+
+# --- #75 Function 系で足す共有ヘルパー ---------------------------------------
+
+# テンプレート内の別リソースの生プロパティ。Properties を持たないリソース
+# （AWS::EFS::FileSystem など）でも undefined にならないようにする。
+_pf_lam_res_props(id) := p if {
+	p := object.get(object.get(input.resources, id, {}), "properties", {})
+	is_object(p)
+}
+
+# テンプレート内のリソースを指す組み込み関数の論理 ID。前処理済みドキュメントでは
+# Ref も GetAtt も {"__kind": "resource" | "getatt:Arn", "__ref": "<論理ID>"} に
+# マーカー化されているので、生の {"Ref": ...} を探しても見つからない（2026-09-07 実測）。
+_pf_lam_ref(v) := id if {
+	is_object(v)
+	id := object.get(v, "__ref", "__pf_absent")
+	id != "__pf_absent"
+	is_string(id)
+}
+
+# 関数の VpcConfig（生ドキュメント）。
+_pf_lam_vpccfg(name) := c if c := _pf_lam_obj(_pf_lam_props(name), "VpcConfig")
+
+# サブネット / セキュリティグループの VpcId。Ref も GetAtt も構造のまま返すので、
+# 同じ VPC を指していれば Rego の値として等しくなる。
+_pf_lam_vpc_of(v) := vpc if {
+	vpc := object.get(_pf_lam_res_props(_pf_lam_ref(v)), "VpcId", "__pf_absent")
+	vpc != "__pf_absent"
+}
+
+# EFS マウントターゲットが置かれているサブネットの AZ。
+_pf_lam_mt_azs contains az if {
+	some id in resources_of_type("AWS::EFS::MountTarget")
+	sub := object.get(_pf_lam_res_props(id), "SubnetId", null)
+	az := object.get(_pf_lam_res_props(_pf_lam_ref(sub)), "AvailabilityZone", "__pf_absent")
+	az != "__pf_absent"
+}
+
+# 関数にぶら下がる ProvisionedConcurrencyConfig の割り当て量。
+# Version も Alias も FunctionName で関数を指すので、その値ごとに合算できる。
+_pf_lam_pc contains [id, fnref, n] if {
+	# resources_of_type は配列を返すので集合の和（|）は使えない。
+	some id in array.concat(_pf_lam_ver, _pf_lam_alias)
+	props := _pf_lam_props(id)
+	pcc := _pf_lam_obj(props, "ProvisionedConcurrencyConfig")
+	n := object.get(pcc, "ProvisionedConcurrentExecutions", "__pf_absent")
+	is_number(n)
+	fnref := object.get(props, "FunctionName", "__pf_absent")
+	fnref != "__pf_absent"
+}
+
+# 「文字列として存在する」ときだけ返す。object.get の既定値を空文字にすると
+# キーが無いテンプレートでも判定が走り、パック全体の pass に誤発火する
+# （2026-09-07 に image-uri-private-ecr と recursive-loop-enum で実測）。
+_pf_lam_str(o, k) := v if {
+	is_object(o)
+	v := object.get(o, k, "__pf_absent")
+	v != "__pf_absent"
+	is_string(v)
+}

@@ -1,0 +1,12 @@
+id: pf-lambda-tenancy-no-snapstart
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A tenant-isolated function cannot use SnapStart"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/tenant-isolation.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "SnapStart is not supported for functions enabled with tenancy configuration."'
+addedOn: 2026-09-07

@@ -439,19 +439,27 @@
 | `pf-lambda-alias-routing-not-latest` | AWS::Lambda::Alias | A weighted alias cannot sit on $LATEST | none |
 | `pf-lambda-alias-version-not-alias` | AWS::Lambda::Alias | An alias cannot point at another alias | none |
 | `pf-lambda-alias-version-weight-range` | AWS::Lambda::Alias | A routing weight is a fraction between 0 and 1 | none |
+| `pf-lambda-capacity-provider-arn-region` | AWS::Lambda::Function | A capacity provider lives in the deploy region | none |
+| `pf-lambda-capacity-provider-json-log-only` | AWS::Lambda::Function | Managed-instance functions log in JSON | none |
+| `pf-lambda-capacity-provider-runtime` | AWS::Lambda::Function | Managed instances support only the newer runtimes | none |
 | `pf-lambda-code-s3-pair` | AWS::Lambda::Function | S3-based Code needs both S3Bucket and S3Key | none |
 | `pf-lambda-code-signing-arn-region` | AWS::Lambda::Function | A code signing config lives in the deploy region | none |
 | `pf-lambda-code-signing-zip-only` | AWS::Lambda::Function | Code signing applies to .zip functions only | none |
 | `pf-lambda-code-zipfile-exclusive` | AWS::Lambda::Function | Inline ZipFile excludes every other Code parameter | none |
 | `pf-lambda-csc-untrusted-artifact-enum` | AWS::Lambda::CodeSigningConfig | UntrustedArtifactOnDeployment is Warn or Enforce | pending-engine |
+| `pf-lambda-dlq-no-fifo` | AWS::Lambda::Function | A dead-letter target cannot be a FIFO queue or topic | none |
 | `pf-lambda-dlq-region` | AWS::Lambda::Function | The dead letter target must sit in the deploy region | none |
 | `pf-lambda-dlq-service` | AWS::Lambda::Function | The dead letter target must be an SQS queue or SNS topic | none |
+| `pf-lambda-durable-kms-key-region` | AWS::Lambda::Function | A durable-function KMS key lives in the deploy region | none |
+| `pf-lambda-efs-mount-target-dependson` | AWS::Lambda::Function | A function that mounts EFS waits for the mount target | none |
+| `pf-lambda-efs-mount-target-every-az` | AWS::Lambda::Function | Every subnet of an EFS function needs a mount target in its AZ | none |
 | `pf-lambda-efs-requires-vpc` | AWS::Lambda::Function | Mounting EFS requires VpcConfig | none |
 | `pf-lambda-eic-destination-no-sns-fifo` | AWS::Lambda::EventInvokeConfig | An invoke destination cannot be a FIFO topic | none |
 | `pf-lambda-eic-destination-no-sqs-fifo` | AWS::Lambda::EventInvokeConfig | An invoke destination cannot be a FIFO queue | none |
 | `pf-lambda-eic-destination-region` | AWS::Lambda::EventInvokeConfig | An invoke destination lives in the deploy region | none |
 | `pf-lambda-eic-destination-service` | AWS::Lambda::EventInvokeConfig | An invoke destination is a queue, topic, bucket, function or event bus | none |
 | `pf-lambda-eic-onsuccess-no-s3` | AWS::Lambda::EventInvokeConfig | An S3 bucket is an on-failure destination only | none |
+| `pf-lambda-env-key-start-letter` | AWS::Lambda::Function | An environment variable name starts with a letter | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
 | `pf-lambda-esm-batchsize-window` | AWS::Lambda::EventSourceMapping | SQS batch sizes over 10 need a batching window | none |
 | `pf-lambda-esm-bisect-batch-stream-only` | AWS::Lambda::EventSourceMapping | BisectBatchOnFunctionError only applies to Kinesis and DynamoDB streams | none |
@@ -507,6 +515,11 @@
 | `pf-lambda-esm-starting-position-timestamp-requires-at-timestamp` | AWS::Lambda::EventSourceMapping | StartingPositionTimestamp needs StartingPosition AT_TIMESTAMP | none |
 | `pf-lambda-esm-starting-position-timestamp-sqs-unsupported` | AWS::Lambda::EventSourceMapping | SQS event sources reject StartingPositionTimestamp | none |
 | `pf-lambda-esm-tumbling-window-stream-only` | AWS::Lambda::EventSourceMapping | TumblingWindowInSeconds only applies to Kinesis and DynamoDB streams | none |
+| `pf-lambda-image-requires-imageuri` | AWS::Lambda::Function | A container-image function needs Code.ImageUri | none |
+| `pf-lambda-image-uri-no-fips` | AWS::Lambda::Function | A container image cannot come from an ECR FIPS endpoint | none |
+| `pf-lambda-image-uri-private-ecr` | AWS::Lambda::Function | A container image lives in a private ECR repository | none |
+| `pf-lambda-image-uri-region` | AWS::Lambda::Function | A container image lives in the deploy region | none |
+| `pf-lambda-imageconfig-requires-image` | AWS::Lambda::Function | ImageConfig belongs to container-image functions | none |
 | `pf-lambda-layer-arn-region` | AWS::Lambda::Function | A layer lives in the deploy region | none |
 | `pf-lambda-layer-compatible-architectures-enum` | AWS::Lambda::LayerVersion | CompatibleArchitectures are x86_64 or arm64 | pending-engine |
 | `pf-lambda-layer-compatible-runtimes-enum` | AWS::Lambda::LayerVersion | CompatibleRuntimes are known runtime identifiers | pending-engine |
@@ -521,6 +534,9 @@
 | `pf-lambda-layerperm-arn-version-suffix` | AWS::Lambda::LayerVersionPermission | A layer permission names a layer version | none |
 | `pf-lambda-layerperm-organization-id-needs-wildcard-principal` | AWS::Lambda::LayerVersionPermission | OrganizationId narrows a wildcard principal | none |
 | `pf-lambda-layerperm-policy-size` | AWS::Lambda::LayerVersionPermission | A layer version policy has a size limit | pending-engine |
+| `pf-lambda-loggroup-no-aws-prefix` | AWS::Lambda::Function | A custom log group cannot start with aws/ | none |
+| `pf-lambda-loggroup-pattern` | AWS::Lambda::Function | A log group name follows the CloudWatch Logs naming rules | none |
+| `pf-lambda-loglevel-requires-json` | AWS::Lambda::Function | Log-level filters need JSON log format | none |
 | `pf-lambda-memory-max` | AWS::Lambda::Function | MemorySize tops out at 10240 | pending-engine |
 | `pf-lambda-perm-cross-region-function` | AWS::Lambda::Permission | A permission stays in the function region | none |
 | `pf-lambda-perm-function-name-latest` | AWS::Lambda::Permission | A permission cannot name $LATEST | none |
@@ -530,7 +546,21 @@
 | `pf-lambda-perm-principal-whitespace` | AWS::Lambda::Permission | A principal has no whitespace | none |
 | `pf-lambda-perm-source-arn-with-account-principal` | AWS::Lambda::Permission | SourceArn narrows service principals, not account principals | pending-engine |
 | `pf-lambda-perm-url-auth-action` | AWS::Lambda::Permission | FunctionUrlAuthType goes with the function URL action | none |
+| `pf-lambda-provisioned-concurrency-not-latest` | AWS::Lambda::Alias | Provisioned concurrency cannot sit on $LATEST | none |
+| `pf-lambda-provisioned-sum-not-exceed-reserved` | AWS::Lambda::Function | Provisioned concurrency fits inside the reserved concurrency | none |
+| `pf-lambda-recursive-loop-enum` | AWS::Lambda::Function | RecursiveLoop takes Allow or Terminate | pending-engine |
+| `pf-lambda-runtime-arn-manual-only` | AWS::Lambda::Function | A pinned runtime version needs UpdateRuntimeOn: Manual | none |
+| `pf-lambda-runtime-manual-requires-arn` | AWS::Lambda::Function | Manual runtime updates need a runtime version ARN | none |
+| `pf-lambda-runtime-version-arn-region` | AWS::Lambda::Function | A runtime version ARN names the deploy region | none |
+| `pf-lambda-s3-storage-mode-zip-only` | AWS::Lambda::Function | S3ObjectStorageMode belongs to .zip functions | none |
+| `pf-lambda-scaling-min-max-pair` | AWS::Lambda::Function | FunctionScalingConfig takes both bounds | none |
+| `pf-lambda-scaling-min-zero-requires-max-zero` | AWS::Lambda::Function | Scaling to zero means both bounds are zero | none |
+| `pf-lambda-system-log-level-enum` | AWS::Lambda::Function | SystemLogLevel takes DEBUG, INFO or WARN | pending-engine |
+| `pf-lambda-tenancy-no-function-url` | AWS::Lambda::Function | A tenant-isolated function cannot have a function URL | none |
+| `pf-lambda-tenancy-no-provisioned-concurrency` | AWS::Lambda::Function | A tenant-isolated function cannot use provisioned concurrency | none |
+| `pf-lambda-tenancy-no-snapstart` | AWS::Lambda::Function | A tenant-isolated function cannot use SnapStart | pending-engine |
 | `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | pending-engine |
+| `pf-lambda-tracing-mode-enum` | AWS::Lambda::Function | TracingConfig.Mode takes Active or PassThrough | pending-engine |
 | `pf-lambda-url-auth-type-enum` | AWS::Lambda::Url | AuthType is AWS_IAM or NONE | pending-engine |
 | `pf-lambda-url-cors-allow-methods-wildcard-mix` | AWS::Lambda::Url | CORS methods are a wildcard or a list, not both | none |
 | `pf-lambda-url-cors-allow-origins-wildcard-mix` | AWS::Lambda::Url | CORS origins are a wildcard or a list, not both | none |
@@ -539,6 +569,11 @@
 | `pf-lambda-url-qualifier-permission-match` | AWS::Lambda::Url | A qualified URL needs a qualified permission | none |
 | `pf-lambda-url-target-arn-and-qualifier` | AWS::Lambda::Url | The qualifier goes in TargetFunctionArn or Qualifier, not both | none |
 | `pf-lambda-url-target-name-length` | AWS::Lambda::Url | A bare target function name is at most 64 characters | none |
+| `pf-lambda-version-runtime-policy-manual-requires-arn` | AWS::Lambda::Version | A version pinned to Manual needs a runtime version ARN | none |
+| `pf-lambda-vpc-no-dedicated-tenancy` | AWS::Lambda::Function | A VPC function cannot sit in a dedicated-tenancy VPC | none |
+| `pf-lambda-vpc-non-empty` | AWS::Lambda::Function | VpcConfig needs at least one subnet and one security group | none |
+| `pf-lambda-vpc-same-vpc` | AWS::Lambda::Function | Subnets and security groups belong to one VPC | none |
+| `pf-lambda-zip-no-imageuri` | AWS::Lambda::Function | A .zip function cannot carry Code.ImageUri | none |
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |
 | `pf-logs-metric-dimensions-default-exclusive` | AWS::Logs::MetricFilter | Dimensions and DefaultValue are mutually exclusive | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | none |

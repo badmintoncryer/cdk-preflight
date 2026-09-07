@@ -1,0 +1,12 @@
+id: pf-lambda-efs-mount-target-every-az
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Every subnet of an EFS function needs a mount target in its AZ"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "EFS file system arn:aws:elasticfilesystem:us-east-1:214794239830:file-system/fs-046122a68c3b071bb referenced by access point arn:aws:elasticfilesystem:us-east-1:214794239830:access-point/fsap-0acd389c69d0d74c9 does not have mount targets created in all availability zones the function will execute in. Please create EFS mount targets in availability zones where the function has a corresponding subnet provided."'
+addedOn: 2026-09-07

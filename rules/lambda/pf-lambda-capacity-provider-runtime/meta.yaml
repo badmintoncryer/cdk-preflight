@@ -1,0 +1,12 @@
+id: pf-lambda-capacity-provider-runtime
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Managed instances support only the newer runtimes"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-runtimes.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Runtime Enum python3.12 does not support specified feature: Lambda Managed Instances"'
+addedOn: 2026-09-07
