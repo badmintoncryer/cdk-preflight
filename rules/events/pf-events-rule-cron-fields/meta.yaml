@@ -1,0 +1,12 @@
+id: pf-events-rule-cron-fields
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: cron() fields must stay in range and keep # in day-of-week
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: cron(75 20 * * ? *) -> ROLLBACK_COMPLETE \"Parameter ScheduleExpression is not valid.\" Measured the same day via events:PutRule: cron(0 20 3#1 * ? *) gives the same error while cron(0 20 * * ? *) deploys. The engine's E3027 covers rate() and the cron() basics but passes both of these (confirmed against the bare engine). The year field is deliberately not checked: cron(0 20 * * ? 2500) deploys, so the documented 1970-2199 range is not enforced (BROKEN-EXPECTATION)."
+addedOn: 2026-09-07

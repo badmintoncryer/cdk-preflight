@@ -1,0 +1,12 @@
+id: pf-events-rule-pattern-size
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: An event pattern may not exceed 2048 bytes
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-quota.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a ~2500 byte pattern -> ROLLBACK_COMPLETE \"Parameter EventPattern for rule ... exceeds limit of 2048.\" The boundary was measured the same day via events:PutRule: 2015 bytes deploy, 2107 do not. This settles a documentation conflict -- the CloudFormation schema says Maximum 4096 for EventPattern while the quota page says 2,048; the quota page is right, and above 4096 the request model rejects the call before the service check."
+addedOn: 2026-09-07

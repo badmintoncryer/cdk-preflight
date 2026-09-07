@@ -1,0 +1,12 @@
+id: pf-events-rule-schedule-default-bus
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: A scheduled rule only works on the default event bus
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a ScheduleExpression on a custom bus -> ROLLBACK_COMPLETE \"ScheduleExpression is supported only on the default event bus.\" Measured the same day via events:PutRule against a real custom bus; the same expression on the default bus deploys."
+addedOn: 2026-09-07
