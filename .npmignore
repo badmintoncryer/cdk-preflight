@@ -26,6 +26,7 @@ tsconfig.tsbuildinfo
 /rules/
 /bench/
 /scripts/
+/assets/
 /.gitattributes
 /.projenrc.ts
 /projenrc
