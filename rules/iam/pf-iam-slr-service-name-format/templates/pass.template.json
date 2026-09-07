@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::IAM::ServiceLinkedRole",
+      "Properties": {
+        "AWSServiceName": "kafka.amazonaws.com"
+      }
+    }
+  }
+}

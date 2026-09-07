@@ -1,0 +1,11 @@
+id: pf-iam-trust-policy-service-wildcard
+service: iam
+resourceTypes: [AWS::IAM::Role]
+severity: ERROR
+title: A service principal cannot be a wildcard
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Invalid principal in policy: 'SERVICE':'*' (Service: Iam, Status Code: 400, Request ID: c9ddd9a5-ae7f-4d0b-af3b-b7fcfabd0952) (SDK Attempt Count: 1)' (RequestToken: 2b9775e4-385a-8190-9baa-004594db75d9, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: UpdateAssumeRolePolicy with \"Principal\": {\"Service\": \"*\"} -> MalformedPolicyDocument \\u0027Invalid principal in policy: \"SERVICE\":\"*\"\\u0027. The user guide says the same: the service principal in an IAM policy cannot be \"Service\": \"*\"."
+addedOn: 2026-09-07

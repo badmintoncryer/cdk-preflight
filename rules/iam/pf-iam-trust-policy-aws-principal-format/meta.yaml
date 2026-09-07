@@ -1,0 +1,11 @@
+id: pf-iam-trust-policy-aws-principal-format
+service: iam
+resourceTypes: [AWS::IAM::Role]
+severity: ERROR
+title: An AWS principal is an account id or an IAM ARN
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Invalid principal in policy: 'AWS':'arn:aws:sts::111122223333:assumed-role/my-role/session' (Service: Iam, Status Code: 400, Request ID: e3f33cfc-4621-49c3-b5bd-f3442a63642e) (SDK Attempt Count: 1)' (RequestToken: 0234fc31-dd75-f318-cf00-5460f881cbc7, HandlerError\"; pass -> CREATE_COMPLETE. api 2026-09-07: UpdateAssumeRolePolicy with \"Principal\": {\"AWS\": \"12345\"} -> MalformedPolicyDocument \\u0027Invalid principal in policy: \"AWS\":\"12345\"\\u0027; an assumed-role ARN (arn:aws:sts::...:assumed-role/x/y), a partial wildcard (arn:aws:iam::...:user/*), \"arn:aws:iam::...:*\" and a trailing space fail the same way. Accepted: \"*\", a 12-digit account id (dashes allowed), an account root ARN and an existing user/role ARN."
+addedOn: 2026-09-07

@@ -1,0 +1,11 @@
+id: pf-iam-policy-effect-required
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Every statement needs an Effect
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Syntax errors in policy. (Service: Iam, Status Code: 400, Request ID: dc178684-b681-4d66-b38c-c5eb53fd6ff7) (SDK Attempt Count: 1)' (RequestToken: b32d6d5c-729b-eb7f-fb0b-a32595887b23, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with a statement holding only Action and Resource -> MalformedPolicyDocument \"Syntax errors in policy.\""
+addedOn: 2026-09-07

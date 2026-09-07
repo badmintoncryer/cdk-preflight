@@ -1,0 +1,11 @@
+id: pf-iam-trust-policy-cognito-condition
+service: iam
+resourceTypes: [AWS::IAM::Role]
+severity: ERROR
+title: A Cognito federated principal needs a Condition block
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'A condition block must be present for the Cognito provider (Service: Iam, Status Code: 400, Request ID: ca964bac-f3b3-4e67-bdc4-270bac8b6f7d) (SDK Attempt Count: 1)' (RequestToken: 191eaadd-2993-36a1-e1d0-02c03081de0e, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: UpdateAssumeRolePolicy with \"Principal\": {\"Federated\": \"cognito-identity.amazonaws.com\"} and no Condition -> MalformedPolicyDocument \"A condition block must be present for the Cognito provider\"; the same statement with a cognito-identity.amazonaws.com:aud condition is accepted."
+addedOn: 2026-09-07

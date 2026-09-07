@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-numeric-value
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Numeric condition operators need a numeric value
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'The policy failed legacy parsing (Service: Iam, Status Code: 400, Request ID: 4dc3f902-8126-47ae-9647-98a7f489afd3) (SDK Attempt Count: 1)' (RequestToken: ec0aa823-d739-8b3e-8723-360442c79c09, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"NumericLessThan\":{\"s3:max-keys\":\"abc\"}} -> MalformedPolicyDocument \"The policy failed legacy parsing\"; \"10\", 10, \"10.5\", \"-1\" and \"1e3\" are all accepted, \" 10\" and \"0x10\" are not."
+addedOn: 2026-09-07

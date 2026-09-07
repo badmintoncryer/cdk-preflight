@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-date-value
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Date condition operators need ISO 8601 or epoch seconds
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'The policy failed legacy parsing (Service: Iam, Status Code: 400, Request ID: b5e1f751-15ab-4970-a235-6db754e0a8fe) (SDK Attempt Count: 1)' (RequestToken: 17ca727c-1689-0e38-987d-74ec8a1aeda4, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"DateGreaterThan\":{\"aws:CurrentTime\":\"tomorrow\"}} -> MalformedPolicyDocument \"The policy failed legacy parsing\"; same for \"2026/01/01\", \"2026-13-45\" and RFC 1123 dates. \"2026\", \"2026-01\", \"2026-01-01\", \"2026-01-01T00:00Z\", \"...T00:00:00.000Z\", \"...+09:00\" and \"1767225600\" are accepted."
+addedOn: 2026-09-07

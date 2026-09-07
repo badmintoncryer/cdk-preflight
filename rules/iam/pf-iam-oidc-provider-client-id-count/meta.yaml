@@ -1,0 +1,11 @@
+id: pf-iam-oidc-provider-client-id-count
+service: iam
+resourceTypes: [AWS::IAM::OIDCProvider]
+severity: ERROR
+title: An OIDC provider takes at most 100 client ids
+constraintSource: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Cannot exceed quota for ClientIdsPerOpenIdConnectProvider: 100 (Service: Iam, Status Code: 409, Request ID: 28b649ca-5877-4fd8-92e9-dfb4569cb43d) (SDK Attempt Count: 1)' (RequestToken: d32232eb-1c90-b542-f119-5b1e4f0bdccf, HandlerErrorCode: ServiceLimitExceeded)\"; pass -> CREATE_COMPLETE. api 2026-09-07: CreateOpenIDConnectProvider with 101 client ids -> LimitExceeded \"Cannot exceed quota for ClientIdsPerOpenIdConnectProvider: 100\"."
+addedOn: 2026-09-07

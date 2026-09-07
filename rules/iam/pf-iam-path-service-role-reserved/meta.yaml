@@ -1,0 +1,11 @@
+id: pf-iam-path-service-role-reserved
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::InstanceProfile, AWS::IAM::ManagedPolicy]
+severity: ERROR
+title: The /aws-service-role/ path is reserved
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-service.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Paths beginning with '/aws-service-role' are reserved for AWS Service Linked Roles (Service: Iam, Status Code: 400, Request ID: 193fbf41-86a3-46a8-8ab1-609b67b42ce8) (SDK Attempt Count: 1)' (RequestToken: ba15ac06-3f96-f21f-bbb6-f7e151af7e41, HandlerErrorCode: Inv\"; pass -> CREATE_COMPLETE. api 2026-09-07: CreateRole with --path /aws-service-role/ -> InvalidInput \"Paths beginning with \\u0027/aws-service-role\\u0027 are reserved for AWS Service Linked Roles\"."
+addedOn: 2026-09-07

@@ -1,0 +1,11 @@
+id: pf-iam-policy-arn-partition
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Attached policy ARNs live in the deploy partition
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Invalid ARN partition (Service: Iam, Status Code: 400, Request ID: d5ce7468-56d6-4f4b-ab16-ed8ae1d29fe6) (SDK Attempt Count: 1)' (RequestToken: 666ff7d7-49f2-d11d-e91f-b593015226a1, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07 (commercial account): AttachRolePolicy with arn:aws-cn:iam::aws:policy/ReadOnlyAccess -> ValidationError \"Invalid ARN partition\"; CreateRole with the same ARN as --permissions-boundary fails identically. Silent when the app has no concrete region (deploy_region is not injected in warn mode)."
+addedOn: 2026-09-07

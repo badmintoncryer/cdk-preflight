@@ -1,0 +1,11 @@
+id: pf-iam-policy-resource-global-service-arn
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: S3, IAM and Route 53 ARNs carry no region
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Resource arn:aws:s3:us-east-1:111122223333:my-bucket can not contain region information. (Service: Iam, Status Code: 400, Request ID: 3829f606-07d5-4e30-8f9a-b25243347fbf) (SDK Attempt Count: 1)' (RequestToken: c9369f38-f24f-3fd8-5292-ecf4a2f6ff1e, HandlerErrorCod\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with \"Resource\": \"arn:aws:s3:us-east-1::b\" -> MalformedPolicyDocument \"Resource arn:aws:s3:us-east-1::b can not contain region information.\"; \"arn:aws:s3::111122223333:b\" -> \"cannot contain an account id.\"; \"arn:aws:iam:us-east-1:111122223333:role/r\" and \"arn:aws:route53:us-east-1::hostedzone/z\" fail the same way. cloudfront, organizations and waf ARNs do accept a region, and so does an S3 access point ARN (arn:aws:s3:us-east-1:111122223333:accesspoint/ap), which is why the s3 half only judges bucket ARNs."
+addedOn: 2026-09-07

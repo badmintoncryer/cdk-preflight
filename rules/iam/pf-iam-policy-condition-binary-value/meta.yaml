@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-binary-value
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: BinaryEquals takes base64 text
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Syntax errors in policy. (Service: Iam, Status Code: 400, Request ID: 53890cd8-40ad-4670-b820-8a58b682da9b) (SDK Attempt Count: 1)' (RequestToken: 773114d4-bd55-6305-fd7a-9fa377555064, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"BinaryEquals\":{\"s3:x-amz-meta-x\":\"!!!\"}} -> MalformedPolicyDocument \"Syntax errors in policy.\"; \"abc\" and \"YWJj==\" (bad padding) fail too, \"YWJj\" and \"YWJjZA==\" are accepted."
+addedOn: 2026-09-07

@@ -1,0 +1,11 @@
+id: pf-iam-oidc-provider-url-https
+service: iam
+resourceTypes: [AWS::IAM::OIDCProvider]
+severity: ERROR
+title: An OIDC provider URL starts with https://
+constraintSource: https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: '(Service: Iam, Status Code: 400, Request ID: 9c53fc73-53f4-4a40-909f-07c2a7002890) (SDK Attempt Count: 1)' (RequestToken: 9b35c40d-99be-a974-1d1b-10506e7d6d14, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: CreateOpenIDConnectProvider with --url http://nope.example.com -> InvalidInput; the API reference states the URL must begin with https://."
+addedOn: 2026-09-07

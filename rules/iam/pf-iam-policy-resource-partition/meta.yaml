@@ -1,0 +1,11 @@
+id: pf-iam-policy-resource-partition
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Resource ARNs live in the deploy partition
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Partition 'aws-cn' is not valid for resource 'arn:aws-cn:s3:::my-bucket'. (Service: Iam, Status Code: 400, Request ID: ef59cd01-c397-45d0-bc0d-b6261a7824c5) (SDK Attempt Count: 1)' (RequestToken: 3a6f177b-c4cf-fd13-a145-341ab3b11124, HandlerErrorCode: InvalidReque\"; pass -> CREATE_COMPLETE. api 2026-09-07 (commercial account): PutRolePolicy with \"Resource\": \"arn:aws-cn:s3:::b\" -> MalformedPolicyDocument: Partition \"aws-cn\" is not valid for resource \"arn:aws-cn:s3:::b\"; \"arn:aws-nope:\", \"arn::\" and \"arn:AWS:\" fail the same way, \"arn:*:s3:::b\" is accepted. Silent when the app has no concrete region (deploy_region is not injected in warn mode)."
+addedOn: 2026-09-07
