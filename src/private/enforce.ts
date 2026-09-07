@@ -1,10 +1,13 @@
+import * as fs from 'fs';
 import * as path from 'path';
-import type {
-  IPolicyValidationContext,
-  IPolicyValidationPlugin,
-  PolicyValidationPluginReport,
-  PolicyViolation,
+import {
+  App,
+  type IPolicyValidationContext,
+  type IPolicyValidationPlugin,
+  type PolicyValidationPluginReport,
+  type PolicyViolation,
 } from 'aws-cdk-lib';
+import type { IConstruct } from 'constructs';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -67,7 +70,7 @@ interface EngineDiagnostic {
  * policy validation の失敗として報告して synth を止める。
  */
 export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
-  public readonly name = 'cdk-preflight';
+  public readonly name = PLUGIN_NAME;
 
   constructor(
     private readonly rules: BundledRuleData[],
@@ -120,6 +123,140 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     }
 
     return { success: violations.length === 0, violations };
+  }
+}
+
+/** The plugin name recorded in `validation-report.json` for our findings. */
+export const PLUGIN_NAME = 'cdk-preflight';
+
+/** The cloud assembly file the CDK writes its validation report to. */
+const VALIDATION_REPORT_FILE = 'validation-report.json';
+
+const GATE_INSTALLED = Symbol.for('cdk-preflight.enforceGate');
+
+/**
+ * enforce モードの取りこぼしを塞ぐゲートを App に仕込む。
+ *
+ * CDK CLI 2.1128.1 以降は app に「レポートは CLI が処理する」と伝えたうえで
+ * `validation-report.json` を自分で読むが、その絞り込み（toolkit-lib の
+ * `filterReportsByStacks`）が violation の constructPath 先頭セグメントを
+ * 選択スタックの hierarchicalId と突き合わせるため、`Stage/Stack` 形式になる
+ * Stage 内スタックの違反がすべて捨てられ、synth が黙って成功する（issue #113）。
+ *
+ * そこで synth 完了後にレポートを読み直し、cdk-preflight の違反が残っていれば
+ * 自分で報告して synth を止める。ライブラリが自力で報告する経路（素の node 実行、
+ * jest、CLI 2.1128.1 未満）では synth が例外を投げるためここには到達せず、
+ * 二重報告は起きない。
+ */
+export function installEnforceGate(scope: IConstruct): void {
+  const root = scope.node.root;
+  if (!App.isApp(root)) return;
+  const app = root as App & { [GATE_INSTALLED]?: boolean };
+  if (app[GATE_INSTALLED]) return;
+  Object.defineProperty(app, GATE_INSTALLED, { value: true, enumerable: false });
+
+  const synth = app.synth.bind(app);
+  let checked = false;
+  app.synth = (options?: Parameters<App['synth']>[0]) => {
+    const assembly = synth(options);
+    if (!checked) {
+      checked = true;
+      failIfReportUnhandled(assembly.directory);
+    }
+    return assembly;
+  };
+}
+
+/**
+ * レポートに cdk-preflight の失敗が残っていれば、findings を出力して synth を止める。
+ *
+ * 判定は cdk-preflight のレポートだけを見る。組み込みエンジンや construct annotation
+ * だけが失敗している場合は CLI が正しく扱えるので、こちらは黙って CLI に任せる。
+ * 逆に発火するときはレポート全体を出す。ここで synth を止めると CLI 側の出力が
+ * 一切走らないため、同時に出ていたはずの他プラグインの finding が消えてしまう。
+ */
+function failIfReportUnhandled(directory: string): void {
+  let pluginReports: any[];
+  try {
+    const report = JSON.parse(fs.readFileSync(path.join(directory, VALIDATION_REPORT_FILE), 'utf8'));
+    pluginReports = report?.pluginReports ?? [];
+  } catch {
+    // レポートが無い（プラグイン未実行）または壊れている場合は何もしない
+    return;
+  }
+  const failed = pluginReports.some(
+    (r) => r?.pluginName === PLUGIN_NAME && r?.conclusion === 'failure',
+  );
+  if (!failed) return;
+
+  // eslint-disable-next-line no-console
+  console.error(formatReports(pluginReports));
+  throw new Error(
+    'cdk-preflight: validation failed. Fix the findings above, ' +
+    "acknowledge them with Validations.of(scope).acknowledge({ id: 'cdk-preflight::<rule-id>' }), " +
+    'or exclude the rule via Preflight.apply(app, { exclude: [...] }).',
+  );
+}
+
+/**
+ * CDK 本体のフォーマッタで整形し、CLI と同一の見た目にする。
+ * 私有パスなので解決できないことがあり、その場合は最小限の自前整形に落とす
+ * （見た目より「落とす」ことを優先する）。
+ */
+function formatReports(pluginReports: any[]): string {
+  const formatter = loadFormatterCached();
+  if (formatter) {
+    try {
+      return formatter.formatValidationReports(process.cwd(), pluginReports).join('\n\n');
+    } catch {
+      // fall through
+    }
+  }
+  return fallbackFormat(pluginReports);
+}
+
+/**
+ * CDK 本体のフォーマッタを解決できないときの最小限の整形。
+ * 見た目は劣るが、findings を必ず読める形で出すための最後の砦。
+ * （テストからも利用するため export している）
+ */
+export function fallbackFormat(pluginReports: any[]): string {
+  const blocks: string[] = [];
+  for (const report of pluginReports) {
+    for (const violation of report?.violations ?? []) {
+      const ackId = String(violation.ruleName).includes('::')
+        ? violation.ruleName
+        : `${report.pluginName}::${violation.ruleName}`;
+      for (const c of violation.violatingConstructs ?? []) {
+        blocks.push(
+          `${String(violation.severity ?? 'ERROR').toUpperCase()} ${violation.description} (${report.pluginName})\n` +
+          `   ${c.constructPath} (${c.cloudFormationResource?.logicalId}) ${c.constructFqn}\n` +
+          `   Acknowledge with '${String(ackId).replace(/ /g, '-')}'`,
+        );
+      }
+    }
+  }
+  return blocks.join('\n\n');
+}
+
+// フォーマッタは aws-cdk-lib の私有パスにあり `exports` から見えないため、
+// エンジン解決（loadEngine）と同じくパッケージルートからの絶対パスで読み込む。
+let cachedFormatter: any | false | undefined;
+function loadFormatterCached(): any | undefined {
+  if (cachedFormatter === undefined) {
+    cachedFormatter = loadFormatter() ?? false;
+  }
+  return cachedFormatter === false ? undefined : cachedFormatter;
+}
+
+/** （テストからも利用するため export している） */
+export function loadFormatter(): any | undefined {
+  try {
+    const libRoot = path.dirname(require.resolve('aws-cdk-lib/package.json'));
+    const mod = require(path.join(libRoot, 'core/lib/validation/private/modern-formatter.js'));
+    return typeof mod?.formatValidationReports === 'function' ? mod : undefined;
+  } catch {
+    return undefined;
   }
 }
 

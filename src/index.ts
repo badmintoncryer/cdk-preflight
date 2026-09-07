@@ -1,6 +1,6 @@
 import { CloudFormationValidatePlugin, Stage, Validations } from 'aws-cdk-lib';
 import { IConstruct } from 'constructs';
-import { PreflightEnforcePlugin } from './private/enforce';
+import { installEnforceGate, PreflightEnforcePlugin } from './private/enforce';
 import { BUNDLED_LIBS, BUNDLED_RULES } from './rules.generated';
 
 /**
@@ -81,6 +81,7 @@ export class Preflight {
 
     if (options.enforce ?? true) {
       Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, options.strict ?? false));
+      installEnforceGate(scope);
     } else {
       Validations.of(scope).addPlugins(new CloudFormationValidatePlugin({
         regoRules: [

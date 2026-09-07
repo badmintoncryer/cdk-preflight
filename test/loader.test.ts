@@ -5,8 +5,9 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, Stack, aws_ec2 as ec2, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
+import { fallbackFormat, loadFormatter } from '../src/private/enforce';
 
 function tmpOut(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-test-'));
@@ -168,6 +169,115 @@ describe('enforce mode (default)', () => {
     const stack = new Stack(app, 'S');
     new sqs.CfnQueue(stack, 'Q', { visibilityTimeout: 99999 });
     expect(() => app.synth()).not.toThrow();
+  });
+});
+
+describe('enforce gate (CDK CLI takes over validation reporting)', () => {
+  // CLI 2.1128.1 以降は app にこのコンテキストを渡してライブラリ側の報告を止め、
+  // 自分で validation-report.json を読む。その絞り込みが Stage 内スタックの違反を
+  // 取りこぼすため（issue #113）、cdk-preflight 側で synth を止め直す。
+  const cliHandlesReporting = { '@aws-cdk/core:failSynthOnValidationErrors': false };
+  let stderr: jest.SpyInstance;
+
+  beforeEach(() => {
+    stderr = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    stderr.mockRestore();
+  });
+
+  test('fails synthesis for a violation inside a Stage', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app);
+    const stage = new Stage(app, 'MyStage');
+    addBadSecurityGroup(new Stack(stage, 'S'));
+    expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
+    expect(stderr.mock.calls.join('\n')).toContain('pf-ec2-sg-port-range');
+  });
+
+  test('fails synthesis for a violation in a top-level stack', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app);
+    addBadSecurityGroup(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
+  });
+
+  test('reports findings of other plugins too, since the CLI output is preempted', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app);
+    const stack = new Stack(app, 'S');
+    addBadSecurityGroup(stack);
+    addBuiltInOnlyViolation(stack);
+    expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
+    const printed = stderr.mock.calls.join('\n');
+    expect(printed).toContain('pf-ec2-sg-port-range');
+    expect(printed).toContain('W3030');
+  });
+
+  test('stays silent when only other plugins have findings', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app);
+    // 組み込みエンジンだけが出す finding は CLI が正しく扱えるので、こちらは介入しない
+    addBuiltInOnlyViolation(new Stack(app, 'S'));
+    expect(() => app.synth()).not.toThrow();
+    expect(stderr).not.toHaveBeenCalled();
+  });
+
+  test('passes clean apps', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app);
+    new Stack(app, 'S');
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test('an acknowledged finding does not fail synthesis', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app);
+    const stage = new Stage(app, 'MyStage');
+    const stack = new Stack(stage, 'S');
+    addBadSecurityGroup(stack);
+    Validations.of(stack).acknowledge({ id: 'cdk-preflight::pf-ec2-sg-port-range', reason: 'known' });
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test('observe mode is not gated', () => {
+    const app = makeApp(cliHandlesReporting);
+    Preflight.apply(app, { enforce: false });
+    addBadSecurityGroup(new Stack(app, 'S'));
+    expect(() => app.synth()).not.toThrow();
+  });
+});
+
+describe('report formatting', () => {
+  const reports = [{
+    pluginName: 'cdk-preflight',
+    conclusion: 'failure',
+    violations: [{
+      ruleName: 'pf-ec2-sg-port-range',
+      description: 'port 99999 is out of range',
+      severity: 'error',
+      violatingConstructs: [{
+        constructPath: 'MyStage/S/SG',
+        constructFqn: 'aws-cdk-lib.aws_ec2.CfnSecurityGroup',
+        cloudFormationResource: { logicalId: 'SG' },
+      }],
+    }],
+  }];
+
+  test('the borrowed CDK formatter is still resolvable', () => {
+    // 解決できなくなったら fallbackFormat に落ちる。壊れたことに気づくための番人。
+    expect(loadFormatter()).toBeDefined();
+  });
+
+  test('fallback formatting stays readable without the CDK formatter', () => {
+    const out = fallbackFormat(reports);
+    expect(out).toContain('port 99999 is out of range');
+    expect(out).toContain('MyStage/S/SG');
+    expect(out).toContain("Acknowledge with 'cdk-preflight::pf-ec2-sg-port-range'");
+  });
+
+  test('fallback formatting tolerates an empty report', () => {
+    expect(fallbackFormat([])).toBe('');
   });
 });
 
