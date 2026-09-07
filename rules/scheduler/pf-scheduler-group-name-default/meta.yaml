@@ -1,0 +1,12 @@
+id: pf-scheduler-group-name-default
+service: scheduler
+resourceTypes: [AWS::Scheduler::ScheduleGroup]
+severity: ERROR
+title: A schedule group may not be named 'default'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-scheduler-schedulegroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Name 'default' -> ROLLBACK_COMPLETE \"This operation cannot be performed on schedule group default.\" Measured the same day via scheduler:CreateScheduleGroup both with and without tags, so the restriction is the name itself and not the tagging."
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-scheduler-target-region
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: A schedule can only invoke a target in its own Region
+constraintSource: https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-targets.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a us-west-2 Lambda target -> ROLLBACK_COMPLETE \"The target ARN provided does not match the current region us-east-1.\" An event bus in another Region gives the same error."
+addedOn: 2026-09-07
