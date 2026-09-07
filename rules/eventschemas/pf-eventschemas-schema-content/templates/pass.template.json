@@ -1,0 +1,20 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Reg": {
+   "Type": "AWS::EventSchemas::Registry",
+   "Properties": {
+    "RegistryName": "cdkpf-bench-schema"
+   }
+  },
+  "Sch": {
+   "Type": "AWS::EventSchemas::Schema",
+   "DependsOn": "Reg",
+   "Properties": {
+    "RegistryName": "cdkpf-bench-schema",
+    "Type": "OpenApi3",
+    "Content": "{\"openapi\": \"3.0.0\", \"info\": {\"version\": \"1.0.0\", \"title\": \"t\"}, \"paths\": {}, \"components\": {\"schemas\": {\"E\": {\"type\": \"object\"}}}}"
+   }
+  }
+ }
+}

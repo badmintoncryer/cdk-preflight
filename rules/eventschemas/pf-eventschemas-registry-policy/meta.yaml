@@ -1,0 +1,12 @@
+id: pf-eventschemas-registry-policy
+service: eventschemas
+resourceTypes: [AWS::EventSchemas::RegistryPolicy]
+severity: ERROR
+title: A registry policy must declare a Version
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eventschemas-registrypolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a registry policy with only Statement -> ROLLBACK_COMPLETE, but the CloudFormation handler reports only \"Error occurred during operation 'CreateRegistryPolicy'.\" and does not name the constraint. The constraint itself was named by calling schemas:PutResourcePolicy directly the same day: \"Provided registry policy is invalid: Missing required field Version.\" Adding \"Version\": \"2012-10-17\" makes the same policy deploy through CloudFormation."
+addedOn: 2026-09-07

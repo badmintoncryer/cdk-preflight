@@ -3632,6 +3632,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# EventBridge invokes Lambda, SNS, SQS and CloudWatch Logs through a\n# resource-based policy, so those four take no RoleArn. Every other supported\n# target service is invoked by assuming a role, and PutTargets rejects the\n# entry when RoleArn is absent (measured 2026-09-07, events:PutTargets,\n# us-east-1). AppSync is left out of the set: its ARN validation runs first,\n# so the RoleArn requirement could not be observed directly.\n_pf_evtrole_services := {\n\t\"batch\", \"codebuild\", \"codepipeline\", \"ecs\", \"events\", \"firehose\",\n\t\"glue\", \"inspector\", \"kinesis\", \"redshift\", \"sagemaker\", \"ssm\",\n\t\"ssm-incidents\", \"states\",\n}\n\n_pf_evtrole_service(arn) := s if {\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n\ts := parts[2]\n}\n\nviolation contains make_diag_full(\"pf-events-target-role-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.RoleArn\", [t.index]),\n\tsprintf(\"Target '%s' is a %s target, which EventBridge can only invoke by assuming a role; PutTargets fails with \\\"RoleArn is required for target %s\\\"\", [tid, svc, arn]),\n\t\"Set RoleArn on the target to a role EventBridge can assume\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-use-resource-based.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := object.get(t.value, \"Arn\", null)\n\tis_string(arn)\n\tsvc := _pf_evtrole_service(arn)\n\tsvc in _pf_evtrole_services\n\tobject.get(t.value, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
   },
   {
+    "id": "pf-eventschemas-discoverer-source",
+    "service": "eventschemas",
+    "severity": "ERROR",
+    "title": "A discoverer source must be an event bus in the discoverer's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EventSchemas::Discoverer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A discoverer watches one event bus, in its own Region. Measured 2026-09-07,\n# schemas:CreateDiscoverer, us-east-1: an SQS ARN gives \"Source ARN must be a\n# valid event bus ARN\" and a us-west-2 bus gives \"Cross region Event Bus\n# sourcing is not supported.\"\n_pf_schdisc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eventschemas-discoverer.html\"\n\n_pf_schdisc_arn(name) := a if {\n\ta := resolve(name, \"Properties.SourceArn\")\n\tis_string(a)\n\tstartswith(a, \"arn:\")\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-discoverer-source\", \"ERROR\", name,\n\t\"Properties.SourceArn\",\n\tsprintf(\"'%s' is not an event bus; CreateDiscoverer fails with \\\"Source ARN must be a valid event bus ARN\\\"\", [arn]),\n\t\"Point SourceArn at an AWS::Events::EventBus ARN\",\n\t_pf_schdisc_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Discoverer\")\n\tarn := _pf_schdisc_arn(name)\n\tnot contains(arn, \":event-bus/\")\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-discoverer-source\", \"ERROR\", name,\n\t\"Properties.SourceArn\",\n\tsprintf(\"The event bus is in '%s' but the discoverer deploys to '%s'; CreateDiscoverer fails with \\\"Cross region Event Bus sourcing is not supported\\\"\", [r, region]),\n\t\"Discover schemas from a bus in the discoverer's own Region\",\n\t_pf_schdisc_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Discoverer\")\n\tregion := data.cdk_preflight.deploy_region\n\tarn := _pf_schdisc_arn(name)\n\tcontains(arn, \":event-bus/\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tr != \"\"\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-eventschemas-registry-name-reserved",
+    "service": "eventschemas",
+    "severity": "ERROR",
+    "title": "A registry name may not use the reserved aws. prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EventSchemas::Registry"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"You do not have the permission to create/modify an AWS managed registry\n# with name prefixed with 'aws.'.\" Measured 2026-09-07, schemas:CreateRegistry,\n# us-east-1.\nviolation contains make_diag_full(\"pf-eventschemas-registry-name-reserved\", \"ERROR\", name,\n\t\"Properties.RegistryName\",\n\tsprintf(\"'%s' uses the aws. prefix, which is reserved for AWS-managed registries; CreateRegistry fails with \\\"You do not have the permission to create/modify an AWS managed registry with name prefixed with 'aws.'\\\"\", [n]),\n\t\"Choose a registry name that does not start with 'aws.'\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eventschemas-registry.html\") if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Registry\")\n\tn := resolve(name, \"Properties.RegistryName\")\n\tis_string(n)\n\tstartswith(n, \"aws.\")\n}\n"
+  },
+  {
+    "id": "pf-eventschemas-registry-policy",
+    "service": "eventschemas",
+    "severity": "ERROR",
+    "title": "A registry policy must declare a Version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EventSchemas::RegistryPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Provided registry policy is invalid: Missing required field Version.\"\n# Measured 2026-09-07, schemas:PutResourcePolicy, us-east-1. The policy is\n# skipped when it is an unresolvable intrinsic (marker keys start with __).\n_pf_schpol_plain(p) if {\n\tis_object(p)\n\tevery k, _ in p {\n\t\tnot startswith(k, \"__\")\n\t}\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-registry-policy\", \"ERROR\", name,\n\t\"Properties.Policy\",\n\t\"The registry policy has no Version; PutResourcePolicy fails with \\\"Provided registry policy is invalid: Missing required field Version\\\"\",\n\t\"Add \\\"Version\\\": \\\"2012-10-17\\\" to the policy document\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eventschemas-registrypolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::RegistryPolicy\")\n\tp := input.resources[name].properties.Policy\n\t_pf_schpol_plain(p)\n\tobject.get(p, \"Version\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-eventschemas-schema-content",
+    "service": "eventschemas",
+    "severity": "ERROR",
+    "title": "Schema Content must be valid JSON, and valid OpenAPI 3.0 when Type is OpenApi3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EventSchemas::Schema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateSchema parses Content and, for OpenApi3, validates it against the\n# OpenAPI 3.0 meta-schema. Measured 2026-09-07, schemas:CreateSchema,\n# us-east-1: 'not json' gives \"Content is not valid JSON\", openapi \"2.0\"\n# gives \"'openapi' does not match pattern '^3\\.0\\.\\d(-.+)?$'\", and a\n# $schema key gives \"additionalProperties '$schema' not allowed\" — the last\n# is what pasting a JSON Schema into an OpenApi3 schema produces.\n_pf_schcontent_url := \"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-schema-create.html\"\n\n_pf_schcontent_raw(name) := c if {\n\tc := resolve(name, \"Properties.Content\")\n\tis_string(c)\n}\n\n_pf_schcontent_openapi(name) := obj if {\n\tresolve(name, \"Properties.Type\") == \"OpenApi3\"\n\traw := _pf_schcontent_raw(name)\n\tjson.is_valid(raw)\n\tobj := json.unmarshal(raw)\n\tis_object(obj)\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-schema-content\", \"ERROR\", name,\n\t\"Properties.Content\",\n\t\"Content is not valid JSON; CreateSchema fails with \\\"Content is not valid JSON\\\"\",\n\t\"Serialise the schema document to JSON\",\n\t_pf_schcontent_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Schema\")\n\traw := _pf_schcontent_raw(name)\n\tnot json.is_valid(raw)\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-schema-content\", \"ERROR\", name,\n\t\"Properties.Content\",\n\tsprintf(\"Type is OpenApi3 but the document declares openapi '%s'; CreateSchema fails with \\\"'openapi' does not match pattern '^3\\\\\\\\.0\\\\\\\\.\\\\\\\\d(-.+)?$'\\\"\", [v]),\n\t\"Declare a 3.0.x version, e.g. \\\"openapi\\\": \\\"3.0.0\\\"\",\n\t_pf_schcontent_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Schema\")\n\tobj := _pf_schcontent_openapi(name)\n\tv := object.get(obj, \"openapi\", null)\n\tis_string(v)\n\tnot regex.match(`^3\\.0\\.[0-9](-.+)?$`, v)\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-schema-content\", \"ERROR\", name,\n\t\"Properties.Content\",\n\t\"An OpenApi3 document may not carry a $schema key; CreateSchema fails with \\\"additionalProperties '$schema' not allowed\\\"\",\n\t\"Drop $schema, or set Type to JSONSchemaDraft4\",\n\t_pf_schcontent_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Schema\")\n\tobj := _pf_schcontent_openapi(name)\n\tobject.get(obj, \"$schema\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-firehose-dfcc-required-configs",
     "service": "firehose",
     "severity": "ERROR",
