@@ -1,0 +1,12 @@
+id: pf-s3-replication-sse-kms-needs-replica-key
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "Replicating SSE-KMS objects requires a replica KMS key"
+constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketReplication.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"ReplicaKmsKeyID must be specified if SseKmsEncryptedObjects tag is present.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

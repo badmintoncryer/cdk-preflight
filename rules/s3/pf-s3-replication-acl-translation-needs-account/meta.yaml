@@ -1,0 +1,12 @@
+id: pf-s3-replication-acl-translation-needs-account
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "AccessControlTranslation requires the destination Account"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationdestination.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Account must be specified if the Owner in AccessControlTranslation has a value\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

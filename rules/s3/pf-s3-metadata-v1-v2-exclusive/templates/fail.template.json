@@ -1,0 +1,24 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "MetadataConfiguration": {
+          "JournalTableConfiguration": {
+            "RecordExpiration": {
+              "Expiration": "ENABLED",
+              "Days": 30
+            }
+          }
+        },
+        "MetadataTableConfiguration": {
+          "S3TablesDestination": {
+            "TableBucketArn": "arn:aws:s3tables:us-east-1:123456789012:bucket/tb",
+            "TableName": "md"
+          }
+        }
+      }
+    }
+  }
+}

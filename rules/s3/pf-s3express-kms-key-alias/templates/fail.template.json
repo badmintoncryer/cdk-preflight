@@ -1,0 +1,24 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3Express::DirectoryBucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3xkalf-b0--use1-az4--x-s3",
+        "DataRedundancy": "SingleAvailabilityZone",
+        "LocationName": "use1-az4",
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "aws:kms",
+                "KMSMasterKeyID": "alias/my-key"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

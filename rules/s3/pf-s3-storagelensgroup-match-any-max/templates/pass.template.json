@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "G": {
+      "Type": "AWS::S3::StorageLensGroup",
+      "Properties": {
+        "Name": "cdkpf-s3sgm",
+        "Filter": {
+          "MatchAnyPrefix": [
+            "a/",
+            "b/",
+            "c/"
+          ]
+        }
+      }
+    }
+  }
+}

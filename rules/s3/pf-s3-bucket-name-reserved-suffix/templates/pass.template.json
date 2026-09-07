@@ -1,0 +1,11 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "cdkpf-s3nsx-b0"
+      }
+    }
+  }
+}

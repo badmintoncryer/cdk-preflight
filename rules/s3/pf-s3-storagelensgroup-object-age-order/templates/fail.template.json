@@ -1,0 +1,17 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "G": {
+      "Type": "AWS::S3::StorageLensGroup",
+      "Properties": {
+        "Name": "cdkpf-s3sga",
+        "Filter": {
+          "MatchObjectAge": {
+            "DaysGreaterThan": 90,
+            "DaysLessThan": 30
+          }
+        }
+      }
+    }
+  }
+}

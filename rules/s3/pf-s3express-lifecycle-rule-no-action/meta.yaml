@@ -1,0 +1,12 @@
+id: pf-s3express-lifecycle-rule-no-action
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::DirectoryBucket]
+severity: ERROR
+title: "A directory bucket lifecycle rule must declare an expiration or an abort action"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-rule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: At least one of [ExpirationInDays,AbortIncompleteMultipartUpload] needs to be specified\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

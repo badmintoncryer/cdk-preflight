@@ -1,0 +1,12 @@
+id: pf-s3-ap-name-alias-suffix
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::AccessPoint]
+severity: ERROR
+title: "An access point name must not end with an alias suffix"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-s3-accesspoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"The specified access point alias is not valid\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

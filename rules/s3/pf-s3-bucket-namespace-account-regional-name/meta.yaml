@@ -1,0 +1,12 @@
+id: pf-s3-bucket-namespace-account-regional-name
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "An account-regional bucket takes a BucketNamePrefix, not a BucketName"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-s3-bucket.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The requested bucket name did not include the account-regional namespace suffix, but the provided x-amz-bucket-namespace header value is account-regional. Specify -[accountId]-[region]-an as the bucket name suffix to create a bucket in your account-regional namespace, or remove the header.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

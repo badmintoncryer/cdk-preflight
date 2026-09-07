@@ -1,0 +1,22 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "SL": {
+      "Type": "AWS::S3::StorageLens",
+      "Properties": {
+        "StorageLensConfiguration": {
+          "Id": "cdkpfs3slb",
+          "IsEnabled": true,
+          "AccountLevel": {
+            "BucketLevel": {}
+          },
+          "Include": {
+            "Buckets": [
+              "arn:aws:s3:::my-bucket"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

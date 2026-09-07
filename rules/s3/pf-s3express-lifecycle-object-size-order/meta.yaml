@@ -1,0 +1,12 @@
+id: pf-s3express-lifecycle-object-size-order
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3Express::DirectoryBucket]
+severity: ERROR
+title: "ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-directorybucket-rule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"'ObjectSizeLessThan' has to be a value greater than 'ObjectSizeGreaterThan'.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06

@@ -1,0 +1,12 @@
+id: pf-s3-metadata-v1-v2-exclusive
+service: s3
+benchRegion: us-east-1
+resourceTypes: [AWS::S3::Bucket]
+severity: ERROR
+title: "MetadataConfiguration and MetadataTableConfiguration cannot both be set"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-metadataconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: Specifying S3 MetadataTable and Metadata configuration schemas at the same time isn't supported. You can specify either the MetadataTableConfiguration schema or the MetadataConfiguration schema.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-06
