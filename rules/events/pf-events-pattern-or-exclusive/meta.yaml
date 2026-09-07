@@ -1,0 +1,12 @@
+id: pf-events-pattern-or-exclusive
+service: events
+resourceTypes: [AWS::Events::Rule, AWS::Events::Archive]
+severity: ERROR
+title: $or cannot share an object with other keys
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns-or-matching.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: {\"detail\": {\"$or\": [{\"x\": [\"1\"]}], \"y\": [\"2\"]}} -> ROLLBACK_COMPLETE \"Event pattern is not valid. Reason: Unrecognized match type x\" -- EventBridge reads the whole object as a matcher once $or has siblings. Measured the same day via events:PutRule: $or on its own is accepted both nested under detail and at the top level."
+addedOn: 2026-09-07

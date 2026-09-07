@@ -1,0 +1,12 @@
+id: pf-events-pattern-operator
+service: events
+resourceTypes: [AWS::Events::Rule, AWS::Events::Archive]
+severity: ERROR
+title: Event pattern matchers must name a real operator and give it the right shape
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns-content-based-filtering.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: {\"detail\": {\"x\": [{\"startsWith\": \"a\"}]}} -> ROLLBACK_COMPLETE \"Event pattern is not valid. Reason: Unrecognized match type startsWith\". Measured the same day via events:PutRule, all with passing controls: numeric '=>' gives \"Unrecognized numeric range operator: =>\" (while '>=' and a two-bound [\">\",0,\"<\",10] are accepted); anything-but wrapping {nested: ...} or {exists: ...} gives \"Unsupported anything-but pattern\" (while a string, an array, {prefix: ...} and {wildcard: [...]} are accepted); prefix 5 gives \"prefix match pattern must be a string\" (while a string and {\"equals-ignore-case\": ...} are accepted, for both prefix and suffix); exists \"true\" gives \"exists match pattern must be either true or false.\"; wildcard 'a**b' gives \"Consecutive wildcard characters\" (while 'a*b' is accepted). cidr and equals-ignore-case are accepted and stay silent."
+addedOn: 2026-09-07
