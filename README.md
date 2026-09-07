@@ -53,6 +53,11 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
    Acknowledge with 'CloudFormation-Validate::pf-elbv2-lb-idle-timeout-range'
 ```
 
+> **Known limitation with stages.** The AWS CDK CLI drops validation findings for stacks nested in a `Stage`
+> before printing them, so in observe-only mode those findings appear **only** in `cdk.out/validation-report.json`
+> and never on the console. Enforce mode is not affected: cdk-preflight reports such findings itself and fails
+> synthesis. This is a CLI-side bug (present since aws-cdk 2.1128.1), not a rule evaluation problem.
+
 | Option | Default | Effect |
 |---|---|---|
 | `enforce` | `true` | Violations of bundled rules fail synthesis; set to `false` to only warn |
