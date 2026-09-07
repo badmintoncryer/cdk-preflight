@@ -1016,21 +1016,61 @@ describe('eventbridge rules', () => {
     });
   });
 
-  describe('pf-scheduler-rate-positive', () => {
-    test('extra spacing inside a valid rate() stays silent', () => {
-      const t = {
-        Resources: {
-          S: {
-            Type: 'AWS::Scheduler::Schedule',
-            Properties: {
-              FlexibleTimeWindow: { Mode: 'OFF' },
-              ScheduleExpression: 'rate( 2 hours )',
-              Target: { Arn: 'arn:aws:sqs:ap-northeast-1:123456789012:q', RoleArn: 'arn:aws:iam::123456789012:role/r' },
-            },
-          },
+  const sched = (expr: string) => ({
+    Resources: {
+      S: {
+        Type: 'AWS::Scheduler::Schedule',
+        Properties: {
+          FlexibleTimeWindow: { Mode: 'OFF' },
+          ScheduleExpression: expr,
+          Target: { Arn: 'arn:aws:sqs:ap-northeast-1:123456789012:q', RoleArn: 'arn:aws:iam::123456789012:role/r' },
         },
-      };
-      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+      },
+    },
+  });
+
+  describe('pf-scheduler-rate-positive', () => {
+    // Measured 2026-09-07 against scheduler:CreateSchedule: padding inside the
+    // parentheses is rejected ("Invalid Schedule Expression rate( 1 minute )"),
+    // so this is a violation, not a tolerated spelling.
+    test('extra spacing inside rate() is rejected by the service', () => {
+      const t = sched('rate( 2 hours )');
+      expect(ids(diagnoseTemplate(t))).toEqual(['pf-scheduler-schedule-expression']);
+    });
+  });
+
+  describe('pf-scheduler-schedule-expression', () => {
+    // Oracle: each expression was run through scheduler:CreateSchedule
+    // (us-east-1, 2026-09-07) with an assumable role. `rejected` is what the
+    // service refused with "Invalid Schedule Expression"; `accepted` is what
+    // it created, including the spellings the docs imply are invalid.
+    const rejected = [
+      'rate(5 weeks)', 'rate(1 second)', 'rate(1 week)', 'rate(-1 minutes)', 'rate(1.5 minutes)', 'rate( 1 minute )',
+      'cron(0 20 * *)', 'cron(0 20 * * ? * *)',
+      'cron(0 20 * * * *)', 'cron(0 20 ? * ? *)', 'cron(0 20 5 * 2 *)',
+      'cron(60 20 * * ? *)', 'cron(-1 20 * * ? *)', 'cron(0 24 * * ? *)',
+      'cron(0 20 0 * ? *)', 'cron(0 20 32 * ? *)', 'cron(0 20 * 0 ? *)', 'cron(0 20 * 13 ? *)',
+      'cron(0 20 ? * 0 *)', 'cron(0 20 ? * 8 *)', 'cron(0 20 ? * 3#0 *)', 'cron(0 20 ? * 3#6 *)',
+      'at(2030-01-01)', 'at(2030-01-01 00:00:00)', 'at(2030-13-01T00:00:00)', 'at(2030-01-01T00:00:00.000)',
+    ];
+    const accepted = [
+      'rate(1 minute)', 'rate(1 minutes)', 'rate(2 minute)', 'rate(1 hour)', 'rate(1 day)', 'rate(1minute)',
+      'cron(0 20 * * ?)', 'cron(0 20 * * ? *)', 'cron(0 20 5 * ? *)', 'cron(0 20 ? * 2 *)',
+      'cron(59 23 * * ? *)', 'cron(0 20 ? * SUN *)', 'cron(0 20 ? * 3#1 *)',
+      'cron(0 20 L * ? *)', 'cron(0 20 ? * 3L *)', 'cron(0 20 1W * ? *)',
+      'at(2030-01-01T00:00:00)', 'at(2030-01-01T00:00)',
+      'AT(2030-01-01T00:00:00)', 'RATE(1 minute)', 'CRON(0 20 * * ? *)',
+    ];
+    test.each(rejected)('%s is reported', (expr) => {
+      expect(ids(diagnoseTemplate(sched(expr)))).toContain('pf-scheduler-schedule-expression');
+    });
+    test.each(accepted)('%s stays silent', (expr) => {
+      expect(ids(diagnoseTemplate(sched(expr)))).toHaveLength(0);
+    });
+    test('an unresolvable expression is skipped', () => {
+      const t = sched('rate(5 weeks)');
+      (t.Resources.S.Properties as Record<string, unknown>).ScheduleExpression = { Ref: 'P' };
+      expect(ids(diagnoseTemplate({ ...t, Parameters: { P: { Type: 'String' } } }))).toHaveLength(0);
     });
   });
 });

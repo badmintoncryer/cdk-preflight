@@ -1,0 +1,12 @@
+id: pf-scheduler-schedule-expression
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: Schedule expression must parse as a valid rate(), cron() or at()
+constraintSource: https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Scheduler::Schedule with rate(5 weeks) -> ROLLBACK_COMPLETE \"Invalid Schedule Expression rate(5 weeks)\". The engine's E3027 covers only AWS::Events::Rule.ScheduleExpression, so this property is otherwise unchecked. Grammar measured the same day by calling scheduler:CreateSchedule directly with an assumable role, 46 expressions: rejected are rate(1 second|1 week|0 minute|-1 minutes|1.5 minutes|' 1 minute '), cron with 4 or 7 fields, cron with '*'/'?' in both day-of-month and day-of-week or a value in both, minute 60, hour 24, day-of-month 0 or 32, month 0 or 13, day-of-week 0 or 8, '#0' and '#6', at(2030-01-01), at(2030-01-01 00:00:00), at(...Z), at(...T00:00:00.000). Accepted (so deliberately NOT reported): rate(1 minutes) and rate(2 minute) -- singular/plural is not enforced; rate(1minute); a 5-field cron; L, 1W and 3L modifiers; at(...T00:00) without seconds; uppercase AT/RATE/CRON. Year-field violations are excluded because Scheduler reports them as \"will never schedule\" against the current StartDate rather than as a grammar error."
+addedOn: 2026-09-07
