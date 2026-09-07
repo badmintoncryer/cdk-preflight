@@ -1,0 +1,40 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Bkt": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "cdkpf",
+              "Status": "Enabled",
+              "Transitions": [
+                {
+                  "StorageClass": "GLACIER",
+                  "TransitionInDays": 0
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "L": {
+      "Type": "AWS::Lambda::LayerVersion",
+      "Properties": {
+        "Content": {
+          "S3Bucket": {
+            "Ref": "Bkt"
+          },
+          "S3Key": "l.zip",
+          "S3ObjectVersion": "cdkpfObjectVersionId",
+          "S3ObjectStorageMode": "REFERENCE"
+        }
+      }
+    }
+  }
+}

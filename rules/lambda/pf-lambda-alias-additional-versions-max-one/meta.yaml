@@ -1,0 +1,12 @@
+id: pf-lambda-alias-additional-versions-max-one
+service: lambda
+resourceTypes: [AWS::Lambda::Alias]
+severity: ERROR
+title: "An alias can carry only one additional version"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateAlias (us-east-1, 2026-09-07): "Number of items in AdditionalVersionWeights cannot be greater than 1"'
+addedOn: 2026-09-07

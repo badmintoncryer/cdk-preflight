@@ -1,0 +1,13 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "U": {
+      "Type": "AWS::Lambda::Url",
+      "Properties": {
+        "TargetFunctionArn": "arn:aws:lambda:us-east-1:111122223333:function:cdkpf-fn:live",
+        "AuthType": "AWS_IAM",
+        "Qualifier": "live"
+      }
+    }
+  }
+}

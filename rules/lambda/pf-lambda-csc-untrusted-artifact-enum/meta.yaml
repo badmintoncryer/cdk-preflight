@@ -1,0 +1,12 @@
+id: pf-lambda-csc-untrusted-artifact-enum
+service: lambda
+resourceTypes: [AWS::Lambda::CodeSigningConfig]
+severity: ERROR
+title: "UntrustedArtifactOnDeployment is Warn or Enforce"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-codesigningconfig-codesigningpolicies.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'CreateCodeSigningConfig (us-east-1, 2026-09-07): "Model validation failed (#/CodeSigningPolicies/UntrustedArtifactOnDeployment: #: only 1 subschema matches out of 2) #/CodeSigningPolicies/UntrustedArtifactOnDeployment: failed validation constraint for keyword [enum] (#/CodeSigningPolicies/UntrustedArtifactOnDeployment)"'
+addedOn: 2026-09-07

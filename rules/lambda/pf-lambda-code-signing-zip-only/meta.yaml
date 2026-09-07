@@ -1,0 +1,12 @@
+id: pf-lambda-code-signing-zip-only
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Code signing applies to .zip functions only"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_CreateFunction.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Code signing is not supported for functions created with container images."'
+addedOn: 2026-09-07

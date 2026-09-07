@@ -1,0 +1,25 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Bkt": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    },
+    "L": {
+      "Type": "AWS::Lambda::LayerVersion",
+      "Properties": {
+        "Content": {
+          "S3Bucket": {
+            "Ref": "Bkt"
+          },
+          "S3Key": "l.zip",
+          "S3ObjectStorageMode": "REFERENCE"
+        }
+      }
+    }
+  }
+}

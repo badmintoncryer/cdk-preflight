@@ -176,3 +176,42 @@ _pf_lam_list(v) := v if is_array(v)
 _pf_lam_list(v) := [v] if is_string(v)
 
 _pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), "ProvisionedPollerConfig")
+# --- #75 非 ESM 分で足す共有ヘルパー -----------------------------------------
+# rules/_lib/lambda.rego の末尾に足す。#117 がマージされてワークツリーが
+# main に戻ってから適用する。
+
+_pf_lam_alias := resources_of_type("AWS::Lambda::Alias")
+
+_pf_lam_ver := resources_of_type("AWS::Lambda::Version")
+
+_pf_lam_fn := resources_of_type("AWS::Lambda::Function")
+
+_pf_lam_perm := resources_of_type("AWS::Lambda::Permission")
+
+_pf_lam_url := resources_of_type("AWS::Lambda::Url")
+
+_pf_lam_layer := resources_of_type("AWS::Lambda::LayerVersion")
+
+_pf_lam_layerperm := resources_of_type("AWS::Lambda::LayerVersionPermission")
+
+_pf_lam_csc := resources_of_type("AWS::Lambda::CodeSigningConfig")
+
+_pf_lam_eic := resources_of_type("AWS::Lambda::EventInvokeConfig")
+
+# EventInvokeConfig の宛先。OnSuccess と OnFailure は制約がほぼ共通なので
+# 1 つの集合にまとめ、どちら側かを second element に残す。
+_pf_lam_eic_dest contains [name, side, dest] if {
+	some name in _pf_lam_eic
+	some side in ["OnSuccess", "OnFailure"]
+	dest := resolve(name, sprintf("Properties.DestinationConfig.%v.Destination", [side]))
+	is_string(dest)
+}
+
+# 署名プロファイルのバージョン ARN。CodeSigningConfig の唯一の必須要素で、
+# 4 本のルールが同じリストを回すのでここに置く。
+_pf_lam_csc_profiles contains [name, arn] if {
+	some name in _pf_lam_csc
+	pubs := _pf_lam_obj(_pf_lam_props(name), "AllowedPublishers")
+	some arn in _pf_lam_list(object.get(pubs, "SigningProfileVersionArns", []))
+	is_string(arn)
+}

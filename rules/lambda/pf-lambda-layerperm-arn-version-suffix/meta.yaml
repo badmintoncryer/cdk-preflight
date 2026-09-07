@@ -1,0 +1,12 @@
+id: pf-lambda-layerperm-arn-version-suffix
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersionPermission]
+severity: ERROR
+title: "A layer permission names a layer version"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-layerversionpermission.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'AddLayerVersionPermission (us-east-1, 2026-09-07): "Layer version arn:aws:lambda:us-east-1:214794239830:layer:l:1 does not exist." CONFOUND: an unversioned layer ARN cannot name a layer version that exists, so the service reports the lookup miss rather than the missing suffix.'
+addedOn: 2026-09-07

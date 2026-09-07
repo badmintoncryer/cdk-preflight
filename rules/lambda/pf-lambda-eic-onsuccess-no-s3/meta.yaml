@@ -1,0 +1,12 @@
+id: pf-lambda-eic-onsuccess-no-s3
+service: lambda
+resourceTypes: [AWS::Lambda::EventInvokeConfig]
+severity: ERROR
+title: "An S3 bucket is an on-failure destination only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-eventinvokeconfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'PutFunctionEventInvokeConfig (us-east-1, 2026-09-07): "The provided destination config DestinationConfig(onSuccess=OnSuccess(destination=arn:aws:s3:::my-bucket), onFailure=OnFailure(destination=)) is invalid."'
+addedOn: 2026-09-07

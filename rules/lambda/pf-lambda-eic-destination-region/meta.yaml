@@ -1,0 +1,12 @@
+id: pf-lambda-eic-destination-region
+service: lambda
+resourceTypes: [AWS::Lambda::EventInvokeConfig]
+severity: ERROR
+title: "An invoke destination lives in the deploy region"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_OnFailure.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'PutFunctionEventInvokeConfig (us-east-1, 2026-09-07): "The provided destination config DestinationConfig(onSuccess=OnSuccess(destination=), onFailure=OnFailure(destination=arn:aws:sqs:eu-west-1:111122223333:q)) is invalid."'
+addedOn: 2026-09-07

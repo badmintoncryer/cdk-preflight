@@ -1,0 +1,12 @@
+id: pf-lambda-alias-version-not-alias
+service: lambda
+resourceTypes: [AWS::Lambda::Alias]
+severity: ERROR
+title: "An alias cannot point at another alias"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-alias.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateAlias (us-east-1, 2026-09-07): "1 validation error detected: Value ''arn:aws:lambda:us-east-1:214794239830:function:cdkpf-pf-lambda-alias-version-not-alias-fail-F-8y7cx8cCc7qD:blue'' at ''functionVersion'' failed to satisfy constraint: Member must satisfy regular expression pattern: (\$LATEST(\.PUBLISHED)?|[0-9]+)"'
+addedOn: 2026-09-07

@@ -4392,6 +4392,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_kmsrep_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-kms-replicakey.html\"\n\n_pf_kmsrep_fix := \"Create the ReplicaKey in a stack of another region and pass the primary key ARN (arn:<partition>:kms:<other-region>:<account>:key/mrk-...) as a literal or cross-stack value\"\n\n# [partition, service, region, account, resource...] of a literal ARN; undefined otherwise\n_pf_kmsrep_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n_pf_kmsrep_partition(region) := \"aws-cn\" if startswith(region, \"cn-\")\n\n_pf_kmsrep_partition(region) := \"aws-us-gov\" if startswith(region, \"us-gov-\")\n\n_pf_kmsrep_partition(region) := \"aws\" if {\n\tnot startswith(region, \"cn-\")\n\tnot startswith(region, \"us-gov-\")\n}\n\nviolation contains make_diag_full(\"pf-kms-replica-primary-arn\", \"ERROR\", name,\n\t\"Properties.PrimaryKeyArn\",\n\tsprintf(\"PrimaryKeyArn refers to key '%s' in this template, so primary and replica would share a region; ReplicateKey fails with \\\"<region> cannot have a replica because it contains the primary.\\\"\", [p]),\n\t_pf_kmsrep_fix, _pf_kmsrep_url) if {\n\tsome name in resources_of_type(\"AWS::KMS::ReplicaKey\")\n\tp := resolve(name, \"Properties.PrimaryKeyArn\")\n\tp in resources_of_type(\"AWS::KMS::Key\")\n}\n\nviolation contains make_diag_full(\"pf-kms-replica-primary-arn\", \"ERROR\", name,\n\t\"Properties.PrimaryKeyArn\",\n\tsprintf(\"'%s' is not an ARN; ReplicateKey needs the primary key ARN (arn:<partition>:kms:<region>:<account>:key/mrk-...)\", [p]),\n\t_pf_kmsrep_fix, _pf_kmsrep_url) if {\n\tsome name in resources_of_type(\"AWS::KMS::ReplicaKey\")\n\tp := resolve(name, \"Properties.PrimaryKeyArn\")\n\tis_string(p)\n\tnot startswith(p, \"arn:\")\n\tnot p in object.keys(input.resources)\n}\n\nviolation contains make_diag_full(\"pf-kms-replica-primary-arn\", \"ERROR\", name,\n\t\"Properties.PrimaryKeyArn\",\n\tsprintf(\"'%s' is not a multi-Region key ARN (the key id must start with mrk-); ReplicateKey fails with \\\"is not a multi-region key.\\\"\", [p]),\n\t_pf_kmsrep_fix, _pf_kmsrep_url) if {\n\tsome name in resources_of_type(\"AWS::KMS::ReplicaKey\")\n\tp := resolve(name, \"Properties.PrimaryKeyArn\")\n\tparts := _pf_kmsrep_arn(p)\n\tparts[2] == \"kms\"\n\tnot startswith(parts[5], \"key/mrk-\")\n}\n\n# Region / partition comparison needs the deploy region (enforce mode only).\nviolation contains make_diag_full(\"pf-kms-replica-primary-arn\", \"ERROR\", name,\n\t\"Properties.PrimaryKeyArn\",\n\tsprintf(\"primary key is in '%s', the same region this replica deploys to; ReplicateKey fails with \\\"%s cannot have a replica because it contains the primary.\\\"\", [region, region]),\n\t_pf_kmsrep_fix, _pf_kmsrep_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::KMS::ReplicaKey\")\n\tparts := _pf_kmsrep_arn(resolve(name, \"Properties.PrimaryKeyArn\"))\n\tparts[2] == \"kms\"\n\tparts[3] == region\n}\n\nviolation contains make_diag_full(\"pf-kms-replica-primary-arn\", \"ERROR\", name,\n\t\"Properties.PrimaryKeyArn\",\n\tsprintf(\"primary key is in partition '%s' but this stack deploys to '%s' (%s); ReplicateKey fails with \\\"The replica key Region must be in the same AWS partition as the primary key Region.\\\"\", [parts[1], region, _pf_kmsrep_partition(region)]),\n\t_pf_kmsrep_fix, _pf_kmsrep_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::KMS::ReplicaKey\")\n\tparts := _pf_kmsrep_arn(resolve(name, \"Properties.PrimaryKeyArn\"))\n\tparts[2] == \"kms\"\n\tparts[1] != _pf_kmsrep_partition(region)\n}\n"
   },
   {
+    "id": "pf-lambda-alias-additional-version-distinct",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A weighted alias must route to a different version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Alias"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ladvd_fix := \"Point AdditionalVersionWeights at a version other than the one in FunctionVersion\"\n\n_pf_ladvd_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html\"\n\nviolation contains make_diag_full(\"pf-lambda-alias-additional-version-distinct\", \"ERROR\", name,\n\t\"Properties.RoutingConfig.AdditionalVersionWeights\",\n\t\"a routing entry that names the same version as the alias itself; a weighted alias splits traffic between two distinct versions and the create is rejected when both sides are the same\",\n\t_pf_ladvd_fix, _pf_ladvd_url) if {\n\tsome name in _pf_lam_alias\n\tprops := _pf_lam_props(name)\n\trc := _pf_lam_obj(props, \"RoutingConfig\")\n\tws := _pf_lam_list(object.get(rc, \"AdditionalVersionWeights\", []))\n\tbase := object.get(props, \"FunctionVersion\", \"__pf_absent\")\n\tsome w in ws\n\tis_object(w)\n\tobject.get(w, \"FunctionVersion\", \"__pf_other\") == base\n}\n"
+  },
+  {
+    "id": "pf-lambda-alias-additional-version-not-latest",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A routing entry cannot name $LATEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Alias"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ladvl_fix := \"Use a published version number in AdditionalVersionWeights\"\n\n_pf_ladvl_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AliasRoutingConfiguration.html\"\n\nviolation contains make_diag_full(\"pf-lambda-alias-additional-version-not-latest\", \"ERROR\", name,\n\t\"Properties.RoutingConfig.AdditionalVersionWeights\",\n\t\"a routing entry that names $LATEST; a weighted alias can only split traffic between published versions\",\n\t_pf_ladvl_fix, _pf_ladvl_url) if {\n\tsome name in _pf_lam_alias\n\tprops := _pf_lam_props(name)\n\trc := _pf_lam_obj(props, \"RoutingConfig\")\n\tws := _pf_lam_list(object.get(rc, \"AdditionalVersionWeights\", []))\n\tsome w in ws\n\tis_object(w)\n\tobject.get(w, \"FunctionVersion\", \"\") == \"$LATEST\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-alias-additional-versions-max-one",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An alias can carry only one additional version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Alias"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ladvm_fix := \"Keep a single entry in AdditionalVersionWeights\"\n\n_pf_ladvm_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html\"\n\nviolation contains make_diag_full(\"pf-lambda-alias-additional-versions-max-one\", \"ERROR\", name,\n\t\"Properties.RoutingConfig.AdditionalVersionWeights\",\n\tsprintf(\"%v routing entries; an alias resolves to at most two versions, so AdditionalVersionWeights takes a single entry\", [count(ws)]),\n\t_pf_ladvm_fix, _pf_ladvm_url) if {\n\tsome name in _pf_lam_alias\n\tprops := _pf_lam_props(name)\n\trc := _pf_lam_obj(props, \"RoutingConfig\")\n\tws := _pf_lam_list(object.get(rc, \"AdditionalVersionWeights\", []))\n\tcount(ws) > 1\n}\n"
+  },
+  {
+    "id": "pf-lambda-alias-routing-not-latest",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A weighted alias cannot sit on $LATEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Alias"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ladrl_fix := \"Publish a version and point the alias at it before adding RoutingConfig\"\n\n_pf_ladrl_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html\"\n\nviolation contains make_diag_full(\"pf-lambda-alias-routing-not-latest\", \"ERROR\", name,\n\t\"Properties.FunctionVersion\",\n\t\"a weighted alias whose own FunctionVersion is $LATEST; routing splits traffic between published versions and $LATEST is not one\",\n\t_pf_ladrl_fix, _pf_ladrl_url) if {\n\tsome name in _pf_lam_alias\n\tprops := _pf_lam_props(name)\n\tobject.get(props, \"FunctionVersion\", \"\") == \"$LATEST\"\n\t_pf_lam_has_key(props, \"RoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-alias-version-not-alias",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An alias cannot point at another alias",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Alias"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ladva_fix := \"Set FunctionVersion to a version number or a Version resource, not another alias\"\n\n_pf_ladva_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-alias.html\"\n\nviolation contains make_diag_full(\"pf-lambda-alias-version-not-alias\", \"ERROR\", name,\n\t\"Properties.FunctionVersion\",\n\t\"an alias whose FunctionVersion names another alias; aliases resolve to versions only and the create is rejected\",\n\t_pf_ladva_fix, _pf_ladva_url) if {\n\tsome name in _pf_lam_alias\n\tresolve(name, \"Properties.FunctionVersion\") in _pf_lam_alias\n}\n"
+  },
+  {
+    "id": "pf-lambda-alias-version-weight-range",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A routing weight is a fraction between 0 and 1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Alias"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ladwr_fix := \"Use a FunctionWeight between 0.0 and 1.0\"\n\n_pf_ladwr_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AliasRoutingConfiguration.html\"\n\nviolation contains make_diag_full(\"pf-lambda-alias-version-weight-range\", \"ERROR\", name,\n\t\"Properties.RoutingConfig.AdditionalVersionWeights\",\n\tsprintf(\"routing weight %v; FunctionWeight is the fraction of traffic sent to the additional version and has to be between 0.0 and 1.0\", [wt]),\n\t_pf_ladwr_fix, _pf_ladwr_url) if {\n\tsome name in _pf_lam_alias\n\tprops := _pf_lam_props(name)\n\trc := _pf_lam_obj(props, \"RoutingConfig\")\n\tws := _pf_lam_list(object.get(rc, \"AdditionalVersionWeights\", []))\n\tsome w in ws\n\tis_object(w)\n\twt := to_number(object.get(w, \"FunctionWeight\", 0))\n\t_pf_ladwr_out(wt)\n}\n\n_pf_ladwr_out(wt) if wt < 0\n\n_pf_ladwr_out(wt) if wt > 1\n"
+  },
+  {
     "id": "pf-lambda-code-s3-pair",
     "service": "lambda",
     "severity": "ERROR",
@@ -4403,6 +4469,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Half an S3 reference cannot be fetched. Only judged when neither ZipFile\n# nor ImageUri is present (those shapes belong to the exclusive rule).\n_pf_lcsp_code(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"Code\", {})\n\tis_object(c)\n}\n\n_pf_lcsp_has(c, k) if object.get(c, k, \"__pf_absent\") != \"__pf_absent\"\n\n_pf_lcsp_half(c) := [\"S3Key\", \"S3Bucket\"] if {\n\t_pf_lcsp_has(c, \"S3Bucket\")\n\tnot _pf_lcsp_has(c, \"S3Key\")\n}\n\n_pf_lcsp_half(c) := [\"S3Bucket\", \"S3Key\"] if {\n\t_pf_lcsp_has(c, \"S3Key\")\n\tnot _pf_lcsp_has(c, \"S3Bucket\")\n}\n\nviolation contains make_diag_full(\"pf-lambda-code-s3-pair\", \"ERROR\", name,\n\tsprintf(\"Properties.Code.%s\", [missing[0]]),\n\tsprintf(\"Code has %s but no %s; the function create fails with \\\"S3 Bucket and Key are required for uploading with S3 parameters.\\\"\", [missing[1], missing[0]]),\n\t\"Set both S3Bucket and S3Key\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-code.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tc := _pf_lcsp_code(name)\n\tnot _pf_lcsp_has(c, \"ZipFile\")\n\tnot _pf_lcsp_has(c, \"ImageUri\")\n\tmissing := _pf_lcsp_half(c)\n}\n"
   },
   {
+    "id": "pf-lambda-code-signing-arn-region",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A code signing config lives in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lcsar_fix := \"Reference a code signing config in the same region and account as the function\"\n\n_pf_lcsar_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html\"\n\nviolation contains make_diag_full(\"pf-lambda-code-signing-arn-region\", \"ERROR\", name,\n\t\"Properties.CodeSigningConfigArn\",\n\tsprintf(\"code signing config region '%v' is not the deploy region '%v'; a function can only reference a config from its own region\", [parts[3], region]),\n\t_pf_lcsar_fix, _pf_lcsar_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in _pf_lam_fn\n\tparts := _pf_lam_arn(resolve(name, \"Properties.CodeSigningConfigArn\"))\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-lambda-code-signing-zip-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Code signing applies to .zip functions only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lcszo_fix := \"Drop CodeSigningConfigArn from container image functions\"\n\n_pf_lcszo_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateFunction.html\"\n\nviolation contains make_diag_full(\"pf-lambda-code-signing-zip-only\", \"ERROR\", name,\n\t\"Properties.CodeSigningConfigArn\",\n\t\"a code signing config on a container image function; Lambda verifies signatures on .zip archives only and the function create is rejected\",\n\t_pf_lcszo_fix, _pf_lcszo_url) if {\n\tsome name in _pf_lam_fn\n\tprops := _pf_lam_props(name)\n\t_pf_lam_has_key(props, \"CodeSigningConfigArn\")\n\tobject.get(props, \"PackageType\", \"Zip\") == \"Image\"\n}\n"
+  },
+  {
     "id": "pf-lambda-code-zipfile-exclusive",
     "service": "lambda",
     "severity": "ERROR",
@@ -4412,6 +4500,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Lambda::Function"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Key presence in the Code object is the violation; checked against the\n# preprocessed document (see AGENTS.md).\n_pf_lczx_other := {\"S3Bucket\", \"S3Key\", \"S3ObjectVersion\", \"ImageUri\"}\n\n_pf_lczx_code(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"Code\", {})\n\tis_object(c)\n}\n\nviolation contains make_diag_full(\"pf-lambda-code-zipfile-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Code.%s\", [k]),\n\tsprintf(\"Code sets ZipFile together with %s; the function create fails with \\\"Please do not provide other FunctionCode parameters when providing a ZipFile.\\\"\", [k]),\n\t\"Keep the inline ZipFile alone, or switch entirely to the S3/image reference\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-code.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tc := _pf_lczx_code(name)\n\tobject.get(c, \"ZipFile\", \"__pf_absent\") != \"__pf_absent\"\n\tsome k in _pf_lczx_other\n\tobject.get(c, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-csc-untrusted-artifact-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "UntrustedArtifactOnDeployment is Warn or Enforce",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::CodeSigningConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lcsue_fix := \"Set UntrustedArtifactOnDeployment to Warn or Enforce\"\n\n_pf_lcsue_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-codesigningconfig-codesigningpolicies.html\"\n\nviolation contains make_diag_full(\"pf-lambda-csc-untrusted-artifact-enum\", \"ERROR\", name,\n\t\"Properties.CodeSigningPolicies.UntrustedArtifactOnDeployment\",\n\tsprintf(\"UntrustedArtifactOnDeployment '%v'; the policy is either Warn or Enforce\", [v]),\n\t_pf_lcsue_fix, _pf_lcsue_url) if {\n\tsome name in _pf_lam_csc\n\tpol := _pf_lam_obj(_pf_lam_props(name), \"CodeSigningPolicies\")\n\tv := object.get(pol, \"UntrustedArtifactOnDeployment\", \"Warn\")\n\tis_string(v)\n\tnot v in {\"Warn\", \"Enforce\"}\n}\n"
   },
   {
     "id": "pf-lambda-dlq-region",
@@ -4445,6 +4544,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Lambda::Function"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Mounting EFS requires the function to run inside a VPC. Key presence is\n# checked against the preprocessed document (see AGENTS.md).\n_pf_lefsv_props(name) := props if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n}\n\nviolation contains make_diag_full(\"pf-lambda-efs-requires-vpc\", \"ERROR\", name,\n\t\"Properties.VpcConfig\",\n\t\"FileSystemConfigs without VpcConfig; the function create fails with \\\"Function must be configured to execute in a VPC to reference access point ... Please update the function configuration to include VPC subnets and security groups.\\\"\",\n\t\"Add VpcConfig with subnets that have EFS mount targets in their AZs\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tprops := _pf_lefsv_props(name)\n\tobject.get(props, \"FileSystemConfigs\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(props, \"VpcConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-eic-destination-no-sns-fifo",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An invoke destination cannot be a FIFO topic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventInvokeConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leidn_fix := \"Send asynchronous invocation results to a standard SNS topic\"\n\n_pf_leidn_url := \"https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-retain-records.html\"\n\nviolation contains make_diag_full(\"pf-lambda-eic-destination-no-sns-fifo\", \"ERROR\", name,\n\tsprintf(\"Properties.DestinationConfig.%v.Destination\", [side]),\n\tsprintf(\"%v destination '%v' is a FIFO topic; asynchronous invocation destinations are delivered without ordering guarantees and Lambda only accepts standard topics\", [side, dest]),\n\t_pf_leidn_fix, _pf_leidn_url) if {\n\tsome [name, side, dest] in _pf_lam_eic_dest\n\tparts := _pf_lam_arn(dest)\n\tparts[2] == \"sns\"\n\tendswith(dest, \".fifo\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-eic-destination-no-sqs-fifo",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An invoke destination cannot be a FIFO queue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventInvokeConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leidq_fix := \"Send asynchronous invocation results to a standard SQS queue\"\n\n_pf_leidq_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventinvokeconfig-destinationconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-eic-destination-no-sqs-fifo\", \"ERROR\", name,\n\tsprintf(\"Properties.DestinationConfig.%v.Destination\", [side]),\n\tsprintf(\"%v destination '%v' is a FIFO queue; asynchronous invocation destinations are delivered without ordering guarantees and Lambda only accepts standard queues\", [side, dest]),\n\t_pf_leidq_fix, _pf_leidq_url) if {\n\tsome [name, side, dest] in _pf_lam_eic_dest\n\tparts := _pf_lam_arn(dest)\n\tparts[2] == \"sqs\"\n\tendswith(dest, \".fifo\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-eic-destination-region",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An invoke destination lives in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventInvokeConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leidr_fix := \"Point the destination at a resource in the same region as the function\"\n\n_pf_leidr_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_OnFailure.html\"\n\nviolation contains make_diag_full(\"pf-lambda-eic-destination-region\", \"ERROR\", name,\n\tsprintf(\"Properties.DestinationConfig.%v.Destination\", [side]),\n\tsprintf(\"%v destination region '%v' is not the deploy region '%v'; invocation records are delivered in-region and the config create is rejected\", [side, parts[3], region]),\n\t_pf_leidr_fix, _pf_leidr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome [name, side, dest] in _pf_lam_eic_dest\n\tparts := _pf_lam_arn(dest)\n\tparts[3] != \"\"\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-lambda-eic-destination-service",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An invoke destination is a queue, topic, bucket, function or event bus",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventInvokeConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leids_fix := \"Point the destination at an SQS queue, SNS topic, S3 bucket, Lambda function or EventBridge bus\"\n\n_pf_leids_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_PutFunctionEventInvokeConfig.html\"\n\n_pf_leids_ok := {\"sqs\", \"sns\", \"s3\", \"lambda\", \"events\"}\n\nviolation contains make_diag_full(\"pf-lambda-eic-destination-service\", \"ERROR\", name,\n\tsprintf(\"Properties.DestinationConfig.%v.Destination\", [side]),\n\tsprintf(\"%v destination names the '%v' service; Lambda delivers invocation records only to SQS, SNS, S3, Lambda and EventBridge\", [side, parts[2]]),\n\t_pf_leids_fix, _pf_leids_url) if {\n\tsome [name, side, dest] in _pf_lam_eic_dest\n\tparts := _pf_lam_arn(dest)\n\tnot parts[2] in _pf_leids_ok\n}\n"
+  },
+  {
+    "id": "pf-lambda-eic-onsuccess-no-s3",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An S3 bucket is an on-failure destination only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventInvokeConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leios_fix := \"Use SQS, SNS, Lambda or EventBridge for OnSuccess, and keep S3 for OnFailure\"\n\n_pf_leios_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-eventinvokeconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-eic-onsuccess-no-s3\", \"ERROR\", name,\n\t\"Properties.DestinationConfig.OnSuccess.Destination\",\n\t\"an S3 bucket as the OnSuccess destination; S3 takes failed-invocation records only and the config create is rejected\",\n\t_pf_leios_fix, _pf_leios_url) if {\n\tsome [name, side, dest] in _pf_lam_eic_dest\n\tside == \"OnSuccess\"\n\tparts := _pf_lam_arn(dest)\n\tparts[2] == \"s3\"\n}\n"
   },
   {
     "id": "pf-lambda-env-size",
@@ -5054,6 +5208,160 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_letws_fix := \"Drop TumblingWindowInSeconds, or point the mapping at a Kinesis or DynamoDB stream\"\n\n_pf_letws_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-tumbling-window-stream-only\", \"ERROR\", name,\n\t\"Properties.TumblingWindowInSeconds\",\n\t\"TumblingWindowInSeconds on a source that does not support it; tumbling windows aggregate per shard, which only Kinesis and DynamoDB Streams provide\",\n\t_pf_letws_fix, _pf_letws_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"TumblingWindowInSeconds\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\",\"kafka\",\"selfkafka\"]\n\t_pf_lam_is(name, other)\n}\n"
   },
   {
+    "id": "pf-lambda-layer-arn-region",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A layer lives in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llar_fix := \"Reference a layer version in the same region as the function\"\n\n_pf_llar_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateFunction.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-arn-region\", \"ERROR\", name,\n\t\"Properties.Layers\",\n\tsprintf(\"layer region '%v' is not the deploy region '%v'; a function can only attach layers from its own region\", [parts[3], region]),\n\t_pf_llar_fix, _pf_llar_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in _pf_lam_fn\n\tsome arn in _pf_lam_list(_pf_lam_get(name, \"Layers\"))\n\tparts := _pf_lam_arn(arn)\n\tparts[2] == \"lambda\"\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-compatible-architectures-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "CompatibleArchitectures are x86_64 or arm64",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llae_fix := \"Use x86_64 and arm64\"\n\n_pf_llae_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-compatible-architectures-enum\", \"ERROR\", name,\n\t\"Properties.CompatibleArchitectures\",\n\tsprintf(\"architecture '%v'; Lambda runs on x86_64 and arm64\", [v]),\n\t_pf_llae_fix, _pf_llae_url) if {\n\tsome name in _pf_lam_layer\n\tvs := _pf_lam_list(_pf_lam_get(name, \"CompatibleArchitectures\"))\n\tsome v in vs\n\tis_string(v)\n\tnot v in {\"x86_64\", \"arm64\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-compatible-runtimes-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "CompatibleRuntimes are known runtime identifiers",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llcr_fix := \"List runtime identifiers Lambda knows, such as python3.12 or nodejs22.x\"\n\n_pf_llcr_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html\"\n\n_pf_llcr_known := {\n\t\"nodejs18.x\", \"nodejs20.x\", \"nodejs22.x\",\n\t\"python3.9\", \"python3.10\", \"python3.11\", \"python3.12\", \"python3.13\",\n\t\"java11\", \"java17\", \"java21\",\n\t\"dotnet6\", \"dotnet8\", \"ruby3.2\", \"ruby3.3\",\n\t\"provided.al2\", \"provided.al2023\",\n}\n\nviolation contains make_diag_full(\"pf-lambda-layer-compatible-runtimes-enum\", \"ERROR\", name,\n\t\"Properties.CompatibleRuntimes\",\n\tsprintf(\"runtime '%v' is not a Lambda runtime identifier\", [v]),\n\t_pf_llcr_fix, _pf_llcr_url) if {\n\tsome name in _pf_lam_layer\n\tvs := _pf_lam_list(_pf_lam_get(name, \"CompatibleRuntimes\"))\n\tsome v in vs\n\tis_string(v)\n\tnot v in _pf_llcr_known\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-content-storage-mode-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "S3ObjectStorageMode is COPY or REFERENCE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llsm_fix := \"Set S3ObjectStorageMode to COPY or REFERENCE\"\n\n_pf_llsm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-layerversion-content.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-content-storage-mode-enum\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\tsprintf(\"S3ObjectStorageMode '%v'; Lambda either copies the archive (COPY) or reads it in place (REFERENCE)\", [v]),\n\t_pf_llsm_fix, _pf_llsm_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tv := object.get(c, \"S3ObjectStorageMode\", \"COPY\")\n\tis_string(v)\n\tnot v in {\"COPY\", \"REFERENCE\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-cross-account-needs-permission",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A cross-account layer needs a share",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llcp_fix := \"Add a LayerVersionPermission on the owning account, or copy the layer\"\n\n_pf_llcp_url := \"https://docs.aws.amazon.com/lambda/latest/dg/adding-layers.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-cross-account-needs-permission\", \"ERROR\", name,\n\t\"Properties.Layers\",\n\tsprintf(\"layer '%v' is owned by another account with no LayerVersionPermission in the template; the owner has to grant lambda:GetLayerVersion before the function can attach it\", [arn]),\n\t_pf_llcp_fix, _pf_llcp_url) if {\n\tsome name in _pf_lam_fn\n\tsome arn in _pf_lam_list(_pf_lam_get(name, \"Layers\"))\n\tparts := _pf_lam_arn(arn)\n\tparts[2] == \"lambda\"\n\tparts[4] != \"${AWS::AccountId}\"\n\tcount(resources_of_type(\"AWS::Lambda::LayerVersionPermission\")) == 0\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-name-pattern",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A layer name is letters, digits, dashes and underscores",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llnp_fix := \"Use a LayerName matching [a-zA-Z0-9-_]+\"\n\n_pf_llnp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-layerversion.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-name-pattern\", \"ERROR\", name,\n\t\"Properties.LayerName\",\n\tsprintf(\"layer name '%v'; the name becomes part of the layer ARN so it takes only letters, digits, dashes and underscores\", [v]),\n\t_pf_llnp_fix, _pf_llnp_url) if {\n\tsome name in _pf_lam_layer\n\tv := resolve(name, \"Properties.LayerName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,140}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-reference-glacier-storage-class",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "REFERENCE content cannot be archived",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrg_fix := \"Keep the layer object out of Glacier storage classes\"\n\n_pf_llrg_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\n_pf_llrg_glacier := {\"GLACIER\", \"DEEP_ARCHIVE\", \"GLACIER_IR\"}\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-glacier-storage-class\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket that transitions objects to Glacier; an archived object cannot be read at cold start\",\n\t_pf_llrg_fix, _pf_llrg_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbp := object.get(object.get(input.resources, bkt, {}), \"properties\", {})\n\tlc := object.get(bp, \"LifecycleConfiguration\", {})\n\tsome rule in _pf_lam_list(object.get(lc, \"Rules\", []))\n\tsome t in _pf_lam_list(object.get(rule, \"Transitions\", []))\n\tobject.get(t, \"StorageClass\", \"\") in _pf_llrg_glacier\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-reference-needs-bucket-policy",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "REFERENCE content needs a bucket policy for Lambda",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrb_fix := \"Grant lambda.amazonaws.com s3:GetObject and s3:GetObjectVersion on the content bucket\"\n\n_pf_llrb_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-bucket-policy\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket with no policy for lambda.amazonaws.com; Lambda reads the object on every cold start and needs s3:GetObject and s3:GetObjectVersion\",\n\t_pf_llrb_fix, _pf_llrb_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbkt in resources_of_type(\"AWS::S3::Bucket\")\n\tnot _pf_llrb_policy(bkt)\n}\n\n_pf_llrb_policy(bkt) if {\n\tsome p in resources_of_type(\"AWS::S3::BucketPolicy\")\n\tresolve(p, \"Properties.Bucket\") == bkt\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-reference-needs-object-version",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "REFERENCE content needs an object version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llro_fix := \"Set Content.S3ObjectVersion alongside S3ObjectStorageMode: REFERENCE\"\n\n_pf_llro_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-object-version\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectVersion\",\n\t\"S3ObjectStorageMode REFERENCE without S3ObjectVersion; the layer keeps reading the object from the bucket, so it has to pin the exact version\",\n\t_pf_llro_fix, _pf_llro_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tnot _pf_lam_has_key(c, \"S3ObjectVersion\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-layer-reference-needs-versioning",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "REFERENCE content needs a versioned bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersion"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrv_fix := \"Turn on versioning for the bucket that holds the layer content\"\n\n_pf_llrv_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-versioning\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket without versioning; the mode pins an object version and the bucket cannot produce one\",\n\t_pf_llrv_fix, _pf_llrv_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbkt in resources_of_type(\"AWS::S3::Bucket\")\n\t# Properties ごと無いバケットもあるので object.get で降りる\n\tbp := object.get(object.get(input.resources, bkt, {}), \"properties\", {})\n\tvc := object.get(bp, \"VersioningConfiguration\", {})\n\tobject.get(vc, \"Status\", \"\") != \"Enabled\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-layerperm-arn-length",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A layer version ARN is at most 140 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersionPermission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llpl_fix := \"Shorten the layer name so the ARN fits in 140 characters\"\n\n_pf_llpl_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-layerversionpermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layerperm-arn-length\", \"ERROR\", name,\n\t\"Properties.LayerVersionArn\",\n\tsprintf(\"layer ARN of %v characters; the property stops at 140\", [count(v)]),\n\t_pf_llpl_fix, _pf_llpl_url) if {\n\tsome name in _pf_lam_layerperm\n\tv := resolve(name, \"Properties.LayerVersionArn\")\n\tis_string(v)\n\tcount(v) > 140\n}\n"
+  },
+  {
+    "id": "pf-lambda-layerperm-arn-version-suffix",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A layer permission names a layer version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersionPermission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llpv_fix := \"Use the versioned layer ARN (…:layer:<name>:<version>)\"\n\n_pf_llpv_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-layerversionpermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layerperm-arn-version-suffix\", \"ERROR\", name,\n\t\"Properties.LayerVersionArn\",\n\tsprintf(\"layer ARN '%v' has no version suffix; a permission is granted on one layer version, not on the layer as a whole\", [v]),\n\t_pf_llpv_fix, _pf_llpv_url) if {\n\tsome name in _pf_lam_layerperm\n\tv := resolve(name, \"Properties.LayerVersionArn\")\n\tparts := _pf_lam_arn(v)\n\tparts[2] == \"lambda\"\n\tcount(split(parts[5], \":\")) < 3\n}\n"
+  },
+  {
+    "id": "pf-lambda-layerperm-organization-id-needs-wildcard-principal",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "OrganizationId narrows a wildcard principal",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersionPermission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llpo_fix := \"Use Principal \\\"*\\\" with OrganizationId, or drop OrganizationId and name the account\"\n\n_pf_llpo_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddLayerVersionPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layerperm-organization-id-needs-wildcard-principal\", \"ERROR\", name,\n\t\"Properties.OrganizationId\",\n\tsprintf(\"OrganizationId with principal '%v'; the organization only narrows the wildcard principal and does nothing next to a named account\", [p]),\n\t_pf_llpo_fix, _pf_llpo_url) if {\n\tsome name in _pf_lam_layerperm\n\t_pf_lam_has_key(_pf_lam_props(name), \"OrganizationId\")\n\tp := resolve(name, \"Properties.Principal\")\n\tp != \"*\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-layerperm-policy-size",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A layer version policy has a size limit",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::LayerVersionPermission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llpp_fix := \"Share with an organization instead of listing accounts one by one\"\n\n_pf_llpp_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddLayerVersionPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layerperm-policy-size\", \"ERROR\", name,\n\t\"Properties.Principal\",\n\tsprintf(\"%v permissions on one layer version; each is a statement in the same resource policy and the policy has a size cap\", [n]),\n\t_pf_llpp_fix, _pf_llpp_url) if {\n\tsome name in _pf_lam_layerperm\n\ttarget := resolve(name, \"Properties.LayerVersionArn\")\n\tn := count({p |\n\t\tsome p in _pf_lam_layerperm\n\t\tresolve(p, \"Properties.LayerVersionArn\") == target\n\t})\n\tn > 20\n}\n"
+  },
+  {
     "id": "pf-lambda-memory-max",
     "service": "lambda",
     "severity": "ERROR",
@@ -5065,6 +5373,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema has the 128 floor but is missing the 10240 cap\n# (engine clean on 20000, F3034 on 64).\nviolation contains make_diag_full(\"pf-lambda-memory-max\", \"ERROR\", name,\n\t\"Properties.MemorySize\",\n\tsprintf(\"MemorySize %v is over the cap; the function create fails with \\\"'MemorySize' value failed to satisfy constraint: Member must have value less than or equal to 10240\\\"\", [m]),\n\t\"Use at most 10240 MB\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tm := to_number(resolve(name, \"Properties.MemorySize\"))\n\tm > 10240\n}\n"
   },
   {
+    "id": "pf-lambda-perm-cross-region-function",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A permission stays in the function region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lpcr_fix := \"Declare the permission in the same region as the function\"\n\n_pf_lpcr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-permission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-cross-region-function\", \"ERROR\", name,\n\t\"Properties.FunctionName\",\n\tsprintf(\"function region '%v' is not the deploy region '%v'; a resource policy is attached in the function's own region and cannot be added across regions\", [parts[3], region]),\n\t_pf_lpcr_fix, _pf_lpcr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in _pf_lam_perm\n\tparts := _pf_lam_arn(resolve(name, \"Properties.FunctionName\"))\n\tparts[2] == \"lambda\"\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-function-name-latest",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A permission cannot name $LATEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lpfl_fix := \"Drop the :$LATEST qualifier, or name a published version or alias\"\n\n_pf_lpfl_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-function-name-latest\", \"ERROR\", name,\n\t\"Properties.FunctionName\",\n\t\"a :$LATEST qualifier; Lambda refuses to attach a resource policy to the unpublished version and the CFN pattern lets it through\",\n\t_pf_lpfl_fix, _pf_lpfl_url) if {\n\tsome name in _pf_lam_perm\n\tv := resolve(name, \"Properties.FunctionName\")\n\tis_string(v)\n\tendswith(v, \":$LATEST\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-function-url-auth-type-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "FunctionUrlAuthType is AWS_IAM or NONE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lpue_fix := \"Set FunctionUrlAuthType to AWS_IAM or NONE\"\n\n_pf_lpue_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-permission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-function-url-auth-type-enum\", \"ERROR\", name,\n\t\"Properties.FunctionUrlAuthType\",\n\tsprintf(\"FunctionUrlAuthType '%v'; the condition key takes AWS_IAM or NONE\", [v]),\n\t_pf_lpue_fix, _pf_lpue_url) if {\n\tsome name in _pf_lam_perm\n\tv := resolve(name, \"Properties.FunctionUrlAuthType\")\n\tis_string(v)\n\tnot v in {\"AWS_IAM\", \"NONE\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-policy-size",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A function resource policy has a size limit",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lpps_fix := \"Split the statements across fewer, broader permissions\"\n\n_pf_lpps_url := \"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-policy-size\", \"ERROR\", name,\n\t\"Properties.SourceArn\",\n\tsprintf(\"about %v characters of source ARNs across the permissions on this function; they all land in one resource policy, which fails with PolicyLengthExceededException past 20 KB\", [total]),\n\t_pf_lpps_fix, _pf_lpps_url) if {\n\tsome name in _pf_lam_perm\n\ttarget := resolve(name, \"Properties.FunctionName\")\n\ttotal := sum([n |\n\t\tsome p in _pf_lam_perm\n\t\tresolve(p, \"Properties.FunctionName\") == target\n\t\tv := resolve(p, \"Properties.SourceArn\")\n\t\tis_string(v)\n\t\tn := count(v)\n\t])\n\ttotal >= 20480\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-principal-service-domain",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A service principal is a domain-style identifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lppd_fix := \"Use the domain form of the service principal (s3.amazonaws.com, not s3)\"\n\n_pf_lppd_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-principal-service-domain\", \"ERROR\", name,\n\t\"Properties.Principal\",\n\tsprintf(\"principal '%v' is neither an account, an ARN nor a domain-style service identifier; services are named like s3.amazonaws.com\", [v]),\n\t_pf_lppd_fix, _pf_lppd_url) if {\n\tsome name in _pf_lam_perm\n\tv := resolve(name, \"Properties.Principal\")\n\tis_string(v)\n\tv != \"*\"\n\tnot contains(v, \".\")\n\tnot startswith(v, \"arn:\")\n\tnot regex.match(`^[0-9]{12}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-principal-whitespace",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A principal has no whitespace",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lppw_fix := \"Remove the whitespace from Principal\"\n\n_pf_lppw_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-principal-whitespace\", \"ERROR\", name,\n\t\"Properties.Principal\",\n\tsprintf(\"whitespace in principal '%v'; the CFN pattern ^.*$ accepts it but the API pattern [^\\\\s]+ rejects it\", [v]),\n\t_pf_lppw_fix, _pf_lppw_url) if {\n\tsome name in _pf_lam_perm\n\tv := resolve(name, \"Properties.Principal\")\n\tis_string(v)\n\tregex.match(`\\s`, v)\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-source-arn-with-account-principal",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "SourceArn narrows service principals, not account principals",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lpap_fix := \"Drop SourceArn when the principal is an account or IAM ARN\"\n\n_pf_lpap_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-source-arn-with-account-principal\", \"ERROR\", name,\n\t\"Properties.SourceArn\",\n\tsprintf(\"SourceArn with principal '%v'; aws:SourceArn is set by a calling service, so an IAM principal calling directly never matches it\", [p]),\n\t_pf_lpap_fix, _pf_lpap_url) if {\n\tsome name in _pf_lam_perm\n\tprops := _pf_lam_props(name)\n\t_pf_lam_has_key(props, \"SourceArn\")\n\tp := resolve(name, \"Properties.Principal\")\n\tis_string(p)\n\tstartswith(p, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-perm-url-auth-action",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "FunctionUrlAuthType goes with the function URL action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Permission"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lpua_fix := \"Use Action lambda:InvokeFunctionUrl when FunctionUrlAuthType is set\"\n\n_pf_lpua_url := \"https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html\"\n\nviolation contains make_diag_full(\"pf-lambda-perm-url-auth-action\", \"ERROR\", name,\n\t\"Properties.Action\",\n\tsprintf(\"FunctionUrlAuthType with action '%v'; the lambda:FunctionUrlAuthType condition key is only evaluated for lambda:InvokeFunctionUrl, so the statement never constrains anything\", [a]),\n\t_pf_lpua_fix, _pf_lpua_url) if {\n\tsome name in _pf_lam_perm\n\tprops := _pf_lam_props(name)\n\t_pf_lam_has_key(props, \"FunctionUrlAuthType\")\n\ta := resolve(name, \"Properties.Action\")\n\ta != \"lambda:InvokeFunctionUrl\"\n\tnot _pf_lam_has_key(props, \"InvokedViaFunctionUrl\")\n}\n"
+  },
+  {
     "id": "pf-lambda-timeout-max",
     "service": "lambda",
     "severity": "ERROR",
@@ -5074,6 +5470,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Lambda::Function"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema has the 1 floor but is missing the 900 cap (engine\n# clean on 901, F3034 on 0).\nviolation contains make_diag_full(\"pf-lambda-timeout-max\", \"ERROR\", name,\n\t\"Properties.Timeout\",\n\tsprintf(\"Timeout %v is over the 15-minute cap; the function create fails with \\\"Value '%v' at 'timeout' failed to satisfy constraint: Member must have value less than or equal to 900\\\"\", [t, t]),\n\t\"Use at most 900 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tt := to_number(resolve(name, \"Properties.Timeout\"))\n\tt > 900\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-auth-type-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "AuthType is AWS_IAM or NONE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_luae_fix := \"Set AuthType to AWS_IAM or NONE\"\n\n_pf_luae_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-url.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-auth-type-enum\", \"ERROR\", name,\n\t\"Properties.AuthType\",\n\tsprintf(\"AuthType '%v'; a function URL is either IAM-signed (AWS_IAM) or public (NONE)\", [v]),\n\t_pf_luae_fix, _pf_luae_url) if {\n\tsome name in _pf_lam_url\n\tv := resolve(name, \"Properties.AuthType\")\n\tis_string(v)\n\tnot v in {\"AWS_IAM\", \"NONE\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-cors-allow-methods-wildcard-mix",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "CORS methods are a wildcard or a list, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lucm_fix := \"Use either \\\"*\\\" alone or an explicit list of methods\"\n\n_pf_lucm_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_Cors.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-cors-allow-methods-wildcard-mix\", \"ERROR\", name,\n\t\"Properties.Cors.AllowMethods\",\n\t\"'*' mixed with explicit entries in AllowMethods; the wildcard already covers every method and the URL create rejects the mixed list\",\n\t_pf_lucm_fix, _pf_lucm_url) if {\n\tsome name in _pf_lam_url\n\tcors := _pf_lam_obj(_pf_lam_props(name), \"Cors\")\n\tvs := _pf_lam_list(object.get(cors, \"AllowMethods\", []))\n\t\"*\" in vs\n\tcount(vs) > 1\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-cors-allow-origins-wildcard-mix",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "CORS origins are a wildcard or a list, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_luco_fix := \"Use either \\\"*\\\" alone or an explicit list of origins\"\n\n_pf_luco_url := \"https://docs.aws.amazon.com/lambda/latest/dg/urls-configuration.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-cors-allow-origins-wildcard-mix\", \"ERROR\", name,\n\t\"Properties.Cors.AllowOrigins\",\n\t\"'*' mixed with explicit entries in AllowOrigins; a browser accepts a single Access-Control-Allow-Origin value, so the wildcard cannot be combined with named origins\",\n\t_pf_luco_fix, _pf_luco_url) if {\n\tsome name in _pf_lam_url\n\tcors := _pf_lam_obj(_pf_lam_props(name), \"Cors\")\n\tvs := _pf_lam_list(object.get(cors, \"AllowOrigins\", []))\n\t\"*\" in vs\n\tcount(vs) > 1\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-invoke-mode-enum",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "InvokeMode is BUFFERED or RESPONSE_STREAM",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_luie_fix := \"Set InvokeMode to BUFFERED or RESPONSE_STREAM\"\n\n_pf_luie_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-url.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-invoke-mode-enum\", \"ERROR\", name,\n\t\"Properties.InvokeMode\",\n\tsprintf(\"InvokeMode '%v'; the URL either buffers the response (BUFFERED) or streams it (RESPONSE_STREAM)\", [v]),\n\t_pf_luie_fix, _pf_luie_url) if {\n\tsome name in _pf_lam_url\n\tv := resolve(name, \"Properties.InvokeMode\")\n\tis_string(v)\n\tnot v in {\"BUFFERED\", \"RESPONSE_STREAM\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-qualifier-latest-literal",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A URL qualifier cannot be $LATEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_luql_fix := \"Omit Qualifier to attach the URL to $LATEST\"\n\n_pf_luql_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-url.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-qualifier-latest-literal\", \"ERROR\", name,\n\t\"Properties.Qualifier\",\n\t\"Qualifier $LATEST; the unpublished version is addressed by leaving Qualifier out and the property pattern does not accept the literal\",\n\t_pf_luql_fix, _pf_luql_url) if {\n\tsome name in _pf_lam_url\n\tresolve(name, \"Properties.Qualifier\") == \"$LATEST\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-qualifier-permission-match",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A qualified URL needs a qualified permission",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_luqp_fix := \"Include the same alias in the Permission FunctionName\"\n\n_pf_luqp_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html\"\n\n# Permission が同じ修飾子のエイリアスリソースを指しているなら満たしている。\n_pf_luqp_alias(fn, q) if {\n\tfn in _pf_lam_alias\n\tresolve(fn, \"Properties.Name\") == q\n}\n\nviolation contains make_diag_full(\"pf-lambda-url-qualifier-permission-match\", \"ERROR\", name,\n\t\"Properties.Qualifier\",\n\tsprintf(\"URL on qualifier '%v' but a function URL permission names an unqualified function; the resource policy is attached to the unqualified function and never applies to the alias\", [q]),\n\t_pf_luqp_fix, _pf_luqp_url) if {\n\tsome name in _pf_lam_url\n\tq := resolve(name, \"Properties.Qualifier\")\n\tis_string(q)\n\tsome p in _pf_lam_perm\n\tprops := _pf_lam_props(p)\n\t_pf_lam_has_key(props, \"FunctionUrlAuthType\")\n\tfn := resolve(p, \"Properties.FunctionName\")\n\tis_string(fn)\n\tnot endswith(fn, sprintf(\":%v\", [q]))\n\tnot _pf_luqp_alias(fn, q)\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-target-arn-and-qualifier",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The qualifier goes in TargetFunctionArn or Qualifier, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_luta_fix := \"Drop Qualifier when TargetFunctionArn already carries the alias\"\n\n_pf_luta_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-url.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-target-arn-and-qualifier\", \"ERROR\", name,\n\t\"Properties.Qualifier\",\n\t\"a qualifier in both TargetFunctionArn and Qualifier; the two are alternative ways to name the same alias and the pair is not defined\",\n\t_pf_luta_fix, _pf_luta_url) if {\n\tsome name in _pf_lam_url\n\tprops := _pf_lam_props(name)\n\t_pf_lam_has_key(props, \"Qualifier\")\n\tparts := _pf_lam_arn(resolve(name, \"Properties.TargetFunctionArn\"))\n\tparts[2] == \"lambda\"\n\tcount(parts) > 7\n}\n"
+  },
+  {
+    "id": "pf-lambda-url-target-name-length",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A bare target function name is at most 64 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::Url"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lutn_fix := \"Use the function ARN, or a name of 64 characters or fewer\"\n\n_pf_lutn_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateFunctionUrlConfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-url-target-name-length\", \"ERROR\", name,\n\t\"Properties.TargetFunctionArn\",\n\tsprintf(\"bare function name of %v characters; only the ARN form may be longer, the name form stops at 64\", [count(v)]),\n\t_pf_lutn_fix, _pf_lutn_url) if {\n\tsome name in _pf_lam_url\n\tv := resolve(name, \"Properties.TargetFunctionArn\")\n\tis_string(v)\n\tnot startswith(v, \"arn:\")\n\tcount(v) > 64\n}\n"
   },
   {
     "id": "pf-logs-filter-pattern-bracket",
@@ -7632,7 +8116,7 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   },
   {
     "name": "_lib/lambda",
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::Lambda::EventSourceMapping rules: literal-vs-token\n# discrimination, ARN segments, raw-document access (resolve() cannot prove a key\n# absent) and — the one every rule needs — which event source a mapping points at.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_lam_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_lam_arn(v) := parts if {\n\t_pf_lam_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# Raw properties. The preprocessed document is the only place where \"the key is\n# absent\" can be told apart from \"the value is a token\".\n_pf_lam_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_lam_has(name, k) if {\n\tobject.get(_pf_lam_props(name), k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_lam_get(name, k) := v if {\n\tv := object.get(_pf_lam_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_lam_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_lam_esm := resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\n# --- which event source does this mapping read from? ------------------------\n# The config blocks are decisive: they exist only for one source family each.\n\n_pf_lam_is(name, \"docdb\") if _pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\n_pf_lam_is(name, \"selfkafka\") if _pf_lam_has(name, \"SelfManagedEventSource\")\n\n_pf_lam_is(name, \"kafka\") if _pf_lam_has(name, \"AmazonManagedKafkaEventSourceConfig\")\n\n# An in-template source resource: resolve() hands back the logical id.\n_pf_lam_src_type := {\n\t\"AWS::SQS::Queue\": \"sqs\",\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::DynamoDB::Table\": \"dynamodb\",\n\t\"AWS::DynamoDB::GlobalTable\": \"dynamodb\",\n\t\"AWS::MSK::Cluster\": \"kafka\",\n\t\"AWS::MSK::ServerlessCluster\": \"kafka\",\n\t\"AWS::AmazonMQ::Broker\": \"mq\",\n\t\"AWS::DocDB::DBCluster\": \"docdb\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tsrc := resolve(name, \"Properties.EventSourceArn\")\n\tsome t, k in _pf_lam_src_type\n\tsrc in resources_of_type(t)\n\tk == kind\n}\n\n# A literal ARN: the service segment names the source. DocumentDB clusters carry\n# an rds ARN, so they are only recognised through DocumentDBEventSourceConfig.\n_pf_lam_arn_kind := {\n\t\"sqs\": \"sqs\",\n\t\"kinesis\": \"kinesis\",\n\t\"dynamodb\": \"dynamodb\",\n\t\"kafka\": \"kafka\",\n\t\"mq\": \"mq\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\t_pf_lam_arn_kind[parts[2]] == kind\n}\n\n# The union: what the mapping reads from, by config block or by source ARN.\n_pf_lam_is(name, kind) if _pf_lam_srcarn(name, kind)\n\n# The source ARN names something other than `kind`. Unlike _pf_lam_not this\n# ignores the config blocks, so a rule can say \"this block is on the wrong ARN\".\n_pf_lam_arn_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_srcarn(name, other)\n}\n\n# Stream sources: the family that accepts StartingPosition, offsets and shard state.\n_pf_lam_stream(name) if _pf_lam_is(name, \"kinesis\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"dynamodb\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"kafka\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"selfkafka\")\n\n# The mapping's source is known to be something other than `kind`.\n_pf_lam_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"selfkafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_is(name, other)\n}\n\n# --- event filter patterns --------------------------------------------------\n# Filters[].Pattern is a JSON *string* holding an EventBridge pattern. There is\n# no walk builtin and Rego forbids recursion, so the traversal is unrolled to\n# four object levels: DynamoDB patterns are the deepest in practice\n# (dynamodb.NewImage.<attribute>.<type>).\n# ponytail: depth-capped at 4, deepen only if a real pattern nests further.\n\n_pf_lam_filters(name) := f if {\n\tf := object.get(_pf_lam_obj(_pf_lam_props(name), \"FilterCriteria\"), \"Filters\", [])\n\tis_array(f)\n}\n\n_pf_lam_pat(f) := o if {\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"\")\n\tis_string(p)\n\to := json.unmarshal(p)\n\tis_object(o)\n}\n\n_pf_lam_scalar(v) if {\n\tnot is_object(v)\n\tnot is_array(v)\n}\n\n# [path, value] for every scalar sitting where the pattern grammar wants an array.\n_pf_lam_pat_scalars(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], v] | some k, v in o; _pf_lam_scalar(v)],\n\t\t[[[k1, k2], v] | some k1, o1 in o; is_object(o1); some k2, v in o1; _pf_lam_scalar(v)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, v in o2; _pf_lam_scalar(v)],\n\t\t[[[k1, k2, k3, k4], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, v in o3; _pf_lam_scalar(v)],\n\t),\n)\n\n# Objects nested inside a match array: these are the operator objects\n# ({\"prefix\": \"a\"}, {\"numeric\": [\">\", 1]}, ...).\n_pf_lam_pat_ops(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], x] | some k, a in o; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2], x] | some k1, o1 in o; is_object(o1); some k2, a in o1; is_array(a); some x in a; is_object(x)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, a in o2; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2, k3, k4], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, a in o3; is_array(a); some x in a; is_object(x)],\n\t),\n)\n\n_pf_lam_has_key(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A property that CloudFormation accepts as either a scalar or a list.\n_pf_lam_list(v) := v if is_array(v)\n\n_pf_lam_list(v) := [v] if is_string(v)\n\n_pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\")\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::Lambda::EventSourceMapping rules: literal-vs-token\n# discrimination, ARN segments, raw-document access (resolve() cannot prove a key\n# absent) and — the one every rule needs — which event source a mapping points at.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_lam_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_lam_arn(v) := parts if {\n\t_pf_lam_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# Raw properties. The preprocessed document is the only place where \"the key is\n# absent\" can be told apart from \"the value is a token\".\n_pf_lam_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_lam_has(name, k) if {\n\tobject.get(_pf_lam_props(name), k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_lam_get(name, k) := v if {\n\tv := object.get(_pf_lam_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_lam_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_lam_esm := resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\n# --- which event source does this mapping read from? ------------------------\n# The config blocks are decisive: they exist only for one source family each.\n\n_pf_lam_is(name, \"docdb\") if _pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\n_pf_lam_is(name, \"selfkafka\") if _pf_lam_has(name, \"SelfManagedEventSource\")\n\n_pf_lam_is(name, \"kafka\") if _pf_lam_has(name, \"AmazonManagedKafkaEventSourceConfig\")\n\n# An in-template source resource: resolve() hands back the logical id.\n_pf_lam_src_type := {\n\t\"AWS::SQS::Queue\": \"sqs\",\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::DynamoDB::Table\": \"dynamodb\",\n\t\"AWS::DynamoDB::GlobalTable\": \"dynamodb\",\n\t\"AWS::MSK::Cluster\": \"kafka\",\n\t\"AWS::MSK::ServerlessCluster\": \"kafka\",\n\t\"AWS::AmazonMQ::Broker\": \"mq\",\n\t\"AWS::DocDB::DBCluster\": \"docdb\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tsrc := resolve(name, \"Properties.EventSourceArn\")\n\tsome t, k in _pf_lam_src_type\n\tsrc in resources_of_type(t)\n\tk == kind\n}\n\n# A literal ARN: the service segment names the source. DocumentDB clusters carry\n# an rds ARN, so they are only recognised through DocumentDBEventSourceConfig.\n_pf_lam_arn_kind := {\n\t\"sqs\": \"sqs\",\n\t\"kinesis\": \"kinesis\",\n\t\"dynamodb\": \"dynamodb\",\n\t\"kafka\": \"kafka\",\n\t\"mq\": \"mq\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\t_pf_lam_arn_kind[parts[2]] == kind\n}\n\n# The union: what the mapping reads from, by config block or by source ARN.\n_pf_lam_is(name, kind) if _pf_lam_srcarn(name, kind)\n\n# The source ARN names something other than `kind`. Unlike _pf_lam_not this\n# ignores the config blocks, so a rule can say \"this block is on the wrong ARN\".\n_pf_lam_arn_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_srcarn(name, other)\n}\n\n# Stream sources: the family that accepts StartingPosition, offsets and shard state.\n_pf_lam_stream(name) if _pf_lam_is(name, \"kinesis\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"dynamodb\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"kafka\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"selfkafka\")\n\n# The mapping's source is known to be something other than `kind`.\n_pf_lam_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"selfkafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_is(name, other)\n}\n\n# --- event filter patterns --------------------------------------------------\n# Filters[].Pattern is a JSON *string* holding an EventBridge pattern. There is\n# no walk builtin and Rego forbids recursion, so the traversal is unrolled to\n# four object levels: DynamoDB patterns are the deepest in practice\n# (dynamodb.NewImage.<attribute>.<type>).\n# ponytail: depth-capped at 4, deepen only if a real pattern nests further.\n\n_pf_lam_filters(name) := f if {\n\tf := object.get(_pf_lam_obj(_pf_lam_props(name), \"FilterCriteria\"), \"Filters\", [])\n\tis_array(f)\n}\n\n_pf_lam_pat(f) := o if {\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"\")\n\tis_string(p)\n\to := json.unmarshal(p)\n\tis_object(o)\n}\n\n_pf_lam_scalar(v) if {\n\tnot is_object(v)\n\tnot is_array(v)\n}\n\n# [path, value] for every scalar sitting where the pattern grammar wants an array.\n_pf_lam_pat_scalars(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], v] | some k, v in o; _pf_lam_scalar(v)],\n\t\t[[[k1, k2], v] | some k1, o1 in o; is_object(o1); some k2, v in o1; _pf_lam_scalar(v)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, v in o2; _pf_lam_scalar(v)],\n\t\t[[[k1, k2, k3, k4], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, v in o3; _pf_lam_scalar(v)],\n\t),\n)\n\n# Objects nested inside a match array: these are the operator objects\n# ({\"prefix\": \"a\"}, {\"numeric\": [\">\", 1]}, ...).\n_pf_lam_pat_ops(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], x] | some k, a in o; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2], x] | some k1, o1 in o; is_object(o1); some k2, a in o1; is_array(a); some x in a; is_object(x)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, a in o2; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2, k3, k4], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, a in o3; is_array(a); some x in a; is_object(x)],\n\t),\n)\n\n_pf_lam_has_key(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A property that CloudFormation accepts as either a scalar or a list.\n_pf_lam_list(v) := v if is_array(v)\n\n_pf_lam_list(v) := [v] if is_string(v)\n\n_pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\")\n# --- #75 非 ESM 分で足す共有ヘルパー -----------------------------------------\n# rules/_lib/lambda.rego の末尾に足す。#117 がマージされてワークツリーが\n# main に戻ってから適用する。\n\n_pf_lam_alias := resources_of_type(\"AWS::Lambda::Alias\")\n\n_pf_lam_ver := resources_of_type(\"AWS::Lambda::Version\")\n\n_pf_lam_fn := resources_of_type(\"AWS::Lambda::Function\")\n\n_pf_lam_perm := resources_of_type(\"AWS::Lambda::Permission\")\n\n_pf_lam_url := resources_of_type(\"AWS::Lambda::Url\")\n\n_pf_lam_layer := resources_of_type(\"AWS::Lambda::LayerVersion\")\n\n_pf_lam_layerperm := resources_of_type(\"AWS::Lambda::LayerVersionPermission\")\n\n_pf_lam_csc := resources_of_type(\"AWS::Lambda::CodeSigningConfig\")\n\n_pf_lam_eic := resources_of_type(\"AWS::Lambda::EventInvokeConfig\")\n\n# EventInvokeConfig の宛先。OnSuccess と OnFailure は制約がほぼ共通なので\n# 1 つの集合にまとめ、どちら側かを second element に残す。\n_pf_lam_eic_dest contains [name, side, dest] if {\n\tsome name in _pf_lam_eic\n\tsome side in [\"OnSuccess\", \"OnFailure\"]\n\tdest := resolve(name, sprintf(\"Properties.DestinationConfig.%v.Destination\", [side]))\n\tis_string(dest)\n}\n\n# 署名プロファイルのバージョン ARN。CodeSigningConfig の唯一の必須要素で、\n# 4 本のルールが同じリストを回すのでここに置く。\n_pf_lam_csc_profiles contains [name, arn] if {\n\tsome name in _pf_lam_csc\n\tpubs := _pf_lam_obj(_pf_lam_props(name), \"AllowedPublishers\")\n\tsome arn in _pf_lam_list(object.get(pubs, \"SigningProfileVersionArns\", []))\n\tis_string(arn)\n}\n"
   },
   {
     "name": "_lib/s3",

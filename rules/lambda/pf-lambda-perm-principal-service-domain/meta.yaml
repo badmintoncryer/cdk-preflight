@@ -1,0 +1,12 @@
+id: pf-lambda-perm-principal-service-domain
+service: lambda
+resourceTypes: [AWS::Lambda::Permission]
+severity: ERROR
+title: "A service principal is a domain-style identifier"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'AddPermission (us-east-1, 2026-09-07): "The provided principal was invalid. Please check the principal and try again."'
+addedOn: 2026-09-07

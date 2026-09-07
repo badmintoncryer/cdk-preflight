@@ -1,0 +1,12 @@
+id: pf-lambda-perm-policy-size
+service: lambda
+resourceTypes: [AWS::Lambda::Permission]
+severity: ERROR
+title: "A function resource policy has a size limit"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'AddPermission (us-east-1, 2026-09-07): "The final policy size (21573) is bigger than the limit (20480)."'
+addedOn: 2026-09-07

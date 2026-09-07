@@ -1,0 +1,12 @@
+id: pf-lambda-layerperm-policy-size
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersionPermission]
+severity: ERROR
+title: "A layer version policy has a size limit"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AddLayerVersionPermission.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'AddLayerVersionPermission (us-east-1, 2026-09-07): "The provided principal was invalid. Please check the principal and try again." CONFOUND: the 25 statements need 25 distinct principals, and Lambda rejects the synthetic account ids before it weighs the policy size.'
+addedOn: 2026-09-07

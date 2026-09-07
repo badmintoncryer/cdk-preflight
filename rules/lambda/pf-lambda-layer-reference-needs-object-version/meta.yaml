@@ -1,0 +1,12 @@
+id: pf-lambda-layer-reference-needs-object-version
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersion]
+severity: ERROR
+title: "REFERENCE content needs an object version"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'PublishLayerVersion (us-east-1, 2026-09-07): "Lambda is unable to access the specified S3 object. Verify that your bucket policy grants the Lambda service principal s3:GetObjectVersion on the object, with aws:SourceAccount scoped to your account."'
+addedOn: 2026-09-07

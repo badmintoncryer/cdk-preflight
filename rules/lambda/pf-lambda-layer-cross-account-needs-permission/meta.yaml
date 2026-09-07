@@ -1,0 +1,12 @@
+id: pf-lambda-layer-cross-account-needs-permission
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A cross-account layer needs a share"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/adding-layers.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: lambda:GetLayerVersion on resource: arn:aws:lambda:us-east-1:444455556666:layer:l:1 because no resource-based policy allows the lambda:GetLayerVersion action"'
+addedOn: 2026-09-07

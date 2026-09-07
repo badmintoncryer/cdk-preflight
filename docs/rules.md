@@ -395,11 +395,25 @@
 | `pf-kms-key-spec-region` | AWS::KMS::Key | KeySpec SM2 exists only in China regions | none |
 | `pf-kms-key-spec-usage` | AWS::KMS::Key | KeyUsage must match KeySpec (symmetric: ENCRYPT_DECRYPT, HMAC: GENERATE_VERIFY_MAC, RSA: ENCRYPT_DECRYPT|SIGN_VERIFY, NIST ECC: SIGN_VERIFY|KEY_AGREEMENT, ed25519/secp256k1/ML-DSA: SIGN_VERIFY) and is required for every non-symmetric key | none |
 | `pf-kms-replica-primary-arn` | AWS::KMS::ReplicaKey | ReplicaKey.PrimaryKeyArn must be the ARN of a multi-Region primary key (key/mrk-...) in a different region of the same partition, so a primary key in the same stack can never be replicated by it | none |
+| `pf-lambda-alias-additional-version-distinct` | AWS::Lambda::Alias | A weighted alias must route to a different version | none |
+| `pf-lambda-alias-additional-version-not-latest` | AWS::Lambda::Alias | A routing entry cannot name $LATEST | none |
+| `pf-lambda-alias-additional-versions-max-one` | AWS::Lambda::Alias | An alias can carry only one additional version | none |
+| `pf-lambda-alias-routing-not-latest` | AWS::Lambda::Alias | A weighted alias cannot sit on $LATEST | none |
+| `pf-lambda-alias-version-not-alias` | AWS::Lambda::Alias | An alias cannot point at another alias | none |
+| `pf-lambda-alias-version-weight-range` | AWS::Lambda::Alias | A routing weight is a fraction between 0 and 1 | none |
 | `pf-lambda-code-s3-pair` | AWS::Lambda::Function | S3-based Code needs both S3Bucket and S3Key | none |
+| `pf-lambda-code-signing-arn-region` | AWS::Lambda::Function | A code signing config lives in the deploy region | none |
+| `pf-lambda-code-signing-zip-only` | AWS::Lambda::Function | Code signing applies to .zip functions only | none |
 | `pf-lambda-code-zipfile-exclusive` | AWS::Lambda::Function | Inline ZipFile excludes every other Code parameter | none |
+| `pf-lambda-csc-untrusted-artifact-enum` | AWS::Lambda::CodeSigningConfig | UntrustedArtifactOnDeployment is Warn or Enforce | pending-engine |
 | `pf-lambda-dlq-region` | AWS::Lambda::Function | The dead letter target must sit in the deploy region | none |
 | `pf-lambda-dlq-service` | AWS::Lambda::Function | The dead letter target must be an SQS queue or SNS topic | none |
 | `pf-lambda-efs-requires-vpc` | AWS::Lambda::Function | Mounting EFS requires VpcConfig | none |
+| `pf-lambda-eic-destination-no-sns-fifo` | AWS::Lambda::EventInvokeConfig | An invoke destination cannot be a FIFO topic | none |
+| `pf-lambda-eic-destination-no-sqs-fifo` | AWS::Lambda::EventInvokeConfig | An invoke destination cannot be a FIFO queue | none |
+| `pf-lambda-eic-destination-region` | AWS::Lambda::EventInvokeConfig | An invoke destination lives in the deploy region | none |
+| `pf-lambda-eic-destination-service` | AWS::Lambda::EventInvokeConfig | An invoke destination is a queue, topic, bucket, function or event bus | none |
+| `pf-lambda-eic-onsuccess-no-s3` | AWS::Lambda::EventInvokeConfig | An S3 bucket is an on-failure destination only | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
 | `pf-lambda-esm-batchsize-window` | AWS::Lambda::EventSourceMapping | SQS batch sizes over 10 need a batching window | none |
 | `pf-lambda-esm-bisect-batch-stream-only` | AWS::Lambda::EventSourceMapping | BisectBatchOnFunctionError only applies to Kinesis and DynamoDB streams | none |
@@ -455,8 +469,38 @@
 | `pf-lambda-esm-starting-position-timestamp-requires-at-timestamp` | AWS::Lambda::EventSourceMapping | StartingPositionTimestamp needs StartingPosition AT_TIMESTAMP | none |
 | `pf-lambda-esm-starting-position-timestamp-sqs-unsupported` | AWS::Lambda::EventSourceMapping | SQS event sources reject StartingPositionTimestamp | none |
 | `pf-lambda-esm-tumbling-window-stream-only` | AWS::Lambda::EventSourceMapping | TumblingWindowInSeconds only applies to Kinesis and DynamoDB streams | none |
+| `pf-lambda-layer-arn-region` | AWS::Lambda::Function | A layer lives in the deploy region | none |
+| `pf-lambda-layer-compatible-architectures-enum` | AWS::Lambda::LayerVersion | CompatibleArchitectures are x86_64 or arm64 | pending-engine |
+| `pf-lambda-layer-compatible-runtimes-enum` | AWS::Lambda::LayerVersion | CompatibleRuntimes are known runtime identifiers | pending-engine |
+| `pf-lambda-layer-content-storage-mode-enum` | AWS::Lambda::LayerVersion | S3ObjectStorageMode is COPY or REFERENCE | pending-engine |
+| `pf-lambda-layer-cross-account-needs-permission` | AWS::Lambda::Function | A cross-account layer needs a share | none |
+| `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | none |
+| `pf-lambda-layer-reference-glacier-storage-class` | AWS::Lambda::LayerVersion | REFERENCE content cannot be archived | none |
+| `pf-lambda-layer-reference-needs-bucket-policy` | AWS::Lambda::LayerVersion | REFERENCE content needs a bucket policy for Lambda | none |
+| `pf-lambda-layer-reference-needs-object-version` | AWS::Lambda::LayerVersion | REFERENCE content needs an object version | none |
+| `pf-lambda-layer-reference-needs-versioning` | AWS::Lambda::LayerVersion | REFERENCE content needs a versioned bucket | none |
+| `pf-lambda-layerperm-arn-length` | AWS::Lambda::LayerVersionPermission | A layer version ARN is at most 140 characters | none |
+| `pf-lambda-layerperm-arn-version-suffix` | AWS::Lambda::LayerVersionPermission | A layer permission names a layer version | none |
+| `pf-lambda-layerperm-organization-id-needs-wildcard-principal` | AWS::Lambda::LayerVersionPermission | OrganizationId narrows a wildcard principal | none |
+| `pf-lambda-layerperm-policy-size` | AWS::Lambda::LayerVersionPermission | A layer version policy has a size limit | pending-engine |
 | `pf-lambda-memory-max` | AWS::Lambda::Function | MemorySize tops out at 10240 | pending-engine |
+| `pf-lambda-perm-cross-region-function` | AWS::Lambda::Permission | A permission stays in the function region | none |
+| `pf-lambda-perm-function-name-latest` | AWS::Lambda::Permission | A permission cannot name $LATEST | none |
+| `pf-lambda-perm-function-url-auth-type-enum` | AWS::Lambda::Permission | FunctionUrlAuthType is AWS_IAM or NONE | pending-engine |
+| `pf-lambda-perm-policy-size` | AWS::Lambda::Permission | A function resource policy has a size limit | pending-engine |
+| `pf-lambda-perm-principal-service-domain` | AWS::Lambda::Permission | A service principal is a domain-style identifier | none |
+| `pf-lambda-perm-principal-whitespace` | AWS::Lambda::Permission | A principal has no whitespace | none |
+| `pf-lambda-perm-source-arn-with-account-principal` | AWS::Lambda::Permission | SourceArn narrows service principals, not account principals | pending-engine |
+| `pf-lambda-perm-url-auth-action` | AWS::Lambda::Permission | FunctionUrlAuthType goes with the function URL action | none |
 | `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | pending-engine |
+| `pf-lambda-url-auth-type-enum` | AWS::Lambda::Url | AuthType is AWS_IAM or NONE | pending-engine |
+| `pf-lambda-url-cors-allow-methods-wildcard-mix` | AWS::Lambda::Url | CORS methods are a wildcard or a list, not both | none |
+| `pf-lambda-url-cors-allow-origins-wildcard-mix` | AWS::Lambda::Url | CORS origins are a wildcard or a list, not both | none |
+| `pf-lambda-url-invoke-mode-enum` | AWS::Lambda::Url | InvokeMode is BUFFERED or RESPONSE_STREAM | pending-engine |
+| `pf-lambda-url-qualifier-latest-literal` | AWS::Lambda::Url | A URL qualifier cannot be $LATEST | none |
+| `pf-lambda-url-qualifier-permission-match` | AWS::Lambda::Url | A qualified URL needs a qualified permission | none |
+| `pf-lambda-url-target-arn-and-qualifier` | AWS::Lambda::Url | The qualifier goes in TargetFunctionArn or Qualifier, not both | none |
+| `pf-lambda-url-target-name-length` | AWS::Lambda::Url | A bare target function name is at most 64 characters | none |
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |
 | `pf-logs-metric-dimensions-default-exclusive` | AWS::Logs::MetricFilter | Dimensions and DefaultValue are mutually exclusive | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | none |

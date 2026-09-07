@@ -1,0 +1,12 @@
+id: pf-lambda-layer-reference-glacier-storage-class
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersion]
+severity: ERROR
+title: "REFERENCE content cannot be archived"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: doc-only
+  evidence: 'REFERENCE content cannot sit in a Glacier storage class. Not benched: same in-template-bucket problem as pf-lambda-layer-reference-needs-versioning (2026-09-07).'
+addedOn: 2026-09-07

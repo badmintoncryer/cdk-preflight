@@ -1,0 +1,12 @@
+id: pf-lambda-alias-routing-not-latest
+service: lambda
+resourceTypes: [AWS::Lambda::Alias]
+severity: ERROR
+title: "A weighted alias cannot sit on $LATEST"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuring-alias-routing.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateAlias (us-east-1, 2026-09-07): "$LATEST is not supported for an alias pointing to more than 1 version"'
+addedOn: 2026-09-07

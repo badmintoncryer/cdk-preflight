@@ -1,0 +1,12 @@
+id: pf-lambda-alias-version-weight-range
+service: lambda
+resourceTypes: [AWS::Lambda::Alias]
+severity: ERROR
+title: "A routing weight is a fraction between 0 and 1"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AliasRoutingConfiguration.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateAlias (us-east-1, 2026-09-07): "1 validation error detected: Value ''{2=1.5}'' at ''routingConfig.additionalVersionWeights'' failed to satisfy constraint: Map value must satisfy constraint: [Member must have value less than or equal to 1.0, Member must have value greater than or equal to 0.0, Member must not be null]"'
+addedOn: 2026-09-07
