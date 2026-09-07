@@ -1,0 +1,12 @@
+id: pf-events-target-input-exclusive
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Input, InputPath and InputTransformer are mutually exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Input plus InputPath on one target -> ROLLBACK_COMPLETE \"Only one of Input, InputPath, or InputTransformer must be provided for target t1\". All three pairings measured the same day via events:PutTargets give the same error."
+addedOn: 2026-09-07

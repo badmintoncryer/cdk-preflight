@@ -1,0 +1,12 @@
+id: pf-events-target-parameters-mismatch
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Target parameter blocks must match the target's resource type
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: EcsParameters on a Lambda target -> ROLLBACK_COMPLETE \"Parameter(s) EcsParameters not supported for target: t1\". Table measured the same day via events:PutTargets: Ecs/Kinesis/Batch/Http/RedshiftData/RunCommand/SageMakerPipeline/AppSync parameters are each refused on a mismatched target, while HttpParameters is accepted on both api-destination and execute-api and RedshiftDataParameters on both redshift and redshift-serverless. SqsParameters is excluded from the table: it is accepted on any target type (BROKEN-EXPECTATION for the documented pairing)."
+addedOn: 2026-09-07

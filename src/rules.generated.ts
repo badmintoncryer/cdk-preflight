@@ -3555,6 +3555,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key. Only the top level is\n# checked — that is the bench-verified scope, and it dodges operator objects\n# like {\"prefix\": \"...\"} that legally carry scalars deeper down.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tsome k, v in ep\n\t_pf_evpsv_scalar(v)\n}\n"
   },
   {
+    "id": "pf-events-target-dlq",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "A target dead-letter queue must be a standard SQS queue in the rule's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A target's dead-letter queue must be a standard SQS queue in the rule's own\n# Region. Measured 2026-09-07, events:PutTargets, us-east-1: an SNS or Lambda\n# ARN gives \"<service> is not supported as a dead letter resource\", a .fifo\n# queue gives \"SQS FIFO is not supported by Dead Letter Queues\", and a queue\n# in another Region is refused even with an identical queue policy that the\n# same-Region queue is accepted with.\n_pf_evtdlq_url := \"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-dlq.html\"\n\n_pf_evtdlq_arn(t) := a if {\n\tdlc := object.get(t, \"DeadLetterConfig\", null)\n\tis_object(dlc)\n\ta := object.get(dlc, \"Arn\", null)\n\tis_string(a)\n}\n\n_pf_evtdlq_part(arn, i) := parts[i] if {\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n}\n\nviolation contains make_diag_full(\"pf-events-target-dlq\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.DeadLetterConfig.Arn\", [t.index]),\n\tsprintf(\"A dead-letter queue must be an SQS queue, but '%s' is a %s resource; PutTargets fails with \\\"%s is not supported as a dead letter resource\\\"\", [arn, svc, svc]),\n\t\"Point DeadLetterConfig.Arn at an SQS queue\",\n\t_pf_evtdlq_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := _pf_evtdlq_arn(t.value)\n\tsvc := _pf_evtdlq_part(arn, 2)\n\tsvc != \"sqs\"\n}\n\nviolation contains make_diag_full(\"pf-events-target-dlq\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.DeadLetterConfig.Arn\", [t.index]),\n\tsprintf(\"'%s' is a FIFO queue; PutTargets fails with \\\"SQS FIFO is not supported by Dead Letter Queues\\\"\", [arn]),\n\t\"Use a standard queue as the dead-letter queue\",\n\t_pf_evtdlq_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := _pf_evtdlq_arn(t.value)\n\t_pf_evtdlq_part(arn, 2) == \"sqs\"\n\tendswith(arn, \".fifo\")\n}\n\nviolation contains make_diag_full(\"pf-events-target-dlq\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.DeadLetterConfig.Arn\", [t.index]),\n\tsprintf(\"The dead-letter queue is in '%s' but the rule deploys to '%s'; EventBridge refuses a cross-Region dead-letter queue\", [qr, region]),\n\t\"Use a dead-letter queue in the rule's own Region\",\n\t_pf_evtdlq_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tregion := data.cdk_preflight.deploy_region\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := _pf_evtdlq_arn(t.value)\n\t_pf_evtdlq_part(arn, 2) == \"sqs\"\n\tqr := _pf_evtdlq_part(arn, 3)\n\tqr != \"\"\n\tqr != region\n}\n"
+  },
+  {
+    "id": "pf-events-target-id-duplicate",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Target ids must be unique within a rule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Target ids are the update key for a rule's targets, so PutTargets refuses a\n# repeat: \"Parameter targets is not valid. Reason: More than one target with\n# Id '<id>' is provided.\" Measured 2026-09-07, us-east-1.\n_pf_evtid_ids(name) := [id |\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tid := object.get(t.value, \"Id\", null)\n\tis_string(id)\n]\n\nviolation contains make_diag_full(\"pf-events-target-id-duplicate\", \"ERROR\", name,\n\t\"Properties.Targets\",\n\tsprintf(\"Two targets share the Id '%s'; PutTargets fails with \\\"More than one target with Id '%s' is provided\\\"\", [id, id]),\n\t\"Give every target on the rule a distinct Id\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutTargets.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tids := _pf_evtid_ids(name)\n\tsome id in ids\n\tcount([x | some x in ids; x == id]) > 1\n}\n"
+  },
+  {
+    "id": "pf-events-target-input-exclusive",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Input, InputPath and InputTransformer are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Only one of Input, InputPath, or InputTransformer must be provided for\n# target <id>\" — measured 2026-09-07, events:PutTargets, us-east-1.\nviolation contains make_diag_full(\"pf-events-target-input-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d\", [t.index]),\n\tsprintf(\"Target '%s' sets %v; PutTargets fails with \\\"Only one of Input, InputPath, or InputTransformer must be provided for target %s\\\"\", [tid, sort(present), tid]),\n\t\"Keep only one of Input, InputPath and InputTransformer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tpresent := {k | some k in [\"Input\", \"InputPath\", \"InputTransformer\"]; object.get(t.value, k, \"__pf_absent\") != \"__pf_absent\"}\n\tcount(present) > 1\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
+  },
+  {
+    "id": "pf-events-target-input-json",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Target Input must be valid JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Target Input is passed to the target verbatim and must be valid JSON;\n# PutTargets fails with \"JSON syntax error in input for target <id>\".\n# A JSON scalar is fine (\"\\\"hello\\\"\" deploys), a bare word is not.\n# Measured 2026-09-07, events:PutTargets, us-east-1.\nviolation contains make_diag_full(\"pf-events-target-input-json\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.Input\", [t.index]),\n\tsprintf(\"Input for target '%s' is not valid JSON; PutTargets fails with \\\"JSON syntax error in input for target %s\\\"\", [tid, tid]),\n\t\"Write Input as a JSON value (an object, array, quoted string, number, boolean or null)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tinp := object.get(t.value, \"Input\", null)\n\tis_string(inp)\n\tnot json.is_valid(inp)\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
+  },
+  {
+    "id": "pf-events-target-parameters-mismatch",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Target parameter blocks must match the target's resource type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PutTargets rejects a target-type parameter block that does not match the\n# target's ARN (\"Parameter(s) EcsParameters not supported for target: t1\").\n# Measured 2026-09-07, events:PutTargets, us-east-1. SqsParameters is\n# deliberately absent from the table: it is accepted on any target type.\n_pf_evtpm_allowed := {\n\t\"EcsParameters\": {\"ecs\"},\n\t\"KinesisParameters\": {\"kinesis\"},\n\t\"BatchParameters\": {\"batch\"},\n\t\"HttpParameters\": {\"events\", \"execute-api\"},\n\t\"RedshiftDataParameters\": {\"redshift\", \"redshift-serverless\"},\n\t\"RunCommandParameters\": {\"ssm\"},\n\t\"SageMakerPipelineParameters\": {\"sagemaker\"},\n\t\"AppSyncParameters\": {\"appsync\"},\n}\n\n_pf_evtpm_service(arn) := parts[2] if {\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n}\n\nviolation contains make_diag_full(\"pf-events-target-parameters-mismatch\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.%s\", [t.index, block]),\n\tsprintf(\"%s is only valid on a %v target but '%s' points at %s; PutTargets fails with \\\"Parameter(s) %s not supported for target: %s\\\"\", [block, sort(allowed), tid, arn, block, tid]),\n\tsprintf(\"Remove %s, or point the target at a matching resource\", [block]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tsome block, allowed in _pf_evtpm_allowed\n\tobject.get(t.value, block, \"__pf_absent\") != \"__pf_absent\"\n\tarn := object.get(t.value, \"Arn\", null)\n\tis_string(arn)\n\tnot _pf_evtpm_service(arn) in allowed\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
+  },
+  {
+    "id": "pf-events-target-parameters-required",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "ECS, Batch and FIFO queue targets require their parameter block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ECS and Batch targets carry mandatory launch parameters, and a FIFO queue\n# target needs a message group; PutTargets fails with \"Parameter(s) <block>\n# must be specified for target: <id>\". Measured 2026-09-07, us-east-1.\n_pf_evtpq_required := {\"ecs\": \"EcsParameters\", \"batch\": \"BatchParameters\"}\n\n_pf_evtpq_service(arn) := parts[2] if {\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n}\n\n_pf_evtpq_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html\"\n\nviolation contains make_diag_full(\"pf-events-target-parameters-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.%s\", [t.index, block]),\n\tsprintf(\"Target '%s' is a %s target, which requires %s; PutTargets fails with \\\"Parameter(s) %s must be specified for target: %s\\\"\", [tid, svc, block, block, tid]),\n\tsprintf(\"Add %s to the target\", [block]),\n\t_pf_evtpq_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := object.get(t.value, \"Arn\", null)\n\tis_string(arn)\n\tsvc := _pf_evtpq_service(arn)\n\tblock := _pf_evtpq_required[svc]\n\tobject.get(t.value, block, \"__pf_absent\") == \"__pf_absent\"\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n\nviolation contains make_diag_full(\"pf-events-target-parameters-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.SqsParameters\", [t.index]),\n\tsprintf(\"Target '%s' is a FIFO queue, which requires SqsParameters.MessageGroupId; PutTargets fails with \\\"Parameter(s) SqsParameters must be specified for target: %s\\\"\", [tid, tid]),\n\t\"Add SqsParameters.MessageGroupId to the target\",\n\t_pf_evtpq_url) if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := object.get(t.value, \"Arn\", null)\n\tis_string(arn)\n\t_pf_evtpq_service(arn) == \"sqs\"\n\tendswith(arn, \".fifo\")\n\tobject.get(t.value, \"SqsParameters\", \"__pf_absent\") == \"__pf_absent\"\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
+  },
+  {
     "id": "pf-events-target-role-required",
     "service": "events",
     "severity": "ERROR",

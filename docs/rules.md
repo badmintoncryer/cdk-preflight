@@ -322,6 +322,12 @@
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule | Event pattern values must be arrays or objects, not scalars | none |
+| `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | none |
+| `pf-events-target-id-duplicate` | AWS::Events::Rule | Target ids must be unique within a rule | none |
+| `pf-events-target-input-exclusive` | AWS::Events::Rule | Input, InputPath and InputTransformer are mutually exclusive | none |
+| `pf-events-target-input-json` | AWS::Events::Rule | Target Input must be valid JSON | none |
+| `pf-events-target-parameters-mismatch` | AWS::Events::Rule | Target parameter blocks must match the target's resource type | none |
+| `pf-events-target-parameters-required` | AWS::Events::Rule | ECS, Batch and FIFO queue targets require their parameter block | none |
 | `pf-events-target-role-required` | AWS::Events::Rule | Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn | none |
 | `pf-firehose-dfcc-required-configs` | AWS::KinesisFirehose::DeliveryStream | Enabled format conversion needs input, output, and schema configs | none |
 | `pf-firehose-dynamic-partitioning-buffer` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs a 64 MB buffer floor | none |
