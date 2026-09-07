@@ -17,7 +17,7 @@ The pack aims at **every deploy-time failure that no existing CDK mechanism alre
 
 ```bash
 npm i -D cdk-preflight
-npx cdk-preflight init   # inserts Preflight.apply(app) into your CDK app
+npx cdkpf init   # inserts Preflight.apply(app) into your CDK app
                          # (`npx cdkpf init` is the same command, shorter)
 ```
 
