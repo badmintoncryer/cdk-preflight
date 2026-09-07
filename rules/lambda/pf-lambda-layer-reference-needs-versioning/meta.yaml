@@ -1,0 +1,12 @@
+id: pf-lambda-layer-reference-needs-versioning
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersion]
+severity: ERROR
+title: "REFERENCE content needs a versioned bucket"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: doc-only
+  evidence: 'REFERENCE content needs a versioned bucket. Not benched: the rule can only judge a bucket declared in the same template, so the fixture needs an in-template bucket, and there is no way to put the layer archive into it without a custom resource (2026-09-07).'
+addedOn: 2026-09-07

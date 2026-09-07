@@ -1,0 +1,12 @@
+id: pf-lambda-layer-compatible-runtimes-enum
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersion]
+severity: ERROR
+title: "CompatibleRuntimes are known runtime identifiers"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'PublishLayerVersion (us-east-1, 2026-09-07): "1 validation error detected: Value ''[null]'' at ''compatibleRuntimes'' failed to satisfy constraint: Member must satisfy enum value set: [nodejs20.x, python3.14, provided.al2023, python3.15, python3.12, python3.13, nodejs24.x, nodejs22.x, nodejs26.x, java25, python3.10, python3.11, java21, ruby3.3, ruby3.4, ruby4.0, ruby3.2, python3.8, python3.9, java17.al2023, java17, nodejs16.x, dotnet10, dotnet8, java8.al2023, java11, dotnet6, nodejs18.x, provided.al2, java8.al2, java11.al2023]"'
+addedOn: 2026-09-07

@@ -1,0 +1,20 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "CSC": {
+      "Type": "AWS::Lambda::CodeSigningConfig",
+      "Properties": {
+        "AllowedPublishers": {
+          "SigningProfileVersionArns": [
+            {
+              "Fn::Sub": "arn:aws:signer:us-east-1:${AWS::AccountId}:/signing-profiles/p/1111111111111"
+            }
+          ]
+        },
+        "CodeSigningPolicies": {
+          "UntrustedArtifactOnDeployment": "Block"
+        }
+      }
+    }
+  }
+}

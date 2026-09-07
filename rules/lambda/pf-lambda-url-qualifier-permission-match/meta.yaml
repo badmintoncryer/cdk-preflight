@@ -1,0 +1,12 @@
+id: pf-lambda-url-qualifier-permission-match
+service: lambda
+resourceTypes: [AWS::Lambda::Url]
+severity: ERROR
+title: "A qualified URL needs a qualified permission"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunctionUrlConfig (us-east-1, 2026-09-07): "Function does not exist" CONFOUND: the mismatch only shows at request time (403), so the deploy fails on the qualifier lookup instead.'
+addedOn: 2026-09-07

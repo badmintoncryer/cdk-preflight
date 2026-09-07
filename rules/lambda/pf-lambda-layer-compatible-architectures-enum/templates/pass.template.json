@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "L": {
+      "Type": "AWS::Lambda::LayerVersion",
+      "Properties": {
+        "LayerName": "cdkpf-layer",
+        "Content": {
+          "S3Bucket": "cdkpf-bench-layers",
+          "S3Key": "l.zip"
+        },
+        "CompatibleArchitectures": [
+          "arm64"
+        ]
+      }
+    }
+  }
+}

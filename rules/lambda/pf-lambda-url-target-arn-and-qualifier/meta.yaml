@@ -1,0 +1,12 @@
+id: pf-lambda-url-target-arn-and-qualifier
+service: lambda
+resourceTypes: [AWS::Lambda::Url]
+severity: ERROR
+title: "The qualifier goes in TargetFunctionArn or Qualifier, not both"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-url.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunctionUrlConfig (us-east-1, 2026-09-07): "Cross-account access is not allowed." CONFOUND: the ARN has to stay literal for the rule to see the qualifier, so the deploy fails on the foreign account first.'
+addedOn: 2026-09-07

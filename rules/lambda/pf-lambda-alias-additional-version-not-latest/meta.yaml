@@ -1,0 +1,12 @@
+id: pf-lambda-alias-additional-version-not-latest
+service: lambda
+resourceTypes: [AWS::Lambda::Alias]
+severity: ERROR
+title: "A routing entry cannot name $LATEST"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AliasRoutingConfiguration.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateAlias (us-east-1, 2026-09-07): "1 validation error detected: Value ''{$LATEST=0.2}'' at ''routingConfig.additionalVersionWeights'' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less than or equal to 1024, Member must have length greater than or equal to 1, Member must satisfy regular expression pattern: [0-9]+]"'
+addedOn: 2026-09-07

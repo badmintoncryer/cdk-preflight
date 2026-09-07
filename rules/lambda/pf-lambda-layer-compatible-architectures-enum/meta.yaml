@@ -1,0 +1,12 @@
+id: pf-lambda-layer-compatible-architectures-enum
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersion]
+severity: ERROR
+title: "CompatibleArchitectures are x86_64 or arm64"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'PublishLayerVersion (us-east-1, 2026-09-07): "1 validation error detected: Value ''[null]'' at ''compatibleArchitectures'' failed to satisfy constraint: Member must satisfy constraint: [Member must satisfy enum value set: [x86_64, arm64], Member must not be null]"'
+addedOn: 2026-09-07

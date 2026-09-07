@@ -1,0 +1,12 @@
+id: pf-lambda-url-qualifier-latest-literal
+service: lambda
+resourceTypes: [AWS::Lambda::Url]
+severity: ERROR
+title: "A URL qualifier cannot be $LATEST"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-url.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunctionUrlConfig (us-east-1, 2026-09-07): "Internal error occurred." CONFOUND: the service answers with an opaque internal error rather than naming the qualifier.'
+addedOn: 2026-09-07

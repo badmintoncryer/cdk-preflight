@@ -1,0 +1,12 @@
+id: pf-lambda-perm-url-auth-action
+service: lambda
+resourceTypes: [AWS::Lambda::Permission]
+severity: ERROR
+title: "FunctionUrlAuthType goes with the function URL action"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'AddPermission (us-east-1, 2026-09-07): "FunctionUrlAuthType is only supported for lambda:InvokeFunctionUrl action"'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-perm-cross-region-function
+service: lambda
+resourceTypes: [AWS::Lambda::Permission]
+severity: ERROR
+title: "A permission stays in the function region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-permission.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'AddPermission (us-east-1, 2026-09-07): "Functions from ''us-west-2'' are not reachable in this region (''us-east-1'')"'
+addedOn: 2026-09-07

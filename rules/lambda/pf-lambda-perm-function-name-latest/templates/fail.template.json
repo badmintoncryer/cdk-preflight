@@ -1,0 +1,13 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "P": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": "cdkpf-fn:$LATEST",
+        "Action": "lambda:InvokeFunction",
+        "Principal": "s3.amazonaws.com"
+      }
+    }
+  }
+}

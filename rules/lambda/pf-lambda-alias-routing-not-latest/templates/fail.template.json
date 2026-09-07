@@ -1,0 +1,93 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "base",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "sqs:SendMessage",
+                    "sns:Publish",
+                    "s3:PutObject",
+                    "events:PutEvents",
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": {
+          "Fn::GetAtt": [
+            "R",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "x"
+        },
+        "Runtime": "python3.12",
+        "Handler": "index.handler"
+      }
+    },
+    "V1": {
+      "Type": "AWS::Lambda::Version",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        }
+      }
+    },
+    "A": {
+      "Type": "AWS::Lambda::Alias",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "FunctionVersion": "$LATEST",
+        "Name": "live",
+        "RoutingConfig": {
+          "AdditionalVersionWeights": [
+            {
+              "FunctionVersion": {
+                "Fn::GetAtt": [
+                  "V1",
+                  "Version"
+                ]
+              },
+              "FunctionWeight": 0.2
+            }
+          ]
+        }
+      }
+    }
+  }
+}

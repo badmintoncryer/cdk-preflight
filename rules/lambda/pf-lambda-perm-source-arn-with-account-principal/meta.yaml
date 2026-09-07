@@ -1,0 +1,12 @@
+id: pf-lambda-perm-source-arn-with-account-principal
+service: lambda
+resourceTypes: [AWS::Lambda::Permission]
+severity: ERROR
+title: "SourceArn narrows service principals, not account principals"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AddPermission.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'AddPermission (us-east-1, 2026-09-07): "The provided principal was invalid. Please check the principal and try again." CONFOUND: the IAM role principal does not exist in the bench account, so Lambda rejects the principal before it considers SourceArn.'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-layerperm-organization-id-needs-wildcard-principal
+service: lambda
+resourceTypes: [AWS::Lambda::LayerVersionPermission]
+severity: ERROR
+title: "OrganizationId narrows a wildcard principal"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_AddLayerVersionPermission.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'AddLayerVersionPermission (us-east-1, 2026-09-07): "If organization id is specified then principal should be *"'
+addedOn: 2026-09-07

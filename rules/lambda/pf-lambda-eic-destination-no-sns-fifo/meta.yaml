@@ -1,0 +1,12 @@
+id: pf-lambda-eic-destination-no-sns-fifo
+service: lambda
+resourceTypes: [AWS::Lambda::EventInvokeConfig]
+severity: ERROR
+title: "An invoke destination cannot be a FIFO topic"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-retain-records.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'PutFunctionEventInvokeConfig (us-east-1, 2026-09-07): "FIFO-type Amazon SNS topics aren''t supported as a destination."'
+addedOn: 2026-09-07

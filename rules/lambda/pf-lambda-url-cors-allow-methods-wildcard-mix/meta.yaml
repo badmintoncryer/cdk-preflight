@@ -1,0 +1,12 @@
+id: pf-lambda-url-cors-allow-methods-wildcard-mix
+service: lambda
+resourceTypes: [AWS::Lambda::Url]
+severity: ERROR
+title: "CORS methods are a wildcard or a list, not both"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_Cors.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunctionUrlConfig (us-east-1, 2026-09-07): "You can''t specify additional fields for AllowMethods because you already specified the wildcard character (*)."'
+addedOn: 2026-09-07

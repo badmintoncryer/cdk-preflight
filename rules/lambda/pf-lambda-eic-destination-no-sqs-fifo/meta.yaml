@@ -1,0 +1,12 @@
+id: pf-lambda-eic-destination-no-sqs-fifo
+service: lambda
+resourceTypes: [AWS::Lambda::EventInvokeConfig]
+severity: ERROR
+title: "An invoke destination cannot be a FIFO queue"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventinvokeconfig-destinationconfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'PutFunctionEventInvokeConfig (us-east-1, 2026-09-07): "The provided destination config DestinationConfig(onSuccess=OnSuccess(destination=), onFailure=OnFailure(destination=arn:aws:sqs:us-east-1:214794239830:q.fifo)) is invalid."'
+addedOn: 2026-09-07
