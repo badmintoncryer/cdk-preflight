@@ -1,0 +1,12 @@
+id: pf-lambda-dlq-no-fifo
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A dead-letter target cannot be a FIFO queue or topic"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-retain-records.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Invalid dead letter queue ARN: FIFO SQS queue is not supported for dead letter configuration"'
+addedOn: 2026-09-07

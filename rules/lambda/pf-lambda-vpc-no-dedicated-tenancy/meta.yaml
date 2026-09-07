@@ -1,0 +1,12 @@
+id: pf-lambda-vpc-no-dedicated-tenancy
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A VPC function cannot sit in a dedicated-tenancy VPC"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/foundation-networking.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "The VPC vpc-0889025b693979dac for the subnets provided is set to dedicated. Lambda only supports default tenancy VPCs."'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-image-uri-no-fips
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A container image cannot come from an ECR FIPS endpoint"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-images.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Source image 111122223333.dkr.ecr-fips.us-east-1.amazonaws.com/repo:latest is not valid. Provide a valid source image." CONFOUND: the repository behind the FIPS endpoint does not exist either, so the service answers with the generic "not a valid source image" instead of naming the endpoint.'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-scaling-min-max-pair
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "FunctionScalingConfig takes both bounds"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: doc-only
+  evidence: 'Not benched: FunctionScalingConfig is rejected outright without a capacity provider ("PublishToLatestPublished or FunctionScalingConfig cannot be specified unless creating a Lambda Managed Instance function"), so both templates need a real Lambda Managed Instances capacity provider, which launches billable compute instances (2026-09-07).'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-image-uri-private-ecr
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A container image lives in a private ECR repository"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-images.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Source image public.ecr.aws/lambda/python:3.12 is not valid. Provide a valid source image."'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-durable-kms-key-region
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A durable-function KMS key lives in the deploy region"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/encrypt-zip-package.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Lambda was unable to configure your durable function because the specified KMS key arn:aws:kms:eu-west-1:111122223333:key/12345678-1234-1234-1234-123456789012 is in a different region than the function. The KMS key must reside in the same region as the function."'
+addedOn: 2026-09-07

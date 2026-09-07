@@ -1,0 +1,12 @@
+id: pf-lambda-provisioned-concurrency-not-latest
+service: lambda
+resourceTypes: [AWS::Lambda::Alias]
+severity: ERROR
+title: "Provisioned concurrency cannot sit on $LATEST"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateAlias (us-east-1, 2026-09-07): "Provisioned Concurrency Configs cannot be applied to unpublished function versions."'
+addedOn: 2026-09-07

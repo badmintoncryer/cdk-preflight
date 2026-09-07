@@ -1,0 +1,12 @@
+id: pf-lambda-image-uri-region
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A container image lives in the deploy region"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-images.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Source image 111122223333.dkr.ecr.eu-west-1.amazonaws.com/repo:latest is not valid. Provide a valid source image." CONFOUND: the ECR repository in the other region does not exist either, so the service answers with the generic "not a valid source image" instead of naming the region.'
+addedOn: 2026-09-07

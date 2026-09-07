@@ -1,0 +1,12 @@
+id: pf-lambda-version-runtime-policy-manual-requires-arn
+service: lambda
+resourceTypes: [AWS::Lambda::Version]
+severity: ERROR
+title: "A version pinned to Manual needs a runtime version ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-version-runtimepolicy.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'PublishVersion (us-east-1, 2026-09-07): "Missing runtime version ARN. A runtime version ARN is required when UpdateRuntimeVersionOn=Manual. Provide a valid runtime version ARN and retry the request."'
+addedOn: 2026-09-07

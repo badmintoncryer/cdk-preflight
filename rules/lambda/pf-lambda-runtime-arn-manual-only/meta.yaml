@@ -1,0 +1,12 @@
+id: pf-lambda-runtime-arn-manual-only
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "A pinned runtime version needs UpdateRuntimeOn: Manual"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/runtimes-update.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "Unexpected runtime version ARN when UpdateRuntimeVersionOn=Auto. Remove the runtime version ARN and retry the request."'
+addedOn: 2026-09-07
