@@ -1,0 +1,12 @@
+id: pf-events-input-transformer-limits
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: InputPathsMap is capped at 100 entries and may not use reserved variable names
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-inputtransformer.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: an InputPathsMap with 101 entries -> ROLLBACK_COMPLETE, the PutTargets request model reporting \"1 validation error detected\"; 100 entries deploy. Measured the same day via events:PutTargets: a key of \"aws.events.rule-name\" is refused the same way. A key merely starting with \"AWS\" (\"AWSthing\") is accepted, so the documented AWS-prefix restriction is NOT reported (BROKEN-EXPECTATION)."
+addedOn: 2026-09-07

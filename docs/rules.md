@@ -324,6 +324,9 @@
 | `pf-events-bus-dlq-arn-type` | AWS::Events::EventBus | An event bus dead-letter queue must be an SQS queue | none |
 | `pf-events-bus-name` | AWS::Events::EventBus | An event bus name may not be 'default' or contain '/', and a partner bus must match its source | none |
 | `pf-events-connection-auth-parameters` | AWS::Events::Connection | AuthParameters must carry the block that AuthorizationType names, and OAuth endpoints must be HTTPS | none |
+| `pf-events-input-path-jsonpath` | AWS::Events::Rule | Input paths must start at $ and avoid quoted bracket notation | none |
+| `pf-events-input-transformer-json-var` | AWS::Events::Rule | <aws.events.event.json> needs a JSON object InputTemplate | none |
+| `pf-events-input-transformer-limits` | AWS::Events::Rule | InputPathsMap is capped at 100 entries and may not use reserved variable names | none |
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
 | `pf-events-pattern-empty-array` | AWS::Events::Rule<br>AWS::Events::Archive | An event pattern may not hold an empty array | none |
