@@ -67,7 +67,9 @@ export function runCli(args: string[]): number {
   const appVar = varMatch ? varMatch[1] : 'app';
 
   let updated = src.replace(appLine, `${appLine}\nPreflight.apply(${appVar});`);
-  updated = `import { Preflight } from 'cdk-preflight';\n${updated}`;
+  // shebang は必ず 1 行目でなければならないので、その下に import を差し込む。
+  const shebang = updated.match(/^#![^\n]*\n/)?.[0] ?? '';
+  updated = `${shebang}import { Preflight } from 'cdk-preflight';\n${updated.slice(shebang.length)}`;
 
   if (dry) {
     console.log(`--- ${entry} (dry run) ---\n${updated}`);
