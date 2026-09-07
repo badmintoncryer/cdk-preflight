@@ -986,6 +986,28 @@ describe('eventbridge rules', () => {
       const t = rule({ EventPattern: { detail: { state: 'x' } }, Targets: [{ Id: 't1', Arn: QARN }] });
       expect(ids(diagnoseTemplate(t))).toHaveLength(0);
     });
+
+    // events:CreateArchive runs the same event-pattern validator as PutRule and
+    // rejects the scalar with the same message (measured 2026-09-07, us-east-1).
+    const archive = (pattern: unknown) => ({
+      Resources: {
+        A: {
+          Type: 'AWS::Events::Archive',
+          Properties: {
+            SourceArn: 'arn:aws:events:us-east-1:123456789012:event-bus/default',
+            EventPattern: pattern,
+          },
+        },
+      },
+    });
+
+    test('an archive pattern with a bare scalar is reported', () => {
+      expect(ids(diagnoseTemplate(archive({ source: 'app.x' })))).toEqual(['pf-events-pattern-scalar-value']);
+    });
+
+    test('an archive pattern wrapped in an array stays silent', () => {
+      expect(ids(diagnoseTemplate(archive({ source: ['app.x'] })))).toHaveLength(0);
+    });
   });
 
   describe('pf-events-pattern-empty', () => {
