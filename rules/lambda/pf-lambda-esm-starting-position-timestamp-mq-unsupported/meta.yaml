@@ -1,0 +1,12 @@
+id: pf-lambda-esm-starting-position-timestamp-mq-unsupported
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "Amazon MQ event sources reject StartingPositionTimestamp"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unsupported ''startingPositionTimestamp'' parameter for given event source mapping type.'
+addedOn: 2026-09-07

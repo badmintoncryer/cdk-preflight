@@ -1,0 +1,12 @@
+id: pf-lambda-esm-event-source-arn-service
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "EventSourceArn must name a supported event source service"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unrecognized event source. Unsupported source arn : arn:aws:s3:::cdkpf-bucket'
+addedOn: 2026-09-07

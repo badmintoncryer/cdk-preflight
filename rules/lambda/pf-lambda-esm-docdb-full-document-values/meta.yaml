@@ -1,0 +1,12 @@
+id: pf-lambda-esm-docdb-full-document-values
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "FullDocument accepts only UpdateLookup and Default"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-documentdbeventsourceconfig.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Model validation failed (#/DocumentDBEventSourceConfig/FullDocument: #: only 1 subschema matches out of 2) #/DocumentDBEventSourceConfig/FullDocument: failed validation constraint for keyword [enum] (#/DocumentDBEventSourceConfig/FullDocument)'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-esm-metrics-error-count-kafka-only
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "The ErrorCount metric is Kafka-only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-metricsconfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid EventSourceMapping metrics. Expected values: [EventCount]'
+addedOn: 2026-09-07

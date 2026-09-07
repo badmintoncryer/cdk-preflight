@@ -1,0 +1,12 @@
+id: pf-lambda-esm-logging-config-kafka-only
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "LoggingConfig only applies to Kafka sources"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unsupported LoggingConfig parameter for given event source mapping type.'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-esm-ddb-cross-region
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "A DynamoDB stream source must sit in the deploy region"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/services-dynamodb-eventsourcemapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Event source region must match Lambda region us-east-1'
+addedOn: 2026-09-07

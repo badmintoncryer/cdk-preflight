@@ -1,0 +1,12 @@
+id: pf-lambda-esm-metrics-allowed-values
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "MetricsConfig.Metrics only accepts EventCount, ErrorCount and KafkaMetrics"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-metricsconfig.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Model validation failed (#/MetricsConfig/Metrics/0: #: only 1 subschema matches out of 2) #/MetricsConfig/Metrics/0: failed validation constraint for keyword [enum] (#/MetricsConfig/Metrics/0)'
+addedOn: 2026-09-07

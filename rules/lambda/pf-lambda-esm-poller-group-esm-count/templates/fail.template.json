@@ -1,0 +1,2104 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "E0": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t0"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E1": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t1"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E2": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t2"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E3": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t3"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E4": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t4"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E5": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t5"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E6": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t6"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E7": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t7"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E8": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t8"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E9": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t9"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E10": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t10"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E11": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t11"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E12": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t12"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E13": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t13"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E14": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t14"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E15": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t15"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E16": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t16"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E17": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t17"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E18": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t18"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E19": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t19"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E20": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t20"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E21": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t21"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E22": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t22"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E23": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t23"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E24": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t24"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E25": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t25"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E26": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t26"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E27": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t27"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E28": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t28"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E29": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t29"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E30": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t30"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E31": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t31"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E32": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t32"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E33": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t33"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E34": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t34"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E35": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t35"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E36": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t36"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E37": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t37"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E38": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t38"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E39": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t39"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E40": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t40"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E41": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t41"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E42": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t42"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E43": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t43"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E44": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t44"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E45": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t45"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E46": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t46"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E47": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t47"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E48": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t48"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E49": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t49"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E50": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t50"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E51": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t51"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E52": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t52"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E53": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t53"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E54": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t54"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E55": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t55"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E56": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t56"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E57": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t57"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E58": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t58"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E59": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t59"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E60": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t60"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E61": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t61"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E62": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t62"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E63": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t63"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E64": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t64"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E65": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t65"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E66": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t66"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E67": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t67"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E68": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t68"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E69": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t69"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E70": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t70"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E71": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t71"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E72": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t72"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E73": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t73"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E74": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t74"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E75": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t75"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E76": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t76"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E77": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t77"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E78": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t78"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E79": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t79"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E80": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t80"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E81": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t81"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E82": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t82"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E83": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t83"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E84": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t84"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E85": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t85"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E86": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t86"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E87": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t87"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E88": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t88"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E89": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t89"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E90": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t90"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E91": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t91"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E92": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t92"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E93": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t93"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E94": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t94"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E95": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t95"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E96": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t96"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E97": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t97"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E98": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t98"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E99": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t99"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "E100": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "F"
+        },
+        "EventSourceArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/c/11111111-1111-1111-1111-111111111111-1"
+        },
+        "Topics": [
+          "t100"
+        ],
+        "StartingPosition": "TRIM_HORIZON",
+        "ProvisionedPollerConfig": {
+          "MinimumPollers": 1,
+          "MaximumPollers": 1,
+          "PollerGroupName": "g1"
+        }
+      }
+    },
+    "F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Role": {
+          "Fn::GetAtt": [
+            "R",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return 0\n"
+        },
+        "Runtime": "python3.12",
+        "Handler": "index.handler"
+      }
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "src",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes",
+                    "kinesis:DescribeStream",
+                    "kinesis:DescribeStreamSummary",
+                    "kinesis:GetRecords",
+                    "kinesis:GetShardIterator",
+                    "kinesis:ListShards",
+                    "kinesis:ListStreams",
+                    "dynamodb:DescribeStream",
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:ListStreams",
+                    "mq:DescribeBroker",
+                    "rds:DescribeDBClusters",
+                    "rds:DescribeDBClusterParameters",
+                    "kafka:DescribeCluster",
+                    "kafka:DescribeClusterV2",
+                    "kafka:GetBootstrapBrokers",
+                    "secretsmanager:GetSecretValue",
+                    "kms:Decrypt",
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DescribeVpcs",
+                    "ec2:DeleteNetworkInterface",
+                    "ec2:DescribeSubnets",
+                    "ec2:DescribeSecurityGroups"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

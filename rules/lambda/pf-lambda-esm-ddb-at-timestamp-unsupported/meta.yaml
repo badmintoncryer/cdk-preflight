@@ -1,0 +1,12 @@
+id: pf-lambda-esm-ddb-at-timestamp-unsupported
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "DynamoDB Streams rejects AT_TIMESTAMP"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unsupported starting position for arn type: arn:aws:dynamodb:us-east-1:214794239830:table/cdkpf-pf-lambda-esm-ddb-at-timestamp-unsupported-fail-T-1BCEPEPOAWOV2/stream/2026-09-07T04:55:10.784'
+addedOn: 2026-09-07
