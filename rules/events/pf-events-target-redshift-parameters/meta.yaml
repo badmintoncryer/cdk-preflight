@@ -1,0 +1,12 @@
+id: pf-events-target-redshift-parameters
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: RedshiftDataParameters takes one statement form and one credential form
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-redshiftdataparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Sql together with Sqls -> ROLLBACK_COMPLETE \"Either RedshiftDataParameters.sql or RedshiftDataParameters.sqls\". Measured the same day via events:PutTargets: DbUser together with SecretManagerArn gives the matching message. A dynamic path embedded in a larger SQL string is accepted, so that is not reported."
+addedOn: 2026-09-07

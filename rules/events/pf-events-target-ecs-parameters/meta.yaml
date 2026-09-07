@@ -1,0 +1,12 @@
+id: pf-events-target-ecs-parameters
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: EcsParameters must match the launch type and stay inside its size caps
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-ecsparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: LaunchType FARGATE with no NetworkConfiguration -> ROLLBACK_COMPLETE \"Parameter NetworkConfiguration must be specified for target t1 when launch type is FARGATE\". Measured the same day via events:PutTargets, each with a passing control: PlatformVersion under LaunchType EC2 gives \"Parameter PlatformVersion for target t1 is not supported when launch type is EC2\", AssignPublicIp under EC2 gives the matching message, 17 subnets give \"Parameter Subnets is not valid. Reason: size must be in between 1 and 16\" (16 deploy), 6 security groups give \"size must be in between 0 and 5\" (5 deploy), and TaskCount 11 gives \"Parameter(s) TaskCount not valid for target: t1\" (1, 2 and 10 deploy). CapacityProviderStrategy alongside LaunchType, and a distinctInstance placement constraint carrying an expression, are both accepted and are NOT reported (BROKEN-EXPECTATION for the documented exclusivity)."
+addedOn: 2026-09-07

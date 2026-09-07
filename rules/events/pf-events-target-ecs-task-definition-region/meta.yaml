@@ -1,0 +1,12 @@
+id: pf-events-target-ecs-task-definition-region
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: An ECS target's cluster and task definition must share a Region
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-ecsparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a us-east-1 cluster with a us-west-2 task definition -> ROLLBACK_COMPLETE \"Region of arn:aws:ecs:us-east-1:...:cluster/C does not match region of arn:aws:ecs:us-west-2:...:task-definition/T:1\"."
+addedOn: 2026-09-07

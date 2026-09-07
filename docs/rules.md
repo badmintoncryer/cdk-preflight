@@ -333,12 +333,16 @@
 | `pf-events-pattern-operator` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern matchers must name a real operator and give it the right shape | none |
 | `pf-events-pattern-or-exclusive` | AWS::Events::Rule<br>AWS::Events::Archive | $or cannot share an object with other keys | none |
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | none |
+| `pf-events-target-batch-parameters` | AWS::Events::Rule | Batch array size and retry attempts have service-stated bounds | none |
 | `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | none |
+| `pf-events-target-ecs-parameters` | AWS::Events::Rule | EcsParameters must match the launch type and stay inside its size caps | none |
+| `pf-events-target-ecs-task-definition-region` | AWS::Events::Rule | An ECS target's cluster and task definition must share a Region | none |
 | `pf-events-target-id-duplicate` | AWS::Events::Rule | Target ids must be unique within a rule | none |
 | `pf-events-target-input-exclusive` | AWS::Events::Rule | Input, InputPath and InputTransformer are mutually exclusive | none |
 | `pf-events-target-input-json` | AWS::Events::Rule | Target Input must be valid JSON | none |
 | `pf-events-target-parameters-mismatch` | AWS::Events::Rule | Target parameter blocks must match the target's resource type | none |
 | `pf-events-target-parameters-required` | AWS::Events::Rule | ECS, Batch and FIFO queue targets require their parameter block | none |
+| `pf-events-target-redshift-parameters` | AWS::Events::Rule | RedshiftDataParameters takes one statement form and one credential form | none |
 | `pf-events-target-role-required` | AWS::Events::Rule | Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn | none |
 | `pf-eventschemas-discoverer-source` | AWS::EventSchemas::Discoverer | A discoverer source must be an event bus in the discoverer's Region | none |
 | `pf-eventschemas-registry-name-reserved` | AWS::EventSchemas::Registry | A registry name may not use the reserved aws. prefix | none |

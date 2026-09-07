@@ -1,0 +1,12 @@
+id: pf-events-target-batch-parameters
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Batch array size and retry attempts have service-stated bounds
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-batchparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: ArrayProperties.Size 1 -> ROLLBACK_COMPLETE \"Parameter ArrayProperties is not valid. Reason: Size must be in between 2 and 10000.\" Measured the same day via events:PutTargets: RetryStrategy.Attempts outside 1-10 gives \"Attempts must be in between 1 and 10\"."
+addedOn: 2026-09-07

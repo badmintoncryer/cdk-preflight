@@ -1,0 +1,48 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "R1": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "cdkpf.test"
+     ]
+    },
+    "State": "DISABLED",
+    "Targets": [
+     {
+      "Id": "t1",
+      "RoleArn": {
+       "Fn::GetAtt": [
+        "Role",
+        "Arn"
+       ]
+      },
+      "Arn": "arn:aws:ecs:us-east-1:214794239830:cluster/C",
+      "EcsParameters": {
+       "TaskDefinitionArn": "arn:aws:ecs:us-east-1:214794239830:task-definition/T:1"
+      }
+     }
+    ]
+   }
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    }
+   }
+  }
+ }
+}
