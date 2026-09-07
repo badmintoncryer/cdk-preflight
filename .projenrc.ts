@@ -61,6 +61,7 @@ project.tasks.tryFind('eslint')!.env('ESLINT_USE_FLAT_CONFIG', 'false');
 project.addPackageIgnore('/rules/');
 project.addPackageIgnore('/bench/');
 project.addPackageIgnore('/scripts/');
+project.addPackageIgnore('/assets/');
 
 // ---- monthly-verify: 全ルールの fail テンプレートを毎月実機デプロイし、
 // 制約ドリフト（ルール陳腐化）を検知する。doc-only ルールは対象外。

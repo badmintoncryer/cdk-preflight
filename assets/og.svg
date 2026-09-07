@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" fill="none" role="img" aria-labelledby="og-title">
+  <title id="og-title">cdk-preflight — Catch deploy-time CloudFormation failures at cdk synth time.</title>
+  <defs>
+    <linearGradient id="page" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1280" y2="640">
+      <stop offset="0" stop-color="#2A3849"/>
+      <stop offset="1" stop-color="#151C25"/>
+    </linearGradient>
+    <radialGradient id="pageGlow" gradientUnits="userSpaceOnUse" cx="900" cy="80" r="620">
+      <stop offset="0" stop-color="#FF9900" stop-opacity=".20"/>
+      <stop offset="1" stop-color="#FF9900" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="256">
+      <stop offset="0" stop-color="#2F4054"/>
+      <stop offset="1" stop-color="#18202B"/>
+    </linearGradient>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="176" cy="80" r="150">
+      <stop offset="0" stop-color="#FF9900" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#FF9900" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wing" gradientUnits="userSpaceOnUse" x1="46" y1="150" x2="228" y2="34">
+      <stop offset="0" stop-color="#FF8A00"/>
+      <stop offset="1" stop-color="#FFC24D"/>
+    </linearGradient>
+    <linearGradient id="fold" gradientUnits="userSpaceOnUse" x1="140" y1="200" x2="228" y2="34">
+      <stop offset="0" stop-color="#B85C05"/>
+      <stop offset="1" stop-color="#E8890C"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#page)"/>
+  <rect width="1280" height="640" fill="url(#pageGlow)"/>
+
+  <g transform="translate(528 112) scale(0.875)">
+    <rect width="256" height="256" rx="60" fill="url(#bg)"/>
+    <rect width="256" height="256" rx="60" fill="url(#glow)"/>
+    <rect x=".75" y=".75" width="254.5" height="254.5" rx="59.25" stroke="#FFFFFF" stroke-opacity=".10" stroke-width="1.5"/>
+    <path d="M46 136 L228 34 L140 148 Z" fill="url(#wing)"/>
+    <path d="M140 148 L228 34 L176 200 Z" fill="url(#fold)"/>
+    <path d="M46 136 L140 148 L228 34" stroke="#1B2430" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="70" cy="190" r="34" fill="#FFFFFF"/>
+    <path d="M54 190 L65 203 L87 174" stroke="#1B2430" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="640" y="446" text-anchor="middle" fill="#FFFFFF" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="80" font-weight="700" letter-spacing="-2">cdk-preflight</text>
+  <text x="640" y="500" text-anchor="middle" fill="#93A3B5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="32">Catch deploy-time CloudFormation failures at cdk synth time.</text>
+</svg>
