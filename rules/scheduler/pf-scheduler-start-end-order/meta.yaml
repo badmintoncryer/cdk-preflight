@@ -1,0 +1,12 @@
+id: pf-scheduler-start-end-order
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: StartDate must come before EndDate
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-scheduler-schedule.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: StartDate 2031-01-01 with EndDate 2030-01-01 -> ROLLBACK_COMPLETE \"The StartDate you specify must come before the EndDate.\""
+addedOn: 2026-09-07

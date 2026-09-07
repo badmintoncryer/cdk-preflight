@@ -1,0 +1,12 @@
+id: pf-scheduler-target-parameters
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: Target parameters must match the target, and FIFO queues and Fargate tasks need theirs
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-scheduler-schedule-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: KinesisParameters on a Lambda target -> ROLLBACK_COMPLETE \"Parameters KinesisParameters not supported for the target.\" Measured the same day via scheduler:CreateSchedule, each block confirmed accepted on its own matching target (Ecs/EventBridge/Kinesis/SageMakerPipeline/Sqs): a .fifo target without SqsParameters gives \"Parameters SqsParameters must be specified\", MessageGroupId on a standard queue gives \"Parameters MessageGroupId not valid for the target\", and a FARGATE task without NetworkConfiguration gives \"Parameter NetworkConfiguration must be specified for the target when launch type is FARGATE\"."
+addedOn: 2026-09-07

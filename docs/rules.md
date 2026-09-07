@@ -706,9 +706,17 @@
 | `pf-s3express-kms-key-with-aes256` | AWS::S3Express::DirectoryBucket | KMSMasterKeyID is only valid when SSEAlgorithm is aws:kms | none |
 | `pf-s3express-lifecycle-object-size-order` | AWS::S3Express::DirectoryBucket | ObjectSizeGreaterThan must be smaller than ObjectSizeLessThan | none |
 | `pf-s3express-lifecycle-rule-no-action` | AWS::S3Express::DirectoryBucket | A directory bucket lifecycle rule must declare an expiration or an abort action | none |
+| `pf-scheduler-date-format` | AWS::Scheduler::Schedule | StartDate and EndDate need millisecond precision | none |
+| `pf-scheduler-flexible-time-window` | AWS::Scheduler::Schedule | MaximumWindowInMinutes is only valid when the flexible time window is on | none |
 | `pf-scheduler-flexible-window` | AWS::Scheduler::Schedule | FLEXIBLE mode needs MaximumWindowInMinutes, OFF forbids it | none |
+| `pf-scheduler-group-name-default` | AWS::Scheduler::ScheduleGroup | A schedule group may not be named 'default' | none |
 | `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | none |
 | `pf-scheduler-schedule-expression` | AWS::Scheduler::Schedule | Schedule expression must parse as a valid rate(), cron() or at() | none |
+| `pf-scheduler-start-end-order` | AWS::Scheduler::Schedule | StartDate must come before EndDate | none |
+| `pf-scheduler-target-input-json` | AWS::Scheduler::Schedule | Target Input must be valid JSON | none |
+| `pf-scheduler-target-parameters` | AWS::Scheduler::Schedule | Target parameters must match the target, and FIFO queues and Fargate tasks need theirs | none |
+| `pf-scheduler-target-region` | AWS::Scheduler::Schedule | A schedule can only invoke a target in its own Region | none |
+| `pf-scheduler-universal-target` | AWS::Scheduler::Schedule | Universal targets need the bare ARN shape, an Input, and an API that changes state | none |
 | `pf-secretsmanager-generate-secret-string` | AWS::SecretsManager::Secret | GenerateSecretString must leave at least one character type, a PasswordLength (1..4096) that fits every required type, ExcludeCharacters under 4096 chars that does not wipe out a required type, and SecretStringTemplate (a JSON object) together with GenerateStringKey | none |
 | `pf-secretsmanager-hosted-rotation` | AWS::SecretsManager::RotationSchedule | HostedRotationLambda needs the AWS::SecretsManager transform, a known RotationType, MasterSecretArn/SuperuserSecretArn only for *MultiUser types (never both), and no Runtime with the 2024-09-16 transform | none |
 | `pf-secretsmanager-kms-key` | AWS::SecretsManager::Secret | KmsKeyId must be a key in the deploy region, and AWS managed keys of other services (alias/aws/<service>) cannot encrypt a secret | none |

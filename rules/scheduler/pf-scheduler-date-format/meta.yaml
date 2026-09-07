@@ -1,0 +1,12 @@
+id: pf-scheduler-date-format
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule]
+severity: ERROR
+title: StartDate and EndDate need millisecond precision
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-scheduler-schedule.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: StartDate/EndDate written as 2030-01-01T00:00:00Z -> ROLLBACK_COMPLETE \"Invalid request provided: EndDate needs to follow the format yyyy-MM-ddTHH:mm:ss.SSSZ\"; the same dates with .000Z deploy. This is a CloudFormation-handler constraint only -- scheduler:CreateSchedule accepts the second-precision form directly (measured the same day), so no API probe surfaces it. Only the fraction-less shape is reported, leaving other spellings alone."
+addedOn: 2026-09-07
