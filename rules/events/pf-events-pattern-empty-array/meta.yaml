@@ -1,0 +1,12 @@
+id: pf-events-pattern-empty-array
+service: events
+resourceTypes: [AWS::Events::Rule, AWS::Events::Archive]
+severity: ERROR
+title: An event pattern may not hold an empty array
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: {\"source\": []} -> ROLLBACK_COMPLETE \"Event pattern is not valid. Reason: Empty arrays are not allowed\". Measured the same day via events:PutRule: a nested empty array ({\"detail\": {\"x\": []}}) gives the same error."
+addedOn: 2026-09-07

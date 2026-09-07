@@ -1,0 +1,29 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "R1": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "cdkpf.test"
+     ],
+     "detail": {
+      "x": [
+       {
+        "startsWith": "a"
+       }
+      ]
+     }
+    },
+    "State": "DISABLED",
+    "Targets": [
+     {
+      "Id": "t1",
+      "Arn": "arn:aws:lambda:us-east-1:214794239830:function:F"
+     }
+    ]
+   }
+  }
+ }
+}

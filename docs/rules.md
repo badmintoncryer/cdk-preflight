@@ -326,6 +326,9 @@
 | `pf-events-connection-auth-parameters` | AWS::Events::Connection | AuthParameters must carry the block that AuthorizationType names, and OAuth endpoints must be HTTPS | none |
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | none |
 | `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | none |
+| `pf-events-pattern-empty-array` | AWS::Events::Rule<br>AWS::Events::Archive | An event pattern may not hold an empty array | none |
+| `pf-events-pattern-operator` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern matchers must name a real operator and give it the right shape | none |
+| `pf-events-pattern-or-exclusive` | AWS::Events::Rule<br>AWS::Events::Archive | $or cannot share an object with other keys | none |
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | none |
 | `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | none |
 | `pf-events-target-id-duplicate` | AWS::Events::Rule | Target ids must be unique within a rule | none |

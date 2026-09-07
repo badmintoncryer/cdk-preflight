@@ -982,8 +982,18 @@ describe('eventbridge rules', () => {
   const QARN = { 'Fn::GetAtt': ['Q', 'Arn'] };
 
   describe('pf-events-pattern-scalar-value', () => {
-    test('a nested scalar is out of scope — only the top level was bench-verified', () => {
+    // Nested keys are in scope: events:PutRule rejects
+    // {"detail": {"a": {"b": {"c": "plain"}}}} the same way (measured 2026-09-07).
+    test('a nested scalar is reported', () => {
       const t = rule({ EventPattern: { detail: { state: 'x' } }, Targets: [{ Id: 't1', Arn: QARN }] });
+      expect(ids(diagnoseTemplate(t))).toEqual(['pf-events-pattern-scalar-value']);
+    });
+
+    test('a matcher object legally carries scalars and stays silent', () => {
+      const t = rule({
+        EventPattern: { source: ['a'], detail: { x: [{ prefix: 'a' }, { numeric: ['>', 0, '<', 10] }] } },
+        Targets: [{ Id: 't1', Arn: QARN }],
+      });
       expect(ids(diagnoseTemplate(t))).toHaveLength(0);
     });
 
