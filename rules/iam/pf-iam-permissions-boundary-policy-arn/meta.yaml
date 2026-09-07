@@ -1,0 +1,11 @@
+id: pf-iam-permissions-boundary-policy-arn
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::User]
+severity: ERROR
+title: A permissions boundary is a policy ARN
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'ARN arn:aws:iam::111122223333:role/boundary is not valid. (Service: Iam, Status Code: 400, Request ID: 831a775e-f05b-4ade-b744-931e502e2540) (SDK Attempt Count: 1)' (RequestToken: beed95ce-7678-81c0-89b3-babe3a0316e2, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: CreateRole with --permissions-boundary arn:aws:iam::214794239830:role/cdkpf-iam-probe -> InvalidInput \"ARN arn:aws:iam::214794239830:role/cdkpf-iam-probe is not valid.\"; an AWS managed policy ARN is accepted."
+addedOn: 2026-09-07

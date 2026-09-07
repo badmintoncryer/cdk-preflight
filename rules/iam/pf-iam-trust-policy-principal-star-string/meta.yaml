@@ -1,0 +1,11 @@
+id: pf-iam-trust-policy-principal-star-string
+service: iam
+resourceTypes: [AWS::IAM::Role]
+severity: ERROR
+title: A trust policy needs a typed principal, not a bare "*"
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'AssumeRolepolicy contained an invalid principal: 'STAR':'*'. (Service: Iam, Status Code: 400, Request ID: 9d1d223d-8160-482e-8e46-bafab254bb24) (SDK Attempt Count: 1)' (RequestToken: b1b6ae5a-9b05-fabd-595b-ed9d14569fd8, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: UpdateAssumeRolePolicy with \"Principal\": \"*\" -> MalformedPolicyDocument \\u0027AssumeRolepolicy contained an invalid principal: \"STAR\":\"*\"\\u0027, while {\"AWS\": \"*\"} is accepted. The bare string form is valid in resource policies (S3 bucket policies), which is where the shape gets copied from."
+addedOn: 2026-09-07

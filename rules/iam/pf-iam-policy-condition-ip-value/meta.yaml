@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-ip-value
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: IpAddress condition operators need an IP address or CIDR
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'The policy failed legacy parsing (Service: Iam, Status Code: 400, Request ID: 188c5f5a-b4e9-40e9-9d19-92828c250cbc) (SDK Attempt Count: 1)' (RequestToken: f54c3859-6254-af28-bc99-eb180696e0dc, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"IpAddress\":{\"aws:SourceIp\":\"203.0.113.999/24\"}} -> MalformedPolicyDocument \"The policy failed legacy parsing\"; same for \"example.com\", \"1.2.3\", \"10.0.0.0/33\" and a trailing space. \"203.0.113.0/24\", \"203.0.113.5\", \"0.0.0.0/0\", \"2001:db8::/32\", \"2001:db8::1\" and \"::/0\" are accepted."
+addedOn: 2026-09-07

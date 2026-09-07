@@ -35,12 +35,13 @@ _pf_iinp_stmts(d) := out if {
 }
 
 violation contains make_diag_full("pf-iam-identity-policy-no-principal", "ERROR", name,
-	sprintf("%s.Statement.%d.Principal", [path, i]),
-	"Identity policy statement has a Principal field; the policy is rejected with \"Policy document should not specify a principal.\"",
-	"Remove Principal (identity policies apply to the identity they attach to)",
+	sprintf("%s.Statement.%d.%s", [path, i, key]),
+	sprintf("Identity policy statement has a %s field; the policy is rejected with \"Policy document should not specify a principal.\"", [key]),
+	"Remove the principal (identity policies apply to the identity they attach to); NotPrincipal is rejected the same way",
 	"https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html") if {
 	some [name, path, d] in _pf_iinp_docs
 	some [i, s] in _pf_iinp_stmts(d)
 	is_object(s)
-	object.get(s, "Principal", "__pf_absent") != "__pf_absent"
+	some key in ["Principal", "NotPrincipal"]
+	object.get(s, key, "__pf_absent") != "__pf_absent"
 }

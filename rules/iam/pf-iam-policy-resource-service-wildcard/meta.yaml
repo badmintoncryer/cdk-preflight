@@ -1,0 +1,11 @@
+id: pf-iam-policy-resource-service-wildcard
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: The service segment of a resource ARN takes no wildcard
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Resource vendor must be fully qualified and cannot contain regexes. (Service: Iam, Status Code: 400, Request ID: 05c5a79e-5089-4eab-bc8f-3136be8f04b0) (SDK Attempt Count: 1)' (RequestToken: 52b0b10c-3cf0-b4c8-0560-d5a0be8a01a6, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with \"Resource\": \"arn:aws:*:::b\" -> MalformedPolicyDocument \"Resource vendor must be fully qualified and cannot contain regexes.\"; \"arn:aws:s3*:::b\" fails the same way, while wildcards in the resource half (\"arn:aws:s3:::b*\") are accepted."
+addedOn: 2026-09-07

@@ -345,17 +345,46 @@
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | none |
 | `pf-iam-name-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::ManagedPolicy | IAM entity names allow only alphanumerics and +=,.@-_ | none |
+| `pf-iam-oidc-provider-client-id-count` | AWS::IAM::OIDCProvider | An OIDC provider takes at most 100 client ids | none |
+| `pf-iam-oidc-provider-url-https` | AWS::IAM::OIDCProvider | An OIDC provider URL starts with https:// | none |
+| `pf-iam-path-service-role-reserved` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::InstanceProfile<br>AWS::IAM::ManagedPolicy | The /aws-service-role/ path is reserved | none |
+| `pf-iam-permissions-boundary-policy-arn` | AWS::IAM::Role<br>AWS::IAM::User | A permissions boundary is a policy ARN | none |
 | `pf-iam-policy-action-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Actions must carry a service prefix | none |
+| `pf-iam-policy-action-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Every statement needs an Action or NotAction | none |
+| `pf-iam-policy-action-single-colon` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | An action carries exactly one colon | none |
+| `pf-iam-policy-action-vendor-wildcard` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | The service prefix of an action takes no wildcard | none |
+| `pf-iam-policy-arn-partition` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Attached policy ARNs live in the deploy partition | none |
+| `pf-iam-policy-condition-arn-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Arn condition operators need an ARN | none |
+| `pf-iam-policy-condition-binary-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | BinaryEquals takes base64 text | none |
+| `pf-iam-policy-condition-date-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Date condition operators need ISO 8601 or epoch seconds | none |
+| `pf-iam-policy-condition-ip-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | IpAddress condition operators need an IP address or CIDR | none |
+| `pf-iam-policy-condition-null-ifexists` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Null does not take the IfExists suffix | none |
+| `pf-iam-policy-condition-numeric-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Numeric condition operators need a numeric value | none |
 | `pf-iam-policy-condition-operator` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Condition operators come from a closed grammar | none |
+| `pf-iam-policy-condition-value-type` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Condition values are strings, not nested objects | none |
 | `pf-iam-policy-duplicate-sid` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Statement IDs must be unique within a policy | none |
 | `pf-iam-policy-effect-case` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Effect is case-sensitive Allow or Deny | none |
+| `pf-iam-policy-effect-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Every statement needs an Effect | none |
 | `pf-iam-policy-exclusive-fields` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Action/NotAction and Resource/NotResource are exclusive pairs | none |
+| `pf-iam-policy-resource-arn-segments` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A resource ARN carries six colon-separated segments | none |
 | `pf-iam-policy-resource-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Resources must be ARNs or * | none |
+| `pf-iam-policy-resource-global-service-arn` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | S3, IAM and Route 53 ARNs carry no region | none |
+| `pf-iam-policy-resource-partition` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Resource ARNs live in the deploy partition | none |
+| `pf-iam-policy-resource-service-wildcard` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | The service segment of a resource ARN takes no wildcard | none |
 | `pf-iam-policy-sid-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy statement Sid must be alphanumeric | none |
+| `pf-iam-policy-statement-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A policy document needs a non-empty Statement | none |
 | `pf-iam-policy-statement-resource-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policy statements need Resource or NotResource | none |
+| `pf-iam-policy-statement-unknown-field` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A statement holds only the documented policy elements | none |
+| `pf-iam-policy-unknown-toplevel-field` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A policy document holds only Version, Id and Statement | none |
 | `pf-iam-policy-version` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy Version must be 2012-10-17 or 2008-10-17 | none |
+| `pf-iam-slr-service-name-format` | AWS::IAM::ServiceLinkedRole | AWSServiceName is a service principal | none |
+| `pf-iam-trust-policy-action-sts-only` | AWS::IAM::Role | A trust policy allows only the STS AssumeRole family | none |
+| `pf-iam-trust-policy-aws-principal-format` | AWS::IAM::Role | An AWS principal is an account id or an IAM ARN | none |
+| `pf-iam-trust-policy-cognito-condition` | AWS::IAM::Role | A Cognito federated principal needs a Condition block | none |
 | `pf-iam-trust-policy-no-resource` | AWS::IAM::Role | Trust policies cannot carry a Resource field | none |
+| `pf-iam-trust-policy-principal-star-string` | AWS::IAM::Role | A trust policy needs a typed principal, not a bare "*" | none |
 | `pf-iam-trust-policy-service-principal` | AWS::IAM::Role | Service principals live under amazonaws.com | none |
+| `pf-iam-trust-policy-service-wildcard` | AWS::IAM::Role | A service principal cannot be a wildcard | none |
 | `pf-kinesis-consumer-duplicate-name` | AWS::Kinesis::StreamConsumer | Two consumers of one stream cannot share a ConsumerName | none |
 | `pf-kinesis-consumer-stream-region` | AWS::Kinesis::StreamConsumer | A stream consumer must reference a stream in its own region | none |
 | `pf-kinesis-encryption-key-region` | AWS::Kinesis::Stream | The stream encryption key must live in the stream region | none |

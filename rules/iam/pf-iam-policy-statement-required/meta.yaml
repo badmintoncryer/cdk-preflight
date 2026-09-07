@@ -1,0 +1,11 @@
+id: pf-iam-policy-statement-required
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: A policy document needs a non-empty Statement
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Syntax errors in policy. (Service: Iam, Status Code: 400, Request ID: a479f934-534f-43c6-bb6c-8dc7785c8442) (SDK Attempt Count: 1)' (RequestToken: a6b3ca6d-8e70-2833-55a3-2fe4cd88498c, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"Version\":\"2012-10-17\"} or \"Statement\": [] -> MalformedPolicyDocument \"Syntax errors in policy.\""
+addedOn: 2026-09-07

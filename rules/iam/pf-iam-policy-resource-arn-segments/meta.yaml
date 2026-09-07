@@ -1,0 +1,11 @@
+id: pf-iam-policy-resource-arn-segments
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: A resource ARN carries six colon-separated segments
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Resource arn:aws:s3:my-bucket:*:* can not contain region information. (Service: Iam, Status Code: 400, Request ID: 2649df71-bb63-4026-8d46-612a3e1d5529) (SDK Attempt Count: 1)' (RequestToken: 790014a0-04e2-ffd6-6ee8-dd16c747e68b, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with \"Resource\": \"arn:aws:s3:b\" -> MalformedPolicyDocument \"The policy failed legacy parsing\"."
+addedOn: 2026-09-07

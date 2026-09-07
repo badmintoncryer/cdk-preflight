@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-arn-value
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Arn condition operators need an ARN
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'The policy failed legacy parsing (Service: Iam, Status Code: 400, Request ID: 9d75b6eb-a37f-4d98-b188-358b0566d0a7) (SDK Attempt Count: 1)' (RequestToken: d57815b2-a401-3940-64b5-38656a6a5b0f, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"ArnLike\":{\"aws:SourceArn\":\"nope\"}} -> MalformedPolicyDocument \"The policy failed legacy parsing\"; \"arn:aws:s3:b\" (four segments) and \"${aws:PrincipalArn}\" fail the same way, while \"arn:*:s3:::b\", \"arn:aws:*:*:*:*\" and \"*\" are accepted."
+addedOn: 2026-09-07

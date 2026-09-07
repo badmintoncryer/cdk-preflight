@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-null-ifexists
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Null does not take the IfExists suffix
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Syntax errors in policy. (Service: Iam, Status Code: 400, Request ID: 23d1f1b8-678e-4f4c-abca-c6f883656b78) (SDK Attempt Count: 1)' (RequestToken: 0420d772-3292-05c3-2546-f4c15140ca4d, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"NullIfExists\":{\"aws:TokenIssueTime\":\"true\"}} -> MalformedPolicyDocument \"Syntax errors in policy.\"; plain \"Null\" and even \"ForAllValues:Null\" are accepted."
+addedOn: 2026-09-07

@@ -1,0 +1,11 @@
+id: pf-iam-policy-condition-value-type
+service: iam
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+severity: ERROR
+title: Condition values are strings, not nested objects
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Syntax errors in policy. (Service: Iam, Status Code: 400, Request ID: aff9bd70-50a4-4650-95aa-22df837e5874) (SDK Attempt Count: 1)' (RequestToken: b3507334-2198-2e6c-c874-dc6994be3532, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with {\"StringEquals\":{\"k\":{\"a\":\"b\"}}} -> MalformedPolicyDocument \"Syntax errors in policy.\"; an array holding an object fails the same way."
+addedOn: 2026-09-07

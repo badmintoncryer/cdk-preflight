@@ -1,0 +1,11 @@
+id: pf-iam-trust-policy-action-sts-only
+service: iam
+resourceTypes: [AWS::IAM::Role]
+severity: ERROR
+title: A trust policy allows only the STS AssumeRole family
+constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-custom.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'AssumeRole policy may only specify STS AssumeRole actions. (Service: Iam, Status Code: 400, Request ID: a99d4af3-de0b-4762-aa3e-fc9fb8d7eee2) (SDK Attempt Count: 1)' (RequestToken: 08a16565-216c-868c-93bc-4e6fb9cb0eab, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: UpdateAssumeRolePolicy with \"Action\": \"s3:GetObject\" -> MalformedPolicyDocument \"AssumeRole policy may only specify STS AssumeRole actions.\"; \"sts:*\", \"*\", \"sts:AssumeRoot\", \"sts:GetCallerIdentity\", \"sts:GetSessionToken\" and the lowercase \"sts:assumerole\" fail the same way. Accepted: sts:AssumeRole, sts:AssumeRoleWithWebIdentity, sts:AssumeRoleWithSAML, sts:TagSession, sts:SetSourceIdentity, sts:SetContext (a new STS session action would need this list updated)."
+addedOn: 2026-09-07

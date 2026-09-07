@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_pol
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Role inline policy statement with Principal (i04) -> \"Policy document should not specify a principal.\" ROLLBACK_COMPLETE."
+  evidence: "api 2026-09-07: PutRolePolicy with a NotPrincipal in an identity policy is rejected with the same \"Policy document should not specify a principal.\" — the rule now covers both keys. bench 2026-09-03 ap-northeast-1: Role inline policy statement with Principal (i04) -> \"Policy document should not specify a principal.\" ROLLBACK_COMPLETE."
 addedOn: 2026-09-03
