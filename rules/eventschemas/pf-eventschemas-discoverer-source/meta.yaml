@@ -1,0 +1,12 @@
+id: pf-eventschemas-discoverer-source
+service: eventschemas
+resourceTypes: [AWS::EventSchemas::Discoverer]
+severity: ERROR
+title: A discoverer source must be an event bus in the discoverer's Region
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eventschemas-discoverer.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: SourceArn pointing at an SQS queue -> ROLLBACK_COMPLETE \"Source ARN must be a valid event bus ARN.\" Measured the same day via schemas:CreateDiscoverer: a us-west-2 event bus gives \"Cross region Event Bus sourcing is not supported.\" while the same-Region default bus is accepted."
+addedOn: 2026-09-07

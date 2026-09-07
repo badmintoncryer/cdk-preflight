@@ -1,0 +1,11 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Reg": {
+   "Type": "AWS::EventSchemas::Registry",
+   "Properties": {
+    "RegistryName": "cdkpf-bench-reg-ok"
+   }
+  }
+ }
+}

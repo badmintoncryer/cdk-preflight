@@ -1,0 +1,12 @@
+id: pf-eventschemas-schema-content
+service: eventschemas
+resourceTypes: [AWS::EventSchemas::Schema]
+severity: ERROR
+title: Schema Content must be valid JSON, and valid OpenAPI 3.0 when Type is OpenApi3
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-schema-create.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: an OpenApi3 schema declaring openapi 2.0 -> ROLLBACK_COMPLETE \"Content is not valid OpenAPI 3.0: 'openapi' does not match pattern '^3\\\\.0\\\\.\\\\d(-.+)?$'\". Measured the same day via schemas:CreateSchema: 'not json' gives \"Content is not valid JSON\", a $schema key gives \"additionalProperties '$schema' not allowed\", and both a valid OpenApi3 document and a valid JSONSchemaDraft4 document are accepted. Only $schema is reported for the additionalProperties case, because OpenAPI legitimately allows servers, tags, security and other top-level keys."
+addedOn: 2026-09-07

@@ -329,6 +329,10 @@
 | `pf-events-target-parameters-mismatch` | AWS::Events::Rule | Target parameter blocks must match the target's resource type | none |
 | `pf-events-target-parameters-required` | AWS::Events::Rule | ECS, Batch and FIFO queue targets require their parameter block | none |
 | `pf-events-target-role-required` | AWS::Events::Rule | Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn | none |
+| `pf-eventschemas-discoverer-source` | AWS::EventSchemas::Discoverer | A discoverer source must be an event bus in the discoverer's Region | none |
+| `pf-eventschemas-registry-name-reserved` | AWS::EventSchemas::Registry | A registry name may not use the reserved aws. prefix | none |
+| `pf-eventschemas-registry-policy` | AWS::EventSchemas::RegistryPolicy | A registry policy must declare a Version | none |
+| `pf-eventschemas-schema-content` | AWS::EventSchemas::Schema | Schema Content must be valid JSON, and valid OpenAPI 3.0 when Type is OpenApi3 | none |
 | `pf-firehose-dfcc-required-configs` | AWS::KinesisFirehose::DeliveryStream | Enabled format conversion needs input, output, and schema configs | none |
 | `pf-firehose-dynamic-partitioning-buffer` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs a 64 MB buffer floor | none |
 | `pf-firehose-dynamic-partitioning-prefix` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs partition namespaces in the prefix | none |

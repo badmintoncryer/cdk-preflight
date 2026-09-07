@@ -1,0 +1,32 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Reg": {
+   "Type": "AWS::EventSchemas::Registry",
+   "Properties": {
+    "RegistryName": "cdkpf-bench-policy"
+   }
+  },
+  "Pol": {
+   "Type": "AWS::EventSchemas::RegistryPolicy",
+   "DependsOn": "Reg",
+   "Properties": {
+    "RegistryName": "cdkpf-bench-policy",
+    "Policy": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Sid": "s1",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "arn:aws:iam::214794239830:root"
+       },
+       "Action": "schemas:DescribeSchema",
+       "Resource": "arn:aws:schemas:us-east-1:214794239830:schema/cdkpf-bench-policy*"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

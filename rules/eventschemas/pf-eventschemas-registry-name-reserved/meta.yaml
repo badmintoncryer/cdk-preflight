@@ -1,0 +1,12 @@
+id: pf-eventschemas-registry-name-reserved
+service: eventschemas
+resourceTypes: [AWS::EventSchemas::Registry]
+severity: ERROR
+title: A registry name may not use the reserved aws. prefix
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eventschemas-registry.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: RegistryName 'aws.cdkpf' -> ROLLBACK_COMPLETE \"You do not have the permission to create/modify an AWS managed registry with name prefixed with 'aws.'.\" A name without the prefix is accepted."
+addedOn: 2026-09-07
