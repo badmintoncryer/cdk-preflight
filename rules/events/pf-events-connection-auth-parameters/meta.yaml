@@ -1,0 +1,12 @@
+id: pf-events-connection-auth-parameters
+service: events
+resourceTypes: [AWS::Events::Connection]
+severity: ERROR
+title: AuthParameters must carry the block that AuthorizationType names, and OAuth endpoints must be HTTPS
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-connection-authparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: AuthorizationType BASIC with ApiKeyAuthParameters -> ROLLBACK_COMPLETE \"Parameter BasicAuthParameters is not valid. Reason: Missing required field(s)\". Measured the same day via events:CreateConnection: an OAuth AuthorizationEndpoint of 'http://example.com/token' gives \"Parameter AuthorizationEndpoint is not valid. Reason: Endpoint '...' is not valid\". A reserved 'Authorization' header in InvocationHttpParameters is accepted, so it is deliberately not reported."
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-events-apidestination-endpoint
+service: events
+resourceTypes: [AWS::Events::ApiDestination]
+severity: ERROR
+title: An API destination needs an HTTPS endpoint and a same-Region connection
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-apidestination.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: InvocationEndpoint 'http://example.com/x' -> ROLLBACK_COMPLETE \"Parameter InvocationEndpoint is not valid. Reason: Endpoint 'http://example.com/x' is not valid\". Measured the same day via events:CreateApiDestination: a us-west-2 ConnectionArn gives \"Invalid ARN: 'arn:aws:events:us-west-2:...'\"."
+addedOn: 2026-09-07

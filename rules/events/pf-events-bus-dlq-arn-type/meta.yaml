@@ -1,0 +1,12 @@
+id: pf-events-bus-dlq-arn-type
+service: events
+resourceTypes: [AWS::Events::EventBus]
+severity: ERROR
+title: An event bus dead-letter queue must be an SQS queue
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-eventbus.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: DeadLetterConfig.Arn pointing at an SNS topic -> ROLLBACK_COMPLETE \"sns is not supported as a dead letter resource.\" Same wording as the target-level check in pf-events-target-dlq."
+addedOn: 2026-09-07

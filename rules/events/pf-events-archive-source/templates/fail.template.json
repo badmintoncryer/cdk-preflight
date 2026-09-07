@@ -1,0 +1,11 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "A": {
+   "Type": "AWS::Events::Archive",
+   "Properties": {
+    "SourceArn": "arn:aws:sqs:us-east-1:214794239830:Q"
+   }
+  }
+ }
+}

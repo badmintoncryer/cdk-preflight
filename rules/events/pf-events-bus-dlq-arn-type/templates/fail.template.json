@@ -1,0 +1,14 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "B": {
+   "Type": "AWS::Events::EventBus",
+   "Properties": {
+    "Name": "cdkpf-bench-busdlq",
+    "DeadLetterConfig": {
+     "Arn": "arn:aws:sns:us-east-1:214794239830:T"
+    }
+   }
+  }
+ }
+}
