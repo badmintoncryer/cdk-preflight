@@ -1,0 +1,12 @@
+id: pf-events-input-transformer-json-var
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: <aws.events.event.json> needs a JSON object InputTemplate
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-transform-target-input.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: InputTemplate '\"event was <aws.events.event.json> today\"' -> ROLLBACK_COMPLETE \"InputTemplate for target t1 contains placeholder aws.events.event.json valid only for JSON template.\" Measured the same day via events:PutTargets: '{\"e\": <aws.events.event.json>}' is accepted, '[<aws.events.event.json>]' is not, and an ordinary placeholder inline in a string ('\"event was <k> today\"') is accepted -- the restriction is specific to this one variable."
+addedOn: 2026-09-07

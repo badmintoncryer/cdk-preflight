@@ -1,0 +1,12 @@
+id: pf-events-input-path-jsonpath
+service: events
+resourceTypes: [AWS::Events::Rule]
+severity: ERROR
+title: Input paths must start at $ and avoid quoted bracket notation
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: InputPath 'detail.state' -> ROLLBACK_COMPLETE \"InputPath for target t1 is invalid.\" Measured the same day via events:PutTargets, symmetrically for InputPath and for InputPathsMap values: a missing leading $ and quoted bracket notation ($.detail['key']) are both refused, while '$.detail.state', a numeric index ('$.detail.a[0]') and a bare '$' are accepted -- so only brackets holding a quote are reported."
+addedOn: 2026-09-07
