@@ -3555,6 +3555,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpsv_scalar(v) if is_string(v)\n\n_pf_evpsv_scalar(v) if is_number(v)\n\n_pf_evpsv_scalar(v) if is_boolean(v)\n\n# Every matcher in an event pattern must be an array (or an object holding\n# operators); a bare scalar is rejected per key. Only the top level is\n# checked — that is the bench-verified scope, and it dodges operator objects\n# like {\"prefix\": \"...\"} that legally carry scalars deeper down.\nviolation contains make_diag_full(\"pf-events-pattern-scalar-value\", \"ERROR\", name,\n\tsprintf(\"Properties.EventPattern.%s\", [k]),\n\tsprintf(\"EventPattern key '%s' holds a bare scalar; PutRule rejects it with \\\"Event pattern is not valid. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := resolve(name, \"Properties.EventPattern\")\n\tis_object(ep)\n\tsome k, v in ep\n\t_pf_evpsv_scalar(v)\n}\n"
   },
   {
+    "id": "pf-events-target-role-required",
+    "service": "events",
+    "severity": "ERROR",
+    "title": "Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Events::Rule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# EventBridge invokes Lambda, SNS, SQS and CloudWatch Logs through a\n# resource-based policy, so those four take no RoleArn. Every other supported\n# target service is invoked by assuming a role, and PutTargets rejects the\n# entry when RoleArn is absent (measured 2026-09-07, events:PutTargets,\n# us-east-1). AppSync is left out of the set: its ARN validation runs first,\n# so the RoleArn requirement could not be observed directly.\n_pf_evtrole_services := {\n\t\"batch\", \"codebuild\", \"codepipeline\", \"ecs\", \"events\", \"firehose\",\n\t\"glue\", \"inspector\", \"kinesis\", \"redshift\", \"sagemaker\", \"ssm\",\n\t\"ssm-incidents\", \"states\",\n}\n\n_pf_evtrole_service(arn) := s if {\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n\ts := parts[2]\n}\n\nviolation contains make_diag_full(\"pf-events-target-role-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.RoleArn\", [t.index]),\n\tsprintf(\"Target '%s' is a %s target, which EventBridge can only invoke by assuming a role; PutTargets fails with \\\"RoleArn is required for target %s\\\"\", [tid, svc, arn]),\n\t\"Set RoleArn on the target to a role EventBridge can assume\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-use-resource-based.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tis_object(t.value)\n\tarn := object.get(t.value, \"Arn\", null)\n\tis_string(arn)\n\tsvc := _pf_evtrole_service(arn)\n\tsvc in _pf_evtrole_services\n\tobject.get(t.value, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n\ttid := object.get(t.value, \"Id\", \"<target>\")\n}\n"
+  },
+  {
     "id": "pf-firehose-dfcc-required-configs",
     "service": "firehose",
     "severity": "ERROR",
