@@ -1,0 +1,75 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "SourceQueue": {
+   "Type": "AWS::SQS::Queue"
+  },
+  "TargetQueue": {
+   "Type": "AWS::SQS::Queue"
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "pipes.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "pipe",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:SendMessage",
+          "sns:Publish"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "P1": {
+   "Type": "AWS::Pipes::Pipe",
+   "Properties": {
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Source": {
+     "Fn::GetAtt": [
+      "SourceQueue",
+      "Arn"
+     ]
+    },
+    "Target": {
+     "Fn::GetAtt": [
+      "Topic",
+      "TopicArn"
+     ]
+    }
+   }
+  },
+  "Topic": {
+   "Type": "AWS::SNS::Topic"
+  }
+ }
+}

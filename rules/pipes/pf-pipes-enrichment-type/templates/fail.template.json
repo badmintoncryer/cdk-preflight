@@ -1,0 +1,36 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "P1": {
+   "Type": "AWS::Pipes::Pipe",
+   "Properties": {
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Source": "arn:aws:sqs:us-east-1:214794239830:Q",
+    "Target": "arn:aws:lambda:us-east-1:214794239830:function:F",
+    "Enrichment": "arn:aws:sqs:us-east-1:214794239830:Q3"
+   }
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "pipes.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

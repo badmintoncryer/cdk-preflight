@@ -1,0 +1,12 @@
+id: pf-pipes-filter-pattern
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: A pipe filter Pattern must be a valid, non-empty event pattern
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: Pattern '{\\\"body\\\":{\\\"i\\\":1}}' -> ROLLBACK_COMPLETE \"Invalid Event Pattern. Reason: \\\"i\\\" must be an object or an array\". Measured the same day via pipes:CreatePipe: a non-JSON Pattern gives \"Unexpected character\", '{}' gives \"Empty objects are not allowed\", and '{\\\"body\\\":{\\\"i\\\":[1]}}' is accepted. The scalar check is unrolled to three levels because Rego has no walk builtin."
+addedOn: 2026-09-07

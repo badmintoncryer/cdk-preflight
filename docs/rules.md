@@ -469,6 +469,15 @@
 | `pf-memorydb-snapshot-retention` | AWS::MemoryDB::Cluster | SnapshotRetentionLimit is 0-35 days | none |
 | `pf-memorydb-snapshot-window` | AWS::MemoryDB::Cluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | none |
 | `pf-memorydb-user-password` | AWS::MemoryDB::User | A password user needs passwords of 16-128 characters | none |
+| `pf-pipes-batch-size-target-limit` | AWS::Pipes::Pipe | Source BatchSize is capped by what the target accepts per call | none |
+| `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | none |
+| `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | none |
+| `pf-pipes-filter-pattern` | AWS::Pipes::Pipe | A pipe filter Pattern must be a valid, non-empty event pattern | none |
+| `pf-pipes-input-template-variables` | AWS::Pipes::Pipe | InputTemplate may only use the aws.pipes.* reserved variables | none |
+| `pf-pipes-log-configuration` | AWS::Pipes::Pipe | A log level other than OFF needs a destination, and S3 logs must be JSON | none |
+| `pf-pipes-source-parameters` | AWS::Pipes::Pipe | Source parameters must match the source, and stream sources require theirs | none |
+| `pf-pipes-target-parameters` | AWS::Pipes::Pipe | Target parameters must match the target's resource type | none |
+| `pf-pipes-target-sns-fifo` | AWS::Pipes::Pipe | A FIFO SNS topic cannot be a pipe target | none |
 | `pf-rds-backtrack` | AWS::RDS::DBCluster | Backtrack only works on aurora-mysql, with a window of at most 259200 seconds | none |
 | `pf-rds-backup-retention-range` | AWS::RDS::DBInstance | BackupRetentionPeriod must be at most 35 days | none |
 | `pf-rds-backup-window-duration` | AWS::RDS::DBInstance | The backup window must be at least 30 minutes | none |

@@ -5209,6 +5209,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
+    "id": "pf-pipes-batch-size-target-limit",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "Source BatchSize is capped by what the target accepts per call",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"The configured batch size N is greater than the max supported ...\" — the\n# source batch size is capped by what the target can take in one call.\n# Measured 2026-09-07, pipes:CreatePipe, us-east-1: sqs, sns and an event bus\n# accept 10 and refuse 11; Step Functions takes more, so it is not listed.\n_pf_pipebs_max := {\"sqs\": 10, \"sns\": 10, \"events\": 10}\n\n_pf_pipebs_target(name) := parts[2] if {\n\tarn := resolve(name, \"Properties.Target\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n}\n\nviolation contains make_diag_full(\"pf-pipes-batch-size-target-limit\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceParameters.%s.BatchSize\", [block]),\n\tsprintf(\"BatchSize %v exceeds the %v events a %s target accepts per call; CreatePipe fails with \\\"The configured batch size %v is greater than the max supported\\\"\", [bs, max, svc, bs]),\n\tsprintf(\"Lower BatchSize to %v or less\", [max]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-batching-concurrency.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsvc := _pf_pipebs_target(name)\n\tmax := _pf_pipebs_max[svc]\n\tsp := input.resources[name].properties.SourceParameters\n\tis_object(sp)\n\tsome block, cfg in sp\n\tis_object(cfg)\n\tbs := to_number(object.get(cfg, \"BatchSize\", \"__pf_absent\"))\n\tbs > max\n}\n"
+  },
+  {
+    "id": "pf-pipes-cross-region",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "A pipe's source and target must be in the pipe's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Creating cross-region pipe is not permitted.\" — both ends must sit in the\n# pipe's own Region. Measured 2026-09-07, pipes:CreatePipe, us-east-1.\n_pf_pipereg_region(arn) := parts[3] if {\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tparts[3] != \"\"\n}\n\nviolation contains make_diag_full(\"pf-pipes-cross-region\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [prop]),\n\tsprintf(\"The pipe %s is in '%s' but the pipe deploys to '%s'; CreatePipe fails with \\\"Creating cross-region pipe is not permitted\\\"\", [lower(prop), r, region]),\n\tsprintf(\"Use a %s in the pipe's own Region\", [lower(prop)]),\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tregion := data.cdk_preflight.deploy_region\n\tsome prop in [\"Source\", \"Target\"]\n\tarn := resolve(name, sprintf(\"Properties.%s\", [prop]))\n\tis_string(arn)\n\tr := _pf_pipereg_region(arn)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-pipes-enrichment-type",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Invalid pipe enrichment.\" — only Lambda, Step Functions, API Gateway and\n# an EventBridge API destination can enrich. Measured 2026-09-07 against\n# pipes:CreatePipe in us-east-1: lambda, states, execute-api and events are\n# accepted; sqs and sns are refused.\n_pf_pipeenr_allowed := {\"lambda\", \"states\", \"execute-api\", \"events\"}\n\nviolation contains make_diag_full(\"pf-pipes-enrichment-type\", \"ERROR\", name,\n\t\"Properties.Enrichment\",\n\tsprintf(\"'%s' is a %s resource; a pipe enrichment must be a Lambda function, a Step Functions state machine, an API Gateway route or an API destination, and CreatePipe fails with \\\"Invalid pipe enrichment.\\\"\", [arn, svc]),\n\t\"Point Enrichment at a Lambda function, state machine, API Gateway route or API destination\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/pipes-enrichment.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tarn := resolve(name, \"Properties.Enrichment\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n\tsvc := parts[2]\n\tnot svc in _pf_pipeenr_allowed\n}\n"
+  },
+  {
+    "id": "pf-pipes-filter-pattern",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "A pipe filter Pattern must be a valid, non-empty event pattern",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A pipe filter Pattern is an event pattern carried as a JSON string, and\n# CreatePipe runs the same validator EventBridge uses: it must parse, it must\n# not be an empty object, and a matcher may not be a bare scalar. Measured\n# 2026-09-07, pipes:CreatePipe, us-east-1. Rego has no walk builtin and no\n# recursion, so the scalar check is unrolled to three levels — enough for the\n# envelope-then-payload shape a pipe pattern actually has. Operator objects\n# ({\"prefix\": \"...\"}) sit inside arrays, so they are never reached.\n_pf_pipefp_url := \"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html\"\n\n_pf_pipefp_scalar(v) if is_string(v)\n\n_pf_pipefp_scalar(v) if is_number(v)\n\n_pf_pipefp_scalar(v) if is_boolean(v)\n\n# The engine's Rego dialect allows only one `some ... in` per comprehension\n# body, so each level gets its own helper and the levels are unioned. Three\n# levels cover the envelope-then-payload shape a pipe pattern actually has.\n_pf_pipefp_kids(obj) := {v | some k, v in obj; is_object(v)}\n\n_pf_pipefp_scalar_keys(obj) := {k | some k, v in obj; _pf_pipefp_scalar(v)}\n\n_pf_pipefp_grandkids(obj) := union({_pf_pipefp_kids(kid) | some kid in _pf_pipefp_kids(obj)})\n\n_pf_pipefp_bad_keys(obj) := union({\n\t_pf_pipefp_scalar_keys(obj),\n\tunion({_pf_pipefp_scalar_keys(d1) | some d1 in _pf_pipefp_kids(obj)}),\n\tunion({_pf_pipefp_scalar_keys(d2) | some d2 in _pf_pipefp_grandkids(obj)}),\n})\n\n_pf_pipefp_patterns(name) := [f |\n\tsome f in flatten_list(name, \"Properties.SourceParameters.FilterCriteria.Filters\")\n\tis_object(f.value)\n\tis_string(object.get(f.value, \"Pattern\", null))\n]\n\nviolation contains make_diag_full(\"pf-pipes-filter-pattern\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceParameters.FilterCriteria.Filters.%d.Pattern\", [f.index]),\n\t\"The filter Pattern is not valid JSON; CreatePipe fails with \\\"Invalid Event Pattern\\\"\",\n\t\"Write the Pattern as a JSON object serialised to a string\",\n\t_pf_pipefp_url) if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsome f in _pf_pipefp_patterns(name)\n\tnot json.is_valid(object.get(f.value, \"Pattern\", \"\"))\n}\n\nviolation contains make_diag_full(\"pf-pipes-filter-pattern\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceParameters.FilterCriteria.Filters.%d.Pattern\", [f.index]),\n\t\"The filter Pattern is an empty object; CreatePipe fails with \\\"Invalid Event Pattern. Reason: Empty objects are not allowed\\\"\",\n\t\"Give the pattern at least one matcher, or drop FilterCriteria\",\n\t_pf_pipefp_url) if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsome f in _pf_pipefp_patterns(name)\n\traw := object.get(f.value, \"Pattern\", \"\")\n\tjson.is_valid(raw)\n\tobj := json.unmarshal(raw)\n\tis_object(obj)\n\tcount(obj) == 0\n}\n\nviolation contains make_diag_full(\"pf-pipes-filter-pattern\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceParameters.FilterCriteria.Filters.%d.Pattern\", [f.index]),\n\tsprintf(\"Pattern key '%s' holds a bare scalar; CreatePipe fails with \\\"Invalid Event Pattern. Reason: \\\\\\\"%s\\\\\\\" must be an object or an array\\\"\", [k, k]),\n\tsprintf(\"Wrap the value in an array: \\\"%s\\\": [...]\", [k]),\n\t_pf_pipefp_url) if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsome f in _pf_pipefp_patterns(name)\n\traw := object.get(f.value, \"Pattern\", \"\")\n\tjson.is_valid(raw)\n\tobj := json.unmarshal(raw)\n\tis_object(obj)\n\tsome k in _pf_pipefp_bad_keys(obj)\n}\n"
+  },
+  {
+    "id": "pf-pipes-input-template-variables",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "InputTemplate may only use the aws.pipes.* reserved variables",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Invalid json path reference or predefined variable for placeholder\" — an\n# InputTemplate may use $.-paths freely but only these eight reserved\n# variables. Measured 2026-09-07, pipes:CreatePipe, us-east-1: all eight are\n# accepted, aws.pipes.bogus and aws.events.rule-name are refused. Only\n# placeholders in the aws.* namespace are checked, so JSON paths and literal\n# markup are untouched.\n_pf_pipeitv_known := {\n\t\"aws.pipes.pipe-arn\", \"aws.pipes.pipe-name\", \"aws.pipes.source-arn\",\n\t\"aws.pipes.enrichment-arn\", \"aws.pipes.target-arn\",\n\t\"aws.pipes.event.ingestion-time\", \"aws.pipes.event\", \"aws.pipes.event.json\",\n}\n\nviolation contains make_diag_full(\"pf-pipes-input-template-variables\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.InputTemplate\", [block]),\n\tsprintf(\"<%s> is not a pipe reserved variable; CreatePipe fails with \\\"Invalid json path reference or predefined variable for placeholder\\\"\", [v]),\n\t\"Use one of the aws.pipes.* reserved variables, or a $. JSON path\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/pipes-input-transformation.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsome block in [\"TargetParameters\", \"EnrichmentParameters\"]\n\ttmpl := resolve(name, sprintf(\"Properties.%s.InputTemplate\", [block]))\n\tis_string(tmpl)\n\tsome m in regex.find_all_string_submatch_n(`<([^<>]+)>`, tmpl, -1)\n\tv := m[1]\n\tstartswith(v, \"aws.\")\n\tnot v in _pf_pipeitv_known\n}\n"
+  },
+  {
+    "id": "pf-pipes-log-configuration",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "A log level other than OFF needs a destination, and S3 logs must be JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A log level other than OFF needs somewhere to write (\"Must provide at least\n# 1 log destination in LogConfiguration\"), and the S3 destination only speaks\n# JSON (\"w3c and plain output formats are not supported by Pipes\"). Measured\n# 2026-09-07, pipes:CreatePipe, us-east-1; Level OFF with no destination is\n# accepted.\n_pf_pipelog_url := \"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-logs.html\"\n\n_pf_pipelog_destinations := [\"CloudwatchLogsLogDestination\", \"FirehoseLogDestination\", \"S3LogDestination\"]\n\nviolation contains make_diag_full(\"pf-pipes-log-configuration\", \"ERROR\", name,\n\t\"Properties.LogConfiguration\",\n\tsprintf(\"LogConfiguration sets Level %s but names no destination; CreatePipe fails with \\\"Must provide at least 1 log destination in LogConfiguration\\\"\", [lvl]),\n\t\"Add a CloudwatchLogsLogDestination, FirehoseLogDestination or S3LogDestination, or set Level to OFF\",\n\t_pf_pipelog_url) if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tlc := input.resources[name].properties.LogConfiguration\n\tis_object(lc)\n\tlvl := object.get(lc, \"Level\", null)\n\tis_string(lvl)\n\tlvl != \"OFF\"\n\tevery d in _pf_pipelog_destinations {\n\t\tobject.get(lc, d, \"__pf_absent\") == \"__pf_absent\"\n\t}\n}\n\nviolation contains make_diag_full(\"pf-pipes-log-configuration\", \"ERROR\", name,\n\t\"Properties.LogConfiguration.S3LogDestination.OutputFormat\",\n\tsprintf(\"S3 pipe logs are only written as JSON, but OutputFormat is '%s'; CreatePipe fails with \\\"w3c and plain output formats are not supported by Pipes\\\"\", [fmt]),\n\t\"Set OutputFormat to json, or drop it\",\n\t_pf_pipelog_url) if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tfmt := resolve(name, \"Properties.LogConfiguration.S3LogDestination.OutputFormat\")\n\tis_string(fmt)\n\tfmt != \"json\"\n}\n"
+  },
+  {
+    "id": "pf-pipes-source-parameters",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "Source parameters must match the source, and stream sources require theirs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreatePipe checks the SourceParameters block against the source ARN's\n# service (\"Invalid source parameter provided for source\") and demands the\n# matching block for stream sources (\"SourceParameters.KinesisStreamParameters\n# Missing required parameter.\"). Measured 2026-09-07, pipes:CreatePipe,\n# us-east-1. SelfManagedKafkaParameters is excluded: its source is an\n# smk:// URI rather than an ARN.\n_pf_pipesrc_block_service := {\n\t\"KinesisStreamParameters\": \"kinesis\",\n\t\"DynamoDBStreamParameters\": \"dynamodb\",\n\t\"SqsQueueParameters\": \"sqs\",\n\t\"ManagedStreamingKafkaParameters\": \"kafka\",\n\t\"ActiveMQBrokerParameters\": \"mq\",\n\t\"RabbitMQBrokerParameters\": \"mq\",\n}\n\n# Stream sources carry a mandatory StartingPosition, so the block itself is\n# required. Measured for both kinesis and dynamodb.\n_pf_pipesrc_required := {\"kinesis\": \"KinesisStreamParameters\", \"dynamodb\": \"DynamoDBStreamParameters\"}\n\n_pf_pipesrc_service(name) := parts[2] if {\n\tarn := resolve(name, \"Properties.Source\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n}\n\nviolation contains make_diag_full(\"pf-pipes-source-parameters\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceParameters.%s\", [block]),\n\tsprintf(\"%s only applies to a %s source but the pipe reads from %s; CreatePipe fails with \\\"Invalid source parameter provided for source\\\"\", [block, want, svc]),\n\tsprintf(\"Remove %s, or point Source at a %s resource\", [block, want]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-pipes-pipe-pipesourceparameters.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsp := input.resources[name].properties.SourceParameters\n\tis_object(sp)\n\tsome block, want in _pf_pipesrc_block_service\n\tobject.get(sp, block, \"__pf_absent\") != \"__pf_absent\"\n\tsvc := _pf_pipesrc_service(name)\n\tsvc != want\n}\n\nviolation contains make_diag_full(\"pf-pipes-source-parameters\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceParameters.%s\", [block]),\n\tsprintf(\"A %s stream source needs %s (StartingPosition is mandatory); CreatePipe fails with \\\"SourceParameters.%s Missing required parameter.\\\"\", [svc, block, block]),\n\tsprintf(\"Add SourceParameters.%s with a StartingPosition\", [block]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-pipes-pipe-pipesourceparameters.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tsvc := _pf_pipesrc_service(name)\n\tblock := _pf_pipesrc_required[svc]\n\tsp := object.get(input.resources[name].properties, \"SourceParameters\", {})\n\tobject.get(sp, block, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-pipes-target-parameters",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "Target parameters must match the target's resource type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Invalid target parameter provided for target.\" — CreatePipe matches the\n# TargetParameters block against the target ARN's service. Table measured\n# 2026-09-07, pipes:CreatePipe, us-east-1, by creating each block on its own\n# matching target. InputTemplate is not a target-type block and is excluded.\n_pf_pipetgt_allowed := {\n\t\"LambdaFunctionParameters\": {\"lambda\"},\n\t\"StepFunctionStateMachineParameters\": {\"states\"},\n\t\"KinesisStreamParameters\": {\"kinesis\"},\n\t\"EcsTaskParameters\": {\"ecs\"},\n\t\"BatchJobParameters\": {\"batch\"},\n\t\"SqsQueueParameters\": {\"sqs\"},\n\t\"EventBridgeEventBusParameters\": {\"events\"},\n\t\"HttpParameters\": {\"events\", \"execute-api\"},\n\t\"RedshiftDataParameters\": {\"redshift\", \"redshift-serverless\"},\n\t\"SageMakerPipelineParameters\": {\"sagemaker\"},\n\t\"CloudWatchLogsParameters\": {\"logs\"},\n\t\"TimestreamParameters\": {\"timestream\"},\n}\n\n_pf_pipetgt_service(name) := parts[2] if {\n\tarn := resolve(name, \"Properties.Target\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n}\n\nviolation contains make_diag_full(\"pf-pipes-target-parameters\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetParameters.%s\", [block]),\n\tsprintf(\"%s only applies to a %v target but the pipe writes to %s; CreatePipe fails with \\\"Invalid target parameter provided for target\\\"\", [block, sort(allowed), svc]),\n\tsprintf(\"Remove %s, or point Target at a matching resource\", [block]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-pipes-pipe-pipetargetparameters.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\ttp := input.resources[name].properties.TargetParameters\n\tis_object(tp)\n\tsome block, allowed in _pf_pipetgt_allowed\n\tobject.get(tp, block, \"__pf_absent\") != \"__pf_absent\"\n\tsvc := _pf_pipetgt_service(name)\n\tnot svc in allowed\n}\n"
+  },
+  {
+    "id": "pf-pipes-target-sns-fifo",
+    "service": "pipes",
+    "severity": "ERROR",
+    "title": "A FIFO SNS topic cannot be a pipe target",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Pipes::Pipe"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"SNS FIFO topics are not supported as a pipe target.\" A standard topic is\n# accepted. Measured 2026-09-07, pipes:CreatePipe, us-east-1.\nviolation contains make_diag_full(\"pf-pipes-target-sns-fifo\", \"ERROR\", name,\n\t\"Properties.Target\",\n\tsprintf(\"'%s' is a FIFO topic; CreatePipe rejects it because SNS FIFO is not supported as a pipe target\", [arn]),\n\t\"Use a standard SNS topic, or send to a FIFO SQS queue instead\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-event-target.html\") if {\n\tsome name in resources_of_type(\"AWS::Pipes::Pipe\")\n\tarn := resolve(name, \"Properties.Target\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 2\n\tparts[2] == \"sns\"\n\tendswith(arn, \".fifo\")\n}\n"
+  },
+  {
     "id": "pf-rds-backtrack",
     "service": "rds",
     "severity": "ERROR",

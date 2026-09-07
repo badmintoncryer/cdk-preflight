@@ -1,0 +1,12 @@
+id: pf-pipes-input-template-variables
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: InputTemplate may only use the aws.pipes.* reserved variables
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/pipes-input-transformation.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: InputTemplate '{\\\"v\\\": <aws.pipes.bogus>}' -> ROLLBACK_COMPLETE \"Invalid json path reference or predefined variable for placeholder\". Measured the same day via pipes:CreatePipe: pipe-arn, pipe-name, source-arn, enrichment-arn, target-arn, event.ingestion-time, event and event.json are all accepted, while aws.pipes.bogus and aws.events.rule-name are refused."
+addedOn: 2026-09-07
