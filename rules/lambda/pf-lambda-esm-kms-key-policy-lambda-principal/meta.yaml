@@ -1,0 +1,12 @@
+id: pf-lambda-esm-kms-key-policy-lambda-principal
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping, AWS::KMS::Key]
+severity: ERROR
+title: "The filter-criteria key policy must let Lambda decrypt"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy'
+addedOn: 2026-09-07

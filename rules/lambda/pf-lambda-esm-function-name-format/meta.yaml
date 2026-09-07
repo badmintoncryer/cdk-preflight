@@ -1,0 +1,12 @@
+id: pf-lambda-esm-function-name-format
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "FunctionName must be a name, ARN, partial ARN or version/alias ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): 1 validation error detected: Value ''cdkpf fn'' at ''functionName'' failed to satisfy constraint: Member must satisfy regular expression pattern: (arn:(aws[a-zA-Z-]*)?:lambda:)?((eusc-)?[a-z]{2}((-gov)|(-iso([a-z]?)))?-[a-z]+-\d{1}:)?(\d{12}:)?(function:)?([a-zA-Z0-9-_\.]+)(:(\$LATEST(\.PUBLISHED)?|[a-zA-Z0-9-_]+))? (Service: Lambda, Status Code: 400, Request ID: a345d1e4-7289-4822-afe3-1770436d9527) (SDK Attempt Count: 1)'
+addedOn: 2026-09-07

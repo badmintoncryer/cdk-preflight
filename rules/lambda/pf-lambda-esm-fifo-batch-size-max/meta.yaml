@@ -1,0 +1,12 @@
+id: pf-lambda-esm-fifo-batch-size-max
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "A FIFO queue source caps BatchSize at 10"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): BatchSize > 10 on a FIFO source is unreachable. Without MaximumBatchingWindowInSeconds: "Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10"; with it: "Batching window is not supported for FIFO queues". The service names the batching window rather than the FIFO batch cap, but both paths fail to deploy.'
+addedOn: 2026-09-07

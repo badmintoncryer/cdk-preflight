@@ -1,0 +1,12 @@
+id: pf-lambda-esm-function-name-bare-max-length
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "A bare function name in FunctionName is limited to 64 characters"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): "Function does not exist". Unremovable confound: a bare name over 64 characters cannot name a function that exists, so the deploy always fails, but the service reports the lookup miss rather than the length limit.'
+addedOn: 2026-09-07

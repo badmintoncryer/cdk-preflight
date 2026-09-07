@@ -4392,6 +4392,149 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SQS-only coupling: big batches must wait for a window. Kinesis and\n# DynamoDB sources take large batches without one, hence the SQS guard.\n_pf_lbsw_is_sqs(name) if {\n\tresolve(name, \"Properties.EventSourceArn\") in resources_of_type(\"AWS::SQS::Queue\")\n}\n\n_pf_lbsw_is_sqs(name) if {\n\tarn := resolve(name, \"Properties.EventSourceArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tsplit(arn, \":\")[2] == \"sqs\"\n}\n\n_pf_lbsw_no_window(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"MaximumBatchingWindowInSeconds\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_lbsw_no_window(name) if {\n\tto_number(resolve(name, \"Properties.MaximumBatchingWindowInSeconds\")) == 0\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-batchsize-window\", \"ERROR\", name,\n\t\"Properties.BatchSize\",\n\tsprintf(\"BatchSize %v without a batching window; the mapping create fails with \\\"Invalid request provided: Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10\\\"\", [b]),\n\t\"Set MaximumBatchingWindowInSeconds (1-300), or keep BatchSize at 10 or less\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\t_pf_lbsw_is_sqs(name)\n\tb := to_number(resolve(name, \"Properties.BatchSize\"))\n\tb > 10\n\t_pf_lbsw_no_window(name)\n}\n"
   },
   {
+    "id": "pf-lambda-esm-bisect-batch-stream-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "BisectBatchOnFunctionError only applies to Kinesis and DynamoDB streams",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lebbs_fix := \"Drop BisectBatchOnFunctionError, or point the mapping at a Kinesis or DynamoDB stream\"\n\n_pf_lebbs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-bisect-batch-stream-only\", \"ERROR\", name,\n\t\"Properties.BisectBatchOnFunctionError\",\n\t\"BisectBatchOnFunctionError on a source that does not support it; batch bisection needs ordered shard offsets, which only Kinesis and DynamoDB Streams provide\",\n\t_pf_lebbs_fix, _pf_lebbs_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"BisectBatchOnFunctionError\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\",\"kafka\",\"selfkafka\"]\n\t_pf_lam_is(name, other)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-client-certificate-kafka-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "CLIENT_CERTIFICATE_TLS_AUTH is not accepted on Amazon MQ",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lekcc_fix := \"Use BASIC_AUTH for Amazon MQ; mTLS is a Kafka credential type\"\n\n_pf_lekcc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-sourceaccessconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-client-certificate-kafka-only\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceAccessConfigurations[%v].Type\", [i]),\n\t\"CLIENT_CERTIFICATE_TLS_AUTH on an Amazon MQ event source; that credential type is only accepted for MSK and self-managed Kafka\",\n\t_pf_lekcc_fix, _pf_lekcc_url) if {\n\tsome name in _pf_lam_esm\n\tsome i, c in _pf_lam_list(_pf_lam_get(name, \"SourceAccessConfigurations\"))\n\tis_object(c)\n\tobject.get(c, \"Type\", \"\") == \"CLIENT_CERTIFICATE_TLS_AUTH\"\n\t_pf_lam_arn_not(name, \"kafka\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-ddb-at-timestamp-unsupported",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "DynamoDB Streams rejects AT_TIMESTAMP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledat_fix := \"Use TRIM_HORIZON or LATEST for a DynamoDB stream\"\n\n_pf_ledat_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-ddb-at-timestamp-unsupported\", \"ERROR\", name,\n\t\"Properties.StartingPosition\",\n\t\"StartingPosition AT_TIMESTAMP on a DynamoDB stream; DynamoDB Streams shards have no timestamp index, so only TRIM_HORIZON and LATEST are accepted\",\n\t_pf_ledat_fix, _pf_ledat_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"dynamodb\")\n\tresolve(name, \"Properties.StartingPosition\") == \"AT_TIMESTAMP\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-ddb-cross-region",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A DynamoDB stream source must sit in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledcr_fix := \"Point EventSourceArn at a stream in the deploy region\"\n\n_pf_ledcr_url := \"https://docs.aws.amazon.com/lambda/latest/dg/services-dynamodb-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-ddb-cross-region\", \"ERROR\", name,\n\t\"Properties.EventSourceArn\",\n\tsprintf(\"DynamoDB stream region '%v' is not the deploy region '%v'; cross-region stream triggers are not supported\", [parts[3], region]),\n\t_pf_ledcr_fix, _pf_ledcr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in _pf_lam_esm\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\tparts[2] == \"dynamodb\"\n\tparts[3] != region\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-ddb-destination-standard-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An on-failure destination cannot be a FIFO queue or topic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledds_fix := \"Point OnFailure.Destination at a standard SQS queue or SNS topic\"\n\n_pf_ledds_url := \"https://docs.aws.amazon.com/lambda/latest/dg/services-ddb-params.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-ddb-destination-standard-only\", \"ERROR\", name,\n\t\"Properties.DestinationConfig.OnFailure.Destination\",\n\t\"the on-failure destination is a FIFO queue or topic; Lambda writes failure records out of order, so only standard queues and topics are accepted\",\n\t_pf_ledds_fix, _pf_ledds_url) if {\n\tsome name in _pf_lam_esm\n\td := resolve(name, \"Properties.DestinationConfig.OnFailure.Destination\")\n\t_pf_lam_lit(d)\n\tendswith(d, \".fifo\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-destination-config-stream-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "DestinationConfig only applies to stream sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledcs_fix := \"Drop DestinationConfig; SQS, Amazon MQ and DocumentDB sources have no on-failure destination\"\n\n_pf_ledcs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-destination-config-stream-only\", \"ERROR\", name,\n\t\"Properties.DestinationConfig\",\n\t\"DestinationConfig on a source that does not support it; only stream sources report discarded batches to an on-failure destination\",\n\t_pf_ledcs_fix, _pf_ledcs_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"DestinationConfig\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\"]\n\t_pf_lam_is(name, other)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-docdb-basic-auth-required",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A DocumentDB event source needs BASIC_AUTH credentials",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledba_fix := \"Add a SourceAccessConfigurations entry of type BASIC_AUTH pointing at a Secrets Manager secret\"\n\n_pf_ledba_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html\"\n\n_pf_ledba_basic(name) if {\n\tsome c in _pf_lam_list(_pf_lam_get(name, \"SourceAccessConfigurations\"))\n\tis_object(c)\n\tobject.get(c, \"Type\", \"\") == \"BASIC_AUTH\"\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-docdb-basic-auth-required\", \"ERROR\", name,\n\t\"Properties.SourceAccessConfigurations\",\n\t\"a DocumentDB event source without BASIC_AUTH credentials; Lambda opens the change stream with a Secrets Manager secret and the mapping create is rejected without one\",\n\t_pf_ledba_fix, _pf_ledba_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"docdb\")\n\tnot _pf_ledba_basic(name)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-docdb-cluster-type",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Elastic DocumentDB clusters cannot be event sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledct_fix := \"Point the mapping at an instance-based (regional) DocumentDB cluster\"\n\n_pf_ledct_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-docdb-cluster-type\", \"ERROR\", name,\n\t\"Properties.EventSourceArn\",\n\t\"the source ARN names the 'docdb-elastic' service; Lambda reads change streams only from instance-based DocumentDB clusters, not elastic ones\",\n\t_pf_ledct_fix, _pf_ledct_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\tparts[2] == \"docdb-elastic\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-docdb-database-name-required",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "CollectionName needs DatabaseName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leddn_fix := \"Set DatabaseName alongside CollectionName\"\n\n_pf_leddn_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-docdb-database-name-required\", \"ERROR\", name,\n\t\"Properties.DocumentDBEventSourceConfig.DatabaseName\",\n\t\"CollectionName without DatabaseName; a collection is only addressable inside a database, so the mapping create is rejected\",\n\t_pf_leddn_fix, _pf_leddn_url) if {\n\tsome name in _pf_lam_esm\n\tcfg := _pf_lam_obj(_pf_lam_props(name), \"DocumentDBEventSourceConfig\")\n\t_pf_lam_has_key(cfg, \"CollectionName\")\n\tnot _pf_lam_has_key(cfg, \"DatabaseName\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-docdb-full-document-values",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "FullDocument accepts only UpdateLookup and Default",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledfd_fix := \"Use \\\"UpdateLookup\\\" or \\\"Default\\\" (the casing is fixed)\"\n\n_pf_ledfd_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-documentdbeventsourceconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-docdb-full-document-values\", \"ERROR\", name,\n\t\"Properties.DocumentDBEventSourceConfig.FullDocument\",\n\tsprintf(\"FullDocument is '%v'; the accepted values are UpdateLookup and Default, and the casing is fixed\", [v]),\n\t_pf_ledfd_fix, _pf_ledfd_url) if {\n\tsome name in _pf_lam_esm\n\tv := resolve(name, \"Properties.DocumentDBEventSourceConfig.FullDocument\")\n\tis_string(v)\n\tnot v in {\"UpdateLookup\", \"Default\"}\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-documentdb-arn-rds-service",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A DocumentDB event source is named by its rds cluster ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledas_fix := \"Use the arn:aws:rds:...:cluster:... form of the cluster ARN\"\n\n_pf_ledas_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-documentdb-arn-rds-service\", \"ERROR\", name,\n\t\"Properties.EventSourceArn\",\n\t\"the source ARN names the 'docdb' service; a DocumentDB cluster is addressed through its rds cluster ARN and Lambda rejects the docdb form\",\n\t_pf_ledas_fix, _pf_ledas_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\tparts[2] == \"docdb\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-event-source-arn-service",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "EventSourceArn must name a supported event source service",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leeas_fix := \"Point EventSourceArn at an SQS queue, Kinesis stream, DynamoDB stream, Kafka cluster, Amazon MQ broker or DocumentDB cluster\"\n\n_pf_leeas_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html\"\n\n_pf_leeas_ok := {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"rds\"}\n\nviolation contains make_diag_full(\"pf-lambda-esm-event-source-arn-service\", \"ERROR\", name,\n\t\"Properties.EventSourceArn\",\n\tsprintf(\"EventSourceArn names the '%v' service; Lambda polls only SQS, Kinesis, DynamoDB Streams, Kafka, Amazon MQ and DocumentDB\", [parts[2]]),\n\t_pf_leeas_fix, _pf_leeas_url) if {\n\tsome name in _pf_lam_esm\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\tnot parts[2] in _pf_leeas_ok\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-fifo-batch-size-max",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A FIFO queue source caps BatchSize at 10",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lefbs_fix := \"Lower BatchSize to 10 or less for a FIFO queue\"\n\n_pf_lefbs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-fifo-batch-size-max\", \"ERROR\", name,\n\t\"Properties.BatchSize\",\n\tsprintf(\"BatchSize %v on a FIFO queue; ordering is per message group, so Lambda caps FIFO batches at 10\", [n]),\n\t_pf_lefbs_fix, _pf_lefbs_url) if {\n\tsome name in _pf_lam_esm\n\tq := resolve(name, \"Properties.EventSourceArn\")\n\t_pf_lam_lit(q)\n\tendswith(q, \".fifo\")\n\tn := to_number(_pf_lam_get(name, \"BatchSize\"))\n\tn > 10\n}\n"
+  },
+  {
     "id": "pf-lambda-esm-fifo-batching-window",
     "service": "lambda",
     "severity": "ERROR",
@@ -4403,6 +4546,382 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# FIFO ordering forbids holding a batch open. FIFO-ness comes from the\n# queue sibling's FifoQueue flag or the .fifo arn suffix.\n_pf_lfbw_is_fifo(name) if {\n\tq := resolve(name, \"Properties.EventSourceArn\")\n\tq in resources_of_type(\"AWS::SQS::Queue\")\n\tcoerce_to_bool(resolve(q, \"Properties.FifoQueue\")) == true\n}\n\n_pf_lfbw_is_fifo(name) if {\n\tarn := resolve(name, \"Properties.EventSourceArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tendswith(arn, \".fifo\")\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-fifo-batching-window\", \"ERROR\", name,\n\t\"Properties.MaximumBatchingWindowInSeconds\",\n\t\"Batching window on a FIFO queue source; the mapping create fails with \\\"Invalid request provided: Batching window is not supported for FIFO queues\\\"\",\n\t\"Drop MaximumBatchingWindowInSeconds, or use a standard queue\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\t_pf_lfbw_is_fifo(name)\n\tto_number(resolve(name, \"Properties.MaximumBatchingWindowInSeconds\")) > 0\n}\n"
   },
   {
+    "id": "pf-lambda-esm-filter-criteria-docdb-unsupported",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "DocumentDB event sources do not support FilterCriteria",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ledfc_fix := \"Drop FilterCriteria and filter inside the function\"\n\n_pf_ledfc_url := \"https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-filter-criteria-docdb-unsupported\", \"ERROR\", name,\n\t\"Properties.FilterCriteria\",\n\t\"FilterCriteria on a DocumentDB event source; Lambda applies no event filtering to DocumentDB change streams and the mapping create is rejected\",\n\t_pf_ledfc_fix, _pf_ledfc_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"docdb\")\n\t_pf_lam_has(name, \"FilterCriteria\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-filter-pattern-eventbridge-syntax",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A filter Pattern must be an EventBridge pattern JSON object",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lefps_fix := \"Write the Pattern as a JSON object, e.g. {\\\"body\\\": {\\\"id\\\": [\\\"a\\\"]}}\"\n\n_pf_lefps_url := \"https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-filter-pattern-eventbridge-syntax\", \"ERROR\", name,\n\tsprintf(\"Properties.FilterCriteria.Filters[%v].Pattern\", [i]),\n\t\"the filter Pattern is not a JSON object; Lambda parses it as an EventBridge event pattern and the mapping create is rejected\",\n\t_pf_lefps_fix, _pf_lefps_url) if {\n\tsome name in _pf_lam_esm\n\tsome i, f in _pf_lam_filters(name)\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"__pf_absent\")\n\tis_string(p)\n\tnot _pf_lam_pat(f)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-filter-pattern-leaf-array",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Every leaf value in a filter Pattern must be an array",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lefla_fix := \"Wrap the match value in an array, e.g. {\\\"id\\\": [\\\"a\\\"]}\"\n\n_pf_lefla_url := \"https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-filter-pattern-leaf-array\", \"ERROR\", name,\n\tsprintf(\"Properties.FilterCriteria.Filters[%v].Pattern\", [i]),\n\tsprintf(\"the pattern matches '%v' against a bare value; EventBridge syntax requires every leaf to be an array of match values\", [concat(\".\", entry[0])]),\n\t_pf_lefla_fix, _pf_lefla_url) if {\n\tsome name in _pf_lam_esm\n\tsome i, f in _pf_lam_filters(name)\n\tsome entry in _pf_lam_pat_scalars(_pf_lam_pat(f))\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-filters-hard-limit-ten",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An event source mapping takes at most ten filters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leflt_fix := \"Keep at most 10 entries in FilterCriteria.Filters\"\n\n_pf_leflt_url := \"https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-filters-hard-limit-ten\", \"ERROR\", name,\n\t\"Properties.FilterCriteria.Filters\",\n\tsprintf(\"%v filters on one event source mapping; 10 is a hard limit that a quota increase cannot raise\", [n]),\n\t_pf_leflt_fix, _pf_leflt_url) if {\n\tsome name in _pf_lam_esm\n\tn := count(_pf_lam_filters(name))\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-function-name-bare-max-length",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A bare function name in FunctionName is limited to 64 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lefnl_fix := \"Use the function ARN, or shorten the name to 64 characters\"\n\n_pf_lefnl_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-function-name-bare-max-length\", \"ERROR\", name,\n\t\"Properties.FunctionName\",\n\tsprintf(\"FunctionName is a bare name of %v characters; the unqualified form is limited to 64\", [count(fn)]),\n\t_pf_lefnl_fix, _pf_lefnl_url) if {\n\tsome name in _pf_lam_esm\n\tfn := resolve(name, \"Properties.FunctionName\")\n\t_pf_lam_lit(fn)\n\tnot contains(fn, \":\")\n\tcount(fn) > 64\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-function-name-format",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "FunctionName must be a name, ARN, partial ARN or version/alias ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lefnf_fix := \"Use a plain function name, a function ARN or a version/alias ARN\"\n\n_pf_lefnf_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-function-name-format\", \"ERROR\", name,\n\t\"Properties.FunctionName\",\n\tsprintf(\"FunctionName '%v' is none of the accepted forms (name, function ARN, partial ARN, version or alias ARN)\", [fn]),\n\t_pf_lefnf_fix, _pf_lefnf_url) if {\n\tsome name in _pf_lam_esm\n\tfn := resolve(name, \"Properties.FunctionName\")\n\t_pf_lam_lit(fn)\n\tnot regex.match(\"^(arn:(aws[a-zA-Z-]*)?:lambda:)?([a-z]{2}(-gov)?-[a-z]+-\\\\d{1}:)?(\\\\d{12}:)?(function:)?([a-zA-Z0-9-_]+)(:(\\\\$LATEST|[a-zA-Z0-9-_]+))?$\", fn)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-function-response-types-allowed-value",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "FunctionResponseTypes only accepts ReportBatchItemFailures",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lefrt_fix := \"Use exactly \\\"ReportBatchItemFailures\\\"\"\n\n_pf_lefrt_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-function-response-types-allowed-value\", \"ERROR\", name,\n\t\"Properties.FunctionResponseTypes\",\n\tsprintf(\"FunctionResponseTypes lists '%v'; the only accepted value is ReportBatchItemFailures\", [v]),\n\t_pf_lefrt_fix, _pf_lefrt_url) if {\n\tsome name in _pf_lam_esm\n\tl := _pf_lam_get(name, \"FunctionResponseTypes\")\n\tis_array(l)\n\tsome v in l\n\tis_string(v)\n\tv != \"ReportBatchItemFailures\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-function-response-types-mq-docdb",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Partial batch failure reporting is not available on Amazon MQ or DocumentDB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemfr_fix := \"Drop FunctionResponseTypes for Amazon MQ and DocumentDB sources\"\n\n_pf_lemfr_url := \"https://docs.aws.amazon.com/lambda/latest/dg/services-mq-params.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-function-response-types-mq-docdb\", \"ERROR\", name,\n\t\"Properties.FunctionResponseTypes\",\n\t\"FunctionResponseTypes on an Amazon MQ or DocumentDB event source; neither reports partial batch failures, so the mapping create is rejected\",\n\t_pf_lemfr_fix, _pf_lemfr_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"FunctionResponseTypes\")\n\tsome kind in {\"mq\", \"docdb\"}\n\t_pf_lam_is(name, kind)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-kms-key-policy-lambda-principal",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The filter-criteria key policy must let Lambda decrypt",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping",
+      "AWS::KMS::Key"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lekkp_fix := \"Add a key policy statement allowing lambda.amazonaws.com to kms:Decrypt\"\n\n_pf_lekkp_url := \"https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html\"\n\n_pf_lekkp_allows(k) if {\n\tsome st in _pf_lam_list(object.get(_pf_lam_obj(_pf_lam_props(k), \"KeyPolicy\"), \"Statement\", []))\n\tis_object(st)\n\tobject.get(st, \"Effect\", \"\") == \"Allow\"\n\tsome p in _pf_lam_list(object.get(_pf_lam_obj(st, \"Principal\"), \"Service\", []))\n\tp == \"lambda.amazonaws.com\"\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-kms-key-policy-lambda-principal\", \"ERROR\", k,\n\t\"Properties.KeyPolicy\",\n\tsprintf(\"key '%v' encrypts filter criteria but its policy never allows the lambda.amazonaws.com service principal; the mapping create fails on kms:Decrypt\", [k]),\n\t_pf_lekkp_fix, _pf_lekkp_url) if {\n\tsome name in _pf_lam_esm\n\tk := resolve(name, \"Properties.KmsKeyArn\")\n\tk in resources_of_type(\"AWS::KMS::Key\")\n\tnot _pf_lekkp_allows(k)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-logging-config-kafka-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "LoggingConfig only applies to Kafka sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leklc_fix := \"Drop LoggingConfig, or point the mapping at an MSK cluster or self-managed Kafka\"\n\n_pf_leklc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-logging-config-kafka-only\", \"ERROR\", name,\n\t\"Properties.LoggingConfig\",\n\t\"LoggingConfig on a non-Kafka event source; poller logging exists only for Kafka event sources\",\n\t_pf_leklc_fix, _pf_leklc_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"LoggingConfig\")\n\t_pf_lam_arn_not(name, \"kafka\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-max-concurrency-vs-reserved",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MaximumConcurrency cannot exceed the reserved concurrency of the function",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping",
+      "AWS::Lambda::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemcr_fix := \"Lower MaximumConcurrency to the function ReservedConcurrentExecutions, or raise the reservation\"\n\n_pf_lemcr_url := \"https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-max-concurrency-vs-reserved\", \"ERROR\", name,\n\t\"Properties.ScalingConfig.MaximumConcurrency\",\n\tsprintf(\"MaximumConcurrency %v exceeds the %v reserved executions of function '%v'; the mapping can never reach that concurrency\", [m, r, fn]),\n\t_pf_lemcr_fix, _pf_lemcr_url) if {\n\tsome name in _pf_lam_esm\n\tm := to_number(object.get(_pf_lam_obj(_pf_lam_props(name), \"ScalingConfig\"), \"MaximumConcurrency\", 0))\n\tfn := resolve(name, \"Properties.FunctionName\")\n\tfn in resources_of_type(\"AWS::Lambda::Function\")\n\tr := to_number(_pf_lam_get(fn, \"ReservedConcurrentExecutions\"))\n\tm > r\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-maximum-record-age-stream-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MaximumRecordAgeInSeconds only applies to stream sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemra_fix := \"Drop MaximumRecordAgeInSeconds, or point the mapping at a stream source\"\n\n_pf_lemra_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-maximum-record-age-stream-only\", \"ERROR\", name,\n\t\"Properties.MaximumRecordAgeInSeconds\",\n\t\"MaximumRecordAgeInSeconds on a source that does not support it; record age is a stream retention concept and queues do not carry it\",\n\t_pf_lemra_fix, _pf_lemra_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"MaximumRecordAgeInSeconds\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\"]\n\t_pf_lam_is(name, other)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-maximum-retry-attempts-stream-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MaximumRetryAttempts only applies to stream sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemrs_fix := \"Drop MaximumRetryAttempts, or point the mapping at a stream source\"\n\n_pf_lemrs_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-maximum-retry-attempts-stream-only\", \"ERROR\", name,\n\t\"Properties.MaximumRetryAttempts\",\n\t\"MaximumRetryAttempts on a source that does not support it; queue sources retry through the queue redrive policy instead\",\n\t_pf_lemrs_fix, _pf_lemrs_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"MaximumRetryAttempts\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\"]\n\t_pf_lam_is(name, other)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-metrics-allowed-values",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MetricsConfig.Metrics only accepts EventCount, ErrorCount and KafkaMetrics",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemav_fix := \"Use EventCount, ErrorCount or KafkaMetrics\"\n\n_pf_lemav_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-metricsconfig.html\"\n\n_pf_lemav_ok := {\"EventCount\", \"ErrorCount\", \"KafkaMetrics\"}\n\nviolation contains make_diag_full(\"pf-lambda-esm-metrics-allowed-values\", \"ERROR\", name,\n\t\"Properties.MetricsConfig.Metrics\",\n\tsprintf(\"MetricsConfig.Metrics lists '%v'; the accepted values are EventCount, ErrorCount and KafkaMetrics\", [v]),\n\t_pf_lemav_fix, _pf_lemav_url) if {\n\tsome name in _pf_lam_esm\n\tl := object.get(_pf_lam_obj(_pf_lam_props(name), \"MetricsConfig\"), \"Metrics\", [])\n\tis_array(l)\n\tsome v in l\n\tis_string(v)\n\tnot v in _pf_lemav_ok\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-metrics-error-count-kafka-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The ErrorCount metric is Kafka-only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lekec_fix := \"Drop ErrorCount from MetricsConfig for a non-Kafka source\"\n\n_pf_lekec_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-metricsconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-metrics-error-count-kafka-only\", \"ERROR\", name,\n\t\"Properties.MetricsConfig.Metrics\",\n\t\"MetricsConfig asks for ErrorCount on a non-Kafka event source; that metric is only emitted for MSK and self-managed Kafka\",\n\t_pf_lekec_fix, _pf_lekec_url) if {\n\tsome name in _pf_lam_esm\n\tsome v in object.get(_pf_lam_obj(_pf_lam_props(name), \"MetricsConfig\"), \"Metrics\", [])\n\tv == \"ErrorCount\"\n\t_pf_lam_arn_not(name, \"kafka\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-metrics-kafka-metrics-kafka-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The KafkaMetrics metric is Kafka-only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lekkm_fix := \"Drop KafkaMetrics from MetricsConfig for a non-Kafka source\"\n\n_pf_lekkm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-metricsconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-metrics-kafka-metrics-kafka-only\", \"ERROR\", name,\n\t\"Properties.MetricsConfig.Metrics\",\n\t\"MetricsConfig asks for KafkaMetrics on a non-Kafka event source; that metric is only emitted for MSK and self-managed Kafka\",\n\t_pf_lekkm_fix, _pf_lekkm_url) if {\n\tsome name in _pf_lam_esm\n\tsome v in object.get(_pf_lam_obj(_pf_lam_props(name), \"MetricsConfig\"), \"Metrics\", [])\n\tv == \"KafkaMetrics\"\n\t_pf_lam_arn_not(name, \"kafka\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-mq-auth-secret-required",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An Amazon MQ event source needs BASIC_AUTH credentials",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemas_fix := \"Add a SourceAccessConfigurations entry of type BASIC_AUTH pointing at a Secrets Manager secret\"\n\n_pf_lemas_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-mq.html\"\n\n_pf_lemas_basic(name) if {\n\tsome c in _pf_lam_list(_pf_lam_get(name, \"SourceAccessConfigurations\"))\n\tis_object(c)\n\tobject.get(c, \"Type\", \"\") == \"BASIC_AUTH\"\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-mq-auth-secret-required\", \"ERROR\", name,\n\t\"Properties.SourceAccessConfigurations\",\n\t\"an Amazon MQ event source without BASIC_AUTH credentials; Lambda signs into the broker with a Secrets Manager secret and the mapping create is rejected without one\",\n\t_pf_lemas_fix, _pf_lemas_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"mq\")\n\tnot _pf_lemas_basic(name)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-mq-cross-account",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The Amazon MQ broker must live in the deploy account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemca_fix := \"Point EventSourceArn at a broker in the deploy account\"\n\n_pf_lemca_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-mq.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-mq-cross-account\", \"ERROR\", name,\n\t\"Properties.EventSourceArn\",\n\tsprintf(\"the broker belongs to account %v but the stack deploys to account %v; Amazon MQ event sources are not cross-account\", [parts[4], account]),\n\t_pf_lemca_fix, _pf_lemca_url) if {\n\taccount := data.cdk_preflight.deploy_account\n\tsome name in _pf_lam_esm\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\tparts[2] == \"mq\"\n\tparts[4] != account\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-mq-starting-position-unsupported",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Amazon MQ event sources reject StartingPosition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemsp_fix := \"Drop StartingPosition; it only applies to stream sources\"\n\n_pf_lemsp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-mq-starting-position-unsupported\", \"ERROR\", name,\n\t\"Properties.StartingPosition\",\n\t\"StartingPosition on an Amazon MQ event source; broker queues have no offsets, so the mapping create is rejected\",\n\t_pf_lemsp_fix, _pf_lemsp_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"mq\")\n\t_pf_lam_has(name, \"StartingPosition\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-msk-topics-required",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A Kafka event source needs Topics",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lektr_fix := \"List exactly one topic in Topics\"\n\n_pf_lektr_url := \"https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameters.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-msk-topics-required\", \"ERROR\", name,\n\t\"Properties.Topics\",\n\t\"a Kafka event source without Topics; Lambda has no topic to subscribe the poller to and the mapping create is rejected\",\n\t_pf_lektr_fix, _pf_lektr_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"kafka\")\n\tnot _pf_lam_has(name, \"Topics\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-on-failure-destination-api-max-length",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An on-failure destination ARN is limited to 350 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leodl_fix := \"Use a shorter destination ARN\"\n\n_pf_leodl_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-onfailure.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-on-failure-destination-api-max-length\", \"ERROR\", name,\n\t\"Properties.DestinationConfig.OnFailure.Destination\",\n\tsprintf(\"the destination ARN is %v characters; the API caps it at 350\", [count(d)]),\n\t_pf_leodl_fix, _pf_leodl_url) if {\n\tsome name in _pf_lam_esm\n\td := resolve(name, \"Properties.DestinationConfig.OnFailure.Destination\")\n\t_pf_lam_lit(d)\n\tcount(d) > 350\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-on-failure-destination-service",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "An on-failure destination must be SNS, SQS, S3 or a Kafka topic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leods_fix := \"Point OnFailure.Destination at an SNS topic, SQS queue, S3 bucket or Kafka topic ARN\"\n\n_pf_leods_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-onfailure.html\"\n\n_pf_leods_ok := {\"sns\", \"sqs\", \"s3\", \"kafka\"}\n\nviolation contains make_diag_full(\"pf-lambda-esm-on-failure-destination-service\", \"ERROR\", name,\n\t\"Properties.DestinationConfig.OnFailure.Destination\",\n\tsprintf(\"the on-failure destination names the '%v' service; Lambda writes failure records only to SNS, SQS, S3 or a Kafka topic\", [parts[2]]),\n\t_pf_leods_fix, _pf_leods_url) if {\n\tsome name in _pf_lam_esm\n\tparts := _pf_lam_arn(resolve(name, \"Properties.DestinationConfig.OnFailure.Destination\"))\n\tnot parts[2] in _pf_leods_ok\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-parallelization-factor-stream-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "ParallelizationFactor only applies to Kinesis and DynamoDB streams",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lepfs_fix := \"Drop ParallelizationFactor, or point the mapping at a Kinesis or DynamoDB stream\"\n\n_pf_lepfs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-parallelization-factor-stream-only\", \"ERROR\", name,\n\t\"Properties.ParallelizationFactor\",\n\t\"ParallelizationFactor on a source that does not support it; the factor multiplies concurrent batches per shard, and only Kinesis and DynamoDB Streams have shards\",\n\t_pf_lepfs_fix, _pf_lepfs_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"ParallelizationFactor\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\",\"kafka\",\"selfkafka\"]\n\t_pf_lam_is(name, other)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-poller-group-esm-count",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "A poller group holds at most 100 event source mappings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lepgc_fix := \"Split the mappings across more than one PollerGroupName\"\n\n_pf_lepgc_url := \"https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameters.html\"\n\n_pf_lepgc_names := {g |\n\tsome name in _pf_lam_esm\n\tg := object.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\")\n\tg != \"\"\n}\n\n_pf_lepgc_count(g) := count([name |\n\tsome name in _pf_lam_esm\n\tobject.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\") == g\n])\n\nviolation contains make_diag_full(\"pf-lambda-esm-poller-group-esm-count\", \"ERROR\", \"PollerGroupName\",\n\t\"Properties.ProvisionedPollerConfig.PollerGroupName\",\n\tsprintf(\"poller group '%v' holds %v event source mappings; the group limit is 100\", [g, n]),\n\t_pf_lepgc_fix, _pf_lepgc_url) if {\n\tsome g in _pf_lepgc_names\n\tn := _pf_lepgc_count(g)\n\tn > 100\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-poller-group-name-kafka-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "PollerGroupName only applies to Kafka sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lekpg_fix := \"Drop PollerGroupName; poller groups are a Kafka-only feature\"\n\n_pf_lekpg_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-provisionedpollerconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-poller-group-name-kafka-only\", \"ERROR\", name,\n\t\"Properties.ProvisionedPollerConfig.PollerGroupName\",\n\t\"PollerGroupName on a non-Kafka event source; poller groups share pollers across Kafka mappings only\",\n\t_pf_lekpg_fix, _pf_lekpg_url) if {\n\tsome name in _pf_lam_esm\n\tobject.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\") != \"\"\n\t_pf_lam_arn_not(name, \"kafka\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-pollers-max-ge-min",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MaximumPollers must be at least MinimumPollers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lepmm_fix := \"Raise MaximumPollers to at least MinimumPollers\"\n\n_pf_lepmm_url := \"https://docs.aws.amazon.com/lambda/latest/dg/kafka-scaling-modes.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-pollers-max-ge-min\", \"ERROR\", name,\n\t\"Properties.ProvisionedPollerConfig.MaximumPollers\",\n\tsprintf(\"MaximumPollers %v is below MinimumPollers %v\", [mx, mn]),\n\t_pf_lepmm_fix, _pf_lepmm_url) if {\n\tsome name in _pf_lam_esm\n\tc := _pf_lam_ppc(name)\n\tmn := to_number(object.get(c, \"MinimumPollers\", 2))\n\tmx := to_number(object.get(c, \"MaximumPollers\", 2000))\n\tmx < mn\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-provisioned-poller-source-support",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "ProvisionedPollerConfig only applies to SQS and Kafka sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lepps_fix := \"Drop ProvisionedPollerConfig, or point the mapping at an SQS queue or a Kafka cluster\"\n\n_pf_lepps_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-provisioned-poller-source-support\", \"ERROR\", name,\n\t\"Properties.ProvisionedPollerConfig\",\n\t\"ProvisionedPollerConfig on a source that does not support it; provisioned mode exists only for SQS and Kafka event sources\",\n\t_pf_lepps_fix, _pf_lepps_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"ProvisionedPollerConfig\")\n\tsome other in [\"kinesis\",\"dynamodb\",\"mq\",\"docdb\"]\n\t_pf_lam_is(name, other)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-record-age-effective-min",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "MaximumRecordAgeInSeconds starts at 60 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leram_fix := \"Use 60 or more, or -1 for the stream retention period\"\n\n_pf_leram_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-record-age-effective-min\", \"ERROR\", name,\n\t\"Properties.MaximumRecordAgeInSeconds\",\n\tsprintf(\"MaximumRecordAgeInSeconds is %v; the accepted values are -1 (stream retention) or 60 and above\", [n]),\n\t_pf_leram_fix, _pf_leram_url) if {\n\tsome name in _pf_lam_esm\n\tn := to_number(_pf_lam_get(name, \"MaximumRecordAgeInSeconds\"))\n\tn != -1\n\tn < 60\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-sasl-scram-512-kafka-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "SASL_SCRAM_512_AUTH is not accepted on Amazon MQ",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_leks5_fix := \"Use BASIC_AUTH for Amazon MQ; SASL/SCRAM is a Kafka credential type\"\n\n_pf_leks5_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-sourceaccessconfiguration.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-sasl-scram-512-kafka-only\", \"ERROR\", name,\n\tsprintf(\"Properties.SourceAccessConfigurations[%v].Type\", [i]),\n\t\"SASL_SCRAM_512_AUTH on an Amazon MQ event source; that credential type is only accepted for MSK and self-managed Kafka\",\n\t_pf_leks5_fix, _pf_leks5_url) if {\n\tsome name in _pf_lam_esm\n\tsome i, c in _pf_lam_list(_pf_lam_get(name, \"SourceAccessConfigurations\"))\n\tis_object(c)\n\tobject.get(c, \"Type\", \"\") == \"SASL_SCRAM_512_AUTH\"\n\t_pf_lam_arn_not(name, \"kafka\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-scaling-config-sqs-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "ScalingConfig only applies to SQS event sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lescs_fix := \"Drop ScalingConfig, or point the mapping at an SQS queue\"\n\n_pf_lescs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-eventsourcemapping-scalingconfig.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-scaling-config-sqs-only\", \"ERROR\", name,\n\t\"Properties.ScalingConfig\",\n\t\"ScalingConfig on a non-SQS event source; MaximumConcurrency is an SQS-only control and the mapping create is rejected\",\n\t_pf_lescs_fix, _pf_lescs_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"ScalingConfig\")\n\t_pf_lam_not(name, \"sqs\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-scaling-provisioned-mutually-exclusive",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "ScalingConfig and ProvisionedPollerConfig are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lekse_fix := \"Keep either ScalingConfig (on-demand) or ProvisionedPollerConfig (provisioned mode)\"\n\n_pf_lekse_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-scaling-provisioned-mutually-exclusive\", \"ERROR\", name,\n\t\"Properties.ProvisionedPollerConfig\",\n\t\"the mapping sets both ScalingConfig and ProvisionedPollerConfig; on-demand scaling and provisioned mode are alternatives, not a combination\",\n\t_pf_lekse_fix, _pf_lekse_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"ScalingConfig\")\n\t_pf_lam_has(name, \"ProvisionedPollerConfig\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-sqs-maximum-pollers-min",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "ProvisionedPollerConfig MaximumPollers starts at 2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lespm_fix := \"Set MaximumPollers to 2 or more\"\n\n_pf_lespm_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-sqs-maximum-pollers-min\", \"ERROR\", name,\n\t\"Properties.ProvisionedPollerConfig.MaximumPollers\",\n\tsprintf(\"MaximumPollers is %v; provisioned mode needs at least 2 pollers\", [n]),\n\t_pf_lespm_fix, _pf_lespm_url) if {\n\tsome name in _pf_lam_esm\n\tn := to_number(object.get(_pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\"), \"MaximumPollers\", 2))\n\tn < 2\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-sqs-minimum-pollers-min",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "ProvisionedPollerConfig MinimumPollers starts at 2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lesnm_fix := \"Set MinimumPollers to 2 or more\"\n\n_pf_lesnm_url := \"https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-sqs-minimum-pollers-min\", \"ERROR\", name,\n\t\"Properties.ProvisionedPollerConfig.MinimumPollers\",\n\tsprintf(\"MinimumPollers is %v; provisioned mode needs at least 2 pollers\", [n]),\n\t_pf_lesnm_fix, _pf_lesnm_url) if {\n\tsome name in _pf_lam_esm\n\tn := to_number(object.get(_pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\"), \"MinimumPollers\", 2))\n\tn < 2\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-sqs-same-region",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "The SQS source queue must sit in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lessr_fix := \"Point EventSourceArn at a queue in the deploy region\"\n\n_pf_lessr_url := \"https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-sqs-same-region\", \"ERROR\", name,\n\t\"Properties.EventSourceArn\",\n\tsprintf(\"source queue region '%v' is not the deploy region '%v'; Lambda only polls queues in its own region and the mapping create is rejected\", [parts[3], region]),\n\t_pf_lessr_fix, _pf_lessr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in _pf_lam_esm\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\tparts[2] == \"sqs\"\n\tparts[3] != region\n}\n"
+  },
+  {
     "id": "pf-lambda-esm-sqs-starting-position",
     "service": "lambda",
     "severity": "ERROR",
@@ -4412,6 +4931,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Lambda::EventSourceMapping"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# StartingPosition belongs to stream sources; queues have no offsets.\n# Detected via an in-template queue sibling or the sqs arn segment.\n_pf_lesp_is_sqs(name) if {\n\tresolve(name, \"Properties.EventSourceArn\") in resources_of_type(\"AWS::SQS::Queue\")\n}\n\n_pf_lesp_is_sqs(name) if {\n\tarn := resolve(name, \"Properties.EventSourceArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tsplit(arn, \":\")[2] == \"sqs\"\n}\n\n_pf_lesp_set(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"StartingPosition\", \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-lambda-esm-sqs-starting-position\", \"ERROR\", name,\n\t\"Properties.StartingPosition\",\n\t\"StartingPosition on an SQS event source; the mapping create fails with \\\"Invalid request provided: StartingPosition is not valid for SQS event sources.\\\"\",\n\t\"Drop StartingPosition (it only applies to Kinesis/DynamoDB/Kafka sources)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\t_pf_lesp_is_sqs(name)\n\t_pf_lesp_set(name)\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-starting-position-timestamp-mq-unsupported",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "Amazon MQ event sources reject StartingPositionTimestamp",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lemst_fix := \"Drop StartingPositionTimestamp; it only applies to AT_TIMESTAMP on stream sources\"\n\n_pf_lemst_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-starting-position-timestamp-mq-unsupported\", \"ERROR\", name,\n\t\"Properties.StartingPositionTimestamp\",\n\t\"StartingPositionTimestamp on an Amazon MQ event source; broker queues have no offsets, so the mapping create is rejected\",\n\t_pf_lemst_fix, _pf_lemst_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"mq\")\n\t_pf_lam_has(name, \"StartingPositionTimestamp\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-starting-position-timestamp-requires-at-timestamp",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "StartingPositionTimestamp needs StartingPosition AT_TIMESTAMP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lesta_fix := \"Set StartingPosition to AT_TIMESTAMP, or drop StartingPositionTimestamp\"\n\n_pf_lesta_url := \"https://docs.aws.amazon.com/lambda/latest/dg/services-kinesis-parameters.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-starting-position-timestamp-requires-at-timestamp\", \"ERROR\", name,\n\t\"Properties.StartingPositionTimestamp\",\n\tsprintf(\"StartingPositionTimestamp with StartingPosition '%v'; the timestamp is only read when the position is AT_TIMESTAMP\", [p]),\n\t_pf_lesta_fix, _pf_lesta_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"StartingPositionTimestamp\")\n\tp := resolve(name, \"Properties.StartingPosition\")\n\tis_string(p)\n\tp != \"AT_TIMESTAMP\"\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-starting-position-timestamp-sqs-unsupported",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "SQS event sources reject StartingPositionTimestamp",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lestt_fix := \"Drop StartingPositionTimestamp; it only applies to AT_TIMESTAMP on stream sources\"\n\n_pf_lestt_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-starting-position-timestamp-sqs-unsupported\", \"ERROR\", name,\n\t\"Properties.StartingPositionTimestamp\",\n\t\"StartingPositionTimestamp on an SQS event source; queues have no offsets, so the mapping create is rejected\",\n\t_pf_lestt_fix, _pf_lestt_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_is(name, \"sqs\")\n\t_pf_lam_has(name, \"StartingPositionTimestamp\")\n}\n"
+  },
+  {
+    "id": "pf-lambda-esm-tumbling-window-stream-only",
+    "service": "lambda",
+    "severity": "ERROR",
+    "title": "TumblingWindowInSeconds only applies to Kinesis and DynamoDB streams",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Lambda::EventSourceMapping"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_letws_fix := \"Drop TumblingWindowInSeconds, or point the mapping at a Kinesis or DynamoDB stream\"\n\n_pf_letws_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html\"\n\nviolation contains make_diag_full(\"pf-lambda-esm-tumbling-window-stream-only\", \"ERROR\", name,\n\t\"Properties.TumblingWindowInSeconds\",\n\t\"TumblingWindowInSeconds on a source that does not support it; tumbling windows aggregate per shard, which only Kinesis and DynamoDB Streams provide\",\n\t_pf_letws_fix, _pf_letws_url) if {\n\tsome name in _pf_lam_esm\n\t_pf_lam_has(name, \"TumblingWindowInSeconds\")\n\tsome other in [\"sqs\",\"mq\",\"docdb\",\"kafka\",\"selfkafka\"]\n\t_pf_lam_is(name, other)\n}\n"
   },
   {
     "id": "pf-lambda-memory-max",
@@ -6978,6 +7541,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/kinesis",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the Kinesis Data Streams and Managed Service for Apache\n# Flink rules: ARN segment access, traversal of the raw document (resolve()\n# cannot prove a key absent) and the runtime-environment families that drive\n# the Managed Flink configuration tables.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_kinlib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_kinlib_arn(v) := parts if {\n\t_pf_kinlib_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# region / account of an ARN belonging to `service`; undefined otherwise.\n_pf_kinlib_arn_region(v, service) := r if {\n\tparts := _pf_kinlib_arn(v)\n\tparts[2] == service\n\tr := parts[3]\n\tr != \"\"\n}\n\n_pf_kinlib_arn_account(v, service) := a if {\n\tparts := _pf_kinlib_arn(v)\n\tparts[2] == service\n\ta := parts[4]\n\ta != \"\"\n}\n\n# Raw properties of a resource. The preprocessed document is the only place\n# where \"the key is absent\" can be told apart from \"the value is a token\".\n_pf_kinlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_kinlib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_kinlib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_kinlib_appcfg(name) := c if c := _pf_kinlib_obj(_pf_kinlib_props(name), \"ApplicationConfiguration\")\n\n_pf_kinlib_flinkcfg(name) := c if c := _pf_kinlib_obj(_pf_kinlib_appcfg(name), \"FlinkApplicationConfiguration\")\n\n_pf_kinlib_runtime(name) := rt if {\n\trt := resolve(name, \"Properties.RuntimeEnvironment\")\n\tis_string(rt)\n}\n\n_pf_kinlib_flink(rt) if startswith(rt, \"FLINK-\")\n\n_pf_kinlib_zeppelin(rt) if startswith(rt, \"ZEPPELIN-FLINK-\")\n\n# [logical id, index, artifact] for every Studio custom artifact.\n_pf_kinlib_artifacts contains [name, i, a] if {\n\tsome name in resources_of_type(\"AWS::KinesisAnalyticsV2::Application\")\n\tz := _pf_kinlib_obj(_pf_kinlib_appcfg(name), \"ZeppelinApplicationConfiguration\")\n\tarts := object.get(z, \"CustomArtifactsConfiguration\", null)\n\tis_array(arts)\n\tsome i, a in arts\n\tis_object(a)\n}\n\n# [logical id, index, statement] for every Kinesis resource-policy statement.\n_pf_kinlib_statements contains [name, i, s] if {\n\tsome name in resources_of_type(\"AWS::Kinesis::ResourcePolicy\")\n\tpol := _pf_kinlib_obj(_pf_kinlib_props(name), \"ResourcePolicy\")\n\tsts := object.get(pol, \"Statement\", null)\n\tis_array(sts)\n\tsome i, s in sts\n\tis_object(s)\n}\n"
+  },
+  {
+    "name": "_lib/lambda",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::Lambda::EventSourceMapping rules: literal-vs-token\n# discrimination, ARN segments, raw-document access (resolve() cannot prove a key\n# absent) and — the one every rule needs — which event source a mapping points at.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_lam_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_lam_arn(v) := parts if {\n\t_pf_lam_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# Raw properties. The preprocessed document is the only place where \"the key is\n# absent\" can be told apart from \"the value is a token\".\n_pf_lam_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_lam_has(name, k) if {\n\tobject.get(_pf_lam_props(name), k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_lam_get(name, k) := v if {\n\tv := object.get(_pf_lam_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_lam_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_lam_esm := resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\n# --- which event source does this mapping read from? ------------------------\n# The config blocks are decisive: they exist only for one source family each.\n\n_pf_lam_is(name, \"docdb\") if _pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\n_pf_lam_is(name, \"selfkafka\") if _pf_lam_has(name, \"SelfManagedEventSource\")\n\n_pf_lam_is(name, \"kafka\") if _pf_lam_has(name, \"AmazonManagedKafkaEventSourceConfig\")\n\n# An in-template source resource: resolve() hands back the logical id.\n_pf_lam_src_type := {\n\t\"AWS::SQS::Queue\": \"sqs\",\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::DynamoDB::Table\": \"dynamodb\",\n\t\"AWS::DynamoDB::GlobalTable\": \"dynamodb\",\n\t\"AWS::MSK::Cluster\": \"kafka\",\n\t\"AWS::MSK::ServerlessCluster\": \"kafka\",\n\t\"AWS::AmazonMQ::Broker\": \"mq\",\n\t\"AWS::DocDB::DBCluster\": \"docdb\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tsrc := resolve(name, \"Properties.EventSourceArn\")\n\tsome t, k in _pf_lam_src_type\n\tsrc in resources_of_type(t)\n\tk == kind\n}\n\n# A literal ARN: the service segment names the source. DocumentDB clusters carry\n# an rds ARN, so they are only recognised through DocumentDBEventSourceConfig.\n_pf_lam_arn_kind := {\n\t\"sqs\": \"sqs\",\n\t\"kinesis\": \"kinesis\",\n\t\"dynamodb\": \"dynamodb\",\n\t\"kafka\": \"kafka\",\n\t\"mq\": \"mq\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\t_pf_lam_arn_kind[parts[2]] == kind\n}\n\n# The union: what the mapping reads from, by config block or by source ARN.\n_pf_lam_is(name, kind) if _pf_lam_srcarn(name, kind)\n\n# The source ARN names something other than `kind`. Unlike _pf_lam_not this\n# ignores the config blocks, so a rule can say \"this block is on the wrong ARN\".\n_pf_lam_arn_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_srcarn(name, other)\n}\n\n# Stream sources: the family that accepts StartingPosition, offsets and shard state.\n_pf_lam_stream(name) if _pf_lam_is(name, \"kinesis\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"dynamodb\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"kafka\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"selfkafka\")\n\n# The mapping's source is known to be something other than `kind`.\n_pf_lam_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"selfkafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_is(name, other)\n}\n\n# --- event filter patterns --------------------------------------------------\n# Filters[].Pattern is a JSON *string* holding an EventBridge pattern. There is\n# no walk builtin and Rego forbids recursion, so the traversal is unrolled to\n# four object levels: DynamoDB patterns are the deepest in practice\n# (dynamodb.NewImage.<attribute>.<type>).\n# ponytail: depth-capped at 4, deepen only if a real pattern nests further.\n\n_pf_lam_filters(name) := f if {\n\tf := object.get(_pf_lam_obj(_pf_lam_props(name), \"FilterCriteria\"), \"Filters\", [])\n\tis_array(f)\n}\n\n_pf_lam_pat(f) := o if {\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"\")\n\tis_string(p)\n\to := json.unmarshal(p)\n\tis_object(o)\n}\n\n_pf_lam_scalar(v) if {\n\tnot is_object(v)\n\tnot is_array(v)\n}\n\n# [path, value] for every scalar sitting where the pattern grammar wants an array.\n_pf_lam_pat_scalars(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], v] | some k, v in o; _pf_lam_scalar(v)],\n\t\t[[[k1, k2], v] | some k1, o1 in o; is_object(o1); some k2, v in o1; _pf_lam_scalar(v)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, v in o2; _pf_lam_scalar(v)],\n\t\t[[[k1, k2, k3, k4], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, v in o3; _pf_lam_scalar(v)],\n\t),\n)\n\n# Objects nested inside a match array: these are the operator objects\n# ({\"prefix\": \"a\"}, {\"numeric\": [\">\", 1]}, ...).\n_pf_lam_pat_ops(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], x] | some k, a in o; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2], x] | some k1, o1 in o; is_object(o1); some k2, a in o1; is_array(a); some x in a; is_object(x)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, a in o2; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2, k3, k4], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, a in o3; is_array(a); some x in a; is_object(x)],\n\t),\n)\n\n_pf_lam_has_key(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A property that CloudFormation accepts as either a scalar or a list.\n_pf_lam_list(v) := v if is_array(v)\n\n_pf_lam_list(v) := [v] if is_string(v)\n\n_pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\")\n"
   },
   {
     "name": "_lib/s3",

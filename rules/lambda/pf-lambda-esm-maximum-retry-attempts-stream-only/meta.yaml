@@ -1,0 +1,12 @@
+id: pf-lambda-esm-maximum-retry-attempts-stream-only
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "MaximumRetryAttempts only applies to stream sources"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unsupported MaximumRetryAttempts parameter for given event source mapping type.'
+addedOn: 2026-09-07

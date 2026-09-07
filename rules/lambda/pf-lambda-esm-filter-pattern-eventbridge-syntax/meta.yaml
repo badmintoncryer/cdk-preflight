@@ -1,0 +1,12 @@
+id: pf-lambda-esm-filter-pattern-eventbridge-syntax
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "A filter Pattern must be an EventBridge pattern JSON object"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid filter pattern definition.'
+addedOn: 2026-09-07

@@ -1,0 +1,12 @@
+id: pf-lambda-esm-function-response-types-allowed-value
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "FunctionResponseTypes only accepts ReportBatchItemFailures"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_CreateEventSourceMapping.html
+benchRegion: us-east-1
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Model validation failed (#/FunctionResponseTypes: #: only 1 subschema matches out of 2) #/FunctionResponseTypes/0: #: only 1 subschema matches out of 2 (#/FunctionResponseTypes/0)'
+addedOn: 2026-09-07

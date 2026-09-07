@@ -1,0 +1,12 @@
+id: pf-lambda-esm-poller-group-esm-count
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "A poller group holds at most 100 event source mappings"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameters.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: doc-only
+  evidence: 'A poller group tops out at 100 event source mappings. Not benched: the fail fixture needs 101 EventSourceMappings (57 KB), past CloudFormation''s 51,200-byte inline template limit, and each one needs a real MSK cluster (2026-09-07).'
+addedOn: 2026-09-07

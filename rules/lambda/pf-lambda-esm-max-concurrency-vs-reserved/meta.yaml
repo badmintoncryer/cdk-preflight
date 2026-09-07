@@ -1,0 +1,12 @@
+id: pf-lambda-esm-max-concurrency-vs-reserved
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping, AWS::Lambda::Function]
+severity: ERROR
+title: "MaximumConcurrency cannot exceed the reserved concurrency of the function"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): MaximumConcurrency: 100 is greater than Function Reserved Concurrency: 5'
+addedOn: 2026-09-07

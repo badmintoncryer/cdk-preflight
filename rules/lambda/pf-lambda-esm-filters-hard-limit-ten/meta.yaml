@@ -1,0 +1,12 @@
+id: pf-lambda-esm-filters-hard-limit-ten
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "An event source mapping takes at most ten filters"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Too many filter patterns, maximum allowed 5 patterns, provided 11 patterns.'
+addedOn: 2026-09-07

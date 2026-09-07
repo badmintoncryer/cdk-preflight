@@ -395,8 +395,59 @@
 | `pf-lambda-efs-requires-vpc` | AWS::Lambda::Function | Mounting EFS requires VpcConfig | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | none |
 | `pf-lambda-esm-batchsize-window` | AWS::Lambda::EventSourceMapping | SQS batch sizes over 10 need a batching window | none |
+| `pf-lambda-esm-bisect-batch-stream-only` | AWS::Lambda::EventSourceMapping | BisectBatchOnFunctionError only applies to Kinesis and DynamoDB streams | none |
+| `pf-lambda-esm-client-certificate-kafka-only` | AWS::Lambda::EventSourceMapping | CLIENT_CERTIFICATE_TLS_AUTH is not accepted on Amazon MQ | none |
+| `pf-lambda-esm-ddb-at-timestamp-unsupported` | AWS::Lambda::EventSourceMapping | DynamoDB Streams rejects AT_TIMESTAMP | none |
+| `pf-lambda-esm-ddb-cross-region` | AWS::Lambda::EventSourceMapping | A DynamoDB stream source must sit in the deploy region | none |
+| `pf-lambda-esm-ddb-destination-standard-only` | AWS::Lambda::EventSourceMapping | An on-failure destination cannot be a FIFO queue or topic | none |
+| `pf-lambda-esm-destination-config-stream-only` | AWS::Lambda::EventSourceMapping | DestinationConfig only applies to stream sources | none |
+| `pf-lambda-esm-docdb-basic-auth-required` | AWS::Lambda::EventSourceMapping | A DocumentDB event source needs BASIC_AUTH credentials | none |
+| `pf-lambda-esm-docdb-cluster-type` | AWS::Lambda::EventSourceMapping | Elastic DocumentDB clusters cannot be event sources | none |
+| `pf-lambda-esm-docdb-database-name-required` | AWS::Lambda::EventSourceMapping | CollectionName needs DatabaseName | none |
+| `pf-lambda-esm-docdb-full-document-values` | AWS::Lambda::EventSourceMapping | FullDocument accepts only UpdateLookup and Default | pending-engine |
+| `pf-lambda-esm-documentdb-arn-rds-service` | AWS::Lambda::EventSourceMapping | A DocumentDB event source is named by its rds cluster ARN | none |
+| `pf-lambda-esm-event-source-arn-service` | AWS::Lambda::EventSourceMapping | EventSourceArn must name a supported event source service | none |
+| `pf-lambda-esm-fifo-batch-size-max` | AWS::Lambda::EventSourceMapping | A FIFO queue source caps BatchSize at 10 | none |
 | `pf-lambda-esm-fifo-batching-window` | AWS::Lambda::EventSourceMapping | FIFO queues reject a batching window | none |
+| `pf-lambda-esm-filter-criteria-docdb-unsupported` | AWS::Lambda::EventSourceMapping | DocumentDB event sources do not support FilterCriteria | none |
+| `pf-lambda-esm-filter-pattern-eventbridge-syntax` | AWS::Lambda::EventSourceMapping | A filter Pattern must be an EventBridge pattern JSON object | none |
+| `pf-lambda-esm-filter-pattern-leaf-array` | AWS::Lambda::EventSourceMapping | Every leaf value in a filter Pattern must be an array | none |
+| `pf-lambda-esm-filters-hard-limit-ten` | AWS::Lambda::EventSourceMapping | An event source mapping takes at most ten filters | none |
+| `pf-lambda-esm-function-name-bare-max-length` | AWS::Lambda::EventSourceMapping | A bare function name in FunctionName is limited to 64 characters | none |
+| `pf-lambda-esm-function-name-format` | AWS::Lambda::EventSourceMapping | FunctionName must be a name, ARN, partial ARN or version/alias ARN | none |
+| `pf-lambda-esm-function-response-types-allowed-value` | AWS::Lambda::EventSourceMapping | FunctionResponseTypes only accepts ReportBatchItemFailures | pending-engine |
+| `pf-lambda-esm-function-response-types-mq-docdb` | AWS::Lambda::EventSourceMapping | Partial batch failure reporting is not available on Amazon MQ or DocumentDB | none |
+| `pf-lambda-esm-kms-key-policy-lambda-principal` | AWS::Lambda::EventSourceMapping<br>AWS::KMS::Key | The filter-criteria key policy must let Lambda decrypt | none |
+| `pf-lambda-esm-logging-config-kafka-only` | AWS::Lambda::EventSourceMapping | LoggingConfig only applies to Kafka sources | none |
+| `pf-lambda-esm-max-concurrency-vs-reserved` | AWS::Lambda::EventSourceMapping<br>AWS::Lambda::Function | MaximumConcurrency cannot exceed the reserved concurrency of the function | none |
+| `pf-lambda-esm-maximum-record-age-stream-only` | AWS::Lambda::EventSourceMapping | MaximumRecordAgeInSeconds only applies to stream sources | none |
+| `pf-lambda-esm-maximum-retry-attempts-stream-only` | AWS::Lambda::EventSourceMapping | MaximumRetryAttempts only applies to stream sources | none |
+| `pf-lambda-esm-metrics-allowed-values` | AWS::Lambda::EventSourceMapping | MetricsConfig.Metrics only accepts EventCount, ErrorCount and KafkaMetrics | pending-engine |
+| `pf-lambda-esm-metrics-error-count-kafka-only` | AWS::Lambda::EventSourceMapping | The ErrorCount metric is Kafka-only | none |
+| `pf-lambda-esm-metrics-kafka-metrics-kafka-only` | AWS::Lambda::EventSourceMapping | The KafkaMetrics metric is Kafka-only | none |
+| `pf-lambda-esm-mq-auth-secret-required` | AWS::Lambda::EventSourceMapping | An Amazon MQ event source needs BASIC_AUTH credentials | none |
+| `pf-lambda-esm-mq-cross-account` | AWS::Lambda::EventSourceMapping | The Amazon MQ broker must live in the deploy account | none |
+| `pf-lambda-esm-mq-starting-position-unsupported` | AWS::Lambda::EventSourceMapping | Amazon MQ event sources reject StartingPosition | none |
+| `pf-lambda-esm-msk-topics-required` | AWS::Lambda::EventSourceMapping | A Kafka event source needs Topics | none |
+| `pf-lambda-esm-on-failure-destination-api-max-length` | AWS::Lambda::EventSourceMapping | An on-failure destination ARN is limited to 350 characters | none |
+| `pf-lambda-esm-on-failure-destination-service` | AWS::Lambda::EventSourceMapping | An on-failure destination must be SNS, SQS, S3 or a Kafka topic | none |
+| `pf-lambda-esm-parallelization-factor-stream-only` | AWS::Lambda::EventSourceMapping | ParallelizationFactor only applies to Kinesis and DynamoDB streams | none |
+| `pf-lambda-esm-poller-group-esm-count` | AWS::Lambda::EventSourceMapping | A poller group holds at most 100 event source mappings | none |
+| `pf-lambda-esm-poller-group-name-kafka-only` | AWS::Lambda::EventSourceMapping | PollerGroupName only applies to Kafka sources | none |
+| `pf-lambda-esm-pollers-max-ge-min` | AWS::Lambda::EventSourceMapping | MaximumPollers must be at least MinimumPollers | none |
+| `pf-lambda-esm-provisioned-poller-source-support` | AWS::Lambda::EventSourceMapping | ProvisionedPollerConfig only applies to SQS and Kafka sources | none |
+| `pf-lambda-esm-record-age-effective-min` | AWS::Lambda::EventSourceMapping | MaximumRecordAgeInSeconds starts at 60 seconds | none |
+| `pf-lambda-esm-sasl-scram-512-kafka-only` | AWS::Lambda::EventSourceMapping | SASL_SCRAM_512_AUTH is not accepted on Amazon MQ | none |
+| `pf-lambda-esm-scaling-config-sqs-only` | AWS::Lambda::EventSourceMapping | ScalingConfig only applies to SQS event sources | none |
+| `pf-lambda-esm-scaling-provisioned-mutually-exclusive` | AWS::Lambda::EventSourceMapping | ScalingConfig and ProvisionedPollerConfig are mutually exclusive | none |
+| `pf-lambda-esm-sqs-maximum-pollers-min` | AWS::Lambda::EventSourceMapping | ProvisionedPollerConfig MaximumPollers starts at 2 | none |
+| `pf-lambda-esm-sqs-minimum-pollers-min` | AWS::Lambda::EventSourceMapping | ProvisionedPollerConfig MinimumPollers starts at 2 | none |
+| `pf-lambda-esm-sqs-same-region` | AWS::Lambda::EventSourceMapping | The SQS source queue must sit in the deploy region | none |
 | `pf-lambda-esm-sqs-starting-position` | AWS::Lambda::EventSourceMapping | SQS event sources reject StartingPosition | none |
+| `pf-lambda-esm-starting-position-timestamp-mq-unsupported` | AWS::Lambda::EventSourceMapping | Amazon MQ event sources reject StartingPositionTimestamp | none |
+| `pf-lambda-esm-starting-position-timestamp-requires-at-timestamp` | AWS::Lambda::EventSourceMapping | StartingPositionTimestamp needs StartingPosition AT_TIMESTAMP | none |
+| `pf-lambda-esm-starting-position-timestamp-sqs-unsupported` | AWS::Lambda::EventSourceMapping | SQS event sources reject StartingPositionTimestamp | none |
+| `pf-lambda-esm-tumbling-window-stream-only` | AWS::Lambda::EventSourceMapping | TumblingWindowInSeconds only applies to Kinesis and DynamoDB streams | none |
 | `pf-lambda-memory-max` | AWS::Lambda::Function | MemorySize tops out at 10240 | pending-engine |
 | `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | pending-engine |
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |

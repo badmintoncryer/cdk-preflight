@@ -1,0 +1,12 @@
+id: pf-lambda-esm-docdb-database-name-required
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "CollectionName needs DatabaseName"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid parameters: databaseName'
+addedOn: 2026-09-07

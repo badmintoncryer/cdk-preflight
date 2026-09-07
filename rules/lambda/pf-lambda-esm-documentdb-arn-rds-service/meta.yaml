@@ -1,0 +1,12 @@
+id: pf-lambda-esm-documentdb-arn-rds-service
+service: lambda
+resourceTypes: [AWS::Lambda::EventSourceMapping]
+severity: ERROR
+title: "A DocumentDB event source is named by its rds cluster ARN"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unrecognized event source. Unsupported source arn : arn:aws:docdb:us-east-1:214794239830:cluster:c'
+addedOn: 2026-09-07

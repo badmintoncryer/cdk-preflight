@@ -1,0 +1,21 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "E": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "FunctionName": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "Q",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    }
+  }
+}
