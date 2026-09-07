@@ -1,0 +1,12 @@
+id: pf-pipes-target-parameters
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: Target parameters must match the target's resource type
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-pipes-pipe-pipetargetparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: SqsQueueParameters on a Lambda target -> ROLLBACK_COMPLETE \"Invalid target parameter provided for target.\" The table was measured the same day via pipes:CreatePipe by creating all twelve blocks on their own matching targets; HttpParameters is accepted on both an API destination and execute-api, RedshiftDataParameters on both redshift and redshift-serverless."
+addedOn: 2026-09-07

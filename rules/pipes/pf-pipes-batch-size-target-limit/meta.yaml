@@ -1,0 +1,12 @@
+id: pf-pipes-batch-size-target-limit
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: Source BatchSize is capped by what the target accepts per call
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-batching-concurrency.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a Kinesis source with BatchSize 11 into an SQS target -> ROLLBACK_COMPLETE \"The configured batch size 11 is greater than the max supported\". Measured the same day via pipes:CreatePipe: sqs, sns and an event bus each accept 10 and refuse 11; a Step Functions target accepts 11, so it is deliberately absent from the table."
+addedOn: 2026-09-07

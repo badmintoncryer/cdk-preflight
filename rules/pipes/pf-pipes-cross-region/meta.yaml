@@ -1,0 +1,12 @@
+id: pf-pipes-cross-region
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: A pipe's source and target must be in the pipe's Region
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a us-west-2 Lambda target -> ROLLBACK_COMPLETE \"Creating cross-region pipe is not permitted.\" A us-west-2 source gives the same error on the Source field."
+addedOn: 2026-09-07

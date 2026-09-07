@@ -1,0 +1,12 @@
+id: pf-pipes-target-sns-fifo
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: A FIFO SNS topic cannot be a pipe target
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-event-target.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a .fifo SNS topic as Target -> ROLLBACK_COMPLETE, \"SNS FIFO\" named in the validation errors. The same topic without the .fifo suffix is accepted."
+addedOn: 2026-09-07

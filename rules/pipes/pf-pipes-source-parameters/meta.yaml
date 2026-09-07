@@ -1,0 +1,12 @@
+id: pf-pipes-source-parameters
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: Source parameters must match the source, and stream sources require theirs
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-pipes-pipe-pipesourceparameters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: a Kinesis stream source with no SourceParameters -> ROLLBACK_COMPLETE \"SourceParameters.KinesisStreamParameters Missing required parameter.\" A DynamoDB stream source behaves the same. A block that does not match the source ARN gives \"Invalid source parameter provided for source\". Measured the same day via pipes:CreatePipe, where each of KinesisStream/DynamoDBStream/SqsQueue/ActiveMQBroker/ManagedStreamingKafka parameters was accepted on its own matching source."
+addedOn: 2026-09-07

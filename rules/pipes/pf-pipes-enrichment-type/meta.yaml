@@ -1,0 +1,12 @@
+id: pf-pipes-enrichment-type
+service: pipes
+resourceTypes: [AWS::Pipes::Pipe]
+severity: ERROR
+title: Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/pipes-enrichment.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-07 us-east-1: an SQS queue as Enrichment -> ROLLBACK_COMPLETE \"Invalid pipe enrichment.\" Measured the same day via pipes:CreatePipe: lambda, states, execute-api and events (API destination) are accepted; sqs and sns are refused."
+addedOn: 2026-09-07
