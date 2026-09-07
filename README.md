@@ -49,6 +49,61 @@ ERROR idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 second
 Synthesis finished with errors
 ```
 
+## What it catches
+
+Four ordinary-looking snippets. All of them pass `cdk synth` and CloudFormation
+pre-deployment validation, and all of them fail minutes into a deployment:
+
+```ts
+// 1) pf-iam-inline-policy-size — enumerate buckets, grant each one, blow past 10,240 chars
+//    "Maximum policy size of 10240 bytes exceeded for role IngestRole"
+//    (via role.addToPolicy the CDK auto-splits into managed policies instead,
+//     and you hit the 6,144-char limit as pf-iam-managed-policy-size)
+new iam.Policy(this, 'IngestPolicy', {
+  roles: [role],
+  statements: [new iam.PolicyStatement({
+    actions: ['s3:GetObject', 's3:ListBucket'],
+    resources: Array.from({ length: 200 },
+      (_, i) => `arn:aws:s3:::data-lake-landing-zone-${i}/year=*/month=*/*`),
+  })],
+});
+
+// 2) pf-lambda-env-size — a config blob in the environment, over the 4KB total
+//    "Lambda was unable to configure your environment variables because the
+//     environment variables you have provided exceeded the 4KB limit"
+new lambda.Function(this, 'Fn', {
+  runtime: lambda.Runtime.NODEJS_22_X,
+  handler: 'index.handler',
+  code: lambda.Code.fromInline('exports.handler = async () => {};'),
+  environment: { FEATURE_FLAGS: JSON.stringify(bigFeatureFlagMap) },
+});
+
+// 3) pf-sfn-asl-missing-state (+ pf-sfn-asl-unreachable-state) — a typo in a state name
+//    "Invalid State Machine Definition: 'MISSING_TRANSITION_TARGET: ...'"
+new sfn.StateMachine(this, 'Pipeline', {
+  definitionBody: sfn.DefinitionBody.fromString(JSON.stringify({
+    StartAt: 'Validate',
+    States: {
+      Validate: { Type: 'Pass', Next: 'Transform' },
+      Trasform: { Type: 'Pass', End: true },   // typo: Transform
+    },
+  })),
+});
+
+// 4) pf-logs-filter-pattern-bracket — a filter pattern opened with '[' and never closed
+//    "If a filter pattern starts with '[' it must end with ']'"
+new logs.MetricFilter(this, 'ErrorFilter', {
+  logGroup,
+  metricNamespace: 'Pipeline',
+  metricName: 'Errors',
+  filterPattern: logs.FilterPattern.literal('[time, level=ERROR, msg'),
+});
+```
+
+None of these are type errors, so the L2 constructs accept them; none of them are
+expressible in a resource schema, so CloudFormation accepts the template. With
+`Preflight.apply(app)` in place they fail `cdk synth` instead.
+
 ## Observe-only mode
 
 To roll the rules out gradually, start with `enforce: false`: findings then surface as synth **warnings** through the CDK built-in validator, with construct traces and per-finding acknowledgement:
@@ -75,7 +130,17 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
 | `exclude` | `[]` | Rule ids to disable |
 | `includeUpstreamPending` | `true` | Include rules already proposed to the upstream engine but not yet merged |
 
-To opt out of a single rule, pass its id in `exclude`. In observe-only mode, individual findings can also be suppressed with the CDK acknowledge mechanism shown in the warning text.
+To opt out of a single rule everywhere, pass its id in `exclude`. To suppress a
+single *finding* on one construct, acknowledge it — this works in both modes, the
+id prefix just differs (`cdk-preflight::` when enforcing, `CloudFormation-Validate::`
+in observe-only, as printed in the warning text):
+
+```ts
+cdk.Validations.of(errorFilter).acknowledge({
+  id: 'cdk-preflight::pf-logs-filter-pattern-bracket',
+  reason: 'log group is written by a legacy producer; pattern is fixed upstream',
+});
+```
 
 ## Bundled rules
 
