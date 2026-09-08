@@ -1,0 +1,11 @@
+id: pf-ec2-eni-public-ip-device-index
+service: ec2
+resourceTypes: [AWS::EC2::Instance]
+severity: ERROR
+title: AssociatePublicIpAddress is only valid on device index 0
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: RunInstances with AssociatePublicIpAddress on DeviceIndex 1 -> \"InvalidParameterValue: The associatePublicIPAddress parameter can only be specified for the network interface with DeviceIndex 0\"; the same flag on index 0 passed validation. bench 2026-09-08 ap-northeast-1: a single interface at DeviceIndex 1 with AssociatePublicIpAddress -> ROLLBACK_COMPLETE \"The associatePublicIPAddress parameter can only be specified for the network interface with DeviceIndex 0.\"; index 0 -> CREATE_COMPLETE. A first fixture with two interfaces failed for a different reason (\"cannot be specified when launching with multiple network interfaces\") and was rebuilt."
+addedOn: 2026-09-08

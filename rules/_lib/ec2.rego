@@ -49,3 +49,11 @@ _pf_ec2lib_absent(name, key) if {
 	is_object(props)
 	object.get(props, key, "__pf_absent") == "__pf_absent"
 }
+
+# ネストしたキーの不在判定。path は上位から順のキー列。
+_pf_ec2lib_absent_at(name, path) if {
+	props := input.resources[name].properties
+	is_object(props)
+	obj := object.get(props, array.slice(path, 0, count(path) - 1), {})
+	object.get(obj, path[count(path) - 1], "__pf_absent") == "__pf_absent"
+}

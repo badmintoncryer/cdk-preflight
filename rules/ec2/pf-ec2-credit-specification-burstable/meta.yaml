@@ -1,0 +1,11 @@
+id: pf-ec2-credit-specification-burstable
+service: ec2
+resourceTypes: [AWS::EC2::Instance]
+severity: ERROR
+title: CreditSpecification applies only to burstable instance types
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: m5.large with CreditSpecification -> ROLLBACK_COMPLETE \"The m5.large instance type does not support T2 Unlimited.\"; t3.micro with the same property -> CREATE_COMPLETE. The API probe could not decide this one: RunInstances --dry-run returned DryRunOperation for both the violating and the control call, so parameter validation for CreditSpecification happens after the dry-run gate."
+addedOn: 2026-09-08

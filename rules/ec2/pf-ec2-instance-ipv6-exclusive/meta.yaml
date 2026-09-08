@@ -1,0 +1,11 @@
+id: pf-ec2-instance-ipv6-exclusive
+service: ec2
+resourceTypes: [AWS::EC2::Instance]
+severity: ERROR
+title: Ipv6AddressCount and Ipv6Addresses are mutually exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: RunInstances with --ipv6-address-count and --ipv6-addresses -> \"InvalidParameterCombination: IPv6 addresses and IPv6 address count may not be specified on the same request\". bench 2026-09-08 ap-northeast-1: both properties -> ROLLBACK_COMPLETE \"Both Ipv6Addresses and Ipv6AddressCount cannot be specified\"; neither -> CREATE_COMPLETE."
+addedOn: 2026-09-08
