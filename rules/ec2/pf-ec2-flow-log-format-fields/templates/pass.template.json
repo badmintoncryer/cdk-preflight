@@ -1,0 +1,34 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.20.0.0/16"
+      }
+    },
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Delete",
+      "Properties": {}
+    },
+    "Fl": {
+      "Type": "AWS::EC2::FlowLog",
+      "Properties": {
+        "ResourceType": "VPC",
+        "ResourceId": {
+          "Ref": "Vpc"
+        },
+        "TrafficType": "ALL",
+        "LogDestinationType": "s3",
+        "LogDestination": {
+          "Fn::GetAtt": [
+            "Bucket",
+            "Arn"
+          ]
+        },
+        "LogFormat": "${srcaddr} ${dstaddr} ${pkt-src-aws-service}"
+      }
+    }
+  }
+}

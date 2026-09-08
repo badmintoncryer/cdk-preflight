@@ -2362,6 +2362,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-session-timeout\", \"ERROR\", name,\n\t\"Properties.SessionTimeoutHours\",\n\tsprintf(\"SessionTimeoutHours %v is not accepted (\\\"Session Timeout you provided is not valid; valid values are [8, 10, 12, 24]\\\")\", [n]),\n\t\"Use 8, 10, 12 or 24\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tn := to_number(resolve(name, \"Properties.SessionTimeoutHours\"))\n\tnot n in {8, 10, 12, 24}\n}\n"
   },
   {
+    "id": "pf-ec2-flow-log-aggregation-interval",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Flow log MaxAggregationInterval accepts only 60 or 600 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2fl_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-flowlog.html\"\n\n_pf_ec2fl_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_ec2fla_bad(name) := v if {\n\tv := resolve(name, \"Properties.MaxAggregationInterval\")\n\tn := to_number(v)\n\tnot n in {60, 600}\n}\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-aggregation-interval\", \"ERROR\", name,\n\t\"Properties.MaxAggregationInterval\",\n\tsprintf(\"MaxAggregationInterval %v is not accepted; a flow log takes 60 or 600 seconds (\\\"Invalid Flow Log Max Aggregation Interval.\\\")\", [v]),\n\t\"Set MaxAggregationInterval to 60 (one minute) or 600 (ten minutes), or drop the property to take the 600 default\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tv := _pf_ec2fla_bad(name)\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-destination-config",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Flow log destination type requires its matching destination property",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# LogDestinationType is optional and defaults to cloud-watch-logs, so an absent\n# type takes the cloud-watch-logs branch (measured: the same error fires).\n_pf_ec2fld_type(name) := t if {\n\tt := resolve(name, \"Properties.LogDestinationType\")\n\tis_string(t)\n}\n\n_pf_ec2fld_type(name) := \"cloud-watch-logs\" if _pf_ec2fl_absent(name, \"LogDestinationType\")\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-destination-config\", \"ERROR\", name,\n\t\"Properties.LogDestination\",\n\t\"A flow log with LogDestinationType s3 needs LogDestination (\\\"LogDestination can't be empty if LogGroupName is not provided.\\\")\",\n\t\"Set LogDestination to the target bucket ARN\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\t_pf_ec2fld_type(name) == \"s3\"\n\t_pf_ec2fl_absent(name, \"LogDestination\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-destination-config\", \"ERROR\", name,\n\t\"Properties.DeliverLogsPermissionArn\",\n\t\"A flow log delivering to CloudWatch Logs needs DeliverLogsPermissionArn (\\\"DeliverLogsPermissionArn can't be empty if LogDestinationType is cloud-watch-logs.\\\")\",\n\t\"Set DeliverLogsPermissionArn to a role the flow log service can assume\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\t_pf_ec2fld_type(name) == \"cloud-watch-logs\"\n\t_pf_ec2fl_absent(name, \"DeliverLogsPermissionArn\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-format-fields",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Flow log LogFormat accepts only documented field names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2flf_fields := {\"version\", \"account-id\", \"interface-id\", \"srcaddr\", \"dstaddr\", \"srcport\", \"dstport\", \"protocol\", \"packets\", \"bytes\", \"start\", \"end\", \"action\", \"log-status\", \"vpc-id\", \"subnet-id\", \"instance-id\", \"tcp-flags\", \"type\", \"pkt-srcaddr\", \"pkt-dstaddr\", \"region\", \"az-id\", \"sublocation-type\", \"sublocation-id\", \"pkt-src-aws-service\", \"pkt-dst-aws-service\", \"flow-direction\", \"traffic-path\", \"ecs-cluster-arn\", \"ecs-cluster-name\", \"ecs-container-instance-arn\", \"ecs-container-instance-id\", \"ecs-container-id\", \"ecs-second-container-id\", \"ecs-service-name\", \"ecs-task-definition-arn\", \"ecs-task-arn\", \"ecs-task-id\", \"reject-reason\"}\n\n_pf_ec2flf_unknown(name) := f if {\n\ts := resolve(name, \"Properties.LogFormat\")\n\tis_string(s)\n\tsome tok in regex.find_n(`\\$\\{[^}]*\\}`, s, -1)\n\tf := trim_suffix(trim_prefix(tok, \"${\"), \"}\")\n\tnot f in _pf_ec2flf_fields\n}\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-format-fields\", \"ERROR\", name,\n\t\"Properties.LogFormat\",\n\tsprintf(\"LogFormat names the field '%s', which flow logs do not provide (\\\"Unknown fields provided\\\")\", [f]),\n\t\"Use only the documented ${field} names; check the log record fields table\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tf := _pf_ec2flf_unknown(name)\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-transit-gateway-traffic-type",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A Transit Gateway flow log cannot take TrafficType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-transit-gateway-traffic-type\", \"ERROR\", name,\n\t\"Properties.TrafficType\",\n\t\"A flow log on a Transit Gateway resource cannot take TrafficType; it always records all traffic\",\n\t\"Remove TrafficType, or point ResourceType at a VPC, Subnet or NetworkInterface\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tresolve(name, \"Properties.ResourceType\") in {\"TransitGateway\", \"TransitGatewayAttachment\"}\n\tnot _pf_ec2fl_absent(name, \"TrafficType\")\n}\n"
+  },
+  {
     "id": "pf-ec2-instance-ami-arch",
     "service": "ec2",
     "severity": "ERROR",
