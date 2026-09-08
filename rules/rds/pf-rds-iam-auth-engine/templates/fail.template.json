@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "sqlserver-ex",
+        "DBInstanceClass": "db.t3.small",
+        "AllocatedStorage": "20",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "EnableIAMDatabaseAuthentication": true,
+        "LicenseModel": "license-included"
+      }
+    }
+  }
+}

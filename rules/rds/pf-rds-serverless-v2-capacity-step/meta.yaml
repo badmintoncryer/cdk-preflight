@@ -1,0 +1,12 @@
+id: pf-rds-serverless-v2-capacity-step
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: "Serverless v2 capacity must be a multiple of 0.5 ACU"
+constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Serverless v2 capacity value 0.3 is not valid. It must be a multiple of 0.5.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

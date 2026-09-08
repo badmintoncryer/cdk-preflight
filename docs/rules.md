@@ -705,15 +705,63 @@
 | `pf-rds-backup-retention-range` | AWS::RDS::DBInstance | BackupRetentionPeriod must be at most 35 days | none |
 | `pf-rds-backup-window-duration` | AWS::RDS::DBInstance | The backup window must be at least 30 minutes | none |
 | `pf-rds-backup-window-format` | AWS::RDS::DBInstance | PreferredBackupWindow must be hh24:mi-hh24:mi | none |
+| `pf-rds-character-set-engine` | AWS::RDS::DBInstance | CharacterSetName is only accepted by Oracle engines | none |
+| `pf-rds-cluster-allocated-storage-aurora` | AWS::RDS::DBCluster | AllocatedStorage is only for Multi-AZ DB clusters, not Aurora | none |
+| `pf-rds-cluster-az-count` | AWS::RDS::DBCluster | AvailabilityZones accepts at most 3 zones | none |
+| `pf-rds-cluster-instance-class-aurora` | AWS::RDS::DBCluster | DBClusterInstanceClass is only for Multi-AZ DB clusters, not Aurora | none |
+| `pf-rds-cluster-logs-exports-engine` | AWS::RDS::DBCluster | Cluster EnableCloudwatchLogsExports values depend on the Aurora engine | none |
+| `pf-rds-cluster-port-range` | AWS::RDS::DBCluster | DBCluster Port must be between 1150 and 65535 | none |
+| `pf-rds-cluster-publicly-accessible-aurora` | AWS::RDS::DBCluster | PubliclyAccessible is only for Multi-AZ DB clusters, not Aurora | none |
+| `pf-rds-cluster-storage-type` | AWS::RDS::DBCluster | Aurora clusters only accept the aurora storage types | none |
+| `pf-rds-database-insights-advanced` | AWS::RDS::DBCluster | DatabaseInsightsMode: advanced requires Performance Insights with at least 31 days retention | none |
 | `pf-rds-dbname-format` | AWS::RDS::DBInstance | postgres DBName must begin with a letter | none |
 | `pf-rds-description-printable` | AWS::RDS::DBSubnetGroup<br>AWS::RDS::DBParameterGroup | RDS group descriptions must be printable ASCII | none |
+| `pf-rds-engine-mode-serverless-retired` | AWS::RDS::DBCluster | EngineMode: serverless (Aurora Serverless v1) can no longer be created | none |
+| `pf-rds-event-subscription-categories` | AWS::RDS::EventSubscription | EventCategories must exist for the SourceType | none |
+| `pf-rds-event-subscription-source-ids-require-type` | AWS::RDS::EventSubscription | SourceIds requires SourceType | none |
+| `pf-rds-event-subscription-source-type-values` | AWS::RDS::EventSubscription | SourceType must be one of the RDS event source types | none |
+| `pf-rds-global-write-forwarding-requires-global` | AWS::RDS::DBCluster | EnableGlobalWriteForwarding requires GlobalClusterIdentifier | none |
 | `pf-rds-gp3-iops-storage-threshold` | AWS::RDS::DBInstance | gp3 below 400 GiB cannot take custom Iops or StorageThroughput (postgres/mysql) | none |
+| `pf-rds-iam-auth-engine` | AWS::RDS::DBInstance | IAM database authentication is only supported by MySQL, MariaDB and PostgreSQL | none |
 | `pf-rds-io1-iops-ratio` | AWS::RDS::DBInstance | postgres io1 Iops may not exceed 50 per GiB of storage | none |
 | `pf-rds-iops-required` | AWS::RDS::DBInstance | io1 and io2 storage require the Iops property | none |
+| `pf-rds-license-model-engine` | AWS::RDS::DBInstance | LicenseModel must match the engine | none |
+| `pf-rds-limitless-delete-automated-backups` | AWS::RDS::DBCluster | Limitless clusters cannot set DeleteAutomatedBackups: false | none |
+| `pf-rds-logs-exports-engine` | AWS::RDS::DBInstance | EnableCloudwatchLogsExports values depend on the engine | none |
+| `pf-rds-magnetic-storage-deprecated` | AWS::RDS::DBInstance | Magnetic (standard) storage cannot be created any more | none |
+| `pf-rds-manage-master-password-exclusive` | AWS::RDS::DBInstance | ManageMasterUserPassword and MasterUserPassword are mutually exclusive | none |
+| `pf-rds-master-username-length` | AWS::RDS::DBInstance | MasterUsername length limit depends on the engine | none |
+| `pf-rds-master-username-reserved` | AWS::RDS::DBInstance | MasterUsername must not be an engine reserved word | none |
+| `pf-rds-max-allocated-storage` | AWS::RDS::DBInstance | MaxAllocatedStorage must be greater than AllocatedStorage | none |
+| `pf-rds-monitoring-interval-values` | AWS::RDS::DBInstance<br>AWS::RDS::DBCluster | MonitoringInterval must be one of 0, 1, 5, 10, 15, 30, 60 | none |
+| `pf-rds-monitoring-role-required` | AWS::RDS::DBInstance<br>AWS::RDS::DBCluster | MonitoringRoleArn is required when MonitoringInterval is not 0 | none |
+| `pf-rds-multiaz-availability-zone` | AWS::RDS::DBInstance | MultiAZ and AvailabilityZone are mutually exclusive | none |
+| `pf-rds-option-group-engine` | AWS::RDS::DBInstance<br>AWS::RDS::OptionGroup | OptionGroup EngineName must match the engine of the instance that uses it | none |
+| `pf-rds-parameter-group-family-engine` | AWS::RDS::DBInstance<br>AWS::RDS::DBParameterGroup | DBParameterGroup Family must match the engine of the instance that uses it | none |
 | `pf-rds-password-valid` | AWS::RDS::DBInstance<br>AWS::RDS::DBCluster | MasterUserPassword must be at least 8 characters without '/', '@', '\"' or spaces | none |
+| `pf-rds-pi-retention-period` | AWS::RDS::DBInstance | PerformanceInsightsRetentionPeriod must be 7, 731, or a multiple of 31 up to 713 | none |
+| `pf-rds-pi-retention-requires-enable` | AWS::RDS::DBInstance | PerformanceInsightsRetentionPeriod requires EnablePerformanceInsights: true | none |
 | `pf-rds-port-range` | AWS::RDS::DBInstance | The database port must be within 1150-65535 | none |
+| `pf-rds-processor-features-engine` | AWS::RDS::DBInstance | ProcessorFeatures is only supported by Oracle and SQL Server | none |
+| `pf-rds-promotion-tier-cluster-only` | AWS::RDS::DBInstance | PromotionTier is only valid on a cluster member instance | none |
+| `pf-rds-proxy-client-password-auth-engine` | AWS::RDS::DBProxy | ClientPasswordAuthType must match the proxy EngineFamily | none |
+| `pf-rds-proxy-iam-auth-enabled` | AWS::RDS::DBProxy | IAMAuth: ENABLED is only valid for SQL Server proxies | none |
+| `pf-rds-proxy-iam-auth-requires-tls` | AWS::RDS::DBProxy | IAMAuth: REQUIRED needs RequireTLS: true | none |
+| `pf-rds-proxy-idle-client-timeout` | AWS::RDS::DBProxy | IdleClientTimeout must be between 1 and 28800 seconds | none |
+| `pf-rds-proxy-pool-percent` | AWS::RDS::DBProxyTargetGroup | Connection pool percentages and borrow timeout have fixed ranges | none |
+| `pf-rds-proxy-target-group-name` | AWS::RDS::DBProxyTargetGroup | DBProxyTargetGroup TargetGroupName must be "default" | none |
+| `pf-rds-scaling-configuration-serverless-v1-only` | AWS::RDS::DBCluster | ScalingConfiguration only applies to Aurora Serverless v1 clusters | none |
+| `pf-rds-serverless-v2-auto-pause` | AWS::RDS::DBCluster | SecondsUntilAutoPause requires MinCapacity 0 | none |
 | `pf-rds-serverless-v2-capacity` | AWS::RDS::DBCluster | Serverless v2 MinCapacity must not exceed MaxCapacity, and MaxCapacity is at most 256 | none |
+| `pf-rds-serverless-v2-capacity-step` | AWS::RDS::DBCluster | Serverless v2 capacity must be a multiple of 0.5 ACU | none |
+| `pf-rds-shard-group-acu` | AWS::RDS::DBShardGroup | DBShardGroup MaxACU must be at least MinACU | none |
+| `pf-rds-sqlserver-dbname-null` | AWS::RDS::DBInstance | DBName is not accepted by SQL Server engines | none |
+| `pf-rds-sqlserver-reserved-port` | AWS::RDS::DBInstance | SQL Server reserves several ports | none |
+| `pf-rds-storage-throughput-gp3-only` | AWS::RDS::DBInstance | StorageThroughput is only valid with StorageType gp3 | none |
+| `pf-rds-storage-throughput-max` | AWS::RDS::DBInstance | gp3 StorageThroughput is capped at 4000 MiBps | none |
 | `pf-rds-subnet-group-name` | AWS::RDS::DBSubnetGroup | DB subnet group names allow only letters, numbers, spaces, dot, underscore and hyphen | none |
+| `pf-rds-subnet-group-name-reserved` | AWS::RDS::DBSubnetGroup | DBSubnetGroupName: default is reserved | none |
+| `pf-rds-timezone-engine` | AWS::RDS::DBInstance | Timezone is only accepted by Db2 and SQL Server engines | none |
 | `pf-rds-window-overlap` | AWS::RDS::DBInstance | The backup window and the maintenance window must not overlap | none |
 | `pf-route53-alias-cloudfront-zone-id` | AWS::Route53::RecordSet | A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2 | none |
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | none |

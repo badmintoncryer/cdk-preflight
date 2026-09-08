@@ -1,0 +1,12 @@
+id: pf-rds-monitoring-interval-values
+service: rds
+resourceTypes: [AWS::RDS::DBInstance, AWS::RDS::DBCluster]
+severity: ERROR
+title: "MonitoringInterval must be one of 0, 1, 5, 10, 15, 30, 60"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Invalid monitoring interval, please enter a value in [0, 1, 5, 10, 15, 30, 60]\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

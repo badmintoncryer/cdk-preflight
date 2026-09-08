@@ -1,0 +1,12 @@
+id: pf-rds-cluster-logs-exports-engine
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: "Cluster EnableCloudwatchLogsExports values depend on the Aurora engine"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"You cannot use the log types 'general' with engine version aurora-postgresql 17.7. For supported log types, see the documentation.\" ROLLBACK_COMPLETE Claim scope: aurora-mysql / aurora-postgresql / mysql / postgres only."
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-rds-scaling-configuration-serverless-v1-only
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: "ScalingConfiguration only applies to Aurora Serverless v1 clusters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"You can only specify scaling configuration for an Aurora Serverless v1 cluster.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

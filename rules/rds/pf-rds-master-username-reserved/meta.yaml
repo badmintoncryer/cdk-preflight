@@ -1,0 +1,12 @@
+id: pf-rds-master-username-reserved
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: "MasterUsername must not be an engine reserved word"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"MasterUsername rdsadmin cannot be used as it is a reserved word used by the engine\" ROLLBACK_COMPLETE Claim scope: literal 'rdsadmin' only."
+addedOn: 2026-09-08

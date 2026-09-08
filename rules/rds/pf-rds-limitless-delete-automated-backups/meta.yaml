@@ -1,0 +1,12 @@
+id: pf-rds-limitless-delete-automated-backups
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: "Limitless clusters cannot set DeleteAutomatedBackups: false"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The request includes Aurora Limitless Database attributes, which aren't available for the engine version of your DB cluster (Aurora PostgreSQL (Compatible with PostgreSQL 17.7)). Upgrade to an engine version that's compatible with Aurora Limitless Database.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

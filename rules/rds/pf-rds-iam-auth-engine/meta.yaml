@@ -1,0 +1,12 @@
+id: pf-rds-iam-auth-engine
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: "IAM database authentication is only supported by MySQL, MariaDB and PostgreSQL"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"IAM Database Authentication is not supported for this configuration.\" ROLLBACK_COMPLETE Claim scope: oracle / sqlserver / db2 only."
+addedOn: 2026-09-08
