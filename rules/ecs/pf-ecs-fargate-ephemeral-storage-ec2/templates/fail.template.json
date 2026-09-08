@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pffargateephemeralstorageec2",
+        "NetworkMode": "bridge",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true
+          }
+        ],
+        "EphemeralStorage": {
+          "SizeInGiB": 30
+        }
+      }
+    }
+  }
+}

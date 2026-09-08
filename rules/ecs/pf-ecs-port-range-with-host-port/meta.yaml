@@ -1,0 +1,12 @@
+id: pf-ecs-port-range-with-host-port
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: ContainerPortRange cannot be combined with a single port
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Invalid port mapping for container 'app', cannot specify both single port and port range.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-port-range-with-host-port.log"
+addedOn: 2026-09-08

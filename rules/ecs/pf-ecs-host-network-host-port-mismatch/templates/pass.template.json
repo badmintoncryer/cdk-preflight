@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfhostnetworkhostportmismatch",
+        "NetworkMode": "host",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true,
+            "PortMappings": [
+              {
+                "ContainerPort": 80,
+                "HostPort": 80
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

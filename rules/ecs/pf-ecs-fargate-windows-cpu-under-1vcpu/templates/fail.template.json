@@ -1,0 +1,53 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pffargatewindowscpuunder1vcpu",
+        "Cpu": "512",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ExecRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": true
+          }
+        ],
+        "RuntimePlatform": {
+          "OperatingSystemFamily": "WINDOWS_SERVER_2019_CORE",
+          "CpuArchitecture": "X86_64"
+        }
+      }
+    },
+    "ExecRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        ]
+      }
+    }
+  }
+}

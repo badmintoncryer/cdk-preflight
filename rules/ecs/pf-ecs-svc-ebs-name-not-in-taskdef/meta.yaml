@@ -1,0 +1,12 @@
+id: pf-ecs-svc-ebs-name-not-in-taskdef
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: VolumeConfigurations.Name must match a ConfiguredAtLaunch volume
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The volume name 'nope' in your request does not have a matching volume in your Task Definition that is configurable at launch.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-ebs-name-not-in-taskdef.log"
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-ecs-healthcheck-interval-range
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: HealthCheck.Interval must be 5-300 seconds
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Health check interval must be less than or equal to the maximum allowed value 300 for container 'app'), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-healthcheck-interval-range.log"
+addedOn: 2026-09-08

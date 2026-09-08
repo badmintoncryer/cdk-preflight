@@ -1,0 +1,12 @@
+id: pf-ecs-restart-policy-attempt-period-range
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: RestartPolicy.RestartAttemptPeriod must be 60-1800 seconds
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: The 'restartAttemptPeriod' setting for container 'app' must be between 60 and 1800.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-restart-policy-attempt-period-range.log"
+addedOn: 2026-09-08

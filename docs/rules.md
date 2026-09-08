@@ -256,16 +256,72 @@
 | `pf-ecr-replication-destination` | AWS::ECR::ReplicationConfiguration | A replication destination must be another registry: not the deploy account in the deploy region, and not another partition | none |
 | `pf-ecr-repository-creation-template-applied-for` | AWS::ECR::RepositoryCreationTemplate | AppliedFor accepts REPLICATION, PULL_THROUGH_CACHE and CREATE_ON_PUSH only | none |
 | `pf-ecr-signing-profile-region` | AWS::ECR::SigningConfiguration | A signing profile ARN must be in the same region as the registry | none |
+| `pf-ecs-awsfirelens-without-router` | AWS::ECS::TaskDefinition | The awsfirelens log driver requires a FireLens router container | none |
+| `pf-ecs-awslogs-fargate-missing-stream-prefix` | AWS::ECS::TaskDefinition | awslogs on Fargate requires the awslogs-stream-prefix option | none |
+| `pf-ecs-awslogs-missing-group` | AWS::ECS::TaskDefinition | The awslogs log driver requires the awslogs-group option | none |
+| `pf-ecs-awsvpc-extra-hosts` | AWS::ECS::TaskDefinition | ExtraHosts is not supported with NetworkMode awsvpc | none |
+| `pf-ecs-awsvpc-hostname` | AWS::ECS::TaskDefinition | Hostname is not supported with NetworkMode awsvpc | none |
+| `pf-ecs-cluster-default-strategy-multiple-base` | AWS::ECS::Cluster | Only one default capacity provider may set Base | none |
+| `pf-ecs-cluster-default-strategy-provider-not-listed` | AWS::ECS::Cluster | DefaultCapacityProviderStrategy may only use listed capacity providers | none |
+| `pf-ecs-cluster-execute-command-default-with-log-config` | AWS::ECS::Cluster | A LogConfiguration requires ExecuteCommand Logging OVERRIDE | none |
+| `pf-ecs-cluster-execute-command-override-without-log-config` | AWS::ECS::Cluster | ExecuteCommand Logging OVERRIDE requires a LogConfiguration | none |
 | `pf-ecs-cluster-name` | AWS::ECS::Cluster | ECS cluster names allow only letters, numbers, hyphen and underscore (max 255) | none |
 | `pf-ecs-container-definitions-empty` | AWS::ECS::TaskDefinition | ContainerDefinitions must contain at least one container | pending-engine |
 | `pf-ecs-container-memory-over-task` | AWS::ECS::TaskDefinition | A container Memory must not exceed the task-level Memory | none |
 | `pf-ecs-container-memory-required` | AWS::ECS::TaskDefinition | A container needs Memory or MemoryReservation when the task sets no Memory | none |
 | `pf-ecs-container-memory-reservation` | AWS::ECS::TaskDefinition | MemoryReservation must not exceed Memory | none |
+| `pf-ecs-cp-managed-termination-scale-in-protection` | AWS::ECS::CapacityProvider | ManagedTerminationProtection requires scale-in protection on the Auto Scaling group | none |
+| `pf-ecs-cp-name-reserved-prefix` | AWS::ECS::CapacityProvider | Capacity provider names cannot start with aws, ecs or fargate | none |
+| `pf-ecs-cp-scaling-step-order` | AWS::ECS::CapacityProvider | MinimumScalingStepSize must not exceed MaximumScalingStepSize | none |
+| `pf-ecs-dependson-complete-on-essential` | AWS::ECS::TaskDefinition | DependsOn COMPLETE / SUCCESS cannot target an essential container | none |
+| `pf-ecs-dependson-container-missing` | AWS::ECS::TaskDefinition | DependsOn.ContainerName must name a container in the same task | none |
+| `pf-ecs-dependson-healthy-without-healthcheck` | AWS::ECS::TaskDefinition | DependsOn Condition HEALTHY needs a HealthCheck on the target container | none |
 | `pf-ecs-duplicate-container-names` | AWS::ECS::TaskDefinition | Container names must be unique within a task definition | none |
+| `pf-ecs-efs-access-point-with-root-directory` | AWS::ECS::TaskDefinition | An EFS access point requires RootDirectory to be "/" or omitted | none |
+| `pf-ecs-efs-iam-without-transit-encryption` | AWS::ECS::TaskDefinition | EFS IAM authorization requires TransitEncryption ENABLED | none |
+| `pf-ecs-efs-transit-encryption-port-without-encryption` | AWS::ECS::TaskDefinition | TransitEncryptionPort requires TransitEncryption ENABLED | none |
+| `pf-ecs-environment-files-max` | AWS::ECS::TaskDefinition | A container can load at most 10 environment files | none |
+| `pf-ecs-environment-files-type` | AWS::ECS::TaskDefinition | EnvironmentFiles.Value must be an S3 object ARN | none |
 | `pf-ecs-ephemeral-storage-range` | AWS::ECS::TaskDefinition | EphemeralStorage SizeInGiB must be 21-200 | pending-engine |
 | `pf-ecs-essential-container` | AWS::ECS::TaskDefinition | At least one container must be essential | none |
+| `pf-ecs-fargate-capabilities-add` | AWS::ECS::TaskDefinition | Fargate only allows SYS_PTRACE in LinuxParameters.Capabilities.Add | none |
+| `pf-ecs-fargate-container-cpu-over-task` | AWS::ECS::TaskDefinition | Container Cpu values must not exceed the task-level Cpu | none |
+| `pf-ecs-fargate-devices` | AWS::ECS::TaskDefinition | LinuxParameters.Devices is not supported on Fargate | none |
+| `pf-ecs-fargate-disable-networking` | AWS::ECS::TaskDefinition | DisableNetworking is not supported with NetworkMode awsvpc | none |
+| `pf-ecs-fargate-dns-servers` | AWS::ECS::TaskDefinition | DnsServers is not supported with NetworkMode awsvpc | none |
+| `pf-ecs-fargate-docker-security-options` | AWS::ECS::TaskDefinition | DockerSecurityOptions is not supported on Fargate | none |
+| `pf-ecs-fargate-docker-volume` | AWS::ECS::TaskDefinition | DockerVolumeConfiguration is not supported on Fargate | none |
+| `pf-ecs-fargate-ephemeral-storage-ec2` | AWS::ECS::TaskDefinition | EphemeralStorage is only supported on Fargate | none |
+| `pf-ecs-fargate-execution-role-missing-awslogs` | AWS::ECS::TaskDefinition | awslogs on Fargate requires an ExecutionRoleArn | none |
+| `pf-ecs-fargate-gpu-resource` | AWS::ECS::TaskDefinition | GPU resource requirements are not supported on Fargate | none |
+| `pf-ecs-fargate-host-source-path` | AWS::ECS::TaskDefinition | Volumes[].Host.SourcePath is not supported on Fargate | none |
+| `pf-ecs-fargate-inference-accelerator` | AWS::ECS::TaskDefinition | InferenceAccelerators is retired and always rejected | none |
+| `pf-ecs-fargate-ipc-mode` | AWS::ECS::TaskDefinition | IpcMode is not supported on Fargate | none |
+| `pf-ecs-fargate-links` | AWS::ECS::TaskDefinition | Links is not supported with NetworkMode awsvpc | none |
+| `pf-ecs-fargate-log-driver-unsupported` | AWS::ECS::TaskDefinition | Fargate supports only a subset of log drivers | none |
+| `pf-ecs-fargate-max-swap` | AWS::ECS::TaskDefinition | LinuxParameters.MaxSwap is not supported on Fargate | none |
 | `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | none |
+| `pf-ecs-fargate-pid-mode-host` | AWS::ECS::TaskDefinition | PidMode host is not supported on Fargate | none |
+| `pf-ecs-fargate-placement-constraints` | AWS::ECS::TaskDefinition | Task placement constraints are not supported on Fargate | none |
+| `pf-ecs-fargate-privileged` | AWS::ECS::TaskDefinition | Privileged is not supported on Fargate | none |
+| `pf-ecs-fargate-shared-memory-size` | AWS::ECS::TaskDefinition | LinuxParameters.SharedMemorySize is not supported on Fargate | none |
 | `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | none |
+| `pf-ecs-fargate-windows-cpu-under-1vcpu` | AWS::ECS::TaskDefinition | Windows tasks on Fargate need at least 1 vCPU | none |
+| `pf-ecs-healthcheck-interval-range` | AWS::ECS::TaskDefinition | HealthCheck.Interval must be 5-300 seconds | none |
+| `pf-ecs-healthcheck-retries-range` | AWS::ECS::TaskDefinition | HealthCheck.Retries must be 1-10 | none |
+| `pf-ecs-healthcheck-start-period-range` | AWS::ECS::TaskDefinition | HealthCheck.StartPeriod must be 0-300 seconds | none |
+| `pf-ecs-healthcheck-timeout-range` | AWS::ECS::TaskDefinition | HealthCheck.Timeout must be 2-60 seconds | none |
+| `pf-ecs-host-network-host-port-mismatch` | AWS::ECS::TaskDefinition | NetworkMode host requires HostPort to equal ContainerPort | none |
+| `pf-ecs-mountpoint-source-volume-missing` | AWS::ECS::TaskDefinition | MountPoints.SourceVolume must name a volume of the task definition | none |
+| `pf-ecs-port-mapping-duplicate-name` | AWS::ECS::TaskDefinition | PortMappings.Name must be unique within a task definition | none |
+| `pf-ecs-port-range-overlap` | AWS::ECS::TaskDefinition | ContainerPortRange values must not overlap | none |
+| `pf-ecs-port-range-reversed` | AWS::ECS::TaskDefinition | The first port of ContainerPortRange must be below the last | none |
+| `pf-ecs-port-range-with-host-port` | AWS::ECS::TaskDefinition | ContainerPortRange cannot be combined with a single port | none |
+| `pf-ecs-proxy-configuration-awsvpc-required` | AWS::ECS::TaskDefinition | ProxyConfiguration requires NetworkMode awsvpc | none |
+| `pf-ecs-proxy-configuration-container-missing` | AWS::ECS::TaskDefinition | ProxyConfiguration.ContainerName must name a container of the task definition | none |
+| `pf-ecs-proxy-configuration-missing-required-props` | AWS::ECS::TaskDefinition | An APPMESH ProxyConfiguration needs the four port properties | none |
+| `pf-ecs-restart-policy-attempt-period-range` | AWS::ECS::TaskDefinition | RestartPolicy.RestartAttemptPeriod must be 60-1800 seconds | none |
+| `pf-ecs-secrets-without-execution-role` | AWS::ECS::TaskDefinition | Container Secrets require an ExecutionRoleArn | none |
 | `pf-ecs-service-codedeploy-lb` | AWS::ECS::Service | CODE_DEPLOY deployment controller requires a load balancer | none |
 | `pf-ecs-service-daemon-desired-count` | AWS::ECS::Service | DAEMON scheduling strategy does not accept DesiredCount | none |
 | `pf-ecs-service-deployment-percent` | AWS::ECS::Service | DeploymentConfiguration percent bounds (min <= 100, max >= 100) | none |
@@ -275,7 +331,41 @@
 | `pf-ecs-service-name` | AWS::ECS::Service | ECS service names allow only letters, numbers, hyphen and underscore (max 255) | none |
 | `pf-ecs-service-network-config-mode` | AWS::ECS::Service<br>AWS::ECS::TaskDefinition | NetworkConfiguration requires an awsvpc task definition | none |
 | `pf-ecs-service-platform-version-ec2` | AWS::ECS::Service | PlatformVersion is not allowed with the EC2 launch type | none |
+| `pf-ecs-svc-az-rebalancing-with-daemon` | AWS::ECS::Service | AvailabilityZoneRebalancing is not supported for DAEMON services | none |
+| `pf-ecs-svc-binpack-field` | AWS::ECS::Service | A binpack placement strategy accepts only cpu or memory | none |
+| `pf-ecs-svc-capacity-provider-multiple-base` | AWS::ECS::Service | Only one capacity provider in a strategy may set Base | none |
+| `pf-ecs-svc-capacity-provider-zero-weight` | AWS::ECS::Service | A capacity provider strategy needs at least one non-zero Weight | none |
+| `pf-ecs-svc-circuit-breaker-with-code-deploy` | AWS::ECS::Service | DeploymentCircuitBreaker only works with the ECS deployment controller | none |
+| `pf-ecs-svc-classic-lb-with-fargate` | AWS::ECS::Service | Classic Load Balancers are not supported with Fargate | none |
+| `pf-ecs-svc-connect-client-alias-dns-name` | AWS::ECS::Service | A Service Connect ClientAlias.DnsName must be a valid DNS name | none |
+| `pf-ecs-svc-connect-client-aliases-max` | AWS::ECS::Service | A Service Connect service accepts at most one ClientAlias | none |
+| `pf-ecs-svc-connect-port-name-missing` | AWS::ECS::Service | Service Connect PortName must match a named port mapping | none |
+| `pf-ecs-svc-connect-without-namespace` | AWS::ECS::Service | Service Connect needs a Namespace on the service or the cluster | none |
+| `pf-ecs-svc-daemon-max-percent` | AWS::ECS::Service | A DAEMON service requires DeploymentConfiguration.MaximumPercent 100 | none |
+| `pf-ecs-svc-daemon-with-placement-strategies` | AWS::ECS::Service | A DAEMON service does not accept placement strategies | none |
+| `pf-ecs-svc-ebs-iops-unsupported-type` | AWS::ECS::Service | ManagedEBSVolume Iops is only valid for io1, io2 and gp3 | none |
+| `pf-ecs-svc-ebs-name-not-in-taskdef` | AWS::ECS::Service | VolumeConfigurations.Name must match a ConfiguredAtLaunch volume | none |
+| `pf-ecs-svc-ebs-throughput-non-gp3` | AWS::ECS::Service | ManagedEBSVolume Throughput is only valid for gp3 | none |
+| `pf-ecs-svc-ebs-volume-without-size-or-snapshot` | AWS::ECS::Service | A managed EBS volume needs SizeInGiB or SnapshotId | none |
+| `pf-ecs-svc-external-with-load-balancers` | AWS::ECS::Service | An EXTERNAL deployment controller does not accept LoadBalancers | none |
+| `pf-ecs-svc-external-with-taskdef` | AWS::ECS::Service | An EXTERNAL deployment controller does not accept TaskDefinition | none |
+| `pf-ecs-svc-lb-container-name-missing` | AWS::ECS::Service | LoadBalancers.ContainerName must name a container of the task definition | none |
+| `pf-ecs-svc-lb-container-port-missing` | AWS::ECS::Service | LoadBalancers.ContainerPort must match a port mapping of the container | none |
+| `pf-ecs-svc-min-healthy-over-max-percent` | AWS::ECS::Service | MinimumHealthyPercent must stay below MaximumPercent | none |
+| `pf-ecs-svc-placement-constraint-distinct-instance-expression` | AWS::ECS::Service | distinctInstance placement constraints take no Expression | none |
+| `pf-ecs-svc-placement-strategies-max6` | AWS::ECS::Service | A service accepts at most 5 placement strategies | none |
+| `pf-ecs-svc-random-with-field` | AWS::ECS::Service | A random placement strategy takes no Field | none |
+| `pf-ecs-svc-registries-multiple` | AWS::ECS::Service | A service accepts at most one service registry | none |
+| `pf-ecs-svc-registries-port-with-awsvpc` | AWS::ECS::Service | awsvpc services address a registry by Port, not ContainerName/ContainerPort | none |
+| `pf-ecs-svc-role-with-awsvpc` | AWS::ECS::Service | awsvpc services must use the service-linked role, not Role | none |
+| `pf-ecs-svc-role-without-load-balancers` | AWS::ECS::Service | Service Role is only valid together with LoadBalancers | none |
 | `pf-ecs-taskdef-family` | AWS::ECS::TaskDefinition | Task definition Family allows only letters, numbers, hyphen and underscore | none |
+| `pf-ecs-taskset-lb-container-missing` | AWS::ECS::TaskSet | TaskSet LoadBalancers.ContainerName must name a container of the task definition | none |
+| `pf-ecs-taskset-platform-version-ec2` | AWS::ECS::TaskSet | TaskSet PlatformVersion is not allowed with the EC2 launch type | none |
+| `pf-ecs-ulimit-soft-over-hard` | AWS::ECS::TaskDefinition | A Ulimit SoftLimit must not exceed its HardLimit | none |
+| `pf-ecs-volume-not-referenced` | AWS::ECS::TaskDefinition | Every task definition volume must be mounted by a container | none |
+| `pf-ecs-volumesfrom-source-container-missing` | AWS::ECS::TaskDefinition | VolumesFrom.SourceContainer must name a container of the task definition | none |
+| `pf-ecs-windows-arm64` | AWS::ECS::TaskDefinition | CpuArchitecture ARM64 is not available for Windows | none |
 | `pf-efs-availability-zone-region` | AWS::EFS::FileSystem | AvailabilityZoneName must name an Availability Zone of the deploy region | none |
 | `pf-efs-file-system-policy` | AWS::EFS::FileSystem | A file system policy may only name its own file system and must not lock out PutFileSystemPolicy | none |
 | `pf-efs-file-system-reference-region` | AWS::EFS::MountTarget<br>AWS::EFS::AccessPoint | A file system ARN passed as FileSystemId must be in the deploy region | none |

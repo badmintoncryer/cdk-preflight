@@ -1918,7 +1918,12 @@ describe('ecs service and cloudwatch dashboard rules', () => {
   test('deployment percent bounds fire on both sides', () => {
     expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MinimumHealthyPercent: 101 } })))).toContain('pf-ecs-service-deployment-percent');
     expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MaximumPercent: 90 } })))).toContain('pf-ecs-service-deployment-percent');
-    expect(ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MinimumHealthyPercent: 100, MaximumPercent: 100 } })))).toHaveLength(0);
+    // 100 / 100 は既存ルールの範囲チェックは通るが、CreateService は
+    // "Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments"
+    // で拒否する（bench 2026-09-08 us-east-1）。その帯を pf-ecs-svc-min-healthy-over-max-percent が拾う。
+    const both100 = ids(diagnoseTemplate(svcT({ LaunchType: 'EC2', DesiredCount: 0, DeploymentConfiguration: { MinimumHealthyPercent: 100, MaximumPercent: 100 } })));
+    expect(both100).not.toContain('pf-ecs-service-deployment-percent');
+    expect(both100).toEqual(['pf-ecs-svc-min-healthy-over-max-percent']);
   });
 
   test('fargate placement fires for strategies too (bench sv09b)', () => {

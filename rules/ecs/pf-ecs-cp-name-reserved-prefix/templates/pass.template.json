@@ -1,0 +1,72 @@
+{
+  "Resources": {
+    "CP": {
+      "Type": "AWS::ECS::CapacityProvider",
+      "Properties": {
+        "AutoScalingGroupProvider": {
+          "AutoScalingGroupArn": {
+            "Ref": "ASG"
+          }
+        },
+        "Name": "pf-cp"
+      }
+    },
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "ASG": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "0",
+        "DesiredCapacity": "0",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "Subnet"
+          }
+        ],
+        "NewInstancesProtectedFromScaleIn": true,
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LT"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LT",
+              "LatestVersionNumber"
+            ]
+          }
+        }
+      }
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    }
+  }
+}

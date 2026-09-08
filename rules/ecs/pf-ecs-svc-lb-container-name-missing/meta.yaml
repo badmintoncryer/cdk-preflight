@@ -1,0 +1,12 @@
+id: pf-ecs-svc-lb-container-name-missing
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: LoadBalancers.ContainerName must name a container of the task definition
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The container nope does not exist in the task definition.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-lb-container-name-missing.log"
+addedOn: 2026-09-08

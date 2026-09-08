@@ -1,0 +1,12 @@
+id: pf-ecs-efs-iam-without-transit-encryption
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: EFS IAM authorization requires TransitEncryption ENABLED
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: EFS IAM authorization requires TransitEncryption to be enabled.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-efs-iam-without-transit-encryption.log"
+addedOn: 2026-09-08

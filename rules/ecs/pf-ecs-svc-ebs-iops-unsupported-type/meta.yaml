@@ -1,0 +1,12 @@
+id: pf-ecs-svc-ebs-iops-unsupported-type
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: ManagedEBSVolume Iops is only valid for io1, io2 and gp3
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Volume configuration provided but no matching configuredAtLaunch volume found in task definition.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-ebs-iops-unsupported-type.log"
+addedOn: 2026-09-08

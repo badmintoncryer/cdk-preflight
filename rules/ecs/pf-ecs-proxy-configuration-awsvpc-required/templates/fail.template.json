@@ -1,0 +1,54 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfproxyconfigurationawsvpcrequired",
+        "NetworkMode": "bridge",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true
+          },
+          {
+            "Name": "envoy",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": false,
+            "Memory": 256
+          }
+        ],
+        "ProxyConfiguration": {
+          "Type": "APPMESH",
+          "ContainerName": "envoy",
+          "ProxyConfigurationProperties": [
+            {
+              "Name": "IgnoredUID",
+              "Value": "1337"
+            },
+            {
+              "Name": "ProxyIngressPort",
+              "Value": "15000"
+            },
+            {
+              "Name": "ProxyEgressPort",
+              "Value": "15001"
+            },
+            {
+              "Name": "AppPorts",
+              "Value": "80"
+            },
+            {
+              "Name": "EgressIgnoredIPs",
+              "Value": "169.254.170.2"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-ecs-dependson-container-missing
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: DependsOn.ContainerName must name a container in the same task
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Cannot depend on container + 'nope' because it does not exist), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-dependson-container-missing.log"
+addedOn: 2026-09-08

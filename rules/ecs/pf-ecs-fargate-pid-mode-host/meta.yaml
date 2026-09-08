@@ -1,0 +1,12 @@
+id: pf-ecs-fargate-pid-mode-host
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: PidMode host is not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Tasks using the Fargate launch type do not support pidMode 'host'. The supported value for pidMode is 'task'.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-fargate-pid-mode-host.log"
+addedOn: 2026-09-08

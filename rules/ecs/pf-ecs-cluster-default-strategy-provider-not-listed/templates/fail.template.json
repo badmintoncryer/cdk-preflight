@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "CapacityProviders": [
+          "FARGATE"
+        ],
+        "DefaultCapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 1
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfproxyconfigurationawsvpcrequired",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "Svc": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "TD"
+        },
+        "LaunchType": "EC2",
+        "SchedulingStrategy": "DAEMON",
+        "PlacementStrategies": [
+          {
+            "Type": "spread",
+            "Field": "instanceId"
+          }
+        ]
+      }
+    },
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfsvcdaemonwithplacementstrategies",
+        "NetworkMode": "bridge",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true
+          }
+        ]
+      }
+    },
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {}
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfenvironmentfilesmax",
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ExecRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": true,
+            "EnvironmentFiles": [
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/1.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/2.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/3.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/4.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/5.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/6.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/7.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/8.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/9.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/10.env"
+              },
+              {
+                "Type": "s3",
+                "Value": "arn:aws:s3:::pf/11.env"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ExecRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        ]
+      }
+    }
+  }
+}
