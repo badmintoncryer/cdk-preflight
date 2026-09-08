@@ -1,0 +1,12 @@
+id: pf-apigwv2-access-log-destination-log-group
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Stage]
+severity: ERROR
+title: "HTTP/WebSocket access logs go to CloudWatch Logs only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-stage-accesslogsettings.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Access log destination must only contain characters a-z, A-Z, 0-9, '_', '-', '/', '.': 'deliverystream/amazon-apigateway-x'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

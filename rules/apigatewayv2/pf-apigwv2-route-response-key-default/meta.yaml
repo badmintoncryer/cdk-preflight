@@ -1,0 +1,12 @@
+id: pf-apigwv2-route-response-key-default
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::RouteResponse]
+severity: ERROR
+title: "RouteResponseKey is $default"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-routeresponse.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Currently, only $default is supported as a RouteResponseKey. The creation of the RouteResponse with a key of $default will indicate to API Gateway that this Route is intended to handle two-way communication.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

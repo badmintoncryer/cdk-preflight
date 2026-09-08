@@ -1,0 +1,12 @@
+id: pf-apigw-gateway-response-status-code
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::GatewayResponse]
+severity: ERROR
+title: "A gateway response status code is three digits"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-gatewayresponse.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"1 validation error detected: Value '999' at 'putGatewayResponseInput.statusCode' failed to satisfy constraint: Member must satisfy regular expression pattern: [1-5]\\d\\d\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

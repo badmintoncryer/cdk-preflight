@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "w",
+        "ProtocolType": "WEBSOCKET",
+        "RouteSelectionExpression": "$request.body.action"
+      }
+    },
+    "Rt": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "RouteKey": "$default"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::RouteResponse",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "RouteId": {
+          "Ref": "Rt"
+        },
+        "RouteResponseKey": "$default"
+      }
+    }
+  }
+}

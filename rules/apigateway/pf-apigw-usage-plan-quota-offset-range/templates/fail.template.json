@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::ApiGateway::UsagePlan",
+      "Properties": {
+        "UsagePlanName": "u",
+        "Quota": {
+          "Limit": 100,
+          "Period": "WEEK",
+          "Offset": 9
+        }
+      }
+    }
+  }
+}

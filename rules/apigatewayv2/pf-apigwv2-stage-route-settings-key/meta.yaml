@@ -1,0 +1,12 @@
+id: pf-apigwv2-stage-route-settings-key
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Stage]
+severity: ERROR
+title: "RouteSettings is keyed by an existing route key"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-stage.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Unable to find Route by key GET /nosuch within the provided RouteSettings\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

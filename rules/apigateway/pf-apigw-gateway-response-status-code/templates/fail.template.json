@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGateway::GatewayResponse",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "ResponseType": "DEFAULT_4XX",
+        "StatusCode": "999"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "Rt": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "RouteKey": "GET /a"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::RouteResponse",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "RouteId": {
+          "Ref": "Rt"
+        },
+        "RouteResponseKey": "$default"
+      }
+    }
+  }
+}

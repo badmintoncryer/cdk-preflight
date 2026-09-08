@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::ApiGateway::ApiKey",
+      "Properties": {
+        "Name": "k",
+        "Value": "abcdefghijklmnopqrstuvwxyz"
+      }
+    }
+  }
+}

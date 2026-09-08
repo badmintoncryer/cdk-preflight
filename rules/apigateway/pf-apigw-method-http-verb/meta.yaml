@@ -1,0 +1,12 @@
+id: pf-apigw-method-http-verb
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::Method]
+severity: ERROR
+title: "HttpMethod is one of the eight API Gateway verbs"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid HttpMethod specified. Valid options are GET,PUT,POST,DELETE,PATCH,OPTIONS,HEAD,ANY\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

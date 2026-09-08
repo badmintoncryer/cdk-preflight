@@ -1,0 +1,12 @@
+id: pf-apigwv2-authorizer-ttl-range
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Authorizer]
+severity: ERROR
+title: "Authorizer result TTL tops out at 3600 seconds"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

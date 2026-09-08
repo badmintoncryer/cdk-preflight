@@ -1,0 +1,12 @@
+id: pf-apigw-regional-certificate-region
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::DomainName]
+severity: ERROR
+title: "A REGIONAL domain name needs a certificate from the deployment region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-domainname.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid request provided: Invalid certificate ARN: arn:aws:acm:us-west-2:214794239830:certificate/11111111-2222-3333-4444-555555555555. Certificate must be in 'us-east-1'.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

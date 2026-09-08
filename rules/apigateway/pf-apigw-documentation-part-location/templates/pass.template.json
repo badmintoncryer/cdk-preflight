@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGateway::DocumentationPart",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "Location": {
+          "Type": "API"
+        },
+        "Properties": "{\"description\":\"d\"}"
+      }
+    }
+  }
+}

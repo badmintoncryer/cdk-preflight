@@ -1,0 +1,12 @@
+id: pf-apigwv2-websocket-authorizer-type
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Authorizer]
+severity: ERROR
+title: "WebSocket APIs only take REQUEST authorizers"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid authorizer type. Only REQUEST authorizer type is supported on WEBSOCKET protocol Apis.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

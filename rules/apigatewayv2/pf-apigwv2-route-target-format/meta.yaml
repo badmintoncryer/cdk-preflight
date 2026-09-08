@@ -1,0 +1,12 @@
+id: pf-apigwv2-route-target-format
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Route]
+severity: ERROR
+title: "A route target is integrations/<integration id>"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-route.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Unexpected or malformed target in route null. Correct format should be integrations/<integration_id>.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08
