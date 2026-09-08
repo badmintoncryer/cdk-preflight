@@ -383,6 +383,8 @@
 | `pf-ec2-client-vpn-session-timeout` | AWS::EC2::ClientVpnEndpoint | Client VPN SessionTimeoutHours must be 8, 10, 12 or 24 | none |
 | `pf-ec2-cpu-options-combination` | AWS::EC2::Instance | CpuOptions ThreadsPerCore and CoreCount must be in range | none |
 | `pf-ec2-credit-specification-burstable` | AWS::EC2::Instance | CreditSpecification applies only to burstable instance types | none |
+| `pf-ec2-dhcp-ntp-servers-count` | AWS::EC2::DHCPOptions | DHCP server lists take at most four addresses | none |
+| `pf-ec2-dhcp-options-empty` | AWS::EC2::DHCPOptions | A DHCP options set must configure at least one option | none |
 | `pf-ec2-eip-association-exclusive` | AWS::EC2::EIPAssociation | An EIP association cannot set both AllocationId and EIP | none |
 | `pf-ec2-enclave-hibernation-exclusive` | AWS::EC2::Instance | Nitro Enclaves and hibernation cannot both be enabled | none |
 | `pf-ec2-eni-primary-single` | AWS::EC2::NetworkInterface | A network interface takes exactly one primary private IP | none |
@@ -397,13 +399,17 @@
 | `pf-ec2-instance-eni-exclusive` | AWS::EC2::Instance | An instance cannot mix NetworkInterfaces with instance-level security groups | none |
 | `pf-ec2-instance-ipv6-exclusive` | AWS::EC2::Instance | Ipv6AddressCount and Ipv6Addresses are mutually exclusive | none |
 | `pf-ec2-instance-requirements-exclusive` | AWS::EC2::LaunchTemplate | A launch template takes either InstanceType or InstanceRequirements | none |
+| `pf-ec2-key-pair-name-whitespace` | AWS::EC2::KeyPair | A key pair name cannot have leading or trailing whitespace | none |
 | `pf-ec2-launch-template-name` | AWS::EC2::LaunchTemplate | Launch template names are 3-128 chars of letters, numbers and -()./_ | none |
 | `pf-ec2-nacl-rule-number-unique` | AWS::EC2::NetworkAclEntry | Network ACL rule numbers must be unique per direction | none |
 | `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |
 | `pf-ec2-natgw-secondary-ip-exclusive` | AWS::EC2::NatGateway | NAT gateway secondary IP count and list are mutually exclusive | none |
 | `pf-ec2-pg-cluster-burstable` | AWS::EC2::Instance<br>AWS::EC2::PlacementGroup | Burstable instance types are not supported in cluster placement groups | none |
+| `pf-ec2-placement-group-partition-count` | AWS::EC2::PlacementGroup | PartitionCount is only valid with the partition strategy | none |
+| `pf-ec2-placement-group-spread-level` | AWS::EC2::PlacementGroup | SpreadLevel is only valid with the spread or partition strategy | none |
 | `pf-ec2-prefix-list-address-family` | AWS::EC2::PrefixList | Prefix list entries must match the declared address family | none |
 | `pf-ec2-prefix-list-max-entries` | AWS::EC2::PrefixList | A managed prefix list cannot hold more entries than MaxEntries | none |
+| `pf-ec2-prefix-list-name-reserved` | AWS::EC2::PrefixList | A managed prefix list name cannot use an AWS-reserved prefix | none |
 | `pf-ec2-route-target-exactly-one` | AWS::EC2::Route | A route must name exactly one target | none |
 | `pf-ec2-sg-cidr-valid` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule CidrIp must be a well-formed IPv4 CIDR | none |
 | `pf-ec2-sg-group-name` | AWS::EC2::SecurityGroup | Security group names may not start with sg- | none |
@@ -413,8 +419,10 @@
 | `pf-ec2-sg-rule-description` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule descriptions are limited to 255 chars of a restricted ASCII set | none |
 | `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | none |
 | `pf-ec2-subnet-cidr-size` | AWS::EC2::Subnet | Subnet IPv4 CIDR netmask must be between /16 and /28 | none |
+| `pf-ec2-subnet-ipv6-native-cidr` | AWS::EC2::Subnet | An IPv6-only subnet cannot carry IPv4 addressing | none |
 | `pf-ec2-tgw-amazon-side-asn` | AWS::EC2::TransitGateway | TransitGateway AmazonSideAsn must be in 64512-65534 or 4200000000-4294967294 | none |
 | `pf-ec2-tgw-cidr-block-size` | AWS::EC2::TransitGateway | TransitGatewayCidrBlocks must be /24 or larger for IPv4 | none |
+| `pf-ec2-traffic-mirror-target-exactly-one` | AWS::EC2::TrafficMirrorTarget | A traffic mirror target names exactly one destination | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
 | `pf-ec2-volume-iops-required` | AWS::EC2::Volume | io1 and io2 volumes require the Iops property | none |

@@ -1,0 +1,11 @@
+id: pf-ec2-dhcp-ntp-servers-count
+service: ec2
+resourceTypes: [AWS::EC2::DHCPOptions]
+severity: ERROR
+title: DHCP server lists take at most four addresses
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-dhcpoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateDhcpOptions with five ntp-servers -> \"Value (...) for parameter value is invalid. Invalid DHCP option value.\"; four created cleanly. bench 2026-09-08 ap-northeast-1: five NtpServers -> ROLLBACK_COMPLETE; four -> CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -1,0 +1,11 @@
+id: pf-ec2-key-pair-name-whitespace
+service: ec2
+resourceTypes: [AWS::EC2::KeyPair]
+severity: ERROR
+title: A key pair name cannot have leading or trailing whitespace
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-keypair.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateKeyPair --key-name \" cdkpf-probe-kp \" -> \"Invalid value ' cdkpf-probe-kp ' for keyName. It should be trimmed\"; the trimmed name created cleanly. bench 2026-09-08 ap-northeast-1: KeyName \" cdkpf-fixture \" -> ROLLBACK_COMPLETE; the trimmed name -> CREATE_COMPLETE."
+addedOn: 2026-09-08

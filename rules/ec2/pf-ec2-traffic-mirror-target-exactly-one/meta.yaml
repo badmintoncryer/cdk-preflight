@@ -1,0 +1,11 @@
+id: pf-ec2-traffic-mirror-target-exactly-one
+service: ec2
+resourceTypes: [AWS::EC2::TrafficMirrorTarget]
+severity: ERROR
+title: A traffic mirror target names exactly one destination
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-trafficmirrortarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateTrafficMirrorTarget with no destination -> \"Request should contain exactly one of NetworkInterfaceId or NetworkLoadBalancerArn or GatewayLoadBalancerEndpointId\". bench 2026-09-08 ap-northeast-1: the same template -> ROLLBACK_COMPLETE with that message. The pass fixture needs the target interface attached to a running instance, otherwise it fails with \"eni-... must be attached to a supported instance\". The pass fixture also needs DependsOn on the instance: a Ref to the interface alone does not make CloudFormation wait for the attachment."
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Pg": {
+      "Type": "AWS::EC2::PlacementGroup",
+      "Properties": {
+        "Strategy": "cluster",
+        "PartitionCount": 3
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Pl": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "com.amazonaws.cdkpf",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.0.0.0/24"
+          }
+        ]
+      }
+    }
+  }
+}

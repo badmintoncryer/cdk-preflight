@@ -4199,6 +4199,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2cs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-credit-specification-burstable\", \"ERROR\", name,\n\t\"Properties.CreditSpecification\",\n\tsprintf(\"CreditSpecification is set on '%s', which is not a burstable (T family) type\", [it]),\n\t\"Remove CreditSpecification, or switch to a t2/t3/t3a/t4g instance type\",\n\t_pf_ec2cs_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tnot _pf_ec2lib_absent(name, \"CreditSpecification\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\tnot regex.match(`^t[0-9]`, it)\n}\n"
   },
   {
+    "id": "pf-ec2-dhcp-ntp-servers-count",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "DHCP server lists take at most four addresses",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::DHCPOptions"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2dhn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-dhcpoptions.html\"\n\n_pf_ec2dhn_lists := [\"NtpServers\", \"DomainNameServers\", \"NetbiosNameServers\"]\n\nviolation contains make_diag_full(\"pf-ec2-dhcp-ntp-servers-count\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [k]),\n\tsprintf(\"%s has %v entries; a DHCP option value takes at most four (\\\"Invalid DHCP option value\\\")\", [k, n]),\n\t\"Keep at most four addresses per option\",\n\t_pf_ec2dhn_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::DHCPOptions\")\n\tsome k in _pf_ec2dhn_lists\n\tn := count(flatten_list(name, sprintf(\"Properties.%s\", [k])))\n\tn > 4\n}\n"
+  },
+  {
+    "id": "pf-ec2-dhcp-options-empty",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A DHCP options set must configure at least one option",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::DHCPOptions"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2dho_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-dhcpoptions.html\"\n\n_pf_ec2dho_keys := [\"DomainName\", \"DomainNameServers\", \"NtpServers\", \"NetbiosNameServers\", \"NetbiosNodeType\", \"Ipv6AddressPreferredLeaseTime\"]\n\n_pf_ec2dho_set(name) if {\n\tsome k in _pf_ec2dho_keys\n\tnot _pf_ec2lib_absent(name, k)\n}\n\nviolation contains make_diag_full(\"pf-ec2-dhcp-options-empty\", \"ERROR\", name,\n\t\"Properties\",\n\t\"A DHCP options set configures nothing (\\\"The request must contain the parameter dhcpConfigurations\\\")\",\n\t\"Set at least one of DomainName, DomainNameServers, NtpServers, NetbiosNameServers or NetbiosNodeType\",\n\t_pf_ec2dho_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::DHCPOptions\")\n\tnot _pf_ec2dho_set(name)\n}\n"
+  },
+  {
     "id": "pf-ec2-eip-association-exclusive",
     "service": "ec2",
     "severity": "ERROR",
@@ -4353,6 +4375,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2ir_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-launchtemplate.html\"\n\nviolation contains make_diag_full(\"pf-ec2-instance-requirements-exclusive\", \"ERROR\", name,\n\t\"Properties.LaunchTemplateData.InstanceType\",\n\t\"LaunchTemplateData sets both InstanceType and InstanceRequirements (\\\"Either the instance type or the instance requirements can be specified in the request, but not both\\\")\",\n\t\"Keep one of the two\",\n\t_pf_ec2ir_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n\tnot _pf_ec2lib_absent_at(name, [\"LaunchTemplateData\", \"InstanceType\"])\n\tnot _pf_ec2lib_absent_at(name, [\"LaunchTemplateData\", \"InstanceRequirements\"])\n}\n"
   },
   {
+    "id": "pf-ec2-key-pair-name-whitespace",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A key pair name cannot have leading or trailing whitespace",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::KeyPair"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2kpn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-keypair.html\"\n\nviolation contains make_diag_full(\"pf-ec2-key-pair-name-whitespace\", \"ERROR\", name,\n\t\"Properties.KeyName\",\n\tsprintf(\"KeyName '%s' has leading or trailing whitespace (\\\"Invalid value '%s' for keyName. It should be trimmed\\\")\", [n, n]),\n\t\"Trim the key pair name\",\n\t_pf_ec2kpn_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::KeyPair\")\n\tn := resolve(name, \"Properties.KeyName\")\n\tis_string(n)\n\ttrim_space(n) != n\n}\n"
+  },
+  {
     "id": "pf-ec2-launch-template-name",
     "service": "ec2",
     "severity": "ERROR",
@@ -4409,6 +4442,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cross-resource: only fires when the referenced placement group is in\n# the template with Strategy cluster. A literal (pre-existing) group\n# name carries no strategy information and stays silent.\n_pf_ec2pgb_burstable(fam) if fam in {\"t2\", \"t3\", \"t3a\", \"t4g\"}\n\nviolation contains make_diag_full(\"pf-ec2-pg-cluster-burstable\", \"ERROR\", name,\n\t\"Properties.InstanceType\",\n\tsprintf(\"Cluster placement groups are not supported by the '%s' instance type; the launch fails at deploy\", [it]),\n\t\"Use a non-burstable type, or a spread/partition placement group\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\t_pf_ec2pgb_burstable(split(it, \".\")[0])\n\tpg := resolve(name, \"Properties.PlacementGroupName\")\n\tpg in resources_of_type(\"AWS::EC2::PlacementGroup\")\n\tresolve(pg, \"Properties.Strategy\") == \"cluster\"\n}\n"
   },
   {
+    "id": "pf-ec2-placement-group-partition-count",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "PartitionCount is only valid with the partition strategy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PlacementGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2pgp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-placementgroup.html\"\n\nviolation contains make_diag_full(\"pf-ec2-placement-group-partition-count\", \"ERROR\", name,\n\t\"Properties.PartitionCount\",\n\tsprintf(\"PartitionCount is set with the '%s' strategy (\\\"partition-count is only available with the 'partition' strategy.\\\")\", [s]),\n\t\"Set Strategy to partition, or drop PartitionCount\",\n\t_pf_ec2pgp_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::PlacementGroup\")\n\tnot _pf_ec2lib_absent(name, \"PartitionCount\")\n\ts := resolve(name, \"Properties.Strategy\")\n\tis_string(s)\n\ts != \"partition\"\n}\n"
+  },
+  {
+    "id": "pf-ec2-placement-group-spread-level",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "SpreadLevel is only valid with the spread or partition strategy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PlacementGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2pgs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-placementgroup.html\"\n\n# Measured, not transcribed: the API message names *two* strategies, so a\n# partition group may carry SpreadLevel even though the survey said spread only.\nviolation contains make_diag_full(\"pf-ec2-placement-group-spread-level\", \"ERROR\", name,\n\t\"Properties.SpreadLevel\",\n\tsprintf(\"SpreadLevel is set with the '%s' strategy (\\\"spread-level is only available with the 'spread' or 'partition' strategy.\\\")\", [s]),\n\t\"Set Strategy to spread or partition, or drop SpreadLevel\",\n\t_pf_ec2pgs_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::PlacementGroup\")\n\tnot _pf_ec2lib_absent(name, \"SpreadLevel\")\n\ts := resolve(name, \"Properties.Strategy\")\n\tis_string(s)\n\tnot s in {\"spread\", \"partition\"}\n}\n"
+  },
+  {
     "id": "pf-ec2-prefix-list-address-family",
     "service": "ec2",
     "severity": "ERROR",
@@ -4429,6 +4484,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::PrefixList"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-prefix-list-max-entries\", \"ERROR\", name,\n\t\"Properties.MaxEntries\",\n\tsprintf(\"MaxEntries is %v but Entries has %v members (\\\"The number of entries cannot be greater than the maximum number of entries\\\")\", [me, count(entries)]),\n\t\"Raise MaxEntries to at least the number of entries\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-prefixlist.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::PrefixList\")\n\tme := to_number(resolve(name, \"Properties.MaxEntries\"))\n\tentries := flatten_list(name, \"Properties.Entries\")\n\tcount(entries) > me\n}\n"
+  },
+  {
+    "id": "pf-ec2-prefix-list-name-reserved",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A managed prefix list name cannot use an AWS-reserved prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PrefixList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2pln_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-prefixlist.html\"\n\n_pf_ec2pln_reserved := [\"com.amazonaws.\", \"com.amazon.\", \"com.aws.\"]\n\nviolation contains make_diag_full(\"pf-ec2-prefix-list-name-reserved\", \"ERROR\", name,\n\t\"Properties.PrefixListName\",\n\tsprintf(\"PrefixListName starts with the reserved prefix '%s' (\\\"The prefix list name cannot begin with (com.amazonaws., com.amazon., com.aws.).\\\")\", [p]),\n\t\"Pick a name that does not start with com.amazonaws., com.amazon. or com.aws.\",\n\t_pf_ec2pln_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::PrefixList\")\n\tn := resolve(name, \"Properties.PrefixListName\")\n\tis_string(n)\n\tsome p in _pf_ec2pln_reserved\n\tstartswith(n, p)\n}\n"
   },
   {
     "id": "pf-ec2-route-target-exactly-one",
@@ -4539,6 +4605,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_subnetcidr_len(c) := to_number(parts[1]) if {\n\tparts := split(c, \"/\")\n\tcount(parts) == 2\n}\n\nviolation contains make_diag_full(\"pf-ec2-subnet-cidr-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"Subnet CIDR '%s' has a /%d netmask; EC2 accepts /16 through /28 and rejects the create call otherwise\", [c, n]),\n\t\"Resize the subnet CIDR to a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Subnet\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tn := _pf_subnetcidr_len(c)\n\t_pf_subnetcidr_out(n)\n}\n\n_pf_subnetcidr_out(n) if n < 16\n\n_pf_subnetcidr_out(n) if n > 28\n"
   },
   {
+    "id": "pf-ec2-subnet-ipv6-native-cidr",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "An IPv6-only subnet cannot carry IPv4 addressing",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Subnet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2s6n_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-subnet.html\"\n\n_pf_ec2s6n_ipv4(name) if not _pf_ec2lib_absent(name, \"CidrBlock\")\n\n_pf_ec2s6n_ipv4(name) if not _pf_ec2lib_absent(name, \"Ipv4IpamPoolId\")\n\nviolation contains make_diag_full(\"pf-ec2-subnet-ipv6-native-cidr\", \"ERROR\", name,\n\t\"Properties.Ipv6Native\",\n\t\"Ipv6Native is true but the subnet also carries IPv4 addressing (\\\"When specifying ipv4 parameters, cidrBlock or ipv4IpamPoolId, you cannot set ipv6Native to true.\\\")\",\n\t\"Drop CidrBlock / Ipv4IpamPoolId, or set Ipv6Native to false\",\n\t_pf_ec2s6n_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Subnet\")\n\tcoerce_to_bool(resolve(name, \"Properties.Ipv6Native\")) == true\n\t_pf_ec2s6n_ipv4(name)\n}\n"
+  },
+  {
     "id": "pf-ec2-tgw-amazon-side-asn",
     "service": "ec2",
     "severity": "ERROR",
@@ -4559,6 +4636,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::TransitGateway"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-tgw-cidr-block-size\", \"ERROR\", name,\n\tsprintf(\"Properties.TransitGatewayCidrBlocks.%d\", [item.index]),\n\tsprintf(\"Transit gateway CIDR block '%s' has netmask /%v; the IPv4 block must be /24 or larger\", [c, p]),\n\t\"Widen the block to /24 or larger\",\n\t\"https://docs.aws.amazon.com/vpc/latest/tgw/tgw-transit-gateways.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::TransitGateway\")\n\tsome item in flatten_list(name, \"Properties.TransitGatewayCidrBlocks\")\n\tc := item.value\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\tp > 24\n}\n"
+  },
+  {
+    "id": "pf-ec2-traffic-mirror-target-exactly-one",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A traffic mirror target names exactly one destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::TrafficMirrorTarget"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2tmt_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-trafficmirrortarget.html\"\n\n_pf_ec2tmt_keys := [\"NetworkInterfaceId\", \"NetworkLoadBalancerArn\", \"GatewayLoadBalancerEndpointId\"]\n\n_pf_ec2tmt_set(name) := [k | some k in _pf_ec2tmt_keys; not _pf_ec2lib_absent(name, k)]\n\nviolation contains make_diag_full(\"pf-ec2-traffic-mirror-target-exactly-one\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"A traffic mirror target names %v destinations (\\\"Request should contain exactly one of NetworkInterfaceId or NetworkLoadBalancerArn or GatewayLoadBalancerEndpointId\\\")\", [count(ks)]),\n\t\"Set exactly one of NetworkInterfaceId, NetworkLoadBalancerArn or GatewayLoadBalancerEndpointId\",\n\t_pf_ec2tmt_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::TrafficMirrorTarget\")\n\tks := _pf_ec2tmt_set(name)\n\tcount(ks) != 1\n}\n"
   },
   {
     "id": "pf-ec2-userdata-size",
