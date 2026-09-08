@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/sdv"
+      }
+    },
+    "SF": {
+      "Type": "AWS::Logs::SubscriptionFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "",
+        "DestinationArn": "arn:aws:sns:us-east-1:123456789012:pf-topic"
+      }
+    }
+  }
+}

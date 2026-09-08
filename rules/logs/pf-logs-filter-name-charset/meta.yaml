@@ -1,0 +1,11 @@
+id: pf-logs-filter-name-charset
+service: logs
+resourceTypes: [AWS::Logs::MetricFilter]
+severity: ERROR
+title: "A filter name cannot contain a colon or an asterisk"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricFilter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Logs::MetricFilter. 1 validation error detected: Value at 'filterNamePrefix' failed to satisfy constraint: Member must satisfy regular expression pattern: [^:*]*\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricFilter with FilterName \"pf:filter\" -> \"Value at 'filterName' failed to satisfy constraint: Member must satisfy regular expression pattern: [^:*]*\". Bare engine clean (no F3031 on this property)."
+addedOn: 2026-09-08

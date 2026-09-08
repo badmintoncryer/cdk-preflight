@@ -2,10 +2,10 @@ id: pf-cloudwatch-metric-query-returndata
 service: cloudwatch
 resourceTypes: [AWS::CloudWatch::Alarm]
 severity: ERROR
-title: Exactly one metric query must return data
+title: "One metric query must return data, or two for an anomaly alarm"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 ap-northeast-1: two explicit ReturnData true (w04), two defaulted-absent (w04b), and zero true (w04c) all -> \"Exactly one element of the metrics list should return data.\" ROLLBACK_COMPLETE. w04b proves the absent-means-true default."
+  evidence: "bench 2026-09-08 ap-northeast-1: an alarm with ThresholdMetricId requires TWO returning queries, not one (\"Exactly two elements of the metrics list should return data.\"), so the expected count is now conditional - the previous unconditional \"exactly one\" fired on every correct anomaly alarm. bench 2026-09-02 ap-northeast-1: two explicit ReturnData true (w04), two defaulted-absent (w04b), and zero true (w04c) all -> \"Exactly one element of the metrics list should return data.\" ROLLBACK_COMPLETE. w04b proves the absent-means-true default."
 addedOn: 2026-09-02

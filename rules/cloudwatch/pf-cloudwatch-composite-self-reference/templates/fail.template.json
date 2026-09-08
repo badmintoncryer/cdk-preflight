@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Composite": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "Properties": {
+        "AlarmName": "pf-ca-selfref",
+        "AlarmRule": "ALARM(\"pf-ca-selfref\")"
+      }
+    }
+  }
+}

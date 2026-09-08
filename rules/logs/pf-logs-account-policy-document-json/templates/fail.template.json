@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::AccountPolicy",
+      "Properties": {
+        "PolicyName": "pf-apdj",
+        "Scope": "ALL",
+        "PolicyType": "DATA_PROTECTION_POLICY",
+        "PolicyDocument": "{\"Name\": \"pf\","
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-logs-data-protection-identifiers-match
+service: logs
+resourceTypes: [AWS::Logs::LogGroup]
+severity: ERROR
+title: "Both data protection statements must list the same data identifiers"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data-start.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Audit Statement and Deidentify Statement must have the same Data Identifiers\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutDataProtectionPolicy whose Audit and Deidentify statements list different DataIdentifier arrays -> \"Audit Statement and Deidentify Statement must have the same Data Identifiers\". Bare engine clean."
+addedOn: 2026-09-08

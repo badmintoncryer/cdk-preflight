@@ -1,0 +1,11 @@
+id: pf-cloudwatch-composite-self-reference
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::CompositeAlarm]
+severity: ERROR
+title: "A composite alarm cannot reference itself in its AlarmRule"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutCompositeAlarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Could not save the composite alarm as alarms [arn:aws:cloudwatch:ap-northeast-1:214794239830:alarm:pf-ca-selfref] in the alarm rule do not exist\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutCompositeAlarm with AlarmName pf-self and AlarmRule ALARM(\"pf-self\") -> \"A composite alarm cannot have a child relation with itself via its AlarmRule, as it would introduce a circular dependency\". The same error comes back when updating an existing alarm, so unlike issue #6's w02 (a reference to an alarm that does not exist) this is decidable from the template alone. Bare engine clean."
+addedOn: 2026-09-08

@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::AccountPolicy",
+      "Properties": {
+        "PolicyName": "pf-aptd",
+        "Scope": "ALL",
+        "PolicyType": "TRANSFORMER_POLICY",
+        "PolicyDocument": "{\"parseJSON\":{}}",
+        "SelectionCriteria": "LogGroupNamePrefix \"/pf/\""
+      }
+    }
+  }
+}

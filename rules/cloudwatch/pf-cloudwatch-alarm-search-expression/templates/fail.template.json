@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "Metrics": [
+          {
+            "Id": "e1",
+            "ReturnData": true,
+            "Expression": "SEARCH('{AWS/EC2,InstanceId} MetricName=\"CPUUtilization\"', 'Average', 300)",
+            "Period": 60
+          }
+        ]
+      }
+    }
+  }
+}

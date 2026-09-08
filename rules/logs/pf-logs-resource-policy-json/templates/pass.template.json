@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::ResourcePolicy",
+      "Properties": {
+        "PolicyName": "pf-rp",
+        "PolicyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"route53.amazonaws.com\"},\"Action\":\"logs:PutLogEvents\",\"Resource\":\"arn:aws:logs:us-east-1:123456789012:log-group:/pf/rp:*\"}]}"
+      }
+    }
+  }
+}

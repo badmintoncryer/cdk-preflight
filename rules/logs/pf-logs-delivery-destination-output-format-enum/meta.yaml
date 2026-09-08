@@ -1,0 +1,11 @@
+id: pf-logs-delivery-destination-output-format-enum
+service: logs
+resourceTypes: [AWS::Logs::DeliveryDestination]
+severity: ERROR
+title: "OutputFormat must be json, plain, w3c, raw or parquet"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutDeliveryDestination.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"1 validation error detected: Value at 'outputFormat' failed to satisfy constraint: Member must satisfy enum value set: [w3c, raw, json, plain, parquet]\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutDeliveryDestination with OutputFormat \"csv\" -> \"Value at 'outputFormat' failed to satisfy constraint: Member must satisfy enum value set: [w3c, raw, json, plain, parquet]\". The bundled engine has no enum on this property - not even a W3030 - so this is an ordinary candidate rather than a gray-zone one."
+addedOn: 2026-09-08

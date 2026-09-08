@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Detector": {
+      "Type": "AWS::CloudWatch::AnomalyDetector",
+      "Properties": {
+        "SingleMetricAnomalyDetector": {
+          "Namespace": "Custom/App",
+          "MetricName": "CPUUtilization",
+          "Stat": "Average"
+        }
+      }
+    }
+  }
+}

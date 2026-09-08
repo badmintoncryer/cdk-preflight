@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::CloudWatch::InsightRule",
+      "Properties": {
+        "RuleName": "pf-ir-lg",
+        "RuleState": "ENABLED",
+        "RuleBody": "{\"Schema\":{\"Name\":\"CloudWatchLogRule\",\"Version\":1},\"LogGroupNames\":[],\"LogFormat\":\"JSON\",\"Contribution\":{\"Keys\":[\"$.ip\"],\"Filters\":[]},\"AggregateOn\":\"Count\"}"
+      }
+    }
+  }
+}

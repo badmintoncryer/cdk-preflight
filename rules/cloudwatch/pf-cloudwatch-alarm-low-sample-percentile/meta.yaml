@@ -1,0 +1,11 @@
+id: pf-cloudwatch-alarm-low-sample-percentile
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: "EvaluateLowSampleCountPercentile only applies to percentile statistics"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Option evaluateLowSampleCountPercentile can not be applied with statistic Average. This option is enabled only for percentile statistics.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricAlarm with Statistic Average and EvaluateLowSampleCountPercentile ignore -> \"Option evaluateLowSampleCountPercentile can not be applied with statistic Average.\"; the same option with ExtendedStatistic p90 succeeded. Bare engine clean."
+addedOn: 2026-09-08

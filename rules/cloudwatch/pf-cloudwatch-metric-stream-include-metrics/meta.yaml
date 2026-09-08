@@ -1,0 +1,11 @@
+id: pf-cloudwatch-metric-stream-include-metrics
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::MetricStream]
+severity: ERROR
+title: "A statistics configuration needs at least one IncludeMetrics entry"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Invalid request provided: IncludeMetrics less than 1\"; the pass side is not benched: it needs a real destination or would create an account-wide policy. api probe 2026-09-08 us-east-1: PutMetricStream with StatisticsConfigurations[0].IncludeMetrics [] -> \"IncludeMetrics less than 1\". Bare engine clean (no F3032 minItems on this list)."
+addedOn: 2026-09-08

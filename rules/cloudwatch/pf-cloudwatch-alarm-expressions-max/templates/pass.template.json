@@ -1,0 +1,86 @@
+{
+  "Resources": {
+    "Alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "Metrics": [
+          {
+            "Id": "m0",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "e0",
+            "ReturnData": true,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e1",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e2",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e3",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e4",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e5",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e6",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e7",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e8",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          },
+          {
+            "Id": "e9",
+            "ReturnData": false,
+            "Expression": "m0",
+            "Period": 60
+          }
+        ]
+      }
+    }
+  }
+}

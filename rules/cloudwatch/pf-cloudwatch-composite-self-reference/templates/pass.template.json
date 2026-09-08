@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "Child": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": 60,
+        "Threshold": 1,
+        "AlarmName": "pf-child-selfref"
+      }
+    },
+    "Composite": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "DependsOn": [
+        "Child"
+      ],
+      "Properties": {
+        "AlarmName": "pf-ca-selfref",
+        "AlarmRule": "ALARM(\"pf-child-selfref\")"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-logs-infrequent-access-subscription-filter
+service: logs
+resourceTypes: [AWS::Logs::LogGroup, AWS::Logs::SubscriptionFilter]
+severity: ERROR
+title: "A subscription filter needs a Standard-class log group"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_FAILED with \"This operation is only supported on the Standard log class.\"; the pass side is not benched: it needs a real destination or would create an account-wide policy. api probe 2026-09-08 us-east-1: PutSubscriptionFilter against an INFREQUENT_ACCESS log group -> \"This operation is only supported on the Standard log class.\"; the log-class check runs before the destination is looked up, so the fixture needs no real destination. Bare engine clean (nothing links the two resources)."
+addedOn: 2026-09-08

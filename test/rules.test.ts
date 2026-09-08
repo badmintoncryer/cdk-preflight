@@ -1144,7 +1144,8 @@ describe('cloudwatch alarm rules', () => {
         ThresholdMetricId: 'ad1',
         Metrics: [
           { Id: 'ad1', Expression: 'ANOMALY_DETECTION_BAND(m1, 2)' },
-          { Id: 'm1', MetricStat: ms('x'), ReturnData: false },
+          // An anomaly alarm returns data from BOTH queries (bench 2026-09-08).
+          { Id: 'm1', MetricStat: ms('x'), ReturnData: true },
         ],
       });
       expect(ids(diagnoseTemplate(t))).toHaveLength(0);
@@ -1957,7 +1958,7 @@ describe('ecs service and cloudwatch dashboard rules', () => {
   test('threshold metric id needs a ReturnData true match', () => {
     const alarm = (adReturnData: boolean) => ({
       Resources: {
-        Alarm: { Type: 'AWS::CloudWatch::Alarm', Properties: { ComparisonOperator: 'LessThanLowerOrGreaterThanUpperThreshold', EvaluationPeriods: 1, ThresholdMetricId: 'ad1', Metrics: [{ Id: 'm1', ReturnData: !adReturnData, MetricStat: { Metric: { MetricName: 'CPUUtilization', Namespace: 'AWS/EC2' }, Period: 300, Stat: 'Average' } }, { Id: 'ad1', ReturnData: adReturnData, Expression: 'ANOMALY_DETECTION_BAND(m1, 2)' }] } },
+        Alarm: { Type: 'AWS::CloudWatch::Alarm', Properties: { ComparisonOperator: 'LessThanLowerOrGreaterThanUpperThreshold', EvaluationPeriods: 1, ThresholdMetricId: 'ad1', Metrics: [{ Id: 'm1', ReturnData: true, MetricStat: { Metric: { MetricName: 'CPUUtilization', Namespace: 'AWS/EC2' }, Period: 300, Stat: 'Average' } }, { Id: 'ad1', ReturnData: adReturnData, Expression: 'ANOMALY_DETECTION_BAND(m1, 2)' }] } },
       },
     });
     expect(ids(diagnoseTemplate(alarm(false)))).toContain('pf-cloudwatch-threshold-metric-id');

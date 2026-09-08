@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Stream": {
+      "Type": "AWS::CloudWatch::MetricStream",
+      "Properties": {
+        "FirehoseArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:firehose:${AWS::Region}:${AWS::AccountId}:deliverystream/pf-stream"
+        },
+        "RoleArn": "arn:aws:iam::999988887777:role/pf-metric-stream",
+        "OutputFormat": "json"
+      }
+    }
+  }
+}

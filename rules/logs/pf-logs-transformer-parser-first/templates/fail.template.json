@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/tpf"
+      }
+    },
+    "TR": {
+      "Type": "AWS::Logs::Transformer",
+      "Properties": {
+        "LogGroupIdentifier": {
+          "Ref": "LG"
+        },
+        "TransformerConfig": [
+          {
+            "AddKeys": {
+              "Entries": [
+                {
+                  "Key": "env",
+                  "Value": "prod"
+                }
+              ]
+            }
+          },
+          {
+            "ParseJSON": {}
+          }
+        ]
+      }
+    }
+  }
+}

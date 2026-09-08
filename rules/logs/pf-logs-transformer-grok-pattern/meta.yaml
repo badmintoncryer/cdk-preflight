@@ -1,0 +1,11 @@
+id: pf-logs-transformer-grok-pattern
+service: logs
+resourceTypes: [AWS::Logs::Transformer]
+severity: ERROR
+title: "A grok match may only use supported pattern names"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation-Configurable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"No definition for key 'NOT_A_PATTERN' found\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutTransformer with grok match \"%{NOT_A_PATTERN:field}\" -> \"No definition for key 'NOT_A_PATTERN' found\". Bare engine clean (the match string is inside an opaque processor object)."
+addedOn: 2026-09-08
