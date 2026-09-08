@@ -69,6 +69,10 @@ project.addPackageIgnore('/assets/');
 // us-east-1 実測ルールは meta.yaml の benchRegion に従う。
 project.gitignore.addPatterns('/bench/out/');
 
+// sweep.sh の残骸回収は AWS 認証が要るので実機では回せない。スタブ版の自己チェックを
+// テストに混ぜ、削除分岐が壊れたら CI で落ちるようにする（実 API は叩かない）。
+project.testTask.exec('bash bench/sweep.test.sh');
+
 // ルール不要化（エンジンが追いついた）の検知。AWS 不要・完全ローカル。
 project.addTask('redundancy-scan', {
   description: 'List rules the bundled engine now blocks by itself (retirement candidates)',
