@@ -10,7 +10,7 @@ trap 'rm -f "$RECLAIM_ERR"' EXIT
 # タグ孤児を種別ごとに回収する。消せた（か既に消えていた）なら 0、それ以外は非 0。
 # 分岐は実際に残骸が出た種別にだけ足すこと。未知の種別は 1 を返して LEFTOVER 行に落ちる。
 reclaim() {
-  local arn=$1 region=$2 svc res name pool domain
+  local arn=$1 region=$2 svc res name
   svc=$(cut -d: -f3 <<<"$arn")
   res=$(cut -d: -f6- <<<"$arn")
   : > "$RECLAIM_ERR"
@@ -21,18 +21,7 @@ reclaim() {
       aws ecs deregister-task-definition --task-definition "$arn" --region "$region" >/dev/null
       aws ecs delete-task-definitions --task-definitions "$arn" --region "$region" >/dev/null ;;
     cognito-idp/userpool)
-      # 削除保護とカスタムドメインはどちらも DeleteUserPool を拒否する。順に外してから消す。
-      # update-user-pool は指定しなかった設定を既定値に戻すが、消す直前のプールなので影響しない
-      pool=${res#*/}
-      aws cognito-idp update-user-pool --user-pool-id "$pool" --region "$region" \
-        --deletion-protection INACTIVE >/dev/null
-      domain=$(aws cognito-idp describe-user-pool --user-pool-id "$pool" --region "$region" \
-        --query UserPool.Domain --output text)
-      if [ -n "$domain" ] && [ "$domain" != None ]; then
-        aws cognito-idp delete-user-pool-domain --user-pool-id "$pool" --domain "$domain" \
-          --region "$region" >/dev/null
-      fi
-      aws cognito-idp delete-user-pool --user-pool-id "$pool" --region "$region" >/dev/null ;;
+      aws cognito-idp delete-user-pool --user-pool-id "${res#*/}" --region "$region" >/dev/null ;;
     kms/key)
       # 削除は最短 7 日待ちで即時には消えない。待機中のキーは回収済みとして扱う
       # （そうしないと「消したのに毎月 LEFTOVER で上がる」が 7 日間続く）
@@ -45,7 +34,10 @@ reclaim() {
       name=${res#table/}; name=${name%%/*}
       aws dynamodb delete-table --table-name "$name" --region "$region" >/dev/null ;;
     *) return 1 ;;
-  esac 2>"$RECLAIM_ERR"
+  esac 2>"$RECLAIM_ERR" && return 0
+  # タグ索引には既に消えたリソースの行が残ることがある（Cognito のプールは削除後も、
+  # ECS のクラスタは INACTIVE のまま返る）。存在しないものは回収済みとして扱う
+  grep -qE 'NotFoundException|does not exist' "$RECLAIM_ERR"
 }
 
 # 失敗理由を 1 行に畳んで返す。取れなかったら手作業を促す既定文
