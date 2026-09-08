@@ -1,0 +1,13 @@
+id: pf-ec2-client-vpn-cert-region
+service: ec2
+resourceTypes: [AWS::EC2::ClientVpnEndpoint]
+severity: ERROR
+title: The Client VPN server certificate must be in the deploy region
+constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html
+upstream: none
+fixtureRegion: ap-northeast-1
+benchRegion: ap-northeast-1
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08: CreateClientVpnEndpoint in us-east-1 with a real ap-northeast-1 ACM certificate ARN -> \"InvalidParameterValue: Certificate not found\", while the same certificate in its own region is accepted. bench 2026-09-09 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Certificate not found\", pass -> CREATE_COMPLETE (both deployed with the placeholder ACM ARNs replaced by real bench certificates, because the committed fixture must not carry an account-specific ARN). Lens 3: only this pack sees the resolved deploy region, so no earlier layer can make this comparison."
+addedOn: 2026-09-09

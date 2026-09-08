@@ -1,0 +1,11 @@
+id: pf-ec2-vpn-gateway-exclusive
+service: ec2
+resourceTypes: [AWS::EC2::VPNConnection]
+severity: ERROR
+title: A VPN connection cannot name both a VPN gateway and a transit gateway
+constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateVpnConnection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateVpnConnection with both vpnGatewayId and transitGatewayId -> \"The request must not contain both parameter vpnGatewayId and transitGatewayId\". The other half of the surveyed candidate (neither gateway set) is BROKEN-EXPECTATION: the same call with neither was accepted and really created a VPN connection (GatewayAssociationState: not-associated, deleted immediately), so this rule only covers the exclusivity. bench 2026-09-09 ap-northeast-1: fail -> ROLLBACK_COMPLETE with that message, pass -> CREATE_COMPLETE (a real VPN connection was created and deleted with the stack)"
+addedOn: 2026-09-09

@@ -1,0 +1,32 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Cgw": {
+      "Type": "AWS::EC2::CustomerGateway",
+      "Properties": {
+        "BgpAsn": 65000,
+        "IpAddress": "203.0.113.9",
+        "Type": "ipsec.1"
+      }
+    },
+    "Vgw": {
+      "Type": "AWS::EC2::VPNGateway",
+      "Properties": {
+        "Type": "ipsec.1"
+      }
+    },
+    "Vpn": {
+      "Type": "AWS::EC2::VPNConnection",
+      "Properties": {
+        "Type": "ipsec.1",
+        "CustomerGatewayId": {
+          "Ref": "Cgw"
+        },
+        "StaticRoutesOnly": true,
+        "VpnGatewayId": {
+          "Ref": "Vgw"
+        }
+      }
+    }
+  }
+}

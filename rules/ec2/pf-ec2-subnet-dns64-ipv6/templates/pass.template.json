@@ -1,0 +1,53 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.86.0.0/16"
+      }
+    },
+    "V6": {
+      "Type": "AWS::EC2::VPCCidrBlock",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "AmazonProvidedIpv6CidrBlock": true
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "DependsOn": "V6",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.86.1.0/24",
+        "EnableDns64": true,
+        "Ipv6CidrBlock": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::Cidr": [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::GetAtt": [
+                        "Vpc",
+                        "Ipv6CidrBlocks"
+                      ]
+                    }
+                  ]
+                },
+                1,
+                64
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -4133,6 +4133,18 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cvpnare_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# Both properties are optional in the schema, so nothing rejects setting both;\n# EC2 refuses the pair at create time.\nviolation contains make_diag_full(\"pf-ec2-client-vpn-authorization-rule-exclusive\", \"ERROR\", name,\n\t\"Properties.AccessGroupId\",\n\t\"AccessGroupId and AuthorizeAllGroups are mutually exclusive (\\\"You can specify either access-group-id or authorize-all-groups, not both\\\")\",\n\t\"Drop AccessGroupId, or set AuthorizeAllGroups to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-clientvpnauthorizationrule.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnAuthorizationRule\")\n\tresolve(name, \"Properties.AuthorizeAllGroups\") == true\n\tnot _pf_cvpnare_absent(name, \"AccessGroupId\")\n}\n"
   },
   {
+    "id": "pf-ec2-client-vpn-cert-region",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "The Client VPN server certificate must be in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::ClientVpnEndpoint"
+    ],
+    "fixtureRegion": "ap-northeast-1",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2cvcr_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\"\n\n# デプロイ先リージョン。enforce プラグインが注入しないとき（warn モード /\n# リージョン非依存アプリ）は未定義になり、このルールは黙って飛ぶ。\n_pf_ec2cvcr_region := r if {\n\tr := data.cdk_preflight.deploy_region\n\tis_string(r)\n\tr != \"\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-cert-region\", \"ERROR\", name,\n\t\"Properties.ServerCertificateArn\",\n\tsprintf(\"The Client VPN server certificate is in %v but the endpoint is deployed to %v; ACM certificates are region-scoped, so the lookup fails with \\\"Certificate not found\\\"\", [parts[3], _pf_ec2cvcr_region]),\n\tsprintf(\"Issue or import the certificate in %v and reference that ARN\", [_pf_ec2cvcr_region]),\n\t_pf_ec2cvcr_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tarn := resolve(name, \"Properties.ServerCertificateArn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"acm\"\n\tparts[3] != \"\"\n\tparts[3] != _pf_ec2cvcr_region\n}\n"
+  },
+  {
     "id": "pf-ec2-client-vpn-cidr-size",
     "service": "ec2",
     "severity": "ERROR",
@@ -4605,6 +4617,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_subnetcidr_len(c) := to_number(parts[1]) if {\n\tparts := split(c, \"/\")\n\tcount(parts) == 2\n}\n\nviolation contains make_diag_full(\"pf-ec2-subnet-cidr-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"Subnet CIDR '%s' has a /%d netmask; EC2 accepts /16 through /28 and rejects the create call otherwise\", [c, n]),\n\t\"Resize the subnet CIDR to a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Subnet\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tn := _pf_subnetcidr_len(c)\n\t_pf_subnetcidr_out(n)\n}\n\n_pf_subnetcidr_out(n) if n < 16\n\n_pf_subnetcidr_out(n) if n > 28\n"
   },
   {
+    "id": "pf-ec2-subnet-dns64-ipv6",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "EnableDns64 requires the subnet to have an IPv6 CIDR",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Subnet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2dns64_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-subnet.html\"\n\n_pf_ec2dns64_v6keys := [\"Ipv6CidrBlock\", \"Ipv6CidrBlocks\", \"Ipv6IpamPoolId\", \"Ipv6Native\"]\n\nviolation contains make_diag_full(\"pf-ec2-subnet-dns64-ipv6\", \"ERROR\", name,\n\t\"Properties.EnableDns64\",\n\t\"EnableDns64 is set on a subnet with no IPv6 CIDR (\\\"Cannot set enable-dns64 to true unless the subnet has an IPv6 CIDR block associated with it\\\")\",\n\t\"Give the subnet an IPv6 CIDR (Ipv6CidrBlock / Ipv6CidrBlocks / Ipv6IpamPoolId) or drop EnableDns64\",\n\t_pf_ec2dns64_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Subnet\")\n\ton := resolve(name, \"Properties.EnableDns64\")\n\ton in [true, \"true\"]\n\tevery key in _pf_ec2dns64_v6keys {\n\t\t_pf_ec2lib_absent(name, key)\n\t}\n}\n"
+  },
+  {
     "id": "pf-ec2-subnet-ipv6-native-cidr",
     "service": "ec2",
     "severity": "ERROR",
@@ -4636,6 +4659,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::TransitGateway"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-tgw-cidr-block-size\", \"ERROR\", name,\n\tsprintf(\"Properties.TransitGatewayCidrBlocks.%d\", [item.index]),\n\tsprintf(\"Transit gateway CIDR block '%s' has netmask /%v; the IPv4 block must be /24 or larger\", [c, p]),\n\t\"Widen the block to /24 or larger\",\n\t\"https://docs.aws.amazon.com/vpc/latest/tgw/tgw-transit-gateways.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::TransitGateway\")\n\tsome item in flatten_list(name, \"Properties.TransitGatewayCidrBlocks\")\n\tc := item.value\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\tp > 24\n}\n"
+  },
+  {
+    "id": "pf-ec2-tgw-route-blackhole-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A blackhole transit gateway route cannot name an attachment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::TransitGatewayRoute"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2tgwbh_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTransitGatewayRoute.html\"\n\nviolation contains make_diag_full(\"pf-ec2-tgw-route-blackhole-exclusive\", \"ERROR\", name,\n\t\"Properties.TransitGatewayAttachmentId\",\n\t\"A blackhole route also names TransitGatewayAttachmentId (\\\"The request must contain exactly one of Blackhole, or TransitGatewayAttachmentId\\\")\",\n\t\"Drop TransitGatewayAttachmentId from the blackhole route, or set Blackhole to false to route to the attachment\",\n\t_pf_ec2tgwbh_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::TransitGatewayRoute\")\n\tbh := resolve(name, \"Properties.Blackhole\")\n\tbh in [true, \"true\"]\n\tnot _pf_ec2lib_absent(name, \"TransitGatewayAttachmentId\")\n}\n"
   },
   {
     "id": "pf-ec2-traffic-mirror-target-exactly-one",
@@ -4749,6 +4783,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine validates subnet containment (E3059) and overlap (E3060)\n# but accepts any VPC netmask; EC2 rejects anything outside /16../28.\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-block-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"VPC CIDR block '%s' has netmask /%v; EC2 only accepts /16 through /28 (\\\"The CIDR '%s' is invalid.\\\")\", [c, p, c]),\n\t\"Use a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPC\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\t_pf_ec2vcs_out(p)\n}\n\n_pf_ec2vcs_out(p) if p < 16\n\n_pf_ec2vcs_out(p) if p > 28\n"
   },
   {
+    "id": "pf-ec2-vpc-cidr-reserved-range",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A VPC CIDR must not overlap a reserved IPv4 range",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPC"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vcr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpc.html\"\n\n# 実測で拒否されるのはこの 4 レンジだけ。240.0.0.0/4（クラス E）と\n# 100.64.0.0/10（CGNAT）は受理されるので入れない。\n_pf_ec2vcr_reserved := [\"0.0.0.0/8\", \"127.0.0.0/8\", \"169.254.0.0/16\", \"224.0.0.0/4\"]\n\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-reserved-range\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"VPC CIDR %v overlaps the reserved range %v (\\\"The CIDR '%v' is invalid.\\\")\", [cidr, reserved, cidr]),\n\t\"Use a CIDR outside 0.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16 and 224.0.0.0/4\",\n\t_pf_ec2vcr_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPC\")\n\tcidr := resolve(name, \"Properties.CidrBlock\")\n\tis_string(cidr)\n\tsome reserved in _pf_ec2vcr_reserved\n\t_pf_ec2lib_cidr_overlap(cidr, reserved)\n}\n"
+  },
+  {
     "id": "pf-ec2-vpc-single-igw",
     "service": "ec2",
     "severity": "ERROR",
@@ -4802,6 +4847,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPCEndpoint"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vtc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html\"\n\n_pf_ec2vtc_type(name) := t if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tt := object.get(props, \"VpcEndpointType\", \"Gateway\")\n}\n\n_pf_ec2vtc_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\t\"A Gateway endpoint cannot take SubnetIds (\\\"Subnet IDs are only supported for Interface and GatewayLoadBalancer type VPC Endpoints.\\\")\",\n\t\"Remove SubnetIds, or set VpcEndpointType: Interface\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\t_pf_ec2vtc_type(name) == \"Gateway\"\n\t_pf_ec2vtc_has(name, \"SubnetIds\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-type-config\", \"ERROR\", name,\n\t\"Properties.RouteTableIds\",\n\tsprintf(\"A %s endpoint cannot take RouteTableIds; only Gateway endpoints attach to route tables\", [t]),\n\t\"Remove RouteTableIds, or set VpcEndpointType: Gateway\",\n\t_pf_ec2vtc_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tt := _pf_ec2vtc_type(name)\n\tt != \"Gateway\"\n\tis_string(t)\n\t_pf_ec2vtc_has(name, \"RouteTableIds\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpn-gateway-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A VPN connection cannot name both a VPN gateway and a transit gateway",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPNConnection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vgex_url := \"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateVpnConnection.html\"\n\nviolation contains make_diag_full(\"pf-ec2-vpn-gateway-exclusive\", \"ERROR\", name,\n\t\"Properties.TransitGatewayId\",\n\t\"A VPN connection names both VpnGatewayId and TransitGatewayId (\\\"The request must not contain both parameter vpnGatewayId and transitGatewayId\\\")\",\n\t\"Keep VpnGatewayId for a virtual private gateway or TransitGatewayId for a transit gateway, not both\",\n\t_pf_ec2vgex_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::VPNConnection\")\n\tnot _pf_ec2lib_absent(name, \"VpnGatewayId\")\n\tnot _pf_ec2lib_absent(name, \"TransitGatewayId\")\n}\n"
   },
   {
     "id": "pf-ec2-vpn-phase-lifetime-order",
