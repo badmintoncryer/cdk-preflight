@@ -1,0 +1,62 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "gk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "gsi1",
+            "KeySchema": [
+              {
+                "AttributeName": "gk",
+                "KeyType": "HASH"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "INCLUDE",
+              "NonKeyAttributes": [
+                "a0",
+                "a1",
+                "a2",
+                "a3",
+                "a4",
+                "a5",
+                "a6",
+                "a7",
+                "a8",
+                "a9",
+                "a10",
+                "a11",
+                "a12",
+                "a13",
+                "a14",
+                "a15",
+                "a16",
+                "a17",
+                "a18",
+                "a19"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

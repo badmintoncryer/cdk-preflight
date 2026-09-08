@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-mrsc-region-set
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "An MRSC global table cannot span Region sets"
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Unsupported Region(s) specified for global tables with MultiRegionConsistency set to STRONG: [eu-west-1].\"; pass -> CREATE_COMPLETE. Evaluates only in enforce mode with a concrete app region (deploy_region injection); silent otherwise. Test fixtures assume the harness region us-east-1."
+addedOn: 2026-09-08

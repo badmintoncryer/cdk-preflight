@@ -1,0 +1,11 @@
+id: pf-dynamodb-projection-nonkey-limit
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "One index can project at most 20 non-key attributes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"1 validation error detected: Value '[a0, a1, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a2, a20, a3, a4, a5, a6, a7, a8, a9]' at 'globalSecondaryIndexes.1.member.projection.nonKeyAttributes' failed to satisfy constraint: Member must have length less than or equal to 20\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

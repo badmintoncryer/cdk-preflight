@@ -1,0 +1,40 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "ResourcePolicy": {
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "AllowOwnAccount",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": {
+                    "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                  }
+                },
+                "Action": "dynamodb:GetItem",
+                "Resource": "*"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

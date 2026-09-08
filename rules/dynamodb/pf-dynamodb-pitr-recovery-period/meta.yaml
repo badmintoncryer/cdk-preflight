@@ -1,0 +1,11 @@
+id: pf-dynamodb-pitr-recovery-period
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "RecoveryPeriodInDays needs point-in-time recovery turned on"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-pointintimerecoveryspecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Cannot set RecoveryPeriodInDays property when PointInTimeRecoveryEnabled is false\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08
