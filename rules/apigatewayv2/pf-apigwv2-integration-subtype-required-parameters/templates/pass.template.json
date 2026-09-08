@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationSubtype": "EventBridge-PutEvents",
+        "PayloadFormatVersion": "1.0",
+        "CredentialsArn": "arn:aws:iam::214794239830:role/r",
+        "RequestParameters": {
+          "Detail": "$request.body",
+          "DetailType": "x",
+          "Source": "y"
+        }
+      }
+    }
+  }
+}

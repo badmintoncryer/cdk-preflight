@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p",
+        "MinimumCompressionSize": 20000000
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-apigw-stage-method-setting-http-method
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::Stage]
+severity: ERROR
+title: "Method setting HttpMethod is a verb or *"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-stage-methodsetting.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid method setting path: /*/FOO/metrics/enabled. Must be one of: [/deploymentId, /description, /cacheClusterEnabled, /cacheClusterSize, /clientCertificateId, /accessLogSettings, /accessLogSettings/destinationArn, /accessLogSettings/form\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

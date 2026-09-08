@@ -1,0 +1,12 @@
+id: pf-apigw-api-key-value-length
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::ApiKey]
+severity: ERROR
+title: "An API key value is at least 20 characters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-apikey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"API Key value should be at least 20 characters\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

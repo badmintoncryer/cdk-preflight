@@ -1,0 +1,12 @@
+id: pf-apigwv2-route-response-websocket-only
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::RouteResponse]
+severity: ERROR
+title: "Route responses exist on WebSocket APIs only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-routeresponse.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"RouteResponses are currently not supported for this API protocol type. This is because the API may only be configured with proxy integration at this time.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

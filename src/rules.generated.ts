@@ -25,6 +25,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The format string is opaque to every schema layer; the service requires a\n# request id variable somewhere inside it.\nviolation contains make_diag_full(\"pf-apigw-access-log-format-request-id\", \"ERROR\", name,\n\t\"Properties.AccessLogSetting.Format\",\n\t\"Access log format has no request id variable; the stage create fails with \\\"Access Log format must include either $context.requestId or $context.extendedRequestId\\\"\",\n\t\"Add $context.requestId (or $context.extendedRequestId) to the access log format\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tfmt := resolve(name, \"Properties.AccessLogSetting.Format\")\n\tis_string(fmt)\n\tnot contains(fmt, \"$context.requestId\")\n\tnot contains(fmt, \"$context.extendedRequestId\")\n}\n"
   },
   {
+    "id": "pf-apigw-api-key-value-length",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An API key value is at least 20 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::ApiKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-api-key-value-length\", \"ERROR\", name,\n\t\"Properties.Value\",\n\tsprintf(\"The API key value is %d characters; the key create fails with \\\"API Key value should be at least 20 characters\\\"\", [count(v)]),\n\t\"Use an API key value of at least 20 characters, or let API Gateway generate one\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-apikey.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::ApiKey\")\n\tv := resolve(name, \"Properties.Value\")\n\tis_string(v)\n\tnot input.resources[v]\n\tcount(v) < 20\n}\n"
+  },
+  {
     "id": "pf-apigw-authorizer-ttl-range",
     "service": "apigateway",
     "severity": "ERROR",
@@ -34,6 +45,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ApiGateway::Authorizer"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types the TTL as a bare integer; the 3600 ceiling is\n# only in the service.\nviolation contains make_diag_full(\"pf-apigw-authorizer-ttl-range\", \"ERROR\", name,\n\t\"Properties.AuthorizerResultTtlInSeconds\",\n\tsprintf(\"AuthorizerResultTtlInSeconds %v is over the cap; the authorizer create fails with \\\"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\\\"\", [ttl]),\n\t\"Use a TTL between 0 and 3600 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Authorizer\")\n\tttl := to_number(resolve(name, \"Properties.AuthorizerResultTtlInSeconds\"))\n\tttl > 3600\n}\n"
+  },
+  {
+    "id": "pf-apigw-authorizer-uri-format",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An authorizer URI is an API Gateway invocation ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same wrapper-ARN shape as an AWS integration: the Lambda ARN alone is\n# rejected.\nviolation contains make_diag_full(\"pf-apigw-authorizer-uri-format\", \"ERROR\", name,\n\t\"Properties.AuthorizerUri\",\n\tsprintf(\"AuthorizerUri '%s' is not an API Gateway invocation ARN; the authorizer create fails with \\\"Invalid Authorizer URI ... Authorizer URI should be a valid API Gateway ARN\\\"\", [uri]),\n\t\"Use arn:<partition>:apigateway:<region>:lambda:path/2015-03-31/functions/<function arn>/invocations\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Authorizer\")\n\turi := resolve(name, \"Properties.AuthorizerUri\")\n\tis_string(uri)\n\tstartswith(uri, \"arn:\")\n\tnot regex.match(`^arn:[^:]*:apigateway:[^:]*:lambda:path/`, uri)\n}\n"
   },
   {
     "id": "pf-apigw-cognito-authorizer-provider-arns",
@@ -58,6 +80,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Deploying an API with zero methods fails. Judged only when the whole\n# picture is in this template: the api is a sibling resource and it has no\n# OpenAPI body (which would define methods invisibly). Absence is proven\n# against the preprocessed document (see AGENTS.md).\n_pf_apgdnm_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_apgdnm_served(api) if {\n\tsome m in resources_of_type(\"AWS::ApiGateway::Method\")\n\tresolve(m, \"Properties.RestApiId\") == api\n}\n\nviolation contains make_diag_full(\"pf-apigw-deployment-no-methods\", \"ERROR\", name,\n\t\"Properties.RestApiId\",\n\tsprintf(\"REST API '%s' has no AWS::ApiGateway::Method in this template; the deployment fails with \\\"The REST API doesn't contain any methods\\\"\", [api]),\n\t\"Add at least one AWS::ApiGateway::Method to the API before deploying it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-deployment.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Deployment\")\n\tapi := resolve(name, \"Properties.RestApiId\")\n\tapi in resources_of_type(\"AWS::ApiGateway::RestApi\")\n\t_pf_apgdnm_absent(api, \"Body\")\n\t_pf_apgdnm_absent(api, \"BodyS3Location\")\n\tnot _pf_apgdnm_served(api)\n}\n"
   },
   {
+    "id": "pf-apigw-documentation-part-location",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An API-level documentation part takes no path, method, status or name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::DocumentationPart"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Location.Type decides which of the other Location fields may appear; API is\n# the measured case (it takes none of them).\n_pf_apgdpl_set(name, key) if is_string(resolve(name, sprintf(\"Properties.Location.%s\", [key])))\n\nviolation contains make_diag_full(\"pf-apigw-documentation-part-location\", \"ERROR\", name,\n\t\"Properties.Location\",\n\tsprintf(\"Location.Type is API but Location.%s is also set; the documentation part create fails with \\\"[Location type: API cannot have path, method, statusCode or name defined.]\\\"\", [key]),\n\t\"Drop Path, Method, StatusCode and Name from an API-level documentation part, or use a Location.Type that takes them\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-documentationpart-location.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::DocumentationPart\")\n\tresolve(name, \"Properties.Location.Type\") == \"API\"\n\tsome key in [\"Method\", \"StatusCode\", \"Name\"]\n\t_pf_apgdpl_set(name, key)\n}\n"
+  },
+  {
+    "id": "pf-apigw-edge-certificate-property",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "EDGE domain names read CertificateArn, not RegionalCertificateArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The certificate property is chosen by endpoint type: EDGE reads CertificateArn\n# (an us-east-1 certificate), REGIONAL reads RegionalCertificateArn.\nviolation contains make_diag_full(\"pf-apigw-edge-certificate-property\", \"ERROR\", name,\n\t\"Properties.RegionalCertificateArn\",\n\t\"An EDGE domain name carries RegionalCertificateArn; the domain name create fails with \\\"Cannot import certificates for REGIONAL while EDGE is active.\\\"\",\n\t\"Put the us-east-1 certificate in CertificateArn, or switch EndpointConfiguration.Types to REGIONAL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-domainname.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::DomainName\")\n\tsome t in flatten_list(name, \"Properties.EndpointConfiguration.Types\")\n\tt.value == \"EDGE\"\n\tis_string(resolve(name, \"Properties.RegionalCertificateArn\"))\n}\n"
+  },
+  {
+    "id": "pf-apigw-endpoint-configuration-single-type",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An API has exactly one endpoint type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::RestApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-endpoint-configuration-single-type\", \"ERROR\", name,\n\t\"Properties.EndpointConfiguration.Types\",\n\tsprintf(\"EndpointConfiguration.Types lists %d endpoint types; the API create fails with \\\"Cannot create a RestApi with multiple Endpoint Types.\\\"\", [count(types)]),\n\t\"List exactly one of EDGE, REGIONAL or PRIVATE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-restapi-endpointconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::RestApi\")\n\ttypes := flatten_list(name, \"Properties.EndpointConfiguration.Types\")\n\tcount(types) > 1\n}\n"
+  },
+  {
+    "id": "pf-apigw-gateway-response-status-code",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A gateway response status code is three digits",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::GatewayResponse"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-gateway-response-status-code\", \"ERROR\", name,\n\t\"Properties.StatusCode\",\n\tsprintf(\"StatusCode '%s' is not a three-digit HTTP status; the gateway response put fails with \\\"Value '%s' at 'putGatewayResponseInput.statusCode' failed to satisfy constraint\\\"\", [c, c]),\n\t\"Use a three-digit status code between 100 and 599\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-gatewayresponse.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::GatewayResponse\")\n\tc := resolve(name, \"Properties.StatusCode\")\n\tis_string(c)\n\tnot input.resources[c]\n\tnot regex.match(`^[1-5][0-9][0-9]$`, c)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-aws-uri",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An AWS integration URI is an API Gateway ARN, not the target's ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An AWS integration URI is an API Gateway ARN wrapping the target action, not\n# the target's own ARN - a distinction that lives inside the string.\nviolation contains make_diag_full(\"pf-apigw-integration-aws-uri\", \"ERROR\", name,\n\t\"Properties.Integration.Uri\",\n\tsprintf(\"Integration.Uri '%s' is not an API Gateway integration ARN; the method create fails with \\\"AWS ARN for integration must contain path or action\\\"\", [uri]),\n\t\"Use arn:<partition>:apigateway:<region>:<service>:path/... (Lambda: .../lambda:path/2015-03-31/functions/<function arn>/invocations)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tresolve(name, \"Properties.Integration.Type\") in {\"AWS\", \"AWS_PROXY\"}\n\turi := resolve(name, \"Properties.Integration.Uri\")\n\tis_string(uri)\n\tstartswith(uri, \"arn:\")\n\tnot regex.match(`^arn:[^:]*:apigateway:[^:]*:[^:]*:(path|action)/`, uri)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-cache-key-parameters",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Cache key parameters must be declared method request parameters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A cache key parameter names a method request parameter, so the two properties\n# have to agree inside the same Method resource.\n_pf_apgickp_declared(name, c) if {\n\trp := resolve(name, \"Properties.RequestParameters\")\n\tis_object(rp)\n\tsome k, _ in rp\n\tk == c\n}\n\nviolation contains make_diag_full(\"pf-apigw-integration-cache-key-parameters\", \"ERROR\", name,\n\t\"Properties.Integration.CacheKeyParameters\",\n\tsprintf(\"Cache key parameter '%s' is not declared in the method's RequestParameters; the method create fails with \\\"Invalid cache key parameter specified\\\"\", [c]),\n\tsprintf(\"Add \\\"%s\\\": true to Properties.RequestParameters, or drop it from CacheKeyParameters\", [c]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tsome item in flatten_list(name, \"Properties.Integration.CacheKeyParameters\")\n\tc := item.value\n\tis_string(c)\n\tnot _pf_apgickp_declared(name, c)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-credentials-arn",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Integration credentials must be an ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-integration-credentials-arn\", \"ERROR\", name,\n\t\"Properties.Integration.Credentials\",\n\tsprintf(\"Integration.Credentials '%s' is not an ARN; the method create fails with \\\"Invalid ARN specified in the request\\\"\", [c]),\n\t\"Use the IAM role ARN to assume (or arn:aws:iam::*:user/* to pass the caller's credentials)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tc := resolve(name, \"Properties.Integration.Credentials\")\n\tis_string(c)\n\tnot input.resources[c]\n\tnot startswith(c, \"arn:\")\n}\n"
+  },
+  {
     "id": "pf-apigw-integration-http-method",
     "service": "apigateway",
     "severity": "ERROR",
@@ -67,6 +166,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ApiGateway::Method"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every integration type except MOCK calls a backend and needs the HTTP\n# method to call it with. Verified for all four non-MOCK types. Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_apgihm_types := {\"AWS\", \"AWS_PROXY\", \"HTTP\", \"HTTP_PROXY\"}\n\n_pf_apgihm_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tinteg := object.get(props, \"Integration\", {})\n\tis_object(integ)\n\tobject.get(integ, \"IntegrationHttpMethod\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-integration-http-method\", \"ERROR\", name,\n\t\"Properties.Integration.IntegrationHttpMethod\",\n\tsprintf(\"Integration type '%s' has no IntegrationHttpMethod; the method create fails with \\\"Enumeration value for HttpMethod must be non-empty\\\"\", [t]),\n\t\"Set Integration.IntegrationHttpMethod (POST for AWS/AWS_PROXY Lambda backends)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tt := resolve(name, \"Properties.Integration.Type\")\n\tt in _pf_apgihm_types\n\t_pf_apgihm_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-http-uri",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An HTTP integration URI is an http(s) URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apgihu_ok(uri) if startswith(uri, \"http://\")\n\n_pf_apgihu_ok(uri) if startswith(uri, \"https://\")\n\nviolation contains make_diag_full(\"pf-apigw-integration-http-uri\", \"ERROR\", name,\n\t\"Properties.Integration.Uri\",\n\tsprintf(\"Integration.Uri '%s' is not an HTTP(S) endpoint; the method create fails with \\\"Invalid HTTP endpoint specified for URI\\\"\", [uri]),\n\t\"Use a full http:// or https:// URL for an HTTP integration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tresolve(name, \"Properties.Integration.Type\") in {\"HTTP\", \"HTTP_PROXY\"}\n\turi := resolve(name, \"Properties.Integration.Uri\")\n\tis_string(uri)\n\tnot input.resources[uri]\n\tnot _pf_apgihu_ok(uri)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-request-parameter-value",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Static integration request parameters must be single-quoted",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A static value has to be single-quoted; anything unquoted is read as a\n# mapping expression.\n_pf_apgirpv_ok(v) if startswith(v, \"'\")\n\n_pf_apgirpv_ok(v) if regex.match(`^(method\\.request\\.|context\\.|stageVariables\\.)`, v)\n\nviolation contains make_diag_full(\"pf-apigw-integration-request-parameter-value\", \"ERROR\", name,\n\tsprintf(\"Properties.Integration.RequestParameters.%s\", [k]),\n\tsprintf(\"Integration.RequestParameters value '%s' is neither a quoted static value nor a mapping expression; the method create fails with \\\"Invalid mapping expression specified\\\"\", [v]),\n\tsprintf(\"Write a static value as \\\"'%s'\\\", or use method.request.* / context.* / stageVariables.*\", [v]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\trp := resolve(name, \"Properties.Integration.RequestParameters\")\n\tis_object(rp)\n\tsome k, v in rp\n\tis_string(v)\n\tnot _pf_apgirpv_ok(v)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-response-selection-pattern",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "SelectionPattern must be a valid regular expression",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only unbalanced brackets are judged: that is the shape the service rejects\n# outright, and it cannot be mistaken for a legal pattern.\n_pf_apgirsp_unbalanced(p) if count(split(p, \"[\")) != count(split(p, \"]\"))\n\n_pf_apgirsp_unbalanced(p) if count(split(p, \"(\")) != count(split(p, \")\"))\n\nviolation contains make_diag_full(\"pf-apigw-integration-response-selection-pattern\", \"ERROR\", name,\n\t\"Properties.Integration.IntegrationResponses\",\n\tsprintf(\"SelectionPattern '%s' has unbalanced brackets and is not a valid regular expression; the method create fails with \\\"Invalid regex pattern specified\\\"\", [p]),\n\t\"Write SelectionPattern as a valid regular expression (e.g. \\\".*Not Found.*\\\")\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integrationresponse.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tsome item in flatten_list(name, \"Properties.Integration.IntegrationResponses\")\n\tr := item.value\n\tis_object(r)\n\tp := r.SelectionPattern\n\tis_string(p)\n\t_pf_apgirsp_unbalanced(p)\n}\n"
+  },
+  {
+    "id": "pf-apigw-integration-timeout-range",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "REST integration timeouts are 50-29000 ms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-integration-timeout-range\", \"ERROR\", name,\n\t\"Properties.Integration.TimeoutInMillis\",\n\tsprintf(\"Integration.TimeoutInMillis %v is outside 50-29000; the method create fails with \\\"Timeout should be between 50 ms and 29000 ms\\\"\", [t]),\n\t\"Use an integration timeout between 50 and 29000 milliseconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tt := to_number(resolve(name, \"Properties.Integration.TimeoutInMillis\"))\n\t_pf_apgitr_bad(t)\n}\n\n_pf_apgitr_bad(t) if t < 50\n\n_pf_apgitr_bad(t) if t > 29000\n"
+  },
+  {
+    "id": "pf-apigw-integration-vpc-link-connection-id",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A VPC_LINK integration needs a ConnectionId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Absence is proven against the preprocessed document (see AGENTS.md).\n_pf_apgivlc_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tinteg := object.get(props, \"Integration\", {})\n\tis_object(integ)\n\tobject.get(integ, \"ConnectionId\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-integration-vpc-link-connection-id\", \"ERROR\", name,\n\t\"Properties.Integration.ConnectionId\",\n\t\"Integration.ConnectionType is VPC_LINK but ConnectionId is not set; the method create fails with \\\"ConnectionId should be set to the vpcLinkId or stage variable on connection type VPC_LINK\\\"\",\n\t\"Set Integration.ConnectionId to the VpcLink id (or a stage variable)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tresolve(name, \"Properties.Integration.ConnectionType\") == \"VPC_LINK\"\n\t_pf_apgivlc_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigw-method-authorization-scopes-cognito",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "AuthorizationScopes needs COGNITO_USER_POOLS authorization",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apgmasc_cognito(name) if resolve(name, \"Properties.AuthorizationType\") == \"COGNITO_USER_POOLS\"\n\nviolation contains make_diag_full(\"pf-apigw-method-authorization-scopes-cognito\", \"ERROR\", name,\n\t\"Properties.AuthorizationScopes\",\n\t\"AuthorizationScopes is set on a method whose AuthorizationType is not COGNITO_USER_POOLS; the method create fails with \\\"Authorization Scopes are only valid for COGNITO_USER_POOLS authorization type\\\"\",\n\t\"Set AuthorizationType: COGNITO_USER_POOLS, or drop AuthorizationScopes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tcount(flatten_list(name, \"Properties.AuthorizationScopes\")) > 0\n\tnot _pf_apgmasc_cognito(name)\n}\n"
   },
   {
     "id": "pf-apigw-method-authorizer-id",
@@ -80,6 +245,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both authorizer-backed authorization types point at an Authorizer; the\n# method create rejects them without one. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_apgmaid_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"AuthorizerId\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-method-authorizer-id\", \"ERROR\", name,\n\t\"Properties.AuthorizerId\",\n\tsprintf(\"AuthorizationType '%s' is set but AuthorizerId is not; the method create fails with \\\"Invalid authorizer ID specified. Setting the authorization type to CUSTOM or COGNITO_USER_POOLS requires a valid authorizer.\\\"\", [at]),\n\t\"Set AuthorizerId to the authorizer this method should use, or change AuthorizationType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tat := resolve(name, \"Properties.AuthorizationType\")\n\tat in {\"CUSTOM\", \"COGNITO_USER_POOLS\"}\n\t_pf_apgmaid_missing(name)\n}\n"
   },
   {
+    "id": "pf-apigw-method-http-verb",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "HttpMethod is one of the eight API Gateway verbs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apgmhv_verbs := {\"GET\", \"PUT\", \"POST\", \"DELETE\", \"PATCH\", \"OPTIONS\", \"HEAD\", \"ANY\"}\n\nviolation contains make_diag_full(\"pf-apigw-method-http-verb\", \"ERROR\", name,\n\t\"Properties.HttpMethod\",\n\tsprintf(\"HttpMethod '%s' is not an API Gateway method; the method create fails with \\\"Invalid HttpMethod specified. Valid options are GET,PUT,POST,DELETE,PATCH,OPTIONS,HEAD,ANY\\\"\", [m]),\n\t\"Use one of GET PUT POST DELETE PATCH OPTIONS HEAD ANY\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tm := resolve(name, \"Properties.HttpMethod\")\n\tis_string(m)\n\tnot input.resources[m]\n\tnot m in _pf_apgmhv_verbs\n}\n"
+  },
+  {
+    "id": "pf-apigw-method-request-parameter-key",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Method request parameter keys are mapping expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Method"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The key is a mapping expression, not a name: schema types it as a plain\n# string map.\n_pf_apgmrpk_ok(k) if regex.match(`^method\\.request\\.(querystring|path|header|multivaluequerystring|multivalueheader)\\.[^ ]+$`, k)\n\nviolation contains make_diag_full(\"pf-apigw-method-request-parameter-key\", \"ERROR\", name,\n\tsprintf(\"Properties.RequestParameters.%s\", [k]),\n\tsprintf(\"RequestParameters key '%s' is not a method request mapping expression; the method create fails with \\\"Invalid mapping expression parameter specified: %s\\\"\", [k, k]),\n\t\"Use method.request.querystring.<name>, method.request.path.<name> or method.request.header.<name>\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\trp := resolve(name, \"Properties.RequestParameters\")\n\tis_object(rp)\n\tsome k, _ in rp\n\tnot _pf_apgmrpk_ok(k)\n}\n"
+  },
+  {
+    "id": "pf-apigw-minimum-compression-size-range",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "MinimumCompressionSize is 0-10485760",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::RestApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-minimum-compression-size-range\", \"ERROR\", name,\n\t\"Properties.MinimumCompressionSize\",\n\tsprintf(\"MinimumCompressionSize %v is outside 0-10485760; the API create fails with \\\"Invalid minimum compression size, must be between 0 and 10485760\\\"\", [s]),\n\t\"Use a compression threshold between 0 and 10485760 bytes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-restapi.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::RestApi\")\n\ts := to_number(resolve(name, \"Properties.MinimumCompressionSize\"))\n\ts > 10485760\n}\n"
+  },
+  {
+    "id": "pf-apigw-model-content-type",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A model content type is a media type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Model"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-model-content-type\", \"ERROR\", name,\n\t\"Properties.ContentType\",\n\tsprintf(\"ContentType '%s' is not a media type; the model create fails with \\\"Invalid content type specified: %s\\\"\", [ct, ct]),\n\t\"Use a media type such as application/json\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-model.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Model\")\n\tct := resolve(name, \"Properties.ContentType\")\n\tis_string(ct)\n\tnot input.resources[ct]\n\tnot regex.match(`^[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+$`, ct)\n}\n"
+  },
+  {
+    "id": "pf-apigw-model-name-alphanumeric",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Model names are alphanumeric",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Model"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-model-name-alphanumeric\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"Model name '%s' is not alphanumeric; the model create fails with \\\"Model name must be alphanumeric: %s\\\"\", [n, n]),\n\t\"Use only letters and digits in the model name (no dashes or underscores)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-model.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Model\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot input.resources[n]\n\tnot regex.match(`^[a-zA-Z0-9]+$`, n)\n}\n"
+  },
+  {
     "id": "pf-apigw-model-schema-type",
     "service": "apigateway",
     "severity": "ERROR",
@@ -91,6 +311,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Schema body is opaque JSON to every schema layer. Full draft-4\n# validation is out of scope; a literal top-level \"type\" outside the\n# draft-4 set (a common typo like \"String\") is provably fatal.\n_pf_apgmst_types := {\"array\", \"boolean\", \"integer\", \"null\", \"number\", \"object\", \"string\"}\n\nviolation contains make_diag_full(\"pf-apigw-model-schema-type\", \"ERROR\", name,\n\t\"Properties.Schema.type\",\n\tsprintf(\"Model schema type '%s' is not a JSON Schema draft-4 type; the model create fails with \\\"Invalid model specified: Validation Result: warnings : [], errors : [Invalid model schema specified]\\\"\", [t]),\n\t\"Use one of array, boolean, integer, null, number, object, string (lowercase)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-model.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Model\")\n\tsch := resolve(name, \"Properties.Schema\")\n\tis_object(sch)\n\tt := object.get(sch, \"type\", \"__pf_absent\")\n\tt != \"__pf_absent\"\n\tis_string(t)\n\tnot t in _pf_apgmst_types\n}\n"
   },
   {
+    "id": "pf-apigw-mutual-tls-security-policy",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Mutual TLS requires SecurityPolicy TLS_1_2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SecurityPolicy defaults to TLS_1_0, so omitting it is a violation too - hence\n# the positive helper plus a negation (AGENTS.md).\n_pf_apgmtsp_tls12(name) if resolve(name, \"Properties.SecurityPolicy\") == \"TLS_1_2\"\n\nviolation contains make_diag_full(\"pf-apigw-mutual-tls-security-policy\", \"ERROR\", name,\n\t\"Properties.SecurityPolicy\",\n\t\"MutualTlsAuthentication is set but SecurityPolicy is not TLS_1_2 (the default is TLS_1_0); the domain name create fails with \\\"Mutual TLS authentication is only supported with TLS 1.2.\\\"\",\n\t\"Set SecurityPolicy: TLS_1_2 on the domain name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-domainname.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::DomainName\")\n\tis_object(resolve(name, \"Properties.MutualTlsAuthentication\"))\n\tnot _pf_apgmtsp_tls12(name)\n}\n"
+  },
+  {
+    "id": "pf-apigw-regional-certificate-property",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "REGIONAL domain names read RegionalCertificateArn, not CertificateArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-regional-certificate-property\", \"ERROR\", name,\n\t\"Properties.CertificateArn\",\n\t\"A REGIONAL domain name carries CertificateArn; the domain name create fails with \\\"Cannot import certificates for EDGE while REGIONAL is active.\\\"\",\n\t\"Put the certificate in RegionalCertificateArn, or switch EndpointConfiguration.Types to EDGE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-domainname.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::DomainName\")\n\tsome t in flatten_list(name, \"Properties.EndpointConfiguration.Types\")\n\tt.value == \"REGIONAL\"\n\tis_string(resolve(name, \"Properties.CertificateArn\"))\n}\n"
+  },
+  {
+    "id": "pf-apigw-regional-certificate-region",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A REGIONAL domain name needs a certificate from the deployment region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Lens 3: the certificate for a REGIONAL domain must be issued in the region the\n# stack deploys to, which only the enforce plugin knows.\n_pf_apgrcr_regional(name) if {\n\tsome t in flatten_list(name, \"Properties.EndpointConfiguration.Types\")\n\tt.value == \"REGIONAL\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-regional-certificate-region\", \"ERROR\", name,\n\t\"Properties.RegionalCertificateArn\",\n\tsprintf(\"RegionalCertificateArn points at an ACM certificate in %s but the stack deploys to %s; the domain name create fails with \\\"Invalid certificate ARN: ... Certificate must be in '%s'.\\\"\", [region, data.cdk_preflight.deploy_region, data.cdk_preflight.deploy_region]),\n\t\"Issue or import the certificate in the deployment region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-domainname.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::DomainName\")\n\t_pf_apgrcr_regional(name)\n\tarn := resolve(name, \"Properties.RegionalCertificateArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"acm\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-apigw-request-authorizer-identity-source",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "REQUEST authorizer identity sources are mapping expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# REQUEST authorizers take a comma-separated list of mapping expressions; the\n# TOKEN case is pf-apigw-token-authorizer-identity-source.\n_pf_apgrais_ok(s) if regex.match(`^(method\\.request\\.(header|querystring|path)\\.[^ ]+|context\\.[^ ]+|stageVariables\\.[^ ]+)$`, s)\n\nviolation contains make_diag_full(\"pf-apigw-request-authorizer-identity-source\", \"ERROR\", name,\n\t\"Properties.IdentitySource\",\n\tsprintf(\"IdentitySource part '%s' is not a mapping expression; the authorizer create fails with \\\"Invalid request identity source expression: %s\\\"\", [part, part]),\n\t\"Use method.request.header.<name> (comma-separated for several), context.<name> or stageVariables.<name>\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Authorizer\")\n\tresolve(name, \"Properties.Type\") == \"REQUEST\"\n\tsrc := resolve(name, \"Properties.IdentitySource\")\n\tis_string(src)\n\tsome raw in split(src, \",\")\n\tpart := trim_space(raw)\n\tpart != \"\"\n\tnot _pf_apgrais_ok(part)\n}\n"
+  },
+  {
     "id": "pf-apigw-resource-path-part",
     "service": "apigateway",
     "severity": "ERROR",
@@ -100,6 +364,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ApiGateway::Resource"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Valid forms per the service error itself: plain [a-zA-Z0-9._:-]+, or a\n# whole-part variable {name} / greedy {name+}.\n_pf_apgrpp_ok(pp) if regex.match(`^[a-zA-Z0-9._:-]+$`, pp)\n\n_pf_apgrpp_ok(pp) if regex.match(`^\\{[a-zA-Z0-9._-]+\\+?\\}$`, pp)\n\nviolation contains make_diag_full(\"pf-apigw-resource-path-part\", \"ERROR\", name,\n\t\"Properties.PathPart\",\n\tsprintf(\"PathPart '%s' has characters the service rejects; the resource create fails with \\\"Resource's path part only allow a-zA-Z0-9._-: or a valid greedy path variable and curly braces at the beginning and the end.\\\"\", [pp]),\n\t\"Use only a-zA-Z0-9._-: in the path part, or a single {variable} / {greedy+} form\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-resource.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Resource\")\n\tpp := resolve(name, \"Properties.PathPart\")\n\tis_string(pp)\n\tnot _pf_apgrpp_ok(pp)\n}\n"
+  },
+  {
+    "id": "pf-apigw-rest-api-policy-document",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A REST API policy must be a policy document",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::RestApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the plainly-not-a-document case is judged; a policy written as an object\n# is rendered as JSON by CloudFormation.\nviolation contains make_diag_full(\"pf-apigw-rest-api-policy-document\", \"ERROR\", name,\n\t\"Properties.Policy\",\n\tsprintf(\"Policy is the string '%s', not a policy document; the API create fails with \\\"Invalid policy document. Please check the policy syntax and ensure that Principals are valid.\\\"\", [pol]),\n\t\"Write the resource policy as a JSON object (or a JSON document string starting with {)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-restapi.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::RestApi\")\n\tpol := resolve(name, \"Properties.Policy\")\n\tis_string(pol)\n\tnot input.resources[pol]\n\tnot startswith(trim_space(pol), \"{\")\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-access-log-destination-arn",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Access logs go to CloudWatch Logs or Firehose only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-stage-access-log-destination-arn\", \"ERROR\", name,\n\t\"Properties.AccessLogSetting.DestinationArn\",\n\tsprintf(\"Access log DestinationArn points at %s; the stage create fails with \\\"The ARN must be a valid CloudWatch Logs log group or Kinesis Data Firehose delivery stream\\\"\", [parts[2]]),\n\t\"Use a CloudWatch Logs log group ARN or a Kinesis Data Firehose delivery stream ARN\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tarn := resolve(name, \"Properties.AccessLogSetting.DestinationArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tnot parts[2] in {\"logs\", \"firehose\"}\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-access-log-firehose-prefix",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "An access log delivery stream is named amazon-apigateway-*",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The stream name inside the ARN carries the constraint.\nviolation contains make_diag_full(\"pf-apigw-stage-access-log-firehose-prefix\", \"ERROR\", name,\n\t\"Properties.AccessLogSetting.DestinationArn\",\n\tsprintf(\"Access log delivery stream '%s' does not start with \\\"amazon-apigateway-\\\"; the stage create fails with \\\"Kinesis Firehose delivery stream name must begin with the characters 'amazon-apigateway-'\\\"\", [stream]),\n\t\"Rename the delivery stream to amazon-apigateway-<name>\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tarn := resolve(name, \"Properties.AccessLogSetting.DestinationArn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"firehose\"\n\tstartswith(parts[5], \"deliverystream/\")\n\tstream := substring(parts[5], 15, -1)\n\tnot startswith(stream, \"amazon-apigateway-\")\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-cache-ttl-range",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Method setting cache TTL tops out at 3600 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-stage-cache-ttl-range\", \"ERROR\", name,\n\t\"Properties.MethodSettings\",\n\tsprintf(\"MethodSettings CacheTtlInSeconds %v is over the cap; the stage update fails with \\\"Invalid time-to-live setting, must be an integer no greater than 3600\\\"\", [ttl]),\n\t\"Use a cache TTL between 0 and 3600 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-stage-methodsetting.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tsome item in flatten_list(name, \"Properties.MethodSettings\")\n\tm := item.value\n\tis_object(m)\n\tttl := to_number(m.CacheTtlInSeconds)\n\tttl > 3600\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-method-setting-http-method",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Method setting HttpMethod is a verb or *",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apgmshm_verbs := {\"GET\", \"PUT\", \"POST\", \"DELETE\", \"PATCH\", \"OPTIONS\", \"HEAD\", \"ANY\", \"*\"}\n\nviolation contains make_diag_full(\"pf-apigw-stage-method-setting-http-method\", \"ERROR\", name,\n\t\"Properties.MethodSettings\",\n\tsprintf(\"MethodSettings HttpMethod '%s' is not an API Gateway method; the stage update fails with \\\"Invalid method setting path\\\"\", [m]),\n\t\"Use one of GET PUT POST DELETE PATCH OPTIONS HEAD ANY, or * for every method\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-stage-methodsetting.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tsome item in flatten_list(name, \"Properties.MethodSettings\")\n\ts := item.value\n\tis_object(s)\n\tm := s.HttpMethod\n\tis_string(m)\n\tnot m in _pf_apgmshm_verbs\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-method-setting-resource-path",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Method setting paths start with / and encode slashes as ~1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The path is the patch path of the underlying UpdateStage call: it starts with\n# a slash and encodes the resource's own slashes as ~1.\n_pf_apgmsrp_ok(p) if {\n\tstartswith(p, \"/\")\n\tnot contains(substring(p, 1, -1), \"/\")\n}\n\nviolation contains make_diag_full(\"pf-apigw-stage-method-setting-resource-path\", \"ERROR\", name,\n\t\"Properties.MethodSettings\",\n\tsprintf(\"MethodSettings ResourcePath '%s' is not a method setting path; the stage update fails with \\\"Invalid method setting path: %s\\\"\", [p, p]),\n\t\"Start the path with / and encode the resource path's slashes as ~1 (e.g. /~1pets), or use /* for every method\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-stage-methodsetting.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tsome item in flatten_list(name, \"Properties.MethodSettings\")\n\tm := item.value\n\tis_object(m)\n\tp := m.ResourcePath\n\tis_string(p)\n\tnot _pf_apgmsrp_ok(p)\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-name-charset",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Stage names allow only a-zA-Z0-9_",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-stage-name-charset\", \"ERROR\", name,\n\t\"Properties.StageName\",\n\tsprintf(\"StageName '%s' has characters outside a-zA-Z0-9_; the stage create fails with \\\"Stage name only allows a-zA-Z0-9_\\\"\", [s]),\n\t\"Use only letters, digits and underscores in the stage name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-stage.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\ts := resolve(name, \"Properties.StageName\")\n\tis_string(s)\n\tnot input.resources[s]\n\tnot regex.match(`^[a-zA-Z0-9_]+$`, s)\n}\n"
+  },
+  {
+    "id": "pf-apigw-stage-variable-name",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Stage variable names allow only word characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The value charset is pf-apigw-stage-variable-value; this is the key.\nviolation contains make_diag_full(\"pf-apigw-stage-variable-name\", \"ERROR\", name,\n\tsprintf(\"Properties.Variables.%s\", [k]),\n\tsprintf(\"Stage variable name '%s' has characters outside word characters; the stage create fails with \\\"Invalid stage variable name: %s. Please use names with only word characters.\\\"\", [k, k]),\n\t\"Use only letters, digits and underscores in the variable name\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tvars := resolve(name, \"Properties.Variables\")\n\tis_object(vars)\n\tsome k, _ in vars\n\tnot regex.match(`^[a-zA-Z0-9_]+$`, k)\n}\n"
   },
   {
     "id": "pf-apigw-stage-variable-value",
@@ -124,6 +476,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# TOKEN authorizers read the token from the header named by IdentitySource,\n# so the create call rejects its absence. REQUEST authorizers are out of\n# scope: they need it only with caching enabled (unmeasured). Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_apgtis_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"IdentitySource\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-token-authorizer-identity-source\", \"ERROR\", name,\n\t\"Properties.IdentitySource\",\n\t\"TOKEN authorizer has no IdentitySource; the authorizer create fails with \\\"IdentitySource cannot be empty\\\"\",\n\t\"Set IdentitySource, e.g. method.request.header.Authorization\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Authorizer\")\n\tresolve(name, \"Properties.Type\") == \"TOKEN\"\n\t_pf_apgtis_missing(name)\n}\n"
   },
   {
+    "id": "pf-apigw-usage-plan-api-stage-exists",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A usage plan references a stage the template creates",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::UsagePlan"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A literal stage name must match a stage the template creates - either an\n# explicit Stage or the one a Deployment creates through StageName. A Ref\n# resolves to a logical id, which is what `input.resources` filters out.\n_pf_apgupas_names contains n if {\n\tsome s in resources_of_type(\"AWS::ApiGateway::Stage\")\n\tn := resolve(s, \"Properties.StageName\")\n\tis_string(n)\n}\n\n# Only judge stages of an API this template creates: a Ref inside a list item\n# surfaces as {\"__ref\": \"<logical id>\"}, and an imported id is skipped.\n_pf_apgupas_own_api(a) if {\n\tref := a.ApiId.__ref\n\tref in resources_of_type(\"AWS::ApiGateway::RestApi\")\n}\n\n_pf_apgupas_names contains n if {\n\tsome d in resources_of_type(\"AWS::ApiGateway::Deployment\")\n\tn := resolve(d, \"Properties.StageName\")\n\tis_string(n)\n}\n\nviolation contains make_diag_full(\"pf-apigw-usage-plan-api-stage-exists\", \"ERROR\", name,\n\t\"Properties.ApiStages\",\n\tsprintf(\"ApiStages references stage '%s', which no Stage or Deployment in this template creates; the usage plan create fails with \\\"API Stage not found\\\"\", [st]),\n\t\"Reference the stage by { \\\"Ref\\\": \\\"<Stage logical id>\\\" }, or use the StageName the template actually deploys\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-usageplan-apistage.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::UsagePlan\")\n\tsome item in flatten_list(name, \"Properties.ApiStages\")\n\ta := item.value\n\tis_object(a)\n\t_pf_apgupas_own_api(a)\n\tst := a.Stage\n\tis_string(st)\n\tnot input.resources[st]\n\tnot st in _pf_apgupas_names\n}\n"
+  },
+  {
+    "id": "pf-apigw-usage-plan-quota-limit",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A usage plan quota limit is 1 or more",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::UsagePlan"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-usage-plan-quota-limit\", \"ERROR\", name,\n\t\"Properties.Quota.Limit\",\n\tsprintf(\"Quota.Limit is %v; the usage plan create fails with \\\"Usage Plan quota limit must be a non-negative numeric\\\"\", [l]),\n\t\"Use a quota limit of 1 or more, or drop Quota entirely\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-usageplan-quotasettings.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::UsagePlan\")\n\tl := to_number(resolve(name, \"Properties.Quota.Limit\"))\n\tl < 1\n}\n"
+  },
+  {
+    "id": "pf-apigw-usage-plan-quota-offset-range",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "The quota offset ceiling depends on the quota period",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::UsagePlan"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The offset ceiling is a function of the period (the doc's combination table).\n_pf_apgupqo_max(\"DAY\") := 0\n\n_pf_apgupqo_max(\"WEEK\") := 6\n\n_pf_apgupqo_max(\"MONTH\") := 27\n\nviolation contains make_diag_full(\"pf-apigw-usage-plan-quota-offset-range\", \"ERROR\", name,\n\t\"Properties.Quota.Offset\",\n\tsprintf(\"Quota.Offset %v is out of range for period %s (0-%d); the usage plan create fails with \\\"Usage Plan quota offset must be between 0 and %d inclusive in the %s period\\\"\", [off, period, mx, mx, period]),\n\tsprintf(\"Use an offset between 0 and %d for the %s period\", [mx, period]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-usageplan-quotasettings.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::UsagePlan\")\n\tperiod := resolve(name, \"Properties.Quota.Period\")\n\tmx := _pf_apgupqo_max(period)\n\toff := to_number(resolve(name, \"Properties.Quota.Offset\"))\n\toff > mx\n}\n"
+  },
+  {
+    "id": "pf-apigw-usage-plan-quota-period-required",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A usage plan quota needs a period",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::UsagePlan"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apgupqp_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tq := object.get(props, \"Quota\", {})\n\tis_object(q)\n\tobject.get(q, \"Period\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-usage-plan-quota-period-required\", \"ERROR\", name,\n\t\"Properties.Quota.Period\",\n\t\"Quota is set but Quota.Period is not; the usage plan create fails with \\\"Invalid Usage Plan quota period specified. Must be one of [DAY, WEEK, MONTH]\\\"\",\n\t\"Set Quota.Period to DAY, WEEK or MONTH\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-usageplan-quotasettings.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::UsagePlan\")\n\tis_object(resolve(name, \"Properties.Quota\"))\n\t_pf_apgupqp_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigw-usage-plan-throttle-key",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "Per-method throttle keys are {resourcePath}/{httpMethod}",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::UsagePlan"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The map key is \"{resourcePath}/{httpMethod}\" - a DSL inside a key.\n_pf_apguptk_ok(k) if regex.match(`^/.*/(GET|PUT|POST|DELETE|PATCH|OPTIONS|HEAD|ANY|\\*)$`, k)\n\nviolation contains make_diag_full(\"pf-apigw-usage-plan-throttle-key\", \"ERROR\", name,\n\t\"Properties.ApiStages\",\n\tsprintf(\"Per-method throttle key '%s' is not \\\"{resourcePath}/{httpMethod}\\\"; the usage plan create fails with \\\"Invalid method {resourcePath: %s,method: } specified\\\"\", [k, k]),\n\t\"Use keys like /pets/GET (or //GET for the root resource)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-usageplan-apistage.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::UsagePlan\")\n\tsome item in flatten_list(name, \"Properties.ApiStages\")\n\ta := item.value\n\tis_object(a)\n\tth := a.Throttle\n\tis_object(th)\n\tsome k, _ in th\n\tnot _pf_apguptk_ok(k)\n}\n"
+  },
+  {
+    "id": "pf-apigw-vpc-endpoint-ids-private-only",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "VpcEndpointIds belongs to PRIVATE APIs only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::RestApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apgveip_private(name) if {\n\tsome t in flatten_list(name, \"Properties.EndpointConfiguration.Types\")\n\tt.value == \"PRIVATE\"\n}\n\nviolation contains make_diag_full(\"pf-apigw-vpc-endpoint-ids-private-only\", \"ERROR\", name,\n\t\"Properties.EndpointConfiguration.VpcEndpointIds\",\n\t\"VpcEndpointIds is set on an API whose endpoint type is not PRIVATE; the API create fails with \\\"VPCEndpoints can only be specified with PRIVATE apis.\\\"\",\n\t\"Set EndpointConfiguration.Types to [PRIVATE], or drop VpcEndpointIds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-restapi-endpointconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::RestApi\")\n\tcount(flatten_list(name, \"Properties.EndpointConfiguration.VpcEndpointIds\")) > 0\n\tnot _pf_apgveip_private(name)\n}\n"
+  },
+  {
+    "id": "pf-apigw-vpc-link-single-target",
+    "service": "apigateway",
+    "severity": "ERROR",
+    "title": "A VPC link takes exactly one target load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGateway::VpcLink"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-vpc-link-single-target\", \"ERROR\", name,\n\t\"Properties.TargetArns\",\n\tsprintf(\"TargetArns lists %d load balancers; the VPC link create fails with \\\"More than one target arn specified for vpc link.\\\"\", [count(t)]),\n\t\"List exactly one Network Load Balancer ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-vpclink.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::VpcLink\")\n\tt := flatten_list(name, \"Properties.TargetArns\")\n\tcount(t) > 1\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-access-log-destination-log-group",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "HTTP/WebSocket access logs go to CloudWatch Logs only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# REST stages also take a Firehose stream; HTTP and WebSocket stages do not.\nviolation contains make_diag_full(\"pf-apigwv2-access-log-destination-log-group\", \"ERROR\", name,\n\t\"Properties.AccessLogSettings.DestinationArn\",\n\tsprintf(\"Access log DestinationArn points at %s; an ApiGatewayV2 stage only takes a CloudWatch Logs log group\", [parts[2]]),\n\t\"Use a CloudWatch Logs log group ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-stage-accesslogsettings.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Stage\")\n\tarn := resolve(name, \"Properties.AccessLogSettings.DestinationArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] != \"logs\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-access-log-format-request-id",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "An access log format must carry a request id",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The REST equivalent is pf-apigw-access-log-format-request-id.\n_pf_agvalfr_has_id(f) if contains(f, \"$context.requestId\")\n\n_pf_agvalfr_has_id(f) if contains(f, \"$context.extendedRequestId\")\n\nviolation contains make_diag_full(\"pf-apigwv2-access-log-format-request-id\", \"ERROR\", name,\n\t\"Properties.AccessLogSettings.Format\",\n\t\"The access log format has neither $context.requestId nor $context.extendedRequestId; the stage create fails with \\\"Access Log format must include either $context.requestId or $context.extendedRequestId\\\"\",\n\t\"Add $context.requestId to the access log format\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-stage-accesslogsettings.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Stage\")\n\tf := resolve(name, \"Properties.AccessLogSettings.Format\")\n\tis_string(f)\n\tnot _pf_agvalfr_has_id(f)\n}\n"
+  },
+  {
     "id": "pf-apigwv2-api-name-required",
     "service": "apigatewayv2",
     "severity": "ERROR",
@@ -133,6 +584,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ApiGatewayV2::Api"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Mirrors cfn-lint E3660 for REST APIs, which has no ApiGatewayV2\n# counterpart: without a Body to carry info.title, Name is mandatory.\n# Absence is proven against the preprocessed document (see AGENTS.md).\n_pf_agv2anr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-api-name-required\", \"ERROR\", name,\n\t\"Properties.Name\",\n\t\"Api has no Name and no OpenAPI body to take one from; the API create fails with \\\"Invalid API name specified\\\"\",\n\t\"Set Name, or provide the definition via Body / BodyS3Location\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\t_pf_agv2anr_absent(name, \"Name\")\n\t_pf_agv2anr_absent(name, \"Body\")\n\t_pf_agv2anr_absent(name, \"BodyS3Location\")\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-authorizer-ttl-identity-source",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Authorizer caching needs an identity source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-authorizer-ttl-identity-source\", \"ERROR\", name,\n\t\"Properties.IdentitySource\",\n\tsprintf(\"AuthorizerResultTtlInSeconds is %v (caching on) but IdentitySource is empty; the authorizer create fails with \\\"Identity source must be set if authorizer caching is enabled (TTL is greater than 0)\\\"\", [ttl]),\n\t\"List the identity sources the cache key is built from, or set AuthorizerResultTtlInSeconds: 0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tttl := to_number(resolve(name, \"Properties.AuthorizerResultTtlInSeconds\"))\n\tttl > 0\n\tcount(flatten_list(name, \"Properties.IdentitySource\")) == 0\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-authorizer-ttl-range",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Authorizer result TTL tops out at 3600 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-authorizer-ttl-range\", \"ERROR\", name,\n\t\"Properties.AuthorizerResultTtlInSeconds\",\n\tsprintf(\"AuthorizerResultTtlInSeconds %v is over the cap; the authorizer create fails with \\\"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\\\"\", [ttl]),\n\t\"Use a TTL between 0 and 3600 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tttl := to_number(resolve(name, \"Properties.AuthorizerResultTtlInSeconds\"))\n\tttl > 3600\n}\n"
   },
   {
     "id": "pf-apigwv2-aws-proxy-payload-version",
@@ -157,6 +630,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The CORS spec forbids credentialed requests against a wildcard origin,\n# and the API create enforces it.\nviolation contains make_diag_full(\"pf-apigwv2-cors-credentials-wildcard\", \"ERROR\", name,\n\tsprintf(\"Properties.CorsConfiguration.AllowOrigins.%d\", [o.index]),\n\t\"CorsConfiguration sets AllowCredentials with a '*' origin; the API create fails with \\\"allow-credentials is not supported if 'allow-origin' is *\\\"\",\n\t\"List explicit origins, or drop AllowCredentials\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tcoerce_to_bool(resolve(name, \"Properties.CorsConfiguration.AllowCredentials\")) == true\n\tsome o in flatten_list(name, \"Properties.CorsConfiguration.AllowOrigins\")\n\to.value == \"*\"\n}\n"
   },
   {
+    "id": "pf-apigwv2-domain-certificate-region",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A custom domain needs a certificate from the deployment region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Lens 3: the certificate must be issued in the region the stack deploys to.\nviolation contains make_diag_full(\"pf-apigwv2-domain-certificate-region\", \"ERROR\", name,\n\t\"Properties.DomainNameConfigurations\",\n\tsprintf(\"DomainNameConfigurations references an ACM certificate in %s but the stack deploys to %s; the domain name create fails with \\\"Invalid certificate ARN ... Certificate must be in '%s'.\\\"\", [region, data.cdk_preflight.deploy_region, data.cdk_preflight.deploy_region]),\n\t\"Issue or import the certificate in the deployment region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-domainname-domainnameconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::DomainName\")\n\tsome item in flatten_list(name, \"Properties.DomainNameConfigurations\")\n\tc := item.value\n\tis_object(c)\n\tarn := c.CertificateArn\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"acm\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-domain-endpoint-type-regional",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "HTTP/WebSocket custom domains are REGIONAL only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-domain-endpoint-type-regional\", \"ERROR\", name,\n\t\"Properties.DomainNameConfigurations\",\n\t\"DomainNameConfigurations asks for an EDGE endpoint; the domain name create fails with \\\"EDGE endpoint type is not supported for APIGatewayV2 domainName\\\"\",\n\t\"Use EndpointType: REGIONAL (HTTP and WebSocket custom domains are regional only)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-domainname-domainnameconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::DomainName\")\n\tsome item in flatten_list(name, \"Properties.DomainNameConfigurations\")\n\tc := item.value\n\tis_object(c)\n\tc.EndpointType == \"EDGE\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-domain-name-charset",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Custom domain names are lower case",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-domain-name-charset\", \"ERROR\", name,\n\t\"Properties.DomainName\",\n\tsprintf(\"DomainName '%s' has characters a custom domain name cannot take (upper case letters or underscores)\", [d]),\n\t\"Use lower case letters, digits, dots and hyphens only\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-domainname.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::DomainName\")\n\td := resolve(name, \"Properties.DomainName\")\n\tis_string(d)\n\tnot input.resources[d]\n\tnot regex.match(`^[a-z0-9.-]+$`, d)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-http-identity-source-expression",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "HTTP API identity sources are $-prefixed selection expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# HTTP APIs take $-prefixed selection expressions; the WebSocket form\n# (route.request.header.X) is a different rule.\n_pf_agvhise_ok(s) if regex.match(`^\\$(request\\.(header|querystring)\\.[^ ]+|context\\.[^ ]+|stageVariables\\.[^ ]+)$`, s)\n\nviolation contains make_diag_full(\"pf-apigwv2-http-identity-source-expression\", \"ERROR\", name,\n\t\"Properties.IdentitySource\",\n\tsprintf(\"IdentitySource '%s' is not a selection expression; the authorizer create fails with \\\"Invalid identity source expression: %s\\\"\", [s, s]),\n\t\"Use $request.header.<name>, $request.querystring.<name>, $context.<name> or $stageVariables.<name>\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\t_pf_apigwv2lib_protocol(name) == \"HTTP\"\n\tsome item in flatten_list(name, \"Properties.IdentitySource\")\n\ts := item.value\n\tis_string(s)\n\tnot _pf_agvhise_ok(s)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-http-proxy-integration-method",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "An HTTP_PROXY integration needs an IntegrationMethod",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvhpim_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"IntegrationMethod\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-http-proxy-integration-method\", \"ERROR\", name,\n\t\"Properties.IntegrationMethod\",\n\t\"IntegrationType is HTTP_PROXY but IntegrationMethod is not set; the integration create fails with \\\"HttpMethod parameter method must be specified for integrationType HTTPPROXY\\\"\",\n\t\"Set IntegrationMethod (e.g. ANY or GET)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tresolve(name, \"Properties.IntegrationType\") == \"HTTP_PROXY\"\n\t_pf_agvhpim_missing(name)\n}\n"
+  },
+  {
     "id": "pf-apigwv2-http-proxy-payload-version",
     "service": "apigatewayv2",
     "severity": "ERROR",
@@ -179,6 +707,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# WebSocket route keys are free-form, so this only judges routes whose Api\n# sibling is provably HTTP. TRACE is deploy-verified as rejected; paths with\n# spaces are left alone (unmeasured).\n_pf_agv2rk_methods := {\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\", \"HEAD\", \"OPTIONS\", \"ANY\"}\n\n_pf_agv2rk_http_api(name) if {\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(api, \"Properties.ProtocolType\") == \"HTTP\"\n}\n\n_pf_agv2rk_ok(rk) if rk == \"$default\"\n\n_pf_agv2rk_ok(rk) if {\n\tparts := split(rk, \" \")\n\tcount(parts) >= 2\n\tparts[0] in _pf_agv2rk_methods\n\tstartswith(parts[1], \"/\")\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-http-route-key\", \"ERROR\", name,\n\t\"Properties.RouteKey\",\n\tsprintf(\"RouteKey '%s' is malformed for an HTTP API; the route create fails with 'The provided route key is not formatted properly for HTTP protocol. Format should be \\\"[HTTP METHOD] /[RESOURCE PATH]\\\" or \\\"$default\\\"'\", [rk]),\n\t\"Use \\\"METHOD /path\\\" with METHOD one of GET POST PUT PATCH DELETE HEAD OPTIONS ANY, or $default\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-routes.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\t_pf_agv2rk_http_api(name)\n\trk := resolve(name, \"Properties.RouteKey\")\n\tis_string(rk)\n\tnot _pf_agv2rk_ok(rk)\n}\n"
   },
   {
+    "id": "pf-apigwv2-http-route-no-api-key",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "ApiKeyRequired is not supported on HTTP APIs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Route"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-http-route-no-api-key\", \"ERROR\", name,\n\t\"Properties.ApiKeyRequired\",\n\t\"ApiKeyRequired is set on a route of an HTTP API; the route create fails with \\\"ApiKeyRequired is not currently supported for HTTP APIs.\\\"\",\n\t\"Drop ApiKeyRequired (API keys exist for WebSocket APIs and REST APIs only)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-route.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\t_pf_apigwv2lib_protocol(name) == \"HTTP\"\n\tresolve(name, \"Properties.ApiKeyRequired\") == true\n}\n"
+  },
+  {
     "id": "pf-apigwv2-http-route-selection",
     "service": "apigatewayv2",
     "severity": "ERROR",
@@ -188,6 +727,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ApiGatewayV2::Api"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both spellings deploy-verified as accepted: the documented\n# \"$request.method $request.path\" and the \"${request.method} ${request.path}\"\n# form the service error itself prints (bench v02b).\n_pf_agv2hrs_allowed := {\"$request.method $request.path\", \"${request.method} ${request.path}\"}\n\nviolation contains make_diag_full(\"pf-apigwv2-http-route-selection\", \"ERROR\", name,\n\t\"Properties.RouteSelectionExpression\",\n\tsprintf(\"HTTP API RouteSelectionExpression '%s' is not supported; the API create fails with 'Route selection expression is currently limited to \\\"${request.method} ${request.path}\\\"'\", [rse]),\n\t\"Use $request.method $request.path, or omit the property (HTTP APIs default to it)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(name, \"Properties.ProtocolType\") == \"HTTP\"\n\trse := resolve(name, \"Properties.RouteSelectionExpression\")\n\tis_string(rse)\n\tnot rse in _pf_agv2hrs_allowed\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-response-websocket-only",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Integration responses exist on WebSocket APIs only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::IntegrationResponse"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-response-websocket-only\", \"ERROR\", name,\n\t\"Properties.IntegrationId\",\n\t\"IntegrationResponse belongs to an HTTP API; the create fails with \\\"IntegrationResponses are currently not supported for this API protocol type.\\\"\",\n\t\"Drop the IntegrationResponse (it exists for WebSocket APIs only)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integrationresponse.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::IntegrationResponse\")\n\t_pf_apigwv2lib_protocol(name) == \"HTTP\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-subtype-credentials",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A subtype integration needs a CredentialsArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvisc_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"CredentialsArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-subtype-credentials\", \"ERROR\", name,\n\t\"Properties.CredentialsArn\",\n\tsprintf(\"IntegrationSubtype %s is set but CredentialsArn is not; the integration create fails with \\\"Role ARN must be specified for AWS integration configuration with Subtype: %s\\\"\", [sub, sub]),\n\t\"Set CredentialsArn to a role API Gateway can assume to call the service\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tsub := resolve(name, \"Properties.IntegrationSubtype\")\n\tis_string(sub)\n\t_pf_agvisc_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-subtype-known",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "IntegrationSubtype is one of the ten AWS service subtypes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvisk_known := {\n\t\"EventBridge-PutEvents\",\n\t\"SQS-SendMessage\",\n\t\"SQS-ReceiveMessage\",\n\t\"SQS-DeleteMessage\",\n\t\"SQS-PurgeQueue\",\n\t\"AppConfig-GetConfiguration\",\n\t\"Kinesis-PutRecord\",\n\t\"StepFunctions-StartExecution\",\n\t\"StepFunctions-StartSyncExecution\",\n\t\"StepFunctions-StopExecution\",\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-subtype-known\", \"ERROR\", name,\n\t\"Properties.IntegrationSubtype\",\n\tsprintf(\"IntegrationSubtype '%s' is not an AWS service integration subtype; the integration create fails with \\\"Operation: %s is not supported.\\\"\", [sub, sub]),\n\t\"Use one of EventBridge-PutEvents, SQS-SendMessage/ReceiveMessage/DeleteMessage/PurgeQueue, AppConfig-GetConfiguration, Kinesis-PutRecord, StepFunctions-StartExecution/StartSyncExecution/StopExecution\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services-reference.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tsub := resolve(name, \"Properties.IntegrationSubtype\")\n\tis_string(sub)\n\tnot input.resources[sub]\n\tnot sub in _pf_agvisk_known\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-subtype-payload-version",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Subtype integrations are payload format 1.0 only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-subtype-payload-version\", \"ERROR\", name,\n\t\"Properties.PayloadFormatVersion\",\n\tsprintf(\"IntegrationSubtype %s is used with PayloadFormatVersion %s; AWS service integrations are 1.0 only and the integration create fails with \\\"Operation: %s is not supported.\\\"\", [sub, v, sub]),\n\t\"Set PayloadFormatVersion: \\\"1.0\\\" for an AWS service (subtype) integration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tsub := resolve(name, \"Properties.IntegrationSubtype\")\n\tis_string(sub)\n\tv := resolve(name, \"Properties.PayloadFormatVersion\")\n\tis_string(v)\n\tv != \"1.0\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-subtype-required-parameters",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Each integration subtype has mandatory request parameters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The doc's per-subtype parameter table: which RequestParameters are mandatory\n# depends on the subtype, which no schema expresses.\n_pf_agvisrp_required(\"EventBridge-PutEvents\") := {\"Detail\", \"DetailType\", \"Source\"}\n\n_pf_agvisrp_required(\"SQS-SendMessage\") := {\"QueueUrl\", \"MessageBody\"}\n\n_pf_agvisrp_required(\"SQS-ReceiveMessage\") := {\"QueueUrl\"}\n\n_pf_agvisrp_required(\"SQS-DeleteMessage\") := {\"QueueUrl\", \"ReceiptHandle\"}\n\n_pf_agvisrp_required(\"SQS-PurgeQueue\") := {\"QueueUrl\"}\n\n_pf_agvisrp_required(\"AppConfig-GetConfiguration\") := {\"Application\", \"Environment\", \"Configuration\", \"ClientId\"}\n\n_pf_agvisrp_required(\"Kinesis-PutRecord\") := {\"StreamName\", \"Data\", \"PartitionKey\"}\n\n_pf_agvisrp_required(\"StepFunctions-StartExecution\") := {\"StateMachineArn\"}\n\n_pf_agvisrp_required(\"StepFunctions-StartSyncExecution\") := {\"StateMachineArn\"}\n\n_pf_agvisrp_required(\"StepFunctions-StopExecution\") := {\"ExecutionArn\"}\n\n_pf_agvisrp_present(rp, p) if {\n\tsome k, _ in rp\n\tk == p\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-subtype-required-parameters\", \"ERROR\", name,\n\t\"Properties.RequestParameters\",\n\tsprintf(\"IntegrationSubtype %s requires the request parameter %s; the integration create fails with \\\"Operation: %s requires enabling passthrough, or defining all of the following parameters\\\"\", [sub, p, sub]),\n\tsprintf(\"Add \\\"%s\\\" to RequestParameters\", [p]),\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services-reference.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tsub := resolve(name, \"Properties.IntegrationSubtype\")\n\treq := _pf_agvisrp_required(sub)\n\trp := resolve(name, \"Properties.RequestParameters\")\n\tis_object(rp)\n\tsome p in req\n\tnot _pf_agvisrp_present(rp, p)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-timeout-range",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "HTTP API integration timeouts are 50-30000 ms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvitr_bad(t) if t < 50\n\n_pf_agvitr_bad(t) if t > 30000\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-timeout-range\", \"ERROR\", name,\n\t\"Properties.TimeoutInMillis\",\n\tsprintf(\"TimeoutInMillis %v is outside 50-30000 for an HTTP API; the integration create fails with \\\"Timeout should be between 50 ms and 30000 ms\\\"\", [t]),\n\t\"Use an integration timeout between 50 and 30000 milliseconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\t_pf_apigwv2lib_protocol(name) == \"HTTP\"\n\tt := to_number(resolve(name, \"Properties.TimeoutInMillis\"))\n\t_pf_agvitr_bad(t)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-integration-vpc-link-connection-id",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A VPC_LINK integration needs a ConnectionId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvivlc_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"ConnectionId\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-integration-vpc-link-connection-id\", \"ERROR\", name,\n\t\"Properties.ConnectionId\",\n\t\"ConnectionType is VPC_LINK but ConnectionId is not set; the integration create fails with \\\"ConnectionId must be set to vpcLinkId for ConnectionType VPC_LINK\\\"\",\n\t\"Set ConnectionId to the VpcLink id\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tresolve(name, \"Properties.ConnectionType\") == \"VPC_LINK\"\n\t_pf_agvivlc_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-jwt-audience-required",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A JWT authorizer needs at least one audience",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-jwt-audience-required\", \"ERROR\", name,\n\t\"Properties.JwtConfiguration.Audience\",\n\t\"A JWT authorizer has no JwtConfiguration.Audience; the authorizer create is rejected without at least one audience\",\n\t\"List the audiences (client ids) the tokens are issued for\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-authorizer-jwtconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tresolve(name, \"Properties.AuthorizerType\") == \"JWT\"\n\tcount(flatten_list(name, \"Properties.JwtConfiguration.Audience\")) == 0\n}\n"
   },
   {
     "id": "pf-apigwv2-jwt-authorizer-config",
@@ -201,6 +828,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A JWT authorizer is nothing but its issuer/audience config, so the\n# create call rejects its absence. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_agv2jac_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"JwtConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-jwt-authorizer-config\", \"ERROR\", name,\n\t\"Properties.JwtConfiguration\",\n\t\"JWT authorizer has no JwtConfiguration; the authorizer create fails with \\\"JwtConfiguration must not be null for JWT Authorizer\\\"\",\n\t\"Set JwtConfiguration with Issuer and Audience\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tresolve(name, \"Properties.AuthorizerType\") == \"JWT\"\n\t_pf_agv2jac_missing(name)\n}\n"
   },
   {
+    "id": "pf-apigwv2-jwt-issuer-https",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A JWT issuer is an https URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-jwt-issuer-https\", \"ERROR\", name,\n\t\"Properties.JwtConfiguration.Issuer\",\n\tsprintf(\"JwtConfiguration.Issuer '%s' is not an https URL; the authorizer create fails with \\\"Invalid issuer: Issuer is not a valid URL for JWT Authorizer\\\"\", [iss]),\n\t\"Use the identity provider's https:// issuer URL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-authorizer-jwtconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tiss := resolve(name, \"Properties.JwtConfiguration.Issuer\")\n\tis_string(iss)\n\tnot input.resources[iss]\n\tnot startswith(iss, \"https://\")\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-model-name-alphanumeric",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Model names are alphanumeric",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Model"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-model-name-alphanumeric\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"Model name '%s' is not alphanumeric; the model create fails with \\\"Model name must be alphanumeric: %s\\\"\", [n, n]),\n\t\"Use only letters and digits in the model name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-model.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Model\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot input.resources[n]\n\tnot regex.match(`^[a-zA-Z0-9]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-model-websocket-only",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Models exist on WebSocket APIs only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Model"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-model-websocket-only\", \"ERROR\", name,\n\t\"Properties.ApiId\",\n\t\"Model belongs to an HTTP API; the create fails with \\\"Currently, Models are not permitted for APIs with a protocol type of HTTP\\\"\",\n\t\"Drop the Model (request models exist for WebSocket APIs only)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-model.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Model\")\n\t_pf_apigwv2lib_protocol(name) == \"HTTP\"\n}\n"
+  },
+  {
     "id": "pf-apigwv2-request-authorizer-payload-version",
     "service": "apigatewayv2",
     "severity": "ERROR",
@@ -210,6 +870,226 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ApiGatewayV2::Authorizer"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Required on HTTP APIs only - WebSocket REQUEST authorizers must NOT set\n# it, so the rule fires solely when the Api sibling is provably HTTP.\n# Absence is proven against the preprocessed document (see AGENTS.md).\n_pf_agv2rap_http_api(name) if {\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(api, \"Properties.ProtocolType\") == \"HTTP\"\n}\n\n_pf_agv2rap_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"AuthorizerPayloadFormatVersion\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-request-authorizer-payload-version\", \"ERROR\", name,\n\t\"Properties.AuthorizerPayloadFormatVersion\",\n\t\"REQUEST authorizer on an HTTP API has no AuthorizerPayloadFormatVersion; the authorizer create fails with \\\"AuthorizerPayloadFormatVersion is a required parameter for REQUEST authorizer\\\"\",\n\t\"Set AuthorizerPayloadFormatVersion to 1.0 or 2.0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tresolve(name, \"Properties.AuthorizerType\") == \"REQUEST\"\n\t_pf_agv2rap_http_api(name)\n\t_pf_agv2rap_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-request-authorizer-uri-required",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A REQUEST authorizer needs an AuthorizerUri",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvraur_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"AuthorizerUri\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-request-authorizer-uri-required\", \"ERROR\", name,\n\t\"Properties.AuthorizerUri\",\n\t\"AuthorizerType is REQUEST but AuthorizerUri is not set; the authorizer create fails with \\\"AuthorizerUri is a required field in an Authorizer\\\"\",\n\t\"Set AuthorizerUri to the Lambda invocation ARN of the authorizer function\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tresolve(name, \"Properties.AuthorizerType\") == \"REQUEST\"\n\t_pf_agvraur_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-request-parameter-action",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Request parameter keys are <action>:<header|querystring|path>.<name>",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only for proxy integrations: with an IntegrationSubtype the same property\n# holds the service API's own parameter names.\n_pf_agvqpa_no_subtype(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"IntegrationSubtype\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_agvqpa_ok(k) if regex.match(`^(append|overwrite|remove):(header|querystring|path)\\.[^ ]+$`, k)\n\nviolation contains make_diag_full(\"pf-apigwv2-request-parameter-action\", \"ERROR\", name,\n\t\"Properties.RequestParameters\",\n\tsprintf(\"Request parameter mapping '%s' is not \\\"<append|overwrite|remove>:<header|querystring|path>.<name>\\\"; the integration create fails with \\\"Invalid Request Actioned Parameter\\\"\", [k]),\n\t\"Use keys like overwrite:header.X-Api or append:querystring.q\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\t_pf_agvqpa_no_subtype(name)\n\trp := resolve(name, \"Properties.RequestParameters\")\n\tis_object(rp)\n\tsome k, _ in rp\n\tnot _pf_agvqpa_ok(k)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-response-parameter-action",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Response parameter keys are <action>:<header.name|statuscode>",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Destination is \"<action>:<target>\" - parameter mapping's own DSL, carried in\n# CloudFormation as {\"<status>\": {\"ResponseParameters\": [{Destination, Source}]}}.\n_pf_agvrpa_ok(d) if regex.match(`^(append|overwrite|remove):(header\\.[^ ]+|statuscode)$`, d)\n\nviolation contains make_diag_full(\"pf-apigwv2-response-parameter-action\", \"ERROR\", name,\n\tsprintf(\"Properties.ResponseParameters.%s\", [sc]),\n\tsprintf(\"Response parameter destination '%s' is not \\\"<append|overwrite|remove>:<header.name|statuscode>\\\"; the integration create fails with \\\"Invalid Response Actioned Parameter destination specified: %s\\\"\", [d, d]),\n\t\"Use destinations like overwrite:header.Location or overwrite:statuscode\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\trp := resolve(name, \"Properties.ResponseParameters\")\n\tis_object(rp)\n\tsome sc, entry in rp\n\tis_object(entry)\n\tsome m in entry.ResponseParameters\n\tis_object(m)\n\td := m.Destination\n\tis_string(d)\n\tnot _pf_agvrpa_ok(d)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-response-parameter-status-code",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Response parameter mappings are keyed by a 200-599 status",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The outer key of ResponseParameters selects the status code to rewrite (the\n# CloudFormation shape is {\"<status>\": {\"ResponseParameters\": [...]}}).\n_pf_agvrpsc_bad(k) if {\n\tregex.match(`^[0-9]+$`, k)\n\tto_number(k) < 200\n}\n\n_pf_agvrpsc_bad(k) if {\n\tregex.match(`^[0-9]+$`, k)\n\tto_number(k) > 599\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-response-parameter-status-code\", \"ERROR\", name,\n\t\"Properties.ResponseParameters\",\n\tsprintf(\"ResponseParameters is keyed by status code '%s'; the integration create fails with \\\"Status Code %s is not valid\\\"\", [k, k]),\n\t\"Key ResponseParameters by a status code between 200 and 599\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\trp := resolve(name, \"Properties.ResponseParameters\")\n\tis_object(rp)\n\tsome k, _ in rp\n\t_pf_agvrpsc_bad(k)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-route-authorization-scopes-jwt",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "AuthorizationScopes needs JWT authorization",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Route"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvrasj_jwt(name) if resolve(name, \"Properties.AuthorizationType\") == \"JWT\"\n\nviolation contains make_diag_full(\"pf-apigwv2-route-authorization-scopes-jwt\", \"ERROR\", name,\n\t\"Properties.AuthorizationScopes\",\n\t\"AuthorizationScopes is set on a route whose AuthorizationType is not JWT; the route create fails with \\\"Authorization Scopes are only valid for COGNITO_USER_POOLS and JWT authorization type\\\"\",\n\t\"Set AuthorizationType: JWT, or drop AuthorizationScopes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-route.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\tcount(flatten_list(name, \"Properties.AuthorizationScopes\")) > 0\n\tnot _pf_agvrasj_jwt(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-route-jwt-authorizer-id",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "JWT authorization needs an AuthorizerId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Route"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvrjai_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"AuthorizerId\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-route-jwt-authorizer-id\", \"ERROR\", name,\n\t\"Properties.AuthorizerId\",\n\t\"AuthorizationType is JWT but AuthorizerId is not set; the route create fails with \\\"Setting the authorization type to JWT requires a valid JWT authorizer.\\\"\",\n\t\"Set AuthorizerId to the JWT authorizer this route should use\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-route.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\tresolve(name, \"Properties.AuthorizationType\") == \"JWT\"\n\t_pf_agvrjai_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-route-response-key-default",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "RouteResponseKey is $default",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::RouteResponse"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-route-response-key-default\", \"ERROR\", name,\n\t\"Properties.RouteResponseKey\",\n\tsprintf(\"RouteResponseKey is '%s'; the route response create fails with \\\"Currently, only $default is supported as a RouteResponseKey.\\\"\", [k]),\n\t\"Use RouteResponseKey: $default\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-routeresponse.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::RouteResponse\")\n\tk := resolve(name, \"Properties.RouteResponseKey\")\n\tis_string(k)\n\tnot input.resources[k]\n\tk != \"$default\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-route-response-websocket-only",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Route responses exist on WebSocket APIs only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::RouteResponse"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-route-response-websocket-only\", \"ERROR\", name,\n\t\"Properties.RouteId\",\n\t\"RouteResponse belongs to an HTTP API; the create fails with \\\"RouteResponses are currently not supported for this API protocol type.\\\"\",\n\t\"Drop the RouteResponse (it exists for WebSocket APIs only)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-routeresponse.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::RouteResponse\")\n\t_pf_apigwv2lib_protocol(name) == \"HTTP\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-route-target-format",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A route target is integrations/<integration id>",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Route"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-route-target-format\", \"ERROR\", name,\n\t\"Properties.Target\",\n\tsprintf(\"Route Target '%s' is not an integration reference; the route create fails with \\\"Unexpected or malformed target in route. Correct format should be integrations/<integration_id>.\\\"\", [t]),\n\t\"Use \\\"integrations/<integration id>\\\" (in CDK/CloudFormation: Fn::Join over the Integration's Ref)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-route.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\tt := resolve(name, \"Properties.Target\")\n\tis_string(t)\n\tnot input.resources[t]\n\tnot startswith(t, \"integrations/\")\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-simple-responses-payload-version",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "EnableSimpleResponses needs payload format 2.0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvsrpv_v2(name) if resolve(name, \"Properties.AuthorizerPayloadFormatVersion\") == \"2.0\"\n\nviolation contains make_diag_full(\"pf-apigwv2-simple-responses-payload-version\", \"ERROR\", name,\n\t\"Properties.EnableSimpleResponses\",\n\t\"EnableSimpleResponses is set but AuthorizerPayloadFormatVersion is not \\\"2.0\\\"; the authorizer create fails with \\\"EnableSimpleResponses can only be set for AuthorizerPayloadFormatVersion \\\\\\\"2.0\\\\\\\".\\\"\",\n\t\"Set AuthorizerPayloadFormatVersion: \\\"2.0\\\", or drop EnableSimpleResponses\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\tresolve(name, \"Properties.EnableSimpleResponses\") == true\n\tnot _pf_agvsrpv_v2(name)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-stage-name-charset",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "Stage names allow only a-zA-Z0-9_ (or $default)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_agvsnc_ok(s) if s == \"$default\"\n\n_pf_agvsnc_ok(s) if regex.match(`^[a-zA-Z0-9_]+$`, s)\n\nviolation contains make_diag_full(\"pf-apigwv2-stage-name-charset\", \"ERROR\", name,\n\t\"Properties.StageName\",\n\tsprintf(\"StageName '%s' has characters outside a-zA-Z0-9_; the stage create fails with \\\"Stage name only allows a-zA-Z0-9_\\\"\", [s]),\n\t\"Use only letters, digits and underscores (or the special name $default)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-stage.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Stage\")\n\ts := resolve(name, \"Properties.StageName\")\n\tis_string(s)\n\tnot input.resources[s]\n\tnot _pf_agvsnc_ok(s)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-stage-route-settings-key",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "RouteSettings is keyed by an existing route key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Stage"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Per-route settings are keyed by RouteKey, so the stage and the routes have to\n# agree - two resources the template holds side by side.\n_pf_agvsrsk_routes contains [api, rk] if {\n\tsome r in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\tapi := resolve(r, \"Properties.ApiId\")\n\trk := resolve(r, \"Properties.RouteKey\")\n\tis_string(rk)\n}\n\n_pf_agvsrsk_known(api, k) if [api, k] in _pf_agvsrsk_routes\n\n# Skip when the routes live in another stack: without a route of this API in\n# the template there is nothing to compare the keys against.\n_pf_agvsrsk_has_routes(api) if {\n\tsome entry in _pf_agvsrsk_routes\n\tentry[0] == api\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-stage-route-settings-key\", \"ERROR\", name,\n\t\"Properties.RouteSettings\",\n\tsprintf(\"RouteSettings is keyed by '%s', which no Route of this API declares; the stage create fails with \\\"Unable to find Route by key %s within the provided RouteSettings\\\"\", [k, k]),\n\t\"Key RouteSettings by a RouteKey the template actually creates\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-stage.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Stage\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\t_pf_agvsrsk_has_routes(api)\n\trs := resolve(name, \"Properties.RouteSettings\")\n\tis_object(rs)\n\tsome k, _ in rs\n\tnot _pf_agvsrsk_known(api, k)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-vpc-link-integration-uri",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A VPC link integration points at a listener, not a load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The ARN has to name a listener, not the load balancer itself.\nviolation contains make_diag_full(\"pf-apigwv2-vpc-link-integration-uri\", \"ERROR\", name,\n\t\"Properties.IntegrationUri\",\n\tsprintf(\"IntegrationUri '%s' is a load balancer ARN, not a listener ARN; the integration create fails with \\\"For VpcLink VPC_LINK, integration uri should be a valid ELB listener ARN or a valid Cloud Map service ARN.\\\"\", [uri]),\n\t\"Point IntegrationUri at the listener ARN (ELB) or a Cloud Map service ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\tresolve(name, \"Properties.ConnectionType\") == \"VPC_LINK\"\n\turi := resolve(name, \"Properties.IntegrationUri\")\n\tis_string(uri)\n\tstartswith(uri, \"arn:\")\n\tparts := split(uri, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"elasticloadbalancing\"\n\tstartswith(parts[5], \"loadbalancer/\")\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-vpc-link-subnets-required",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "A VPC link needs at least one subnet",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::VpcLink"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-vpc-link-subnets-required\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\t\"SubnetIds is empty; the VPC link create fails with \\\"SubnetIds for a vpc link cannot be empty\\\"\",\n\t\"List at least one subnet the VPC link places its network interfaces in\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-vpclink.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::VpcLink\")\n\tcount(flatten_list(name, \"Properties.SubnetIds\")) == 0\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-websocket-authorization-connect-only",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "WebSocket authorization is restricted to $connect",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Route"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CUSTOM is the measured case; the service message is about authorization in\n# general, so IAM and JWT are judged the same way.\nviolation contains make_diag_full(\"pf-apigwv2-websocket-authorization-connect-only\", \"ERROR\", name,\n\t\"Properties.AuthorizationType\",\n\tsprintf(\"Route '%s' of a WebSocket API sets AuthorizationType %s; the route create fails with \\\"Currently, authorization is restricted to the $connect route only\\\"\", [rk, at]),\n\t\"Authorize the $connect route instead, and leave the other routes on AuthorizationType NONE\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-control-access.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Route\")\n\t_pf_apigwv2lib_protocol(name) == \"WEBSOCKET\"\n\trk := resolve(name, \"Properties.RouteKey\")\n\trk != \"$connect\"\n\tat := resolve(name, \"Properties.AuthorizationType\")\n\tat in {\"CUSTOM\", \"AWS_IAM\", \"JWT\"}\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-websocket-authorizer-type",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "WebSocket APIs only take REQUEST authorizers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-authorizer-type\", \"ERROR\", name,\n\t\"Properties.AuthorizerType\",\n\tsprintf(\"AuthorizerType is %s on a WebSocket API; the authorizer create fails with \\\"Only REQUEST authorizer type is supported on WEBSOCKET protocol Apis.\\\"\", [t]),\n\t\"Use AuthorizerType: REQUEST (a Lambda authorizer) on WebSocket APIs\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\t_pf_apigwv2lib_protocol(name) == \"WEBSOCKET\"\n\tt := resolve(name, \"Properties.AuthorizerType\")\n\tis_string(t)\n\tt != \"REQUEST\"\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-websocket-identity-source-expression",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "WebSocket identity sources use route.request.*",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Authorizer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same property, different DSL: WebSocket authorizers use route.request.*.\n_pf_agvwise_ok(s) if regex.match(`^route\\.request\\.(header|querystring)\\.[^ ]+$`, s)\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-identity-source-expression\", \"ERROR\", name,\n\t\"Properties.IdentitySource\",\n\tsprintf(\"IdentitySource '%s' is not a WebSocket identity expression; the authorizer create fails with \\\"Invalid request identity source expression: %s\\\"\", [s, s]),\n\t\"Use route.request.header.<name> or route.request.querystring.<name> on WebSocket APIs\",\n\t\"https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-lambda-auth.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Authorizer\")\n\t_pf_apigwv2lib_protocol(name) == \"WEBSOCKET\"\n\tsome item in flatten_list(name, \"Properties.IdentitySource\")\n\ts := item.value\n\tis_string(s)\n\tnot _pf_agvwise_ok(s)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-websocket-integration-timeout-range",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "WebSocket integration timeouts are 50-29000 ms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same property, lower ceiling: the limit is protocol-dependent.\n_pf_agvwitr_bad(t) if t < 50\n\n_pf_agvwitr_bad(t) if t > 29000\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-integration-timeout-range\", \"ERROR\", name,\n\t\"Properties.TimeoutInMillis\",\n\tsprintf(\"TimeoutInMillis %v is outside 50-29000 for a WebSocket API; the integration create fails with \\\"Timeout should be between 50 ms and 29000 ms\\\"\", [t]),\n\t\"Use an integration timeout between 50 and 29000 milliseconds on WebSocket APIs\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\t_pf_apigwv2lib_protocol(name) == \"WEBSOCKET\"\n\tt := to_number(resolve(name, \"Properties.TimeoutInMillis\"))\n\t_pf_agvwitr_bad(t)\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-websocket-no-cors",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "WebSocket APIs take no CORS configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-no-cors\", \"ERROR\", name,\n\t\"Properties.CorsConfiguration\",\n\t\"CorsConfiguration is set on a WEBSOCKET API; the API create fails with \\\"Cors is not supported for WEBSOCKET protocolType\\\"\",\n\t\"Drop CorsConfiguration, or make the API an HTTP API\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(name, \"Properties.ProtocolType\") == \"WEBSOCKET\"\n\tis_object(resolve(name, \"Properties.CorsConfiguration\"))\n}\n"
+  },
+  {
+    "id": "pf-apigwv2-websocket-payload-version",
+    "service": "apigatewayv2",
+    "severity": "ERROR",
+    "title": "WebSocket AWS_PROXY integrations reject payload format 2.0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ApiGatewayV2::Integration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The HTTP API side of this is pf-apigwv2-aws-proxy-payload-version; WebSocket\n# APIs reject 2.0 outright.\nviolation contains make_diag_full(\"pf-apigwv2-websocket-payload-version\", \"ERROR\", name,\n\t\"Properties.PayloadFormatVersion\",\n\t\"An AWS_PROXY integration on a WebSocket API sets PayloadFormatVersion 2.0; the integration create fails with \\\"Unsupported PayloadFormatVersion: 2.0\\\"\",\n\t\"Drop PayloadFormatVersion (WebSocket AWS_PROXY integrations are 1.0 only)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Integration\")\n\t_pf_apigwv2lib_protocol(name) == \"WEBSOCKET\"\n\tresolve(name, \"Properties.IntegrationType\") == \"AWS_PROXY\"\n\tresolve(name, \"Properties.PayloadFormatVersion\") == \"2.0\"\n}\n"
   },
   {
     "id": "pf-apigwv2-websocket-route-selection",
@@ -10865,6 +11745,10 @@ export interface BundledLibData {
 
 /** Shared helper modules (rules/_lib). Always loaded before the rules. */
 export const BUNDLED_LIBS: BundledLibData[] = [
+  {
+    "name": "_lib/apigatewayv2",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Protocol of the Api a child resource points at (\"HTTP\" or \"WEBSOCKET\").\n# Undefined when ApiId is an imported id, so callers skip imported APIs. Half\n# of the ApiGatewayV2 constraints are protocol-dependent, which is why this is\n# a lib rather than a per-rule helper.\n_pf_apigwv2lib_protocol(name) := p if {\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tp := resolve(api, \"Properties.ProtocolType\")\n}\n"
+  },
   {
     "name": "_lib/bedrock",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the Amazon Bedrock rules (Guardrail, Prompt, Flow,\n# KnowledgeBase, DataSource, IntelligentPromptRouter, ApplicationInferenceProfile,\n# Data Automation). Loaded ahead of every rule (BUNDLED_LIBS); never emits\n# diagnostics.\n\n# Raw (preprocessed) properties object of a resource — the sanctioned way to\n# prove a key absent. Intrinsics inside are marker objects, never strings.\n_pf_bedrocklib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_bedrocklib_has(obj, key) if {\n\tis_object(obj)\n\tobject.get(obj, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_bedrocklib_region := r if {\n\tr := data.cdk_preflight.deploy_region\n\tis_string(r)\n}\n\n_pf_bedrocklib_account := a if {\n\ta := data.cdk_preflight.deploy_account\n\tis_string(a)\n}\n\n# Region / account fields of an ARN string; undefined for non-ARNs, empty\n# fields and marker objects (is_string fails).\n_pf_bedrocklib_arn_region(arn) := r if {\n\tis_string(arn)\n\tp := split(arn, \":\")\n\tcount(p) >= 6\n\tp[0] == \"arn\"\n\tr := p[3]\n\tr != \"\"\n}\n\n_pf_bedrocklib_arn_account(arn) := a if {\n\tis_string(arn)\n\tp := split(arn, \":\")\n\tcount(p) >= 6\n\tp[0] == \"arn\"\n\ta := p[4]\n\ta != \"\"\n}\n\n# Model / inference-profile identifier: the part after the last \"/\" of an\n# ARN, or the bare id.\n_pf_bedrocklib_model_id(v) := id if {\n\tis_string(v)\n\tcontains(v, \"/\")\n\tparts := split(v, \"/\")\n\tid := parts[count(parts) - 1]\n}\n\n_pf_bedrocklib_model_id(v) := v if {\n\tis_string(v)\n\tnot contains(v, \"/\")\n}\n\n# Geographic prefixes of cross-Region (system-defined) inference profiles.\n# Source Regions of a geo profile never change (inference-profiles-support.html),\n# so a prefix that does not match the deploy Region is a deploy-time\n# \"Inference profile not found\". Unknown prefixes are not judged.\n_pf_bedrocklib_geo_prefixes := {\"us\", \"us-gov\", \"eu\", \"apac\", \"global\"}\n\n_pf_bedrocklib_geo(id) := g if {\n\tis_string(id)\n\tg := split(id, \".\")[0]\n\t_pf_bedrocklib_geo_prefixes[g]\n}\n\n_pf_bedrocklib_geo_ok(g, r) if g == \"global\"\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"us\"\n\tstartswith(r, \"us-\")\n\tnot startswith(r, \"us-gov-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"us-gov\"\n\tstartswith(r, \"us-gov-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"eu\"\n\tstartswith(r, \"eu-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"eu\"\n\tr == \"il-central-1\"\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"apac\"\n\tstartswith(r, \"ap-\")\n}\n\n_pf_bedrocklib_geo_ok(g, r) if {\n\tg == \"apac\"\n\tr == \"me-central-1\"\n}\n\n# True when a model / profile reference (bare id or ARN) cannot be served from\n# the deploy Region: the ARN carries another Region, or the geo prefix of a\n# cross-Region profile does not cover the Region.\n_pf_bedrocklib_model_region_mismatch(v, region) if {\n\tr := _pf_bedrocklib_arn_region(v)\n\tr != region\n}\n\n_pf_bedrocklib_model_region_mismatch(v, region) if {\n\tg := _pf_bedrocklib_geo(_pf_bedrocklib_model_id(v))\n\tnot _pf_bedrocklib_geo_ok(g, region)\n}\n\n# Provider of a model id (\"anthropic\" for anthropic.claude-…, also behind a\n# geo prefix such as us.anthropic.…).\n_pf_bedrocklib_model_provider(v) := p if {\n\tsegs := split(_pf_bedrocklib_model_id(v), \".\")\n\tcount(segs) >= 3\n\t_pf_bedrocklib_geo_prefixes[segs[0]]\n\tp := segs[1]\n}\n\n_pf_bedrocklib_model_provider(v) := p if {\n\tsegs := split(_pf_bedrocklib_model_id(v), \".\")\n\tcount(segs) >= 2\n\tnot _pf_bedrocklib_geo_prefixes[segs[0]]\n\tp := segs[0]\n}\n\n# Logical id of an in-template resource of `type` that a property value\n# points at: resolve() turns {\"Ref\": X} into \"X\"; raw marker objects carry\n# __ref for both Ref and Fn::GetAtt.\n_pf_bedrocklib_ref_target(v, type) := t if {\n\tis_string(v)\n\tv in resources_of_type(type)\n\tt := v\n}\n\n_pf_bedrocklib_ref_target(v, type) := t if {\n\tis_object(v)\n\tt := object.get(v, \"__ref\", null)\n\tis_string(t)\n\tt in resources_of_type(type)\n}\n\n# The KnowledgeBase logical id a DataSource points at (Ref / GetAtt in the\n# same template); undefined for literal ids.\n_pf_bedrocklib_ds_kb(name) := kb if {\n\tkb := _pf_bedrocklib_ref_target(resolve(name, \"Properties.KnowledgeBaseId\"), \"AWS::Bedrock::KnowledgeBase\")\n}\n\n_pf_bedrocklib_ds_kb(name) := kb if {\n\tnot resolve(name, \"Properties.KnowledgeBaseId\")\n\tp := _pf_bedrocklib_props(name)\n\tkb := _pf_bedrocklib_ref_target(object.get(p, \"KnowledgeBaseId\", null), \"AWS::Bedrock::KnowledgeBase\")\n}\n\n# Embedding model id of a vector knowledge base (literal ARN or a Fn::Sub the\n# engine could flatten); undefined otherwise.\n_pf_bedrocklib_kb_embed_model(kb) := id if {\n\tid := _pf_bedrocklib_model_id(resolve(kb, \"Properties.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelArn\"))\n}\n\n# Bucket expression of an S3 reference: a literal name, or the token text of a\n# Fn::Sub (\"${Bucket}\") so two references to the same in-template bucket compare\n# equal. Accepts \"s3://bucket[/...]\" and \"arn:aws:s3:::bucket\".\n_pf_bedrocklib_bucket_text(v) := v if is_string(v)\n\n_pf_bedrocklib_bucket_text(v) := t if {\n\tis_object(v)\n\td := object.get(v, \"__dynamic\", null)\n\tis_string(d)\n\tstartswith(d, \"Sub:\")\n\tt := substring(d, 4, -1)\n}\n\n_pf_bedrocklib_bucket_expr(v) := b if {\n\tt := _pf_bedrocklib_bucket_text(v)\n\tstartswith(t, \"s3://\")\n\tb := split(substring(t, 5, -1), \"/\")[0]\n\tb != \"\"\n}\n\n_pf_bedrocklib_bucket_expr(v) := b if {\n\tt := _pf_bedrocklib_bucket_text(v)\n\tregex.match(`^arn:[^:]*:s3:::`, t)\n\tb := split(split(t, \":::\")[1], \"/\")[0]\n\tb != \"\"\n}\n\n# Flow definition: the Definition object, or DefinitionString parsed as JSON\n# (CloudFormation-cased keys, same as FlowDefinition). Undefined when the\n# string is not JSON (pf-bedrock-flow-definition-string-json reports that) or\n# carries unresolved intrinsics.\n_pf_bedrocklib_flow_def(name) := d if {\n\tp := _pf_bedrocklib_props(name)\n\td := object.get(p, \"Definition\", null)\n\tis_object(d)\n}\n\n_pf_bedrocklib_flow_def(name) := d if {\n\tp := _pf_bedrocklib_props(name)\n\tnot _pf_bedrocklib_has(p, \"Definition\")\n\ts := resolve(name, \"Properties.DefinitionString\")\n\tis_string(s)\n\tjson.is_valid(s)\n\td := json.unmarshal(s)\n\tis_object(d)\n}\n\n_pf_bedrocklib_flow_prop(name) := \"Properties.Definition\" if {\n\t_pf_bedrocklib_has(_pf_bedrocklib_props(name), \"Definition\")\n}\n\n_pf_bedrocklib_flow_prop(name) := \"Properties.DefinitionString\" if {\n\tnot _pf_bedrocklib_has(_pf_bedrocklib_props(name), \"Definition\")\n}\n\n_pf_bedrocklib_flow_nodes(name) := [n | some n in object.get(_pf_bedrocklib_flow_def(name), \"Nodes\", []); is_object(n)]\n\n_pf_bedrocklib_flow_conns(name) := [c | some c in object.get(_pf_bedrocklib_flow_def(name), \"Connections\", []); is_object(c)]\n\n_pf_bedrocklib_flow_node_names(name) := {n.Name | some n in _pf_bedrocklib_flow_nodes(name); is_string(n.Name)}\n\n# Names of the outputs / inputs declared on a node.\n_pf_bedrocklib_node_outputs(n) := {o.Name | some o in object.get(n, \"Outputs\", []); is_object(o); is_string(o.Name)}\n\n_pf_bedrocklib_node_inputs(n) := {i.Name | some i in object.get(n, \"Inputs\", []); is_object(i); is_string(i.Name)}\n\n# Condition names declared on a Condition node.\n_pf_bedrocklib_node_conditions(n) := {c.Name | some c in object.get(object.get(object.get(n, \"Configuration\", {}), \"Condition\", {}), \"Conditions\", []); is_object(c); is_string(c.Name)}\n"

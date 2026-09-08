@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "w",
+        "ProtocolType": "WEBSOCKET",
+        "RouteSelectionExpression": "$request.body.action"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Model",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "Name": "m",
+        "ContentType": "application/json",
+        "Schema": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-apigwv2-request-parameter-action
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Integration]
+severity: ERROR
+title: "Request parameter keys are <action>:<header|querystring|path>.<name>"
+constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid mapping expression specified: Validation Result: warnings : [], errors : [Invalid Request Actioned Parameter destination specified: badaction:header.x]\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Authorizer",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "Name": "a",
+        "AuthorizerType": "JWT",
+        "IdentitySource": [
+          "$request.header.Authorization"
+        ],
+        "JwtConfiguration": {
+          "Issuer": "http://example.com",
+          "Audience": [
+            "aud"
+          ]
+        }
+      }
+    }
+  }
+}

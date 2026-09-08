@@ -1,0 +1,12 @@
+id: pf-apigwv2-http-proxy-integration-method
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Integration]
+severity: ERROR
+title: "An HTTP_PROXY integration needs an IntegrationMethod"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"HttpMethod parameter method must be specified for integrationType HTTPPROXY\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

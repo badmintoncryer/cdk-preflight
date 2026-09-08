@@ -1,0 +1,75 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "Mok": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "Api",
+            "RootResourceId"
+          ]
+        },
+        "HttpMethod": "GET",
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{\"statusCode\": 200}"
+          }
+        }
+      }
+    },
+    "Dep": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        }
+      },
+      "DependsOn": "Mok"
+    },
+    "St": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "StageName": "s",
+        "DeploymentId": {
+          "Ref": "Dep"
+        }
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGateway::UsagePlan",
+      "Properties": {
+        "UsagePlanName": "u",
+        "ApiStages": [
+          {
+            "ApiId": {
+              "Ref": "Api"
+            },
+            "Stage": {
+              "Ref": "St"
+            },
+            "Throttle": {
+              "badkey": {
+                "RateLimit": 10,
+                "BurstLimit": 5
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
