@@ -1,0 +1,11 @@
+id: pf-ec2-subnet-ipv6-native-cidr
+service: ec2
+resourceTypes: [AWS::EC2::Subnet]
+severity: ERROR
+title: An IPv6-only subnet cannot carry IPv4 addressing
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-subnet.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateSubnet --ipv6-native --ipv6-cidr-block ... --cidr-block -> \"When specifying ipv4 parameters, cidrBlock or ipv4IpamPoolId, you cannot set ipv6Native to true.\"; the same call without --cidr-block created the subnet. A first probe without an IPv6 CIDR returned a different error (\"Either ipv6CidrBlock or ipv6IpamPoolId should be provided\"), which does not evidence this constraint. bench 2026-09-08 ap-northeast-1: Ipv6Native with CidrBlock -> ROLLBACK_COMPLETE with the same message; without CidrBlock -> CREATE_COMPLETE."
+addedOn: 2026-09-08

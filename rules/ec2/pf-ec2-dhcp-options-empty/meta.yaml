@@ -1,0 +1,11 @@
+id: pf-ec2-dhcp-options-empty
+service: ec2
+resourceTypes: [AWS::EC2::DHCPOptions]
+severity: ERROR
+title: A DHCP options set must configure at least one option
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-dhcpoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateDhcpOptions with an empty configuration list -> \"The request must contain the parameter dhcpConfigurations\". bench 2026-09-08 ap-northeast-1: a DHCPOptions with only Tags -> ROLLBACK_COMPLETE with the same message; one DomainNameServers entry -> CREATE_COMPLETE."
+addedOn: 2026-09-08
