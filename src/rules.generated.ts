@@ -1844,6 +1844,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A WAFv2 ARN carries its scope in the resource segment:\n#   arn:aws:wafv2:us-east-1:123456789012:global/webacl/name/id    (CLOUDFRONT)\n#   arn:aws:wafv2:ap-northeast-1:123456789012:regional/webacl/... (REGIONAL)\n# CloudFront accepts only the global form. Checking the region alone would miss\n# a REGIONAL web ACL that happens to have been created in us-east-1, which is\n# the easy mistake to make.\nviolation contains make_diag_full(\"pf-cloudfront-wafv2-webacl-scope\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.WebACLId\",\n\tsprintf(\"CloudFront only accepts a globally scoped web ACL, but this ARN is scoped '%s'\", [scope]),\n\t\"Create the web ACL with scope CLOUDFRONT in us-east-1 (wafv2.CfnWebACL with scope: 'CLOUDFRONT') and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-wafv2-webacl.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.WebACLId\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"wafv2\"\n\tsegments := split(parts[5], \"/\")\n\tscope := segments[0]\n\tscope != \"global\"\n}\n"
   },
   {
+    "id": "pf-cloudwatch-alarm-action-vendor",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Alarm actions accept only the CloudWatch action vendors",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The set is the documented action list: EC2 (automate), SNS, Auto Scaling,\n# Systems Manager OpsItems and Incidents, and Lambda.\n# ponytail: an allowlist, so a newly supported vendor would false-positive\n# until this set is updated.\n_pf_cwav_vendors := {\"automate\", \"sns\", \"autoscaling\", \"ssm\", \"ssm-incidents\", \"lambda\"}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-action-vendor\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"Alarm action ARN names the service '%s'; PutMetricAlarm fails with \\\"Unsupported AWS vendor %s\\\"\", [vendor, vendor]),\n\t\"Point alarm actions at an SNS topic, an Auto Scaling policy, an EC2 automate action, an SSM OpsItem or response plan, or a Lambda function\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome key in _pf_cwlib_action_keys\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [key]))\n\tparts := _pf_cwlib_arn(item.value)\n\tvendor := parts[2]\n\tnot vendor in _pf_cwav_vendors\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-actions-max",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Each alarm action list holds at most 5 ARNs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-actions-max\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"%s has %d entries; PutMetricAlarm accepts at most 5 and fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 5\\\"\", [key, n]),\n\t\"Fan out through a single SNS topic instead of listing more than 5 actions\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome key in _pf_cwlib_action_keys\n\titems := [x | some x in flatten_list(name, sprintf(\"Properties.%s\", [key]))]\n\tn := count(items)\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-anomaly-autoscaling-action",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An anomaly-detection alarm cannot carry an Auto Scaling action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-anomaly-autoscaling-action\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\t\"The alarm sets ThresholdMetricId (anomaly detection) and an Auto Scaling action; PutMetricAlarm fails with \\\"autoscaling actions not supported when ThresholdMetricId is set\\\"\",\n\t\"Drive scaling from a separate static-threshold alarm, or drop the Auto Scaling action from the anomaly alarm\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tis_string(resolve(name, \"Properties.ThresholdMetricId\"))\n\tsome key in _pf_cwlib_action_keys\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [key]))\n\tparts := _pf_cwlib_arn(item.value)\n\tparts[2] == \"autoscaling\"\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-ec2-action-region",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An EC2 automate action must name the stack's own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Needs the deploy environment (enforce mode only) - this is the layer that\n# knows the target region.\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-ec2-action-region\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"The EC2 automate action names region %s but the stack deploys to %s; PutMetricAlarm fails with \\\"Invalid region %s specified. Only %s is supported.\\\"\", [arn_region, region, arn_region, region]),\n\t\"Build the action ARN with ${AWS::Region} (arn:${AWS::Partition}:automate:${AWS::Region}:ec2:stop)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome key in _pf_cwlib_action_keys\n\tsome item in flatten_list(name, sprintf(\"Properties.%s\", [key]))\n\tparts := _pf_cwlib_arn(item.value)\n\tparts[2] == \"automate\"\n\tarn_region := parts[3]\n\tarn_region != region\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-evaluation-window",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The evaluation window caps at 7 days (Period >= 3600) or 1 day (Period < 3600)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Two tiers, both measured: a week for hourly-or-longer periods, a day below\n# that. Issue #6 recorded this as BROKEN-EXPECTATION after testing 3600 x 100,\n# which is inside the 604800 budget - the probe was aimed wrong, not the doc.\n_pf_cwew_limit(p) := 604800 if p >= 3600\n\n_pf_cwew_limit(p) := 86400 if p < 3600\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-evaluation-window\", \"ERROR\", name,\n\t\"Properties.EvaluationPeriods\",\n\tsprintf(\"Period %v x EvaluationPeriods %v spans %v seconds; PutMetricAlarm fails with \\\"EvaluationPeriods * Period must be <= %v\\\"\", [p, e, p * e, lim]),\n\t\"Shorten the window: EvaluationPeriods x Period must stay within 604800 seconds when Period >= 3600, and within 86400 seconds when Period < 3600\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tp := to_number(resolve(name, \"Properties.Period\"))\n\te := to_number(resolve(name, \"Properties.EvaluationPeriods\"))\n\tlim := _pf_cwew_limit(p)\n\tp * e > lim\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-expressions-max",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An alarm takes at most 10 math expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-expressions-max\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"The alarm has %d math expressions; PutMetricAlarm fails with \\\"Too many expressions in alarm, maximum is 10\\\"\", [n]),\n\t\"Keep math expressions to 10 per alarm\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tn := count(_pf_cwlib_queries(name, \"Expression\"))\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-low-sample-percentile",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "EvaluateLowSampleCountPercentile only applies to percentile statistics",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Statistic only ever holds a non-percentile (SampleCount/Average/Sum/Minimum/\n# Maximum); percentiles live in ExtendedStatistic. So the two properties\n# appearing together is the violation.\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-low-sample-percentile\", \"ERROR\", name,\n\t\"Properties.EvaluateLowSampleCountPercentile\",\n\tsprintf(\"EvaluateLowSampleCountPercentile is set alongside Statistic '%s'; PutMetricAlarm fails with \\\"Option evaluateLowSampleCountPercentile can not be applied with statistic %s.\\\"\", [s, s]),\n\t\"Drop EvaluateLowSampleCountPercentile, or switch the alarm to a percentile via ExtendedStatistic\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tis_string(resolve(name, \"Properties.EvaluateLowSampleCountPercentile\"))\n\ts := resolve(name, \"Properties.Statistic\")\n\tis_string(s)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-metrics-max",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An alarm takes at most 10 MetricStat queries",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-metrics-max\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"The alarm has %d MetricStat queries; PutMetricAlarm fails with \\\"Too many metrics in alarm, maximum is 10\\\"\", [n]),\n\t\"Keep MetricStat queries to 10 per alarm (math expressions have a separate limit of 10)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tn := count(_pf_cwlib_queries(name, \"MetricStat\"))\n\tn > 10\n}\n"
+  },
+  {
     "id": "pf-cloudwatch-alarm-period",
     "service": "cloudwatch",
     "severity": "ERROR",
@@ -1853,6 +1941,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::Alarm"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types Period as a bare integer; the valid values are\n# only in the service (\"Period must be 10, 20, 30 or a multiple of 60\").\n# The same constraint applies inside MetricStat (bench w11, 2026-09-03).\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-period\", \"ERROR\", name,\n\t\"Properties.Period\",\n\tsprintf(\"Period %v is invalid; PutMetricAlarm fails with \\\"Period must be 10, 20, 30 or a multiple of 60\\\"\", [p]),\n\t\"Use 10, 20, 30, or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tp := to_number(resolve(name, \"Properties.Period\"))\n\tnot p in {10, 20, 30}\n\tp % 60 != 0\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-period\", \"ERROR\", name,\n\tsprintf(\"Properties.Metrics (MetricStat.Period of query %d)\", [i]),\n\tsprintf(\"MetricStat Period %v is invalid; PutMetricAlarm fails with \\\"Period must be 10, 20, 30 or a multiple of 60\\\"\", [p]),\n\t\"Use 10, 20, 30, or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome item in flatten_list(name, \"Properties.Metrics\")\n\ti := item.index\n\tq := item.value\n\tis_object(q)\n\tp := object.get(q, [\"MetricStat\", \"Period\"], null)\n\tis_number(p)\n\tnot p in {10, 20, 30}\n\tp % 60 != 0\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-alarm-search-expression",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "SEARCH() cannot be used in a metric alarm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-search-expression\", \"ERROR\", name,\n\tsprintf(\"Properties.Metrics (Expression of query %d)\", [i]),\n\t\"A SEARCH() expression cannot back an alarm; PutMetricAlarm fails with \\\"SEARCH is not supported on Metric Alarms.\\\"\",\n\t\"Name the metrics explicitly with MetricStat queries, or build the alarm from a math expression over them\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome item in flatten_list(name, \"Properties.Metrics\")\n\ti := item.index\n\tq := item.value\n\tis_object(q)\n\te := object.get(q, \"Expression\", null)\n\tis_string(e)\n\tregex.match(`(?i)\\bSEARCH\\s*\\(`, e)\n}\n"
   },
   {
     "id": "pf-cloudwatch-alarm-threshold",
@@ -1866,6 +1965,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwath_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\"\n\n# The two range operators anchor to an anomaly-detection band via\n# ThresholdMetricId; every other operator needs a static Threshold. Absence\n# is proven against the preprocessed document (see AGENTS.md).\n_pf_cwath_range_ops := {\"LessThanLowerOrGreaterThanUpperThreshold\", \"LessThanLowerThreshold\", \"GreaterThanUpperThreshold\"}\n\n_pf_cwath_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-threshold\", \"ERROR\", name,\n\t\"Properties.Threshold\",\n\tsprintf(\"ComparisonOperator '%s' needs a static Threshold but none is set; PutMetricAlarm fails with \\\"PutMetricAlarm request should have valid Threshold parameter\\\"\", [op]),\n\t\"Set Threshold, or switch to an anomaly-detection operator with ThresholdMetricId\",\n\t_pf_cwath_url) if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\top := resolve(name, \"Properties.ComparisonOperator\")\n\tis_string(op)\n\tnot op in _pf_cwath_range_ops\n\t_pf_cwath_absent(name, \"Threshold\")\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-alarm-threshold\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"ComparisonOperator '%s' is a range operator but ThresholdMetricId is not set; PutMetricAlarm fails with \\\"ComparisonOperators for ranges require ThresholdMetricId to be set\\\"\", [op]),\n\t\"Point ThresholdMetricId at the ANOMALY_DETECTION_BAND query id, or use a static-threshold operator\",\n\t_pf_cwath_url) if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\top := resolve(name, \"Properties.ComparisonOperator\")\n\top in _pf_cwath_range_ops\n\t_pf_cwath_absent(name, \"ThresholdMetricId\")\n}\n"
   },
   {
+    "id": "pf-cloudwatch-anomaly-detector-excluded-range-order",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An excluded time range must start before it ends",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::AnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both timestamps are matched against the same fixed-width ISO 8601 shape\n# first, so the lexicographic comparison below is a chronological one.\n_pf_cwetr_ts := `^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}`\n\nviolation contains make_diag_full(\"pf-cloudwatch-anomaly-detector-excluded-range-order\", \"ERROR\", name,\n\tsprintf(\"Properties.Configuration.ExcludedTimeRanges.%d\", [i]),\n\tsprintf(\"Excluded time range %d starts at %s and ends at %s; PutAnomalyDetector rejects it with \\\"Input has invalid parameter.\\\"\", [i, st, et]),\n\t\"Put the earlier timestamp in StartTime\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::AnomalyDetector\")\n\tsome item in flatten_list(name, \"Properties.Configuration.ExcludedTimeRanges\")\n\ti := item.index\n\tr := item.value\n\tis_object(r)\n\tst := object.get(r, \"StartTime\", null)\n\tet := object.get(r, \"EndTime\", null)\n\tis_string(st)\n\tis_string(et)\n\tregex.match(_pf_cwetr_ts, st)\n\tregex.match(_pf_cwetr_ts, et)\n\tst >= et\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-anomaly-detector-exclusive",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "SingleMetricAnomalyDetector and MetricMathAnomalyDetector are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::AnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-anomaly-detector-exclusive\", \"ERROR\", name,\n\t\"Properties.MetricMathAnomalyDetector\",\n\t\"The detector sets both SingleMetricAnomalyDetector and MetricMathAnomalyDetector; PutAnomalyDetector fails with \\\"Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set\\\"\",\n\t\"Keep one detector definition\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::AnomalyDetector\")\n\tnot _pf_cwlib_absent(name, \"SingleMetricAnomalyDetector\")\n\tnot _pf_cwlib_absent(name, \"MetricMathAnomalyDetector\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-anomaly-detector-math-single-query",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A math detector needs more than one metric data query",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::AnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-anomaly-detector-math-single-query\", \"ERROR\", name,\n\t\"Properties.MetricMathAnomalyDetector.MetricDataQueries\",\n\t\"The math detector has one metric data query; PutAnomalyDetector fails with \\\"The MetricDataQueries list in MetricMathAnomalyDetector contains a single metric, please use SingleMetricAnomalyDetector instead\\\"\",\n\t\"Use SingleMetricAnomalyDetector for one metric, or add the math expression query\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::AnomalyDetector\")\n\titems := [q | some q in flatten_list(name, \"Properties.MetricMathAnomalyDetector.MetricDataQueries\")]\n\tcount(items) == 1\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-anomaly-detector-math-toplevel",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "MetricMathAnomalyDetector cannot be combined with the top-level metric properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::AnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwmt_single := {\"MetricName\", \"Namespace\", \"Stat\", \"Dimensions\"}\n\nviolation contains make_diag_full(\"pf-cloudwatch-anomaly-detector-math-toplevel\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"MetricMathAnomalyDetector is set alongside the top-level %s; PutAnomalyDetector fails with \\\"Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set\\\"\", [key]),\n\t\"Move the metric into the MetricDataQueries, or drop MetricMathAnomalyDetector\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::AnomalyDetector\")\n\tnot _pf_cwlib_absent(name, \"MetricMathAnomalyDetector\")\n\tsome key in _pf_cwmt_single\n\tnot _pf_cwlib_absent(name, key)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-anomaly-detector-namespace-colon",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A metric namespace must not start with a colon",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::AnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-anomaly-detector-namespace-colon\", \"ERROR\", name,\n\t\"Properties.SingleMetricAnomalyDetector.Namespace\",\n\tsprintf(\"Namespace '%s' starts with a colon; PutAnomalyDetector fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: [^:].*\\\"\", [ns]),\n\t\"Start the namespace with any character other than a colon\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::AnomalyDetector\")\n\tns := resolve(name, \"Properties.SingleMetricAnomalyDetector.Namespace\")\n\tis_string(ns)\n\tstartswith(ns, \":\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-anomaly-detector-stat-syntax",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The anomaly detector Stat must be a CloudWatch statistic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::AnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-anomaly-detector-stat-syntax\", \"ERROR\", name,\n\t\"Properties.SingleMetricAnomalyDetector.Stat\",\n\tsprintf(\"Stat '%s' is not a CloudWatch statistic; PutAnomalyDetector fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern\\\"\", [st]),\n\t\"Use SampleCount, Average, Sum, Minimum, Maximum, IQM, a percentile (p90) or a trimmed statistic (TM90)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::AnomalyDetector\")\n\tst := resolve(name, \"Properties.SingleMetricAnomalyDetector.Stat\")\n\tis_string(st)\n\tnot _pf_cwlib_stat_ok(st)\n}\n"
+  },
+  {
     "id": "pf-cloudwatch-composite-alarm-rule-syntax",
     "service": "cloudwatch",
     "severity": "ERROR",
@@ -1875,6 +2040,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::CompositeAlarm"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service names the only tokens a rule expression may start with; this\n# checks just that first token — a full grammar is out of scope. Function\n# tokens take an argument list, keywords stand alone.\n_pf_cwcas_valid_start(t) if startswith(t, \"(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"NOT \")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"NOT(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"AT_LEAST\")\n\n_pf_cwcas_valid_start(t) if t == \"TRUE\"\n\n_pf_cwcas_valid_start(t) if t == \"FALSE\"\n\n_pf_cwcas_valid_start(t) if startswith(t, \"ALARM(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"OK(\")\n\n_pf_cwcas_valid_start(t) if startswith(t, \"INSUFFICIENT_DATA(\")\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-alarm-rule-syntax\", \"ERROR\", name,\n\t\"Properties.AlarmRule\",\n\tsprintf(\"AlarmRule '%s' does not start with a valid token; the service rejects it with \\\"Error in AlarmRule [Unsupported token ... must be: '(', 'NOT', AT_LEAST, TRUE or FALSE, ALARM, OK, or INSUFFICIENT_DATA]\\\"\", [expr]),\n\t\"Start the rule with ALARM(...), OK(...), INSUFFICIENT_DATA(...), NOT, AT_LEAST, TRUE, FALSE, or a parenthesized group\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Create_Composite_Alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\texpr := resolve(name, \"Properties.AlarmRule\")\n\tis_string(expr)\n\tt := trim_space(expr)\n\tt != \"\"\n\tnot _pf_cwcas_valid_start(t)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-composite-self-reference",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A composite alarm cannot reference itself in its AlarmRule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::CompositeAlarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ponytail: literal string matching only. An AlarmRule built with Fn::Sub over\n# a Ref is undefined under resolve() and is skipped.\n_pf_cwsref_hit(r, n) if contains(r, sprintf(\"\\\"%s\\\"\", [n]))\n\n_pf_cwsref_hit(r, n) if contains(r, sprintf(\"ALARM(%s)\", [n]))\n\n_pf_cwsref_hit(r, n) if contains(r, sprintf(\":alarm:%s\", [n]))\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-self-reference\", \"ERROR\", name,\n\t\"Properties.AlarmRule\",\n\tsprintf(\"The AlarmRule references the composite alarm's own name '%s'; PutCompositeAlarm fails with \\\"A composite alarm cannot have a child relation with itself via its AlarmRule\\\"\", [n]),\n\t\"Reference the child alarms, not the composite alarm itself\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutCompositeAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\tn := resolve(name, \"Properties.AlarmName\")\n\tis_string(n)\n\tr := resolve(name, \"Properties.AlarmRule\")\n\tis_string(r)\n\t_pf_cwsref_hit(r, n)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-composite-suppressor-extension-period",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "ActionsSuppressor requires ActionsSuppressorExtensionPeriod",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::CompositeAlarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-suppressor-extension-period\", \"ERROR\", name,\n\t\"Properties.ActionsSuppressorExtensionPeriod\",\n\t\"ActionsSuppressor is set without ActionsSuppressorExtensionPeriod; PutCompositeAlarm fails with \\\"ActionsSuppressorExtensionPeriod must not be null\\\"\",\n\t\"Set ActionsSuppressorExtensionPeriod (seconds to keep suppressing after the suppressor alarm clears)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutCompositeAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\tis_string(resolve(name, \"Properties.ActionsSuppressor\"))\n\t_pf_cwlib_absent(name, \"ActionsSuppressorExtensionPeriod\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-composite-suppressor-format",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "ActionsSuppressor must be an alarm name or a CloudWatch alarm ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::CompositeAlarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwsf_alarm_arn(parts) if {\n\tcount(parts) >= 7\n\tparts[2] == \"cloudwatch\"\n\tparts[5] == \"alarm\"\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-suppressor-format\", \"ERROR\", name,\n\t\"Properties.ActionsSuppressor\",\n\tsprintf(\"ActionsSuppressor '%s' is an ARN but not a CloudWatch alarm ARN; PutCompositeAlarm fails with \\\"ActionsSuppressor must be a valid CloudWatch Alarm ARN or an Alarm name\\\"\", [s]),\n\t\"Use the alarm name, or arn:<partition>:cloudwatch:<region>:<account>:alarm:<name>\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutCompositeAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\ts := resolve(name, \"Properties.ActionsSuppressor\")\n\tparts := _pf_cwlib_arn(s)\n\tnot _pf_cwsf_alarm_arn(parts)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-composite-suppressor-required",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The suppressor periods require an ActionsSuppressor",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::CompositeAlarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwsr_periods := {\"ActionsSuppressorWaitPeriod\", \"ActionsSuppressorExtensionPeriod\"}\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-suppressor-required\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"%s is set but ActionsSuppressor is not; PutCompositeAlarm fails with \\\"%s requires an ActionSuppressor\\\"\", [key, key]),\n\t\"Set ActionsSuppressor to the alarm that should suppress actions, or drop the suppressor periods\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutCompositeAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\tsome key in _pf_cwsr_periods\n\tnot _pf_cwlib_absent(name, key)\n\t_pf_cwlib_absent(name, \"ActionsSuppressor\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-composite-suppressor-wait-period",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "ActionsSuppressor requires ActionsSuppressorWaitPeriod",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::CompositeAlarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-composite-suppressor-wait-period\", \"ERROR\", name,\n\t\"Properties.ActionsSuppressorWaitPeriod\",\n\t\"ActionsSuppressor is set without ActionsSuppressorWaitPeriod; PutCompositeAlarm fails with \\\"ActionsSuppressorWaitPeriod must not be null\\\"\",\n\t\"Set ActionsSuppressorWaitPeriod (seconds to wait for the suppressor alarm to go into ALARM)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutCompositeAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::CompositeAlarm\")\n\tis_string(resolve(name, \"Properties.ActionsSuppressor\"))\n\t_pf_cwlib_absent(name, \"ActionsSuppressorWaitPeriod\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-alarm-widget-alarms",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "An alarm widget requires properties.alarms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-alarm-widget-alarms\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].properties.alarms)\", [i]),\n\tsprintf(\"Alarm widget %d has no alarms list; PutDashboard fails with \\\"Should have required property 'alarms'\\\"\", [i]),\n\t\"List the alarm ARNs the widget should show\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\t_pf_cwlib_wtype(w, \"alarm\")\n\tprops := _pf_cwlib_wprops(w)\n\tobject.get(props, \"alarms\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-cloudwatch-dashboard-body-json",
@@ -1888,6 +2119,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-body-json\", \"ERROR\", name,\n\t\"Properties.DashboardBody\",\n\t\"DashboardBody does not parse as JSON; PutDashboard fails with \\\"The field DashboardBody must be a valid JSON object\\\"\",\n\t\"Fix the JSON syntax of the dashboard body\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tnot json.is_valid(body)\n}\n"
   },
   {
+    "id": "pf-cloudwatch-dashboard-metric-widget-source",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A metric widget needs a region and a data source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwmws_source(props) if is_array(object.get(props, \"metrics\", null))\n\n_pf_cwmws_source(props) if is_object(object.get(props, \"annotations\", null))\n\n_pf_cwmws_ok(props) if {\n\t_pf_cwmws_source(props)\n\tis_string(object.get(props, \"region\", null))\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-metric-widget-source\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].properties)\", [i]),\n\tsprintf(\"Metric widget %d has no region plus data source; PutDashboard fails with \\\"The metric widget should have specified a region and a data source or an alarm annotation\\\"\", [i]),\n\t\"Give the widget a region and either a metrics array or an alarm annotation\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\t_pf_cwlib_wtype(w, \"metric\")\n\tprops := _pf_cwlib_wprops(w)\n\tnot _pf_cwmws_ok(props)\n}\n"
+  },
+  {
     "id": "pf-cloudwatch-dashboard-name",
     "service": "cloudwatch",
     "severity": "ERROR",
@@ -1897,6 +2139,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::Dashboard"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Extra painful at deploy time: the invalid name also breaks the rollback\n# DELETE, leaving the stack in ROLLBACK_FAILED (benched).\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-name\", \"ERROR\", name,\n\t\"Properties.DashboardName\",\n\tsprintf(\"DashboardName '%s' contains invalid characters; PutDashboard allows only alphanumerics, dash (-) and underscore (_), and the failed stack cannot even roll back cleanly\", [dn]),\n\t\"Use only letters, digits, dash and underscore in the dashboard name\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutDashboard.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tdn := resolve(name, \"Properties.DashboardName\")\n\tis_string(dn)\n\tnot regex.match(`^[A-Za-z0-9_-]+$`, dn)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-text-widget-markdown",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A text widget requires properties.markdown",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-text-widget-markdown\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].properties.markdown)\", [i]),\n\tsprintf(\"Text widget %d has no markdown; PutDashboard fails with \\\"Should have required property 'markdown'\\\"\", [i]),\n\t\"Give the text widget a markdown string\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\t_pf_cwlib_wtype(w, \"text\")\n\tprops := _pf_cwlib_wprops(w)\n\tobject.get(props, \"markdown\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-cloudwatch-dashboard-widget-fields",
@@ -1910,6 +2163,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only key presence is checked: the service accepts arbitrary type values\n# (bench dw04, type \"metricc\" deployed clean), so no enum validation.\n_pf_cwdwf_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-fields\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d])\", [i]),\n\tsprintf(\"Dashboard widget %d is missing '%s'; PutDashboard fails with \\\"Should have required property '%s'\\\"\", [i, key, key]),\n\t\"Give every widget a type and a properties object\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwdwf_widgets(name)\n\tis_object(w)\n\tsome key in {\"type\", \"properties\"}\n\tobject.get(w, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-cloudwatch-dashboard-widget-height-max",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Widget height tops out at 1000",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-height-max\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].height)\", [i]),\n\tsprintf(\"Widget %d has height=%v; PutDashboard fails with \\\"Should be <= 1000\\\"\", [i, h]),\n\t\"Keep widget height at 1000 or below\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\tis_object(w)\n\th := object.get(w, \"height\", 0)\n\tis_number(h)\n\th > 1000\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-widget-period",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A widget period must be 1, 5, 10, 20, 30 or a multiple of 60",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwwp_ok(p) if p in {1, 5, 10, 20, 30}\n\n_pf_cwwp_ok(p) if {\n\tp > 0\n\tp % 60 == 0\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-period\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].properties.period)\", [i]),\n\tsprintf(\"Widget %d sets period %v; PutDashboard fails with \\\"Should be multiple of 60\\\"\", [i, p]),\n\t\"Use 1, 5, 10, 20, 30 or a multiple of 60 seconds\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\tprops := _pf_cwlib_wprops(w)\n\tp := object.get(props, \"period\", null)\n\tis_number(p)\n\tnot _pf_cwwp_ok(p)\n}\n"
+  },
+  {
     "id": "pf-cloudwatch-dashboard-widget-position",
     "service": "cloudwatch",
     "severity": "ERROR",
@@ -1921,6 +2196,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the two benched maxima are claimed (x <= 23, width <= 24).\n_pf_cwdwp_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwdwp_max := {\"x\": 23, \"width\": 24}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-position\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].%s)\", [i, key]),\n\tsprintf(\"Dashboard widget %d has %s=%v, above the maximum %v; PutDashboard fails with \\\"Should be <= %v\\\"\", [i, key, v, m, m]),\n\t\"Keep x within 0-23 and width within 1-24 (24-column grid)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwdwp_widgets(name)\n\tis_object(w)\n\tsome key, m in _pf_cwdwp_max\n\tv := object.get(w, key, 0)\n\tis_number(v)\n\tv > m\n}\n"
   },
   {
+    "id": "pf-cloudwatch-dashboard-widget-position-min",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Widget x and y must not be negative",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwpm_keys := {\"x\", \"y\"}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-position-min\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].%s)\", [i, key]),\n\tsprintf(\"Widget %d has %s=%v; PutDashboard fails with \\\"Should be >= 0\\\"\", [i, key, v]),\n\t\"Keep widget x and y at 0 or above\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\tis_object(w)\n\tsome key in _pf_cwpm_keys\n\tv := object.get(w, key, 0)\n\tis_number(v)\n\tv < 0\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-widget-stat-syntax",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A widget stat must be a CloudWatch statistic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widget-stat-syntax\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].properties.stat)\", [i]),\n\tsprintf(\"Widget %d has stat '%s'; PutDashboard fails with \\\"Should match pattern\\\" for the statistic grammar\", [i, st]),\n\t\"Use SampleCount, Average, Sum, Minimum, Maximum, IQM, a percentile (p90) or a trimmed statistic (TM90)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\tprops := _pf_cwlib_wprops(w)\n\tst := object.get(props, \"stat\", null)\n\tis_string(st)\n\tnot _pf_cwlib_stat_ok(st)\n}\n"
+  },
+  {
     "id": "pf-cloudwatch-dashboard-widgets",
     "service": "cloudwatch",
     "severity": "ERROR",
@@ -1930,6 +2227,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::Dashboard"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widgets\", \"ERROR\", name,\n\t\"Properties.DashboardBody\",\n\t\"DashboardBody has no 'widgets' key; PutDashboard fails with \\\"Should have required property 'widgets'\\\"\",\n\t\"Add a widgets array to the dashboard body\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tobject.get(obj, \"widgets\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-widgets-array",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The widgets key must hold an array",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-widgets-array\", \"ERROR\", name,\n\t\"Properties.DashboardBody\",\n\t\"The widgets key is not an array; PutDashboard fails with \\\"Should be array\\\"\",\n\t\"Make widgets a JSON array of widget objects\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", \"__pf_absent\")\n\tws != \"__pf_absent\"\n\tnot is_array(ws)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-dashboard-yaxis-range",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A widget yAxis min must be below its max",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Dashboard"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwyx_sides := {\"left\", \"right\"}\n\nviolation contains make_diag_full(\"pf-cloudwatch-dashboard-yaxis-range\", \"ERROR\", name,\n\tsprintf(\"Properties.DashboardBody (widgets[%d].properties.yAxis.%s)\", [i, side]),\n\tsprintf(\"Widget %d has yAxis %s min=%v and max=%v; PutDashboard rejects the pair with \\\"Should be <= %v\\\"\", [i, side, mn, mx, mx]),\n\t\"Set the axis min below its max\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Dashboard\")\n\tsome i, w in _pf_cwlib_widgets(name)\n\tprops := _pf_cwlib_wprops(w)\n\taxis := object.get(props, \"yAxis\", null)\n\tis_object(axis)\n\tsome side in _pf_cwyx_sides\n\tspec := object.get(axis, side, null)\n\tis_object(spec)\n\tmn := object.get(spec, \"min\", null)\n\tmx := object.get(spec, \"max\", null)\n\tis_number(mn)\n\tis_number(mx)\n\tmn >= mx\n}\n"
   },
   {
     "id": "pf-cloudwatch-datapoints-evaluation",
@@ -1952,6 +2271,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudWatch::Alarm"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Percentile statistics run p0.0 to p100. Only the pN form is checked; other\n# extended forms (tm, wm, tc, ts, ...) have their own grammars and were not\n# measured.\nviolation contains make_diag_full(\"pf-cloudwatch-extended-statistic\", \"ERROR\", name,\n\t\"Properties.ExtendedStatistic\",\n\tsprintf(\"ExtendedStatistic '%s' is beyond p100; PutMetricAlarm fails with \\\"The value %s for parameter ExtendedStatistic is not supported.\\\"\", [s, s]),\n\t\"Use a percentile between p0.0 and p100\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html#Percentiles\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ts := resolve(name, \"Properties.ExtendedStatistic\")\n\tis_string(s)\n\tstartswith(s, \"p\")\n\tn := to_number(substring(s, 1, count(s) - 1))\n\tn > 100\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-body-json",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "RuleBody must be valid JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-body-json\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\t\"RuleBody is not valid JSON; PutInsightRule fails with \\\"INVALID_RULE_BODY: The RuleBody could not be parsed.\\\"\",\n\t\"Render the rule body with JSON.stringify / Fn::ToJsonString instead of hand-written JSON\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tbody := resolve(name, \"Properties.RuleBody\")\n\tis_string(body)\n\tnot json.is_valid(body)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-body-unknown-key",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The rule body top level takes only the documented keys",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ponytail: an allowlist over the documented top-level keys. Fields is kept in\n# the set because the CLF form documents it there; only keys outside the set\n# fire.\n_pf_cwirk_keys := {\"Schema\", \"LogGroupNames\", \"LogFormat\", \"Contribution\", \"AggregateOn\", \"Fields\"}\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-body-unknown-key\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\tsprintf(\"RuleBody has the unknown top-level key '%s'; PutInsightRule fails with \\\"INVALID_RULE_BODY: UnknownKey encountered at %s in the RuleBody.\\\"\", [key, key]),\n\t\"Filters and the contribution fields belong inside Contribution, not at the top level\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tobj := _pf_cwlib_rulebody(name)\n\tsome key in object.keys(obj)\n\tnot key in _pf_cwirk_keys\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-contribution-filters",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Contribution requires a Filters key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-contribution-filters\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\t\"Contribution has no Filters key; PutInsightRule fails with \\\"INVALID_RULE_BODY: MissingKey encountered at Filters in the RuleBody.\\\"\",\n\t\"Add \\\"Filters\\\": [] inside Contribution (an empty list matches every log event)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tobj := _pf_cwlib_rulebody(name)\n\tcontribution := object.get(obj, \"Contribution\", null)\n\tis_object(contribution)\n\tobject.get(contribution, \"Filters\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-keys-max",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "Contribution.Keys holds at most 4 keys",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-keys-max\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\tsprintf(\"Contribution.Keys has %d entries; PutInsightRule fails with \\\"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4 Keys in the Contribution.\\\"\", [n]),\n\t\"Keep Contribution.Keys to 4 fields\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tobj := _pf_cwlib_rulebody(name)\n\tkeys := object.get(obj, [\"Contribution\", \"Keys\"], null)\n\tis_array(keys)\n\tn := count(keys)\n\tn > 4\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-log-format",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "LogFormat must be JSON or CLF",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-log-format\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\tsprintf(\"LogFormat '%s' is not JSON or CLF; PutInsightRule fails with \\\"INVALID_RULE_BODY: InvalidValueType encountered at LogFormat in the RuleBody.\\\"\", [f]),\n\t\"Set LogFormat to JSON or CLF\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tobj := _pf_cwlib_rulebody(name)\n\tf := object.get(obj, \"LogFormat\", null)\n\tis_string(f)\n\tnot f in {\"JSON\", \"CLF\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-log-groups",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The rule body needs at least one log group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-log-groups\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\t\"LogGroupNames is empty; PutInsightRule fails with \\\"INVALID_RULE_BODY: Empty encountered at LogGroupNames in the RuleBody.\\\"\",\n\t\"List at least one log group name (a trailing * is allowed as a prefix match)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tobj := _pf_cwlib_rulebody(name)\n\tgroups := object.get(obj, \"LogGroupNames\", null)\n\tis_array(groups)\n\tcount(groups) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-insight-rule-schema",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "The rule body Schema must be CloudWatchLogRule version 1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::InsightRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cwirs_ok(obj) if {\n\tschema := object.get(obj, \"Schema\", null)\n\tis_object(schema)\n\tobject.get(schema, \"Name\", null) == \"CloudWatchLogRule\"\n\tobject.get(schema, \"Version\", null) == 1\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-insight-rule-schema\", \"ERROR\", name,\n\t\"Properties.RuleBody\",\n\t\"The rule body Schema is not {\\\"Name\\\": \\\"CloudWatchLogRule\\\", \\\"Version\\\": 1}; PutInsightRule fails with \\\"INVALID_RULE_BODY: InvalidSchema encountered at Schema in the RuleBody.\\\"\",\n\t\"Set Schema to {\\\"Name\\\": \\\"CloudWatchLogRule\\\", \\\"Version\\\": 1}\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::InsightRule\")\n\tobj := _pf_cwlib_rulebody(name)\n\tnot _pf_cwirs_ok(obj)\n}\n"
   },
   {
     "id": "pf-cloudwatch-metric-namespace-ascii",
@@ -1979,12 +2375,89 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-cloudwatch-metric-query-returndata",
     "service": "cloudwatch",
     "severity": "ERROR",
-    "title": "Exactly one metric query must return data",
+    "title": "One metric query must return data, or two for an anomaly alarm",
     "upstream": "none",
     "resourceTypes": [
       "AWS::CloudWatch::Alarm"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An alarm on a Metrics array needs exactly one query returning data.\n# ReturnData defaults to true when absent (bench w04b), and explicit false\n# everywhere is rejected too (w04c). A query whose ReturnData is an\n# unresolvable intrinsic makes the count unknowable, so the rule skips.\n_pf_cwmqr_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwmqr_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwmqr_returns(q) if object.get(q, \"ReturnData\", true) == true\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-query-returndata\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"%d of the metric queries return data (ReturnData defaults to true); PutMetricAlarm fails with \\\"Exactly one element of the metrics list should return data.\\\"\", [n]),\n\t\"Set ReturnData: false on every query except the one the alarm should watch\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\t_pf_cwmqr_countable(q.value)\n\t}\n\tn := count([q | some q in items; _pf_cwmqr_returns(q.value)])\n\tn != 1\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An alarm on a Metrics array needs a fixed number of queries returning data,\n# and the number depends on the alarm kind: one for a static-threshold alarm,\n# two for an anomaly-detection alarm (the metric and the band both return,\n# bench 2026-09-08). ReturnData defaults to true when absent (bench w04b), and\n# explicit false everywhere is rejected too (w04c). A query whose ReturnData is\n# an unresolvable intrinsic makes the count unknowable, so the rule skips.\n_pf_cwmqr_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwmqr_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwmqr_returns(q) if object.get(q, \"ReturnData\", true) == true\n\n_pf_cwmqr_anomaly(name) if is_string(resolve(name, \"Properties.ThresholdMetricId\"))\n\n_pf_cwmqr_expected(name) := 2 if _pf_cwmqr_anomaly(name)\n\n_pf_cwmqr_expected(name) := 1 if not _pf_cwmqr_anomaly(name)\n\n_pf_cwmqr_wording := {\n\t1: \"Exactly one element of the metrics list should return data.\",\n\t2: \"Exactly two elements of the metrics list should return data.\",\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-query-returndata\", \"ERROR\", name,\n\t\"Properties.Metrics\",\n\tsprintf(\"%d of the metric queries return data (ReturnData defaults to true); PutMetricAlarm fails with \\\"%s\\\"\", [n, _pf_cwmqr_wording[expected]]),\n\t\"Set ReturnData so exactly one query returns data (two for an anomaly alarm: the metric and its ANOMALY_DETECTION_BAND)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\t_pf_cwmqr_countable(q.value)\n\t}\n\texpected := _pf_cwmqr_expected(name)\n\tn := count([q | some q in items; _pf_cwmqr_returns(q.value)])\n\tn != expected\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-stream-additional-statistic",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "AdditionalStatistics must be CloudWatch statistics",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::MetricStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-stream-additional-statistic\", \"ERROR\", name,\n\tsprintf(\"Properties.StatisticsConfigurations.%d.AdditionalStatistics\", [i]),\n\tsprintf(\"AdditionalStatistics contains '%s'; PutMetricStream fails with \\\"Unsupported statistic %s for selected OutputFormat\\\"\", [st, st]),\n\t\"Use a percentile up to p100 (p99, p99.9) or another supported statistic\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::MetricStream\")\n\tsome item in flatten_list(name, \"Properties.StatisticsConfigurations\")\n\ti := item.index\n\tcfg := item.value\n\tis_object(cfg)\n\tstats := object.get(cfg, \"AdditionalStatistics\", null)\n\tis_array(stats)\n\tsome st in stats\n\tis_string(st)\n\tnot _pf_cwlib_stat_ok(st)\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-stream-filters-exclusive",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "IncludeFilters and ExcludeFilters are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::MetricStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-stream-filters-exclusive\", \"ERROR\", name,\n\t\"Properties.ExcludeFilters\",\n\t\"The metric stream sets both IncludeFilters and ExcludeFilters; PutMetricStream fails with \\\"IncludeFilters and ExcludeFilters cannot both be present\\\"\",\n\t\"Keep one list: an allowlist (IncludeFilters) or a denylist (ExcludeFilters)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::MetricStream\")\n\tnot _pf_cwlib_absent(name, \"IncludeFilters\")\n\tnot _pf_cwlib_absent(name, \"ExcludeFilters\")\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-stream-firehose-account",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "FirehoseArn must be in the stack's own account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::MetricStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Needs the deploy environment (enforce mode with a concrete account).\nviolation contains make_diag_full(\"pf-cloudwatch-metric-stream-firehose-account\", \"ERROR\", name,\n\t\"Properties.FirehoseArn\",\n\tsprintf(\"FirehoseArn names account %s but the stack deploys to %s; PutMetricStream fails with \\\"FirehoseArn must be in the same account as the Metric Stream\\\"\", [arn_account, account]),\n\t\"Build the ARN with ${AWS::AccountId}; a metric stream cannot write to another account's delivery stream\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html\") if {\n\taccount := data.cdk_preflight.deploy_account\n\tsome name in resources_of_type(\"AWS::CloudWatch::MetricStream\")\n\tparts := _pf_cwlib_arn(resolve(name, \"Properties.FirehoseArn\"))\n\tparts[2] == \"firehose\"\n\tarn_account := parts[4]\n\tarn_account != account\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-stream-firehose-region",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "FirehoseArn must be in the stack's own region and partition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::MetricStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Needs the deploy environment (enforce mode only).\nviolation contains make_diag_full(\"pf-cloudwatch-metric-stream-firehose-region\", \"ERROR\", name,\n\t\"Properties.FirehoseArn\",\n\tsprintf(\"FirehoseArn names region %s but the stack deploys to %s; PutMetricStream fails with \\\"FirehoseArn must be in the same region and AWS partition as the Metric Stream\\\"\", [arn_region, region]),\n\t\"Build the ARN with ${AWS::Region} (arn:${AWS::Partition}:firehose:${AWS::Region}:${AWS::AccountId}:deliverystream/<name>)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html\") if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::CloudWatch::MetricStream\")\n\tparts := _pf_cwlib_arn(resolve(name, \"Properties.FirehoseArn\"))\n\tparts[2] == \"firehose\"\n\tarn_region := parts[3]\n\tarn_region != region\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-stream-include-metrics",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "A statistics configuration needs at least one IncludeMetrics entry",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::MetricStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-metric-stream-include-metrics\", \"ERROR\", name,\n\tsprintf(\"Properties.StatisticsConfigurations.%d.IncludeMetrics\", [i]),\n\tsprintf(\"StatisticsConfigurations[%d] has an empty IncludeMetrics; PutMetricStream fails with \\\"IncludeMetrics less than 1\\\"\", [i]),\n\t\"List the metrics the additional statistics apply to, or drop the statistics configuration\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::MetricStream\")\n\tsome item in flatten_list(name, \"Properties.StatisticsConfigurations\")\n\ti := item.index\n\tcfg := item.value\n\tis_object(cfg)\n\tmetrics := object.get(cfg, \"IncludeMetrics\", null)\n\tis_array(metrics)\n\tcount(metrics) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metric-stream-role-account",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "RoleArn must be in the stack's own account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::MetricStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Needs the deploy environment (enforce mode with a concrete account).\nviolation contains make_diag_full(\"pf-cloudwatch-metric-stream-role-account\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\tsprintf(\"RoleArn names account %s but the stack deploys to %s; PutMetricStream fails with \\\"Cross-account pass role is not allowed.\\\"\", [arn_account, account]),\n\t\"Pass a role from this account (build the ARN with ${AWS::AccountId})\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricStream.html\") if {\n\taccount := data.cdk_preflight.deploy_account\n\tsome name in resources_of_type(\"AWS::CloudWatch::MetricStream\")\n\tparts := _pf_cwlib_arn(resolve(name, \"Properties.RoleArn\"))\n\tparts[2] == \"iam\"\n\tarn_account := parts[4]\n\tarn_account != account\n}\n"
+  },
+  {
+    "id": "pf-cloudwatch-metricstat-stat-syntax",
+    "service": "cloudwatch",
+    "severity": "ERROR",
+    "title": "MetricStat.Stat must be a CloudWatch statistic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudwatch-metricstat-stat-syntax\", \"ERROR\", name,\n\tsprintf(\"Properties.Metrics (MetricStat.Stat of query %d)\", [i]),\n\tsprintf(\"MetricStat Stat '%s' is not a CloudWatch statistic; PutMetricAlarm fails with \\\"Invalid metrics list\\\"\", [st]),\n\t\"Use SampleCount, Average, Sum, Minimum, Maximum, IQM, a percentile (p90) or a trimmed statistic (TM90)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\tsome item in flatten_list(name, \"Properties.Metrics\")\n\ti := item.index\n\tq := item.value\n\tis_object(q)\n\tst := object.get(q, [\"MetricStat\", \"Stat\"], null)\n\tis_string(st)\n\tnot _pf_cwlib_stat_ok(st)\n}\n"
   },
   {
     "id": "pf-cloudwatch-threshold-metric-id",
@@ -8283,6 +8756,215 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_limgz_fix := \"Use Code.S3Bucket/S3Key or Code.ZipFile for a .zip function\"\n\n_pf_limgz_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-function.html\"\n\nviolation contains make_diag_full(\"pf-lambda-zip-no-imageuri\", \"ERROR\", name,\n\t\"Properties.Code.ImageUri\",\n\t\"Code.ImageUri on a .zip function; the image URI is only read when PackageType is Image\",\n\t_pf_limgz_fix, _pf_limgz_url) if {\n\tsome name in _pf_lam_fn\n\tprops := _pf_lam_props(name)\n\tcode := _pf_lam_obj(props, \"Code\")\n\tobject.get(props, \"PackageType\", \"Zip\") != \"Image\"\n\t_pf_lam_has_key(code, \"ImageUri\")\n}\n"
   },
   {
+    "id": "pf-logs-account-policy-document-json",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "An account policy document must be valid JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::AccountPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-account-policy-document-json\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\t\"PolicyDocument is not valid JSON; PutAccountPolicy fails with \\\"Malformed Subscription filter policy\\\"\",\n\t\"Render the document with JSON.stringify / Fn::ToJsonString instead of hand-written JSON\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAccountPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::AccountPolicy\")\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_string(doc)\n\tnot json.is_valid(doc)\n}\n"
+  },
+  {
+    "id": "pf-logs-account-policy-selection-criteria-prefix",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "Field index and transformer account policies select with LogGroupNamePrefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::AccountPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgapp_types := {\"FIELD_INDEX_POLICY\", \"TRANSFORMER_POLICY\"}\n\nviolation contains make_diag_full(\"pf-logs-account-policy-selection-criteria-prefix\", \"ERROR\", name,\n\t\"Properties.SelectionCriteria\",\n\tsprintf(\"A %s selects with LogGroupNamePrefix, but SelectionCriteria is '%s'; PutAccountPolicy fails with \\\"Invalid selection criteria provided.\\\"\", [policy_type, c]),\n\t\"Use LogGroupNamePrefix \\\"/my/prefix\\\"\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAccountPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::AccountPolicy\")\n\tpolicy_type := resolve(name, \"Properties.PolicyType\")\n\tpolicy_type in _pf_lgapp_types\n\tc := resolve(name, \"Properties.SelectionCriteria\")\n\tis_string(c)\n\tnot regex.match(`(?i)^\\s*LogGroupNamePrefix\\s`, c)\n}\n"
+  },
+  {
+    "id": "pf-logs-account-policy-selection-criteria-subscription",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A subscription account policy selects with LogGroupName NOT IN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::AccountPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-account-policy-selection-criteria-subscription\", \"ERROR\", name,\n\t\"Properties.SelectionCriteria\",\n\tsprintf(\"SelectionCriteria '%s' is not a LogGroupName NOT IN [...] expression; PutAccountPolicy fails with \\\"The provided SelectionCriteria string is invalid.\\\"\", [c]),\n\t\"Use LogGroupName NOT IN [\\\"/aws/lambda/fn\\\"] - a subscription account policy can only exclude log groups\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAccountPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::AccountPolicy\")\n\tresolve(name, \"Properties.PolicyType\") == \"SUBSCRIPTION_FILTER_POLICY\"\n\tc := resolve(name, \"Properties.SelectionCriteria\")\n\tis_string(c)\n\tnot regex.match(`(?i)^\\s*LogGroupName\\s+NOT\\s+IN\\s*\\[`, c)\n}\n"
+  },
+  {
+    "id": "pf-logs-account-policy-selection-criteria-unsupported",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A data protection account policy takes no SelectionCriteria",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::AccountPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-account-policy-selection-criteria-unsupported\", \"ERROR\", name,\n\t\"Properties.SelectionCriteria\",\n\t\"A DATA_PROTECTION_POLICY account policy cannot narrow its scope; PutAccountPolicy fails with \\\"SelectionCriteria is not yet supported for the DATA_PROTECTION_POLICY policy type.\\\"\",\n\t\"Drop SelectionCriteria - a data protection account policy applies to every log group\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAccountPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::AccountPolicy\")\n\tresolve(name, \"Properties.PolicyType\") == \"DATA_PROTECTION_POLICY\"\n\tis_string(resolve(name, \"Properties.SelectionCriteria\"))\n}\n"
+  },
+  {
+    "id": "pf-logs-account-policy-subscription-document",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A subscription account policy document needs DestinationArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::AccountPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-account-policy-subscription-document\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\t\"The subscription policy document has no DestinationArn; PutAccountPolicy fails with \\\"MissingDestinationArnfield in policy document\\\"\",\n\t\"Add DestinationArn (and FilterPattern) to the policy document\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAccountPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::AccountPolicy\")\n\tresolve(name, \"Properties.PolicyType\") == \"SUBSCRIPTION_FILTER_POLICY\"\n\tobj := _pf_lglib_json(resolve(name, \"Properties.PolicyDocument\"))\n\tobject.get(obj, \"DestinationArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-logs-account-policy-transformer-document",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A transformer account policy document is an array of processors",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::AccountPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-account-policy-transformer-document\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\t\"The transformer policy document is not a JSON array of processors; PutAccountPolicy fails with \\\"Invalid json transformer config provided\\\"\",\n\t\"Wrap the processors in an array: [{\\\"parseJSON\\\": {}}, ...]\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAccountPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::AccountPolicy\")\n\tresolve(name, \"Properties.PolicyType\") == \"TRANSFORMER_POLICY\"\n\tdoc := resolve(name, \"Properties.PolicyDocument\")\n\tis_string(doc)\n\tjson.is_valid(doc)\n\tnot is_array(json.unmarshal(doc))\n}\n"
+  },
+  {
+    "id": "pf-logs-anomaly-detector-single-log-group",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A log anomaly detector watches exactly one log group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogAnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-anomaly-detector-single-log-group\", \"ERROR\", name,\n\t\"Properties.LogGroupArnList\",\n\tsprintf(\"The detector lists %d log groups; CreateLogAnomalyDetector fails with \\\"Only 1 log group arn is supported in the list.\\\"\", [n]),\n\t\"Create one anomaly detector per log group\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loganomalydetector.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogAnomalyDetector\")\n\titems := [x | some x in flatten_list(name, \"Properties.LogGroupArnList\")]\n\tn := count(items)\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-logs-data-protection-identifier-arn",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A data identifier must be a managed data-identifier ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-data-protection-identifier-arn\", \"ERROR\", name,\n\t\"Properties.DataProtectionPolicy\",\n\tsprintf(\"DataIdentifier '%s' is not an ARN; PutDataProtectionPolicy fails with \\\"%s is not a valid Data Identifier\\\"\", [id, id]),\n\t\"Use the managed identifier ARN (arn:aws:dataprotection::aws:data-identifier/EmailAddress)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data-start.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogGroup\")\n\tobj := _pf_lglib_dpp(name)\n\tstmts := object.get(obj, \"Statement\", null)\n\tis_array(stmts)\n\tsome st in stmts\n\tis_object(st)\n\tids := object.get(st, \"DataIdentifier\", null)\n\tis_array(ids)\n\tsome id in ids\n\tis_string(id)\n\tnot startswith(id, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-logs-data-protection-identifiers-match",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "Both data protection statements must list the same data identifiers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-data-protection-identifiers-match\", \"ERROR\", name,\n\t\"Properties.DataProtectionPolicy\",\n\t\"The two statements list different DataIdentifier sets; PutDataProtectionPolicy fails with \\\"Audit Statement and Deidentify Statement must have the same Data Identifiers\\\"\",\n\t\"Use the same DataIdentifier list in the Audit and the Deidentify statement\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data-start.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogGroup\")\n\tobj := _pf_lglib_dpp(name)\n\tstmts := object.get(obj, \"Statement\", null)\n\tis_array(stmts)\n\tcount(stmts) == 2\n\tfirst := object.get(stmts[0], \"DataIdentifier\", null)\n\tsecond := object.get(stmts[1], \"DataIdentifier\", null)\n\tis_array(first)\n\tis_array(second)\n\tsort(first) != sort(second)\n}\n"
+  },
+  {
+    "id": "pf-logs-data-protection-mask-config-empty",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "Deidentify MaskConfig takes no fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-data-protection-mask-config-empty\", \"ERROR\", name,\n\t\"Properties.DataProtectionPolicy\",\n\tsprintf(\"Deidentify MaskConfig carries the field '%s'; PutDataProtectionPolicy fails with \\\"%s is not a valid field\\\"\", [key, key]),\n\t\"Leave MaskConfig as an empty object - the masking character is not configurable\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data-start.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogGroup\")\n\tobj := _pf_lglib_dpp(name)\n\tstmts := object.get(obj, \"Statement\", null)\n\tis_array(stmts)\n\tsome st in stmts\n\tis_object(st)\n\tmask := object.get(st, [\"Operation\", \"Deidentify\", \"MaskConfig\"], null)\n\tis_object(mask)\n\tsome key in object.keys(mask)\n}\n"
+  },
+  {
+    "id": "pf-logs-data-protection-policy-statements",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A data protection policy needs exactly two statements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-data-protection-policy-statements\", \"ERROR\", name,\n\t\"Properties.DataProtectionPolicy\",\n\tsprintf(\"The data protection policy has %d statements; PutDataProtectionPolicy fails with \\\"Policy can only have two statements. One for Audit Operation and one for Deidentify Operation\\\"\", [n]),\n\t\"Write one Audit statement and one Deidentify statement\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data-start.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogGroup\")\n\tobj := _pf_lglib_dpp(name)\n\tstmts := object.get(obj, \"Statement\", null)\n\tis_array(stmts)\n\tn := count(stmts)\n\tn != 2\n}\n"
+  },
+  {
+    "id": "pf-logs-data-protection-policy-version",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A data protection policy version must be 2021-06-01",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-data-protection-policy-version\", \"ERROR\", name,\n\t\"Properties.DataProtectionPolicy\",\n\tsprintf(\"The data protection policy Version is '%s'; PutDataProtectionPolicy fails with \\\"Policy Version must be 2021-06-01\\\"\", [v]),\n\t\"Set Version to 2021-06-01 (this is not an IAM policy document)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data-start.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogGroup\")\n\tobj := _pf_lglib_dpp(name)\n\tv := object.get(obj, \"Version\", null)\n\tis_string(v)\n\tv != \"2021-06-01\"\n}\n"
+  },
+  {
+    "id": "pf-logs-delivery-destination-output-format-enum",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "OutputFormat must be json, plain, w3c, raw or parquet",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::DeliveryDestination"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgdof_formats := {\"json\", \"plain\", \"w3c\", \"raw\", \"parquet\"}\n\nviolation contains make_diag_full(\"pf-logs-delivery-destination-output-format-enum\", \"ERROR\", name,\n\t\"Properties.OutputFormat\",\n\tsprintf(\"OutputFormat '%s' is not a delivery output format; PutDeliveryDestination fails with \\\"failed to satisfy constraint: Member must satisfy enum value set: [w3c, raw, json, plain, parquet]\\\"\", [f]),\n\t\"Use json, plain, w3c, raw or parquet\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutDeliveryDestination.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::DeliveryDestination\")\n\tf := resolve(name, \"Properties.OutputFormat\")\n\tis_string(f)\n\tnot f in _pf_lgdof_formats\n}\n"
+  },
+  {
+    "id": "pf-logs-delivery-destination-output-format-target",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A CloudWatch Logs delivery destination cannot use parquet",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::DeliveryDestination"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-delivery-destination-output-format-target\", \"ERROR\", name,\n\t\"Properties.OutputFormat\",\n\t\"The delivery destination is a log group but OutputFormat is parquet; PutDeliveryDestination fails with \\\"Invalid output format value provided.\\\"\",\n\t\"Use json or plain for a CloudWatch Logs destination; parquet is only available for S3 destinations\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutDeliveryDestination.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::DeliveryDestination\")\n\tparts := _pf_lglib_arn(resolve(name, \"Properties.DestinationResourceArn\"))\n\tparts[2] == \"logs\"\n\tresolve(name, \"Properties.OutputFormat\") == \"parquet\"\n}\n"
+  },
+  {
+    "id": "pf-logs-delivery-destination-region",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A delivery destination must be in the stack's own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::DeliveryDestination"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Needs the deploy environment (enforce mode only). S3 ARNs carry an empty\n# region segment and are skipped.\nviolation contains make_diag_full(\"pf-logs-delivery-destination-region\", \"ERROR\", name,\n\t\"Properties.DestinationResourceArn\",\n\tsprintf(\"The destination ARN names region %s but the stack deploys to %s; PutDeliveryDestination fails with \\\"Region from identity does not match the Destination Resource ARN.\\\"\", [arn_region, region]),\n\t\"Build the ARN with ${AWS::Region}, or deploy the delivery destination from the region that holds the target\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutDeliveryDestination.html\") if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::Logs::DeliveryDestination\")\n\tparts := _pf_lglib_arn(resolve(name, \"Properties.DestinationResourceArn\"))\n\tarn_region := parts[3]\n\tarn_region != \"\"\n\tarn_region != region\n}\n"
+  },
+  {
+    "id": "pf-logs-destination-policy-json",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "DestinationPolicy must be an IAM policy document",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::Destination"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-destination-policy-json\", \"ERROR\", name,\n\t\"Properties.DestinationPolicy\",\n\t\"DestinationPolicy is not an IAM policy document; PutDestinationPolicy fails with \\\"Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar.\\\"\",\n\t\"Render the policy with iam.PolicyDocument (a Version plus a Statement array)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-destination.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::Destination\")\n\tp := resolve(name, \"Properties.DestinationPolicy\")\n\tis_string(p)\n\tnot _pf_lgdpj_iam(p)\n}\n"
+  },
+  {
+    "id": "pf-logs-field-index-fields-max",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A field index policy indexes at most 20 fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-field-index-fields-max\", \"ERROR\", name,\n\t\"Properties.FieldIndexPolicies\",\n\tsprintf(\"The field index policy lists %d fields; PutIndexPolicy fails with \\\"Policy document contains more than 20 fields.\\\"\", [n]),\n\t\"Index at most 20 fields per log group\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogGroup\")\n\tsome item in flatten_list(name, \"Properties.FieldIndexPolicies\")\n\tpol := item.value\n\tis_object(pol)\n\tfields := object.get(pol, \"Fields\", null)\n\tis_array(fields)\n\tn := count(fields)\n\tn > 20\n}\n"
+  },
+  {
+    "id": "pf-logs-field-selection-criteria-syntax",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "FieldSelectionCriteria must reference an @aws system field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::MetricFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ponytail: only the \"no system field at all\" case is claimed - a criteria\n# string that names @aws.* but is otherwise malformed passes the rule and is\n# caught by the service.\nviolation contains make_diag_full(\"pf-logs-field-selection-criteria-syntax\", \"ERROR\", name,\n\t\"Properties.FieldSelectionCriteria\",\n\tsprintf(\"FieldSelectionCriteria '%s' references no @aws system field; PutMetricFilter fails with \\\"The provided field selection criteria is invalid\\\"\", [c]),\n\t\"Select on a system field, e.g. @aws.region = \\\"us-east-1\\\" or @aws.account IN [\\\"123456789012\\\"]\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricFilter.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tc := resolve(name, \"Properties.FieldSelectionCriteria\")\n\tis_string(c)\n\tc != \"\"\n\tnot contains(c, \"@aws.\")\n}\n"
+  },
+  {
+    "id": "pf-logs-filter-name-charset",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A filter name cannot contain a colon or an asterisk",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::MetricFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-filter-name-charset\", \"ERROR\", name,\n\t\"Properties.FilterName\",\n\tsprintf(\"FilterName '%s' contains a colon or asterisk; PutMetricFilter fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: [^:*]*\\\"\", [n]),\n\t\"Remove ':' and '*' from the filter name\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricFilter.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tn := resolve(name, \"Properties.FilterName\")\n\tis_string(n)\n\tregex.match(`[:*]`, n)\n}\n"
+  },
+  {
     "id": "pf-logs-filter-pattern-bracket",
     "service": "logs",
     "severity": "ERROR",
@@ -8293,6 +8975,65 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Logs::SubscriptionFilter"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgfpb_url := \"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html\"\n\n_pf_lgfpb_msg(kind) := sprintf(\"The %s filter pattern starts with '[' but does not end with ']'; the service rejects it with \\\"If a filter pattern starts with '[' it must end with ']'\\\"\", [kind])\n\n_pf_lgfpb_fix := \"Close the bracket — a space-delimited pattern is [field1, field2, ...]\"\n\n# The same parser runs for metric filters and subscription filters, and it\n# runs before any destination validation (bench c01/c06). Only this\n# start/end pairing is checked here; a full pattern parser is out of scope.\n_pf_lgfpb_unbalanced(p) if {\n\tt := trim_space(p)\n\tstartswith(t, \"[\")\n\tnot endswith(t, \"]\")\n}\n\nviolation contains make_diag_full(\"pf-logs-filter-pattern-bracket\", \"ERROR\", name,\n\t\"Properties.FilterPattern\",\n\t_pf_lgfpb_msg(\"metric\"),\n\t_pf_lgfpb_fix, _pf_lgfpb_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tp := resolve(name, \"Properties.FilterPattern\")\n\tis_string(p)\n\t_pf_lgfpb_unbalanced(p)\n}\n\nviolation contains make_diag_full(\"pf-logs-filter-pattern-bracket\", \"ERROR\", name,\n\t\"Properties.FilterPattern\",\n\t_pf_lgfpb_msg(\"subscription\"),\n\t_pf_lgfpb_fix, _pf_lgfpb_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\tp := resolve(name, \"Properties.FilterPattern\")\n\tis_string(p)\n\t_pf_lgfpb_unbalanced(p)\n}\n"
+  },
+  {
+    "id": "pf-logs-infrequent-access-anomaly-detector",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A log anomaly detector needs Standard-class log groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup",
+      "AWS::Logs::LogAnomalyDetector"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-infrequent-access-anomaly-detector\", \"ERROR\", name,\n\t\"Properties.LogGroupArnList\",\n\t\"One of the detector's log groups uses the Infrequent Access log class; CreateLogAnomalyDetector fails with \\\"This operation is only supported on the Standard log class.\\\"\",\n\t\"Point the detector at Standard-class log groups (LogGroupClass: STANDARD, the default)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::LogAnomalyDetector\")\n\tsome item in flatten_list(name, \"Properties.LogGroupArnList\")\n\tsome g in _pf_lglib_groups(_pf_lglib_ref(item.value))\n\t_pf_lglib_ia(g)\n}\n"
+  },
+  {
+    "id": "pf-logs-infrequent-access-metric-filter",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A metric filter needs a Standard-class log group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup",
+      "AWS::Logs::MetricFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-infrequent-access-metric-filter\", \"ERROR\", name,\n\t\"Properties.LogGroupName\",\n\t\"The target log group uses the Infrequent Access log class; PutMetricFilter fails with \\\"This operation is only supported on the Standard log class.\\\"\",\n\t\"Put the log group in the Standard class (LogGroupClass: STANDARD, the default), or drop this resource\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\t_pf_lglib_ia_target(name, \"Properties.LogGroupName\")\n}\n"
+  },
+  {
+    "id": "pf-logs-infrequent-access-subscription-filter",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A subscription filter needs a Standard-class log group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup",
+      "AWS::Logs::SubscriptionFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-infrequent-access-subscription-filter\", \"ERROR\", name,\n\t\"Properties.LogGroupName\",\n\t\"The target log group uses the Infrequent Access log class; PutSubscriptionFilter fails with \\\"This operation is only supported on the Standard log class.\\\"\",\n\t\"Put the log group in the Standard class (LogGroupClass: STANDARD, the default), or drop this resource\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lglib_ia_target(name, \"Properties.LogGroupName\")\n}\n"
+  },
+  {
+    "id": "pf-logs-infrequent-access-transformer",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A transformer needs a Standard-class log group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::LogGroup",
+      "AWS::Logs::Transformer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-infrequent-access-transformer\", \"ERROR\", name,\n\t\"Properties.LogGroupIdentifier\",\n\t\"The target log group uses the Infrequent Access log class; PutTransformer fails with \\\"This operation is only supported on the Standard log class.\\\"\",\n\t\"Put the log group in the Standard class (LogGroupClass: STANDARD, the default), or drop this resource\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::Transformer\")\n\t_pf_lglib_ia_target(name, \"Properties.LogGroupIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-logs-metric-dimension-selector",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A metric filter dimension value must be a field selector",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::MetricFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-metric-dimension-selector\", \"ERROR\", name,\n\tsprintf(\"Properties.MetricTransformations.%d.Dimensions\", [i]),\n\tsprintf(\"Dimension '%s' has the literal value '%s'; PutMetricFilter fails with \\\"Invalid metric transformation: dimension value must be valid selector\\\"\", [key, v]),\n\t\"Point the dimension at a field from the log event ($.field for JSON, $1 for space-delimited)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricFilter.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tsome item in flatten_list(name, \"Properties.MetricTransformations\")\n\ti := item.index\n\ttransform := item.value\n\tis_object(transform)\n\tdims := object.get(transform, \"Dimensions\", null)\n\tis_array(dims)\n\tsome d in dims\n\tis_object(d)\n\tkey := object.get(d, \"Key\", \"\")\n\tv := object.get(d, \"Value\", null)\n\tis_string(v)\n\tnot startswith(v, \"$\")\n}\n"
   },
   {
     "id": "pf-logs-metric-dimensions-default-exclusive",
@@ -8306,6 +9047,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DefaultValue is emitted when a log line does not match, but a dimension\n# value can only come from a match — the service rejects the combination.\nviolation contains make_diag_full(\"pf-logs-metric-dimensions-default-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.MetricTransformations.%d.DefaultValue\", [t.index]),\n\t\"The metric transformation sets both Dimensions and DefaultValue; the service rejects it with \\\"Invalid metric transformation: dimensions and default value are mutually exclusive properties\\\"\",\n\t\"Drop DefaultValue when the transformation has Dimensions, or drop the Dimensions\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-logs-metricfilter-metrictransformation.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tsome t in flatten_list(name, \"Properties.MetricTransformations\")\n\tis_object(t.value)\n\tobject.get(t.value, \"DefaultValue\", \"__pf_absent\") != \"__pf_absent\"\n\tdims := object.get(t.value, \"Dimensions\", null)\n\tis_array(dims)\n\tcount(dims) > 0\n}\n"
   },
   {
+    "id": "pf-logs-metric-namespace-reserved",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A metric filter cannot publish into the AWS/ namespace",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::MetricFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-metric-namespace-reserved\", \"ERROR\", name,\n\tsprintf(\"Properties.MetricTransformations.%d.MetricNamespace\", [i]),\n\tsprintf(\"MetricNamespace '%s' is in the reserved AWS/ prefix; PutMetricFilter fails with \\\"Metric namespaces starting with AWS/ are reserved for AWS.\\\"\", [ns]),\n\t\"Publish into your own namespace\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricFilter.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::MetricFilter\")\n\tsome item in flatten_list(name, \"Properties.MetricTransformations\")\n\ti := item.index\n\ttransform := item.value\n\tis_object(transform)\n\tns := object.get(transform, \"MetricNamespace\", null)\n\tis_string(ns)\n\tstartswith(ns, \"AWS/\")\n}\n"
+  },
+  {
+    "id": "pf-logs-query-definition-log-groups-max",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A saved query names at most 50 log groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::QueryDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-query-definition-log-groups-max\", \"ERROR\", name,\n\t\"Properties.LogGroupNames\",\n\tsprintf(\"The query definition names %d log groups; PutQueryDefinition fails with \\\"Too many log groups specified\\\"\", [n]),\n\t\"Keep the saved query to 50 log groups\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-querydefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::QueryDefinition\")\n\titems := [x | some x in flatten_list(name, \"Properties.LogGroupNames\")]\n\tn := count(items)\n\tn > 50\n}\n"
+  },
+  {
+    "id": "pf-logs-resource-policy-json",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "PolicyDocument must be an IAM policy document",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::ResourcePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-resource-policy-json\", \"ERROR\", name,\n\t\"Properties.PolicyDocument\",\n\t\"PolicyDocument is not an IAM policy document; PutResourcePolicy fails with \\\"Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar.\\\"\",\n\t\"Render the policy with iam.PolicyDocument (a Version plus a Statement array)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-resourcepolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::ResourcePolicy\")\n\tp := resolve(name, \"Properties.PolicyDocument\")\n\tis_string(p)\n\tnot _pf_lgdpj_iam(p)\n}\n"
+  },
+  {
+    "id": "pf-logs-subscription-destination-vendor",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A subscription destination must be Lambda, Kinesis, Firehose or a Logs destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::SubscriptionFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgsdv_vendors := {\"lambda\", \"kinesis\", \"firehose\", \"logs\"}\n\nviolation contains make_diag_full(\"pf-logs-subscription-destination-vendor\", \"ERROR\", name,\n\t\"Properties.DestinationArn\",\n\tsprintf(\"The destination ARN names the service '%s'; PutSubscriptionFilter fails with \\\"PutSubscriptionFilter operation cannot work with destinationArn for vendor %s\\\"\", [vendor, vendor]),\n\t\"Send the subscription to a Lambda function, a Kinesis stream, a Firehose delivery stream or a cross-account CloudWatch Logs destination\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\tvendor := _pf_lglib_dest_vendor(name)\n\tnot vendor in _pf_lgsdv_vendors\n}\n"
+  },
+  {
+    "id": "pf-logs-subscription-firehose-role",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A Firehose destination needs RoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::SubscriptionFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-subscription-firehose-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"The subscription filter targets a Firehose delivery stream but sets no RoleArn; PutSubscriptionFilter fails with \\\"destinationArn for vendor firehose cannot be used without roleArn\\\"\",\n\t\"Add a RoleArn for a role logs.amazonaws.com can assume with firehose:PutRecord on the stream\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lglib_dest_vendor(name) == \"firehose\"\n\t_pf_lglib_absent(name, \"RoleArn\")\n}\n"
+  },
+  {
     "id": "pf-logs-subscription-kinesis-role",
     "service": "logs",
     "severity": "ERROR",
@@ -8315,6 +9111,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Logs::SubscriptionFilter"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lgskr_url := \"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\"\n\n# The destination is provably Kinesis two ways: a literal\n# arn:<partition>:kinesis: string, or a Ref/GetAtt that resolve() turns into\n# the logical ID of an in-template AWS::Kinesis::Stream. Scoped to Kinesis —\n# the bench error names \"vendor kinesis\"; other vendors were not measured.\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\tparts := split(d, \":\")\n\tcount(parts) >= 3\n\tparts[0] == \"arn\"\n\tparts[2] == \"kinesis\"\n}\n\n_pf_lgskr_kinesis_dest(name) if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\td in resources_of_type(\"AWS::Kinesis::Stream\")\n}\n\n# True absence of RoleArn needs the preprocessed document (see AGENTS.md).\n_pf_lgskr_role_absent(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RoleArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-logs-subscription-kinesis-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"The subscription filter targets a Kinesis stream but sets no RoleArn; the service rejects it with \\\"destinationArn for vendor kinesis cannot be used without roleArn\\\"\",\n\t\"Add a RoleArn for a role that logs.amazonaws.com can assume with kinesis:PutRecord on the stream\",\n\t_pf_lgskr_url) if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lgskr_kinesis_dest(name)\n\t_pf_lgskr_role_absent(name)\n}\n"
+  },
+  {
+    "id": "pf-logs-subscription-lambda-no-role",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A Lambda destination must not carry RoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::SubscriptionFilter"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-logs-subscription-lambda-no-role\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\t\"The subscription filter targets a Lambda function and also sets RoleArn; PutSubscriptionFilter fails with \\\"destinationArn for vendor lambda cannot be used with roleArn\\\"\",\n\t\"Drop RoleArn and grant logs.amazonaws.com invoke permission on the function instead (AWS::Lambda::Permission)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::SubscriptionFilter\")\n\t_pf_lglib_dest_vendor(name) == \"lambda\"\n\tnot _pf_lglib_absent(name, \"RoleArn\")\n}\n"
+  },
+  {
+    "id": "pf-logs-transformer-grok-pattern",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A grok match may only use supported pattern names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::Transformer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ponytail: an allowlist taken from the documented \"Supported grok patterns\"\n# table. A pattern AWS adds later would false-positive until this set is\n# updated.\n_pf_lggp_patterns := {\n\t\"APACHE_ACCESS_LOG\",\n\t\"ARN\",\n\t\"BASE10NUM\",\n\t\"BASE16NUM\",\n\t\"CISCOMAC\",\n\t\"COMMONMAC\",\n\t\"DATA\",\n\t\"DATE\",\n\t\"DATESTAMP\",\n\t\"DATESTAMP_EVENTLOG\",\n\t\"DATESTAMP_OTHER\",\n\t\"DATESTAMP_RFC2822\",\n\t\"DATESTAMP_RFC822\",\n\t\"DATE_EU\",\n\t\"DATE_US\",\n\t\"DAY\",\n\t\"GREEDYDATA\",\n\t\"GREEDYDATA_MULTILINE\",\n\t\"HOST\",\n\t\"HOSTNAME\",\n\t\"HOSTPORT\",\n\t\"HOUR\",\n\t\"HTTPDATE\",\n\t\"INT\",\n\t\"IP\",\n\t\"IPORHOST\",\n\t\"IPV4\",\n\t\"IPV6\",\n\t\"ISO8601_SECOND\",\n\t\"ISO8601_TIMEZONE\",\n\t\"LOGLEVEL\",\n\t\"MAC\",\n\t\"MINUTE\",\n\t\"MONTH\",\n\t\"MONTHDAY\",\n\t\"MONTHNUM\",\n\t\"MONTHNUM2\",\n\t\"NGINX_ACCESS_LOG\",\n\t\"NONNEGINT\",\n\t\"NOTSPACE\",\n\t\"NUMBER\",\n\t\"PATH\",\n\t\"POSINT\",\n\t\"PROG\",\n\t\"QUOTEDSTRING\",\n\t\"SECOND\",\n\t\"SPACE\",\n\t\"SYSLOG5424\",\n\t\"SYSLOGFACILITY\",\n\t\"SYSLOGHOST\",\n\t\"SYSLOGPROG\",\n\t\"SYSLOGTIMESTAMP\",\n\t\"TIME\",\n\t\"TIMESTAMP_ISO8601\",\n\t\"TTY\",\n\t\"TZ\",\n\t\"UNIXPATH\",\n\t\"URI\",\n\t\"URIHOST\",\n\t\"URIPARAM\",\n\t\"URIPATH\",\n\t\"URIPATHPARAM\",\n\t\"URIPROTO\",\n\t\"URN\",\n\t\"USERNAME\",\n\t\"UUID\",\n\t\"WINDOWSMAC\",\n\t\"WINPATH\",\n\t\"WORD\",\n\t\"YEAR\",\n}\n\nviolation contains make_diag_full(\"pf-logs-transformer-grok-pattern\", \"ERROR\", name,\n\t\"Properties.TransformerConfig\",\n\tsprintf(\"The grok match references the unknown pattern '%s'; PutTransformer fails with \\\"No definition for key '%s' found\\\"\", [pattern, pattern]),\n\t\"Use one of the supported grok pattern names (WORD, NUMBER, TIMESTAMP_ISO8601, ...)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation-Configurable.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::Transformer\")\n\tsome item in flatten_list(name, \"Properties.TransformerConfig\")\n\tprocessor := item.value\n\tis_object(processor)\n\tgrok := object.get(processor, \"Grok\", null)\n\tis_object(grok)\n\tmatch := object.get(grok, \"Match\", null)\n\tis_string(match)\n\tsome ref in regex.find_n(`%\\{[A-Za-z_0-9]+`, match, -1)\n\tpattern := substring(ref, 2, count(ref) - 2)\n\tnot pattern in _pf_lggp_patterns\n}\n"
+  },
+  {
+    "id": "pf-logs-transformer-parser-first",
+    "service": "logs",
+    "severity": "ERROR",
+    "title": "A transformer config must begin with a parser",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Logs::Transformer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ponytail: a denylist of the mutation processors rather than an allowlist of\n# parsers - the service's parser list grows, and an incomplete allowlist would\n# reject valid configs.\n_pf_lgtp_mutators := {\n\t\"AddKeys\",\n\t\"CopyValue\",\n\t\"DateTimeConverter\",\n\t\"DeleteKeys\",\n\t\"ListToMap\",\n\t\"LowerCaseString\",\n\t\"MoveKeys\",\n\t\"RenameKeys\",\n\t\"SplitString\",\n\t\"SubstituteString\",\n\t\"TrimString\",\n\t\"TypeConverter\",\n\t\"UpperCaseString\",\n}\n\nviolation contains make_diag_full(\"pf-logs-transformer-parser-first\", \"ERROR\", name,\n\t\"Properties.TransformerConfig\",\n\tsprintf(\"The transformer starts with the '%s' processor; PutTransformer fails with \\\"Transformer config should begin with parser.\\\"\", [key]),\n\t\"Put a parser first (ParseJSON, ParseKeyValue, Csv, Grok or one of the AWS service parsers)\",\n\t\"https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation-Configurable.html\") if {\n\tsome name in resources_of_type(\"AWS::Logs::Transformer\")\n\tsome item in flatten_list(name, \"Properties.TransformerConfig\")\n\titem.index == 0\n\tfirst := item.value\n\tis_object(first)\n\tsome key in object.keys(first)\n\tkey in _pf_lgtp_mutators\n}\n"
   },
   {
     "id": "pf-memorydb-data-tiering-node-type",
@@ -11545,6 +12374,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ElastiCache and MemoryDB rules. Both services use the\n# same maintenance / snapshot window grammar, the same endpoint port range and\n# the same identifier rules, so the parsing lives here once.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# to_number(\"03\") is undefined in the engine's Rego build, so digits go\n# through a lookup table (same trick as pf-rds-window-overlap).\n_pf_cachelib_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_cachelib_days := {\"sun\": 0, \"mon\": 1, \"tue\": 2, \"wed\": 3, \"thu\": 4, \"fri\": 5, \"sat\": 6}\n\n# \"HH:MM\" -> minutes of day; undefined for anything else.\n_pf_cachelib_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_cachelib_digit[substring(t, 0, 1)] * 10) + _pf_cachelib_digit[substring(t, 1, 1)]\n\tmi := (_pf_cachelib_digit[substring(t, 3, 1)] * 10) + _pf_cachelib_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# \"ddd:hh24:mi-ddd:hh24:mi\" -> [start day, start minutes, end day, end minutes].\n_pf_cachelib_window(w) := [d1, m1, d2, m2] if {\n\tis_string(w)\n\tparts := split(lower(w), \"-\")\n\tcount(parts) == 2\n\tp1 := split(parts[0], \":\")\n\tp2 := split(parts[1], \":\")\n\tcount(p1) == 3\n\tcount(p2) == 3\n\td1 := _pf_cachelib_days[p1[0]]\n\td2 := _pf_cachelib_days[p2[0]]\n\tm1 := _pf_cachelib_min(sprintf(\"%s:%s\", [p1[1], p1[2]]))\n\tm2 := _pf_cachelib_min(sprintf(\"%s:%s\", [p2[1], p2[2]]))\n}\n\n# Length of a maintenance window in minutes (wrapping around the week).\n_pf_cachelib_window_minutes(w) := n if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(w)\n\tstart := (d1 * 1440) + m1\n\tend := (d2 * 1440) + m2\n\tn := ((end - start) + 10080) % 10080\n}\n\n# \"hh24:mi-hh24:mi\" -> [start minutes, end minutes] of a daily window.\n_pf_cachelib_daily(w) := [s, e] if {\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_cachelib_min(parts[0])\n\te := _pf_cachelib_min(parts[1])\n}\n\n# The snapshot window recurs daily, so a same-day maintenance window overlaps\n# whenever the two time-of-day intervals intersect (mirrors pf-rds-window-overlap;\n# a window that spans two days is left alone).\n_pf_cachelib_overlap(mw, sw) if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(mw)\n\td1 == d2\n\tm1 < m2\n\t[s, e] := _pf_cachelib_daily(sw)\n\ts < e\n\ts < m2\n\tm1 < e\n}\n\n# ElastiCache and MemoryDB both accept 1150-8004 and 8006-65535.\n_pf_cachelib_port_ok(p) if {\n\tp >= 1150\n\tp <= 8004\n}\n\n_pf_cachelib_port_ok(p) if {\n\tp >= 8006\n\tp <= 65535\n}\n\n# Identifiers: begin with a letter, letters/digits/hyphens only, no two\n# consecutive hyphens and no trailing hyphen.\n_pf_cachelib_identifier_ok(s) if regex.match(`^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$`, s)\n\n# Data tiering is only supported on the r6gd families (cache.r6gd.* / db.r6gd.*).\n_pf_cachelib_r6gd(t) if {\n\tis_string(t)\n\tparts := split(t, \".\")\n\tcount(parts) >= 2\n\tparts[1] == \"r6gd\"\n}\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_cachelib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# A literal string a user wrote, not a resolved Ref / GetAtt logical id.\n_pf_cachelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_cachelib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "name": "_lib/cloudwatch",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch rules.\n\n# True absence needs the preprocessed document (see AGENTS.md); resolve() is\n# undefined for a missing key, so \"resolve(...) != x\" never fires on one.\n_pf_cwlib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The statistic grammar CloudWatch accepts wherever a statistic is a string:\n# MetricStat.Stat, a dashboard widget's \"stat\", PutAnomalyDetector's Stat and\n# a metric stream's AdditionalStatistics. Percentiles stop at 100, which is\n# why the numeric part is spelled out instead of [0-9.]+ (p101 is rejected by\n# the service with \"Unsupported statistic p101\").\n# ponytail: the trimmed-mean interval forms (TM(10%:90%)) are matched loosely;\n# a malformed interval passes the rule and is caught by the service.\n_pf_cwlib_stat_re := `^(SampleCount|Average|Sum|Minimum|Maximum|IQM|[pP](100|[0-9]{1,2}(\\.[0-9]{1,2})?)|(TM|TC|TS|WM|tm|tc|ts|wm)((100|[0-9]{1,2}(\\.[0-9]{1,2})?)%?|\\([0-9.%:]*\\))|PR\\([0-9.:]*\\))$`\n\n_pf_cwlib_stat_ok(s) if regex.match(_pf_cwlib_stat_re, s)\n\n# DashboardBody is an opaque JSON string; every dashboard rule reads it here.\n_pf_cwlib_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwlib_wprops(w) := p if {\n\tis_object(w)\n\tp := object.get(w, \"properties\", null)\n\tis_object(p)\n}\n\n_pf_cwlib_wtype(w, t) if {\n\tis_object(w)\n\tobject.get(w, \"type\", null) == t\n}\n\n# InsightRule RuleBody is the other opaque JSON DSL on this service.\n_pf_cwlib_rulebody(name) := obj if {\n\tb := resolve(name, \"Properties.RuleBody\")\n\tis_string(b)\n\tjson.is_valid(b)\n\tobj := json.unmarshal(b)\n\tis_object(obj)\n}\n\n# The three alarm action lists, shared by the action rules.\n_pf_cwlib_action_keys := {\"AlarmActions\", \"OKActions\", \"InsufficientDataActions\"}\n\n# Metric queries of one kind (MetricStat / Expression) on an alarm.\n_pf_cwlib_queries(name, key) := qs if {\n\tqs := [q |\n\t\tsome item in flatten_list(name, \"Properties.Metrics\")\n\t\tq := item.value\n\t\tis_object(q)\n\t\tobject.get(q, key, null) != null\n\t]\n}\n\n# A literal ARN split into its six-plus segments. Refs and GetAtts resolve to a\n# logical id, which has no \"arn:\" prefix, so they skip.\n_pf_cwlib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n"
+  },
+  {
     "name": "_lib/dynamodb",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::DynamoDB::GlobalTable rules. MRSC (multi-Region\n# strong consistency) constrains the replica set as a whole, so several rules\n# need the same notion of \"which Regions does this table touch\".\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_ddb_mrsc(name) if resolve(name, \"Properties.MultiRegionConsistency\") == \"STRONG\"\n\n_pf_ddb_regions(name, prop) := {r |\n\tsome x in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tr := object.get(x.value, \"Region\", null)\n\tis_string(r)\n}\n\n_pf_ddb_replica_regions(name) := _pf_ddb_regions(name, \"Replicas\")\n\n_pf_ddb_witness_regions(name) := _pf_ddb_regions(name, \"GlobalTableWitnesses\")\n\n# The three Region sets an MRSC global table can live in (2026-09).\n_pf_ddb_mrsc_sets := [\n\t{\"us-east-1\", \"us-east-2\", \"us-west-2\"},\n\t{\"eu-west-1\", \"eu-west-2\", \"eu-west-3\", \"eu-central-1\"},\n\t{\"ap-northeast-1\", \"ap-northeast-2\", \"ap-northeast-3\"},\n]\n"
   },
@@ -11579,6 +12412,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/lambda",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::Lambda::EventSourceMapping rules: literal-vs-token\n# discrimination, ARN segments, raw-document access (resolve() cannot prove a key\n# absent) and — the one every rule needs — which event source a mapping points at.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_lam_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_lam_arn(v) := parts if {\n\t_pf_lam_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# Raw properties. The preprocessed document is the only place where \"the key is\n# absent\" can be told apart from \"the value is a token\".\n_pf_lam_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_lam_has(name, k) if {\n\tobject.get(_pf_lam_props(name), k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_lam_get(name, k) := v if {\n\tv := object.get(_pf_lam_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_lam_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_lam_esm := resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\n# --- which event source does this mapping read from? ------------------------\n# The config blocks are decisive: they exist only for one source family each.\n\n_pf_lam_is(name, \"docdb\") if _pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\n_pf_lam_is(name, \"selfkafka\") if _pf_lam_has(name, \"SelfManagedEventSource\")\n\n_pf_lam_is(name, \"kafka\") if _pf_lam_has(name, \"AmazonManagedKafkaEventSourceConfig\")\n\n# An in-template source resource: resolve() hands back the logical id.\n_pf_lam_src_type := {\n\t\"AWS::SQS::Queue\": \"sqs\",\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::DynamoDB::Table\": \"dynamodb\",\n\t\"AWS::DynamoDB::GlobalTable\": \"dynamodb\",\n\t\"AWS::MSK::Cluster\": \"kafka\",\n\t\"AWS::MSK::ServerlessCluster\": \"kafka\",\n\t\"AWS::AmazonMQ::Broker\": \"mq\",\n\t\"AWS::DocDB::DBCluster\": \"docdb\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tsrc := resolve(name, \"Properties.EventSourceArn\")\n\tsome t, k in _pf_lam_src_type\n\tsrc in resources_of_type(t)\n\tk == kind\n}\n\n# A literal ARN: the service segment names the source. DocumentDB clusters carry\n# an rds ARN, so they are only recognised through DocumentDBEventSourceConfig.\n_pf_lam_arn_kind := {\n\t\"sqs\": \"sqs\",\n\t\"kinesis\": \"kinesis\",\n\t\"dynamodb\": \"dynamodb\",\n\t\"kafka\": \"kafka\",\n\t\"mq\": \"mq\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\t_pf_lam_arn_kind[parts[2]] == kind\n}\n\n# The union: what the mapping reads from, by config block or by source ARN.\n_pf_lam_is(name, kind) if _pf_lam_srcarn(name, kind)\n\n# The source ARN names something other than `kind`. Unlike _pf_lam_not this\n# ignores the config blocks, so a rule can say \"this block is on the wrong ARN\".\n_pf_lam_arn_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_srcarn(name, other)\n}\n\n# Stream sources: the family that accepts StartingPosition, offsets and shard state.\n_pf_lam_stream(name) if _pf_lam_is(name, \"kinesis\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"dynamodb\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"kafka\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"selfkafka\")\n\n# The mapping's source is known to be something other than `kind`.\n_pf_lam_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"selfkafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_is(name, other)\n}\n\n# --- event filter patterns --------------------------------------------------\n# Filters[].Pattern is a JSON *string* holding an EventBridge pattern. There is\n# no walk builtin and Rego forbids recursion, so the traversal is unrolled to\n# four object levels: DynamoDB patterns are the deepest in practice\n# (dynamodb.NewImage.<attribute>.<type>).\n# ponytail: depth-capped at 4, deepen only if a real pattern nests further.\n\n_pf_lam_filters(name) := f if {\n\tf := object.get(_pf_lam_obj(_pf_lam_props(name), \"FilterCriteria\"), \"Filters\", [])\n\tis_array(f)\n}\n\n_pf_lam_pat(f) := o if {\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"\")\n\tis_string(p)\n\to := json.unmarshal(p)\n\tis_object(o)\n}\n\n_pf_lam_scalar(v) if {\n\tnot is_object(v)\n\tnot is_array(v)\n}\n\n# [path, value] for every scalar sitting where the pattern grammar wants an array.\n_pf_lam_pat_scalars(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], v] | some k, v in o; _pf_lam_scalar(v)],\n\t\t[[[k1, k2], v] | some k1, o1 in o; is_object(o1); some k2, v in o1; _pf_lam_scalar(v)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, v in o2; _pf_lam_scalar(v)],\n\t\t[[[k1, k2, k3, k4], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, v in o3; _pf_lam_scalar(v)],\n\t),\n)\n\n# Objects nested inside a match array: these are the operator objects\n# ({\"prefix\": \"a\"}, {\"numeric\": [\">\", 1]}, ...).\n_pf_lam_pat_ops(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], x] | some k, a in o; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2], x] | some k1, o1 in o; is_object(o1); some k2, a in o1; is_array(a); some x in a; is_object(x)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, a in o2; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2, k3, k4], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, a in o3; is_array(a); some x in a; is_object(x)],\n\t),\n)\n\n_pf_lam_has_key(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A property that CloudFormation accepts as either a scalar or a list.\n_pf_lam_list(v) := v if is_array(v)\n\n_pf_lam_list(v) := [v] if is_string(v)\n\n_pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\")\n# --- #75 非 ESM 分で足す共有ヘルパー -----------------------------------------\n# rules/_lib/lambda.rego の末尾に足す。#117 がマージされてワークツリーが\n# main に戻ってから適用する。\n\n_pf_lam_alias := resources_of_type(\"AWS::Lambda::Alias\")\n\n_pf_lam_ver := resources_of_type(\"AWS::Lambda::Version\")\n\n_pf_lam_fn := resources_of_type(\"AWS::Lambda::Function\")\n\n_pf_lam_perm := resources_of_type(\"AWS::Lambda::Permission\")\n\n_pf_lam_url := resources_of_type(\"AWS::Lambda::Url\")\n\n_pf_lam_layer := resources_of_type(\"AWS::Lambda::LayerVersion\")\n\n_pf_lam_layerperm := resources_of_type(\"AWS::Lambda::LayerVersionPermission\")\n\n_pf_lam_csc := resources_of_type(\"AWS::Lambda::CodeSigningConfig\")\n\n_pf_lam_eic := resources_of_type(\"AWS::Lambda::EventInvokeConfig\")\n\n# EventInvokeConfig の宛先。OnSuccess と OnFailure は制約がほぼ共通なので\n# 1 つの集合にまとめ、どちら側かを second element に残す。\n_pf_lam_eic_dest contains [name, side, dest] if {\n\tsome name in _pf_lam_eic\n\tsome side in [\"OnSuccess\", \"OnFailure\"]\n\tdest := resolve(name, sprintf(\"Properties.DestinationConfig.%v.Destination\", [side]))\n\tis_string(dest)\n}\n\n# 署名プロファイルのバージョン ARN。CodeSigningConfig の唯一の必須要素で、\n# 4 本のルールが同じリストを回すのでここに置く。\n_pf_lam_csc_profiles contains [name, arn] if {\n\tsome name in _pf_lam_csc\n\tpubs := _pf_lam_obj(_pf_lam_props(name), \"AllowedPublishers\")\n\tsome arn in _pf_lam_list(object.get(pubs, \"SigningProfileVersionArns\", []))\n\tis_string(arn)\n}\n\n# --- #75 Function 系で足す共有ヘルパー ---------------------------------------\n\n# テンプレート内の別リソースの生プロパティ。Properties を持たないリソース\n# （AWS::EFS::FileSystem など）でも undefined にならないようにする。\n_pf_lam_res_props(id) := p if {\n\tp := object.get(object.get(input.resources, id, {}), \"properties\", {})\n\tis_object(p)\n}\n\n# テンプレート内のリソースを指す組み込み関数の論理 ID。前処理済みドキュメントでは\n# Ref も GetAtt も {\"__kind\": \"resource\" | \"getatt:Arn\", \"__ref\": \"<論理ID>\"} に\n# マーカー化されているので、生の {\"Ref\": ...} を探しても見つからない（2026-09-07 実測）。\n_pf_lam_ref(v) := id if {\n\tis_object(v)\n\tid := object.get(v, \"__ref\", \"__pf_absent\")\n\tid != \"__pf_absent\"\n\tis_string(id)\n}\n\n# 関数の VpcConfig（生ドキュメント）。\n_pf_lam_vpccfg(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"VpcConfig\")\n\n# サブネット / セキュリティグループの VpcId。Ref も GetAtt も構造のまま返すので、\n# 同じ VPC を指していれば Rego の値として等しくなる。\n_pf_lam_vpc_of(v) := vpc if {\n\tvpc := object.get(_pf_lam_res_props(_pf_lam_ref(v)), \"VpcId\", \"__pf_absent\")\n\tvpc != \"__pf_absent\"\n}\n\n# EFS マウントターゲットが置かれているサブネットの AZ。\n_pf_lam_mt_azs contains az if {\n\tsome id in resources_of_type(\"AWS::EFS::MountTarget\")\n\tsub := object.get(_pf_lam_res_props(id), \"SubnetId\", null)\n\taz := object.get(_pf_lam_res_props(_pf_lam_ref(sub)), \"AvailabilityZone\", \"__pf_absent\")\n\taz != \"__pf_absent\"\n}\n\n# 関数にぶら下がる ProvisionedConcurrencyConfig の割り当て量。\n# Version も Alias も FunctionName で関数を指すので、その値ごとに合算できる。\n_pf_lam_pc contains [id, fnref, n] if {\n\t# resources_of_type は配列を返すので集合の和（|）は使えない。\n\tsome id in array.concat(_pf_lam_ver, _pf_lam_alias)\n\tprops := _pf_lam_props(id)\n\tpcc := _pf_lam_obj(props, \"ProvisionedConcurrencyConfig\")\n\tn := object.get(pcc, \"ProvisionedConcurrentExecutions\", \"__pf_absent\")\n\tis_number(n)\n\tfnref := object.get(props, \"FunctionName\", \"__pf_absent\")\n\tfnref != \"__pf_absent\"\n}\n\n# 「文字列として存在する」ときだけ返す。object.get の既定値を空文字にすると\n# キーが無いテンプレートでも判定が走り、パック全体の pass に誤発火する\n# （2026-09-07 に image-uri-private-ecr と recursive-loop-enum で実測）。\n_pf_lam_str(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n\tis_string(v)\n}\n"
+  },
+  {
+    "name": "_lib/logs",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch Logs rules.\n\n_pf_lglib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_lglib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n\n# A property typed as Json arrives as an object; the same property written as a\n# string is also accepted by CloudFormation.\n_pf_lglib_json(v) := v if is_object(v)\n\n_pf_lglib_json(v) := obj if {\n\tis_string(v)\n\tjson.is_valid(v)\n\tobj := json.unmarshal(v)\n\tis_object(obj)\n}\n\n_pf_lglib_dpp(name) := obj if {\n\tobj := _pf_lglib_json(resolve(name, \"Properties.DataProtectionPolicy\"))\n}\n\n_pf_lglib_ia(g) if resolve(g, \"Properties.LogGroupClass\") == \"INFREQUENT_ACCESS\"\n\n# Log groups in this template that a value points at. A Ref or GetAtt resolves\n# to the target's logical id; a literal string can be the LogGroupName.\n# ponytail: an ARN built with Fn::Sub over a Ref is undefined under resolve()\n# and is skipped.\n_pf_lglib_named(g, v) if g == v\n\n_pf_lglib_named(g, v) if resolve(g, \"Properties.LogGroupName\") == v\n\n_pf_lglib_groups(v) := gs if {\n\tis_string(v)\n\tgs := {g |\n\t\tsome g in resources_of_type(\"AWS::Logs::LogGroup\")\n\t\t_pf_lglib_named(g, v)\n\t}\n}\n\n# flatten_list drops the __kind marker, so a Ref / GetAtt element of a list\n# arrives as {\"__ref\": \"<logical id>\"} rather than a string.\n_pf_lglib_ref(v) := v if is_string(v)\n\n_pf_lglib_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n_pf_lglib_ia_target(name, path) if {\n\tsome g in _pf_lglib_groups(resolve(name, path))\n\t_pf_lglib_ia(g)\n}\n\n# The service a subscription filter delivers to, from a literal ARN or from an\n# in-template resource reached through Ref / GetAtt.\n_pf_lglib_dest_types := {\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::KinesisFirehose::DeliveryStream\": \"firehose\",\n\t\"AWS::Lambda::Function\": \"lambda\",\n\t\"AWS::Logs::Destination\": \"logs\",\n}\n\n_pf_lglib_dest_vendor(name) := vendor if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tparts := _pf_lglib_arn(d)\n\tvendor := parts[2]\n}\n\n_pf_lglib_dest_vendor(name) := vendor if {\n\td := resolve(name, \"Properties.DestinationArn\")\n\tis_string(d)\n\tnot startswith(d, \"arn:\")\n\tsome t, v in _pf_lglib_dest_types\n\td in resources_of_type(t)\n\tvendor := v\n}\n\n# An IAM policy document rendered into a string property.\n_pf_lgdpj_iam(p) if {\n\tjson.is_valid(p)\n\tobj := json.unmarshal(p)\n\tis_object(obj)\n\tis_array(object.get(obj, \"Statement\", null))\n}\n"
   },
   {
     "name": "_lib/rds",

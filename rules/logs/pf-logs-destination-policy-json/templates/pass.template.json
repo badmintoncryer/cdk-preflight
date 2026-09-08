@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Dest": {
+      "Type": "AWS::Logs::Destination",
+      "Properties": {
+        "DestinationName": "pf-dest",
+        "RoleArn": "arn:aws:iam::123456789012:role/pf-logs-role",
+        "TargetArn": "arn:aws:kinesis:us-east-1:123456789012:stream/pf-stream",
+        "DestinationPolicy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"123456789012\"},\"Action\":\"logs:PutSubscriptionFilter\",\"Resource\":\"arn:aws:logs:us-east-1:123456789012:destination:pf-dest\"}]}"
+      }
+    }
+  }
+}

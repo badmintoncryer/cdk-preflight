@@ -1,0 +1,11 @@
+id: pf-cloudwatch-insight-rule-keys-max
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::InsightRule]
+severity: ERROR
+title: "Contribution.Keys holds at most 4 keys"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with 5 Contribution.Keys -> \"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4 \\\"Keys\\\" in the \\\"Contribution\\\".\" Bare engine clean."
+addedOn: 2026-09-08

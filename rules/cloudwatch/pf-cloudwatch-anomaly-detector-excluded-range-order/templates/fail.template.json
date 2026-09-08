@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "Detector": {
+      "Type": "AWS::CloudWatch::AnomalyDetector",
+      "Properties": {
+        "SingleMetricAnomalyDetector": {
+          "Namespace": "AWS/EC2",
+          "MetricName": "CPUUtilization",
+          "Stat": "Average"
+        },
+        "Configuration": {
+          "ExcludedTimeRanges": [
+            {
+              "StartTime": "2026-02-01T00:00:00",
+              "EndTime": "2026-01-01T00:00:00"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

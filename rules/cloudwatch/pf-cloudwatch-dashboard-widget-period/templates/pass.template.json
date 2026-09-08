@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Dash": {
+      "Type": "AWS::CloudWatch::Dashboard",
+      "Properties": {
+        "DashboardName": "pf-dwp",
+        "DashboardBody": "{\"widgets\":[{\"type\":\"metric\",\"x\":0,\"y\":0,\"width\":6,\"height\":6,\"properties\":{\"metrics\":[[\"AWS/EC2\",\"CPUUtilization\"]],\"region\":\"us-east-1\",\"period\":30}}]}"
+      }
+    }
+  }
+}

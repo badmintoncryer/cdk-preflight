@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::AccountPolicy",
+      "Properties": {
+        "PolicyName": "pf-apdj",
+        "Scope": "ALL",
+        "PolicyType": "DATA_PROTECTION_POLICY",
+        "PolicyDocument": "{\"Name\":\"pf-dpp\",\"Version\":\"2021-06-01\",\"Statement\":[{\"Sid\":\"audit\",\"DataIdentifier\":[\"arn:aws:dataprotection::aws:data-identifier/EmailAddress\"],\"Operation\":{\"Audit\":{\"FindingsDestination\":{}}}},{\"Sid\":\"deidentify\",\"DataIdentifier\":[\"arn:aws:dataprotection::aws:data-identifier/EmailAddress\"],\"Operation\":{\"Deidentify\":{\"MaskConfig\":{}}}}]}"
+      }
+    }
+  }
+}

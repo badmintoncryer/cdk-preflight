@@ -1,0 +1,11 @@
+id: pf-cloudwatch-dashboard-widget-period
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Dashboard]
+severity: ERROR
+title: "A widget period must be 1, 5, 10, 20, 30 or a multiple of 60"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Resource handler returned message: \"The dashboard body is invalid, there are 3 validation errors:\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutDashboard with a metric widget period 45 -> InvalidParameterInput \"Should be >= 60\" + \"Should be multiple of 60\" + \"Should match exactly one schema in oneOf\" at /widgets/0/properties/period; period 30 was accepted. Bare engine clean (DashboardBody is an opaque string)."
+addedOn: 2026-09-08

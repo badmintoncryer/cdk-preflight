@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/fsc"
+      }
+    },
+    "MF": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "{ $.level = \"ERROR\" }",
+        "MetricTransformations": [
+          {
+            "MetricName": "pf",
+            "MetricNamespace": "PF",
+            "MetricValue": "1"
+          }
+        ],
+        "FieldSelectionCriteria": "bogus criteria"
+      }
+    }
+  }
+}

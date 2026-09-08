@@ -1,0 +1,40 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/dpp-mask",
+        "DataProtectionPolicy": {
+          "Name": "pf-dpp",
+          "Version": "2021-06-01",
+          "Statement": [
+            {
+              "Sid": "audit",
+              "DataIdentifier": [
+                "arn:aws:dataprotection::aws:data-identifier/EmailAddress"
+              ],
+              "Operation": {
+                "Audit": {
+                  "FindingsDestination": {}
+                }
+              }
+            },
+            {
+              "Sid": "deidentify",
+              "DataIdentifier": [
+                "arn:aws:dataprotection::aws:data-identifier/EmailAddress"
+              ],
+              "Operation": {
+                "Deidentify": {
+                  "MaskConfig": {
+                    "MaskWith": "*"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

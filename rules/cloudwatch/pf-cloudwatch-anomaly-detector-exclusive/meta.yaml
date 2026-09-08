@@ -1,0 +1,11 @@
+id: pf-cloudwatch-anomaly-detector-exclusive
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::AnomalyDetector]
+severity: ERROR
+title: "SingleMetricAnomalyDetector and MetricMathAnomalyDetector are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set, found MetricMathAnomalyDetector, SingleMetricAnomalyDetector.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutAnomalyDetector with both detectors -> \"Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set, found SingleMetricAnomalyDetector, MetricMathAnomalyDetector\". Bare engine clean (no F3020 on this pair)."
+addedOn: 2026-09-08

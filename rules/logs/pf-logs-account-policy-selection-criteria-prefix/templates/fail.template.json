@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::AccountPolicy",
+      "Properties": {
+        "PolicyName": "pf-apscp",
+        "Scope": "ALL",
+        "PolicyType": "FIELD_INDEX_POLICY",
+        "PolicyDocument": "{\"Fields\":[\"level\"]}",
+        "SelectionCriteria": "LogGroupName NOT IN [\"/pf/skip\"]"
+      }
+    }
+  }
+}

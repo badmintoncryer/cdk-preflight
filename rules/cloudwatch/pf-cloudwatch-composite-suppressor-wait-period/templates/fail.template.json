@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Composite": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "Properties": {
+        "AlarmName": "pf-ca-swp",
+        "AlarmRule": "ALARM(\"pf-supp-swp\")",
+        "ActionsSuppressor": "pf-supp-swp",
+        "ActionsSuppressorExtensionPeriod": 60
+      }
+    }
+  }
+}

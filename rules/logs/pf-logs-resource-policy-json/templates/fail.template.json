@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::ResourcePolicy",
+      "Properties": {
+        "PolicyName": "pf-rp",
+        "PolicyDocument": "{\"allow\":\"everyone\"}"
+      }
+    }
+  }
+}

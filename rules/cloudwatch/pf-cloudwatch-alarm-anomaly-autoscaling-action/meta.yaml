@@ -1,0 +1,11 @@
+id: pf-cloudwatch-alarm-anomaly-autoscaling-action
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: "An anomaly-detection alarm cannot carry an Auto Scaling action"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"autoscaling actions not supported when ThresholdMetricId is set\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricAlarm with ThresholdMetricId plus an arn:aws:autoscaling:...:scalingPolicy action -> \"autoscaling actions not supported when ThresholdMetricId is set\". Bare engine clean."
+addedOn: 2026-09-08

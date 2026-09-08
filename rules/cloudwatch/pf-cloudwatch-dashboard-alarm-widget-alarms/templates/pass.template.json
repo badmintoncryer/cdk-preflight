@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Dash": {
+      "Type": "AWS::CloudWatch::Dashboard",
+      "Properties": {
+        "DashboardName": "pf-dawa",
+        "DashboardBody": "{\"widgets\":[{\"type\":\"alarm\",\"x\":0,\"y\":0,\"width\":6,\"height\":6,\"properties\":{\"alarms\":[\"arn:aws:cloudwatch:us-east-1:123456789012:alarm:pf-dawa\"]}}]}"
+      }
+    }
+  }
+}

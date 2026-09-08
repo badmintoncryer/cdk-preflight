@@ -169,19 +169,62 @@
 | `pf-cloudfront-origin-group-member-origin` | AWS::CloudFront::Distribution | Origin group members must reference an origin declared in the distribution | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | none |
+| `pf-cloudwatch-alarm-action-vendor` | AWS::CloudWatch::Alarm | Alarm actions accept only the CloudWatch action vendors | none |
+| `pf-cloudwatch-alarm-actions-max` | AWS::CloudWatch::Alarm | Each alarm action list holds at most 5 ARNs | none |
+| `pf-cloudwatch-alarm-anomaly-autoscaling-action` | AWS::CloudWatch::Alarm | An anomaly-detection alarm cannot carry an Auto Scaling action | none |
+| `pf-cloudwatch-alarm-ec2-action-region` | AWS::CloudWatch::Alarm | An EC2 automate action must name the stack's own region | none |
+| `pf-cloudwatch-alarm-evaluation-window` | AWS::CloudWatch::Alarm | The evaluation window caps at 7 days (Period >= 3600) or 1 day (Period < 3600) | none |
+| `pf-cloudwatch-alarm-expressions-max` | AWS::CloudWatch::Alarm | An alarm takes at most 10 math expressions | none |
+| `pf-cloudwatch-alarm-low-sample-percentile` | AWS::CloudWatch::Alarm | EvaluateLowSampleCountPercentile only applies to percentile statistics | none |
+| `pf-cloudwatch-alarm-metrics-max` | AWS::CloudWatch::Alarm | An alarm takes at most 10 MetricStat queries | none |
 | `pf-cloudwatch-alarm-period` | AWS::CloudWatch::Alarm | Period must be 10, 20, 30 or a multiple of 60 | none |
+| `pf-cloudwatch-alarm-search-expression` | AWS::CloudWatch::Alarm | SEARCH() cannot be used in a metric alarm | none |
 | `pf-cloudwatch-alarm-threshold` | AWS::CloudWatch::Alarm | Standard operators need Threshold, range operators need ThresholdMetricId | none |
+| `pf-cloudwatch-anomaly-detector-excluded-range-order` | AWS::CloudWatch::AnomalyDetector | An excluded time range must start before it ends | none |
+| `pf-cloudwatch-anomaly-detector-exclusive` | AWS::CloudWatch::AnomalyDetector | SingleMetricAnomalyDetector and MetricMathAnomalyDetector are mutually exclusive | none |
+| `pf-cloudwatch-anomaly-detector-math-single-query` | AWS::CloudWatch::AnomalyDetector | A math detector needs more than one metric data query | none |
+| `pf-cloudwatch-anomaly-detector-math-toplevel` | AWS::CloudWatch::AnomalyDetector | MetricMathAnomalyDetector cannot be combined with the top-level metric properties | none |
+| `pf-cloudwatch-anomaly-detector-namespace-colon` | AWS::CloudWatch::AnomalyDetector | A metric namespace must not start with a colon | none |
+| `pf-cloudwatch-anomaly-detector-stat-syntax` | AWS::CloudWatch::AnomalyDetector | The anomaly detector Stat must be a CloudWatch statistic | none |
 | `pf-cloudwatch-composite-alarm-rule-syntax` | AWS::CloudWatch::CompositeAlarm | An AlarmRule must start with a valid expression token | none |
+| `pf-cloudwatch-composite-self-reference` | AWS::CloudWatch::CompositeAlarm | A composite alarm cannot reference itself in its AlarmRule | none |
+| `pf-cloudwatch-composite-suppressor-extension-period` | AWS::CloudWatch::CompositeAlarm | ActionsSuppressor requires ActionsSuppressorExtensionPeriod | none |
+| `pf-cloudwatch-composite-suppressor-format` | AWS::CloudWatch::CompositeAlarm | ActionsSuppressor must be an alarm name or a CloudWatch alarm ARN | none |
+| `pf-cloudwatch-composite-suppressor-required` | AWS::CloudWatch::CompositeAlarm | The suppressor periods require an ActionsSuppressor | none |
+| `pf-cloudwatch-composite-suppressor-wait-period` | AWS::CloudWatch::CompositeAlarm | ActionsSuppressor requires ActionsSuppressorWaitPeriod | none |
+| `pf-cloudwatch-dashboard-alarm-widget-alarms` | AWS::CloudWatch::Dashboard | An alarm widget requires properties.alarms | none |
 | `pf-cloudwatch-dashboard-body-json` | AWS::CloudWatch::Dashboard | DashboardBody must be valid JSON | none |
+| `pf-cloudwatch-dashboard-metric-widget-source` | AWS::CloudWatch::Dashboard | A metric widget needs a region and a data source | none |
 | `pf-cloudwatch-dashboard-name` | AWS::CloudWatch::Dashboard | Dashboard names allow only alphanumerics, dash and underscore | none |
+| `pf-cloudwatch-dashboard-text-widget-markdown` | AWS::CloudWatch::Dashboard | A text widget requires properties.markdown | none |
 | `pf-cloudwatch-dashboard-widget-fields` | AWS::CloudWatch::Dashboard | Every dashboard widget requires type and properties | none |
+| `pf-cloudwatch-dashboard-widget-height-max` | AWS::CloudWatch::Dashboard | Widget height tops out at 1000 | none |
+| `pf-cloudwatch-dashboard-widget-period` | AWS::CloudWatch::Dashboard | A widget period must be 1, 5, 10, 20, 30 or a multiple of 60 | none |
 | `pf-cloudwatch-dashboard-widget-position` | AWS::CloudWatch::Dashboard | Dashboard widget x tops out at 23 and width at 24 | none |
+| `pf-cloudwatch-dashboard-widget-position-min` | AWS::CloudWatch::Dashboard | Widget x and y must not be negative | none |
+| `pf-cloudwatch-dashboard-widget-stat-syntax` | AWS::CloudWatch::Dashboard | A widget stat must be a CloudWatch statistic | none |
 | `pf-cloudwatch-dashboard-widgets` | AWS::CloudWatch::Dashboard | DashboardBody requires a widgets array | none |
+| `pf-cloudwatch-dashboard-widgets-array` | AWS::CloudWatch::Dashboard | The widgets key must hold an array | none |
+| `pf-cloudwatch-dashboard-yaxis-range` | AWS::CloudWatch::Dashboard | A widget yAxis min must be below its max | none |
 | `pf-cloudwatch-datapoints-evaluation` | AWS::CloudWatch::Alarm | DatapointsToAlarm must not exceed EvaluationPeriods | none |
 | `pf-cloudwatch-extended-statistic` | AWS::CloudWatch::Alarm | A percentile statistic cannot exceed p100 | none |
+| `pf-cloudwatch-insight-rule-body-json` | AWS::CloudWatch::InsightRule | RuleBody must be valid JSON | none |
+| `pf-cloudwatch-insight-rule-body-unknown-key` | AWS::CloudWatch::InsightRule | The rule body top level takes only the documented keys | none |
+| `pf-cloudwatch-insight-rule-contribution-filters` | AWS::CloudWatch::InsightRule | Contribution requires a Filters key | none |
+| `pf-cloudwatch-insight-rule-keys-max` | AWS::CloudWatch::InsightRule | Contribution.Keys holds at most 4 keys | none |
+| `pf-cloudwatch-insight-rule-log-format` | AWS::CloudWatch::InsightRule | LogFormat must be JSON or CLF | none |
+| `pf-cloudwatch-insight-rule-log-groups` | AWS::CloudWatch::InsightRule | The rule body needs at least one log group | none |
+| `pf-cloudwatch-insight-rule-schema` | AWS::CloudWatch::InsightRule | The rule body Schema must be CloudWatchLogRule version 1 | none |
 | `pf-cloudwatch-metric-namespace-ascii` | AWS::CloudWatch::Alarm | Metric namespaces must not contain non-ASCII characters | none |
 | `pf-cloudwatch-metric-query-exclusive` | AWS::CloudWatch::Alarm | Expression and MetricStat are mutually exclusive per query | none |
-| `pf-cloudwatch-metric-query-returndata` | AWS::CloudWatch::Alarm | Exactly one metric query must return data | none |
+| `pf-cloudwatch-metric-query-returndata` | AWS::CloudWatch::Alarm | One metric query must return data, or two for an anomaly alarm | none |
+| `pf-cloudwatch-metric-stream-additional-statistic` | AWS::CloudWatch::MetricStream | AdditionalStatistics must be CloudWatch statistics | none |
+| `pf-cloudwatch-metric-stream-filters-exclusive` | AWS::CloudWatch::MetricStream | IncludeFilters and ExcludeFilters are mutually exclusive | none |
+| `pf-cloudwatch-metric-stream-firehose-account` | AWS::CloudWatch::MetricStream | FirehoseArn must be in the stack's own account | none |
+| `pf-cloudwatch-metric-stream-firehose-region` | AWS::CloudWatch::MetricStream | FirehoseArn must be in the stack's own region and partition | none |
+| `pf-cloudwatch-metric-stream-include-metrics` | AWS::CloudWatch::MetricStream | A statistics configuration needs at least one IncludeMetrics entry | none |
+| `pf-cloudwatch-metric-stream-role-account` | AWS::CloudWatch::MetricStream | RoleArn must be in the stack's own account | none |
+| `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | none |
 | `pf-cognito-client-credentials-exclusive` | AWS::Cognito::UserPoolClient | client_credentials cannot combine with code or implicit | none |
@@ -741,9 +784,41 @@
 | `pf-lambda-vpc-non-empty` | AWS::Lambda::Function | VpcConfig needs at least one subnet and one security group | none |
 | `pf-lambda-vpc-same-vpc` | AWS::Lambda::Function | Subnets and security groups belong to one VPC | none |
 | `pf-lambda-zip-no-imageuri` | AWS::Lambda::Function | A .zip function cannot carry Code.ImageUri | none |
+| `pf-logs-account-policy-document-json` | AWS::Logs::AccountPolicy | An account policy document must be valid JSON | none |
+| `pf-logs-account-policy-selection-criteria-prefix` | AWS::Logs::AccountPolicy | Field index and transformer account policies select with LogGroupNamePrefix | none |
+| `pf-logs-account-policy-selection-criteria-subscription` | AWS::Logs::AccountPolicy | A subscription account policy selects with LogGroupName NOT IN | none |
+| `pf-logs-account-policy-selection-criteria-unsupported` | AWS::Logs::AccountPolicy | A data protection account policy takes no SelectionCriteria | none |
+| `pf-logs-account-policy-subscription-document` | AWS::Logs::AccountPolicy | A subscription account policy document needs DestinationArn | none |
+| `pf-logs-account-policy-transformer-document` | AWS::Logs::AccountPolicy | A transformer account policy document is an array of processors | none |
+| `pf-logs-anomaly-detector-single-log-group` | AWS::Logs::LogAnomalyDetector | A log anomaly detector watches exactly one log group | none |
+| `pf-logs-data-protection-identifier-arn` | AWS::Logs::LogGroup | A data identifier must be a managed data-identifier ARN | none |
+| `pf-logs-data-protection-identifiers-match` | AWS::Logs::LogGroup | Both data protection statements must list the same data identifiers | none |
+| `pf-logs-data-protection-mask-config-empty` | AWS::Logs::LogGroup | Deidentify MaskConfig takes no fields | none |
+| `pf-logs-data-protection-policy-statements` | AWS::Logs::LogGroup | A data protection policy needs exactly two statements | none |
+| `pf-logs-data-protection-policy-version` | AWS::Logs::LogGroup | A data protection policy version must be 2021-06-01 | none |
+| `pf-logs-delivery-destination-output-format-enum` | AWS::Logs::DeliveryDestination | OutputFormat must be json, plain, w3c, raw or parquet | none |
+| `pf-logs-delivery-destination-output-format-target` | AWS::Logs::DeliveryDestination | A CloudWatch Logs delivery destination cannot use parquet | none |
+| `pf-logs-delivery-destination-region` | AWS::Logs::DeliveryDestination | A delivery destination must be in the stack's own region | none |
+| `pf-logs-destination-policy-json` | AWS::Logs::Destination | DestinationPolicy must be an IAM policy document | none |
+| `pf-logs-field-index-fields-max` | AWS::Logs::LogGroup | A field index policy indexes at most 20 fields | none |
+| `pf-logs-field-selection-criteria-syntax` | AWS::Logs::MetricFilter | FieldSelectionCriteria must reference an @aws system field | none |
+| `pf-logs-filter-name-charset` | AWS::Logs::MetricFilter | A filter name cannot contain a colon or an asterisk | none |
 | `pf-logs-filter-pattern-bracket` | AWS::Logs::MetricFilter<br>AWS::Logs::SubscriptionFilter | A filter pattern starting with '[' must end with ']' | none |
+| `pf-logs-infrequent-access-anomaly-detector` | AWS::Logs::LogGroup<br>AWS::Logs::LogAnomalyDetector | A log anomaly detector needs Standard-class log groups | none |
+| `pf-logs-infrequent-access-metric-filter` | AWS::Logs::LogGroup<br>AWS::Logs::MetricFilter | A metric filter needs a Standard-class log group | none |
+| `pf-logs-infrequent-access-subscription-filter` | AWS::Logs::LogGroup<br>AWS::Logs::SubscriptionFilter | A subscription filter needs a Standard-class log group | none |
+| `pf-logs-infrequent-access-transformer` | AWS::Logs::LogGroup<br>AWS::Logs::Transformer | A transformer needs a Standard-class log group | none |
+| `pf-logs-metric-dimension-selector` | AWS::Logs::MetricFilter | A metric filter dimension value must be a field selector | none |
 | `pf-logs-metric-dimensions-default-exclusive` | AWS::Logs::MetricFilter | Dimensions and DefaultValue are mutually exclusive | none |
+| `pf-logs-metric-namespace-reserved` | AWS::Logs::MetricFilter | A metric filter cannot publish into the AWS/ namespace | none |
+| `pf-logs-query-definition-log-groups-max` | AWS::Logs::QueryDefinition | A saved query names at most 50 log groups | none |
+| `pf-logs-resource-policy-json` | AWS::Logs::ResourcePolicy | PolicyDocument must be an IAM policy document | none |
+| `pf-logs-subscription-destination-vendor` | AWS::Logs::SubscriptionFilter | A subscription destination must be Lambda, Kinesis, Firehose or a Logs destination | none |
+| `pf-logs-subscription-firehose-role` | AWS::Logs::SubscriptionFilter | A Firehose destination needs RoleArn | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | none |
+| `pf-logs-subscription-lambda-no-role` | AWS::Logs::SubscriptionFilter | A Lambda destination must not carry RoleArn | none |
+| `pf-logs-transformer-grok-pattern` | AWS::Logs::Transformer | A grok match may only use supported pattern names | none |
+| `pf-logs-transformer-parser-first` | AWS::Logs::Transformer | A transformer config must begin with a parser | none |
 | `pf-memorydb-data-tiering-node-type` | AWS::MemoryDB::Cluster | DataTiering only works on r6gd node types | none |
 | `pf-memorydb-engine` | AWS::MemoryDB::Cluster | MemoryDB runs Valkey or Redis, not Memcached | none |
 | `pf-memorydb-kms-key-region` | AWS::MemoryDB::Cluster | KmsKeyId must name a key in the deploy region | none |

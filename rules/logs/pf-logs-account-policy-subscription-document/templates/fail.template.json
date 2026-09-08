@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::Logs::AccountPolicy",
+      "Properties": {
+        "PolicyName": "pf-apsd",
+        "Scope": "ALL",
+        "PolicyType": "SUBSCRIPTION_FILTER_POLICY",
+        "PolicyDocument": "{\"FilterPattern\":\"\",\"Distribution\":\"ByLogStream\"}"
+      }
+    }
+  }
+}

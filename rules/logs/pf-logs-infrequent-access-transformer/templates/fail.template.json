@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/transformer",
+        "LogGroupClass": "INFREQUENT_ACCESS"
+      }
+    },
+    "Transform": {
+      "Type": "AWS::Logs::Transformer",
+      "Properties": {
+        "LogGroupIdentifier": {
+          "Ref": "LG"
+        },
+        "TransformerConfig": [
+          {
+            "ParseJSON": {}
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Target": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/delivery-ddr"
+      }
+    },
+    "Dest": {
+      "Type": "AWS::Logs::DeliveryDestination",
+      "Properties": {
+        "Name": "pf-ddr",
+        "DestinationResourceArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/pf/delivery-ddr:*"
+        },
+        "OutputFormat": "json"
+      }
+    }
+  }
+}

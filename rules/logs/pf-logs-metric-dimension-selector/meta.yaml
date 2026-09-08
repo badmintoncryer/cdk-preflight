@@ -1,0 +1,11 @@
+id: pf-logs-metric-dimension-selector
+service: logs
+resourceTypes: [AWS::Logs::MetricFilter]
+severity: ERROR
+title: "A metric filter dimension value must be a field selector"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricFilter.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Logs::MetricFilter. Invalid metric transformation: dimension value must be valid selector\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricFilter with a dimension value \"literal\" -> \"Invalid metric transformation: dimension value must be valid selector\". The value has to name a field from the log event ($.field or $1). Bare engine clean."
+addedOn: 2026-09-08

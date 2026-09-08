@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Dash": {
+      "Type": "AWS::CloudWatch::Dashboard",
+      "Properties": {
+        "DashboardName": "pf-dwa",
+        "DashboardBody": "{\"widgets\":{\"0\":{\"type\":\"text\",\"properties\":{\"markdown\":\"hi\"}}}}"
+      }
+    }
+  }
+}

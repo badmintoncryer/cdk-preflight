@@ -1,0 +1,11 @@
+id: pf-cloudwatch-insight-rule-schema
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::InsightRule]
+severity: ERROR
+title: "The rule body Schema must be CloudWatchLogRule version 1"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"INVALID_RULE_BODY: InvalidSchema encountered at Schema in the RuleBody.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with Schema.Version 2 -> \"INVALID_RULE_BODY: InvalidSchema encountered at Schema in the RuleBody.\"; the same error comes back for a wrong Schema.Name. Bare engine clean."
+addedOn: 2026-09-08

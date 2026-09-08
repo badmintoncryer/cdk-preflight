@@ -1,0 +1,11 @@
+id: pf-logs-resource-policy-json
+service: logs
+resourceTypes: [AWS::Logs::ResourcePolicy]
+severity: ERROR
+title: "PolicyDocument must be an IAM policy document"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-resourcepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutResourcePolicy with a JSON object that is not IAM-shaped -> \"Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar.\" Bare engine clean (the property is a plain string)."
+addedOn: 2026-09-08

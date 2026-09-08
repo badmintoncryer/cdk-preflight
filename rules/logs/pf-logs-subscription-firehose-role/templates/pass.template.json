@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/sfr"
+      }
+    },
+    "SF": {
+      "Type": "AWS::Logs::SubscriptionFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "",
+        "DestinationArn": "arn:aws:firehose:us-east-1:123456789012:deliverystream/pf-stream",
+        "RoleArn": "arn:aws:iam::123456789012:role/pf-logs-role"
+      }
+    }
+  }
+}

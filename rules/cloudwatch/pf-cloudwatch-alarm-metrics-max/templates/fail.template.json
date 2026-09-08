@@ -1,0 +1,146 @@
+{
+  "Resources": {
+    "Alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "Metrics": [
+          {
+            "Id": "m0",
+            "ReturnData": true,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m1",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m2",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m3",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m4",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m5",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m6",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m7",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m8",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m9",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          },
+          {
+            "Id": "m10",
+            "ReturnData": false,
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization"
+              },
+              "Period": 60,
+              "Stat": "Average"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

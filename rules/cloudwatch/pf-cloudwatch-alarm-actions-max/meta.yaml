@@ -1,0 +1,11 @@
+id: pf-cloudwatch-alarm-actions-max
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: "Each alarm action list holds at most 5 ARNs"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"1 validation error detected: Value '[arn:aws:sns:ap-northeast-1:214794239830:pf-topic-0, arn:aws:sns:ap-northeast-1:214794239830:pf-topic-1, arn:aws:sns:ap-northeast-1:214794239830:pf-topic-2, arn:aws:sns:ap-northeast-1:214794239830:pf-topic-3, arn:aws:sns:ap-northeast-1:214794239830:pf-topic-4, arn:aws:sns:ap-northeast-1:214794239830:pf-topic-5]' at 'alarmActions' failed to satisfy constraint: Member must have length less than or equal to 5\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricAlarm with 6 SNS ARNs in AlarmActions -> \"Value '[...]' at 'alarmActions' failed to satisfy constraint: Member must have length less than or equal to 5\". Bare engine clean (the schema carries no maxItems)."
+addedOn: 2026-09-08

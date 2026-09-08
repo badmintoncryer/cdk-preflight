@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Composite": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "Properties": {
+        "AlarmName": "pf-ca-sfmt",
+        "AlarmRule": "ALARM(\"pf-child-sfmt\")",
+        "ActionsSuppressor": "arn:aws:sns:us-east-1:123456789012:pf-topic",
+        "ActionsSuppressorWaitPeriod": 60,
+        "ActionsSuppressorExtensionPeriod": 60
+      }
+    }
+  }
+}

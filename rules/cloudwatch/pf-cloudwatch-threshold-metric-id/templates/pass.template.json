@@ -9,7 +9,7 @@
         "Metrics": [
           {
             "Id": "m1",
-            "ReturnData": false,
+            "ReturnData": true,
             "MetricStat": {
               "Metric": {
                 "MetricName": "CPUUtilization",

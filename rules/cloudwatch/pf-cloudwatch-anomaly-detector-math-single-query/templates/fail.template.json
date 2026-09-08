@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Detector": {
+      "Type": "AWS::CloudWatch::AnomalyDetector",
+      "Properties": {
+        "MetricMathAnomalyDetector": {
+          "MetricDataQueries": [
+            {
+              "Id": "m1",
+              "ReturnData": true,
+              "MetricStat": {
+                "Metric": {
+                  "Namespace": "AWS/EC2",
+                  "MetricName": "CPUUtilization"
+                },
+                "Period": 60,
+                "Stat": "Average"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

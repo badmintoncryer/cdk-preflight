@@ -1,0 +1,11 @@
+id: pf-logs-transformer-parser-first
+service: logs
+resourceTypes: [AWS::Logs::Transformer]
+severity: ERROR
+title: "A transformer config must begin with a parser"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation-Configurable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Transformer config should begin with parser. Allowed parsers are parsePostgres, parseWAF, parseCloudfront, parseCloudfrontOCSF, parseRoute53, parseLambda, parseVPC, parseSyslog, parseRDS, parseCiscoFTD, parseF5BigIP, parseCiscoISE, parseForescoutNac, parseInfobloxDDI, parseToOCSF, parseJSON, grok, csv, parseKeyValue\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutTransformer whose first processor is addKeys -> \"Transformer config should begin with parser. Allowed parsers are parsePostgres, parseWAF, parseCloudfront, parseCloudfrontOCSF, parseRoute53, parseLambda, parseVPC, parseSyslog, parseRDS, parseCiscoFTD, parseF5BigIP, ...\". Bare engine clean."
+addedOn: 2026-09-08

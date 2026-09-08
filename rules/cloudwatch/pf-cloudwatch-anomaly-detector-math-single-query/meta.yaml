@@ -1,0 +1,11 @@
+id: pf-cloudwatch-anomaly-detector-math-single-query
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::AnomalyDetector]
+severity: ERROR
+title: "A math detector needs more than one metric data query"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"The MetricDataQueries list in MetricMathAnomalyDetector contains a single metric, please use SingleMetricAnomalyDetector instead\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutAnomalyDetector with a single MetricDataQueries entry -> \"The MetricDataQueries list in MetricMathAnomalyDetector contains a single metric, please use SingleMetricAnomalyDetector instead\". Bare engine clean."
+addedOn: 2026-09-08

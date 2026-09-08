@@ -1,0 +1,11 @@
+id: pf-cloudwatch-insight-rule-log-groups
+service: cloudwatch
+resourceTypes: [AWS::CloudWatch::InsightRule]
+severity: ERROR
+title: "The rule body needs at least one log group"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/ContributorInsights-RuleSyntax.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"INVALID_RULE_BODY: Empty encountered at LogGroupNames in the RuleBody.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with LogGroupNames [] -> \"INVALID_RULE_BODY: Empty encountered at LogGroupNames in the RuleBody.\" Bare engine clean."
+addedOn: 2026-09-08

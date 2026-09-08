@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/tgp"
+      }
+    },
+    "TR": {
+      "Type": "AWS::Logs::Transformer",
+      "Properties": {
+        "LogGroupIdentifier": {
+          "Ref": "LG"
+        },
+        "TransformerConfig": [
+          {
+            "Grok": {
+              "Match": "%{NOT_A_PATTERN:field}"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

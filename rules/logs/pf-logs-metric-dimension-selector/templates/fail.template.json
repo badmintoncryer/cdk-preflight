@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/mds"
+      }
+    },
+    "MF": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LG"
+        },
+        "FilterPattern": "{ $.level = \"ERROR\" }",
+        "MetricTransformations": [
+          {
+            "MetricName": "pf",
+            "MetricNamespace": "PF",
+            "MetricValue": "1",
+            "Dimensions": [
+              {
+                "Key": "level",
+                "Value": "literal"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

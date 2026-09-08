@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Composite": {
+      "Type": "AWS::CloudWatch::CompositeAlarm",
+      "Properties": {
+        "AlarmName": "pf-ca-sep",
+        "AlarmRule": "ALARM(\"pf-supp-sep\")",
+        "ActionsSuppressor": "pf-supp-sep",
+        "ActionsSuppressorWaitPeriod": 60
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-logs-anomaly-detector-single-log-group
+service: logs
+resourceTypes: [AWS::Logs::LogAnomalyDetector]
+severity: ERROR
+title: "A log anomaly detector watches exactly one log group"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loganomalydetector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Logs::LogAnomalyDetector\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: CreateLogAnomalyDetector with two log group ARNs -> \"Only 1 log group arn is supported in the list.\" Bare engine clean (no F3032 maxItems on the list)."
+addedOn: 2026-09-08

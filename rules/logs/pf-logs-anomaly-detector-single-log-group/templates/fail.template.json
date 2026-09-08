@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "LG1": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/lad-1"
+      }
+    },
+    "LG2": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/pf/lad-2"
+      }
+    },
+    "Detector": {
+      "Type": "AWS::Logs::LogAnomalyDetector",
+      "Properties": {
+        "DetectorName": "pf-lad",
+        "LogGroupArnList": [
+          {
+            "Fn::GetAtt": [
+              "LG1",
+              "Arn"
+            ]
+          },
+          {
+            "Fn::GetAtt": [
+              "LG2",
+              "Arn"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
