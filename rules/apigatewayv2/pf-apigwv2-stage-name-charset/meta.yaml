@@ -1,0 +1,12 @@
+id: pf-apigwv2-stage-name-charset
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Stage]
+severity: ERROR
+title: "Stage names allow only a-zA-Z0-9_ (or $default)"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-stage.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Stage name only allows a-zA-Z0-9_\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

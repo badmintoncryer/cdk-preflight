@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "StageName": "prod"
+      }
+    }
+  }
+}

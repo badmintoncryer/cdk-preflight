@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::ApiGatewayV2::VpcLink",
+      "Properties": {
+        "Name": "v",
+        "SubnetIds": []
+      }
+    }
+  }
+}

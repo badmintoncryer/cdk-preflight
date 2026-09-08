@@ -1,0 +1,12 @@
+id: pf-apigw-integration-aws-uri
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::Method]
+severity: ERROR
+title: "An AWS integration URI is an API Gateway ARN, not the target's ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"AWS ARN for integration must contain path or action\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

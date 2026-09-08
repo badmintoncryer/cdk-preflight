@@ -1,0 +1,12 @@
+id: pf-apigwv2-jwt-issuer-https
+service: apigatewayv2
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGatewayV2::Authorizer]
+severity: ERROR
+title: "A JWT issuer is an https URL"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-authorizer-jwtconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid issuer: Issuer is not a valid URL for JWT Authorizer\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

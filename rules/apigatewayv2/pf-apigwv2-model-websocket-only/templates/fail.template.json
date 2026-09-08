@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Model",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "Name": "m",
+        "ContentType": "application/json",
+        "Schema": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

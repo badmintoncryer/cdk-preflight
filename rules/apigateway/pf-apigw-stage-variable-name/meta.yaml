@@ -1,0 +1,12 @@
+id: pf-apigw-stage-variable-name
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::Stage]
+severity: ERROR
+title: "Stage variable names allow only word characters"
+constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/stage-variables.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid stage variable name: bad-key. Please use names with only word characters.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationSubtype": "SQS-SendMessage",
+        "PayloadFormatVersion": "1.0",
+        "RequestParameters": {
+          "QueueUrl": "https://q",
+          "MessageBody": "$request.body"
+        }
+      }
+    }
+  }
+}

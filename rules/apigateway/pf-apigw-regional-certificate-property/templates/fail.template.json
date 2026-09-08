@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::ApiGateway::DomainName",
+      "Properties": {
+        "DomainName": "x.example.com",
+        "EndpointConfiguration": {
+          "Types": [
+            "REGIONAL"
+          ]
+        },
+        "CertificateArn": "arn:aws:acm:us-east-1:214794239830:certificate/11111111-2222-3333-4444-555555555555"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "h",
+        "ProtocolType": "HTTP"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "HTTP_PROXY",
+        "IntegrationMethod": "GET",
+        "IntegrationUri": "arn:aws:elasticloadbalancing:us-east-1:214794239830:listener/net/a/1111111111111111/2222222222222222",
+        "ConnectionType": "VPC_LINK",
+        "PayloadFormatVersion": "1.0"
+      }
+    }
+  }
+}

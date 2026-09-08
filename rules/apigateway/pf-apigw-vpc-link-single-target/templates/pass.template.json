@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::ApiGateway::VpcLink",
+      "Properties": {
+        "Name": "v",
+        "TargetArns": [
+          "arn:aws:elasticloadbalancing:us-east-1:214794239830:loadbalancer/net/a/1111111111111111"
+        ]
+      }
+    }
+  }
+}

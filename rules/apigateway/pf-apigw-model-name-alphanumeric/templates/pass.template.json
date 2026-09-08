@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Api": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "p"
+      }
+    },
+    "X": {
+      "Type": "AWS::ApiGateway::Model",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "Api"
+        },
+        "Name": "m4",
+        "ContentType": "application/json",
+        "Schema": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

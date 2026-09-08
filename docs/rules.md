@@ -5,23 +5,103 @@
 | Rule | Resource types | Constraint | Upstream status |
 |---|---|---|---|
 | `pf-apigw-access-log-format-request-id` | AWS::ApiGateway::Stage | Access log format must include a request id variable | none |
+| `pf-apigw-api-key-value-length` | AWS::ApiGateway::ApiKey | An API key value is at least 20 characters | none |
 | `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | none |
+| `pf-apigw-authorizer-uri-format` | AWS::ApiGateway::Authorizer | An authorizer URI is an API Gateway invocation ARN | none |
 | `pf-apigw-cognito-authorizer-provider-arns` | AWS::ApiGateway::Authorizer | COGNITO_USER_POOLS authorizers need ProviderARNs | none |
 | `pf-apigw-deployment-no-methods` | AWS::ApiGateway::Deployment | A Deployment needs at least one Method on its REST API | none |
+| `pf-apigw-documentation-part-location` | AWS::ApiGateway::DocumentationPart | An API-level documentation part takes no path, method, status or name | none |
+| `pf-apigw-edge-certificate-property` | AWS::ApiGateway::DomainName | EDGE domain names read CertificateArn, not RegionalCertificateArn | none |
+| `pf-apigw-endpoint-configuration-single-type` | AWS::ApiGateway::RestApi | An API has exactly one endpoint type | none |
+| `pf-apigw-gateway-response-status-code` | AWS::ApiGateway::GatewayResponse | A gateway response status code is three digits | none |
+| `pf-apigw-integration-aws-uri` | AWS::ApiGateway::Method | An AWS integration URI is an API Gateway ARN, not the target's ARN | none |
+| `pf-apigw-integration-cache-key-parameters` | AWS::ApiGateway::Method | Cache key parameters must be declared method request parameters | none |
+| `pf-apigw-integration-credentials-arn` | AWS::ApiGateway::Method | Integration credentials must be an ARN | none |
 | `pf-apigw-integration-http-method` | AWS::ApiGateway::Method | Non-MOCK integrations need IntegrationHttpMethod | none |
+| `pf-apigw-integration-http-uri` | AWS::ApiGateway::Method | An HTTP integration URI is an http(s) URL | none |
+| `pf-apigw-integration-request-parameter-value` | AWS::ApiGateway::Method | Static integration request parameters must be single-quoted | none |
+| `pf-apigw-integration-response-selection-pattern` | AWS::ApiGateway::Method | SelectionPattern must be a valid regular expression | none |
+| `pf-apigw-integration-timeout-range` | AWS::ApiGateway::Method | REST integration timeouts are 50-29000 ms | none |
+| `pf-apigw-integration-vpc-link-connection-id` | AWS::ApiGateway::Method | A VPC_LINK integration needs a ConnectionId | none |
+| `pf-apigw-method-authorization-scopes-cognito` | AWS::ApiGateway::Method | AuthorizationScopes needs COGNITO_USER_POOLS authorization | none |
 | `pf-apigw-method-authorizer-id` | AWS::ApiGateway::Method | CUSTOM and COGNITO_USER_POOLS authorization need AuthorizerId | none |
+| `pf-apigw-method-http-verb` | AWS::ApiGateway::Method | HttpMethod is one of the eight API Gateway verbs | none |
+| `pf-apigw-method-request-parameter-key` | AWS::ApiGateway::Method | Method request parameter keys are mapping expressions | none |
+| `pf-apigw-minimum-compression-size-range` | AWS::ApiGateway::RestApi | MinimumCompressionSize is 0-10485760 | none |
+| `pf-apigw-model-content-type` | AWS::ApiGateway::Model | A model content type is a media type | none |
+| `pf-apigw-model-name-alphanumeric` | AWS::ApiGateway::Model | Model names are alphanumeric | none |
 | `pf-apigw-model-schema-type` | AWS::ApiGateway::Model | Model schema 'type' must be a JSON Schema draft-4 type | none |
+| `pf-apigw-mutual-tls-security-policy` | AWS::ApiGateway::DomainName | Mutual TLS requires SecurityPolicy TLS_1_2 | none |
+| `pf-apigw-regional-certificate-property` | AWS::ApiGateway::DomainName | REGIONAL domain names read RegionalCertificateArn, not CertificateArn | none |
+| `pf-apigw-regional-certificate-region` | AWS::ApiGateway::DomainName | A REGIONAL domain name needs a certificate from the deployment region | none |
+| `pf-apigw-request-authorizer-identity-source` | AWS::ApiGateway::Authorizer | REQUEST authorizer identity sources are mapping expressions | none |
 | `pf-apigw-resource-path-part` | AWS::ApiGateway::Resource | PathPart allows a-zA-Z0-9._-: or one curly-brace variable | none |
+| `pf-apigw-rest-api-policy-document` | AWS::ApiGateway::RestApi | A REST API policy must be a policy document | none |
+| `pf-apigw-stage-access-log-destination-arn` | AWS::ApiGateway::Stage | Access logs go to CloudWatch Logs or Firehose only | none |
+| `pf-apigw-stage-access-log-firehose-prefix` | AWS::ApiGateway::Stage | An access log delivery stream is named amazon-apigateway-* | none |
+| `pf-apigw-stage-cache-ttl-range` | AWS::ApiGateway::Stage | Method setting cache TTL tops out at 3600 seconds | none |
+| `pf-apigw-stage-method-setting-http-method` | AWS::ApiGateway::Stage | Method setting HttpMethod is a verb or * | none |
+| `pf-apigw-stage-method-setting-resource-path` | AWS::ApiGateway::Stage | Method setting paths start with / and encode slashes as ~1 | none |
+| `pf-apigw-stage-name-charset` | AWS::ApiGateway::Stage | Stage names allow only a-zA-Z0-9_ | none |
+| `pf-apigw-stage-variable-name` | AWS::ApiGateway::Stage | Stage variable names allow only word characters | none |
 | `pf-apigw-stage-variable-value` | AWS::ApiGateway::Stage | Stage variable values have a restricted character set | none |
 | `pf-apigw-token-authorizer-identity-source` | AWS::ApiGateway::Authorizer | TOKEN authorizers need IdentitySource | none |
+| `pf-apigw-usage-plan-api-stage-exists` | AWS::ApiGateway::UsagePlan | A usage plan references a stage the template creates | none |
+| `pf-apigw-usage-plan-quota-limit` | AWS::ApiGateway::UsagePlan | A usage plan quota limit is 1 or more | none |
+| `pf-apigw-usage-plan-quota-offset-range` | AWS::ApiGateway::UsagePlan | The quota offset ceiling depends on the quota period | none |
+| `pf-apigw-usage-plan-quota-period-required` | AWS::ApiGateway::UsagePlan | A usage plan quota needs a period | none |
+| `pf-apigw-usage-plan-throttle-key` | AWS::ApiGateway::UsagePlan | Per-method throttle keys are {resourcePath}/{httpMethod} | none |
+| `pf-apigw-vpc-endpoint-ids-private-only` | AWS::ApiGateway::RestApi | VpcEndpointIds belongs to PRIVATE APIs only | none |
+| `pf-apigw-vpc-link-single-target` | AWS::ApiGateway::VpcLink | A VPC link takes exactly one target load balancer | none |
+| `pf-apigwv2-access-log-destination-log-group` | AWS::ApiGatewayV2::Stage | HTTP/WebSocket access logs go to CloudWatch Logs only | none |
+| `pf-apigwv2-access-log-format-request-id` | AWS::ApiGatewayV2::Stage | An access log format must carry a request id | none |
 | `pf-apigwv2-api-name-required` | AWS::ApiGatewayV2::Api | An Api needs a Name unless an OpenAPI body provides one | none |
+| `pf-apigwv2-authorizer-ttl-identity-source` | AWS::ApiGatewayV2::Authorizer | Authorizer caching needs an identity source | none |
+| `pf-apigwv2-authorizer-ttl-range` | AWS::ApiGatewayV2::Authorizer | Authorizer result TTL tops out at 3600 seconds | none |
 | `pf-apigwv2-aws-proxy-payload-version` | AWS::ApiGatewayV2::Integration | AWS_PROXY integrations take PayloadFormatVersion 1.0 or 2.0 | none |
 | `pf-apigwv2-cors-credentials-wildcard` | AWS::ApiGatewayV2::Api | CORS AllowCredentials cannot pair with a wildcard origin | none |
+| `pf-apigwv2-domain-certificate-region` | AWS::ApiGatewayV2::DomainName | A custom domain needs a certificate from the deployment region | none |
+| `pf-apigwv2-domain-endpoint-type-regional` | AWS::ApiGatewayV2::DomainName | HTTP/WebSocket custom domains are REGIONAL only | none |
+| `pf-apigwv2-domain-name-charset` | AWS::ApiGatewayV2::DomainName | Custom domain names are lower case | none |
+| `pf-apigwv2-http-identity-source-expression` | AWS::ApiGatewayV2::Authorizer | HTTP API identity sources are $-prefixed selection expressions | none |
+| `pf-apigwv2-http-proxy-integration-method` | AWS::ApiGatewayV2::Integration | An HTTP_PROXY integration needs an IntegrationMethod | none |
 | `pf-apigwv2-http-proxy-payload-version` | AWS::ApiGatewayV2::Integration | HTTP_PROXY integrations only take PayloadFormatVersion 1.0 | none |
 | `pf-apigwv2-http-route-key` | AWS::ApiGatewayV2::Route | HTTP API route keys are "METHOD /path" or $default | none |
+| `pf-apigwv2-http-route-no-api-key` | AWS::ApiGatewayV2::Route | ApiKeyRequired is not supported on HTTP APIs | none |
 | `pf-apigwv2-http-route-selection` | AWS::ApiGatewayV2::Api | HTTP APIs accept only the method-path route selection expression | none |
+| `pf-apigwv2-integration-response-websocket-only` | AWS::ApiGatewayV2::IntegrationResponse | Integration responses exist on WebSocket APIs only | none |
+| `pf-apigwv2-integration-subtype-credentials` | AWS::ApiGatewayV2::Integration | A subtype integration needs a CredentialsArn | none |
+| `pf-apigwv2-integration-subtype-known` | AWS::ApiGatewayV2::Integration | IntegrationSubtype is one of the ten AWS service subtypes | none |
+| `pf-apigwv2-integration-subtype-payload-version` | AWS::ApiGatewayV2::Integration | Subtype integrations are payload format 1.0 only | none |
+| `pf-apigwv2-integration-subtype-required-parameters` | AWS::ApiGatewayV2::Integration | Each integration subtype has mandatory request parameters | none |
+| `pf-apigwv2-integration-timeout-range` | AWS::ApiGatewayV2::Integration | HTTP API integration timeouts are 50-30000 ms | none |
+| `pf-apigwv2-integration-vpc-link-connection-id` | AWS::ApiGatewayV2::Integration | A VPC_LINK integration needs a ConnectionId | none |
+| `pf-apigwv2-jwt-audience-required` | AWS::ApiGatewayV2::Authorizer | A JWT authorizer needs at least one audience | none |
 | `pf-apigwv2-jwt-authorizer-config` | AWS::ApiGatewayV2::Authorizer | JWT authorizers need JwtConfiguration | none |
+| `pf-apigwv2-jwt-issuer-https` | AWS::ApiGatewayV2::Authorizer | A JWT issuer is an https URL | none |
+| `pf-apigwv2-model-name-alphanumeric` | AWS::ApiGatewayV2::Model | Model names are alphanumeric | none |
+| `pf-apigwv2-model-websocket-only` | AWS::ApiGatewayV2::Model | Models exist on WebSocket APIs only | none |
 | `pf-apigwv2-request-authorizer-payload-version` | AWS::ApiGatewayV2::Authorizer | REQUEST authorizers on HTTP APIs need AuthorizerPayloadFormatVersion | none |
+| `pf-apigwv2-request-authorizer-uri-required` | AWS::ApiGatewayV2::Authorizer | A REQUEST authorizer needs an AuthorizerUri | none |
+| `pf-apigwv2-request-parameter-action` | AWS::ApiGatewayV2::Integration | Request parameter keys are <action>:<header|querystring|path>.<name> | none |
+| `pf-apigwv2-response-parameter-action` | AWS::ApiGatewayV2::Integration | Response parameter keys are <action>:<header.name|statuscode> | none |
+| `pf-apigwv2-response-parameter-status-code` | AWS::ApiGatewayV2::Integration | Response parameter mappings are keyed by a 200-599 status | none |
+| `pf-apigwv2-route-authorization-scopes-jwt` | AWS::ApiGatewayV2::Route | AuthorizationScopes needs JWT authorization | none |
+| `pf-apigwv2-route-jwt-authorizer-id` | AWS::ApiGatewayV2::Route | JWT authorization needs an AuthorizerId | none |
+| `pf-apigwv2-route-response-key-default` | AWS::ApiGatewayV2::RouteResponse | RouteResponseKey is $default | none |
+| `pf-apigwv2-route-response-websocket-only` | AWS::ApiGatewayV2::RouteResponse | Route responses exist on WebSocket APIs only | none |
+| `pf-apigwv2-route-target-format` | AWS::ApiGatewayV2::Route | A route target is integrations/<integration id> | none |
+| `pf-apigwv2-simple-responses-payload-version` | AWS::ApiGatewayV2::Authorizer | EnableSimpleResponses needs payload format 2.0 | none |
+| `pf-apigwv2-stage-name-charset` | AWS::ApiGatewayV2::Stage | Stage names allow only a-zA-Z0-9_ (or $default) | none |
+| `pf-apigwv2-stage-route-settings-key` | AWS::ApiGatewayV2::Stage | RouteSettings is keyed by an existing route key | none |
+| `pf-apigwv2-vpc-link-integration-uri` | AWS::ApiGatewayV2::Integration | A VPC link integration points at a listener, not a load balancer | none |
+| `pf-apigwv2-vpc-link-subnets-required` | AWS::ApiGatewayV2::VpcLink | A VPC link needs at least one subnet | none |
+| `pf-apigwv2-websocket-authorization-connect-only` | AWS::ApiGatewayV2::Route | WebSocket authorization is restricted to $connect | none |
+| `pf-apigwv2-websocket-authorizer-type` | AWS::ApiGatewayV2::Authorizer | WebSocket APIs only take REQUEST authorizers | none |
+| `pf-apigwv2-websocket-identity-source-expression` | AWS::ApiGatewayV2::Authorizer | WebSocket identity sources use route.request.* | none |
+| `pf-apigwv2-websocket-integration-timeout-range` | AWS::ApiGatewayV2::Integration | WebSocket integration timeouts are 50-29000 ms | none |
+| `pf-apigwv2-websocket-no-cors` | AWS::ApiGatewayV2::Api | WebSocket APIs take no CORS configuration | none |
+| `pf-apigwv2-websocket-payload-version` | AWS::ApiGatewayV2::Integration | WebSocket AWS_PROXY integrations reject payload format 2.0 | none |
 | `pf-apigwv2-websocket-route-selection` | AWS::ApiGatewayV2::Api | WebSocket APIs need RouteSelectionExpression | none |
 | `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | none |
 | `pf-asg-desired-capacity-range` | AWS::AutoScaling::AutoScalingGroup | DesiredCapacity must sit between MinSize and MaxSize | none |

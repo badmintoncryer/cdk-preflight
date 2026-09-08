@@ -1,0 +1,12 @@
+id: pf-apigw-integration-cache-key-parameters
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::Method]
+severity: ERROR
+title: "Cache key parameters must be declared method request parameters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid cache key parameter specified\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08

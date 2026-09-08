@@ -1,0 +1,12 @@
+id: pf-apigw-request-authorizer-identity-source
+service: apigateway
+benchRegion: us-east-1
+resourceTypes: [AWS::ApiGateway::Authorizer]
+severity: ERROR
+title: "REQUEST authorizer identity sources are mapping expressions"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid request identity source expression: header.Auth. The sources must be separated by comma, and each source must be either a method request parameter, matching 'method.request.querystring|header.[a-zA-Z0-9._-]+', or a stage variable, m\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-08
