@@ -12,8 +12,11 @@ case "$1 $2" in
   "cloudformation list-stacks") echo "" ;;
   "resourcegroupstaggingapi get-resources") cat "$CDKPF_STUB_ORPHANS" ;;
   "kms describe-key") echo "${CDKPF_STUB_KEYSTATE:-Enabled}" ;;
+  "cognito-idp describe-user-pool") echo "${CDKPF_STUB_DOMAIN:-None}" ;;
   *)
-    if [ -n "${CDKPF_STUB_FAIL:-}" ] && grep -q -- "$CDKPF_STUB_FAIL" <<<"$*"; then exit 254; fi
+    if [ -n "${CDKPF_STUB_FAIL:-}" ] && grep -q -- "$CDKPF_STUB_FAIL" <<<"$*"; then
+      echo "An error occurred: stub refused $2" >&2; exit 254
+    fi
     exit 0 ;;
 esac
 STUB
@@ -40,9 +43,17 @@ grep -q LEFTOVER <<<"$out" && fail "a reclaimable orphan was reported as leftove
 [ "$(grep -c '^sweep: reclaimed' <<<"$out")" -eq 10 ] || fail "expected 10 reclaim lines (5 arns x 2 regions)" "$out"
 called 'ecs delete-cluster --cluster arn:aws:ecs:ap-northeast-1:1:cluster/c1' || fail "cluster not deleted"
 called 'ecs delete-task-definitions --task-definitions arn:aws:ecs:ap-northeast-1:1:task-definition/t1:1' || fail "task definition not deleted"
+called 'cognito-idp update-user-pool --user-pool-id ap-northeast-1_abc --region ap-northeast-1 --deletion-protection INACTIVE' || fail "deletion protection not cleared"
 called 'cognito-idp delete-user-pool --user-pool-id ap-northeast-1_abc' || fail "user pool not deleted"
 called 'kms schedule-key-deletion --key-id arn:aws:kms:ap-northeast-1:1:key/k1 --region ap-northeast-1 --pending-window-in-days 7' || fail "key deletion not scheduled"
 called 'dynamodb delete-table --table-name tbl1' || fail "table not deleted (stream arn must resolve to its table)"
+
+# カスタムドメイン付きのプールは、ドメインを先に消してから本体を消す
+export CDKPF_STUB_DOMAIN=cdkpf-example
+out=$(run "$tmp/known")
+unset CDKPF_STUB_DOMAIN
+called 'cognito-idp delete-user-pool-domain --user-pool-id ap-northeast-1_abc --domain cdkpf-example' || fail "custom domain not removed first" "$out"
+grep -q LEFTOVER <<<"$out" && fail "a pool with a custom domain was reported as leftover" "$out"
 
 # 削除待ちの KMS キーは二度スケジュールせず、LEFTOVER にも落とさない
 printf 'arn:aws:kms:ap-northeast-1:1:key/k1\n' > "$tmp/pending"
@@ -64,5 +75,6 @@ export CDKPF_STUB_FAIL=delete-user-pool
 out=$(run "$tmp/failing")
 unset CDKPF_STUB_FAIL
 [ "$(grep -c '^LEFTOVER: orphaned resource' <<<"$out")" -eq 2 ] || fail "a failed deletion was not reported" "$out"
+grep -q 'could not delete: .*stub refused' <<<"$out" || fail "the failure reason was not carried onto the leftover line" "$out"
 
 echo "sweep.test.sh: OK"
