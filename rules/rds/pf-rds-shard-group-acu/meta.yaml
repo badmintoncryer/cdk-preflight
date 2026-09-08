@@ -1,0 +1,12 @@
+id: pf-rds-shard-group-acu
+service: rds
+resourceTypes: [AWS::RDS::DBShardGroup]
+severity: ERROR
+title: "DBShardGroup MaxACU must be at least MinACU"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: doc-only
+  evidence: "doc-only: \u518d\u73fe\u306b\u306f Limitless \u30af\u30e9\u30b9\u30bf\uff08\u6700\u4f4e 16 ACU\u3001PI \u3068 Enhanced Monitoring \u5fc5\u9808\uff09\u304c\u8981\u308a\u3001\u5b9f\u6a5f\u30b2\u30fc\u30c8\u306e\u30b3\u30b9\u30c8\u304c\u5236\u7d04 1 \u672c\u306b\u898b\u5408\u308f\u306a\u3044\u3002DBShardGroup \u306e MaxACU / MinACU \u306f https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html \u306b\u660e\u8a18\uff08MaxACU \u306f MinACU \u4ee5\u4e0a\uff09"
+addedOn: 2026-09-08

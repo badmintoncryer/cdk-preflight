@@ -1,0 +1,23 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Pl": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf-fixture",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 2,
+        "Entries": [
+          {
+            "Cidr": "10.0.0.0/24",
+            "Description": "fixture"
+          },
+          {
+            "Cidr": "10.0.1.0/24",
+            "Description": "fixture"
+          }
+        ]
+      }
+    }
+  }
+}

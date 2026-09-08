@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "postgres",
+        "DBInstanceClass": "db.m6g.large",
+        "AllocatedStorage": "500",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "StorageType": "gp3",
+        "Iops": 12000,
+        "StorageThroughput": 4001
+      }
+    }
+  }
+}

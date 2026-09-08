@@ -1,0 +1,12 @@
+id: pf-rds-magnetic-storage-deprecated
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: "Magnetic (standard) storage cannot be created any more"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"RDS can't create the DB instance because magnetic storage is deprecated. Set StorageType to gp2, gp3, or io2.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

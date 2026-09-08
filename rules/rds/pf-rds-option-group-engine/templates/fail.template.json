@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "mysql",
+        "DBInstanceClass": "db.t4g.micro",
+        "AllocatedStorage": "20",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "OptionGroupName": {
+          "Ref": "OG"
+        }
+      }
+    },
+    "OG": {
+      "Type": "AWS::RDS::OptionGroup",
+      "Properties": {
+        "EngineName": "postgres",
+        "MajorEngineVersion": "16",
+        "OptionGroupDescription": "cdkpf",
+        "OptionConfigurations": []
+      }
+    }
+  }
+}

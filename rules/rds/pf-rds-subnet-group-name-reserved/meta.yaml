@@ -1,0 +1,12 @@
+id: pf-rds-subnet-group-name-reserved
+service: rds
+resourceTypes: [AWS::RDS::DBSubnetGroup]
+severity: ERROR
+title: "DBSubnetGroupName: default is reserved"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbsubnetgroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Resource of type 'AWS::RDS::DBSubnetGroup' with identifier 'default' already exists.\" ROLLBACK_COMPLETE The stack event names the pre-existing default group; the direct API call names the reservation (\"Subnet group name default is reserved. Please specify another name.\") - both reject the name."
+addedOn: 2026-09-08

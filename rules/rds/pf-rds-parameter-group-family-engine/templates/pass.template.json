@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "mysql",
+        "DBInstanceClass": "db.t4g.micro",
+        "AllocatedStorage": "20",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "DBParameterGroupName": {
+          "Ref": "PG"
+        }
+      }
+    },
+    "PG": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Properties": {
+        "Family": "mysql8.4",
+        "Description": "cdkpf",
+        "Parameters": {
+          "max_connections": "100"
+        }
+      }
+    }
+  }
+}

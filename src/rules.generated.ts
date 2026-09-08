@@ -2824,6 +2824,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-session-timeout\", \"ERROR\", name,\n\t\"Properties.SessionTimeoutHours\",\n\tsprintf(\"SessionTimeoutHours %v is not accepted (\\\"Session Timeout you provided is not valid; valid values are [8, 10, 12, 24]\\\")\", [n]),\n\t\"Use 8, 10, 12 or 24\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tn := to_number(resolve(name, \"Properties.SessionTimeoutHours\"))\n\tnot n in {8, 10, 12, 24}\n}\n"
   },
   {
+    "id": "pf-ec2-eni-private-ip-in-subnet",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A network interface private IP must fall inside its subnet",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NetworkInterface"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-eni-private-ip-in-subnet\", \"ERROR\", name,\n\t\"Properties.PrivateIpAddress\",\n\tsprintf(\"PrivateIpAddress %s is outside subnet '%s' (%s); the create fails with \\\"Address does not fall within the subnet's address range\\\"\", [ip, sref, cidr]),\n\t\"Pick an address inside the subnet CIDR, or drop PrivateIpAddress and let EC2 assign one\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkinterface.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::NetworkInterface\")\n\tip := resolve(name, \"Properties.PrivateIpAddress\")\n\tis_string(ip)\n\tsref := resolve(name, \"Properties.SubnetId\")\n\tis_string(sref)\n\tsref in resources_of_type(\"AWS::EC2::Subnet\")\n\tcidr := resolve(sref, \"Properties.CidrBlock\")\n\tis_string(cidr)\n\tnot _pf_ec2lib_cidr_has_ip(cidr, ip)\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-aggregation-interval",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Flow log MaxAggregationInterval accepts only 60 or 600 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2fl_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-flowlog.html\"\n\n_pf_ec2fl_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_ec2fla_bad(name) := v if {\n\tv := resolve(name, \"Properties.MaxAggregationInterval\")\n\tn := to_number(v)\n\tnot n in {60, 600}\n}\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-aggregation-interval\", \"ERROR\", name,\n\t\"Properties.MaxAggregationInterval\",\n\tsprintf(\"MaxAggregationInterval %v is not accepted; a flow log takes 60 or 600 seconds (\\\"Invalid Flow Log Max Aggregation Interval.\\\")\", [v]),\n\t\"Set MaxAggregationInterval to 60 (one minute) or 600 (ten minutes), or drop the property to take the 600 default\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tv := _pf_ec2fla_bad(name)\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-destination-config",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Flow log destination type requires its matching destination property",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# LogDestinationType is optional and defaults to cloud-watch-logs, so an absent\n# type takes the cloud-watch-logs branch (measured: the same error fires).\n_pf_ec2fld_type(name) := t if {\n\tt := resolve(name, \"Properties.LogDestinationType\")\n\tis_string(t)\n}\n\n_pf_ec2fld_type(name) := \"cloud-watch-logs\" if _pf_ec2fl_absent(name, \"LogDestinationType\")\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-destination-config\", \"ERROR\", name,\n\t\"Properties.LogDestination\",\n\t\"A flow log with LogDestinationType s3 needs LogDestination (\\\"LogDestination can't be empty if LogGroupName is not provided.\\\")\",\n\t\"Set LogDestination to the target bucket ARN\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\t_pf_ec2fld_type(name) == \"s3\"\n\t_pf_ec2fl_absent(name, \"LogDestination\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-destination-config\", \"ERROR\", name,\n\t\"Properties.DeliverLogsPermissionArn\",\n\t\"A flow log delivering to CloudWatch Logs needs DeliverLogsPermissionArn (\\\"DeliverLogsPermissionArn can't be empty if LogDestinationType is cloud-watch-logs.\\\")\",\n\t\"Set DeliverLogsPermissionArn to a role the flow log service can assume\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\t_pf_ec2fld_type(name) == \"cloud-watch-logs\"\n\t_pf_ec2fl_absent(name, \"DeliverLogsPermissionArn\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-format-fields",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Flow log LogFormat accepts only documented field names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2flf_fields := {\"version\", \"account-id\", \"interface-id\", \"srcaddr\", \"dstaddr\", \"srcport\", \"dstport\", \"protocol\", \"packets\", \"bytes\", \"start\", \"end\", \"action\", \"log-status\", \"vpc-id\", \"subnet-id\", \"instance-id\", \"tcp-flags\", \"type\", \"pkt-srcaddr\", \"pkt-dstaddr\", \"region\", \"az-id\", \"sublocation-type\", \"sublocation-id\", \"pkt-src-aws-service\", \"pkt-dst-aws-service\", \"flow-direction\", \"traffic-path\", \"ecs-cluster-arn\", \"ecs-cluster-name\", \"ecs-container-instance-arn\", \"ecs-container-instance-id\", \"ecs-container-id\", \"ecs-second-container-id\", \"ecs-service-name\", \"ecs-task-definition-arn\", \"ecs-task-arn\", \"ecs-task-id\", \"reject-reason\"}\n\n_pf_ec2flf_unknown(name) := f if {\n\ts := resolve(name, \"Properties.LogFormat\")\n\tis_string(s)\n\tsome tok in regex.find_n(`\\$\\{[^}]*\\}`, s, -1)\n\tf := trim_suffix(trim_prefix(tok, \"${\"), \"}\")\n\tnot f in _pf_ec2flf_fields\n}\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-format-fields\", \"ERROR\", name,\n\t\"Properties.LogFormat\",\n\tsprintf(\"LogFormat names the field '%s', which flow logs do not provide (\\\"Unknown fields provided\\\")\", [f]),\n\t\"Use only the documented ${field} names; check the log record fields table\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tf := _pf_ec2flf_unknown(name)\n}\n"
+  },
+  {
+    "id": "pf-ec2-flow-log-transit-gateway-traffic-type",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A Transit Gateway flow log cannot take TrafficType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::FlowLog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-transit-gateway-traffic-type\", \"ERROR\", name,\n\t\"Properties.TrafficType\",\n\t\"A flow log on a Transit Gateway resource cannot take TrafficType; it always records all traffic\",\n\t\"Remove TrafficType, or point ResourceType at a VPC, Subnet or NetworkInterface\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tresolve(name, \"Properties.ResourceType\") in {\"TransitGateway\", \"TransitGatewayAttachment\"}\n\tnot _pf_ec2fl_absent(name, \"TrafficType\")\n}\n"
+  },
+  {
     "id": "pf-ec2-instance-ami-arch",
     "service": "ec2",
     "severity": "ERROR",
@@ -2844,6 +2899,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::LaunchTemplate"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-launch-template-name\", \"ERROR\", name,\n\t\"Properties.LaunchTemplateName\",\n\tsprintf(\"LaunchTemplateName '%s' is rejected: EC2 requires 3-128 characters of letters, numbers and - ( ) . / _\", [n]),\n\t\"Rename the launch template using only letters, numbers and - ( ) . / _ (3-128 characters)\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateLaunchTemplate.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n\tn := resolve(name, \"Properties.LaunchTemplateName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z0-9()./_-]{3,128}$`, n)\n}\n"
+  },
+  {
+    "id": "pf-ec2-nacl-rule-number-unique",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Network ACL rule numbers must be unique per direction",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NetworkAclEntry"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Egress defaults to false, so an absent property takes the ingress table.\n_pf_ec2nre_egress(n) := e if {\n\te := coerce_to_bool(resolve(n, \"Properties.Egress\"))\n}\n\n_pf_ec2nre_egress(n) := false if _pf_ec2lib_absent(n, \"Egress\")\n\n_pf_ec2nre_key(n) := [acl, eg, num] if {\n\tacl := resolve(n, \"Properties.NetworkAclId\")\n\tis_string(acl)\n\teg := _pf_ec2nre_egress(n)\n\tnum := to_number(resolve(n, \"Properties.RuleNumber\"))\n}\n\n_pf_ec2nre_peers(k) := {n |\n\tsome n in resources_of_type(\"AWS::EC2::NetworkAclEntry\")\n\t_pf_ec2nre_key(n) == k\n}\n\nviolation contains make_diag_full(\"pf-ec2-nacl-rule-number-unique\", \"ERROR\", name,\n\t\"Properties.RuleNumber\",\n\tsprintf(\"Rule number %v is already taken on this network ACL in the same direction by '%s' (\\\"The network acl entry identified by %v already exists.\\\")\", [k[2], min(peers), k[2]]),\n\t\"Give each entry its own rule number within a direction; the ingress and egress tables are numbered separately\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkaclentry.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::NetworkAclEntry\")\n\tk := _pf_ec2nre_key(name)\n\tpeers := _pf_ec2nre_peers(k)\n\tcount(peers) > 1\n\tname != min(peers)\n}\n"
   },
   {
     "id": "pf-ec2-natgw-allocation",
@@ -2867,6 +2933,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::PlacementGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cross-resource: only fires when the referenced placement group is in\n# the template with Strategy cluster. A literal (pre-existing) group\n# name carries no strategy information and stays silent.\n_pf_ec2pgb_burstable(fam) if fam in {\"t2\", \"t3\", \"t3a\", \"t4g\"}\n\nviolation contains make_diag_full(\"pf-ec2-pg-cluster-burstable\", \"ERROR\", name,\n\t\"Properties.InstanceType\",\n\tsprintf(\"Cluster placement groups are not supported by the '%s' instance type; the launch fails at deploy\", [it]),\n\t\"Use a non-burstable type, or a spread/partition placement group\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\t_pf_ec2pgb_burstable(split(it, \".\")[0])\n\tpg := resolve(name, \"Properties.PlacementGroupName\")\n\tpg in resources_of_type(\"AWS::EC2::PlacementGroup\")\n\tresolve(pg, \"Properties.Strategy\") == \"cluster\"\n}\n"
+  },
+  {
+    "id": "pf-ec2-prefix-list-address-family",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Prefix list entries must match the declared address family",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PrefixList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2plaf_bad(\"IPv4\", cidr) if contains(cidr, \":\")\n\n_pf_ec2plaf_bad(\"IPv6\", cidr) if not contains(cidr, \":\")\n\nviolation contains make_diag_full(\"pf-ec2-prefix-list-address-family\", \"ERROR\", name,\n\tsprintf(\"Properties.Entries.%d.Cidr\", [e.index]),\n\tsprintf(\"An %s prefix list cannot hold the CIDR '%s' (\\\"An (%s) prefix list cannot contain an (%s) CIDR.\\\")\", [fam, cidr, fam, cidr]),\n\t\"Match the entry CIDRs to AddressFamily, or split them into one list per family\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-prefixlist.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::PrefixList\")\n\tfam := resolve(name, \"Properties.AddressFamily\")\n\tsome e in flatten_list(name, \"Properties.Entries\")\n\tcidr := object.get(e.value, \"Cidr\", \"\")\n\tis_string(cidr)\n\t_pf_ec2plaf_bad(fam, cidr)\n}\n"
+  },
+  {
+    "id": "pf-ec2-prefix-list-max-entries",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A managed prefix list cannot hold more entries than MaxEntries",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PrefixList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-prefix-list-max-entries\", \"ERROR\", name,\n\t\"Properties.MaxEntries\",\n\tsprintf(\"MaxEntries is %v but Entries has %v members (\\\"The number of entries cannot be greater than the maximum number of entries\\\")\", [me, count(entries)]),\n\t\"Raise MaxEntries to at least the number of entries\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-prefixlist.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::PrefixList\")\n\tme := to_number(resolve(name, \"Properties.MaxEntries\"))\n\tentries := flatten_list(name, \"Properties.Entries\")\n\tcount(entries) > me\n}\n"
   },
   {
     "id": "pf-ec2-route-target-exactly-one",
@@ -3032,6 +3120,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only minimums: the historical 16384 GiB maximum no longer holds\n# (a 17000 GiB gp3 deployed clean on 2026-09-03).\n_pf_ec2vsm_min := {\"io1\": 4, \"io2\": 4, \"st1\": 125, \"sc1\": 125}\n\nviolation contains make_diag_full(\"pf-ec2-volume-size-minimum\", \"ERROR\", name,\n\t\"Properties.Size\",\n\tsprintf(\"Size %v GiB is below the %v GiB minimum for %s volumes (\\\"%s volumes must be at least %v GiB in size.\\\")\", [s, mn, vt, vt, mn]),\n\t\"Raise Size to the volume type minimum\",\n\t\"https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tmn := _pf_ec2vsm_min[vt]\n\ts := to_number(resolve(name, \"Properties.Size\"))\n\ts < mn\n}\n"
   },
   {
+    "id": "pf-ec2-vpc-cidr-block-overlap",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A secondary VPC CIDR cannot overlap the primary",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCCidrBlock"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-block-overlap\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"CidrBlock %s overlaps the primary CIDR %s of VPC '%s' (\\\"CidrConflict: CIDR range conflicts\\\")\", [c, primary, vref]),\n\t\"Choose a secondary range that does not overlap the primary CIDR\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpccidrblock.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCCidrBlock\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tvref := resolve(name, \"Properties.VpcId\")\n\tis_string(vref)\n\tvref in resources_of_type(\"AWS::EC2::VPC\")\n\tprimary := resolve(vref, \"Properties.CidrBlock\")\n\tis_string(primary)\n\t_pf_ec2lib_cidr_overlap(c, primary)\n}\n"
+  },
+  {
     "id": "pf-ec2-vpc-cidr-block-size",
     "service": "ec2",
     "severity": "ERROR",
@@ -3041,6 +3140,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPC"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine validates subnet containment (E3059) and overlap (E3060)\n# but accepts any VPC netmask; EC2 rejects anything outside /16../28.\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-block-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"VPC CIDR block '%s' has netmask /%v; EC2 only accepts /16 through /28 (\\\"The CIDR '%s' is invalid.\\\")\", [c, p, c]),\n\t\"Use a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPC\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\t_pf_ec2vcs_out(p)\n}\n\n_pf_ec2vcs_out(p) if p < 16\n\n_pf_ec2vcs_out(p) if p > 28\n"
+  },
+  {
+    "id": "pf-ec2-vpc-single-igw",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A VPC accepts only one internet gateway attachment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCGatewayAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2sigw_vpc(n) := v if {\n\tv := resolve(n, \"Properties.VpcId\")\n\tis_string(v)\n\tnot _pf_ec2lib_absent(n, \"InternetGatewayId\")\n}\n\n_pf_ec2sigw_peers(v) := {n |\n\tsome n in resources_of_type(\"AWS::EC2::VPCGatewayAttachment\")\n\t_pf_ec2sigw_vpc(n) == v\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpc-single-igw\", \"ERROR\", name,\n\t\"Properties.InternetGatewayId\",\n\tsprintf(\"VPC '%s' already takes an internet gateway from '%s'; a second attachment fails with \\\"already has an internet gateway attached\\\"\", [v, min(peers)]),\n\t\"Attach one internet gateway per VPC, and route the rest through a different gateway type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcgatewayattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCGatewayAttachment\")\n\tv := _pf_ec2sigw_vpc(name)\n\tpeers := _pf_ec2sigw_peers(v)\n\tcount(peers) > 1\n\tname != min(peers)\n}\n"
   },
   {
     "id": "pf-ec2-vpce-gateway-service",
@@ -3063,6 +3173,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPCEndpoint"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vsr_url := \"https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html\"\n\n# Only com.amazonaws.<region>.<service> names where the third segment is\n# region-shaped; names like com.amazonaws.s3-global.accesspoint stay out.\n_pf_ec2vsr_parts(name) := parts if {\n\tsn := resolve(name, \"Properties.ServiceName\")\n\tis_string(sn)\n\tparts := split(sn, \".\")\n\tcount(parts) == 4\n\tparts[0] == \"com\"\n\tparts[1] == \"amazonaws\"\n\tregex.match(`^[a-z]{2}(-[a-z]+)+-[0-9]+$`, parts[2])\n}\n\n_pf_ec2vsr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-service-region\", \"ERROR\", name,\n\t\"Properties.ServiceName\",\n\tsprintf(\"Endpoint service '%s' names region %s but this stack deploys to %s; without ServiceRegion the lookup is regional and the create fails\", [concat(\".\", parts), parts[2], region]),\n\t\"Use com.amazonaws.<deploy-region>.<service>, or set ServiceRegion for cross-region PrivateLink\",\n\t_pf_ec2vsr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tparts := _pf_ec2vsr_parts(name)\n\tparts[2] != region\n\t_pf_ec2vsr_absent(name, \"ServiceRegion\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpce-subnet-az-unique",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "An interface VPC endpoint takes at most one subnet per availability zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# flatten_list の .value は生のマーカーオブジェクトなので、論理 ID はドット記法の\n# resolve で取り直す（AGENTS.md: 配列要素は Properties.L.1）。AZ 側は解決できない\n# 式のままでも構わない — 同じ式なら同じマーカーになり、等値比較が成立する。\n_pf_ec2vaz_az(name, i) := az if {\n\tsref := resolve(name, sprintf(\"Properties.SubnetIds.%d\", [i]))\n\tis_string(sref)\n\taz := resolve(sref, \"Properties.AvailabilityZone\")\n}\n\n_pf_ec2vaz_azs(name) := [az |\n\tsome s in flatten_list(name, \"Properties.SubnetIds\")\n\taz := _pf_ec2vaz_az(name, s.index)\n]\n\n_pf_ec2vaz_dup(name) := az if {\n\tazs := _pf_ec2vaz_azs(name)\n\tsome az in azs\n\tcount([x | some x in azs; x == az]) > 1\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-subnet-az-unique\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\tsprintf(\"SubnetIds names more than one subnet in '%s'; the create fails with \\\"Found another VPC endpoint subnet in the availability zone\\\"\", [az]),\n\t\"List one subnet per availability zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tresolve(name, \"Properties.VpcEndpointType\") == \"Interface\"\n\taz := _pf_ec2vaz_dup(name)\n}\n"
   },
   {
     "id": "pf-ec2-vpce-type-config",
@@ -8350,6 +8471,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-backup-window-format\", \"ERROR\", name,\n\t\"Properties.PreferredBackupWindow\",\n\tsprintf(\"PreferredBackupWindow '%s' is not hh24:mi-hh24:mi (24H clock UTC); RDS rejects it at create time\", [w]),\n\t\"Use the hh24:mi-hh24:mi form, e.g. 03:00-04:00\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tw := resolve(name, \"Properties.PreferredBackupWindow\")\n\tis_string(w)\n\tnot regex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]$`, w)\n}\n"
   },
   {
+    "id": "pf-rds-character-set-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "CharacterSetName is only accepted by Oracle engines",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-character-set-engine\", \"ERROR\", name,\n\t\"Properties.CharacterSetName\",\n\tsprintf(\"CharacterSetName is set on engine %v (\\\"You tried to modify the character set, which isn't supported when creating an instance using version 8.4 of mysql.\\\")\", [e]),\n\t\"Drop CharacterSetName, or use an Oracle engine\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"CharacterSetName\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"mysql\", \"mariadb\", \"postgres\", \"db2-\", \"aurora-mysql\", \"aurora-postgresql\"})\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-allocated-storage-aurora",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "AllocatedStorage is only for Multi-AZ DB clusters, not Aurora",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-cluster-allocated-storage-aurora\", \"ERROR\", name,\n\t\"Properties.AllocatedStorage\",\n\tsprintf(\"AllocatedStorage is set on engine %v (\\\"AllocatedStorage isn't supported for DB engine aurora-postgresql.\\\")\", [e]),\n\t\"Drop AllocatedStorage for Aurora\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\t_pf_rds_has(name, \"AllocatedStorage\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"aurora-mysql\", \"aurora-postgresql\"})\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-az-count",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "AvailabilityZones accepts at most 3 zones",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-cluster-az-count\", \"ERROR\", name,\n\t\"Properties.AvailabilityZones\",\n\tsprintf(\"AvailabilityZones lists %v zones (\\\"You cannot specify more than 3 availability zones.\\\")\", [count(azs)]),\n\t\"List at most 3 availability zones\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tazs := flatten_list(name, \"Properties.AvailabilityZones\")\n\tcount(azs) > 3\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-instance-class-aurora",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBClusterInstanceClass is only for Multi-AZ DB clusters, not Aurora",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-cluster-instance-class-aurora\", \"ERROR\", name,\n\t\"Properties.DBClusterInstanceClass\",\n\tsprintf(\"DBClusterInstanceClass is set on engine %v (\\\"DBClusterInstanceClass isn't supported for DB engine aurora-postgresql.\\\")\", [e]),\n\t\"Drop DBClusterInstanceClass for Aurora\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\t_pf_rds_has(name, \"DBClusterInstanceClass\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"aurora-mysql\", \"aurora-postgresql\"})\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-logs-exports-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Cluster EnableCloudwatchLogsExports values depend on the Aurora engine",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsclogs := {\n\t\"aurora-postgresql\": {\"postgresql\", \"instance\", \"iam-db-auth-error\"},\n\t\"aurora-mysql\": {\"audit\", \"error\", \"general\", \"slowquery\", \"iam-db-auth-error\"},\n\t\"postgres\": {\"postgresql\", \"upgrade\", \"iam-db-auth-error\"},\n\t\"mysql\": {\"audit\", \"error\", \"general\", \"slowquery\", \"iam-db-auth-error\"},\n}\n\nviolation contains make_diag_full(\"pf-rds-cluster-logs-exports-engine\", \"ERROR\", name,\n\t\"Properties.EnableCloudwatchLogsExports\",\n\tsprintf(\"Log type %v is not exportable for engine %v (\\\"You cannot use the log types 'general' with engine version aurora-postgresql 17.7. For supported log types, see the documentation.\\\")\", [v, e]),\n\t\"Use the log types the engine supports\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\te := _pf_rds_engine(name)\n\tallowed := _pf_rdsclogs[_pf_rds_family(name)]\n\tsome it in flatten_list(name, \"Properties.EnableCloudwatchLogsExports\")\n\tv := it.value\n\tis_string(v)\n\tnot v in allowed\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-port-range",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBCluster Port must be between 1150 and 65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdscport_out(n) if n < 1150\n\n_pf_rdscport_out(n) if n > 65535\n\nviolation contains make_diag_full(\"pf-rds-cluster-port-range\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"Port %v is outside 1150-65535 (\\\"Invalid endpoint port 100. Valid range is: 1150-65535\\\")\", [n]),\n\t\"Pick a port between 1150 and 65535\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tn := to_number(resolve(name, \"Properties.Port\"))\n\t_pf_rdscport_out(n)\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-publicly-accessible-aurora",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "PubliclyAccessible is only for Multi-AZ DB clusters, not Aurora",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-cluster-publicly-accessible-aurora\", \"ERROR\", name,\n\t\"Properties.PubliclyAccessible\",\n\tsprintf(\"PubliclyAccessible is set on engine %v (\\\"PubliclyAccessible isn't supported for DB engine aurora-postgresql.\\\")\", [e]),\n\t\"Drop PubliclyAccessible for Aurora\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\t_pf_rds_has(name, \"PubliclyAccessible\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"aurora-mysql\", \"aurora-postgresql\"})\n}\n"
+  },
+  {
+    "id": "pf-rds-cluster-storage-type",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Aurora clusters only accept the aurora storage types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-cluster-storage-type\", \"ERROR\", name,\n\t\"Properties.StorageType\",\n\tsprintf(\"StorageType %v is not valid for engine %v (\\\"You can't use the gp3 storage type.\\\")\", [st, e]),\n\t\"Use aurora or aurora-iopt1\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"aurora-mysql\", \"aurora-postgresql\"})\n\tst := resolve(name, \"Properties.StorageType\")\n\tis_string(st)\n\tnot st in {\"aurora\", \"aurora-iopt1\"}\n}\n"
+  },
+  {
+    "id": "pf-rds-database-insights-advanced",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DatabaseInsightsMode: advanced requires Performance Insights with at least 31 days retention",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsadv_bad(name) if not _pf_rds_true(name, \"PerformanceInsightsEnabled\")\n\n_pf_rdsadv_bad(name) if not _pf_rds_has(name, \"PerformanceInsightsRetentionPeriod\")\n\n_pf_rdsadv_bad(name) if {\n\tn := to_number(resolve(name, \"Properties.PerformanceInsightsRetentionPeriod\"))\n\tn < 31\n}\n\nviolation contains make_diag_full(\"pf-rds-database-insights-advanced\", \"ERROR\", name,\n\t\"Properties.DatabaseInsightsMode\",\n\t\"DatabaseInsightsMode: advanced without Performance Insights enabled and a retention period of at least 31 days (\\\"You can't enable the Advanced mode of Database Insights until you enable Performance Insights and set the retention period for Performance Insights to at least 31 days.\\\")\",\n\t\"Set PerformanceInsightsEnabled: true and PerformanceInsightsRetentionPeriod >= 31\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tresolve(name, \"Properties.DatabaseInsightsMode\") == \"advanced\"\n\t_pf_rdsadv_bad(name)\n}\n"
+  },
+  {
     "id": "pf-rds-dbname-format",
     "service": "rds",
     "severity": "ERROR",
@@ -8373,6 +8593,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsdesc_bad contains [name, path, v] if {\n\tsome name in resources_of_type(\"AWS::RDS::DBSubnetGroup\")\n\tv := resolve(name, \"Properties.DBSubnetGroupDescription\")\n\tis_string(v)\n\tnot regex.match(`^[\\x20-\\x7e]*$`, v)\n\tpath := \"Properties.DBSubnetGroupDescription\"\n}\n\n_pf_rdsdesc_bad contains [name, path, v] if {\n\tsome name in resources_of_type(\"AWS::RDS::DBParameterGroup\")\n\tv := resolve(name, \"Properties.Description\")\n\tis_string(v)\n\tnot regex.match(`^[\\x20-\\x7e]*$`, v)\n\tpath := \"Properties.Description\"\n}\n\nviolation contains make_diag_full(\"pf-rds-description-printable\", \"ERROR\", name,\n\tpath,\n\tsprintf(\"Description '%s' is rejected: RDS treats any non-ASCII character as a non-printable control character\", [v]),\n\t\"Write the description in printable ASCII\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBSubnetGroup.html\") if {\n\tsome [name, path, v] in _pf_rdsdesc_bad\n}\n"
   },
   {
+    "id": "pf-rds-engine-mode-serverless-retired",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "EngineMode: serverless (Aurora Serverless v1) can no longer be created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-engine-mode-serverless-retired\", \"ERROR\", name,\n\t\"Properties.EngineMode\",\n\t\"EngineMode: serverless is Aurora Serverless v1 (\\\"The engine mode serverless you requested is currently unavailable.\\\")\",\n\t\"Use Serverless v2 (ServerlessV2ScalingConfiguration) instead\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tresolve(name, \"Properties.EngineMode\") == \"serverless\"\n}\n"
+  },
+  {
+    "id": "pf-rds-event-subscription-categories",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "EventCategories must exist for the SourceType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::EventSubscription"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsescat := {\n\t\"db-cluster\": {\"configuration change\", \"creation\", \"deletion\", \"failover\", \"failure\", \"global-failover\", \"maintenance\", \"notification\", \"serverless\"},\n\t\"db-instance\": {\"availability\", \"backup\", \"configuration change\", \"creation\", \"deletion\", \"failover\", \"failure\", \"low storage\", \"maintenance\", \"notification\", \"read replica\", \"recovery\", \"restoration\", \"security patching\"},\n}\n\nviolation contains make_diag_full(\"pf-rds-event-subscription-categories\", \"ERROR\", name,\n\t\"Properties.EventCategories\",\n\tsprintf(\"Event category %v does not exist for source type %v (\\\"Category : restoration not found for source type db-cluster.\\\")\", [c, st]),\n\t\"Use a category that the source type publishes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-eventsubscription.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::EventSubscription\")\n\tst := resolve(name, \"Properties.SourceType\")\n\tallowed := _pf_rdsescat[st]\n\tsome it in flatten_list(name, \"Properties.EventCategories\")\n\tc := it.value\n\tis_string(c)\n\tnot c in allowed\n}\n"
+  },
+  {
+    "id": "pf-rds-event-subscription-source-ids-require-type",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "SourceIds requires SourceType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::EventSubscription"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-event-subscription-source-ids-require-type\", \"ERROR\", name,\n\t\"Properties.SourceIds\",\n\t\"SourceIds is set without SourceType (\\\"If SourceType is null, SourceId must also be null.\\\")\",\n\t\"Set SourceType, or drop SourceIds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-eventsubscription.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::EventSubscription\")\n\t_pf_rds_has(name, \"SourceIds\")\n\tnot _pf_rds_has(name, \"SourceType\")\n}\n"
+  },
+  {
+    "id": "pf-rds-event-subscription-source-type-values",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "SourceType must be one of the RDS event source types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::EventSubscription"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-event-subscription-source-type-values\", \"ERROR\", name,\n\t\"Properties.SourceType\",\n\tsprintf(\"SourceType %v is not an RDS event source type (\\\"Invalid event source type. Valid types are 'db-instance', 'db-security-group', 'db-parameter-group', 'db-snapshot', 'db-cluster', 'db-cluster-snapshot' ...\\\")\", [st]),\n\t\"Use one of the documented source types\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-eventsubscription.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::EventSubscription\")\n\tst := resolve(name, \"Properties.SourceType\")\n\tis_string(st)\n\tnot input.resources[st]\n\tnot st in {\"db-instance\", \"db-security-group\", \"db-parameter-group\", \"db-snapshot\", \"db-cluster\", \"db-cluster-snapshot\", \"db-proxy\", \"custom-engine-version\", \"blue-green-deployment\"}\n}\n"
+  },
+  {
+    "id": "pf-rds-global-write-forwarding-requires-global",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "EnableGlobalWriteForwarding requires GlobalClusterIdentifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-global-write-forwarding-requires-global\", \"ERROR\", name,\n\t\"Properties.EnableGlobalWriteForwarding\",\n\t\"EnableGlobalWriteForwarding is set without GlobalClusterIdentifier (\\\"Requested global functionality, but global cluster identifier is not specified\\\")\",\n\t\"Set GlobalClusterIdentifier, or drop the flag\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\t_pf_rds_true(name, \"EnableGlobalWriteForwarding\")\n\tnot _pf_rds_has(name, \"GlobalClusterIdentifier\")\n}\n"
+  },
+  {
     "id": "pf-rds-gp3-iops-storage-threshold",
     "service": "rds",
     "severity": "ERROR",
@@ -8382,6 +8657,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::RDS::DBInstance"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsgp3_has(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_rdsgp3_custom(name) if _pf_rdsgp3_has(name, \"Iops\")\n\n_pf_rdsgp3_custom(name) if _pf_rdsgp3_has(name, \"StorageThroughput\")\n\nviolation contains make_diag_full(\"pf-rds-gp3-iops-storage-threshold\", \"ERROR\", name,\n\t\"Properties.Iops\",\n\tsprintf(\"gp3 with %v GiB cannot take custom Iops/StorageThroughput below 400 GiB for engine %s (\\\"You can't specify IOPS or storage throughput ... less than 400.\\\")\", [s, eng]),\n\t\"Drop the custom Iops/StorageThroughput, or allocate at least 400 GiB\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\teng := resolve(name, \"Properties.Engine\")\n\teng in {\"postgres\", \"mysql\"}\n\tresolve(name, \"Properties.StorageType\") == \"gp3\"\n\ts := to_number(resolve(name, \"Properties.AllocatedStorage\"))\n\ts < 400\n\t_pf_rdsgp3_custom(name)\n}\n"
+  },
+  {
+    "id": "pf-rds-iam-auth-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "IAM database authentication is only supported by MySQL, MariaDB and PostgreSQL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-iam-auth-engine\", \"ERROR\", name,\n\t\"Properties.EnableIAMDatabaseAuthentication\",\n\tsprintf(\"IAM database authentication is not supported by engine %v (\\\"IAM Database Authentication is not supported for this configuration.\\\")\", [e]),\n\t\"Drop EnableIAMDatabaseAuthentication for this engine\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_true(name, \"EnableIAMDatabaseAuthentication\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"oracle-\", \"sqlserver-\", \"db2-\"})\n}\n"
   },
   {
     "id": "pf-rds-io1-iops-ratio",
@@ -8406,6 +8692,153 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-iops-required\", \"ERROR\", name,\n\t\"Properties.Iops\",\n\tsprintf(\"StorageType %s requires Iops (\\\"The storage type %s requires iops to be specified.\\\")\", [st, st]),\n\t\"Set Iops alongside the provisioned-IOPS storage type\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tst := resolve(name, \"Properties.StorageType\")\n\tst in {\"io1\", \"io2\"}\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Iops\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-rds-license-model-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "LicenseModel must match the engine",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 実測で確定しているエンジンだけ。挙がっていないエンジンは黙る（under-claim）。\n_pf_rdslic := {\n\t\"postgres\": {\"postgresql-license\"},\n\t\"mysql\": {\"general-public-license\"},\n\t\"mariadb\": {\"general-public-license\"},\n}\n\nviolation contains make_diag_full(\"pf-rds-license-model-engine\", \"ERROR\", name,\n\t\"Properties.LicenseModel\",\n\tsprintf(\"LicenseModel %v is not valid for engine %v (\\\"Invalid license model 'bring-your-own-license' for engine 'postgres'. Valid license models are: postgresql-license\\\")\", [lm, e]),\n\t\"Use the license model the engine supports\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\te := _pf_rds_engine(name)\n\tallowed := _pf_rdslic[e]\n\tlm := resolve(name, \"Properties.LicenseModel\")\n\tis_string(lm)\n\tnot lm in allowed\n}\n"
+  },
+  {
+    "id": "pf-rds-limitless-delete-automated-backups",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Limitless clusters cannot set DeleteAutomatedBackups: false",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-limitless-delete-automated-backups\", \"ERROR\", name,\n\t\"Properties.DeleteAutomatedBackups\",\n\t\"DeleteAutomatedBackups: false is not allowed on a ClusterScalabilityType: limitless cluster\",\n\t\"Drop DeleteAutomatedBackups for a Limitless cluster\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tresolve(name, \"Properties.ClusterScalabilityType\") == \"limitless\"\n\t_pf_rds_false(name, \"DeleteAutomatedBackups\")\n}\n"
+  },
+  {
+    "id": "pf-rds-logs-exports-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "EnableCloudwatchLogsExports values depend on the engine",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdslogs := {\n\t\"postgres\": {\"postgresql\", \"upgrade\", \"iam-db-auth-error\"},\n\t\"mysql\": {\"audit\", \"error\", \"general\", \"slowquery\", \"iam-db-auth-error\"},\n\t\"mariadb\": {\"audit\", \"error\", \"general\", \"slowquery\", \"iam-db-auth-error\"},\n\t\"oracle-\": {\"alert\", \"audit\", \"listener\", \"trace\", \"oemagent\"},\n\t\"sqlserver-\": {\"agent\", \"error\"},\n\t\"db2-\": {\"diag.log\", \"notify.log\"},\n}\n\nviolation contains make_diag_full(\"pf-rds-logs-exports-engine\", \"ERROR\", name,\n\t\"Properties.EnableCloudwatchLogsExports\",\n\tsprintf(\"Log type %v is not exportable for engine %v (\\\"You cannot use the log types 'audit' with engine version postgres 18.3. For supported log types, see the documentation.\\\")\", [v, e]),\n\t\"Use the log types the engine supports\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\te := _pf_rds_engine(name)\n\tallowed := _pf_rdslogs[_pf_rds_family(name)]\n\tsome it in flatten_list(name, \"Properties.EnableCloudwatchLogsExports\")\n\tv := it.value\n\tis_string(v)\n\tnot v in allowed\n}\n"
+  },
+  {
+    "id": "pf-rds-magnetic-storage-deprecated",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Magnetic (standard) storage cannot be created any more",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-magnetic-storage-deprecated\", \"ERROR\", name,\n\t\"Properties.StorageType\",\n\t\"StorageType: standard is magnetic storage (\\\"RDS can't create the DB instance because magnetic storage is deprecated. Set StorageType to gp2, gp3, or io2.\\\")\",\n\t\"Use gp2, gp3 or io2\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tresolve(name, \"Properties.StorageType\") == \"standard\"\n}\n"
+  },
+  {
+    "id": "pf-rds-manage-master-password-exclusive",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "ManageMasterUserPassword and MasterUserPassword are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-manage-master-password-exclusive\", \"ERROR\", name,\n\t\"Properties.ManageMasterUserPassword\",\n\t\"ManageMasterUserPassword is set together with MasterUserPassword (\\\"MasterUserPassword and ManageMasterUserPassword are mutually exclusive. Specify only one of these parameters.\\\")\",\n\t\"Keep only one of the two\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_true(name, \"ManageMasterUserPassword\")\n\t_pf_rds_has(name, \"MasterUserPassword\")\n}\n"
+  },
+  {
+    "id": "pf-rds-master-username-length",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MasterUsername length limit depends on the engine",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsmu := {\n\t\"mysql\": 16,\n\t\"mariadb\": 16,\n\t\"aurora-mysql\": 16,\n\t\"db2-\": 16,\n\t\"oracle-\": 30,\n\t\"postgres\": 63,\n\t\"aurora-postgresql\": 63,\n\t\"sqlserver-\": 128,\n}\n\nviolation contains make_diag_full(\"pf-rds-master-username-length\", \"ERROR\", name,\n\t\"Properties.MasterUsername\",\n\tsprintf(\"MasterUsername is %v characters; engine %v allows at most %v (\\\"Invalid master user name\\\")\", [count(u), e, mx]),\n\t\"Shorten the master user name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\te := _pf_rds_engine(name)\n\tmx := _pf_rdsmu[_pf_rds_family(name)]\n\tu := resolve(name, \"Properties.MasterUsername\")\n\tis_string(u)\n\tnot input.resources[u]\n\tcount(u) > mx\n}\n"
+  },
+  {
+    "id": "pf-rds-master-username-reserved",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MasterUsername must not be an engine reserved word",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-master-username-reserved\", \"ERROR\", name,\n\t\"Properties.MasterUsername\",\n\tsprintf(\"MasterUsername %v is reserved by the engine (\\\"MasterUsername rdsadmin cannot be used as it is a reserved word used by the engine\\\")\", [u]),\n\t\"Pick another master user name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tu := resolve(name, \"Properties.MasterUsername\")\n\tis_string(u)\n\tlower(u) == \"rdsadmin\"\n}\n"
+  },
+  {
+    "id": "pf-rds-max-allocated-storage",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MaxAllocatedStorage must be greater than AllocatedStorage",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-max-allocated-storage\", \"ERROR\", name,\n\t\"Properties.MaxAllocatedStorage\",\n\tsprintf(\"MaxAllocatedStorage %v is not greater than AllocatedStorage %v (\\\"Max storage size must be greater than storage size\\\")\", [mx, al]),\n\t\"Raise MaxAllocatedStorage above AllocatedStorage\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tmx := to_number(resolve(name, \"Properties.MaxAllocatedStorage\"))\n\tal := to_number(resolve(name, \"Properties.AllocatedStorage\"))\n\tmx <= al\n}\n"
+  },
+  {
+    "id": "pf-rds-monitoring-interval-values",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MonitoringInterval must be one of 0, 1, 5, 10, 15, 30, 60",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance",
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-monitoring-interval-values\", \"ERROR\", name,\n\t\"Properties.MonitoringInterval\",\n\tsprintf(\"MonitoringInterval %v is not one of 0/1/5/10/15/30/60 (\\\"Invalid monitoring interval, please enter a value in [0, 1, 5, 10, 15, 30, 60]\\\")\", [n]),\n\t\"Use 0, 1, 5, 10, 15, 30 or 60\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tn := to_number(resolve(name, \"Properties.MonitoringInterval\"))\n\tnot n in {0, 1, 5, 10, 15, 30, 60}\n}\n\nviolation contains make_diag_full(\"pf-rds-monitoring-interval-values\", \"ERROR\", name,\n\t\"Properties.MonitoringInterval\",\n\tsprintf(\"MonitoringInterval %v is not one of 0/1/5/10/15/30/60 (\\\"Invalid monitoring interval, please enter a value in [0, 1, 5, 10, 15, 30, 60]\\\")\", [n]),\n\t\"Use 0, 1, 5, 10, 15, 30 or 60\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tn := to_number(resolve(name, \"Properties.MonitoringInterval\"))\n\tnot n in {0, 1, 5, 10, 15, 30, 60}\n}\n"
+  },
+  {
+    "id": "pf-rds-monitoring-role-required",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MonitoringRoleArn is required when MonitoringInterval is not 0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance",
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-monitoring-role-required\", \"ERROR\", name,\n\t\"Properties.MonitoringInterval\",\n\tsprintf(\"MonitoringInterval %v needs MonitoringRoleArn (\\\"A MonitoringRoleARN value is required if you specify a MonitoringInterval value other than 0.\\\")\", [n]),\n\t\"Set MonitoringRoleArn, or MonitoringInterval to 0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tn := to_number(resolve(name, \"Properties.MonitoringInterval\"))\n\tn != 0\n\t_pf_rds_has(name, \"MonitoringInterval\")\n\tnot _pf_rds_has(name, \"MonitoringRoleArn\")\n}\n\nviolation contains make_diag_full(\"pf-rds-monitoring-role-required\", \"ERROR\", name,\n\t\"Properties.MonitoringInterval\",\n\tsprintf(\"MonitoringInterval %v needs MonitoringRoleArn (\\\"A MonitoringRoleARN value is required if you specify a MonitoringInterval value other than 0.\\\")\", [n]),\n\t\"Set MonitoringRoleArn, or MonitoringInterval to 0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tn := to_number(resolve(name, \"Properties.MonitoringInterval\"))\n\tn != 0\n\t_pf_rds_has(name, \"MonitoringInterval\")\n\tnot _pf_rds_has(name, \"MonitoringRoleArn\")\n}\n"
+  },
+  {
+    "id": "pf-rds-multiaz-availability-zone",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "MultiAZ and AvailabilityZone are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-multiaz-availability-zone\", \"ERROR\", name,\n\t\"Properties.AvailabilityZone\",\n\t\"AvailabilityZone is set on a Multi-AZ instance (\\\"Requesting a specific availability zone is not valid for Multi-AZ instances.\\\")\",\n\t\"Drop AvailabilityZone, or turn MultiAZ off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_true(name, \"MultiAZ\")\n\t_pf_rds_has(name, \"AvailabilityZone\")\n}\n"
+  },
+  {
+    "id": "pf-rds-option-group-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "OptionGroup EngineName must match the engine of the instance that uses it",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance",
+      "AWS::RDS::OptionGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-option-group-engine\", \"ERROR\", name,\n\t\"Properties.OptionGroupName\",\n\tsprintf(\"Option group %v is for %v, but the instance runs %v (\\\"The option group default:postgres-16 is for postgres 16, and your DB instance is mysql 8.4.\\\")\", [og, en, e]),\n\t\"Match the option group engine to the instance engine\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-optiongroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tog := resolve(name, \"Properties.OptionGroupName\")\n\tis_string(og)\n\tinput.resources[og].resourceType == \"AWS::RDS::OptionGroup\"\n\ten := resolve(og, \"Properties.EngineName\")\n\tis_string(en)\n\te := _pf_rds_engine(name)\n\t_pf_rds_famof(en) != _pf_rds_famof(e)\n}\n"
+  },
+  {
+    "id": "pf-rds-parameter-group-family-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBParameterGroup Family must match the engine of the instance that uses it",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance",
+      "AWS::RDS::DBParameterGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-parameter-group-family-engine\", \"ERROR\", name,\n\t\"Properties.DBParameterGroupName\",\n\tsprintf(\"Parameter group %v has DBParameterGroupFamily %v, but the instance runs %v (\\\"The parameter group cdkpf-p-pg16 with DBParameterGroupFamily postgres16 can't be used for this instance. Use a parameter group with DBParameterGroupFamily mysql8.4.\\\")\", [pg, fam, e]),\n\t\"Match the parameter group family to the engine\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbparametergroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tpg := resolve(name, \"Properties.DBParameterGroupName\")\n\tis_string(pg)\n\tinput.resources[pg].resourceType == \"AWS::RDS::DBParameterGroup\"\n\tf0 := resolve(pg, \"Properties.Family\")\n\tis_string(f0)\n\tfam := lower(f0)\n\te := _pf_rds_engine(name)\n\tnot startswith(fam, e)\n}\n"
+  },
+  {
     "id": "pf-rds-password-valid",
     "service": "rds",
     "severity": "ERROR",
@@ -8416,6 +8849,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::RDS::DBCluster"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspw_url := \"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\"\n\n_pf_rdspw_types := {\"AWS::RDS::DBInstance\", \"AWS::RDS::DBCluster\"}\n\n_pf_rdspw_forbidden := {\"/\", \"@\", \"\\\"\", \" \"}\n\nviolation contains make_diag_full(\"pf-rds-password-valid\", \"ERROR\", name,\n\t\"Properties.MasterUserPassword\",\n\t\"MasterUserPassword is shorter than 8 characters; RDS rejects it at create time\",\n\t\"Use 8+ characters, or a Secrets Manager reference\",\n\t_pf_rdspw_url) if {\n\tsome rtype in _pf_rdspw_types\n\tsome name in resources_of_type(rtype)\n\tpw := resolve(name, \"Properties.MasterUserPassword\")\n\tis_string(pw)\n\tcount(pw) < 8\n}\n\nviolation contains make_diag_full(\"pf-rds-password-valid\", \"ERROR\", name,\n\t\"Properties.MasterUserPassword\",\n\tsprintf(\"MasterUserPassword contains '%s'; RDS forbids '/', '@', double quotes and spaces\", [ch]),\n\t\"Remove the forbidden character, or use a Secrets Manager reference\",\n\t_pf_rdspw_url) if {\n\tsome rtype in _pf_rdspw_types\n\tsome name in resources_of_type(rtype)\n\tpw := resolve(name, \"Properties.MasterUserPassword\")\n\tis_string(pw)\n\tsome ch in _pf_rdspw_forbidden\n\tcontains(pw, ch)\n}\n"
+  },
+  {
+    "id": "pf-rds-pi-retention-period",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "PerformanceInsightsRetentionPeriod must be 7, 731, or a multiple of 31 up to 713",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspi_ok(n) if n == 7\n\n_pf_rdspi_ok(n) if n == 731\n\n_pf_rdspi_ok(n) if {\n\tk := round(n / 31)\n\tk >= 1\n\tk <= 23\n\tn == k * 31\n}\n\nviolation contains make_diag_full(\"pf-rds-pi-retention-period\", \"ERROR\", name,\n\t\"Properties.PerformanceInsightsRetentionPeriod\",\n\tsprintf(\"PerformanceInsightsRetentionPeriod %v is not a valid retention (\\\"Invalid Performance Insights retention period. Valid values are: [7, 31, 62, ... 731]\\\")\", [n]),\n\t\"Use 7, 731, or a multiple of 31 (31-713)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tn := to_number(resolve(name, \"Properties.PerformanceInsightsRetentionPeriod\"))\n\tnot _pf_rdspi_ok(n)\n}\n"
+  },
+  {
+    "id": "pf-rds-pi-retention-requires-enable",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "PerformanceInsightsRetentionPeriod requires EnablePerformanceInsights: true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspien_off(name) if not _pf_rds_has(name, \"EnablePerformanceInsights\")\n\n_pf_rdspien_off(name) if _pf_rds_false(name, \"EnablePerformanceInsights\")\n\nviolation contains make_diag_full(\"pf-rds-pi-retention-requires-enable\", \"ERROR\", name,\n\t\"Properties.PerformanceInsightsRetentionPeriod\",\n\t\"PerformanceInsightsRetentionPeriod is set without EnablePerformanceInsights: true (\\\"To enable Performance Insights, EnablePerformanceInsights must be set to 'true'\\\")\",\n\t\"Set EnablePerformanceInsights: true, or drop the retention period\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"PerformanceInsightsRetentionPeriod\")\n\t_pf_rdspien_off(name)\n}\n"
   },
   {
     "id": "pf-rds-port-range",
@@ -8429,6 +8884,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsport_out(n) if n < 1150\n\n_pf_rdsport_out(n) if n > 65535\n\nviolation contains make_diag_full(\"pf-rds-port-range\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"Port %v is outside 1150-65535 (\\\"Invalid endpoint port %v. Valid range is: 1150-65535\\\")\", [n, n]),\n\t\"Pick a port between 1150 and 65535\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tn := to_number(resolve(name, \"Properties.Port\"))\n\t_pf_rdsport_out(n)\n}\n"
   },
   {
+    "id": "pf-rds-processor-features-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "ProcessorFeatures is only supported by Oracle and SQL Server",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-processor-features-engine\", \"ERROR\", name,\n\t\"Properties.ProcessorFeatures\",\n\tsprintf(\"ProcessorFeatures is set on engine %v (\\\"The given ProcessorFeature coreCount is unavailable for this DB instance class.\\\")\", [e]),\n\t\"Drop ProcessorFeatures for this engine\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"ProcessorFeatures\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"mysql\", \"mariadb\", \"postgres\", \"db2-\", \"aurora-mysql\", \"aurora-postgresql\"})\n}\n"
+  },
+  {
+    "id": "pf-rds-promotion-tier-cluster-only",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "PromotionTier is only valid on a cluster member instance",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-promotion-tier-cluster-only\", \"ERROR\", name,\n\t\"Properties.PromotionTier\",\n\t\"PromotionTier is set on an instance without DBClusterIdentifier (\\\"You cannot set the promotion tier for a DB instance that is not part of an DB Cluster.\\\")\",\n\t\"Drop PromotionTier, or attach the instance to a cluster\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"PromotionTier\")\n\tnot _pf_rds_has(name, \"DBClusterIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-rds-proxy-client-password-auth-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "ClientPasswordAuthType must match the proxy EngineFamily",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBProxy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspxauth := {\n\t\"MYSQL\": {\"MYSQL_NATIVE_PASSWORD\", \"MYSQL_CACHING_SHA2_PASSWORD\"},\n\t\"POSTGRESQL\": {\"POSTGRES_SCRAM_SHA_256\", \"POSTGRES_MD5\"},\n\t\"SQLSERVER\": {\"SQL_SERVER_AUTHENTICATION\"},\n}\n\nviolation contains make_diag_full(\"pf-rds-proxy-client-password-auth-engine\", \"ERROR\", name,\n\t\"Properties.Auth\",\n\tsprintf(\"ClientPasswordAuthType %v is not valid for EngineFamily %v (\\\"The client password auth type POSTGRES_SCRAM_SHA_256 that you specified isn't valid. The engine family MYSQL supports only the following types: ...\\\")\", [t, ef]),\n\t\"Use an auth type the engine family supports\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbproxy.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxy\")\n\tef0 := resolve(name, \"Properties.EngineFamily\")\n\tis_string(ef0)\n\tef := upper(ef0)\n\tallowed := _pf_rdspxauth[ef]\n\tsome a in flatten_list(name, \"Properties.Auth\")\n\tt := object.get(a.value, \"ClientPasswordAuthType\", \"__pf_absent\")\n\tis_string(t)\n\tt != \"__pf_absent\"\n\tnot t in allowed\n}\n"
+  },
+  {
+    "id": "pf-rds-proxy-iam-auth-enabled",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "IAMAuth: ENABLED is only valid for SQL Server proxies",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBProxy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-proxy-iam-auth-enabled\", \"ERROR\", name,\n\t\"Properties.Auth\",\n\tsprintf(\"IAMAuth: ENABLED with EngineFamily %v (\\\"Unsupported IAM Auth mode ENABLED, need to be in [DISABLED, REQUIRED]\\\")\", [ef]),\n\t\"Use DISABLED or REQUIRED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbproxy.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxy\")\n\tef0 := resolve(name, \"Properties.EngineFamily\")\n\tis_string(ef0)\n\tef := upper(ef0)\n\tef != \"SQLSERVER\"\n\tsome a in flatten_list(name, \"Properties.Auth\")\n\tobject.get(a.value, \"IAMAuth\", \"__pf_absent\") == \"ENABLED\"\n}\n"
+  },
+  {
+    "id": "pf-rds-proxy-iam-auth-requires-tls",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "IAMAuth: REQUIRED needs RequireTLS: true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBProxy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdstls_off(name) if not _pf_rds_has(name, \"RequireTLS\")\n\n_pf_rdstls_off(name) if _pf_rds_false(name, \"RequireTLS\")\n\nviolation contains make_diag_full(\"pf-rds-proxy-iam-auth-requires-tls\", \"ERROR\", name,\n\t\"Properties.Auth\",\n\t\"IAMAuth: REQUIRED without RequireTLS: true (\\\"Must enable TLS, when IAM Auth is required\\\")\",\n\t\"Set RequireTLS: true, or use IAMAuth: DISABLED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbproxy.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxy\")\n\tsome a in flatten_list(name, \"Properties.Auth\")\n\tobject.get(a.value, \"IAMAuth\", \"__pf_absent\") == \"REQUIRED\"\n\t_pf_rdstls_off(name)\n}\n"
+  },
+  {
+    "id": "pf-rds-proxy-idle-client-timeout",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "IdleClientTimeout must be between 1 and 28800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBProxy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspxidle_out(n) if n < 1\n\n_pf_rdspxidle_out(n) if n > 28800\n\nviolation contains make_diag_full(\"pf-rds-proxy-idle-client-timeout\", \"ERROR\", name,\n\t\"Properties.IdleClientTimeout\",\n\tsprintf(\"IdleClientTimeout %v is outside 1-28800 (\\\"Invalid IdleClientTimeout - valid range is 1 - 28800\\\")\", [n]),\n\t\"Use a value between 1 and 28800\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbproxy.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxy\")\n\tn := to_number(resolve(name, \"Properties.IdleClientTimeout\"))\n\t_pf_rdspxidle_out(n)\n}\n"
+  },
+  {
+    "id": "pf-rds-proxy-pool-percent",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Connection pool percentages and borrow timeout have fixed ranges",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBProxyTargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdspool_pct_out(n) if n < 1\n\n_pf_rdspool_pct_out(n) if n > 100\n\n_pf_rdspool_timeout_out(n) if n < 0\n\n_pf_rdspool_timeout_out(n) if n > 300\n\nviolation contains make_diag_full(\"pf-rds-proxy-pool-percent\", \"ERROR\", name,\n\t\"Properties.ConnectionPoolConfigurationInfo.MaxIdleConnectionsPercent\",\n\tsprintf(\"MaxIdleConnectionsPercent %v is above MaxConnectionsPercent %v\", [idle, mx]),\n\t\"Keep MaxIdleConnectionsPercent at or below MaxConnectionsPercent\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxyTargetGroup\")\n\tidle := to_number(resolve(name, \"Properties.ConnectionPoolConfigurationInfo.MaxIdleConnectionsPercent\"))\n\tmx := to_number(resolve(name, \"Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent\"))\n\tidle > mx\n}\n\nviolation contains make_diag_full(\"pf-rds-proxy-pool-percent\", \"ERROR\", name,\n\t\"Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent\",\n\tsprintf(\"MaxConnectionsPercent %v is outside 1-100\", [mx]),\n\t\"Use a value between 1 and 100\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxyTargetGroup\")\n\tmx := to_number(resolve(name, \"Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent\"))\n\t_pf_rdspool_pct_out(mx)\n}\n\nviolation contains make_diag_full(\"pf-rds-proxy-pool-percent\", \"ERROR\", name,\n\t\"Properties.ConnectionPoolConfigurationInfo.ConnectionBorrowTimeout\",\n\tsprintf(\"ConnectionBorrowTimeout %v is outside 0-300 seconds\", [t]),\n\t\"Use a value between 0 and 300\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxyTargetGroup\")\n\tt := to_number(resolve(name, \"Properties.ConnectionPoolConfigurationInfo.ConnectionBorrowTimeout\"))\n\t_pf_rdspool_timeout_out(t)\n}\n"
+  },
+  {
+    "id": "pf-rds-proxy-target-group-name",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBProxyTargetGroup TargetGroupName must be \"default\"",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBProxyTargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-proxy-target-group-name\", \"ERROR\", name,\n\t\"Properties.TargetGroupName\",\n\tsprintf(\"TargetGroupName %v is not \\\"default\\\"; RDS only supports the default target group\", [n]),\n\t\"Use \\\"default\\\"\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBProxyTargetGroup\")\n\tn := resolve(name, \"Properties.TargetGroupName\")\n\tis_string(n)\n\tnot input.resources[n]\n\tn != \"default\"\n}\n"
+  },
+  {
+    "id": "pf-rds-scaling-configuration-serverless-v1-only",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "ScalingConfiguration only applies to Aurora Serverless v1 clusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsv1_notserverless(name) if not _pf_rds_has(name, \"EngineMode\")\n\n_pf_rdsv1_notserverless(name) if {\n\tm := _pf_rds_get(name, \"EngineMode\")\n\tis_string(m)\n\tm != \"serverless\"\n}\n\nviolation contains make_diag_full(\"pf-rds-scaling-configuration-serverless-v1-only\", \"ERROR\", name,\n\t\"Properties.ScalingConfiguration\",\n\t\"ScalingConfiguration is set on a cluster that is not EngineMode: serverless (\\\"You can only specify scaling configuration for an Aurora Serverless v1 cluster.\\\")\",\n\t\"Use ServerlessV2ScalingConfiguration for Serverless v2\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\t_pf_rds_has(name, \"ScalingConfiguration\")\n\t_pf_rdsv1_notserverless(name)\n}\n"
+  },
+  {
+    "id": "pf-rds-serverless-v2-auto-pause",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "SecondsUntilAutoPause requires MinCapacity 0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-auto-pause\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.SecondsUntilAutoPause\",\n\tsprintf(\"SecondsUntilAutoPause is set with MinCapacity %v (\\\"SecondsUntilAutoPause can only be specified when minimum capacity is 0.\\\")\", [n]),\n\t\"Set MinCapacity to 0, or drop SecondsUntilAutoPause\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tresolve(name, \"Properties.ServerlessV2ScalingConfiguration.SecondsUntilAutoPause\")\n\tn := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MinCapacity\"))\n\tn != 0\n}\n"
+  },
+  {
     "id": "pf-rds-serverless-v2-capacity",
     "service": "rds",
     "severity": "ERROR",
@@ -8440,6 +9005,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdssv2_url := \"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html\"\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MinCapacity\",\n\tsprintf(\"MinCapacity %v exceeds MaxCapacity %v (\\\"minimum capacity must be less than or equal to maximum capacity\\\")\", [mn, mx]),\n\t\"Keep MinCapacity <= MaxCapacity\",\n\t_pf_rdssv2_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tmn := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MinCapacity\"))\n\tmx := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\tmn > mx\n}\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v is above 256 ACUs (\\\"The valid scaling range for this cluster is 0.0 to 256.0.\\\")\", [mx]),\n\t\"Use at most 256 ACUs\",\n\t_pf_rdssv2_url) if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tmx := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\tmx > 256\n}\n"
   },
   {
+    "id": "pf-rds-serverless-v2-capacity-step",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Serverless v2 capacity must be a multiple of 0.5 ACU",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rdsstep_bad(n) if {\n\tf := n * 2\n\tf != round(f)\n}\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity-step\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MinCapacity\",\n\tsprintf(\"MinCapacity %v is not a multiple of 0.5 (\\\"Serverless v2 capacity value 0.3 is not valid. It must be a multiple of 0.5.\\\")\", [n]),\n\t\"Round the capacity to a multiple of 0.5\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tn := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MinCapacity\"))\n\t_pf_rdsstep_bad(n)\n}\n\nviolation contains make_diag_full(\"pf-rds-serverless-v2-capacity-step\", \"ERROR\", name,\n\t\"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v is not a multiple of 0.5 (\\\"Serverless v2 capacity value 0.3 is not valid. It must be a multiple of 0.5.\\\")\", [n]),\n\t\"Round the capacity to a multiple of 0.5\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBCluster\")\n\tn := to_number(resolve(name, \"Properties.ServerlessV2ScalingConfiguration.MaxCapacity\"))\n\t_pf_rdsstep_bad(n)\n}\n"
+  },
+  {
+    "id": "pf-rds-shard-group-acu",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBShardGroup MaxACU must be at least MinACU",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBShardGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-shard-group-acu\", \"ERROR\", name,\n\t\"Properties.MaxACU\",\n\tsprintf(\"MaxACU %v is below MinACU %v\", [mx, mn]),\n\t\"Raise MaxACU to at least MinACU\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBShardGroup\")\n\tmx := to_number(resolve(name, \"Properties.MaxACU\"))\n\tmn := to_number(resolve(name, \"Properties.MinACU\"))\n\tmx < mn\n}\n"
+  },
+  {
+    "id": "pf-rds-sqlserver-dbname-null",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBName is not accepted by SQL Server engines",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-sqlserver-dbname-null\", \"ERROR\", name,\n\t\"Properties.DBName\",\n\tsprintf(\"DBName is set on engine %v (\\\"DBName must be null for engine: sqlserver-ex\\\")\", [e]),\n\t\"Drop DBName for SQL Server\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"DBName\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"sqlserver-\"})\n}\n"
+  },
+  {
+    "id": "pf-rds-sqlserver-reserved-port",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "SQL Server reserves several ports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-sqlserver-reserved-port\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"Port %v is reserved for SQL Server (\\\"Port 3389 is reserved for this configuration.\\\")\", [n]),\n\t\"Pick another port (1433 is the default)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_engine_in(name, {\"sqlserver-\"})\n\tn := to_number(resolve(name, \"Properties.Port\"))\n\tn in {1234, 1434, 3260, 3343, 3389, 47001, 49152, 49153, 49154, 49155, 49156}\n}\n"
+  },
+  {
+    "id": "pf-rds-storage-throughput-gp3-only",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "StorageThroughput is only valid with StorageType gp3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-storage-throughput-gp3-only\", \"ERROR\", name,\n\t\"Properties.StorageThroughput\",\n\tsprintf(\"StorageThroughput is set with StorageType %v (\\\"You can't specify storage throughput for storage type gp2.\\\")\", [st]),\n\t\"Use StorageType gp3, or drop StorageThroughput\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"StorageThroughput\")\n\tst := resolve(name, \"Properties.StorageType\")\n\tis_string(st)\n\tst != \"gp3\"\n}\n"
+  },
+  {
+    "id": "pf-rds-storage-throughput-max",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "gp3 StorageThroughput is capped at 4000 MiBps",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-storage-throughput-max\", \"ERROR\", name,\n\t\"Properties.StorageThroughput\",\n\tsprintf(\"StorageThroughput %v is above the gp3 maximum of 4000 (\\\"Invalid storage throughput value for engine name postgres and storage type gp3: 4001\\\")\", [n]),\n\t\"Use at most 4000 MiBps\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tresolve(name, \"Properties.StorageType\") == \"gp3\"\n\tn := to_number(resolve(name, \"Properties.StorageThroughput\"))\n\tn > 4000\n}\n"
+  },
+  {
     "id": "pf-rds-subnet-group-name",
     "service": "rds",
     "severity": "ERROR",
@@ -8449,6 +9080,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::RDS::DBSubnetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-subnet-group-name\", \"ERROR\", name,\n\t\"Properties.DBSubnetGroupName\",\n\tsprintf(\"DBSubnetGroupName '%s' is rejected with \\\"Invalid subnet group name\\\": RDS accepts only letters, numbers, spaces, dot, underscore and hyphen\", [n]),\n\t\"Rename the subnet group using [a-zA-Z0-9 ._-] only\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBSubnetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBSubnetGroup\")\n\tn := resolve(name, \"Properties.DBSubnetGroupName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z0-9 ._-]{1,255}$`, n)\n}\n"
+  },
+  {
+    "id": "pf-rds-subnet-group-name-reserved",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "DBSubnetGroupName: default is reserved",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBSubnetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-subnet-group-name-reserved\", \"ERROR\", name,\n\t\"Properties.DBSubnetGroupName\",\n\t\"DBSubnetGroupName \\\"default\\\" is reserved (\\\"Subnet group name default is reserved. Please specify another name.\\\")\",\n\t\"Pick another subnet group name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbsubnetgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBSubnetGroup\")\n\tn := resolve(name, \"Properties.DBSubnetGroupName\")\n\tis_string(n)\n\tlower(n) == \"default\"\n}\n"
+  },
+  {
+    "id": "pf-rds-timezone-engine",
+    "service": "rds",
+    "severity": "ERROR",
+    "title": "Timezone is only accepted by Db2 and SQL Server engines",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::RDS::DBInstance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-timezone-engine\", \"ERROR\", name,\n\t\"Properties.Timezone\",\n\tsprintf(\"Timezone is set on engine %v (\\\"You can't specify a time zone when you create a DB instance running postgres.\\\")\", [e]),\n\t\"Drop Timezone, or use a Db2 / SQL Server engine\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\t_pf_rds_has(name, \"Timezone\")\n\te := _pf_rds_engine(name)\n\t_pf_rds_engine_in(name, {\"mysql\", \"mariadb\", \"postgres\", \"oracle-\", \"aurora-mysql\", \"aurora-postgresql\"})\n}\n"
   },
   {
     "id": "pf-rds-window-overlap",
@@ -10808,6 +11461,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::DynamoDB::GlobalTable rules. MRSC (multi-Region\n# strong consistency) constrains the replica set as a whole, so several rules\n# need the same notion of \"which Regions does this table touch\".\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_ddb_mrsc(name) if resolve(name, \"Properties.MultiRegionConsistency\") == \"STRONG\"\n\n_pf_ddb_regions(name, prop) := {r |\n\tsome x in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tr := object.get(x.value, \"Region\", null)\n\tis_string(r)\n}\n\n_pf_ddb_replica_regions(name) := _pf_ddb_regions(name, \"Replicas\")\n\n_pf_ddb_witness_regions(name) := _pf_ddb_regions(name, \"GlobalTableWitnesses\")\n\n# The three Region sets an MRSC global table can live in (2026-09).\n_pf_ddb_mrsc_sets := [\n\t{\"us-east-1\", \"us-east-2\", \"us-west-2\"},\n\t{\"eu-west-1\", \"eu-west-2\", \"eu-west-3\", \"eu-central-1\"},\n\t{\"ap-northeast-1\", \"ap-northeast-2\", \"ap-northeast-3\"},\n]\n"
   },
   {
+    "name": "_lib/ec2",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# エンジンに net.cidr_* ビルトインは無い（1.7.0-beta で実測、rules/_lib/efs.rego\n# にも同じ注記がある）ので IPv4 のアドレス演算を自前で持つ。pow ビルトインも\n# 無いため 2^n は表で引く。IPv6 は扱わない（呼び出し側が \":\" の有無で弾く）。\n_pf_ec2lib_pow2 := {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64, 7: 128, 8: 256, 9: 512, 10: 1024, 11: 2048, 12: 4096, 13: 8192, 14: 16384, 15: 32768, 16: 65536, 17: 131072, 18: 262144, 19: 524288, 20: 1048576, 21: 2097152, 22: 4194304, 23: 8388608, 24: 16777216, 25: 33554432, 26: 67108864, 27: 134217728, 28: 268435456, 29: 536870912, 30: 1073741824, 31: 2147483648, 32: 4294967296}\n\n_pf_ec2lib_ip_int(s) := n if {\n\tparts := split(s, \".\")\n\tcount(parts) == 4\n\tnums := [to_number(p) | some p in parts]\n\tevery x in nums {\n\t\tx >= 0\n\t\tx <= 255\n\t}\n\tn := ((nums[0] * 16777216) + (nums[1] * 65536)) + ((nums[2] * 256) + nums[3])\n}\n\n# [ネットワークアドレス, ブロックサイズ] を返す。ホストビットが立っていても\n# 切り捨てて正規化するので \"10.0.0.5/24\" は \"10.0.0.0/24\" と同じ結果になる。\n_pf_ec2lib_cidr(s) := [start, size] if {\n\tparts := split(s, \"/\")\n\tcount(parts) == 2\n\tbase := _pf_ec2lib_ip_int(parts[0])\n\tp := to_number(parts[1])\n\tsize := _pf_ec2lib_pow2[32 - p]\n\tstart := floor(base / size) * size\n}\n\n_pf_ec2lib_cidr_has_ip(cidr, ip) if {\n\tc := _pf_ec2lib_cidr(cidr)\n\tn := _pf_ec2lib_ip_int(ip)\n\tn >= c[0]\n\tn < c[0] + c[1]\n}\n\n_pf_ec2lib_cidr_overlap(a, b) if {\n\tx := _pf_ec2lib_cidr(a)\n\ty := _pf_ec2lib_cidr(b)\n\tx[0] < y[0] + y[1]\n\ty[0] < x[0] + x[1]\n}\n\n# プロパティ不在の証明（AGENTS.md の sanctioned exception）\n_pf_ec2lib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
     "name": "_lib/ecr",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ECR rules (rules/ecr/pf-ecr-*).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n#\n# The lifecycle policy is an opaque JSON string in both places it can appear:\n# AWS::ECR::Repository LifecyclePolicy.LifecyclePolicyText and\n# AWS::ECR::RepositoryCreationTemplate LifecyclePolicy. PutLifecyclePolicy\n# validates the document itself, so the rules parse it here.\n\n_pf_ecrlib_text(name) := s if {\n\tname in resources_of_type(\"AWS::ECR::Repository\")\n\ts := resolve(name, \"Properties.LifecyclePolicy.LifecyclePolicyText\")\n\tis_string(s)\n}\n\n_pf_ecrlib_text(name) := s if {\n\tname in resources_of_type(\"AWS::ECR::RepositoryCreationTemplate\")\n\ts := resolve(name, \"Properties.LifecyclePolicy\")\n\tis_string(s)\n}\n\n_pf_ecrlib_prop(name) := \"Properties.LifecyclePolicy.LifecyclePolicyText\" if {\n\tname in resources_of_type(\"AWS::ECR::Repository\")\n}\n\n_pf_ecrlib_prop(name) := \"Properties.LifecyclePolicy\" if {\n\tname in resources_of_type(\"AWS::ECR::RepositoryCreationTemplate\")\n}\n\n# Parsed policy document; undefined when the text is not JSON or not an object.\n_pf_ecrlib_policy(name) := pol if {\n\tpol := json.unmarshal(_pf_ecrlib_text(name))\n\tis_object(pol)\n}\n\n_pf_ecrlib_rule_list(name) := rules if {\n\trules := object.get(_pf_ecrlib_policy(name), \"rules\", null)\n\tis_array(rules)\n}\n\n# [name, index, rule object] for every rule of every lifecycle policy.\n_pf_ecrlib_rules contains [name, i, r] if {\n\tsome name, _ in input.resources\n\tsome i, r in _pf_ecrlib_rule_list(name)\n\tis_object(r)\n}\n\n_pf_ecrlib_selection(r) := s if {\n\ts := object.get(r, \"selection\", null)\n\tis_object(s)\n}\n\n_pf_ecrlib_action(r) := a if {\n\ta := object.get(r, \"action\", null)\n\tis_object(a)\n}\n\n_pf_ecrlib_get(o, key) := v if {\n\tv := object.get(o, key, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_ecrlib_absent(o, key) if object.get(o, key, \"__pf_absent\") == \"__pf_absent\"\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_ecrlib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# Resource types that carry EncryptionConfiguration / ImageTagMutability.\n_pf_ecrlib_repo_types := [\"AWS::ECR::Repository\", \"AWS::ECR::RepositoryCreationTemplate\"]\n\n# Upstream registry URLs a pull through cache rule accepts (measured\n# 2026-09-05 in ap-northeast-1; the check is case sensitive and any other URL\n# is rejected with \"The upstream registry URL <url> is invalid\").\n# The three \"open\" registries take no credential at all; the five \"secret\"\n# ones require a Secrets Manager ARN; the ECR form authenticates with an IAM\n# role instead.\n_pf_ecrlib_ptc_secret_url := {\n\t\"registry-1.docker.io\": \"docker-hub\",\n\t\"ghcr.io\": \"github-container-registry\",\n\t\"registry.gitlab.com\": \"gitlab-container-registry\",\n\t\"cgr.dev\": \"chainguard\",\n}\n\n_pf_ecrlib_ptc_open_url := {\n\t\"public.ecr.aws\": \"ecr-public\",\n\t\"registry.k8s.io\": \"k8s\",\n\t\"quay.io\": \"quay\",\n}\n\n_pf_ecrlib_ptc_registry(url) := _pf_ecrlib_ptc_secret_url[url]\n\n_pf_ecrlib_ptc_registry(url) := _pf_ecrlib_ptc_open_url[url]\n\n_pf_ecrlib_ptc_registry(url) := \"azure-container-registry\" if {\n\tis_string(url)\n\tendswith(url, \".azurecr.io\")\n\tcount(url) > count(\".azurecr.io\")\n}\n\n_pf_ecrlib_ptc_registry(url) := \"ecr\" if {\n\tis_string(url)\n\tregex.match(`^[0-9]{12}\\.dkr\\.ecr\\.[a-z0-9-]+\\.amazonaws\\.com$`, url)\n}\n\n# Registries that authenticate with a Secrets Manager secret.\n_pf_ecrlib_ptc_needs_secret(url) if _pf_ecrlib_ptc_secret_url[url]\n\n_pf_ecrlib_ptc_needs_secret(url) if _pf_ecrlib_ptc_registry(url) == \"azure-container-registry\"\n"
   },
@@ -10834,6 +11491,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/lambda",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::Lambda::EventSourceMapping rules: literal-vs-token\n# discrimination, ARN segments, raw-document access (resolve() cannot prove a key\n# absent) and — the one every rule needs — which event source a mapping points at.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_lam_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# ARN segments of a literal ARN; undefined for intrinsics and non-ARN strings.\n_pf_lam_arn(v) := parts if {\n\t_pf_lam_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n}\n\n# Raw properties. The preprocessed document is the only place where \"the key is\n# absent\" can be told apart from \"the value is a token\".\n_pf_lam_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_lam_has(name, k) if {\n\tobject.get(_pf_lam_props(name), k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_lam_get(name, k) := v if {\n\tv := object.get(_pf_lam_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_lam_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_lam_esm := resources_of_type(\"AWS::Lambda::EventSourceMapping\")\n\n# --- which event source does this mapping read from? ------------------------\n# The config blocks are decisive: they exist only for one source family each.\n\n_pf_lam_is(name, \"docdb\") if _pf_lam_has(name, \"DocumentDBEventSourceConfig\")\n\n_pf_lam_is(name, \"selfkafka\") if _pf_lam_has(name, \"SelfManagedEventSource\")\n\n_pf_lam_is(name, \"kafka\") if _pf_lam_has(name, \"AmazonManagedKafkaEventSourceConfig\")\n\n# An in-template source resource: resolve() hands back the logical id.\n_pf_lam_src_type := {\n\t\"AWS::SQS::Queue\": \"sqs\",\n\t\"AWS::Kinesis::Stream\": \"kinesis\",\n\t\"AWS::DynamoDB::Table\": \"dynamodb\",\n\t\"AWS::DynamoDB::GlobalTable\": \"dynamodb\",\n\t\"AWS::MSK::Cluster\": \"kafka\",\n\t\"AWS::MSK::ServerlessCluster\": \"kafka\",\n\t\"AWS::AmazonMQ::Broker\": \"mq\",\n\t\"AWS::DocDB::DBCluster\": \"docdb\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tsrc := resolve(name, \"Properties.EventSourceArn\")\n\tsome t, k in _pf_lam_src_type\n\tsrc in resources_of_type(t)\n\tk == kind\n}\n\n# A literal ARN: the service segment names the source. DocumentDB clusters carry\n# an rds ARN, so they are only recognised through DocumentDBEventSourceConfig.\n_pf_lam_arn_kind := {\n\t\"sqs\": \"sqs\",\n\t\"kinesis\": \"kinesis\",\n\t\"dynamodb\": \"dynamodb\",\n\t\"kafka\": \"kafka\",\n\t\"mq\": \"mq\",\n}\n\n_pf_lam_srcarn(name, kind) if {\n\tparts := _pf_lam_arn(resolve(name, \"Properties.EventSourceArn\"))\n\t_pf_lam_arn_kind[parts[2]] == kind\n}\n\n# The union: what the mapping reads from, by config block or by source ARN.\n_pf_lam_is(name, kind) if _pf_lam_srcarn(name, kind)\n\n# The source ARN names something other than `kind`. Unlike _pf_lam_not this\n# ignores the config blocks, so a rule can say \"this block is on the wrong ARN\".\n_pf_lam_arn_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_srcarn(name, other)\n}\n\n# Stream sources: the family that accepts StartingPosition, offsets and shard state.\n_pf_lam_stream(name) if _pf_lam_is(name, \"kinesis\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"dynamodb\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"kafka\")\n\n_pf_lam_stream(name) if _pf_lam_is(name, \"selfkafka\")\n\n# The mapping's source is known to be something other than `kind`.\n_pf_lam_not(name, kind) if {\n\tsome other in {\"sqs\", \"kinesis\", \"dynamodb\", \"kafka\", \"selfkafka\", \"mq\", \"docdb\"}\n\tother != kind\n\t_pf_lam_is(name, other)\n}\n\n# --- event filter patterns --------------------------------------------------\n# Filters[].Pattern is a JSON *string* holding an EventBridge pattern. There is\n# no walk builtin and Rego forbids recursion, so the traversal is unrolled to\n# four object levels: DynamoDB patterns are the deepest in practice\n# (dynamodb.NewImage.<attribute>.<type>).\n# ponytail: depth-capped at 4, deepen only if a real pattern nests further.\n\n_pf_lam_filters(name) := f if {\n\tf := object.get(_pf_lam_obj(_pf_lam_props(name), \"FilterCriteria\"), \"Filters\", [])\n\tis_array(f)\n}\n\n_pf_lam_pat(f) := o if {\n\tis_object(f)\n\tp := object.get(f, \"Pattern\", \"\")\n\tis_string(p)\n\to := json.unmarshal(p)\n\tis_object(o)\n}\n\n_pf_lam_scalar(v) if {\n\tnot is_object(v)\n\tnot is_array(v)\n}\n\n# [path, value] for every scalar sitting where the pattern grammar wants an array.\n_pf_lam_pat_scalars(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], v] | some k, v in o; _pf_lam_scalar(v)],\n\t\t[[[k1, k2], v] | some k1, o1 in o; is_object(o1); some k2, v in o1; _pf_lam_scalar(v)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, v in o2; _pf_lam_scalar(v)],\n\t\t[[[k1, k2, k3, k4], v] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, v in o3; _pf_lam_scalar(v)],\n\t),\n)\n\n# Objects nested inside a match array: these are the operator objects\n# ({\"prefix\": \"a\"}, {\"numeric\": [\">\", 1]}, ...).\n_pf_lam_pat_ops(o) := array.concat(\n\tarray.concat(\n\t\t[[[k], x] | some k, a in o; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2], x] | some k1, o1 in o; is_object(o1); some k2, a in o1; is_array(a); some x in a; is_object(x)],\n\t),\n\tarray.concat(\n\t\t[[[k1, k2, k3], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, a in o2; is_array(a); some x in a; is_object(x)],\n\t\t[[[k1, k2, k3, k4], x] | some k1, o1 in o; is_object(o1); some k2, o2 in o1; is_object(o2); some k3, o3 in o2; is_object(o3); some k4, a in o3; is_array(a); some x in a; is_object(x)],\n\t),\n)\n\n_pf_lam_has_key(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A property that CloudFormation accepts as either a scalar or a list.\n_pf_lam_list(v) := v if is_array(v)\n\n_pf_lam_list(v) := [v] if is_string(v)\n\n_pf_lam_ppc(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"ProvisionedPollerConfig\")\n# --- #75 非 ESM 分で足す共有ヘルパー -----------------------------------------\n# rules/_lib/lambda.rego の末尾に足す。#117 がマージされてワークツリーが\n# main に戻ってから適用する。\n\n_pf_lam_alias := resources_of_type(\"AWS::Lambda::Alias\")\n\n_pf_lam_ver := resources_of_type(\"AWS::Lambda::Version\")\n\n_pf_lam_fn := resources_of_type(\"AWS::Lambda::Function\")\n\n_pf_lam_perm := resources_of_type(\"AWS::Lambda::Permission\")\n\n_pf_lam_url := resources_of_type(\"AWS::Lambda::Url\")\n\n_pf_lam_layer := resources_of_type(\"AWS::Lambda::LayerVersion\")\n\n_pf_lam_layerperm := resources_of_type(\"AWS::Lambda::LayerVersionPermission\")\n\n_pf_lam_csc := resources_of_type(\"AWS::Lambda::CodeSigningConfig\")\n\n_pf_lam_eic := resources_of_type(\"AWS::Lambda::EventInvokeConfig\")\n\n# EventInvokeConfig の宛先。OnSuccess と OnFailure は制約がほぼ共通なので\n# 1 つの集合にまとめ、どちら側かを second element に残す。\n_pf_lam_eic_dest contains [name, side, dest] if {\n\tsome name in _pf_lam_eic\n\tsome side in [\"OnSuccess\", \"OnFailure\"]\n\tdest := resolve(name, sprintf(\"Properties.DestinationConfig.%v.Destination\", [side]))\n\tis_string(dest)\n}\n\n# 署名プロファイルのバージョン ARN。CodeSigningConfig の唯一の必須要素で、\n# 4 本のルールが同じリストを回すのでここに置く。\n_pf_lam_csc_profiles contains [name, arn] if {\n\tsome name in _pf_lam_csc\n\tpubs := _pf_lam_obj(_pf_lam_props(name), \"AllowedPublishers\")\n\tsome arn in _pf_lam_list(object.get(pubs, \"SigningProfileVersionArns\", []))\n\tis_string(arn)\n}\n\n# --- #75 Function 系で足す共有ヘルパー ---------------------------------------\n\n# テンプレート内の別リソースの生プロパティ。Properties を持たないリソース\n# （AWS::EFS::FileSystem など）でも undefined にならないようにする。\n_pf_lam_res_props(id) := p if {\n\tp := object.get(object.get(input.resources, id, {}), \"properties\", {})\n\tis_object(p)\n}\n\n# テンプレート内のリソースを指す組み込み関数の論理 ID。前処理済みドキュメントでは\n# Ref も GetAtt も {\"__kind\": \"resource\" | \"getatt:Arn\", \"__ref\": \"<論理ID>\"} に\n# マーカー化されているので、生の {\"Ref\": ...} を探しても見つからない（2026-09-07 実測）。\n_pf_lam_ref(v) := id if {\n\tis_object(v)\n\tid := object.get(v, \"__ref\", \"__pf_absent\")\n\tid != \"__pf_absent\"\n\tis_string(id)\n}\n\n# 関数の VpcConfig（生ドキュメント）。\n_pf_lam_vpccfg(name) := c if c := _pf_lam_obj(_pf_lam_props(name), \"VpcConfig\")\n\n# サブネット / セキュリティグループの VpcId。Ref も GetAtt も構造のまま返すので、\n# 同じ VPC を指していれば Rego の値として等しくなる。\n_pf_lam_vpc_of(v) := vpc if {\n\tvpc := object.get(_pf_lam_res_props(_pf_lam_ref(v)), \"VpcId\", \"__pf_absent\")\n\tvpc != \"__pf_absent\"\n}\n\n# EFS マウントターゲットが置かれているサブネットの AZ。\n_pf_lam_mt_azs contains az if {\n\tsome id in resources_of_type(\"AWS::EFS::MountTarget\")\n\tsub := object.get(_pf_lam_res_props(id), \"SubnetId\", null)\n\taz := object.get(_pf_lam_res_props(_pf_lam_ref(sub)), \"AvailabilityZone\", \"__pf_absent\")\n\taz != \"__pf_absent\"\n}\n\n# 関数にぶら下がる ProvisionedConcurrencyConfig の割り当て量。\n# Version も Alias も FunctionName で関数を指すので、その値ごとに合算できる。\n_pf_lam_pc contains [id, fnref, n] if {\n\t# resources_of_type は配列を返すので集合の和（|）は使えない。\n\tsome id in array.concat(_pf_lam_ver, _pf_lam_alias)\n\tprops := _pf_lam_props(id)\n\tpcc := _pf_lam_obj(props, \"ProvisionedConcurrencyConfig\")\n\tn := object.get(pcc, \"ProvisionedConcurrentExecutions\", \"__pf_absent\")\n\tis_number(n)\n\tfnref := object.get(props, \"FunctionName\", \"__pf_absent\")\n\tfnref != \"__pf_absent\"\n}\n\n# 「文字列として存在する」ときだけ返す。object.get の既定値を空文字にすると\n# キーが無いテンプレートでも判定が走り、パック全体の pass に誤発火する\n# （2026-09-07 に image-uri-private-ecr と recursive-loop-enum で実測）。\n_pf_lam_str(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n\tis_string(v)\n}\n"
+  },
+  {
+    "name": "_lib/rds",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RDS ルールの共有ヘルパー。不在の証明は input.resources 側でしかできない\n# （resolve() はキー不在と未解決トークンの両方で undefined になる、AGENTS.md 参照）ので、\n# 「プロパティが書かれているか」は必ず _pf_rds_has を通す。エンジン名の比較は\n# リテラルに限る（Ref はエンジン名ではなく論理 ID に解決されるため）。\n# 診断は出さない（BUNDLED_LIBS）。\n\n_pf_rds_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_rds_get(name, k) := v if {\n\tv := object.get(_pf_rds_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_rds_has(name, k) if {\n\t_pf_rds_get(name, k)\n}\n\n# ユーザーが書いたリテラルのエンジン名（小文字）。Ref/GetAtt は論理 ID に解決されるので弾く。\n_pf_rds_engine(name) := lower(e) if {\n\te := resolve(name, \"Properties.Engine\")\n\tis_string(e)\n\tnot input.resources[e]\n}\n\n# エンジン系列。互いに前方一致しない接頭辞なので、一致するのは高々 1 つ。\n_pf_rds_fam_prefix := {\"aurora-mysql\", \"aurora-postgresql\", \"mariadb\", \"mysql\", \"postgres\", \"oracle-\", \"sqlserver-\", \"db2-\"}\n\n_pf_rds_famof(s) := f if {\n\tis_string(s)\n\tsome f in _pf_rds_fam_prefix\n\tstartswith(lower(s), f)\n}\n\n_pf_rds_family(name) := _pf_rds_famof(_pf_rds_engine(name))\n\n_pf_rds_engine_in(name, families) if {\n\tsome f in families\n\t_pf_rds_family(name) == f\n}\n\n# 文書に true と書かれている場合だけ真（未解決トークンは対象外）。\n_pf_rds_true(name, k) if _pf_rds_get(name, k) == true\n\n_pf_rds_true(name, k) if _pf_rds_get(name, k) == \"true\"\n\n_pf_rds_false(name, k) if _pf_rds_get(name, k) == false\n\n_pf_rds_false(name, k) if _pf_rds_get(name, k) == \"false\"\n"
   },
   {
     "name": "_lib/s3",

@@ -1,0 +1,12 @@
+id: pf-rds-pi-retention-period
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: "PerformanceInsightsRetentionPeriod must be 7, 731, or a multiple of 31 up to 713"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Invalid Performance Insights retention period. Valid values are: [7, 31, 62, 93, 124, 155, 186, 217, 248, 279, 310, 341, 372, 403, 434, 465, 496, 527, 558, 589, 620, 651, 682, 713, 731]\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

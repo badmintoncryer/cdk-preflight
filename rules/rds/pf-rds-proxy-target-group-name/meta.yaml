@@ -1,0 +1,12 @@
+id: pf-rds-proxy-target-group-name
+service: rds
+resourceTypes: [AWS::RDS::DBProxyTargetGroup]
+severity: ERROR
+title: "DBProxyTargetGroup TargetGroupName must be \"default\""
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Resource handler returned message: \"Model validation failed (#/TargetGroupName: #: only 1 subschema matches out of 2)\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

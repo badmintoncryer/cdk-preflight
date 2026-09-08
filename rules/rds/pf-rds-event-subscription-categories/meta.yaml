@@ -1,0 +1,12 @@
+id: pf-rds-event-subscription-categories
+service: rds
+resourceTypes: [AWS::RDS::EventSubscription]
+severity: ERROR
+title: "EventCategories must exist for the SourceType"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-eventsubscription.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Category : restoration not found for source type db-cluster.\" ROLLBACK_COMPLETE Claim scope: db-cluster and db-instance source types only."
+addedOn: 2026-09-08
