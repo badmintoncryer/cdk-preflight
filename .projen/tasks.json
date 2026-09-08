@@ -355,6 +355,9 @@
         },
         {
           "spawn": "eslint"
+        },
+        {
+          "exec": "bash bench/sweep.test.sh"
         }
       ]
     },
