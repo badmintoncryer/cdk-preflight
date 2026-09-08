@@ -1,0 +1,11 @@
+id: pf-ec2-instance-requirements-exclusive
+service: ec2
+resourceTypes: [AWS::EC2::LaunchTemplate]
+severity: ERROR
+title: A launch template takes either InstanceType or InstanceRequirements
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-launchtemplate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateLaunchTemplate with both -> \"InvalidParameterCombination: Either the instance type or the instance requirements can be specified in the request, but not both\". bench 2026-09-08 ap-northeast-1: both set -> ROLLBACK_COMPLETE \"Either the instance type or the instance requirements can be specified in the request, but not both.\"; requirements alone -> CREATE_COMPLETE."
+addedOn: 2026-09-08

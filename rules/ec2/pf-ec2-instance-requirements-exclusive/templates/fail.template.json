@@ -1,0 +1,22 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Lt": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "InstanceType": "t3.micro",
+          "InstanceRequirements": {
+            "VCpuCount": {
+              "Min": 2,
+              "Max": 4
+            },
+            "MemoryMiB": {
+              "Min": 1024
+            }
+          }
+        }
+      }
+    }
+  }
+}

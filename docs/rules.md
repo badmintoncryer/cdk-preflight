@@ -258,12 +258,20 @@
 | `pf-ec2-client-vpn-connection-log` | AWS::EC2::ClientVpnEndpoint | Client VPN ConnectionLogOptions.Enabled requires CloudwatchLogGroup | none |
 | `pf-ec2-client-vpn-port` | AWS::EC2::ClientVpnEndpoint | Client VPN VpnPort must be 443 or 1194 | none |
 | `pf-ec2-client-vpn-session-timeout` | AWS::EC2::ClientVpnEndpoint | Client VPN SessionTimeoutHours must be 8, 10, 12 or 24 | none |
+| `pf-ec2-cpu-options-combination` | AWS::EC2::Instance | CpuOptions ThreadsPerCore and CoreCount must be in range | none |
+| `pf-ec2-credit-specification-burstable` | AWS::EC2::Instance | CreditSpecification applies only to burstable instance types | none |
+| `pf-ec2-enclave-hibernation-exclusive` | AWS::EC2::Instance | Nitro Enclaves and hibernation cannot both be enabled | none |
 | `pf-ec2-eni-private-ip-in-subnet` | AWS::EC2::NetworkInterface | A network interface private IP must fall inside its subnet | none |
+| `pf-ec2-eni-public-ip-device-index` | AWS::EC2::Instance | AssociatePublicIpAddress is only valid on device index 0 | none |
 | `pf-ec2-flow-log-aggregation-interval` | AWS::EC2::FlowLog | Flow log MaxAggregationInterval accepts only 60 or 600 seconds | none |
 | `pf-ec2-flow-log-destination-config` | AWS::EC2::FlowLog | Flow log destination type requires its matching destination property | none |
 | `pf-ec2-flow-log-format-fields` | AWS::EC2::FlowLog | Flow log LogFormat accepts only documented field names | none |
 | `pf-ec2-flow-log-transit-gateway-traffic-type` | AWS::EC2::FlowLog | A Transit Gateway flow log cannot take TrafficType | none |
+| `pf-ec2-host-resource-group-tenancy` | AWS::EC2::Instance | HostResourceGroupArn requires Tenancy host | none |
 | `pf-ec2-instance-ami-arch` | AWS::EC2::Instance | Instance type architecture must match the SSM public-parameter AMI architecture | none |
+| `pf-ec2-instance-eni-exclusive` | AWS::EC2::Instance | An instance cannot mix NetworkInterfaces with instance-level security groups | none |
+| `pf-ec2-instance-ipv6-exclusive` | AWS::EC2::Instance | Ipv6AddressCount and Ipv6Addresses are mutually exclusive | none |
+| `pf-ec2-instance-requirements-exclusive` | AWS::EC2::LaunchTemplate | A launch template takes either InstanceType or InstanceRequirements | none |
 | `pf-ec2-launch-template-name` | AWS::EC2::LaunchTemplate | Launch template names are 3-128 chars of letters, numbers and -()./_ | none |
 | `pf-ec2-nacl-rule-number-unique` | AWS::EC2::NetworkAclEntry | Network ACL rule numbers must be unique per direction | none |
 | `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |

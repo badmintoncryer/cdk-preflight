@@ -1,0 +1,11 @@
+id: pf-ec2-host-resource-group-tenancy
+service: ec2
+resourceTypes: [AWS::EC2::Instance]
+severity: ERROR
+title: HostResourceGroupArn requires Tenancy host
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: RunInstances with HostResourceGroupArn and Tenancy=default -> \"InvalidParameterValue: Invalid value 'default' for tenancy. When HostResourceGroupArn is specified, tenancy must be set to 'host'\". bench 2026-09-08 ap-northeast-1: HostResourceGroupArn with Tenancy default -> ROLLBACK_COMPLETE with the same message; no host resource group -> CREATE_COMPLETE."
+addedOn: 2026-09-08

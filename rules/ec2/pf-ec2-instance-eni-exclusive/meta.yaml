@@ -1,0 +1,11 @@
+id: pf-ec2-instance-eni-exclusive
+service: ec2
+resourceTypes: [AWS::EC2::Instance]
+severity: ERROR
+title: An instance cannot mix NetworkInterfaces with instance-level security groups
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: RunInstances with both --network-interfaces and --security-group-ids -> \"InvalidParameterCombination: Network interfaces and an instance-level security groups may not be specified on the same request\"; network interfaces alone passed validation. bench 2026-09-08 ap-northeast-1: NetworkInterfaces + SecurityGroupIds -> ROLLBACK_COMPLETE with the same message; NetworkInterfaces alone -> CREATE_COMPLETE."
+addedOn: 2026-09-08

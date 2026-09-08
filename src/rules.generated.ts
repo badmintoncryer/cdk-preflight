@@ -2824,6 +2824,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-session-timeout\", \"ERROR\", name,\n\t\"Properties.SessionTimeoutHours\",\n\tsprintf(\"SessionTimeoutHours %v is not accepted (\\\"Session Timeout you provided is not valid; valid values are [8, 10, 12, 24]\\\")\", [n]),\n\t\"Use 8, 10, 12 or 24\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tn := to_number(resolve(name, \"Properties.SessionTimeoutHours\"))\n\tnot n in {8, 10, 12, 24}\n}\n"
   },
   {
+    "id": "pf-ec2-cpu-options-combination",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "CpuOptions ThreadsPerCore and CoreCount must be in range",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2cpu_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\n# The accepted CoreCount / ThreadsPerCore pairs are per instance type, and the\n# survey warned against extrapolating that table. These two bounds hold for\n# every type measured: ThreadsPerCore is only ever 1 or 2, and CoreCount is at\n# least 1. Anything outside them is rejected whatever the instance type is.\nviolation contains make_diag_full(\"pf-ec2-cpu-options-combination\", \"ERROR\", name,\n\t\"Properties.CpuOptions.ThreadsPerCore\",\n\tsprintf(\"ThreadsPerCore %v is out of range; EC2 accepts 1 or 2 (\\\"A value of %v for ThreadsPerCore is not a valid value for the ... instance type\\\")\", [t, t]),\n\t\"Set ThreadsPerCore to 1 (SMT off) or 2\",\n\t_pf_ec2cpu_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tt := to_number(resolve(name, \"Properties.CpuOptions.ThreadsPerCore\"))\n\tnot t in {1, 2}\n}\n\nviolation contains make_diag_full(\"pf-ec2-cpu-options-combination\", \"ERROR\", name,\n\t\"Properties.CpuOptions.CoreCount\",\n\tsprintf(\"CoreCount %v is out of range; it must be at least 1\", [c]),\n\t\"Set CoreCount to a core count the instance type offers\",\n\t_pf_ec2cpu_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tc := to_number(resolve(name, \"Properties.CpuOptions.CoreCount\"))\n\tc < 1\n}\n"
+  },
+  {
+    "id": "pf-ec2-credit-specification-burstable",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "CreditSpecification applies only to burstable instance types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2cs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-credit-specification-burstable\", \"ERROR\", name,\n\t\"Properties.CreditSpecification\",\n\tsprintf(\"CreditSpecification is set on '%s', which is not a burstable (T family) type\", [it]),\n\t\"Remove CreditSpecification, or switch to a t2/t3/t3a/t4g instance type\",\n\t_pf_ec2cs_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tnot _pf_ec2lib_absent(name, \"CreditSpecification\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\tnot regex.match(`^t[0-9]`, it)\n}\n"
+  },
+  {
+    "id": "pf-ec2-enclave-hibernation-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Nitro Enclaves and hibernation cannot both be enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2eh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-enclave-hibernation-exclusive\", \"ERROR\", name,\n\t\"Properties.EnclaveOptions\",\n\t\"EnclaveOptions and HibernationOptions are both enabled (\\\"You cannot enable Nitro Enclaves and hibernation on the same instance.\\\")\",\n\t\"Enable one of the two\",\n\t_pf_ec2eh_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tcoerce_to_bool(resolve(name, \"Properties.EnclaveOptions.Enabled\")) == true\n\tcoerce_to_bool(resolve(name, \"Properties.HibernationOptions.Configured\")) == true\n}\n"
+  },
+  {
     "id": "pf-ec2-eni-private-ip-in-subnet",
     "service": "ec2",
     "severity": "ERROR",
@@ -2833,6 +2866,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::NetworkInterface"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-eni-private-ip-in-subnet\", \"ERROR\", name,\n\t\"Properties.PrivateIpAddress\",\n\tsprintf(\"PrivateIpAddress %s is outside subnet '%s' (%s); the create fails with \\\"Address does not fall within the subnet's address range\\\"\", [ip, sref, cidr]),\n\t\"Pick an address inside the subnet CIDR, or drop PrivateIpAddress and let EC2 assign one\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkinterface.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::NetworkInterface\")\n\tip := resolve(name, \"Properties.PrivateIpAddress\")\n\tis_string(ip)\n\tsref := resolve(name, \"Properties.SubnetId\")\n\tis_string(sref)\n\tsref in resources_of_type(\"AWS::EC2::Subnet\")\n\tcidr := resolve(sref, \"Properties.CidrBlock\")\n\tis_string(cidr)\n\tnot _pf_ec2lib_cidr_has_ip(cidr, ip)\n}\n"
+  },
+  {
+    "id": "pf-ec2-eni-public-ip-device-index",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "AssociatePublicIpAddress is only valid on device index 0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2pidx_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-eni-public-ip-device-index\", \"ERROR\", name,\n\tsprintf(\"Properties.NetworkInterfaces.%d.AssociatePublicIpAddress\", [n.index]),\n\tsprintf(\"AssociatePublicIpAddress is set on device index %v; only index 0 accepts it (\\\"The associatePublicIPAddress parameter can only be specified for the network interface with DeviceIndex 0\\\")\", [idx]),\n\t\"Set AssociatePublicIpAddress on the device index 0 interface only\",\n\t_pf_ec2pidx_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tsome n in flatten_list(name, \"Properties.NetworkInterfaces\")\n\tcoerce_to_bool(object.get(n.value, \"AssociatePublicIpAddress\", false)) == true\n\tidx := to_number(object.get(n.value, \"DeviceIndex\", 0))\n\tidx != 0\n}\n"
   },
   {
     "id": "pf-ec2-flow-log-aggregation-interval",
@@ -2879,6 +2923,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-flow-log-transit-gateway-traffic-type\", \"ERROR\", name,\n\t\"Properties.TrafficType\",\n\t\"A flow log on a Transit Gateway resource cannot take TrafficType; it always records all traffic\",\n\t\"Remove TrafficType, or point ResourceType at a VPC, Subnet or NetworkInterface\",\n\t_pf_ec2fl_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::FlowLog\")\n\tresolve(name, \"Properties.ResourceType\") in {\"TransitGateway\", \"TransitGatewayAttachment\"}\n\tnot _pf_ec2fl_absent(name, \"TrafficType\")\n}\n"
   },
   {
+    "id": "pf-ec2-host-resource-group-tenancy",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "HostResourceGroupArn requires Tenancy host",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2hrg_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\n_pf_ec2hrg_tenancy(name) := t if {\n\tt := resolve(name, \"Properties.Tenancy\")\n\tis_string(t)\n}\n\n_pf_ec2hrg_tenancy(name) := \"default\" if _pf_ec2lib_absent(name, \"Tenancy\")\n\nviolation contains make_diag_full(\"pf-ec2-host-resource-group-tenancy\", \"ERROR\", name,\n\t\"Properties.Tenancy\",\n\tsprintf(\"HostResourceGroupArn is set but Tenancy is '%s' (\\\"When HostResourceGroupArn is specified, tenancy must be set to 'host'\\\")\", [t]),\n\t\"Set Tenancy to host\",\n\t_pf_ec2hrg_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tnot _pf_ec2lib_absent(name, \"HostResourceGroupArn\")\n\tt := _pf_ec2hrg_tenancy(name)\n\tt != \"host\"\n}\n"
+  },
+  {
     "id": "pf-ec2-instance-ami-arch",
     "service": "ec2",
     "severity": "ERROR",
@@ -2888,6 +2943,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::Instance"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2iaa_url := \"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html\"\n\n# Graviton naming convention: a \"g\" among the letters after the\n# generation digit (t4g, c7gn, im4gn, g5g), plus the pre-convention a1.\n# mac* families are excluded from judgment entirely.\n_pf_ec2iaa_arm_fam(fam) if regex.match(`^[a-z]+[0-9]+[a-z0-9]*g[a-z0-9]*$`, fam)\n\n_pf_ec2iaa_arm_fam(fam) if fam == \"a1\"\n\n_pf_ec2iaa_fam(name) := fam if {\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\tfam := split(it, \".\")[0]\n\tnot startswith(fam, \"mac\")\n}\n\n# {{resolve:ssm:...}} strings surface as {\"__dynamic\": \"dynamic\n# reference: {{resolve:ssm:<path>}}\"} marker objects (measured\n# 2026-09-03); the reference text is read from the marker.\n_pf_ec2iaa_img(name) := d if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\traw := object.get(props, \"ImageId\", \"__pf_absent\")\n\tis_object(raw)\n\td := object.get(raw, \"__dynamic\", \"\")\n\tis_string(d)\n\tcontains(d, \"{{resolve:ssm:\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-instance-ami-arch\", \"ERROR\", name,\n\t\"Properties.ImageId\",\n\tsprintf(\"Instance type '%s' is x86_64 but the AMI parameter path names arm64; the launch fails with an architecture mismatch\", [resolve(name, \"Properties.InstanceType\")]),\n\t\"Use an arm64 (Graviton) instance type or the x86_64 AMI path\",\n\t_pf_ec2iaa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tfam := _pf_ec2iaa_fam(name)\n\tnot _pf_ec2iaa_arm_fam(fam)\n\timg := _pf_ec2iaa_img(name)\n\tcontains(img, \"arm64\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-instance-ami-arch\", \"ERROR\", name,\n\t\"Properties.ImageId\",\n\tsprintf(\"Instance type '%s' is arm64 (Graviton) but the AMI parameter path names x86_64; the launch fails with an architecture mismatch\", [resolve(name, \"Properties.InstanceType\")]),\n\t\"Use an x86_64 instance type or the arm64 AMI path\",\n\t_pf_ec2iaa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tfam := _pf_ec2iaa_fam(name)\n\t_pf_ec2iaa_arm_fam(fam)\n\timg := _pf_ec2iaa_img(name)\n\tcontains(img, \"x86_64\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-instance-eni-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "An instance cannot mix NetworkInterfaces with instance-level security groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2ie_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-instance-eni-exclusive\", \"ERROR\", name,\n\t\"Properties.SecurityGroupIds\",\n\t\"NetworkInterfaces and instance-level SecurityGroupIds cannot both be set (\\\"Network interfaces and an instance-level security groups may not be specified on the same request\\\")\",\n\t\"Move the security groups into the NetworkInterfaces entry as GroupSet\",\n\t_pf_ec2ie_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tcount(flatten_list(name, \"Properties.NetworkInterfaces\")) > 0\n\tcount(flatten_list(name, \"Properties.SecurityGroupIds\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-ec2-instance-ipv6-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Ipv6AddressCount and Ipv6Addresses are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Instance"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2i6_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-instance-ipv6-exclusive\", \"ERROR\", name,\n\t\"Properties.Ipv6AddressCount\",\n\t\"Ipv6AddressCount and Ipv6Addresses cannot both be set (\\\"IPv6 addresses and IPv6 address count may not be specified on the same request\\\")\",\n\t\"Keep either the count or the explicit address list\",\n\t_pf_ec2i6_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tnot _pf_ec2lib_absent(name, \"Ipv6AddressCount\")\n\tcount(flatten_list(name, \"Properties.Ipv6Addresses\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-ec2-instance-requirements-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A launch template takes either InstanceType or InstanceRequirements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::LaunchTemplate"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2ir_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-launchtemplate.html\"\n\nviolation contains make_diag_full(\"pf-ec2-instance-requirements-exclusive\", \"ERROR\", name,\n\t\"Properties.LaunchTemplateData.InstanceType\",\n\t\"LaunchTemplateData sets both InstanceType and InstanceRequirements (\\\"Either the instance type or the instance requirements can be specified in the request, but not both\\\")\",\n\t\"Keep one of the two\",\n\t_pf_ec2ir_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n\tnot _pf_ec2lib_absent_at(name, [\"LaunchTemplateData\", \"InstanceType\"])\n\tnot _pf_ec2lib_absent_at(name, [\"LaunchTemplateData\", \"InstanceRequirements\"])\n}\n"
   },
   {
     "id": "pf-ec2-launch-template-name",
@@ -11462,7 +11550,7 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   },
   {
     "name": "_lib/ec2",
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# エンジンに net.cidr_* ビルトインは無い（1.7.0-beta で実測、rules/_lib/efs.rego\n# にも同じ注記がある）ので IPv4 のアドレス演算を自前で持つ。pow ビルトインも\n# 無いため 2^n は表で引く。IPv6 は扱わない（呼び出し側が \":\" の有無で弾く）。\n_pf_ec2lib_pow2 := {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64, 7: 128, 8: 256, 9: 512, 10: 1024, 11: 2048, 12: 4096, 13: 8192, 14: 16384, 15: 32768, 16: 65536, 17: 131072, 18: 262144, 19: 524288, 20: 1048576, 21: 2097152, 22: 4194304, 23: 8388608, 24: 16777216, 25: 33554432, 26: 67108864, 27: 134217728, 28: 268435456, 29: 536870912, 30: 1073741824, 31: 2147483648, 32: 4294967296}\n\n_pf_ec2lib_ip_int(s) := n if {\n\tparts := split(s, \".\")\n\tcount(parts) == 4\n\tnums := [to_number(p) | some p in parts]\n\tevery x in nums {\n\t\tx >= 0\n\t\tx <= 255\n\t}\n\tn := ((nums[0] * 16777216) + (nums[1] * 65536)) + ((nums[2] * 256) + nums[3])\n}\n\n# [ネットワークアドレス, ブロックサイズ] を返す。ホストビットが立っていても\n# 切り捨てて正規化するので \"10.0.0.5/24\" は \"10.0.0.0/24\" と同じ結果になる。\n_pf_ec2lib_cidr(s) := [start, size] if {\n\tparts := split(s, \"/\")\n\tcount(parts) == 2\n\tbase := _pf_ec2lib_ip_int(parts[0])\n\tp := to_number(parts[1])\n\tsize := _pf_ec2lib_pow2[32 - p]\n\tstart := floor(base / size) * size\n}\n\n_pf_ec2lib_cidr_has_ip(cidr, ip) if {\n\tc := _pf_ec2lib_cidr(cidr)\n\tn := _pf_ec2lib_ip_int(ip)\n\tn >= c[0]\n\tn < c[0] + c[1]\n}\n\n_pf_ec2lib_cidr_overlap(a, b) if {\n\tx := _pf_ec2lib_cidr(a)\n\ty := _pf_ec2lib_cidr(b)\n\tx[0] < y[0] + y[1]\n\ty[0] < x[0] + x[1]\n}\n\n# プロパティ不在の証明（AGENTS.md の sanctioned exception）\n_pf_ec2lib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# エンジンに net.cidr_* ビルトインは無い（1.7.0-beta で実測、rules/_lib/efs.rego\n# にも同じ注記がある）ので IPv4 のアドレス演算を自前で持つ。pow ビルトインも\n# 無いため 2^n は表で引く。IPv6 は扱わない（呼び出し側が \":\" の有無で弾く）。\n_pf_ec2lib_pow2 := {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64, 7: 128, 8: 256, 9: 512, 10: 1024, 11: 2048, 12: 4096, 13: 8192, 14: 16384, 15: 32768, 16: 65536, 17: 131072, 18: 262144, 19: 524288, 20: 1048576, 21: 2097152, 22: 4194304, 23: 8388608, 24: 16777216, 25: 33554432, 26: 67108864, 27: 134217728, 28: 268435456, 29: 536870912, 30: 1073741824, 31: 2147483648, 32: 4294967296}\n\n_pf_ec2lib_ip_int(s) := n if {\n\tparts := split(s, \".\")\n\tcount(parts) == 4\n\tnums := [to_number(p) | some p in parts]\n\tevery x in nums {\n\t\tx >= 0\n\t\tx <= 255\n\t}\n\tn := ((nums[0] * 16777216) + (nums[1] * 65536)) + ((nums[2] * 256) + nums[3])\n}\n\n# [ネットワークアドレス, ブロックサイズ] を返す。ホストビットが立っていても\n# 切り捨てて正規化するので \"10.0.0.5/24\" は \"10.0.0.0/24\" と同じ結果になる。\n_pf_ec2lib_cidr(s) := [start, size] if {\n\tparts := split(s, \"/\")\n\tcount(parts) == 2\n\tbase := _pf_ec2lib_ip_int(parts[0])\n\tp := to_number(parts[1])\n\tsize := _pf_ec2lib_pow2[32 - p]\n\tstart := floor(base / size) * size\n}\n\n_pf_ec2lib_cidr_has_ip(cidr, ip) if {\n\tc := _pf_ec2lib_cidr(cidr)\n\tn := _pf_ec2lib_ip_int(ip)\n\tn >= c[0]\n\tn < c[0] + c[1]\n}\n\n_pf_ec2lib_cidr_overlap(a, b) if {\n\tx := _pf_ec2lib_cidr(a)\n\ty := _pf_ec2lib_cidr(b)\n\tx[0] < y[0] + y[1]\n\ty[0] < x[0] + x[1]\n}\n\n# プロパティ不在の証明（AGENTS.md の sanctioned exception）\n_pf_ec2lib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# ネストしたキーの不在判定。path は上位から順のキー列。\n_pf_ec2lib_absent_at(name, path) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobj := object.get(props, array.slice(path, 0, count(path) - 1), {})\n\tobject.get(obj, path[count(path) - 1], \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "name": "_lib/ecr",
