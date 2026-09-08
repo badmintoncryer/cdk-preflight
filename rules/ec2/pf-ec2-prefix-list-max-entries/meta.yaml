@@ -1,0 +1,11 @@
+id: pf-ec2-prefix-list-max-entries
+service: ec2
+resourceTypes: [AWS::EC2::PrefixList]
+severity: ERROR
+title: A managed prefix list cannot hold more entries than MaxEntries
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/AWS_EC2.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateManagedPrefixList with MaxEntries 1 and two entries -> \"InvalidParameterCombination: The number of entries cannot be greater than the maximum number of entries\"; MaxEntries 2 created cleanly. bench 2026-09-08 ap-northeast-1: MaxEntries 1 with two entries -> ROLLBACK_COMPLETE \"Invalid request provided: Prefix list entries can not exceed max entries.\"; MaxEntries 2 -> CREATE_COMPLETE."
+addedOn: 2026-09-08
