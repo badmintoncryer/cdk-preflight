@@ -1,0 +1,11 @@
+id: pf-ec2-volume-throughput-type
+service: ec2
+resourceTypes: [AWS::EC2::Volume]
+severity: ERROR
+title: EBS Throughput applies only to gp3 volumes
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-volume.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateVolume gp2 with --throughput -> \"The throughput parameter is not supported for gp2 volumes.\"; gp3 with the same throughput passed validation. bench 2026-09-08 ap-northeast-1: gp2 with Throughput -> ROLLBACK_COMPLETE with the same message; gp3 -> CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -1,0 +1,11 @@
+id: pf-ec2-sg-icmp-type-code
+service: ec2
+resourceTypes: [AWS::EC2::SecurityGroupIngress, AWS::EC2::SecurityGroupEgress]
+severity: ERROR
+title: ICMP type and code must be within -1 to 255
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-securitygroupingress.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: AuthorizeSecurityGroupIngress icmp FromPort=300 -> \"ICMP type (300) out of range\"; ToPort=300 -> \"ICMP code (300) out of range\"; type 8 / code 0 succeeded. bench 2026-09-08 ap-northeast-1: FromPort 300 on an icmp ingress rule -> ROLLBACK_COMPLETE; type 8 / code 0 -> CREATE_COMPLETE."
+addedOn: 2026-09-08

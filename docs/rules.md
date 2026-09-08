@@ -383,7 +383,9 @@
 | `pf-ec2-client-vpn-session-timeout` | AWS::EC2::ClientVpnEndpoint | Client VPN SessionTimeoutHours must be 8, 10, 12 or 24 | none |
 | `pf-ec2-cpu-options-combination` | AWS::EC2::Instance | CpuOptions ThreadsPerCore and CoreCount must be in range | none |
 | `pf-ec2-credit-specification-burstable` | AWS::EC2::Instance | CreditSpecification applies only to burstable instance types | none |
+| `pf-ec2-eip-association-exclusive` | AWS::EC2::EIPAssociation | An EIP association cannot set both AllocationId and EIP | none |
 | `pf-ec2-enclave-hibernation-exclusive` | AWS::EC2::Instance | Nitro Enclaves and hibernation cannot both be enabled | none |
+| `pf-ec2-eni-primary-single` | AWS::EC2::NetworkInterface | A network interface takes exactly one primary private IP | none |
 | `pf-ec2-eni-private-ip-in-subnet` | AWS::EC2::NetworkInterface | A network interface private IP must fall inside its subnet | none |
 | `pf-ec2-eni-public-ip-device-index` | AWS::EC2::Instance | AssociatePublicIpAddress is only valid on device index 0 | none |
 | `pf-ec2-flow-log-aggregation-interval` | AWS::EC2::FlowLog | Flow log MaxAggregationInterval accepts only 60 or 600 seconds | none |
@@ -398,12 +400,15 @@
 | `pf-ec2-launch-template-name` | AWS::EC2::LaunchTemplate | Launch template names are 3-128 chars of letters, numbers and -()./_ | none |
 | `pf-ec2-nacl-rule-number-unique` | AWS::EC2::NetworkAclEntry | Network ACL rule numbers must be unique per direction | none |
 | `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |
+| `pf-ec2-natgw-secondary-ip-exclusive` | AWS::EC2::NatGateway | NAT gateway secondary IP count and list are mutually exclusive | none |
 | `pf-ec2-pg-cluster-burstable` | AWS::EC2::Instance<br>AWS::EC2::PlacementGroup | Burstable instance types are not supported in cluster placement groups | none |
 | `pf-ec2-prefix-list-address-family` | AWS::EC2::PrefixList | Prefix list entries must match the declared address family | none |
 | `pf-ec2-prefix-list-max-entries` | AWS::EC2::PrefixList | A managed prefix list cannot hold more entries than MaxEntries | none |
 | `pf-ec2-route-target-exactly-one` | AWS::EC2::Route | A route must name exactly one target | none |
 | `pf-ec2-sg-cidr-valid` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule CidrIp must be a well-formed IPv4 CIDR | none |
 | `pf-ec2-sg-group-name` | AWS::EC2::SecurityGroup | Security group names may not start with sg- | none |
+| `pf-ec2-sg-group-name-default` | AWS::EC2::SecurityGroup | A security group cannot be named default | none |
+| `pf-ec2-sg-icmp-type-code` | AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | ICMP type and code must be within -1 to 255 | none |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | none |
 | `pf-ec2-sg-rule-description` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule descriptions are limited to 255 chars of a restricted ASCII set | none |
 | `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | none |
@@ -414,7 +419,9 @@
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
 | `pf-ec2-volume-iops-required` | AWS::EC2::Volume | io1 and io2 volumes require the Iops property | none |
 | `pf-ec2-volume-kms-encrypted` | AWS::EC2::Volume | KmsKeyId on a volume requires Encrypted to be true | none |
+| `pf-ec2-volume-multi-attach-type` | AWS::EC2::Volume | Multi-Attach is only available on io1 and io2 volumes | none |
 | `pf-ec2-volume-size-minimum` | AWS::EC2::Volume | EBS volume size must meet the volume type minimum (io1/io2 4 GiB, st1/sc1 125 GiB) | none |
+| `pf-ec2-volume-throughput-type` | AWS::EC2::Volume | EBS Throughput applies only to gp3 volumes | none |
 | `pf-ec2-vpc-cidr-block-overlap` | AWS::EC2::VPCCidrBlock | A secondary VPC CIDR cannot overlap the primary | none |
 | `pf-ec2-vpc-cidr-block-size` | AWS::EC2::VPC | VPC IPv4 CIDR block netmask must be between /16 and /28 | none |
 | `pf-ec2-vpc-single-igw` | AWS::EC2::VPCGatewayAttachment | A VPC accepts only one internet gateway attachment | none |
