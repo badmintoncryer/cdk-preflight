@@ -1,0 +1,11 @@
+id: pf-dynamodb-sse-type
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "SSEType must be KMS, and only when SSE is enabled"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-ssespecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: SSEType can not be specified if Enabled is false\"; pass -> CREATE_COMPLETE. The fixture exercises the SSEEnabled:false half, which the engine misses entirely; the SSEType enum half is W3030/WARN there."
+addedOn: 2026-09-08

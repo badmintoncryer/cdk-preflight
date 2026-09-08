@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-mrsc-lsi
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "MRSC global tables do not support local secondary indexes"
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Local secondary indexes are not supported for global tables with MultiRegionConsistency set to STRONG\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

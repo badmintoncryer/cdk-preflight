@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-ondemand-settings-billing
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "On-demand throughput settings need BillingMode PAY_PER_REQUEST"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"WriteOnDemandThroughputSettings cannot be specified for table when BillingMode is PROVISIONED\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

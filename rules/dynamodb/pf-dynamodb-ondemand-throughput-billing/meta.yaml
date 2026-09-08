@@ -1,0 +1,11 @@
+id: pf-dynamodb-ondemand-throughput-billing
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "OnDemandThroughput belongs to PAY_PER_REQUEST tables only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Property MaxReadRequestUnits for OnDemandThroughput can't be used with PROVISIONED BillingMode.\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

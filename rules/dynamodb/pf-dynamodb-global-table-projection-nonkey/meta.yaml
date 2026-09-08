@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-projection-nonkey
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "GlobalTable NonKeyAttributes goes with INCLUDE, and only with INCLUDE"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-projection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: ProjectionType is ALL, but NonKeyAttributes is specified\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

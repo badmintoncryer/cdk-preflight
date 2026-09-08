@@ -1,0 +1,11 @@
+id: pf-dynamodb-warm-throughput-minimum
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "WarmThroughput cannot go below the default 12000 read / 4000 write"
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/warm-throughput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: Requested ReadUnitsPerSecond for WarmThroughput for table is lower than initial throughput for OnDemand. See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode.html#on-demand-capacity-mode-initial\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

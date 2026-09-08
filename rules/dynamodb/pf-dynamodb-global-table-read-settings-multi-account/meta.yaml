@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-read-settings-multi-account
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "Table-level read throughput settings are for multi-account global tables only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: Table level ReadOnDemandThroughput settings cannot be set when Global Table Settings Replication is not ENABLED. Please enable Global Table Settings Replication on a replica or remove table-level ReadOnDemandThroughput settings.\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

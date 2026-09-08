@@ -1,0 +1,11 @@
+id: pf-dynamodb-lsi-count
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "A table can carry at most 5 local secondary indexes"
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: Number of LocalSecondaryIndexes exceeds per-table limit of 5\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -1,0 +1,11 @@
+id: pf-dynamodb-ttl-attribute-required
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "Enabling TTL requires an AttributeName"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-timetolivespecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: AttributeName property of TimeToLiveSpecification is required when TTL status is enabled or when enabling TTL.\"; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-08

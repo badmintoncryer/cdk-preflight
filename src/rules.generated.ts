@@ -2163,6 +2163,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DynamoDB requires an exact match: every AttributeDefinitions entry must be\n# used by the table key schema or an index key schema. The engine's E3039\n# checks the opposite direction only (key attribute not defined), so the\n# classic \"removed a GSI, left the attribute definition\" mistake sails through.\n\n_pf_ddbadu_table_keys(name) := {a |\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\ta := object.get(it.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbadu_index_keys(name, prop) := {a |\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome k in object.get(ix.value, \"KeySchema\", [])\n\ta := object.get(k, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbadu_used(name) := ((_pf_ddbadu_table_keys(name) |\n\t_pf_ddbadu_index_keys(name, \"GlobalSecondaryIndexes\")) |\n\t_pf_ddbadu_index_keys(name, \"LocalSecondaryIndexes\"))\n\n# Any unresolvable AttributeName in a key schema means the used-set is\n# incomplete, so the rule must stay silent rather than guess.\n_pf_ddbadu_unresolvable(name) if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tnot is_string(object.get(it.value, \"AttributeName\", null))\n}\n\n_pf_ddbadu_unresolvable(name) if {\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome k in object.get(ix.value, \"KeySchema\", [])\n\tnot is_string(object.get(k, \"AttributeName\", null))\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-attribute-definitions-usage\", \"ERROR\", name,\n\tsprintf(\"Properties.AttributeDefinitions.%d\", [d.index]),\n\tsprintf(\"Attribute '%s' is defined but used by no key schema; DynamoDB requires an exact match and fails with \\\"Number of attributes in KeySchema does not exactly match number of attributes defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Remove the unused definition (non-key attributes such as a TTL attribute must NOT be declared), or add the index that uses it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tnot _pf_ddbadu_unresolvable(name)\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\tattr := object.get(d.value, \"AttributeName\", null)\n\tis_string(attr)\n\tnot attr in _pf_ddbadu_used(name)\n}\n"
   },
   {
+    "id": "pf-dynamodb-attribute-type",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "AttributeType must be S, N or B",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine reports this enum as W3030/WARN only, which does not block the\n# deploy — hence upstream: pending-engine. AWS::DynamoDB::Table only; the\n# GlobalTable variant was not measured.\nviolation contains make_diag_full(\"pf-dynamodb-attribute-type\", \"ERROR\", name,\n\tsprintf(\"Properties.AttributeDefinitions.%d.AttributeType\", [d.index]),\n\tsprintf(\"AttributeType '%s' is not a key attribute type; CreateTable fails with \\\"Member must satisfy enum value set: [B, N, S]\\\"\", [t]),\n\t\"Use S (string), N (number) or B (binary) — key attributes cannot be lists, maps or booleans\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\tt := object.get(d.value, \"AttributeType\", null)\n\tis_string(t)\n\tnot t in {\"S\", \"N\", \"B\"}\n}\n"
+  },
+  {
     "id": "pf-dynamodb-billing-throughput",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -2172,6 +2183,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::Table"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbbt_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html\"\n\n_pf_ddbbt_has_pt(name) if is_object(resolve(name, \"Properties.ProvisionedThroughput\"))\n\n_pf_ddbbt_billing_present(name) if resolve(name, \"Properties.BillingMode\")\n\n# BillingMode がリテラル \"PROVISIONED\"、または未指定（デフォルト PROVISIONED）。\n# トークン値（Ref 等）は判定に使わない（誤検知防止）。\n_pf_ddbbt_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbbt_provisioned(name) if not _pf_ddbbt_billing_present(name)\n\nviolation contains make_diag_full(\"pf-dynamodb-billing-throughput\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughput\",\n\t\"ProvisionedThroughput cannot be specified when BillingMode is PAY_PER_REQUEST; CreateTable fails at deploy time\",\n\t\"Remove ProvisionedThroughput, or switch BillingMode to PROVISIONED\",\n\t_pf_ddbbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tresolve(name, \"Properties.BillingMode\") == \"PAY_PER_REQUEST\"\n\t_pf_ddbbt_has_pt(name)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-billing-throughput\", \"ERROR\", name,\n\t\"Properties.ProvisionedThroughput\",\n\t\"BillingMode is PROVISIONED (the default) but ProvisionedThroughput is missing; CreateTable fails at deploy time\",\n\t\"Add ProvisionedThroughput (ReadCapacityUnits / WriteCapacityUnits), or set BillingMode to PAY_PER_REQUEST\",\n\t_pf_ddbbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbbt_provisioned(name)\n\tnot _pf_ddbbt_has_pt(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-contributor-insights-mode",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Contributor Insights Mode must be ACCESSED_AND_THROTTLED_KEYS or THROTTLED_KEYS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# W3030/WARN in the bundled engine (1.7.0-beta) — does not block the deploy.\nviolation contains make_diag_full(\"pf-dynamodb-contributor-insights-mode\", \"ERROR\", name,\n\t\"Properties.ContributorInsightsSpecification.Mode\",\n\tsprintf(\"Contributor Insights Mode '%s' does not exist; UpdateContributorInsights fails with \\\"Value '%s' at 'contributorInsightsMode' failed to satisfy constraint\\\"\", [m, m]),\n\t\"Use ACCESSED_AND_THROTTLED_KEYS or THROTTLED_KEYS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-contributorinsightsspecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tm := resolve(name, \"Properties.ContributorInsightsSpecification.Mode\")\n\tis_string(m)\n\tnot m in {\"ACCESSED_AND_THROTTLED_KEYS\", \"THROTTLED_KEYS\"}\n}\n"
   },
   {
     "id": "pf-dynamodb-duplicate-attribute-definitions",
@@ -2196,6 +2218,215 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbdin_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\"\n\n# Duplicates within the same index list only; a GSI/LSI cross-list clash was\n# not measured (issue #21).\nviolation contains make_diag_full(\"pf-dynamodb-duplicate-index-name\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.IndexName\", [prop, b.index]),\n\tsprintf(\"Index name '%s' is used more than once; CreateTable fails with \\\"Duplicate index name\\\"\", [iname]),\n\t\"Give every secondary index a unique IndexName\",\n\t_pf_ddbdin_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome a in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome b in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\ta.index < b.index\n\tiname := object.get(a.value, \"IndexName\", null)\n\tis_string(iname)\n\tobject.get(b.value, \"IndexName\", null) == iname\n}\n"
   },
   {
+    "id": "pf-dynamodb-global-table-attribute-definitions",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTable AttributeDefinitions must match the key schemas exactly",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's E3039 checks key attributes against AttributeDefinitions for\n# AWS::DynamoDB::Table only, and never the unused direction (measured\n# 2026-09-08, 1.7.0-beta). LSI key attributes are covered by\n# pf-dynamodb-global-table-lsi-attribute-definitions.\n_pf_ddbgad_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\"\n\n_pf_ddbgad_defs(name) := {a |\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\ta := object.get(d.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbgad_table_keys(name) := {a |\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\ta := object.get(it.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbgad_index_keys(name, prop) := {a |\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome k in object.get(ix.value, \"KeySchema\", [])\n\ta := object.get(k, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbgad_used(name) := ((_pf_ddbgad_table_keys(name) |\n\t_pf_ddbgad_index_keys(name, \"GlobalSecondaryIndexes\")) |\n\t_pf_ddbgad_index_keys(name, \"LocalSecondaryIndexes\"))\n\n# Any unresolvable name anywhere makes the comparison incomplete — stay silent.\n_pf_ddbgad_unresolvable(name) if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tnot is_string(object.get(it.value, \"AttributeName\", null))\n}\n\n_pf_ddbgad_unresolvable(name) if {\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tsome k in object.get(ix.value, \"KeySchema\", [])\n\tnot is_string(object.get(k, \"AttributeName\", null))\n}\n\n_pf_ddbgad_unresolvable(name) if {\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\tnot is_string(object.get(d.value, \"AttributeName\", null))\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-attribute-definitions\", \"ERROR\", name,\n\t\"Properties.KeySchema\",\n\tsprintf(\"Key attribute '%s' is not defined in AttributeDefinitions; CreateTable fails with \\\"An attribute referenced in a KeySchema element is not defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Declare every key attribute in AttributeDefinitions with its type (S, N or B)\",\n\t_pf_ddbgad_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tnot _pf_ddbgad_unresolvable(name)\n\tsome attr in _pf_ddbgad_table_keys(name)\n\tnot attr in _pf_ddbgad_defs(name)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-attribute-definitions\", \"ERROR\", name,\n\t\"Properties.GlobalSecondaryIndexes\",\n\tsprintf(\"GSI key attribute '%s' is not defined in AttributeDefinitions; CreateTable fails with \\\"An attribute referenced in a KeySchema element is not defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Declare every index key attribute in AttributeDefinitions with its type (S, N or B)\",\n\t_pf_ddbgad_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tnot _pf_ddbgad_unresolvable(name)\n\tsome attr in _pf_ddbgad_index_keys(name, \"GlobalSecondaryIndexes\")\n\tnot attr in _pf_ddbgad_defs(name)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-attribute-definitions\", \"ERROR\", name,\n\tsprintf(\"Properties.AttributeDefinitions.%d\", [d.index]),\n\tsprintf(\"Attribute '%s' is defined but used by no key schema; DynamoDB requires an exact match and fails with \\\"Number of attributes in KeySchema does not exactly match number of attributes defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Remove the unused definition (non-key attributes such as a TTL attribute must NOT be declared), or add the index that uses it\",\n\t_pf_ddbgad_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tnot _pf_ddbgad_unresolvable(name)\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\tattr := object.get(d.value, \"AttributeName\", null)\n\tis_string(attr)\n\tnot attr in _pf_ddbgad_used(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-gsi-count",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A global table can carry at most 20 global secondary indexes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-gsi-count covers AWS::DynamoDB::Table only.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-gsi-count\", \"ERROR\", name,\n\t\"Properties.GlobalSecondaryIndexes\",\n\tsprintf(\"The global table declares %d global secondary indexes; CreateTable fails with \\\"GlobalSecondaryIndex count exceeds the per-table limit of 20\\\"\", [n]),\n\t\"Keep GlobalSecondaryIndexes at 20 or fewer, or raise the per-table quota before deploying\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tn := count(flatten_list(name, \"Properties.GlobalSecondaryIndexes\"))\n\tn > 20\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-gsi-provisioned-write-settings",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Each GSI of a PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbggw_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbggw_provisioned(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"BillingMode\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-gsi-provisioned-write-settings\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.WriteProvisionedThroughputSettings\", [g.index]),\n\tsprintf(\"GSI '%s' has no WriteProvisionedThroughputSettings while the global table is PROVISIONED; each index carries its own write capacity\", [iname]),\n\t\"Add WriteProvisionedThroughputSettings to the index, or move the table to PAY_PER_REQUEST\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-globalsecondaryindex.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddbggw_provisioned(name)\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tobject.get(g.value, \"WriteProvisionedThroughputSettings\", \"__pf_absent\") == \"__pf_absent\"\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-key-schema-shape",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTable KeySchema must be [HASH] or [HASH, RANGE]",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-key-schema-shape covers AWS::DynamoDB::Table only; the same\n# CreateTable validation applies to a global table's key schema.\n_pf_ddbgks_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\"\n\n_pf_ddbgks_type(name, i) := kt if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tit.index == i\n\tkt := object.get(it.value, \"KeyType\", null)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.0.KeyType\",\n\tsprintf(\"The first KeySchema element must be HASH, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The first KeySchemaElement is not a HASH key type\\\"\", [kt]),\n\t\"Put the partition key (KeyType HASH) first and the optional sort key (RANGE) second\",\n\t_pf_ddbgks_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tkt := _pf_ddbgks_type(name, 0)\n\tis_string(kt)\n\tkt != \"HASH\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.1.KeyType\",\n\tsprintf(\"The second KeySchema element must be RANGE, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The second KeySchemaElement is not a RANGE key type\\\"\", [kt]),\n\t\"Use exactly one HASH element, optionally followed by one RANGE element\",\n\t_pf_ddbgks_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tkt := _pf_ddbgks_type(name, 1)\n\tis_string(kt)\n\tkt != \"RANGE\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema\",\n\tsprintf(\"KeySchema can hold at most 2 elements (HASH + optional RANGE), got %d\", [n]),\n\t\"Model extra access patterns as global or local secondary indexes instead\",\n\t_pf_ddbgks_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tn := count(flatten_list(name, \"Properties.KeySchema\"))\n\tn > 2\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-lsi-attribute-definitions",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTable LSI key attributes must be defined in AttributeDefinitions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-lsi-attribute-definitions covers AWS::DynamoDB::Table only.\n_pf_ddbgla_defs(name) := {a |\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\ta := object.get(d.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n_pf_ddbgla_defs_resolvable(name) if {\n\tevery d in [x | some x in flatten_list(name, \"Properties.AttributeDefinitions\")] {\n\t\tis_string(object.get(d.value, \"AttributeName\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-lsi-attribute-definitions\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"LSI key attribute '%s' is not defined in AttributeDefinitions; CreateTable fails with \\\"An attribute referenced in a KeySchema element is not defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Add the attribute to AttributeDefinitions (and nowhere else: only key attributes belong there)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-localsecondaryindex.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tcount(_pf_ddbgla_defs(name)) > 0\n\t_pf_ddbgla_defs_resolvable(name)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tsome k in object.get(l.value, \"KeySchema\", [])\n\tattr := object.get(k, \"AttributeName\", null)\n\tis_string(attr)\n\tnot attr in _pf_ddbgla_defs(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-lsi-count",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A global table can carry at most 5 local secondary indexes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-lsi-count covers AWS::DynamoDB::Table only. This limit is hard:\n# it cannot be raised.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-lsi-count\", \"ERROR\", name,\n\t\"Properties.LocalSecondaryIndexes\",\n\tsprintf(\"The global table declares %d local secondary indexes; CreateTable fails with \\\"Number of LocalSecondaryIndexes exceeds per-table limit of 5\\\"\", [n]),\n\t\"Keep LocalSecondaryIndexes at 5 or fewer (this limit cannot be raised); model the rest as global secondary indexes\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tn := count(flatten_list(name, \"Properties.LocalSecondaryIndexes\"))\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-lsi-shape",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A GlobalTable LSI needs a RANGE key and the table's leading hash key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-lsi-shape covers AWS::DynamoDB::Table only.\n_pf_ddbgls_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-localsecondaryindex.html\"\n\n_pf_ddbgls_keytypes(ks) := {kt |\n\tsome k in ks\n\tkt := object.get(k, \"KeyType\", null)\n\tis_string(kt)\n}\n\n_pf_ddbgls_resolvable_all(ks) if {\n\tevery k in ks {\n\t\tis_string(object.get(k, \"KeyType\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' has no RANGE key; CreateTable fails with \\\"Index KeySchema does not have a range key for index\\\"\", [iname]),\n\t\"Give the LSI a sort key: [table HASH key, its own RANGE key]\",\n\t_pf_ddbgls_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tcount(ks) > 0\n\t_pf_ddbgls_resolvable_all(ks)\n\tnot \"RANGE\" in _pf_ddbgls_keytypes(ks)\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' uses hash key '%s' but the table's hash key is '%s'; CreateTable fails with \\\"Index KeySchema does not have the same leading hash key as table KeySchema\\\"\", [iname, lsiHash, tableHash]),\n\t\"An LSI must reuse the table's partition key; use a global secondary index for a different hash key\",\n\t_pf_ddbgls_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome t in flatten_list(name, \"Properties.KeySchema\")\n\tt.index == 0\n\ttableHash := object.get(t.value, \"AttributeName\", null)\n\tis_string(tableHash)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tsome k in object.get(l.value, \"KeySchema\", [])\n\tobject.get(k, \"KeyType\", null) == \"HASH\"\n\tlsiHash := object.get(k, \"AttributeName\", null)\n\tis_string(lsiHash)\n\tlsiHash != tableHash\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-mrsc-lsi",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "MRSC global tables do not support local secondary indexes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-mrsc-lsi\", \"ERROR\", name,\n\t\"Properties.LocalSecondaryIndexes\",\n\tsprintf(\"The global table declares %d local secondary indexes with MultiRegionConsistency STRONG; MRSC does not support LSIs\", [n]),\n\t\"Model the access pattern as a global secondary index, or use multi-Region eventual consistency (MREC)\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddb_mrsc(name)\n\tn := count(flatten_list(name, \"Properties.LocalSecondaryIndexes\"))\n\tn > 0\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-mrsc-region-set",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "An MRSC global table cannot span Region sets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MRSC is only available inside one of three Region sets, and the deployment\n# region itself is part of the set (a replica must exist there). Reading\n# data.cdk_preflight.deploy_region makes this a deploy-environment check:\n# the same template is legal from us-east-1 and illegal from eu-west-1.\n_pf_ddbmrs_all(name) := rs if {\n\tbase := _pf_ddb_replica_regions(name) | _pf_ddb_witness_regions(name)\n\trs := base | {r | r := data.cdk_preflight.deploy_region; is_string(r)}\n}\n\n_pf_ddbmrs_covered(rs) if {\n\tsome s in _pf_ddb_mrsc_sets\n\tevery r in rs {\n\t\tr in s\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-mrsc-region-set\", \"ERROR\", name,\n\t\"Properties.Replicas\",\n\tsprintf(\"MultiRegionConsistency is STRONG across %s; MRSC global tables cannot span Region sets (US: us-east-1/us-east-2/us-west-2, EU: eu-west-1/eu-west-2/eu-west-3/eu-central-1, AP: ap-northeast-1/ap-northeast-2/ap-northeast-3)\", [concat(\", \", rs)]),\n\t\"Keep every replica, the witness and the deployment region inside one Region set\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddb_mrsc(name)\n\trs := _pf_ddbmrs_all(name)\n\tcount(rs) > 0\n\tnot _pf_ddbmrs_covered(rs)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-mrsc-replica-count",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "An MRSC global table spans exactly three Regions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbmrc_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html\"\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-mrsc-replica-count\", \"ERROR\", name,\n\t\"Properties.Replicas\",\n\tsprintf(\"MultiRegionConsistency is STRONG but the table spans %d Regions (%d replicas + %d witnesses); MRSC requires exactly three\", [total, nr, nw]),\n\t\"Use three replicas, or two replicas and one witness\",\n\t_pf_ddbmrc_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddb_mrsc(name)\n\tnr := count(flatten_list(name, \"Properties.Replicas\"))\n\tnw := count(flatten_list(name, \"Properties.GlobalTableWitnesses\"))\n\ttotal := nr + nw\n\ttotal != 3\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-mrsc-replica-count\", \"ERROR\", name,\n\t\"Properties.Replicas\",\n\tsprintf(\"MultiRegionConsistency is STRONG with only %d replica; MRSC needs two replicas plus a witness, or three replicas\", [nr]),\n\t\"Add a second replica (a witness cannot stand in for one)\",\n\t_pf_ddbmrc_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddb_mrsc(name)\n\tnr := count(flatten_list(name, \"Properties.Replicas\"))\n\tnr < 2\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-mrsc-ttl",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "MRSC global tables do not support TTL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-mrsc-ttl\", \"ERROR\", name,\n\t\"Properties.TimeToLiveSpecification\",\n\t\"TimeToLiveSpecification enables TTL on a MultiRegionConsistency STRONG global table; MRSC does not support TTL deletion\",\n\t\"Drop TTL, or use multi-Region eventual consistency (MREC)\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddb_mrsc(name)\n\tttl := resolve(name, \"Properties.TimeToLiveSpecification\")\n\tis_object(ttl)\n\tobject.get(ttl, \"Enabled\", null) == true\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-name-length",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTable TableName must be at least 3 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-table-name-length covers AWS::DynamoDB::Table only. Only the\n# measured minimum is enforced; the 255-char maximum and the character\n# pattern belong to pf-dynamodb-table-name-format.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-name-length\", \"ERROR\", name,\n\t\"Properties.TableName\",\n\tsprintf(\"TableName '%s' is shorter than 3 characters; CreateTable fails with \\\"Member must have length greater than or equal to 3\\\"\", [tn]),\n\t\"Use a table name of at least 3 characters, or omit TableName and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\ttn := resolve(name, \"Properties.TableName\")\n\tis_string(tn)\n\tcount(tn) < 3\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-ondemand-settings-billing",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "On-demand throughput settings need BillingMode PAY_PER_REQUEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The *OnDemandThroughputSettings properties cap on-demand request units, so\n# they are meaningless — and rejected — under PROVISIONED billing. The\n# table-level Write settings and the per-replica Read settings are checked;\n# the index-level variants were not measured.\n_pf_ddbgob_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\"\n\n_pf_ddbgob_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbgob_provisioned(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"BillingMode\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-ondemand-settings-billing\", \"ERROR\", name,\n\t\"Properties.WriteOnDemandThroughputSettings\",\n\t\"WriteOnDemandThroughputSettings is set on a PROVISIONED global table; on-demand maximums only apply to PAY_PER_REQUEST\",\n\t\"Remove WriteOnDemandThroughputSettings, or switch BillingMode to PAY_PER_REQUEST\",\n\t_pf_ddbgob_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddbgob_provisioned(name)\n\tis_object(resolve(name, \"Properties.WriteOnDemandThroughputSettings\"))\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-ondemand-settings-billing\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.ReadOnDemandThroughputSettings\", [r.index]),\n\tsprintf(\"Replica '%s' sets ReadOnDemandThroughputSettings while the global table is PROVISIONED; replicas follow the table's billing mode\", [region]),\n\t\"Give the replica ReadProvisionedThroughputSettings instead, or switch the table to PAY_PER_REQUEST\",\n\t_pf_ddbgob_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddbgob_provisioned(name)\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\tis_object(object.get(r.value, \"ReadOnDemandThroughputSettings\", null))\n\tregion := object.get(r.value, \"Region\", \"<unknown>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-projection-nonkey",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTable NonKeyAttributes goes with INCLUDE, and only with INCLUDE",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# pf-dynamodb-gsi-projection-nonkey covers AWS::DynamoDB::Table only. Both\n# index kinds are checked here.\n_pf_ddbgpj_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-projection.html\"\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-projection-nonkey\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.Projection\", [prop, ix.index]),\n\tsprintf(\"Index '%s' uses ProjectionType INCLUDE without NonKeyAttributes; CreateTable fails with \\\"ProjectionType is INCLUDE, but NonKeyAttributes is not specified\\\"\", [iname]),\n\t\"List the projected attributes in NonKeyAttributes, or switch ProjectionType to ALL / KEYS_ONLY\",\n\t_pf_ddbgpj_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tproj := object.get(ix.value, \"Projection\", null)\n\tis_object(proj)\n\tobject.get(proj, \"ProjectionType\", null) == \"INCLUDE\"\n\tcount(object.get(proj, \"NonKeyAttributes\", [])) == 0\n\tiname := object.get(ix.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-projection-nonkey\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.Projection\", [prop, ix.index]),\n\tsprintf(\"Index '%s' combines ProjectionType %s with NonKeyAttributes; CreateTable fails with \\\"ProjectionType is %s, but NonKeyAttributes is specified\\\"\", [iname, pt, pt]),\n\t\"Drop NonKeyAttributes, or switch ProjectionType to INCLUDE\",\n\t_pf_ddbgpj_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tproj := object.get(ix.value, \"Projection\", null)\n\tis_object(proj)\n\tpt := object.get(proj, \"ProjectionType\", null)\n\tis_string(pt)\n\tpt != \"INCLUDE\"\n\tcount(object.get(proj, \"NonKeyAttributes\", [])) > 0\n\tiname := object.get(ix.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-provisioned-write-settings",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Write capacity is shared by every replica, so it lives on the global table\n# itself. BillingMode defaults to PROVISIONED when omitted.\n_pf_ddbgpw_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbgpw_provisioned(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"BillingMode\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_ddbgpw_has(name) if is_object(resolve(name, \"Properties.WriteProvisionedThroughputSettings\"))\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-provisioned-write-settings\", \"ERROR\", name,\n\t\"Properties.WriteProvisionedThroughputSettings\",\n\t\"BillingMode is PROVISIONED (the default) but WriteProvisionedThroughputSettings is missing; the global table cannot be created without write capacity\",\n\t\"Add WriteProvisionedThroughputSettings (WriteCapacityUnits or WriteCapacityAutoScalingSettings), or set BillingMode to PAY_PER_REQUEST\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddbgpw_provisioned(name)\n\tnot _pf_ddbgpw_has(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-read-capacity-exclusive",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A replica sets either ReadCapacityUnits or autoscaling, never both or neither",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbgrc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-readprovisionedthroughputsettings.html\"\n\n_pf_ddbgrc_units(rp) if object.get(rp, \"ReadCapacityUnits\", \"__pf_absent\") != \"__pf_absent\"\n\n_pf_ddbgrc_auto(rp) if object.get(rp, \"ReadCapacityAutoScalingSettings\", \"__pf_absent\") != \"__pf_absent\"\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-read-capacity-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.ReadProvisionedThroughputSettings\", [r.index]),\n\tsprintf(\"Replica '%s' sets both ReadCapacityUnits and ReadCapacityAutoScalingSettings; the two are mutually exclusive\", [region]),\n\t\"Keep either the fixed ReadCapacityUnits or the autoscaling settings, not both\",\n\t_pf_ddbgrc_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\trp := object.get(r.value, \"ReadProvisionedThroughputSettings\", null)\n\tis_object(rp)\n\t_pf_ddbgrc_units(rp)\n\t_pf_ddbgrc_auto(rp)\n\tregion := object.get(r.value, \"Region\", \"<unknown>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-read-capacity-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.ReadProvisionedThroughputSettings\", [r.index]),\n\tsprintf(\"Replica '%s' has an empty ReadProvisionedThroughputSettings; one of ReadCapacityUnits or ReadCapacityAutoScalingSettings is required\", [region]),\n\t\"Set ReadCapacityUnits, or ReadCapacityAutoScalingSettings, or drop the property entirely\",\n\t_pf_ddbgrc_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\trp := object.get(r.value, \"ReadProvisionedThroughputSettings\", null)\n\tis_object(rp)\n\tnot _pf_ddbgrc_units(rp)\n\tnot _pf_ddbgrc_auto(rp)\n\tregion := object.get(r.value, \"Region\", \"<unknown>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-read-settings-multi-account",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Table-level read throughput settings are for multi-account global tables only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Read capacity is per replica; the table-level Read*ThroughputSettings only\n# exist for a multi-account global table, which is identified by\n# GlobalTableSourceArn.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-read-settings-multi-account\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [prop]),\n\tsprintf(\"%s is set at the table level without GlobalTableSourceArn; read capacity belongs to each replica unless this is a multi-account global table\", [prop]),\n\t\"Move the read settings into the matching Replicas entry, or add GlobalTableSourceArn for a multi-account global table\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tsome prop in [\"ReadProvisionedThroughputSettings\", \"ReadOnDemandThroughputSettings\"]\n\tobject.get(props, prop, \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(props, \"GlobalTableSourceArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-replica-gsi-name",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A replica can only override an index the global table declares",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbrgi_names(name) := {n |\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tn := object.get(g.value, \"IndexName\", null)\n\tis_string(n)\n}\n\n# An unresolvable index name anywhere makes the name set incomplete.\n_pf_ddbrgi_resolvable(name) if {\n\tevery g in [x | some x in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")] {\n\t\tis_string(object.get(g.value, \"IndexName\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-replica-gsi-name\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.GlobalSecondaryIndexes\", [r.index]),\n\tsprintf(\"Replica '%s' configures index '%s', which the global table does not declare in GlobalSecondaryIndexes\", [region, iname]),\n\t\"Use the same IndexName as the table-level GlobalSecondaryIndexes entry (a replica can only override settings of an existing index)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-replicaglobalsecondaryindexspecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\t_pf_ddbrgi_resolvable(name)\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\tsome g in object.get(r.value, \"GlobalSecondaryIndexes\", [])\n\tiname := object.get(g, \"IndexName\", null)\n\tis_string(iname)\n\tnot iname in _pf_ddbrgi_names(name)\n\tregion := object.get(r.value, \"Region\", \"<unknown>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-replica-kinesis-region",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A replica's Kinesis destination must be in the replica's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The GlobalTable counterpart of pf-dynamodb-kinesis-stream-region. The\n# failure mode is the same: the replica never stabilizes and the stack rolls\n# back without naming the Region mismatch.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-replica-kinesis-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.KinesisStreamSpecification.StreamArn\", [r.index]),\n\tsprintf(\"Replica '%s' streams to a Kinesis stream in '%s'; the destination must be in the replica's own Region\", [region, streamRegion]),\n\t\"Create one Kinesis stream per replica Region and point each replica at its own\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-kinesisstreamspecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\tregion := object.get(r.value, \"Region\", null)\n\tis_string(region)\n\tks := object.get(r.value, \"KinesisStreamSpecification\", null)\n\tis_object(ks)\n\tarn := object.get(ks, \"StreamArn\", null)\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kinesis\"\n\tstreamRegion := parts[3]\n\tstreamRegion != \"\"\n\tstreamRegion != region\n}\n"
+  },
+  {
     "id": "pf-dynamodb-global-table-replica-region",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -2205,6 +2436,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::GlobalTable"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_region is defined only when the enforce plugin\n# knows the app's concrete region (see src/private/enforce.ts); without it the\n# reference is undefined and this rule skips. Replicas with unresolvable\n# Region values also make the rule skip — absence cannot be proven then.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-replica-region\", \"ERROR\", name,\n\t\"Properties.Replicas\",\n\tsprintf(\"The Replicas list %v does not include the deployment region '%s'; CreateGlobalTable fails with \\\"The Replicas section must contain an entry for the current region\\\"\", [replicas, region]),\n\t\"Add a replica entry for the region the stack deploys to (CDK TableV2 does this automatically)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\titems := [it | some it in flatten_list(name, \"Properties.Replicas\")]\n\tcount(items) > 0\n\tevery it in items {\n\t\tis_string(object.get(it.value, \"Region\", null))\n\t}\n\treplicas := [r | some it in items; r := object.get(it.value, \"Region\", null)]\n\tnot region in replicas\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-replica-sse-key-coverage",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Either every replica names a KMS key, or none does",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbskc_keyed(name) := {r.index |\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\tsse := object.get(r.value, \"SSESpecification\", null)\n\tis_object(sse)\n\tobject.get(sse, \"KMSMasterKeyId\", \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-replica-sse-key-coverage\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.SSESpecification\", [r.index]),\n\tsprintf(\"Replica '%s' has no KMSMasterKeyId while other replicas do; a customer managed key must be given for every replica (keys are regional and cannot be shared)\", [region]),\n\t\"Add a KMS key from that replica's own Region, or drop the per-replica keys entirely\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-replicaspecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tcount(_pf_ddbskc_keyed(name)) > 0\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\tnot r.index in _pf_ddbskc_keyed(name)\n\tregion := object.get(r.value, \"Region\", \"<unknown>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-replica-sse-key-region",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A replica's KMS key must live in the replica's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Each replica is encrypted with a key in its own Region: a KMS key ARN is\n# regional and cannot be used from another Region. The replica's Region is in\n# the template, so this needs no deploy-environment injection.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-replica-sse-key-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Replicas.%d.SSESpecification.KMSMasterKeyId\", [r.index]),\n\tsprintf(\"Replica '%s' points at a KMS key in '%s'; a replica can only be encrypted with a key from its own Region\", [region, keyRegion]),\n\t\"Give each replica a KMS key created in that replica's Region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-replicassespecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome r in flatten_list(name, \"Properties.Replicas\")\n\tregion := object.get(r.value, \"Region\", null)\n\tis_string(region)\n\tsse := object.get(r.value, \"SSESpecification\", null)\n\tis_object(sse)\n\tkid := object.get(sse, \"KMSMasterKeyId\", null)\n\tis_string(kid)\n\tparts := split(kid, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kms\"\n\tkeyRegion := parts[3]\n\tkeyRegion != \"\"\n\tkeyRegion != region\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-stream-required",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "An MREC global table with more than one replica needs a stream",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MREC replicates by reading each replica's stream, so the stream is not\n# optional once a second replica exists. MRSC does not replicate through\n# streams and is excluded.\n_pf_ddbgst_has(name) if is_object(resolve(name, \"Properties.StreamSpecification\"))\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-stream-required\", \"ERROR\", name,\n\t\"Properties.StreamSpecification\",\n\tsprintf(\"The global table has %d replicas but no StreamSpecification; multi-Region eventual consistency replicates through DynamoDB Streams\", [n]),\n\t\"Add StreamSpecification with StreamViewType NEW_AND_OLD_IMAGES\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tnot _pf_ddb_mrsc(name)\n\tn := count(flatten_list(name, \"Properties.Replicas\"))\n\tn > 1\n\tnot _pf_ddbgst_has(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-witness-region",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A witness lives in a Region that has no replica",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-witness-region\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalTableWitnesses.%d.Region\", [w.index]),\n\tsprintf(\"The witness Region '%s' already holds a replica; a witness must be located in a different Region than the two replicas\", [wr]),\n\t\"Point the witness at the third Region of the set, the one without a replica\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tsome w in flatten_list(name, \"Properties.GlobalTableWitnesses\")\n\twr := object.get(w.value, \"Region\", null)\n\tis_string(wr)\n\twr in _pf_ddb_replica_regions(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-witness-requires-mrsc",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "GlobalTableWitnesses only exists for MRSC global tables",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A witness is part of the MRSC quorum; an eventually consistent global table\n# has nothing to do with one.\nviolation contains make_diag_full(\"pf-dynamodb-global-table-witness-requires-mrsc\", \"ERROR\", name,\n\t\"Properties.GlobalTableWitnesses\",\n\t\"GlobalTableWitnesses is set but MultiRegionConsistency is not STRONG; witnesses only exist in multi-Region strong consistency global tables\",\n\t\"Set MultiRegionConsistency to STRONG (with exactly three Regions), or drop GlobalTableWitnesses\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-globaltablewitness.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tcount(flatten_list(name, \"Properties.GlobalTableWitnesses\")) > 0\n\tnot _pf_ddb_mrsc(name)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-global-table-write-provisioned-with-ppr",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "WriteProvisionedThroughputSettings cannot be used with PAY_PER_REQUEST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::GlobalTable"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-global-table-write-provisioned-with-ppr\", \"ERROR\", name,\n\t\"Properties.WriteProvisionedThroughputSettings\",\n\t\"WriteProvisionedThroughputSettings is set while BillingMode is PAY_PER_REQUEST; an on-demand global table has no provisioned write capacity\",\n\t\"Remove WriteProvisionedThroughputSettings, or switch BillingMode to PROVISIONED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::GlobalTable\")\n\tresolve(name, \"Properties.BillingMode\") == \"PAY_PER_REQUEST\"\n\tis_object(resolve(name, \"Properties.WriteProvisionedThroughputSettings\"))\n}\n"
   },
   {
     "id": "pf-dynamodb-gsi-billing-throughput",
@@ -2218,6 +2515,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbgbt_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html\"\n\n# GSI-level counterpart of pf-dynamodb-billing-throughput (which covers the\n# table-level pair only). Same token safety: literal BillingMode or absent\n# (default PROVISIONED); token values never judged.\n_pf_ddbgbt_billing_present(name) if resolve(name, \"Properties.BillingMode\")\n\n_pf_ddbgbt_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbgbt_provisioned(name) if not _pf_ddbgbt_billing_present(name)\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-billing-throughput\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.ProvisionedThroughput\", [g.index]),\n\tsprintf(\"GSI '%s' specifies ProvisionedThroughput but BillingMode is PAY_PER_REQUEST; CreateTable fails with \\\"Property ProvisionedThroughput can't be used with PAY_PER_REQUEST BillingMode\\\"\", [iname]),\n\t\"Remove the GSI's ProvisionedThroughput, or switch the table to PROVISIONED\",\n\t_pf_ddbgbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tresolve(name, \"Properties.BillingMode\") == \"PAY_PER_REQUEST\"\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tis_object(object.get(g.value, \"ProvisionedThroughput\", null))\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-billing-throughput\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.ProvisionedThroughput\", [g.index]),\n\tsprintf(\"GSI '%s' is missing ProvisionedThroughput while the table bills PROVISIONED (the default); CreateTable fails with \\\"Property ProvisionedThroughput cannot be empty\\\"\", [iname]),\n\t\"Add ProvisionedThroughput to the GSI, or set BillingMode to PAY_PER_REQUEST\",\n\t_pf_ddbgbt_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbgbt_provisioned(name)\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tnot is_object(object.get(g.value, \"ProvisionedThroughput\", null))\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n"
   },
   {
+    "id": "pf-dynamodb-gsi-count",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A table can carry at most 20 global secondary indexes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-count\", \"ERROR\", name,\n\t\"Properties.GlobalSecondaryIndexes\",\n\tsprintf(\"The table declares %d global secondary indexes; CreateTable fails with \\\"GlobalSecondaryIndex count exceeds the per-table limit of 20\\\"\", [n]),\n\t\"Keep GlobalSecondaryIndexes at 20 or fewer, or raise the per-table quota before deploying\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tn := count(flatten_list(name, \"Properties.GlobalSecondaryIndexes\"))\n\tn > 20\n}\n"
+  },
+  {
     "id": "pf-dynamodb-gsi-projection-nonkey",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -2229,6 +2537,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbgpn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-projection.html\"\n\n# GSI projections only: the LSI shape and the KEYS_ONLY+NonKeyAttributes combo\n# were not measured (issue #21).\nviolation contains make_diag_full(\"pf-dynamodb-gsi-projection-nonkey\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.Projection\", [g.index]),\n\tsprintf(\"GSI '%s' uses ProjectionType INCLUDE without NonKeyAttributes; CreateTable fails with \\\"ProjectionType is INCLUDE, but NonKeyAttributes is not specified\\\"\", [iname]),\n\t\"List the projected attributes in NonKeyAttributes, or switch ProjectionType to ALL / KEYS_ONLY\",\n\t_pf_ddbgpn_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tproj := object.get(g.value, \"Projection\", null)\n\tis_object(proj)\n\tobject.get(proj, \"ProjectionType\", null) == \"INCLUDE\"\n\tcount(object.get(proj, \"NonKeyAttributes\", [])) == 0\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-gsi-projection-nonkey\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.Projection\", [g.index]),\n\tsprintf(\"GSI '%s' combines ProjectionType ALL with NonKeyAttributes; CreateTable fails with \\\"ProjectionType is ALL, but NonKeyAttributes is specified\\\"\", [iname]),\n\t\"Drop NonKeyAttributes (ALL already projects everything), or switch ProjectionType to INCLUDE\",\n\t_pf_ddbgpn_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tproj := object.get(g.value, \"Projection\", null)\n\tis_object(proj)\n\tobject.get(proj, \"ProjectionType\", null) == \"ALL\"\n\tcount(object.get(proj, \"NonKeyAttributes\", [])) > 0\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n"
   },
   {
+    "id": "pf-dynamodb-import-csv-delimiter",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A CSV import delimiter is a single character from , ; : | tab space",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The CFN schema carries the pattern and Maximum 1, but the bundled engine\n# does not evaluate them (measured 2026-09-08, 1.7.0-beta).\nviolation contains make_diag_full(\"pf-dynamodb-import-csv-delimiter\", \"ERROR\", name,\n\t\"Properties.ImportSourceSpecification.InputFormatOptions.Csv.Delimiter\",\n\tsprintf(\"CSV Delimiter '%s' is not one of , ; : | tab space; ImportTable fails with \\\"Member must have length less than or equal to 1\\\" / a constraint violation\", [d]),\n\t\"Use a single delimiter character out of comma, semicolon, colon, pipe, tab or space\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/S3DataImport.Requesting.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\td := resolve(name, \"Properties.ImportSourceSpecification.InputFormatOptions.Csv.Delimiter\")\n\tis_string(d)\n\tnot regex.match(\"^[,;:|\\t ]$\", d)\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-import-format-options",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "InputFormatOptions only applies to CSV imports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-dynamodb-import-format-options\", \"ERROR\", name,\n\t\"Properties.ImportSourceSpecification.InputFormatOptions\",\n\tsprintf(\"InputFormatOptions is set but InputFormat is %s; ImportTable fails with \\\"Unsupported InputFormatOptions for the given input format: %s\\\"\", [fmt, fmt]),\n\t\"Drop InputFormatOptions for DYNAMODB_JSON and ION imports; it only carries CSV options\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/S3DataImport.Requesting.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\timp := resolve(name, \"Properties.ImportSourceSpecification\")\n\tis_object(imp)\n\tfmt := object.get(imp, \"InputFormat\", null)\n\tis_string(fmt)\n\tfmt != \"CSV\"\n\tobject.get(imp, \"InputFormatOptions\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-dynamodb-key-schema-shape",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -2238,6 +2568,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::Table"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbksh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\"\n\n# Table-level key schema only: index key schemas produce different service\n# errors and were not measured (issue #21).\n_pf_ddbksh_type(name, i) := kt if {\n\tsome it in flatten_list(name, \"Properties.KeySchema\")\n\tit.index == i\n\tkt := object.get(it.value, \"KeyType\", null)\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.0.KeyType\",\n\tsprintf(\"The first KeySchema element must be HASH, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The first KeySchemaElement is not a HASH key type\\\"\", [kt]),\n\t\"Put the partition key (KeyType HASH) first and the optional sort key (RANGE) second\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tkt := _pf_ddbksh_type(name, 0)\n\tis_string(kt)\n\tkt != \"HASH\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema.1.KeyType\",\n\tsprintf(\"The second KeySchema element must be RANGE, got '%s'; CreateTable fails with \\\"Invalid KeySchema: The second KeySchemaElement is not a RANGE key type\\\"\", [kt]),\n\t\"Use exactly one HASH element, optionally followed by one RANGE element\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tkt := _pf_ddbksh_type(name, 1)\n\tis_string(kt)\n\tkt != \"RANGE\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-key-schema-shape\", \"ERROR\", name,\n\t\"Properties.KeySchema\",\n\tsprintf(\"KeySchema can hold at most 2 elements (HASH + optional RANGE), got %d\", [n]),\n\t\"Model extra access patterns as global or local secondary indexes instead\",\n\t_pf_ddbksh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tn := count([1 | some _ in flatten_list(name, \"Properties.KeySchema\")])\n\tn > 2\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-kinesis-precision",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Kinesis record timestamp precision is MICROSECOND or MILLISECOND",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# W3030/WARN in the bundled engine (1.7.0-beta) — does not block the deploy.\nviolation contains make_diag_full(\"pf-dynamodb-kinesis-precision\", \"ERROR\", name,\n\t\"Properties.KinesisStreamSpecification.ApproximateCreationDateTimePrecision\",\n\tsprintf(\"ApproximateCreationDateTimePrecision '%s' does not exist; EnableKinesisStreamingDestination rejects the value\", [p]),\n\t\"Use MICROSECOND or MILLISECOND\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-kinesisstreamspecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tp := resolve(name, \"Properties.KinesisStreamSpecification.ApproximateCreationDateTimePrecision\")\n\tis_string(p)\n\tnot p in {\"MICROSECOND\", \"MILLISECOND\"}\n}\n"
   },
   {
     "id": "pf-dynamodb-kinesis-stream-region",
@@ -2262,6 +2603,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's E3039 checks table and GSI key schemas against\n# AttributeDefinitions but is blind to LocalSecondaryIndexes (measured\n# 2026-09-02, 1.7.0-beta). This rule covers exactly that gap.\n\n_pf_ddblad_defs(name) := {a |\n\tsome d in flatten_list(name, \"Properties.AttributeDefinitions\")\n\ta := object.get(d.value, \"AttributeName\", null)\n\tis_string(a)\n}\n\n# If any definition's name is unresolvable the set is incomplete — stay silent.\n_pf_ddblad_defs_resolvable(name) if {\n\tevery d in [x | some x in flatten_list(name, \"Properties.AttributeDefinitions\")] {\n\t\tis_string(object.get(d.value, \"AttributeName\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-attribute-definitions\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"LSI key attribute '%s' is not defined in AttributeDefinitions; CreateTable fails with \\\"An attribute referenced in a KeySchema element is not defined in AttributeDefinitions\\\"\", [attr]),\n\t\"Add the attribute to AttributeDefinitions (and nowhere else: only key attributes belong there)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-localsecondaryindex.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tcount(_pf_ddblad_defs(name)) > 0\n\t_pf_ddblad_defs_resolvable(name)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tsome k in object.get(l.value, \"KeySchema\", [])\n\tattr := object.get(k, \"AttributeName\", null)\n\tis_string(attr)\n\tnot attr in _pf_ddblad_defs(name)\n}\n"
   },
   {
+    "id": "pf-dynamodb-lsi-count",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A table can carry at most 5 local secondary indexes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Unlike the GSI limit this one is a hard limit: it cannot be raised.\nviolation contains make_diag_full(\"pf-dynamodb-lsi-count\", \"ERROR\", name,\n\t\"Properties.LocalSecondaryIndexes\",\n\tsprintf(\"The table declares %d local secondary indexes; CreateTable fails with \\\"Number of LocalSecondaryIndexes exceeds per-table limit of 5\\\"\", [n]),\n\t\"Keep LocalSecondaryIndexes at 5 or fewer (this limit cannot be raised); model the rest as global secondary indexes\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tn := count(flatten_list(name, \"Properties.LocalSecondaryIndexes\"))\n\tn > 5\n}\n"
+  },
+  {
     "id": "pf-dynamodb-lsi-shape",
     "service": "dynamodb",
     "severity": "ERROR",
@@ -2271,6 +2623,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::Table"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddblsh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-localsecondaryindex.html\"\n\n_pf_ddblsh_keytypes(ks) := {kt |\n\tsome k in ks\n\tkt := object.get(k, \"KeyType\", null)\n\tis_string(kt)\n}\n\n# Only judge a key schema whose KeyTypes are all literal strings.\n_pf_ddblsh_resolvable(ks) if count(_pf_ddblsh_keytypes(ks)) > 0\n\n_pf_ddblsh_resolvable_all(ks) if {\n\tevery k in ks {\n\t\tis_string(object.get(k, \"KeyType\", null))\n\t}\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' has no RANGE key; CreateTable fails with \\\"Index KeySchema does not have a range key for index\\\"\", [iname]),\n\t\"Give the LSI a sort key: [table HASH key, its own RANGE key]\",\n\t_pf_ddblsh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tcount(ks) > 0\n\t_pf_ddblsh_resolvable_all(ks)\n\tnot \"RANGE\" in _pf_ddblsh_keytypes(ks)\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-lsi-shape\", \"ERROR\", name,\n\tsprintf(\"Properties.LocalSecondaryIndexes.%d.KeySchema\", [l.index]),\n\tsprintf(\"Local secondary index '%s' uses hash key '%s' but the table's hash key is '%s'; CreateTable fails with \\\"Index KeySchema does not have the same leading hash key as table KeySchema\\\"\", [iname, lsiHash, tableHash]),\n\t\"An LSI must reuse the table's partition key; use a global secondary index for a different hash key\",\n\t_pf_ddblsh_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome t in flatten_list(name, \"Properties.KeySchema\")\n\tt.index == 0\n\ttableHash := object.get(t.value, \"AttributeName\", null)\n\tis_string(tableHash)\n\tsome l in flatten_list(name, \"Properties.LocalSecondaryIndexes\")\n\tks := object.get(l.value, \"KeySchema\", [])\n\tsome k in ks\n\tobject.get(k, \"KeyType\", null) == \"HASH\"\n\tlsiHash := object.get(k, \"AttributeName\", null)\n\tis_string(lsiHash)\n\tlsiHash != tableHash\n\tiname := object.get(l.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-ondemand-throughput-billing",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "OnDemandThroughput belongs to PAY_PER_REQUEST tables only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbotb_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-ondemandthroughput.html\"\n\n# BillingMode defaults to PROVISIONED when omitted, so an absent BillingMode\n# is treated the same way (mirrors pf-dynamodb-billing-throughput). Token\n# values (Ref etc.) are never judged.\n_pf_ddbotb_provisioned(name) if resolve(name, \"Properties.BillingMode\") == \"PROVISIONED\"\n\n_pf_ddbotb_provisioned(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"BillingMode\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-ondemand-throughput-billing\", \"ERROR\", name,\n\t\"Properties.OnDemandThroughput\",\n\t\"OnDemandThroughput is set on a PROVISIONED table; the deploy fails with \\\"Property MaxReadRequestUnits for OnDemandThroughput can't be used with PROVISIONED BillingMode\\\"\",\n\t\"Drop OnDemandThroughput, or switch BillingMode to PAY_PER_REQUEST and drop ProvisionedThroughput instead\",\n\t_pf_ddbotb_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbotb_provisioned(name)\n\tis_object(resolve(name, \"Properties.OnDemandThroughput\"))\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-ondemand-throughput-billing\", \"ERROR\", name,\n\tsprintf(\"Properties.GlobalSecondaryIndexes.%d.OnDemandThroughput\", [g.index]),\n\tsprintf(\"GSI '%s' sets OnDemandThroughput on a PROVISIONED table; an index follows the table's billing mode and CreateTable rejects the request\", [iname]),\n\t\"Give the index ProvisionedThroughput instead, or move the whole table to PAY_PER_REQUEST\",\n\t_pf_ddbotb_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\t_pf_ddbotb_provisioned(name)\n\tsome g in flatten_list(name, \"Properties.GlobalSecondaryIndexes\")\n\tis_object(object.get(g.value, \"OnDemandThroughput\", null))\n\tiname := object.get(g.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-pitr-recovery-period",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "RecoveryPeriodInDays needs point-in-time recovery turned on",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbprp_disabled(p) if object.get(p, \"PointInTimeRecoveryEnabled\", null) == false\n\n_pf_ddbprp_disabled(p) if object.get(p, \"PointInTimeRecoveryEnabled\", \"__pf_absent\") == \"__pf_absent\"\n\nviolation contains make_diag_full(\"pf-dynamodb-pitr-recovery-period\", \"ERROR\", name,\n\t\"Properties.PointInTimeRecoverySpecification.RecoveryPeriodInDays\",\n\t\"RecoveryPeriodInDays is set while point-in-time recovery is off; UpdateContinuousBackups fails with \\\"Cannot specify RecoveryPeriodInDays when disabling point-in-time recovery\\\"\",\n\t\"Set PointInTimeRecoveryEnabled to true, or drop RecoveryPeriodInDays\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-pointintimerecoveryspecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tp := resolve(name, \"Properties.PointInTimeRecoverySpecification\")\n\tis_object(p)\n\t_pf_ddbprp_disabled(p)\n\tobject.get(p, \"RecoveryPeriodInDays\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-projection-nonkey-limit",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "One index can project at most 20 non-key attributes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The CFN schema carries Maximum 20 for NonKeyAttributes but the bundled\n# engine does not evaluate it (measured 2026-09-08, 1.7.0-beta).\nviolation contains make_diag_full(\"pf-dynamodb-projection-nonkey-limit\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.Projection.NonKeyAttributes\", [prop, ix.index]),\n\tsprintf(\"Index '%s' projects %d non-key attributes; CreateTable fails with \\\"Member must have length less than or equal to 20\\\"\", [iname, n]),\n\t\"Project at most 20 non-key attributes per index, or switch the index to ProjectionType ALL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-projection.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome prop in [\"GlobalSecondaryIndexes\", \"LocalSecondaryIndexes\"]\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tproj := object.get(ix.value, \"Projection\", null)\n\tis_object(proj)\n\tn := count(object.get(proj, \"NonKeyAttributes\", []))\n\tn > 20\n\tiname := object.get(ix.value, \"IndexName\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-projection-nonkey-total",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Projected non-key attributes are capped at 100 across all indexes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The cap is on the sum over every INCLUDE projection in the table: the same\n# attribute projected into two indexes counts twice. ALL projections are\n# exempt, so only INCLUDE entries are summed.\n_pf_ddbpnt_counts(name, prop) := [c |\n\tsome ix in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tproj := object.get(ix.value, \"Projection\", null)\n\tis_object(proj)\n\tobject.get(proj, \"ProjectionType\", null) == \"INCLUDE\"\n\tc := count(object.get(proj, \"NonKeyAttributes\", []))\n]\n\n_pf_ddbpnt_total(name) := sum(array.concat(\n\t_pf_ddbpnt_counts(name, \"GlobalSecondaryIndexes\"),\n\t_pf_ddbpnt_counts(name, \"LocalSecondaryIndexes\"),\n))\n\nviolation contains make_diag_full(\"pf-dynamodb-projection-nonkey-total\", \"ERROR\", name,\n\t\"Properties.GlobalSecondaryIndexes\",\n\tsprintf(\"The table's indexes project %d non-key attributes in total; CreateTable fails with \\\"Number of projected attributes in all indexes exceeds limit of 100\\\"\", [n]),\n\t\"Project fewer attributes, share indexes, or switch an index to ProjectionType ALL (ALL does not count towards the limit)\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tn := _pf_ddbpnt_total(name)\n\tn > 100\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-resource-policy-principal",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Every resource policy statement needs a Principal",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A resource-based policy is not an identity policy: Principal (or\n# NotPrincipal) is required in every statement. IAM's own policy validator\n# never sees this document, so nothing before deploy catches it.\nviolation contains make_diag_full(\"pf-dynamodb-resource-policy-principal\", \"ERROR\", name,\n\tsprintf(\"Properties.ResourcePolicy.PolicyDocument.Statement.%d\", [s.index]),\n\tsprintf(\"Resource policy statement %d has no Principal; PutResourcePolicy fails with \\\"Invalid policy document: Missing required field Principal\\\"\", [s.index]),\n\t\"Add a Principal (or NotPrincipal) to every statement of the table's resource policy\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/rbac-considerations.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tsome s in flatten_list(name, \"Properties.ResourcePolicy.PolicyDocument.Statement\")\n\tobject.get(s.value, \"Principal\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(s.value, \"NotPrincipal\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-resource-policy-size",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "A table resource policy must stay under 20480 bytes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The quota counts the serialized document including whitespace; json.marshal\n# is the compact form, so this rule only fires on documents that are over the\n# limit however they are serialized.\nviolation contains make_diag_full(\"pf-dynamodb-resource-policy-size\", \"ERROR\", name,\n\t\"Properties.ResourcePolicy.PolicyDocument\",\n\tsprintf(\"The resource policy serializes to %d bytes; PutResourcePolicy fails with \\\"Maximum policy size of 20480 bytes exceeded\\\"\", [n]),\n\t\"Shorten the policy: drop Sid strings, merge statements, or move principals into a shared IAM role\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/rbac-considerations.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tdoc := resolve(name, \"Properties.ResourcePolicy.PolicyDocument\")\n\tis_object(doc)\n\tn := count(json.marshal(doc))\n\tn > 20480\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-sse-type",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "SSEType must be KMS, and only when SSE is enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbsse_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-ssespecification.html\"\n\n# The engine reports the enum half as W3030 (WARN) only; the\n# \"SSEEnabled: false with an SSEType\" half is entirely silent\n# (measured 2026-09-08, 1.7.0-beta).\nviolation contains make_diag_full(\"pf-dynamodb-sse-type\", \"ERROR\", name,\n\t\"Properties.SSESpecification.SSEType\",\n\tsprintf(\"SSEType '%s' is not a table encryption type; CreateTable fails with \\\"SSEType %s is not supported\\\" (KMS is the only value)\", [st, st]),\n\t\"Set SSEType to KMS, or drop it and let the table use the default AWS owned key\",\n\t_pf_ddbsse_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tst := resolve(name, \"Properties.SSESpecification.SSEType\")\n\tis_string(st)\n\tst != \"KMS\"\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-sse-type\", \"ERROR\", name,\n\t\"Properties.SSESpecification.SSEType\",\n\t\"SSEType is set while SSEEnabled is false; CreateTable fails with \\\"SSEType can not be specified if Enabled is false\\\"\",\n\t\"Remove SSEType (and KMSMasterKeyId) when SSEEnabled is false, or set SSEEnabled to true\",\n\t_pf_ddbsse_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tresolve(name, \"Properties.SSESpecification.SSEEnabled\") == false\n\tis_string(resolve(name, \"Properties.SSESpecification.SSEType\"))\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-table-class",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "TableClass must be STANDARD or STANDARD_INFREQUENT_ACCESS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# W3030/WARN in the bundled engine (1.7.0-beta) — does not block the deploy.\nviolation contains make_diag_full(\"pf-dynamodb-table-class\", \"ERROR\", name,\n\t\"Properties.TableClass\",\n\tsprintf(\"TableClass '%s' does not exist; CreateTable fails with \\\"Invalid table-class parameter provided\\\"\", [tc]),\n\t\"Use STANDARD or STANDARD_INFREQUENT_ACCESS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-table.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\ttc := resolve(name, \"Properties.TableClass\")\n\tis_string(tc)\n\tnot tc in {\"STANDARD\", \"STANDARD_INFREQUENT_ACCESS\"}\n}\n"
   },
   {
     "id": "pf-dynamodb-table-name-format",
@@ -2294,6 +2734,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::DynamoDB::Table"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound (minimum 3 characters) is enforced. The 255-char\n# maximum and the character pattern were not measured. Note resolve() turns a\n# Ref-to-resource into the target's logical ID; a logical ID short enough to\n# trip this rule while feeding a TableName is treated as the bug it almost\n# certainly is.\nviolation contains make_diag_full(\"pf-dynamodb-table-name-length\", \"ERROR\", name,\n\t\"Properties.TableName\",\n\tsprintf(\"TableName '%s' is shorter than 3 characters; CreateTable fails with \\\"Member must have length greater than or equal to 3\\\"\", [tn]),\n\t\"Use a table name of at least 3 characters, or omit TableName and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CreateTable.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\ttn := resolve(name, \"Properties.TableName\")\n\tis_string(tn)\n\tcount(tn) < 3\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-ttl-attribute-required",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "Enabling TTL requires an AttributeName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# AttributeName is optional in the CFN schema (it may be omitted when\n# disabling TTL) but UpdateTimeToLive requires it whenever Enabled is true.\nviolation contains make_diag_full(\"pf-dynamodb-ttl-attribute-required\", \"ERROR\", name,\n\t\"Properties.TimeToLiveSpecification.AttributeName\",\n\t\"TimeToLiveSpecification enables TTL without an AttributeName; UpdateTimeToLive fails with \\\"Missing required parameter in TimeToLiveSpecification: AttributeName\\\"\",\n\t\"Name the timestamp attribute the table expires on (it must not be declared in AttributeDefinitions)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-table-timetolivespecification.html\") if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tttl := resolve(name, \"Properties.TimeToLiveSpecification\")\n\tis_object(ttl)\n\tobject.get(ttl, \"Enabled\", null) == true\n\tobject.get(ttl, \"AttributeName\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-dynamodb-warm-throughput-minimum",
+    "service": "dynamodb",
+    "severity": "ERROR",
+    "title": "WarmThroughput cannot go below the default 12000 read / 4000 write",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::DynamoDB::Table"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ddbwtm_url := \"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/warm-throughput.html\"\n\n# The CFN schema's Minimum is 1, but warm throughput can only be raised above\n# the table's initial values (12,000 read / 4,000 write units per second).\n# Table-level WarmThroughput only; index-level values were not measured.\nviolation contains make_diag_full(\"pf-dynamodb-warm-throughput-minimum\", \"ERROR\", name,\n\t\"Properties.WarmThroughput.ReadUnitsPerSecond\",\n\tsprintf(\"WarmThroughput.ReadUnitsPerSecond is %d; CreateTable fails with \\\"Requested ReadUnitsPerSecond for WarmThroughput for table is lower than initial throughput\\\" below 12000\", [r]),\n\t\"Use at least 12000 read units per second, or omit WarmThroughput to keep the default\",\n\t_pf_ddbwtm_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tr := to_number(resolve(name, \"Properties.WarmThroughput.ReadUnitsPerSecond\"))\n\tr < 12000\n}\n\nviolation contains make_diag_full(\"pf-dynamodb-warm-throughput-minimum\", \"ERROR\", name,\n\t\"Properties.WarmThroughput.WriteUnitsPerSecond\",\n\tsprintf(\"WarmThroughput.WriteUnitsPerSecond is %d; CreateTable rejects anything below the initial 4000 write units per second\", [w]),\n\t\"Use at least 4000 write units per second, or omit WarmThroughput to keep the default\",\n\t_pf_ddbwtm_url) if {\n\tsome name in resources_of_type(\"AWS::DynamoDB::Table\")\n\tw := to_number(resolve(name, \"Properties.WarmThroughput.WriteUnitsPerSecond\"))\n\tw < 4000\n}\n"
   },
   {
     "id": "pf-ec2-client-vpn-auth-type-config",
@@ -10340,6 +10802,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cache",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ElastiCache and MemoryDB rules. Both services use the\n# same maintenance / snapshot window grammar, the same endpoint port range and\n# the same identifier rules, so the parsing lives here once.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# to_number(\"03\") is undefined in the engine's Rego build, so digits go\n# through a lookup table (same trick as pf-rds-window-overlap).\n_pf_cachelib_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_cachelib_days := {\"sun\": 0, \"mon\": 1, \"tue\": 2, \"wed\": 3, \"thu\": 4, \"fri\": 5, \"sat\": 6}\n\n# \"HH:MM\" -> minutes of day; undefined for anything else.\n_pf_cachelib_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_cachelib_digit[substring(t, 0, 1)] * 10) + _pf_cachelib_digit[substring(t, 1, 1)]\n\tmi := (_pf_cachelib_digit[substring(t, 3, 1)] * 10) + _pf_cachelib_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# \"ddd:hh24:mi-ddd:hh24:mi\" -> [start day, start minutes, end day, end minutes].\n_pf_cachelib_window(w) := [d1, m1, d2, m2] if {\n\tis_string(w)\n\tparts := split(lower(w), \"-\")\n\tcount(parts) == 2\n\tp1 := split(parts[0], \":\")\n\tp2 := split(parts[1], \":\")\n\tcount(p1) == 3\n\tcount(p2) == 3\n\td1 := _pf_cachelib_days[p1[0]]\n\td2 := _pf_cachelib_days[p2[0]]\n\tm1 := _pf_cachelib_min(sprintf(\"%s:%s\", [p1[1], p1[2]]))\n\tm2 := _pf_cachelib_min(sprintf(\"%s:%s\", [p2[1], p2[2]]))\n}\n\n# Length of a maintenance window in minutes (wrapping around the week).\n_pf_cachelib_window_minutes(w) := n if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(w)\n\tstart := (d1 * 1440) + m1\n\tend := (d2 * 1440) + m2\n\tn := ((end - start) + 10080) % 10080\n}\n\n# \"hh24:mi-hh24:mi\" -> [start minutes, end minutes] of a daily window.\n_pf_cachelib_daily(w) := [s, e] if {\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_cachelib_min(parts[0])\n\te := _pf_cachelib_min(parts[1])\n}\n\n# The snapshot window recurs daily, so a same-day maintenance window overlaps\n# whenever the two time-of-day intervals intersect (mirrors pf-rds-window-overlap;\n# a window that spans two days is left alone).\n_pf_cachelib_overlap(mw, sw) if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(mw)\n\td1 == d2\n\tm1 < m2\n\t[s, e] := _pf_cachelib_daily(sw)\n\ts < e\n\ts < m2\n\tm1 < e\n}\n\n# ElastiCache and MemoryDB both accept 1150-8004 and 8006-65535.\n_pf_cachelib_port_ok(p) if {\n\tp >= 1150\n\tp <= 8004\n}\n\n_pf_cachelib_port_ok(p) if {\n\tp >= 8006\n\tp <= 65535\n}\n\n# Identifiers: begin with a letter, letters/digits/hyphens only, no two\n# consecutive hyphens and no trailing hyphen.\n_pf_cachelib_identifier_ok(s) if regex.match(`^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$`, s)\n\n# Data tiering is only supported on the r6gd families (cache.r6gd.* / db.r6gd.*).\n_pf_cachelib_r6gd(t) if {\n\tis_string(t)\n\tparts := split(t, \".\")\n\tcount(parts) >= 2\n\tparts[1] == \"r6gd\"\n}\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_cachelib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# A literal string a user wrote, not a resolved Ref / GetAtt logical id.\n_pf_cachelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_cachelib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "name": "_lib/dynamodb",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS::DynamoDB::GlobalTable rules. MRSC (multi-Region\n# strong consistency) constrains the replica set as a whole, so several rules\n# need the same notion of \"which Regions does this table touch\".\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_ddb_mrsc(name) if resolve(name, \"Properties.MultiRegionConsistency\") == \"STRONG\"\n\n_pf_ddb_regions(name, prop) := {r |\n\tsome x in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tr := object.get(x.value, \"Region\", null)\n\tis_string(r)\n}\n\n_pf_ddb_replica_regions(name) := _pf_ddb_regions(name, \"Replicas\")\n\n_pf_ddb_witness_regions(name) := _pf_ddb_regions(name, \"GlobalTableWitnesses\")\n\n# The three Region sets an MRSC global table can live in (2026-09).\n_pf_ddb_mrsc_sets := [\n\t{\"us-east-1\", \"us-east-2\", \"us-west-2\"},\n\t{\"eu-west-1\", \"eu-west-2\", \"eu-west-3\", \"eu-central-1\"},\n\t{\"ap-northeast-1\", \"ap-northeast-2\", \"ap-northeast-3\"},\n]\n"
   },
   {
     "name": "_lib/ecr",

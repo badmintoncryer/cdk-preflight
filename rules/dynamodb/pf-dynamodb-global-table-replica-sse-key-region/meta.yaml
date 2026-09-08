@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-replica-sse-key-region
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "A replica's KMS key must live in the replica's Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-replicassespecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"KMS validation error: com.amazonaws.services.kms.model.NotFoundException: Invalid arn us-west-2\"; pass -> CREATE_COMPLETE. The committed fixture uses a placeholder key ARN, so the logged error cannot separate 'wrong Region' from 'no such key'. Probed separately on 2026-09-08 with a real CMK created in us-west-2 (arn:aws:kms:us-west-2:<account>:key/32fa29af-...): the us-east-1 replica still rolled back with \"KMS validation error: com.amazonaws.services.kms.model.NotFoundException: Invalid arn us-west-2\" - DynamoDB resolves the key in the replica's own Region. The probe key was scheduled for deletion."
+addedOn: 2026-09-08

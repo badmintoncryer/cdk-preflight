@@ -198,18 +198,60 @@
 | `pf-cognito-token-validity-range` | AWS::Cognito::UserPoolClient | Token validity ranges depend on token type and unit | none |
 | `pf-cognito-user-pool-name` | AWS::Cognito::UserPool | User pool names allow only word characters, spaces and +=,.@- | none |
 | `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | none |
+| `pf-dynamodb-attribute-type` | AWS::DynamoDB::Table | AttributeType must be S, N or B | pending-engine |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |
+| `pf-dynamodb-contributor-insights-mode` | AWS::DynamoDB::Table | Contributor Insights Mode must be ACCESSED_AND_THROTTLED_KEYS or THROTTLED_KEYS | pending-engine |
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | none |
 | `pf-dynamodb-duplicate-index-name` | AWS::DynamoDB::Table | Secondary index names must be unique | none |
+| `pf-dynamodb-global-table-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable AttributeDefinitions must match the key schemas exactly | none |
+| `pf-dynamodb-global-table-gsi-count` | AWS::DynamoDB::GlobalTable | A global table can carry at most 20 global secondary indexes | none |
+| `pf-dynamodb-global-table-gsi-provisioned-write-settings` | AWS::DynamoDB::GlobalTable | Each GSI of a PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings | none |
+| `pf-dynamodb-global-table-key-schema-shape` | AWS::DynamoDB::GlobalTable | GlobalTable KeySchema must be [HASH] or [HASH, RANGE] | none |
+| `pf-dynamodb-global-table-lsi-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable LSI key attributes must be defined in AttributeDefinitions | none |
+| `pf-dynamodb-global-table-lsi-count` | AWS::DynamoDB::GlobalTable | A global table can carry at most 5 local secondary indexes | none |
+| `pf-dynamodb-global-table-lsi-shape` | AWS::DynamoDB::GlobalTable | A GlobalTable LSI needs a RANGE key and the table's leading hash key | none |
+| `pf-dynamodb-global-table-mrsc-lsi` | AWS::DynamoDB::GlobalTable | MRSC global tables do not support local secondary indexes | none |
+| `pf-dynamodb-global-table-mrsc-region-set` | AWS::DynamoDB::GlobalTable | An MRSC global table cannot span Region sets | none |
+| `pf-dynamodb-global-table-mrsc-replica-count` | AWS::DynamoDB::GlobalTable | An MRSC global table spans exactly three Regions | none |
+| `pf-dynamodb-global-table-mrsc-ttl` | AWS::DynamoDB::GlobalTable | MRSC global tables do not support TTL | none |
+| `pf-dynamodb-global-table-name-length` | AWS::DynamoDB::GlobalTable | GlobalTable TableName must be at least 3 characters | none |
+| `pf-dynamodb-global-table-ondemand-settings-billing` | AWS::DynamoDB::GlobalTable | On-demand throughput settings need BillingMode PAY_PER_REQUEST | none |
+| `pf-dynamodb-global-table-projection-nonkey` | AWS::DynamoDB::GlobalTable | GlobalTable NonKeyAttributes goes with INCLUDE, and only with INCLUDE | none |
+| `pf-dynamodb-global-table-provisioned-write-settings` | AWS::DynamoDB::GlobalTable | A PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings | none |
+| `pf-dynamodb-global-table-read-capacity-exclusive` | AWS::DynamoDB::GlobalTable | A replica sets either ReadCapacityUnits or autoscaling, never both or neither | none |
+| `pf-dynamodb-global-table-read-settings-multi-account` | AWS::DynamoDB::GlobalTable | Table-level read throughput settings are for multi-account global tables only | none |
+| `pf-dynamodb-global-table-replica-gsi-name` | AWS::DynamoDB::GlobalTable | A replica can only override an index the global table declares | none |
+| `pf-dynamodb-global-table-replica-kinesis-region` | AWS::DynamoDB::GlobalTable | A replica's Kinesis destination must be in the replica's Region | none |
 | `pf-dynamodb-global-table-replica-region` | AWS::DynamoDB::GlobalTable | GlobalTable Replicas must include the deployment region | none |
+| `pf-dynamodb-global-table-replica-sse-key-coverage` | AWS::DynamoDB::GlobalTable | Either every replica names a KMS key, or none does | none |
+| `pf-dynamodb-global-table-replica-sse-key-region` | AWS::DynamoDB::GlobalTable | A replica's KMS key must live in the replica's Region | none |
+| `pf-dynamodb-global-table-stream-required` | AWS::DynamoDB::GlobalTable | An MREC global table with more than one replica needs a stream | none |
+| `pf-dynamodb-global-table-witness-region` | AWS::DynamoDB::GlobalTable | A witness lives in a Region that has no replica | none |
+| `pf-dynamodb-global-table-witness-requires-mrsc` | AWS::DynamoDB::GlobalTable | GlobalTableWitnesses only exists for MRSC global tables | none |
+| `pf-dynamodb-global-table-write-provisioned-with-ppr` | AWS::DynamoDB::GlobalTable | WriteProvisionedThroughputSettings cannot be used with PAY_PER_REQUEST | none |
 | `pf-dynamodb-gsi-billing-throughput` | AWS::DynamoDB::Table | GSI ProvisionedThroughput must match the table BillingMode | none |
+| `pf-dynamodb-gsi-count` | AWS::DynamoDB::Table | A table can carry at most 20 global secondary indexes | none |
 | `pf-dynamodb-gsi-projection-nonkey` | AWS::DynamoDB::Table | NonKeyAttributes goes with INCLUDE, and only with INCLUDE | none |
+| `pf-dynamodb-import-csv-delimiter` | AWS::DynamoDB::Table | A CSV import delimiter is a single character from , ; : | tab space | none |
+| `pf-dynamodb-import-format-options` | AWS::DynamoDB::Table | InputFormatOptions only applies to CSV imports | none |
 | `pf-dynamodb-key-schema-shape` | AWS::DynamoDB::Table | KeySchema must be [HASH] or [HASH, RANGE] | none |
+| `pf-dynamodb-kinesis-precision` | AWS::DynamoDB::Table | Kinesis record timestamp precision is MICROSECOND or MILLISECOND | pending-engine |
 | `pf-dynamodb-kinesis-stream-region` | AWS::DynamoDB::Table | A Kinesis streaming destination must be in the table's region | none |
 | `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | none |
+| `pf-dynamodb-lsi-count` | AWS::DynamoDB::Table | A table can carry at most 5 local secondary indexes | none |
 | `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | none |
+| `pf-dynamodb-ondemand-throughput-billing` | AWS::DynamoDB::Table | OnDemandThroughput belongs to PAY_PER_REQUEST tables only | none |
+| `pf-dynamodb-pitr-recovery-period` | AWS::DynamoDB::Table | RecoveryPeriodInDays needs point-in-time recovery turned on | none |
+| `pf-dynamodb-projection-nonkey-limit` | AWS::DynamoDB::Table | One index can project at most 20 non-key attributes | none |
+| `pf-dynamodb-projection-nonkey-total` | AWS::DynamoDB::Table | Projected non-key attributes are capped at 100 across all indexes | none |
+| `pf-dynamodb-resource-policy-principal` | AWS::DynamoDB::Table | Every resource policy statement needs a Principal | none |
+| `pf-dynamodb-resource-policy-size` | AWS::DynamoDB::Table | A table resource policy must stay under 20480 bytes | none |
+| `pf-dynamodb-sse-type` | AWS::DynamoDB::Table | SSEType must be KMS, and only when SSE is enabled | none |
+| `pf-dynamodb-table-class` | AWS::DynamoDB::Table | TableClass must be STANDARD or STANDARD_INFREQUENT_ACCESS | pending-engine |
 | `pf-dynamodb-table-name-format` | AWS::DynamoDB::Table<br>AWS::DynamoDB::GlobalTable | Table names allow only letters, numbers, underscore, dot and hyphen (max 255) | none |
 | `pf-dynamodb-table-name-length` | AWS::DynamoDB::Table | TableName must be at least 3 characters | pending-engine |
+| `pf-dynamodb-ttl-attribute-required` | AWS::DynamoDB::Table | Enabling TTL requires an AttributeName | none |
+| `pf-dynamodb-warm-throughput-minimum` | AWS::DynamoDB::Table | WarmThroughput cannot go below the default 12000 read / 4000 write | none |
 | `pf-ec2-client-vpn-auth-type-config` | AWS::EC2::ClientVpnEndpoint | Client VPN AuthenticationOptions.Type must match the provided authentication sub-block | none |
 | `pf-ec2-client-vpn-authorization-rule-exclusive` | AWS::EC2::ClientVpnAuthorizationRule | Client VPN authorization rule cannot set both AccessGroupId and AuthorizeAllGroups | none |
 | `pf-ec2-client-vpn-cidr-size` | AWS::EC2::ClientVpnEndpoint | Client VPN ClientCidrBlock must be between /12 and /22 | none |

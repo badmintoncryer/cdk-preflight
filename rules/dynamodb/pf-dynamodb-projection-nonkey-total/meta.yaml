@@ -1,0 +1,11 @@
+id: pf-dynamodb-projection-nonkey-total
+service: dynamodb
+resourceTypes: [AWS::DynamoDB::Table]
+severity: ERROR
+title: "Projected non-key attributes are capped at 100 across all indexes"
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: Number of projected attributes in all indexes exceeds limit of 100, number of projected attributes:120\"; pass -> CREATE_COMPLETE. The pass fixture sits on the boundary: 5 indexes x 20 projected attributes = 100."
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-dynamodb-global-table-replica-sse-key-coverage
+service: dynamodb
+benchRegion: us-east-1
+resourceTypes: [AWS::DynamoDB::GlobalTable]
+severity: ERROR
+title: "Either every replica names a KMS key, or none does"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: Either all replicas have a KMS key id specified, or no one of them.\"; pass -> CREATE_COMPLETE. The fixture uses a KMS key ARN that does not exist in this account; the coverage rule is about the shape of the Replicas list, which the template shows in full."
+addedOn: 2026-09-08
