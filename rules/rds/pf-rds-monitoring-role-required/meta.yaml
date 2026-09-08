@@ -1,0 +1,12 @@
+id: pf-rds-monitoring-role-required
+service: rds
+resourceTypes: [AWS::RDS::DBInstance, AWS::RDS::DBCluster]
+severity: ERROR
+title: "MonitoringRoleArn is required when MonitoringInterval is not 0"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"A MonitoringRoleARN value is required if you specify a MonitoringInterval value other than 0.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-rds-option-group-engine
+service: rds
+resourceTypes: [AWS::RDS::DBInstance, AWS::RDS::OptionGroup]
+severity: ERROR
+title: "OptionGroup EngineName must match the engine of the instance that uses it"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-optiongroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The option group cdkpf-pf-rds-option-group-engine-fail-og-8g5jitwcyezy is for postgres 16, and your DB instance is mysql 8.4.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

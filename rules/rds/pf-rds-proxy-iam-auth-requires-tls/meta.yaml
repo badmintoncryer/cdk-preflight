@@ -1,0 +1,12 @@
+id: pf-rds-proxy-iam-auth-requires-tls
+service: rds
+resourceTypes: [AWS::RDS::DBProxy]
+severity: ERROR
+title: "IAMAuth: REQUIRED needs RequireTLS: true"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbproxy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Must enable TLS, when IAM Auth is required\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

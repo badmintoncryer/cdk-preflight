@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "postgres",
+        "DBInstanceClass": "db.t4g.micro",
+        "AllocatedStorage": "20",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "StorageType": "gp2",
+        "StorageThroughput": 200
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-rds-sqlserver-reserved-port
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: "SQL Server reserves several ports"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Port 3389 is reserved for this configuration.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08

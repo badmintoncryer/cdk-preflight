@@ -1,0 +1,130 @@
+{
+  "Resources": {
+    "V": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "V"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "V"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "Sec": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "SecretString": "{\"username\": \"benchuser\", \"password\": \"benchpass123\"}"
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "rds.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "sec",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PX": {
+      "Type": "AWS::RDS::DBProxy",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBProxyName": "cdkpf-pxpool-f",
+        "EngineFamily": "MYSQL",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Auth": [
+          {
+            "AuthScheme": "SECRETS",
+            "SecretArn": {
+              "Ref": "Sec"
+            },
+            "IAMAuth": "DISABLED"
+          }
+        ],
+        "VpcSubnetIds": [
+          {
+            "Ref": "SA"
+          },
+          {
+            "Ref": "SB"
+          }
+        ]
+      }
+    },
+    "R": {
+      "Type": "AWS::RDS::DBProxyTargetGroup",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "TargetGroupName": "default",
+        "ConnectionPoolConfigurationInfo": {
+          "MaxConnectionsPercent": 50,
+          "MaxIdleConnectionsPercent": 80
+        },
+        "DBProxyName": "cdkpf-pxpool-f"
+      },
+      "DependsOn": "PX"
+    }
+  }
+}

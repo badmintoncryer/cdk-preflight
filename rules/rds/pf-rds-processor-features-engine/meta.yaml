@@ -1,0 +1,12 @@
+id: pf-rds-processor-features-engine
+service: rds
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: "ProcessorFeatures is only supported by Oracle and SQL Server"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The given ProcessorFeature coreCount is unavailable for this DB instance class.\" ROLLBACK_COMPLETE Claim scope: engines other than Oracle and SQL Server."
+addedOn: 2026-09-08

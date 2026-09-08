@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::RDS::EventSubscription",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "SnsTopicArn": {
+          "Ref": "T"
+        }
+      }
+    }
+  }
+}

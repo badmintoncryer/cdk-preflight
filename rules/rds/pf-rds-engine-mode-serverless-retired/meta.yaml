@@ -1,0 +1,12 @@
+id: pf-rds-engine-mode-serverless-retired
+service: rds
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: "EngineMode: serverless (Aurora Serverless v1) can no longer be created"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The engine mode serverless you requested is currently unavailable.\" ROLLBACK_COMPLETE"
+addedOn: 2026-09-08
