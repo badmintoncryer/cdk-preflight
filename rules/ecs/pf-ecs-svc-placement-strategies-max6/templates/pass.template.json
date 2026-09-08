@@ -1,0 +1,60 @@
+{
+  "Resources": {
+    "Svc": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "TD"
+        },
+        "DesiredCount": 0,
+        "LaunchType": "EC2",
+        "PlacementStrategies": [
+          {
+            "Type": "spread",
+            "Field": "attribute:ecs.availability-zone"
+          },
+          {
+            "Type": "spread",
+            "Field": "instanceId"
+          },
+          {
+            "Type": "binpack",
+            "Field": "cpu"
+          },
+          {
+            "Type": "binpack",
+            "Field": "memory"
+          },
+          {
+            "Type": "random"
+          }
+        ]
+      }
+    },
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfsvcplacementstrategiesmax6",
+        "NetworkMode": "bridge",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true
+          }
+        ]
+      }
+    },
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {}
+    }
+  }
+}

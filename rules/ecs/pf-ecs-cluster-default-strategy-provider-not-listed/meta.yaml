@@ -1,0 +1,12 @@
+id: pf-ecs-cluster-default-strategy-provider-not-listed
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Cluster]
+severity: ERROR
+title: DefaultCapacityProviderStrategy may only use listed capacity providers
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (CreateCluster Invalid Request: The specified capacity provider strategy cannot contain a capacity provider that is not associated with the cluster. Associate the capacity provider with the cluster or specify a valid capacity provider and try again.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-cluster-default-strategy-provider-not-listed.log"
+addedOn: 2026-09-08

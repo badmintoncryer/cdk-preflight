@@ -1,0 +1,12 @@
+id: pf-ecs-svc-registries-port-with-awsvpc
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: awsvpc services address a registry by Port, not ContainerName/ContainerPort
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The values specified for serviceRegistries do not require a value for 'containerPort'. Remove the value and retry. Registry: arn:aws:servicediscovery:us-east-1:214794239830:service/srv-laugkbelz6gwwvas), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-registries-port-with-awsvpc.log"
+addedOn: 2026-09-08

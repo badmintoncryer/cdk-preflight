@@ -2819,6 +2819,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecrsign_url := \"https://docs.aws.amazon.com/AmazonECR/latest/APIReference/API_PutSigningConfiguration.html\"\n\n_pf_ecrsign_fix := \"Create the AWS Signer profile in the registry region and reference that ARN\"\n\nviolation contains make_diag_full(\"pf-ecr-signing-profile-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Rules[%d].SigningProfileArn\", [i]),\n\tsprintf(\"the signing profile is in region '%s' but the registry is in '%s'; PutSigningConfiguration fails with \\\"The region of signing profile ARN ... is '%s' but must be '%s' (the current region)\\\"\", [parts[3], region, parts[3], region]),\n\t_pf_ecrsign_fix, _pf_ecrsign_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::ECR::SigningConfiguration\")\n\trules := resolve(name, \"Properties.Rules\")\n\tis_array(rules)\n\tsome i, rule in rules\n\tparts := _pf_ecrlib_arn(object.get(rule, \"SigningProfileArn\", null))\n\tparts[2] == \"signer\"\n\tparts[3] != region\n}\n"
   },
   {
+    "id": "pf-ecs-awsfirelens-without-router",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "The awsfirelens log driver requires a FireLens router container",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Does any container in the task definition act as the FireLens router?\n_pf_ecs_firelens(name) if {\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"FirelensConfiguration\")\n}\n\nviolation contains make_diag_full(\"pf-ecs-awsfirelens-without-router\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LogConfiguration.LogDriver\", [c.index]),\n\tsprintf(\"Container '%s' logs through awsfirelens but no container declares FirelensConfiguration; RegisterTaskDefinition fails with \\\"When awsfirelens log driver is specified in log configuration, a firelens configuration object must be specified\\\"\", [_pf_ecs_cname(c)]),\n\t\"Add a container with FirelensConfiguration to the task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tlc := _pf_ecs_cget(c, \"LogConfiguration\")\n\t_pf_ecs_oget(lc, \"LogDriver\") == \"awsfirelens\"\n\tnot _pf_ecs_firelens(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-awslogs-fargate-missing-stream-prefix",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "awslogs on Fargate requires the awslogs-stream-prefix option",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-awslogs-fargate-missing-stream-prefix\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LogConfiguration.Options\", [c.index]),\n\tsprintf(\"Container '%s' logs through awslogs on a FARGATE task definition without awslogs-stream-prefix; RegisterTaskDefinition fails with \\\"Fargate requires log configuration options to include awslogs-stream-prefix\\\"\", [_pf_ecs_cname(c)]),\n\t\"Add awslogs-stream-prefix to LogConfiguration.Options\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\tlc := _pf_ecs_cget(c, \"LogConfiguration\")\n\t_pf_ecs_oget(lc, \"LogDriver\") == \"awslogs\"\n\tnot _pf_ecs_ohas(object.get(lc, \"Options\", {}), \"awslogs-stream-prefix\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-awslogs-missing-group",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "The awslogs log driver requires the awslogs-group option",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-awslogs-missing-group\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LogConfiguration.Options\", [c.index]),\n\tsprintf(\"Container '%s' uses the awslogs driver without the awslogs-group option; RegisterTaskDefinition fails with \\\"Log driver awslogs requires options: awslogs-group\\\"\", [_pf_ecs_cname(c)]),\n\t\"Add awslogs-group (and awslogs-region) to LogConfiguration.Options\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tlc := _pf_ecs_cget(c, \"LogConfiguration\")\n\t_pf_ecs_oget(lc, \"LogDriver\") == \"awslogs\"\n\tnot _pf_ecs_ohas(object.get(lc, \"Options\", {}), \"awslogs-group\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-awsvpc-extra-hosts",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ExtraHosts is not supported with NetworkMode awsvpc",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-awsvpc-extra-hosts\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.ExtraHosts\", [c.index]),\n\tsprintf(\"Container '%s' sets ExtraHosts while the task definition uses NetworkMode awsvpc; RegisterTaskDefinition fails with \\\"Extra hosts are not supported on container when networkMode=awsvpc\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop ExtraHosts, or use the bridge network mode\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tresolve(name, \"Properties.NetworkMode\") == \"awsvpc\"\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"ExtraHosts\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-awsvpc-hostname",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Hostname is not supported with NetworkMode awsvpc",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-awsvpc-hostname\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.Hostname\", [c.index]),\n\tsprintf(\"Container '%s' sets Hostname while the task definition uses NetworkMode awsvpc; RegisterTaskDefinition fails with \\\"hostname is not supported on container when networkMode=awsvpc\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop Hostname, or use the bridge network mode\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tresolve(name, \"Properties.NetworkMode\") == \"awsvpc\"\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"Hostname\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-cluster-default-strategy-multiple-base",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Only one default capacity provider may set Base",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cluster-default-strategy-multiple-base\", \"ERROR\", name,\n\t\"Properties.DefaultCapacityProviderStrategy\",\n\t\"More than one entry of DefaultCapacityProviderStrategy sets Base; CreateCluster fails with \\\"The specified capacity provider strategy contains multiple capacity providers with a base value defined\\\"\",\n\t\"Keep Base on a single capacity provider\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Cluster\")\n\tst := _pf_ecs_get(name, \"DefaultCapacityProviderStrategy\")\n\tis_array(st)\n\tcount([x | some x in st; _pf_ecs_ohas(x, \"Base\")]) > 1\n}\n"
+  },
+  {
+    "id": "pf-ecs-cluster-default-strategy-provider-not-listed",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DefaultCapacityProviderStrategy may only use listed capacity providers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cluster-default-strategy-provider-not-listed\", \"ERROR\", name,\n\t\"Properties.DefaultCapacityProviderStrategy\",\n\tsprintf(\"The default strategy uses the capacity provider '%s', which the cluster does not list in CapacityProviders; CreateCluster fails with \\\"The specified capacity provider strategy cannot contain a capacity provider that is not associated with the cluster\\\"\", [cp]),\n\t\"Add the capacity provider to CapacityProviders\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Cluster\")\n\tlisted := _pf_ecs_get(name, \"CapacityProviders\")\n\tis_array(listed)\n\tsome s in flatten_list(name, \"Properties.DefaultCapacityProviderStrategy\")\n\tcp := object.get(s.value, \"CapacityProvider\", null)\n\t_pf_ecs_lit(cp)\n\tnot cp in {x | some x in listed; _pf_ecs_lit(x)}\n}\n"
+  },
+  {
+    "id": "pf-ecs-cluster-execute-command-default-with-log-config",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A LogConfiguration requires ExecuteCommand Logging OVERRIDE",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cluster-execute-command-default-with-log-config\", \"ERROR\", name,\n\t\"Properties.Configuration.ExecuteCommandConfiguration.Logging\",\n\tsprintf(\"ExecuteCommandConfiguration supplies a LogConfiguration with Logging '%s'; CreateCluster fails with \\\"You must set logging to 'OVERRIDE' when you supply a log configuration\\\"\", [lg]),\n\t\"Set Logging to 'OVERRIDE', or drop LogConfiguration\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Cluster\")\n\tcfg := _pf_ecs_get(name, \"Configuration\")\n\tec := _pf_ecs_oget(cfg, \"ExecuteCommandConfiguration\")\n\t_pf_ecs_ohas(ec, \"LogConfiguration\")\n\tlg := _pf_ecs_oget(ec, \"Logging\")\n\t_pf_ecs_lit(lg)\n\tlg != \"OVERRIDE\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-cluster-execute-command-override-without-log-config",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ExecuteCommand Logging OVERRIDE requires a LogConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cluster-execute-command-override-without-log-config\", \"ERROR\", name,\n\t\"Properties.Configuration.ExecuteCommandConfiguration.LogConfiguration\",\n\t\"ExecuteCommandConfiguration overrides the default logging without a LogConfiguration; CreateCluster fails with \\\"A CloudWatch log group name or S3 bucket name must be specified when overriding the default log configuration\\\"\",\n\t\"Add LogConfiguration with a CloudWatch log group or an S3 bucket\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Cluster\")\n\tcfg := _pf_ecs_get(name, \"Configuration\")\n\tec := _pf_ecs_oget(cfg, \"ExecuteCommandConfiguration\")\n\t_pf_ecs_oget(ec, \"Logging\") == \"OVERRIDE\"\n\tnot _pf_ecs_ohas(ec, \"LogConfiguration\")\n}\n"
+  },
+  {
     "id": "pf-ecs-cluster-name",
     "service": "ecs",
     "severity": "ERROR",
@@ -2874,6 +2973,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MemoryReservation is a soft floor and Memory a hard ceiling; the service\n# rejects a floor above the ceiling. to_number fails (and the rule skips) when\n# either value is absent or unresolvable.\nviolation contains make_diag_full(\"pf-ecs-container-memory-reservation\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.MemoryReservation\", [c.index]),\n\tsprintf(\"Container '%s' sets MemoryReservation %v above Memory %v; RegisterTaskDefinition fails with \\\"'memory' must be greater than or equal to 'memoryReservation'\\\"\", [cname, mr, m]),\n\t\"Lower MemoryReservation to at most Memory, or raise Memory\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-containerdefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in flatten_list(name, \"Properties.ContainerDefinitions\")\n\tis_object(c.value)\n\tm := to_number(object.get(c.value, \"Memory\", null))\n\tmr := to_number(object.get(c.value, \"MemoryReservation\", null))\n\tmr > m\n\tcname := object.get(c.value, \"Name\", \"<unnamed>\")\n}\n"
   },
   {
+    "id": "pf-ecs-cp-managed-termination-scale-in-protection",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ManagedTerminationProtection requires scale-in protection on the Auto Scaling group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::CapacityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Auto Scaling group protects new instances from scale-in (CloudFormation\n# accepts the boolean either as true or as the string \"true\").\n_pf_ecs_scalein(props) if {\n\tobject.get(props, \"NewInstancesProtectedFromScaleIn\", false) in {true, \"true\"}\n}\n\nviolation contains make_diag_full(\"pf-ecs-cp-managed-termination-scale-in-protection\", \"ERROR\", name,\n\t\"Properties.AutoScalingGroupProvider.ManagedTerminationProtection\",\n\tsprintf(\"ManagedTerminationProtection is ENABLED but the Auto Scaling group '%s' does not protect new instances from scale-in; CreateCapacityProvider fails with \\\"To enable managed termination protection for a capacity provider, the Auto Scaling group must have instance protection from scale-in enabled\\\"\", [g]),\n\t\"Set NewInstancesProtectedFromScaleIn on the Auto Scaling group, or drop ManagedTerminationProtection\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCapacityProvider.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::CapacityProvider\")\n\tasg := _pf_ecs_get(name, \"AutoScalingGroupProvider\")\n\t_pf_ecs_oget(asg, \"ManagedTerminationProtection\") == \"ENABLED\"\n\tg := resolve(name, \"Properties.AutoScalingGroupProvider.AutoScalingGroupArn\")\n\tinput.resources[g].resourceType == \"AWS::AutoScaling::AutoScalingGroup\"\n\tnot _pf_ecs_scalein(input.resources[g].properties)\n}\n"
+  },
+  {
+    "id": "pf-ecs-cp-name-reserved-prefix",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Capacity provider names cannot start with aws, ecs or fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::CapacityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cp-name-reserved-prefix\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The capacity provider name '%s' uses a reserved prefix; CreateCapacityProvider fails with \\\"The specified capacity provider name is invalid\\\"\", [n]),\n\t\"Rename the capacity provider so it does not start with aws, ecs or fargate\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCapacityProvider.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::CapacityProvider\")\n\tn := resolve(name, \"Properties.Name\")\n\t_pf_ecs_lit(n)\n\tsome p in {\"aws\", \"ecs\", \"fargate\"}\n\tstartswith(lower(n), p)\n}\n"
+  },
+  {
+    "id": "pf-ecs-cp-scaling-step-order",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "MinimumScalingStepSize must not exceed MaximumScalingStepSize",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::CapacityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-cp-scaling-step-order\", \"ERROR\", name,\n\t\"Properties.AutoScalingGroupProvider.ManagedScaling\",\n\tsprintf(\"ManagedScaling sets MinimumScalingStepSize %v above MaximumScalingStepSize %v; CreateCapacityProvider fails with \\\"The minimum or maximum scaling step size value is invalid\\\"\", [mn, mx]),\n\t\"Lower MinimumScalingStepSize to at most MaximumScalingStepSize\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCapacityProvider.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::CapacityProvider\")\n\tasg := _pf_ecs_get(name, \"AutoScalingGroupProvider\")\n\tms := _pf_ecs_oget(asg, \"ManagedScaling\")\n\tmn := to_number(_pf_ecs_oget(ms, \"MinimumScalingStepSize\"))\n\tmx := to_number(_pf_ecs_oget(ms, \"MaximumScalingStepSize\"))\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-ecs-dependson-complete-on-essential",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DependsOn COMPLETE / SUCCESS cannot target an essential container",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-dependson-complete-on-essential\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.DependsOn\", [c.index]),\n\tsprintf(\"Container '%s' waits for the essential container '%s' to reach %s; RegisterTaskDefinition fails with \\\"A dependency container with SUCCESS or COMPLETE condition cannot be an essential container\\\"\", [_pf_ecs_cname(c), t, cond]),\n\t\"Set Essential to false on the depended-on container, or use the START / HEALTHY condition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tdep := _pf_ecs_cget(c, \"DependsOn\")\n\tis_array(dep)\n\tsome d in dep\n\tcond := object.get(d, \"Condition\", null)\n\tcond in {\"COMPLETE\", \"SUCCESS\"}\n\tt := object.get(d, \"ContainerName\", null)\n\t_pf_ecs_lit(t)\n\tsome tc in _pf_ecs_containers(name)\n\tobject.get(tc.value, \"Name\", null) == t\n\tobject.get(tc.value, \"Essential\", true) == true\n}\n"
+  },
+  {
+    "id": "pf-ecs-dependson-container-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DependsOn.ContainerName must name a container in the same task",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-dependson-container-missing\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.DependsOn\", [c.index]),\n\tsprintf(\"Container '%s' depends on '%s', which is not declared in this task definition; RegisterTaskDefinition fails with \\\"Cannot depend on container %s because it does not exist\\\"\", [_pf_ecs_cname(c), t, t]),\n\t\"Point DependsOn at a container declared in the same task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tdep := _pf_ecs_cget(c, \"DependsOn\")\n\tis_array(dep)\n\tsome d in dep\n\tt := object.get(d, \"ContainerName\", null)\n\t_pf_ecs_lit(t)\n\tnot t in _pf_ecs_names(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-dependson-healthy-without-healthcheck",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DependsOn Condition HEALTHY needs a HealthCheck on the target container",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-dependson-healthy-without-healthcheck\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.DependsOn\", [c.index]),\n\tsprintf(\"Container '%s' waits for '%s' to become HEALTHY but that container defines no HealthCheck; RegisterTaskDefinition fails with \\\"A dependency container with HEALTHY condition must have health check configured\\\"\", [_pf_ecs_cname(c), t]),\n\t\"Add a HealthCheck to the depended-on container, or use the START condition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tdep := _pf_ecs_cget(c, \"DependsOn\")\n\tis_array(dep)\n\tsome d in dep\n\tobject.get(d, \"Condition\", null) == \"HEALTHY\"\n\tt := object.get(d, \"ContainerName\", null)\n\t_pf_ecs_lit(t)\n\tsome tc in _pf_ecs_containers(name)\n\tobject.get(tc.value, \"Name\", null) == t\n\tnot _pf_ecs_chas(tc, \"HealthCheck\")\n}\n"
+  },
+  {
     "id": "pf-ecs-duplicate-container-names",
     "service": "ecs",
     "severity": "ERROR",
@@ -2883,6 +3048,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ECS::TaskDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One diagnostic per duplicated later occurrence; only literal string names\n# can be compared, so a Ref-valued Name skips its pairs.\nviolation contains make_diag_full(\"pf-ecs-duplicate-container-names\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.Name\", [b.index]),\n\tsprintf(\"Container name '%s' appears more than once; RegisterTaskDefinition fails with \\\"Container names must be unique within a task definition\\\"\", [na]),\n\t\"Give every container in the task definition a distinct Name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-containerdefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome a in flatten_list(name, \"Properties.ContainerDefinitions\")\n\tsome b in flatten_list(name, \"Properties.ContainerDefinitions\")\n\ta.index < b.index\n\tna := object.get(a.value, \"Name\", null)\n\tis_string(na)\n\tna == object.get(b.value, \"Name\", null)\n}\n"
+  },
+  {
+    "id": "pf-ecs-efs-access-point-with-root-directory",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "An EFS access point requires RootDirectory to be \"/\" or omitted",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-efs-access-point-with-root-directory\", \"ERROR\", name,\n\tsprintf(\"Properties.Volumes.%d.EFSVolumeConfiguration.RootDirectory\", [v.index]),\n\tsprintf(\"An EFS volume combines an access point with RootDirectory '%s'; RegisterTaskDefinition fails with \\\"When using an EFS access point, the root directory must either be set to \\\"/\\\" or be omitted\\\"\", [rd]),\n\t\"Drop RootDirectory (or set it to \\\"/\\\") when AccessPointId is used\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\te := _pf_ecs_oget(v.value, \"EFSVolumeConfiguration\")\n\tac := _pf_ecs_oget(e, \"AuthorizationConfig\")\n\t_pf_ecs_ohas(ac, \"AccessPointId\")\n\trd := _pf_ecs_oget(e, \"RootDirectory\")\n\t_pf_ecs_lit(rd)\n\trd != \"/\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-efs-iam-without-transit-encryption",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "EFS IAM authorization requires TransitEncryption ENABLED",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-efs-iam-without-transit-encryption\", \"ERROR\", name,\n\tsprintf(\"Properties.Volumes.%d.EFSVolumeConfiguration.TransitEncryption\", [v.index]),\n\t\"An EFS volume uses IAM authorization without transit encryption; RegisterTaskDefinition fails with \\\"EFS IAM authorization requires TransitEncryption to be enabled\\\"\",\n\t\"Set EFSVolumeConfiguration.TransitEncryption to ENABLED\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\te := _pf_ecs_oget(v.value, \"EFSVolumeConfiguration\")\n\tac := _pf_ecs_oget(e, \"AuthorizationConfig\")\n\t_pf_ecs_oget(ac, \"IAM\") == \"ENABLED\"\n\tnot _pf_ecs_oget(e, \"TransitEncryption\") == \"ENABLED\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-efs-transit-encryption-port-without-encryption",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "TransitEncryptionPort requires TransitEncryption ENABLED",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-efs-transit-encryption-port-without-encryption\", \"ERROR\", name,\n\tsprintf(\"Properties.Volumes.%d.EFSVolumeConfiguration.TransitEncryptionPort\", [v.index]),\n\t\"An EFS volume pins a transit encryption port without enabling transit encryption; RegisterTaskDefinition fails with \\\"TransitEncryptionPort requires that TransitEncryption is enabled\\\"\",\n\t\"Set TransitEncryption to ENABLED, or drop TransitEncryptionPort\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\te := _pf_ecs_oget(v.value, \"EFSVolumeConfiguration\")\n\t_pf_ecs_ohas(e, \"TransitEncryptionPort\")\n\tnot _pf_ecs_oget(e, \"TransitEncryption\") == \"ENABLED\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-environment-files-max",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A container can load at most 10 environment files",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-environment-files-max\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.EnvironmentFiles\", [c.index]),\n\tsprintf(\"Container '%s' loads %d environment files; RegisterTaskDefinition fails with \\\"The maximum number of environment files was exceeded. Specify ten or less and try again\\\"\", [_pf_ecs_cname(c), count(efs)]),\n\t\"Reduce EnvironmentFiles to 10 entries\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tefs := _pf_ecs_cget(c, \"EnvironmentFiles\")\n\tcount(efs) > 10\n}\n"
+  },
+  {
+    "id": "pf-ecs-environment-files-type",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "EnvironmentFiles.Value must be an S3 object ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-environment-files-type\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.EnvironmentFiles\", [c.index]),\n\tsprintf(\"Container '%s' loads the environment file '%s', which is not an ARN; RegisterTaskDefinition fails with \\\"Invalid arn syntax\\\"\", [_pf_ecs_cname(c), v]),\n\t\"Give EnvironmentFiles.Value the full arn:<partition>:s3:::<bucket>/<key> form\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tefs := _pf_ecs_cget(c, \"EnvironmentFiles\")\n\tis_array(efs)\n\tsome ef in efs\n\tv := object.get(ef, \"Value\", null)\n\t_pf_ecs_lit(v)\n\tnot startswith(v, \"arn:\")\n}\n"
   },
   {
     "id": "pf-ecs-ephemeral-storage-range",
@@ -2907,6 +3127,182 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Essential defaults to true, so the rule fires only when every container says\n# Essential: false explicitly. A container whose Essential is unresolvable (or\n# a non-boolean) breaks the `every`, and the rule skips — absence of an\n# essential container cannot be proven then.\nviolation contains make_diag_full(\"pf-ecs-essential-container\", \"ERROR\", name,\n\t\"Properties.ContainerDefinitions\",\n\t\"Every container sets Essential: false; RegisterTaskDefinition fails with \\\"Task definition doesn't have any essential container\\\"\",\n\t\"Mark at least one container Essential: true, or omit Essential (it defaults to true)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-containerdefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\titems := [c | some c in flatten_list(name, \"Properties.ContainerDefinitions\")]\n\tcount(items) > 0\n\tevery c in items {\n\t\tobject.get(c.value, \"Essential\", null) == false\n\t}\n}\n"
   },
   {
+    "id": "pf-ecs-fargate-capabilities-add",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Fargate only allows SYS_PTRACE in LinuxParameters.Capabilities.Add",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-capabilities-add\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LinuxParameters.Capabilities.Add\", [c.index]),\n\tsprintf(\"Container '%s' adds the Linux capability '%s'; on Fargate only SYS_PTRACE can be added and RegisterTaskDefinition fails with \\\"%s is not allowed on Fargate.\\\"\", [_pf_ecs_cname(c), cap, cap]),\n\t\"Remove every capability other than SYS_PTRACE, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\tlp := _pf_ecs_cget(c, \"LinuxParameters\")\n\tcaps := _pf_ecs_oget(lp, \"Capabilities\")\n\tadd := _pf_ecs_oget(caps, \"Add\")\n\tis_array(add)\n\tsome cap in add\n\t_pf_ecs_lit(cap)\n\tcap != \"SYS_PTRACE\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-container-cpu-over-task",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Container Cpu values must not exceed the task-level Cpu",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-container-cpu-over-task\", \"ERROR\", name,\n\t\"Properties.ContainerDefinitions\",\n\tsprintf(\"The containers reserve %v CPU units in total but the task definition allocates %v; RegisterTaskDefinition fails with \\\"The sum of all container 'cpu' values cannot be greater than the task-level 'cpu' value\\\"\", [total, tc]),\n\t\"Lower the container Cpu values, or raise the task-level Cpu\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\ttc := to_number(resolve(name, \"Properties.Cpu\"))\n\ttotal := sum([n | some c in _pf_ecs_containers(name); n := to_number(object.get(c.value, \"Cpu\", 0))])\n\ttotal > tc\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-devices",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "LinuxParameters.Devices is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-devices\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LinuxParameters.Devices\", [c.index]),\n\tsprintf(\"Container '%s' sets LinuxParameters.Devices on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support devices\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop LinuxParameters.Devices, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\tlp := _pf_ecs_cget(c, \"LinuxParameters\")\n\t_pf_ecs_ohas(lp, \"Devices\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-disable-networking",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DisableNetworking is not supported with NetworkMode awsvpc",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-disable-networking\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.DisableNetworking\", [c.index]),\n\tsprintf(\"Container '%s' sets DisableNetworking while the task definition uses NetworkMode awsvpc; RegisterTaskDefinition fails with \\\"Disable Networking is not supported on container when networkMode=awsvpc\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop DisableNetworking, or use the bridge network mode\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tresolve(name, \"Properties.NetworkMode\") == \"awsvpc\"\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"DisableNetworking\")\n\t_pf_ecs_cget(c, \"DisableNetworking\") == true\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-dns-servers",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DnsServers is not supported with NetworkMode awsvpc",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-dns-servers\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.DnsServers\", [c.index]),\n\tsprintf(\"Container '%s' sets DnsServers while the task definition uses NetworkMode awsvpc; RegisterTaskDefinition fails with \\\"DNS servers are not supported on container when networkMode=awsvpc\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop DnsServers, or use the bridge network mode\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tresolve(name, \"Properties.NetworkMode\") == \"awsvpc\"\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"DnsServers\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-docker-security-options",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DockerSecurityOptions is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-docker-security-options\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.DockerSecurityOptions\", [c.index]),\n\tsprintf(\"Container '%s' sets DockerSecurityOptions on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support dockerSecurityOptions\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop DockerSecurityOptions, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"DockerSecurityOptions\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-docker-volume",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DockerVolumeConfiguration is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-docker-volume\", \"ERROR\", name,\n\tsprintf(\"Properties.Volumes.%d.DockerVolumeConfiguration\", [v.index]),\n\t\"A FARGATE task definition declares a Docker volume; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support dockerVolumeConfiguration\\\"\",\n\t\"Drop DockerVolumeConfiguration, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\t_pf_ecs_ohas(v.value, \"DockerVolumeConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-ephemeral-storage-ec2",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "EphemeralStorage is only supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-ephemeral-storage-ec2\", \"ERROR\", name,\n\t\"Properties.EphemeralStorage\",\n\t\"EphemeralStorage is set on a task definition that does not require FARGATE; RegisterTaskDefinition fails with \\\"Tasks using the EC2 launch type do not support EphemeralStorage\\\"\",\n\t\"Drop EphemeralStorage, or add FARGATE to RequiresCompatibilities\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_has(name, \"EphemeralStorage\")\n\trc := resolve(name, \"Properties.RequiresCompatibilities\")\n\tis_array(rc)\n\tnot \"FARGATE\" in rc\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-execution-role-missing-awslogs",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "awslogs on Fargate requires an ExecutionRoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-execution-role-missing-awslogs\", \"ERROR\", name,\n\t\"Properties.ExecutionRoleArn\",\n\tsprintf(\"Container '%s' logs through the awslogs driver on a FARGATE task definition that sets no ExecutionRoleArn; RegisterTaskDefinition fails with \\\"Fargate requires task definition to have execution role ARN to support log driver awslogs\\\"\", [_pf_ecs_cname(c)]),\n\t\"Set ExecutionRoleArn to a task execution role that can write to CloudWatch Logs\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tnot _pf_ecs_has(name, \"ExecutionRoleArn\")\n\tsome c in _pf_ecs_containers(name)\n\tlc := _pf_ecs_cget(c, \"LogConfiguration\")\n\t_pf_ecs_oget(lc, \"LogDriver\") == \"awslogs\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-gpu-resource",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "GPU resource requirements are not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-gpu-resource\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.ResourceRequirements\", [c.index]),\n\tsprintf(\"Container '%s' requires a GPU on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Tasks using the Fargate launch type do not support GPU resource requirements\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop the GPU ResourceRequirement, or run the task on EC2 with GPU instances\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\trr := _pf_ecs_cget(c, \"ResourceRequirements\")\n\tis_array(rr)\n\tsome r in rr\n\tobject.get(r, \"Type\", null) == \"GPU\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-host-source-path",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Volumes[].Host.SourcePath is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-host-source-path\", \"ERROR\", name,\n\tsprintf(\"Properties.Volumes.%d.Host.SourcePath\", [v.index]),\n\t\"A FARGATE task definition binds a host path through Volumes[].Host.SourcePath; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support sourcePath\\\"\",\n\t\"Drop Host.SourcePath (bind mounts need EC2), or use an EFS volume\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\th := _pf_ecs_oget(v.value, \"Host\")\n\t_pf_ecs_ohas(h, \"SourcePath\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-inference-accelerator",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "InferenceAccelerators is retired and always rejected",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-inference-accelerator\", \"ERROR\", name,\n\t\"Properties.InferenceAccelerators\",\n\t\"The task definition declares InferenceAccelerators, but Amazon Elastic Inference is retired; RegisterTaskDefinition fails with \\\"Unsupported field 'inferenceAccelerators'\\\"\",\n\t\"Drop InferenceAccelerators; Amazon Elastic Inference is no longer available\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tia := _pf_ecs_get(name, \"InferenceAccelerators\")\n\tcount(ia) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-ipc-mode",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "IpcMode is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-ipc-mode\", \"ERROR\", name,\n\t\"Properties.IpcMode\",\n\tsprintf(\"IpcMode '%s' is set on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support ipcMode\\\"\", [m]),\n\t\"Drop IpcMode, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tm := resolve(name, \"Properties.IpcMode\")\n\tis_string(m)\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-links",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Links is not supported with NetworkMode awsvpc",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-links\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.Links\", [c.index]),\n\tsprintf(\"Container '%s' sets Links while the task definition uses NetworkMode awsvpc; RegisterTaskDefinition fails with \\\"Links are not supported when networkMode=awsvpc\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop Links; containers in an awsvpc task share a network namespace and reach each other on localhost\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tresolve(name, \"Properties.NetworkMode\") == \"awsvpc\"\n\tsome c in _pf_ecs_containers(name)\n\tl := _pf_ecs_cget(c, \"Links\")\n\tcount(l) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-log-driver-unsupported",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Fargate supports only a subset of log drivers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-log-driver-unsupported\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LogConfiguration.LogDriver\", [c.index]),\n\tsprintf(\"Container '%s' uses the '%s' log driver on a FARGATE task definition; RegisterTaskDefinition fails with \\\"%s is not a valid log driver. Must be one of [awslogs, splunk, awsfirelens]\\\"\", [_pf_ecs_cname(c), d, d]),\n\t\"Use awslogs, splunk or awsfirelens on Fargate\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\tlc := _pf_ecs_cget(c, \"LogConfiguration\")\n\td := _pf_ecs_oget(lc, \"LogDriver\")\n\t_pf_ecs_lit(d)\n\tnot d in {\"awslogs\", \"splunk\", \"awsfirelens\"}\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-max-swap",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "LinuxParameters.MaxSwap is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-max-swap\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LinuxParameters.MaxSwap\", [c.index]),\n\tsprintf(\"Container '%s' sets LinuxParameters.MaxSwap on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support maxSwap\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop LinuxParameters.MaxSwap and Swappiness, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\tlp := _pf_ecs_cget(c, \"LinuxParameters\")\n\t_pf_ecs_ohas(lp, \"MaxSwap\")\n}\n"
+  },
+  {
     "id": "pf-ecs-fargate-network-mode",
     "service": "ecs",
     "severity": "ERROR",
@@ -2918,6 +3314,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsnm_url := \"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#network_mode\"\n\n# resolve() cannot tell \"absent\" from \"unresolvable\" (both undefined), so true\n# absence is proven against the preprocessed document; a Ref-valued NetworkMode\n# no longer trips the not-set block.\n_pf_ecsnm_absent(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"NetworkMode\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-network-mode\", \"ERROR\", name,\n\t\"Properties.NetworkMode\",\n\tsprintf(\"NetworkMode is '%s' but task definitions requiring FARGATE compatibility must use 'awsvpc'; RegisterTaskDefinition fails at deploy time\", [nm]),\n\t\"Set NetworkMode to 'awsvpc'\",\n\t_pf_ecsnm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\trc := resolve(name, \"Properties.RequiresCompatibilities\")\n\tis_array(rc)\n\t\"FARGATE\" in rc\n\tnm := resolve(name, \"Properties.NetworkMode\")\n\tis_string(nm)\n\tnm != \"awsvpc\"\n}\n\n# NetworkMode 未指定でも RegisterTaskDefinition は\n# \"Fargate only supports network mode 'awsvpc'.\" で失敗する（2026-09-01 実 API 確認）\nviolation contains make_diag_full(\"pf-ecs-fargate-network-mode\", \"ERROR\", name,\n\t\"Properties.NetworkMode\",\n\t\"NetworkMode is not set, but task definitions requiring FARGATE compatibility must set it to 'awsvpc'; RegisterTaskDefinition fails at deploy time\",\n\t\"Set NetworkMode to 'awsvpc'\",\n\t_pf_ecsnm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\trc := resolve(name, \"Properties.RequiresCompatibilities\")\n\tis_array(rc)\n\t\"FARGATE\" in rc\n\t_pf_ecsnm_absent(name)\n}\n"
   },
   {
+    "id": "pf-ecs-fargate-pid-mode-host",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "PidMode host is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-pid-mode-host\", \"ERROR\", name,\n\t\"Properties.PidMode\",\n\t\"PidMode is 'host' on a FARGATE task definition; only 'task' is supported and RegisterTaskDefinition fails with \\\"Tasks using the Fargate launch type do not support pidMode 'host'\\\"\",\n\t\"Use PidMode 'task', or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tresolve(name, \"Properties.PidMode\") == \"host\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-placement-constraints",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Task placement constraints are not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-placement-constraints\", \"ERROR\", name,\n\t\"Properties.PlacementConstraints\",\n\t\"A FARGATE task definition declares PlacementConstraints; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support constraints\\\"\",\n\t\"Drop PlacementConstraints, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tpc := _pf_ecs_get(name, \"PlacementConstraints\")\n\tcount(pc) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-privileged",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Privileged is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-privileged\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.Privileged\", [c.index]),\n\tsprintf(\"Container '%s' sets Privileged on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Fargate requires that the 'privileged' setting be 'false'\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop Privileged, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\t_pf_ecs_chas(c, \"Privileged\")\n\t_pf_ecs_cget(c, \"Privileged\") == true\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-shared-memory-size",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "LinuxParameters.SharedMemorySize is not supported on Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-shared-memory-size\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.LinuxParameters.SharedMemorySize\", [c.index]),\n\tsprintf(\"Container '%s' sets LinuxParameters.SharedMemorySize on a FARGATE task definition; RegisterTaskDefinition fails with \\\"Fargate compatible task definitions do not support sharedMemorySize\\\"\", [_pf_ecs_cname(c)]),\n\t\"Drop LinuxParameters.SharedMemorySize, or run the task on EC2\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tsome c in _pf_ecs_containers(name)\n\tlp := _pf_ecs_cget(c, \"LinuxParameters\")\n\t_pf_ecs_ohas(lp, \"SharedMemorySize\")\n}\n"
+  },
+  {
     "id": "pf-ecs-fargate-task-cpu-memory",
     "service": "ecs",
     "severity": "ERROR",
@@ -2927,6 +3367,182 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ECS::TaskDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecsfargcm_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html\"\n\n# The engine's E3047 checks the Cpu/Memory pairing only when both are present;\n# leaving one out entirely is caught by nothing before registration. True\n# absence needs the preprocessed document (see pf-ecs-container-memory-required\n# for the idiom).\n_pf_ecsfargcm_fargate(name) if {\n\tsome rc in flatten_list(name, \"Properties.RequiresCompatibilities\")\n\trc.value == \"FARGATE\"\n}\n\n_pf_ecsfargcm_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-task-cpu-memory\", \"ERROR\", name,\n\t\"Properties.Cpu\",\n\t\"RequiresCompatibilities includes FARGATE but the task-level Cpu is missing; RegisterTaskDefinition fails with \\\"Fargate requires that 'cpu' be defined at the task level\\\"\",\n\t\"Set task-level Cpu (and Memory) to one of the supported Fargate combinations\",\n\t_pf_ecsfargcm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecsfargcm_fargate(name)\n\t_pf_ecsfargcm_absent(name, \"Cpu\")\n}\n\nviolation contains make_diag_full(\"pf-ecs-fargate-task-cpu-memory\", \"ERROR\", name,\n\t\"Properties.Memory\",\n\t\"RequiresCompatibilities includes FARGATE but the task-level Memory is missing; RegisterTaskDefinition fails with \\\"Fargate requires that 'memory' be defined at the task level\\\"\",\n\t\"Set task-level Memory (and Cpu) to one of the supported Fargate combinations\",\n\t_pf_ecsfargcm_url) if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecsfargcm_fargate(name)\n\t_pf_ecsfargcm_absent(name, \"Memory\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-fargate-windows-cpu-under-1vcpu",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Windows tasks on Fargate need at least 1 vCPU",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-fargate-windows-cpu-under-1vcpu\", \"ERROR\", name,\n\t\"Properties.Cpu\",\n\tsprintf(\"A Windows (%s) FARGATE task definition allocates %v CPU units; Windows containers need at least 1024 and RegisterTaskDefinition fails with \\\"No Fargate configuration exists for given values\\\"\", [os, cpu]),\n\t\"Set Cpu to 1024 or more for a Windows Fargate task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_fargate(name)\n\tos := resolve(name, \"Properties.RuntimePlatform.OperatingSystemFamily\")\n\tstartswith(os, \"WINDOWS\")\n\tcpu := to_number(resolve(name, \"Properties.Cpu\"))\n\tcpu < 1024\n}\n"
+  },
+  {
+    "id": "pf-ecs-healthcheck-interval-range",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "HealthCheck.Interval must be 5-300 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-healthcheck-interval-range\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.HealthCheck.Interval\", [c.index]),\n\tsprintf(\"Container '%s' sets HealthCheck.Interval to %v; RegisterTaskDefinition accepts only 5-300\", [_pf_ecs_cname(c), v]),\n\t\"Set HealthCheck.Interval to a value between 5 and 300\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\thc := _pf_ecs_cget(c, \"HealthCheck\")\n\tv := to_number(_pf_ecs_oget(hc, \"Interval\"))\n\t_pf_ecs_outside(v, 5, 300)\n}\n"
+  },
+  {
+    "id": "pf-ecs-healthcheck-retries-range",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "HealthCheck.Retries must be 1-10",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-healthcheck-retries-range\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.HealthCheck.Retries\", [c.index]),\n\tsprintf(\"Container '%s' sets HealthCheck.Retries to %v; RegisterTaskDefinition accepts only 1-10\", [_pf_ecs_cname(c), v]),\n\t\"Set HealthCheck.Retries to a value between 1 and 10\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\thc := _pf_ecs_cget(c, \"HealthCheck\")\n\tv := to_number(_pf_ecs_oget(hc, \"Retries\"))\n\t_pf_ecs_outside(v, 1, 10)\n}\n"
+  },
+  {
+    "id": "pf-ecs-healthcheck-start-period-range",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "HealthCheck.StartPeriod must be 0-300 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-healthcheck-start-period-range\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.HealthCheck.StartPeriod\", [c.index]),\n\tsprintf(\"Container '%s' sets HealthCheck.StartPeriod to %v; RegisterTaskDefinition accepts only 0-300\", [_pf_ecs_cname(c), v]),\n\t\"Set HealthCheck.StartPeriod to a value between 0 and 300\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\thc := _pf_ecs_cget(c, \"HealthCheck\")\n\tv := to_number(_pf_ecs_oget(hc, \"StartPeriod\"))\n\t_pf_ecs_outside(v, 0, 300)\n}\n"
+  },
+  {
+    "id": "pf-ecs-healthcheck-timeout-range",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "HealthCheck.Timeout must be 2-60 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-healthcheck-timeout-range\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.HealthCheck.Timeout\", [c.index]),\n\tsprintf(\"Container '%s' sets HealthCheck.Timeout to %v; RegisterTaskDefinition accepts only 2-60\", [_pf_ecs_cname(c), v]),\n\t\"Set HealthCheck.Timeout to a value between 2 and 60\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\thc := _pf_ecs_cget(c, \"HealthCheck\")\n\tv := to_number(_pf_ecs_oget(hc, \"Timeout\"))\n\t_pf_ecs_outside(v, 2, 60)\n}\n"
+  },
+  {
+    "id": "pf-ecs-host-network-host-port-mismatch",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "NetworkMode host requires HostPort to equal ContainerPort",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-host-network-host-port-mismatch\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.PortMappings\", [c.index]),\n\tsprintf(\"Container '%s' maps container port %v to host port %v while the task definition uses NetworkMode host; RegisterTaskDefinition fails with \\\"When networkMode=host, the host ports and container ports in port mappings must match\\\"\", [_pf_ecs_cname(c), cp, hp]),\n\t\"Drop HostPort, or set it to the same value as ContainerPort\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tresolve(name, \"Properties.NetworkMode\") == \"host\"\n\tsome c in _pf_ecs_containers(name)\n\tpms := _pf_ecs_cget(c, \"PortMappings\")\n\tis_array(pms)\n\tsome pm in pms\n\tcp := to_number(object.get(pm, \"ContainerPort\", null))\n\thp := to_number(object.get(pm, \"HostPort\", null))\n\tcp != hp\n}\n"
+  },
+  {
+    "id": "pf-ecs-mountpoint-source-volume-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "MountPoints.SourceVolume must name a volume of the task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-mountpoint-source-volume-missing\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.MountPoints\", [c.index]),\n\tsprintf(\"Container '%s' mounts the volume '%s', which the task definition does not declare; RegisterTaskDefinition fails with \\\"Unknown volume '%s'\\\"\", [_pf_ecs_cname(c), sv, sv]),\n\t\"Declare the volume in Properties.Volumes, or point SourceVolume at an existing one\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tmps := _pf_ecs_cget(c, \"MountPoints\")\n\tis_array(mps)\n\tsome mp in mps\n\tsv := object.get(mp, \"SourceVolume\", null)\n\t_pf_ecs_lit(sv)\n\tnot sv in _pf_ecs_volnames(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-port-mapping-duplicate-name",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "PortMappings.Name must be unique within a task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-port-mapping-duplicate-name\", \"ERROR\", name,\n\t\"Properties.ContainerDefinitions\",\n\tsprintf(\"The port mapping name '%s' is used more than once in the task definition; RegisterTaskDefinition fails with \\\"port mapping name is already used\\\"\", [n]),\n\t\"Give every port mapping in the task definition a distinct Name\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tpms := _pf_ecs_portmappings(name)\n\tsome i, j\n\ti < j\n\tn := object.get(pms[i], \"Name\", null)\n\t_pf_ecs_lit(n)\n\tn == object.get(pms[j], \"Name\", null)\n}\n"
+  },
+  {
+    "id": "pf-ecs-port-range-overlap",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ContainerPortRange values must not overlap",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Numeric bounds of a \"<low>-<high>\" container port range.\n_pf_ecs_range(pm) := [lo, hi] if {\n\tr := object.get(pm, \"ContainerPortRange\", null)\n\t_pf_ecs_lit(r)\n\tparts := split(r, \"-\")\n\tcount(parts) == 2\n\tlo := to_number(parts[0])\n\thi := to_number(parts[1])\n}\n\nviolation contains make_diag_full(\"pf-ecs-port-range-overlap\", \"ERROR\", name,\n\t\"Properties.ContainerDefinitions\",\n\tsprintf(\"The container port ranges %v and %v overlap; RegisterTaskDefinition fails with \\\"container port is used multiple times in task\\\"\", [a, b]),\n\t\"Make the container port ranges disjoint\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tpms := _pf_ecs_portmappings(name)\n\tsome i, j\n\ti < j\n\ta := _pf_ecs_range(pms[i])\n\tb := _pf_ecs_range(pms[j])\n\ta[0] <= b[1]\n\tb[0] <= a[1]\n}\n"
+  },
+  {
+    "id": "pf-ecs-port-range-reversed",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "The first port of ContainerPortRange must be below the last",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-port-range-reversed\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.PortMappings\", [c.index]),\n\tsprintf(\"Container '%s' declares the port range '%s' where the first port is not below the last; RegisterTaskDefinition fails with \\\"Invalid 'containerPortRange' setting\\\"\", [_pf_ecs_cname(c), r]),\n\t\"Write ContainerPortRange as \\\"<low>-<high>\\\"\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tpms := _pf_ecs_cget(c, \"PortMappings\")\n\tis_array(pms)\n\tsome pm in pms\n\tr := object.get(pm, \"ContainerPortRange\", null)\n\t_pf_ecs_lit(r)\n\tparts := split(r, \"-\")\n\tcount(parts) == 2\n\tto_number(parts[0]) >= to_number(parts[1])\n}\n"
+  },
+  {
+    "id": "pf-ecs-port-range-with-host-port",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ContainerPortRange cannot be combined with a single port",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-port-range-with-host-port\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.PortMappings\", [c.index]),\n\tsprintf(\"Container '%s' declares both ContainerPortRange and a single port; RegisterTaskDefinition fails with \\\"cannot specify both single port and port range\\\"\", [_pf_ecs_cname(c)]),\n\t\"Use either ContainerPortRange or ContainerPort/HostPort, not both\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tpms := _pf_ecs_cget(c, \"PortMappings\")\n\tis_array(pms)\n\tsome pm in pms\n\t_pf_ecs_ohas(pm, \"ContainerPortRange\")\n\tsome k in {\"HostPort\", \"ContainerPort\"}\n\t_pf_ecs_ohas(pm, k)\n}\n"
+  },
+  {
+    "id": "pf-ecs-proxy-configuration-awsvpc-required",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ProxyConfiguration requires NetworkMode awsvpc",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-proxy-configuration-awsvpc-required\", \"ERROR\", name,\n\t\"Properties.NetworkMode\",\n\tsprintf(\"The task definition declares an App Mesh ProxyConfiguration with NetworkMode '%s'; RegisterTaskDefinition fails with \\\"APPMESH proxy configuration is only supported in networkMode=awsvpc\\\"\", [nm]),\n\t\"Set NetworkMode to awsvpc, or drop ProxyConfiguration\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\t_pf_ecs_has(name, \"ProxyConfiguration\")\n\tnm := resolve(name, \"Properties.NetworkMode\")\n\tis_string(nm)\n\tnm != \"awsvpc\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-proxy-configuration-container-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ProxyConfiguration.ContainerName must name a container of the task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-proxy-configuration-container-missing\", \"ERROR\", name,\n\t\"Properties.ProxyConfiguration.ContainerName\",\n\tsprintf(\"ProxyConfiguration points at the container '%s', which the task definition does not declare; RegisterTaskDefinition fails with \\\"Proxy container [%s] does not exist\\\"\", [cn, cn]),\n\t\"Point ContainerName at the App Mesh proxy container declared in this task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tpc := _pf_ecs_get(name, \"ProxyConfiguration\")\n\tcn := _pf_ecs_oget(pc, \"ContainerName\")\n\t_pf_ecs_lit(cn)\n\tnot cn in _pf_ecs_names(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-proxy-configuration-missing-required-props",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "An APPMESH ProxyConfiguration needs the four port properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-proxy-configuration-missing-required-props\", \"ERROR\", name,\n\t\"Properties.ProxyConfiguration.ProxyConfigurationProperties\",\n\tsprintf(\"The APPMESH ProxyConfiguration does not set %s; RegisterTaskDefinition fails with \\\"Ingress port not found\\\" (or the equivalent for the other keys)\", [req]),\n\t\"Add ProxyIngressPort, ProxyEgressPort, AppPorts and EgressIgnoredIPs to ProxyConfigurationProperties\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tpc := _pf_ecs_get(name, \"ProxyConfiguration\")\n\tobject.get(pc, \"Type\", \"APPMESH\") == \"APPMESH\"\n\tgiven := {n | some p in object.get(pc, \"ProxyConfigurationProperties\", []); n := object.get(p, \"Name\", null)}\n\tsome req in {\"ProxyIngressPort\", \"ProxyEgressPort\", \"AppPorts\", \"EgressIgnoredIPs\"}\n\tnot req in given\n}\n"
+  },
+  {
+    "id": "pf-ecs-restart-policy-attempt-period-range",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "RestartPolicy.RestartAttemptPeriod must be 60-1800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-restart-policy-attempt-period-range\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.RestartPolicy.RestartAttemptPeriod\", [c.index]),\n\tsprintf(\"Container '%s' sets RestartAttemptPeriod to %v; RegisterTaskDefinition fails with \\\"the 'restartAttemptPeriod' setting for container '%s' must be between 60 and 1800\\\"\", [_pf_ecs_cname(c), v, _pf_ecs_cname(c)]),\n\t\"Set RestartAttemptPeriod to a value between 60 and 1800\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\trp := _pf_ecs_cget(c, \"RestartPolicy\")\n\tv := to_number(_pf_ecs_oget(rp, \"RestartAttemptPeriod\"))\n\t_pf_ecs_outside(v, 60, 1800)\n}\n"
+  },
+  {
+    "id": "pf-ecs-secrets-without-execution-role",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Container Secrets require an ExecutionRoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-secrets-without-execution-role\", \"ERROR\", name,\n\t\"Properties.ExecutionRoleArn\",\n\tsprintf(\"Container '%s' injects Secrets but the task definition sets no ExecutionRoleArn; RegisterTaskDefinition fails with \\\"When you are specifying container secrets, you must also specify a value for 'executionRoleArn'\\\"\", [_pf_ecs_cname(c)]),\n\t\"Set ExecutionRoleArn to a task execution role that can read the secret\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tnot _pf_ecs_has(name, \"ExecutionRoleArn\")\n\tsome c in _pf_ecs_containers(name)\n\ts := _pf_ecs_cget(c, \"Secrets\")\n\tcount(s) > 0\n}\n"
   },
   {
     "id": "pf-ecs-service-codedeploy-lb",
@@ -3029,6 +3645,314 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-service-platform-version-ec2\", \"ERROR\", name,\n\t\"Properties.PlatformVersion\",\n\t\"LaunchType is EC2 but PlatformVersion is set; CreateService fails with \\\"The platform version must be null when specifying an EC2 launch type\\\"\",\n\t\"Remove PlatformVersion (it applies to Fargate only)\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.LaunchType\") == \"EC2\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tnot object.get(props, \"PlatformVersion\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-ecs-svc-az-rebalancing-with-daemon",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "AvailabilityZoneRebalancing is not supported for DAEMON services",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-az-rebalancing-with-daemon\", \"ERROR\", name,\n\t\"Properties.AvailabilityZoneRebalancing\",\n\t\"A DAEMON service enables AvailabilityZoneRebalancing; CreateService fails with \\\"Availability Zone Rebalancing does not support DAEMON services\\\"\",\n\t\"Drop AvailabilityZoneRebalancing, or use the REPLICA scheduling strategy\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.SchedulingStrategy\") == \"DAEMON\"\n\tresolve(name, \"Properties.AvailabilityZoneRebalancing\") == \"ENABLED\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-binpack-field",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A binpack placement strategy accepts only cpu or memory",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-binpack-field\", \"ERROR\", name,\n\t\"Properties.PlacementStrategies\",\n\tsprintf(\"A binpack placement strategy uses the field '%s'; CreateService fails with \\\"binpack field '%s' is invalid\\\"\", [f, f]),\n\t\"Set Field to cpu or memory\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome ps in flatten_list(name, \"Properties.PlacementStrategies\")\n\tobject.get(ps.value, \"Type\", null) == \"binpack\"\n\tf := object.get(ps.value, \"Field\", null)\n\t_pf_ecs_lit(f)\n\tnot f in {\"cpu\", \"memory\"}\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-capacity-provider-multiple-base",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Only one capacity provider in a strategy may set Base",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-capacity-provider-multiple-base\", \"ERROR\", name,\n\t\"Properties.CapacityProviderStrategy\",\n\t\"More than one capacity provider in the strategy sets Base; CreateService fails with \\\"There are multiple capacity providers in the specified capacity provider strategy with a base value defined\\\"\",\n\t\"Keep Base on a single capacity provider\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tcps := _pf_ecs_get(name, \"CapacityProviderStrategy\")\n\tis_array(cps)\n\tcount([x | some x in cps; _pf_ecs_ohas(x, \"Base\")]) > 1\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-capacity-provider-zero-weight",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A capacity provider strategy needs at least one non-zero Weight",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-capacity-provider-zero-weight\", \"ERROR\", name,\n\t\"Properties.CapacityProviderStrategy\",\n\t\"Every capacity provider in the strategy has Weight 0; CreateService fails with \\\"There are no capacity providers in the capacity provider strategy with a weight value greater than zero\\\"\",\n\t\"Give at least one capacity provider a Weight above 0\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tcps := _pf_ecs_get(name, \"CapacityProviderStrategy\")\n\tis_array(cps)\n\tcount(cps) > 0\n\tsum([to_number(object.get(x, \"Weight\", 0)) | some x in cps]) == 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-circuit-breaker-with-code-deploy",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "DeploymentCircuitBreaker only works with the ECS deployment controller",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-circuit-breaker-with-code-deploy\", \"ERROR\", name,\n\t\"Properties.DeploymentConfiguration.DeploymentCircuitBreaker\",\n\tsprintf(\"The service combines the %s deployment controller with a DeploymentCircuitBreaker, which only the ECS controller supports; CreateService fails\", [t]),\n\t\"Drop DeploymentCircuitBreaker, or use the ECS deployment controller\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tt := resolve(name, \"Properties.DeploymentController.Type\")\n\tt != \"ECS\"\n\t_pf_ecs_ohas(_pf_ecs_get(name, \"DeploymentConfiguration\"), \"DeploymentCircuitBreaker\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-classic-lb-with-fargate",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Classic Load Balancers are not supported with Fargate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-classic-lb-with-fargate\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\t\"The service runs on FARGATE but attaches a Classic Load Balancer through LoadBalancerName; CreateService fails with \\\"Classic Load Balancers are not supported with Fargate\\\"\",\n\t\"Use an Application or Network Load Balancer target group\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tlbs := _pf_ecs_get(name, \"LoadBalancers\")\n\tis_array(lbs)\n\tsome lb in lbs\n\t_pf_ecs_ohas(lb, \"LoadBalancerName\")\n\tresolve(name, \"Properties.LaunchType\") == \"FARGATE\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-connect-client-alias-dns-name",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A Service Connect ClientAlias.DnsName must be a valid DNS name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-connect-client-alias-dns-name\", \"ERROR\", name,\n\t\"Properties.ServiceConnectConfiguration.Services\",\n\tsprintf(\"The Service Connect client alias '%s' is not a valid DNS name; CreateService fails with \\\"The DNS name that you provided is invalid\\\"\", [dn]),\n\t\"Use a DNS-safe name (letters, digits, hyphen and dot)\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tscc := _pf_ecs_get(name, \"ServiceConnectConfiguration\")\n\tsvcs := _pf_ecs_oget(scc, \"Services\")\n\tis_array(svcs)\n\tsome s in svcs\n\tsome ca in object.get(s, \"ClientAliases\", [])\n\tdn := object.get(ca, \"DnsName\", null)\n\t_pf_ecs_lit(dn)\n\tnot regex.match(\"^[A-Za-z0-9]([A-Za-z0-9.-]{0,125}[A-Za-z0-9])?$\", dn)\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-connect-client-aliases-max",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A Service Connect service accepts at most one ClientAlias",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-connect-client-aliases-max\", \"ERROR\", name,\n\t\"Properties.ServiceConnectConfiguration.Services\",\n\tsprintf(\"A Service Connect service declares %d client aliases; CreateService fails with \\\"%d clientAliases exceeds the max limit of 1\\\"\", [count(ca), count(ca)]),\n\t\"Keep a single ClientAliases entry\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tscc := _pf_ecs_get(name, \"ServiceConnectConfiguration\")\n\tsvcs := _pf_ecs_oget(scc, \"Services\")\n\tis_array(svcs)\n\tsome s in svcs\n\tca := object.get(s, \"ClientAliases\", [])\n\tcount(ca) > 1\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-connect-port-name-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Service Connect PortName must match a named port mapping",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-connect-port-name-missing\", \"ERROR\", name,\n\t\"Properties.ServiceConnectConfiguration.Services\",\n\tsprintf(\"Service Connect exposes the port name '%s', which the referenced task definition does not declare; CreateService fails with \\\"portName(%s) does not refer to any named PortMapping in the container definitions\\\"\", [pn, pn]),\n\t\"Name the port mapping in the task definition, or point PortName at an existing one\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tscc := _pf_ecs_get(name, \"ServiceConnectConfiguration\")\n\tsvcs := _pf_ecs_oget(scc, \"Services\")\n\tis_array(svcs)\n\tsome s in svcs\n\tpn := object.get(s, \"PortName\", null)\n\t_pf_ecs_lit(pn)\n\ttd := _pf_ecs_reftd(name, \"Properties.TaskDefinition\")\n\tnot pn in {n | some pm in _pf_ecs_portmappings(td); n := object.get(pm, \"Name\", null)}\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-connect-without-namespace",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Service Connect needs a Namespace on the service or the cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The cluster carries a default namespace, so the service may omit its own.\n_pf_ecs_clusterns(name) if {\n\tcl := resolve(name, \"Properties.Cluster\")\n\tinput.resources[cl].resourceType == \"AWS::ECS::Cluster\"\n\t_pf_ecs_has(cl, \"ServiceConnectDefaults\")\n}\n\nviolation contains make_diag_full(\"pf-ecs-svc-connect-without-namespace\", \"ERROR\", name,\n\t\"Properties.ServiceConnectConfiguration.Namespace\",\n\t\"Service Connect is enabled without a Namespace, and the cluster declares no ServiceConnectDefaults; CreateService fails with \\\"Namespace is missing\\\"\",\n\t\"Set ServiceConnectConfiguration.Namespace, or give the cluster ServiceConnectDefaults\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tscc := _pf_ecs_get(name, \"ServiceConnectConfiguration\")\n\t_pf_ecs_oget(scc, \"Enabled\") == true\n\tnot _pf_ecs_ohas(scc, \"Namespace\")\n\tnot _pf_ecs_clusterns(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-daemon-max-percent",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A DAEMON service requires DeploymentConfiguration.MaximumPercent 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-daemon-max-percent\", \"ERROR\", name,\n\t\"Properties.DeploymentConfiguration.MaximumPercent\",\n\tsprintf(\"A DAEMON service sets MaximumPercent to %v; CreateService fails with \\\"The daemon scheduling strategy does not support values above 100 for maximumPercent\\\"\", [mp]),\n\t\"Set MaximumPercent to 100 for DAEMON services\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.SchedulingStrategy\") == \"DAEMON\"\n\tmp := to_number(resolve(name, \"Properties.DeploymentConfiguration.MaximumPercent\"))\n\tmp > 100\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-daemon-with-placement-strategies",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A DAEMON service does not accept placement strategies",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-daemon-with-placement-strategies\", \"ERROR\", name,\n\t\"Properties.PlacementStrategies\",\n\t\"A DAEMON service declares placement strategies; CreateService fails with \\\"The daemon scheduling strategy does not support placement strategies\\\"\",\n\t\"Drop PlacementStrategies from the DAEMON service\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.SchedulingStrategy\") == \"DAEMON\"\n\tps := _pf_ecs_get(name, \"PlacementStrategies\")\n\tcount(ps) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-ebs-iops-unsupported-type",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ManagedEBSVolume Iops is only valid for io1, io2 and gp3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-ebs-iops-unsupported-type\", \"ERROR\", name,\n\t\"Properties.VolumeConfigurations\",\n\tsprintf(\"A ManagedEBSVolume of type '%s' sets Iops, which only io1, io2 and gp3 support; CreateService fails with \\\"ECS managed EBS volume configuration was invalid\\\" (InvalidParameterCombination)\", [vt]),\n\t\"Drop Iops, or use io1 / io2 / gp3\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome v in flatten_list(name, \"Properties.VolumeConfigurations\")\n\teb := _pf_ecs_oget(v.value, \"ManagedEBSVolume\")\n\t_pf_ecs_ohas(eb, \"Iops\")\n\tvt := _pf_ecs_oget(eb, \"VolumeType\")\n\t_pf_ecs_lit(vt)\n\tnot vt in {\"io1\", \"io2\", \"gp3\"}\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-ebs-name-not-in-taskdef",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "VolumeConfigurations.Name must match a ConfiguredAtLaunch volume",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-ebs-name-not-in-taskdef\", \"ERROR\", name,\n\t\"Properties.VolumeConfigurations\",\n\tsprintf(\"The service configures the volume '%s', which the referenced task definition does not declare; CreateService fails with \\\"The volume name '%s' in your request does not have a matching volume in your Task Definition\\\"\", [vn, vn]),\n\t\"Declare the volume in the task definition with ConfiguredAtLaunch true\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome v in flatten_list(name, \"Properties.VolumeConfigurations\")\n\tvn := object.get(v.value, \"Name\", null)\n\t_pf_ecs_lit(vn)\n\ttd := _pf_ecs_reftd(name, \"Properties.TaskDefinition\")\n\tnot vn in _pf_ecs_volnames(td)\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-ebs-throughput-non-gp3",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "ManagedEBSVolume Throughput is only valid for gp3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-ebs-throughput-non-gp3\", \"ERROR\", name,\n\t\"Properties.VolumeConfigurations\",\n\tsprintf(\"A ManagedEBSVolume of type '%s' sets Throughput, which only gp3 supports; CreateService fails with \\\"ECS managed EBS volume configuration was invalid\\\" (InvalidParameterCombination)\", [vt]),\n\t\"Drop Throughput, or use VolumeType gp3\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome v in flatten_list(name, \"Properties.VolumeConfigurations\")\n\teb := _pf_ecs_oget(v.value, \"ManagedEBSVolume\")\n\t_pf_ecs_ohas(eb, \"Throughput\")\n\tvt := _pf_ecs_oget(eb, \"VolumeType\")\n\t_pf_ecs_lit(vt)\n\tvt != \"gp3\"\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-ebs-volume-without-size-or-snapshot",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A managed EBS volume needs SizeInGiB or SnapshotId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-ebs-volume-without-size-or-snapshot\", \"ERROR\", name,\n\t\"Properties.VolumeConfigurations\",\n\t\"A ManagedEBSVolume sets neither SizeInGiB nor SnapshotId; CreateService fails with \\\"ECS managed EBS volume configuration was invalid\\\" (MissingParameter)\",\n\t\"Set SizeInGiB, or restore from SnapshotId\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome v in flatten_list(name, \"Properties.VolumeConfigurations\")\n\teb := _pf_ecs_oget(v.value, \"ManagedEBSVolume\")\n\tnot _pf_ecs_ohas(eb, \"SizeInGiB\")\n\tnot _pf_ecs_ohas(eb, \"SnapshotId\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-external-with-load-balancers",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "An EXTERNAL deployment controller does not accept LoadBalancers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-external-with-load-balancers\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\t\"The service uses the EXTERNAL deployment controller but still sets LoadBalancers; CreateService fails with \\\"LoadBalancers must be empty or null\\\"\",\n\t\"Move the load balancer configuration to the task set\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.DeploymentController.Type\") == \"EXTERNAL\"\n\tlbs := _pf_ecs_get(name, \"LoadBalancers\")\n\tcount(lbs) > 0\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-external-with-taskdef",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "An EXTERNAL deployment controller does not accept TaskDefinition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-external-with-taskdef\", \"ERROR\", name,\n\t\"Properties.TaskDefinition\",\n\t\"The service uses the EXTERNAL deployment controller but still sets TaskDefinition; CreateService fails with \\\"TaskDefinition must be blank\\\"\",\n\t\"Drop TaskDefinition; task sets carry it for EXTERNAL services\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tresolve(name, \"Properties.DeploymentController.Type\") == \"EXTERNAL\"\n\t_pf_ecs_has(name, \"TaskDefinition\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-lb-container-name-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "LoadBalancers.ContainerName must name a container of the task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-lb-container-name-missing\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\tsprintf(\"The load balancer targets the container '%s', which the referenced task definition does not declare; CreateService fails with \\\"The container %s does not exist in the task definition\\\"\", [cn, cn]),\n\t\"Point ContainerName at a container of the referenced task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tlbs := _pf_ecs_get(name, \"LoadBalancers\")\n\tis_array(lbs)\n\tsome lb in lbs\n\tcn := object.get(lb, \"ContainerName\", null)\n\t_pf_ecs_lit(cn)\n\ttd := _pf_ecs_reftd(name, \"Properties.TaskDefinition\")\n\tnot cn in _pf_ecs_names(td)\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-lb-container-port-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "LoadBalancers.ContainerPort must match a port mapping of the container",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-lb-container-port-missing\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\tsprintf(\"The load balancer targets port %v of container '%s', which publishes no such port; CreateService fails with \\\"The container %s did not have a container port %v defined\\\"\", [cp, cn, cn, cp]),\n\t\"Add the port to the container PortMappings, or target a port the container already publishes\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tlbs := _pf_ecs_get(name, \"LoadBalancers\")\n\tis_array(lbs)\n\tsome lb in lbs\n\tcn := object.get(lb, \"ContainerName\", null)\n\t_pf_ecs_lit(cn)\n\tcp := to_number(object.get(lb, \"ContainerPort\", null))\n\ttd := _pf_ecs_reftd(name, \"Properties.TaskDefinition\")\n\tsome c in _pf_ecs_containers(td)\n\tobject.get(c.value, \"Name\", null) == cn\n\tpms := _pf_ecs_cget(c, \"PortMappings\")\n\tis_array(pms)\n\tnot cp in {to_number(object.get(pm, \"ContainerPort\", null)) | some pm in pms}\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-min-healthy-over-max-percent",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "MinimumHealthyPercent must stay below MaximumPercent",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-min-healthy-over-max-percent\", \"ERROR\", name,\n\t\"Properties.DeploymentConfiguration\",\n\tsprintf(\"The rolling update leaves no room to replace tasks: MinimumHealthyPercent %v and MaximumPercent %v; CreateService fails with \\\"Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments\\\"\", [mn, mx]),\n\t\"Raise MaximumPercent above MinimumHealthyPercent (for example 100 / 200)\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tdc := _pf_ecs_get(name, \"DeploymentConfiguration\")\n\tmn := to_number(_pf_ecs_oget(dc, \"MinimumHealthyPercent\"))\n\tmx := to_number(_pf_ecs_oget(dc, \"MaximumPercent\"))\n\tmn >= mx\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-placement-constraint-distinct-instance-expression",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "distinctInstance placement constraints take no Expression",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-placement-constraint-distinct-instance-expression\", \"ERROR\", name,\n\t\"Properties.PlacementConstraints\",\n\t\"A distinctInstance placement constraint carries an Expression; CreateService fails with \\\"distinctInstance expression should not be specified\\\"\",\n\t\"Drop Expression from the distinctInstance constraint\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome pc in flatten_list(name, \"Properties.PlacementConstraints\")\n\tobject.get(pc.value, \"Type\", null) == \"distinctInstance\"\n\t_pf_ecs_ohas(pc.value, \"Expression\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-placement-strategies-max6",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A service accepts at most 5 placement strategies",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-placement-strategies-max6\", \"ERROR\", name,\n\t\"Properties.PlacementStrategies\",\n\tsprintf(\"The service declares %d placement strategies; CreateService fails with \\\"Maximum number of strategies is 5\\\"\", [count(ps)]),\n\t\"Reduce PlacementStrategies to 5 entries\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tps := _pf_ecs_get(name, \"PlacementStrategies\")\n\tcount(ps) > 5\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-random-with-field",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A random placement strategy takes no Field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-random-with-field\", \"ERROR\", name,\n\t\"Properties.PlacementStrategies\",\n\t\"A random placement strategy carries a Field; CreateService fails with \\\"random field should not be specified\\\"\",\n\t\"Drop Field from the random strategy\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsome ps in flatten_list(name, \"Properties.PlacementStrategies\")\n\tobject.get(ps.value, \"Type\", null) == \"random\"\n\t_pf_ecs_ohas(ps.value, \"Field\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-registries-multiple",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A service accepts at most one service registry",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-registries-multiple\", \"ERROR\", name,\n\t\"Properties.ServiceRegistries\",\n\tsprintf(\"The service declares %d service registries; CreateService fails with \\\"service registries can have at most 1 items\\\"\", [count(sr)]),\n\t\"Keep a single ServiceRegistries entry\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\tsr := _pf_ecs_get(name, \"ServiceRegistries\")\n\tcount(sr) > 1\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-registries-port-with-awsvpc",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "awsvpc services address a registry by Port, not ContainerName/ContainerPort",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-registries-port-with-awsvpc\", \"ERROR\", name,\n\t\"Properties.ServiceRegistries\",\n\t\"An awsvpc service sets ContainerName / ContainerPort on its service registry; CreateService fails with \\\"The values specified for serviceRegistries do not require a value for 'containerPort'\\\"\",\n\t\"Drop ContainerName and ContainerPort; use Port instead\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\t_pf_ecs_has(name, \"NetworkConfiguration\")\n\tsome sr in flatten_list(name, \"Properties.ServiceRegistries\")\n\tsome k in {\"ContainerName\", \"ContainerPort\"}\n\t_pf_ecs_ohas(sr.value, k)\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-role-with-awsvpc",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "awsvpc services must use the service-linked role, not Role",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-role-with-awsvpc\", \"ERROR\", name,\n\t\"Properties.Role\",\n\t\"The service sets Role while using the awsvpc network mode; CreateService fails with \\\"You cannot specify an IAM role for services that require a service linked role\\\"\",\n\t\"Drop Role; ECS uses the service-linked role for awsvpc services\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\t_pf_ecs_has(name, \"Role\")\n\t_pf_ecs_has(name, \"NetworkConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-svc-role-without-load-balancers",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Service Role is only valid together with LoadBalancers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::Service"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-svc-role-without-load-balancers\", \"ERROR\", name,\n\t\"Properties.Role\",\n\t\"The service sets Role without any LoadBalancers; CreateService fails with \\\"IAM roles are only valid for services configured to use load balancers\\\"\",\n\t\"Drop Role, or attach a load balancer\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::Service\")\n\t_pf_ecs_has(name, \"Role\")\n\tnot _pf_ecs_has(name, \"LoadBalancers\")\n}\n"
+  },
+  {
     "id": "pf-ecs-taskdef-family",
     "service": "ecs",
     "severity": "ERROR",
@@ -3038,6 +3962,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ECS::TaskDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-taskdef-family\", \"ERROR\", name,\n\t\"Properties.Family\",\n\tsprintf(\"Family '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 255 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 255 characters\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RegisterTaskDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tv := resolve(name, \"Properties.Family\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,255}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-ecs-taskset-lb-container-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "TaskSet LoadBalancers.ContainerName must name a container of the task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-taskset-lb-container-missing\", \"ERROR\", name,\n\t\"Properties.LoadBalancers\",\n\tsprintf(\"The task set targets the container '%s', which the referenced task definition does not declare; CreateTaskSet fails with \\\"The container %s does not exist in the task definition\\\"\", [cn, cn]),\n\t\"Point ContainerName at a container of the referenced task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateTaskSet.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskSet\")\n\tlbs := _pf_ecs_get(name, \"LoadBalancers\")\n\tis_array(lbs)\n\tsome lb in lbs\n\tcn := object.get(lb, \"ContainerName\", null)\n\t_pf_ecs_lit(cn)\n\ttd := _pf_ecs_reftd(name, \"Properties.TaskDefinition\")\n\tnot cn in _pf_ecs_names(td)\n}\n"
+  },
+  {
+    "id": "pf-ecs-taskset-platform-version-ec2",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "TaskSet PlatformVersion is not allowed with the EC2 launch type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskSet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-taskset-platform-version-ec2\", \"ERROR\", name,\n\t\"Properties.PlatformVersion\",\n\t\"The task set combines the EC2 launch type with a PlatformVersion; CreateTaskSet fails with \\\"The platform version must be null when specifying an EC2 launch type\\\"\",\n\t\"Drop PlatformVersion, or use the FARGATE launch type\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateTaskSet.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskSet\")\n\tresolve(name, \"Properties.LaunchType\") == \"EC2\"\n\t_pf_ecs_has(name, \"PlatformVersion\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-ulimit-soft-over-hard",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "A Ulimit SoftLimit must not exceed its HardLimit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-ulimit-soft-over-hard\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.Ulimits\", [c.index]),\n\tsprintf(\"Container '%s' sets the ulimit '%s' with SoftLimit %v above HardLimit %v; RegisterTaskDefinition fails with \\\"Soft limit exceeds hard limit for ulimit %s\\\"\", [_pf_ecs_cname(c), un, s, h, un]),\n\t\"Lower SoftLimit to at most HardLimit\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tuls := _pf_ecs_cget(c, \"Ulimits\")\n\tis_array(uls)\n\tsome u in uls\n\ts := to_number(object.get(u, \"SoftLimit\", null))\n\th := to_number(object.get(u, \"HardLimit\", null))\n\ts > h\n\tun := object.get(u, \"Name\", \"<unnamed>\")\n}\n"
+  },
+  {
+    "id": "pf-ecs-volume-not-referenced",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "Every task definition volume must be mounted by a container",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The mounted volume names of the whole task definition.\n_pf_ecs_mounted(name) := {sv |\n\tsome c in _pf_ecs_containers(name)\n\tmps := _pf_ecs_cget(c, \"MountPoints\")\n\tis_array(mps)\n\tsome mp in mps\n\tsv := object.get(mp, \"SourceVolume\", null)\n}\n\nviolation contains make_diag_full(\"pf-ecs-volume-not-referenced\", \"ERROR\", name,\n\tsprintf(\"Properties.Volumes.%d.Name\", [v.index]),\n\tsprintf(\"The ConfiguredAtLaunch volume '%s' is declared but no container mounts it; RegisterTaskDefinition fails with \\\"Volumes [%s] are not referenced by any of the containers\\\"\", [vn, vn]),\n\t\"Add a MountPoint for the volume, or drop the volume\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\tobject.get(v.value, \"ConfiguredAtLaunch\", false) == true\n\tvn := object.get(v.value, \"Name\", null)\n\t_pf_ecs_lit(vn)\n\tnot vn in _pf_ecs_mounted(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-volumesfrom-source-container-missing",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "VolumesFrom.SourceContainer must name a container of the task definition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-volumesfrom-source-container-missing\", \"ERROR\", name,\n\tsprintf(\"Properties.ContainerDefinitions.%d.VolumesFrom\", [c.index]),\n\tsprintf(\"Container '%s' takes volumes from '%s', which is not declared in this task definition; RegisterTaskDefinition fails with \\\"Invalid 'volumesFrom' setting. Unknown container: '%s'\\\"\", [_pf_ecs_cname(c), sc, sc]),\n\t\"Point SourceContainer at a container declared in the same task definition\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tsome c in _pf_ecs_containers(name)\n\tvf := _pf_ecs_cget(c, \"VolumesFrom\")\n\tis_array(vf)\n\tsome v in vf\n\tsc := object.get(v, \"SourceContainer\", null)\n\t_pf_ecs_lit(sc)\n\tnot sc in _pf_ecs_names(name)\n}\n"
+  },
+  {
+    "id": "pf-ecs-windows-arm64",
+    "service": "ecs",
+    "severity": "ERROR",
+    "title": "CpuArchitecture ARM64 is not available for Windows",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ECS::TaskDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ecs-windows-arm64\", \"ERROR\", name,\n\t\"Properties.RuntimePlatform.CpuArchitecture\",\n\tsprintf(\"RuntimePlatform pairs the Windows family '%s' with CpuArchitecture ARM64; no Fargate configuration exists for that pair and RegisterTaskDefinition fails\", [os]),\n\t\"Use X86_64 with a Windows operating system family\",\n\t\"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::ECS::TaskDefinition\")\n\tos := resolve(name, \"Properties.RuntimePlatform.OperatingSystemFamily\")\n\tstartswith(os, \"WINDOWS\")\n\tresolve(name, \"Properties.RuntimePlatform.CpuArchitecture\") == \"ARM64\"\n}\n"
   },
   {
     "id": "pf-efs-availability-zone-region",
@@ -9354,6 +10344,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/ecr",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ECR rules (rules/ecr/pf-ecr-*).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n#\n# The lifecycle policy is an opaque JSON string in both places it can appear:\n# AWS::ECR::Repository LifecyclePolicy.LifecyclePolicyText and\n# AWS::ECR::RepositoryCreationTemplate LifecyclePolicy. PutLifecyclePolicy\n# validates the document itself, so the rules parse it here.\n\n_pf_ecrlib_text(name) := s if {\n\tname in resources_of_type(\"AWS::ECR::Repository\")\n\ts := resolve(name, \"Properties.LifecyclePolicy.LifecyclePolicyText\")\n\tis_string(s)\n}\n\n_pf_ecrlib_text(name) := s if {\n\tname in resources_of_type(\"AWS::ECR::RepositoryCreationTemplate\")\n\ts := resolve(name, \"Properties.LifecyclePolicy\")\n\tis_string(s)\n}\n\n_pf_ecrlib_prop(name) := \"Properties.LifecyclePolicy.LifecyclePolicyText\" if {\n\tname in resources_of_type(\"AWS::ECR::Repository\")\n}\n\n_pf_ecrlib_prop(name) := \"Properties.LifecyclePolicy\" if {\n\tname in resources_of_type(\"AWS::ECR::RepositoryCreationTemplate\")\n}\n\n# Parsed policy document; undefined when the text is not JSON or not an object.\n_pf_ecrlib_policy(name) := pol if {\n\tpol := json.unmarshal(_pf_ecrlib_text(name))\n\tis_object(pol)\n}\n\n_pf_ecrlib_rule_list(name) := rules if {\n\trules := object.get(_pf_ecrlib_policy(name), \"rules\", null)\n\tis_array(rules)\n}\n\n# [name, index, rule object] for every rule of every lifecycle policy.\n_pf_ecrlib_rules contains [name, i, r] if {\n\tsome name, _ in input.resources\n\tsome i, r in _pf_ecrlib_rule_list(name)\n\tis_object(r)\n}\n\n_pf_ecrlib_selection(r) := s if {\n\ts := object.get(r, \"selection\", null)\n\tis_object(s)\n}\n\n_pf_ecrlib_action(r) := a if {\n\ta := object.get(r, \"action\", null)\n\tis_object(a)\n}\n\n_pf_ecrlib_get(o, key) := v if {\n\tv := object.get(o, key, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_ecrlib_absent(o, key) if object.get(o, key, \"__pf_absent\") == \"__pf_absent\"\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_ecrlib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# Resource types that carry EncryptionConfiguration / ImageTagMutability.\n_pf_ecrlib_repo_types := [\"AWS::ECR::Repository\", \"AWS::ECR::RepositoryCreationTemplate\"]\n\n# Upstream registry URLs a pull through cache rule accepts (measured\n# 2026-09-05 in ap-northeast-1; the check is case sensitive and any other URL\n# is rejected with \"The upstream registry URL <url> is invalid\").\n# The three \"open\" registries take no credential at all; the five \"secret\"\n# ones require a Secrets Manager ARN; the ECR form authenticates with an IAM\n# role instead.\n_pf_ecrlib_ptc_secret_url := {\n\t\"registry-1.docker.io\": \"docker-hub\",\n\t\"ghcr.io\": \"github-container-registry\",\n\t\"registry.gitlab.com\": \"gitlab-container-registry\",\n\t\"cgr.dev\": \"chainguard\",\n}\n\n_pf_ecrlib_ptc_open_url := {\n\t\"public.ecr.aws\": \"ecr-public\",\n\t\"registry.k8s.io\": \"k8s\",\n\t\"quay.io\": \"quay\",\n}\n\n_pf_ecrlib_ptc_registry(url) := _pf_ecrlib_ptc_secret_url[url]\n\n_pf_ecrlib_ptc_registry(url) := _pf_ecrlib_ptc_open_url[url]\n\n_pf_ecrlib_ptc_registry(url) := \"azure-container-registry\" if {\n\tis_string(url)\n\tendswith(url, \".azurecr.io\")\n\tcount(url) > count(\".azurecr.io\")\n}\n\n_pf_ecrlib_ptc_registry(url) := \"ecr\" if {\n\tis_string(url)\n\tregex.match(`^[0-9]{12}\\.dkr\\.ecr\\.[a-z0-9-]+\\.amazonaws\\.com$`, url)\n}\n\n# Registries that authenticate with a Secrets Manager secret.\n_pf_ecrlib_ptc_needs_secret(url) if _pf_ecrlib_ptc_secret_url[url]\n\n_pf_ecrlib_ptc_needs_secret(url) if _pf_ecrlib_ptc_registry(url) == \"azure-container-registry\"\n"
+  },
+  {
+    "name": "_lib/ecs",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ECS rules. Absence has to be proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), containers and\n# volumes are always walked through flatten_list, and every name comparison is\n# limited to literals so a Ref-valued Name never produces a false positive.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_ecs_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_ecs_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_ecs_oget(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_ecs_ohas(o, k) if {\n\t_pf_ecs_oget(o, k)\n}\n\n# Task-level property straight from the document (absence is provable here).\n_pf_ecs_get(name, k) := v if {\n\tv := _pf_ecs_oget(_pf_ecs_props(name), k)\n}\n\n_pf_ecs_has(name, k) if {\n\t_pf_ecs_get(name, k)\n}\n\n# The task definition asks for the Fargate launch type.\n_pf_ecs_fargate(name) if {\n\trc := resolve(name, \"Properties.RequiresCompatibilities\")\n\tis_array(rc)\n\t\"FARGATE\" in rc\n}\n\n# Container definitions as {index, value} pairs.\n_pf_ecs_containers(name) := cs if {\n\tcs := flatten_list(name, \"Properties.ContainerDefinitions\")\n}\n\n_pf_ecs_cget(c, k) := v if {\n\tv := _pf_ecs_oget(c.value, k)\n}\n\n_pf_ecs_cname(c) := n if {\n\tn := object.get(c.value, \"Name\", \"<unnamed>\")\n}\n\n# Literal container names declared in the task definition.\n_pf_ecs_names(name) := {n |\n\tsome c in _pf_ecs_containers(name)\n\tn := object.get(c.value, \"Name\", null)\n\t_pf_ecs_lit(n)\n}\n\n# Literal volume names declared in the task definition.\n_pf_ecs_volnames(name) := {n |\n\tsome v in flatten_list(name, \"Properties.Volumes\")\n\tn := object.get(v.value, \"Name\", null)\n\t_pf_ecs_lit(n)\n}\n\n# Every port mapping of the task definition, flattened across containers.\n_pf_ecs_portmappings(name) := [pm |\n\tsome c in _pf_ecs_containers(name)\n\tpms := _pf_ecs_cget(c, \"PortMappings\")\n\tis_array(pms)\n\tsome pm in pms\n\tis_object(pm)\n]\n\n# The task definition a service or task set points at, when it is a Ref to a\n# task definition in the same template (a literal ARN or family:revision cannot\n# be inspected, so those rules simply do not fire).\n_pf_ecs_reftd(name, key) := td if {\n\ttd := resolve(name, key)\n\tinput.resources[td].resourceType == \"AWS::ECS::TaskDefinition\"\n}\n\n# Outside an inclusive range; two clauses so a single rule body can express it.\n_pf_ecs_outside(v, lo, _) if {\n\tv < lo\n}\n\n_pf_ecs_outside(v, _, hi) if {\n\tv > hi\n}\n\n_pf_ecs_num(v) := n if {\n\tn := to_number(v)\n}\n\n_pf_ecs_chas(c, k) if {\n\t_pf_ecs_cget(c, k)\n}\n"
   },
   {
     "name": "_lib/efs",

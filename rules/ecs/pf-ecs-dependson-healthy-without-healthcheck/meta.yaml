@@ -1,0 +1,12 @@
+id: pf-ecs-dependson-healthy-without-healthcheck
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: DependsOn Condition HEALTHY needs a HealthCheck on the target container
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: A dependency container with HEALTHY condition must have health check configured), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-dependson-healthy-without-healthcheck.log"
+addedOn: 2026-09-08

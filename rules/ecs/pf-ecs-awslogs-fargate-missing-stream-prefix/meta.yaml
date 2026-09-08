@@ -1,0 +1,12 @@
+id: pf-ecs-awslogs-fargate-missing-stream-prefix
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: awslogs on Fargate requires the awslogs-stream-prefix option
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Fargate requires log configuration options to include awslogs-stream-prefix to support log driver awslogs.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-awslogs-fargate-missing-stream-prefix.log"
+addedOn: 2026-09-08

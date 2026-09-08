@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "TD": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "pfulimitsoftoverhard",
+        "NetworkMode": "bridge",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Memory": 512,
+            "Essential": true,
+            "Ulimits": [
+              {
+                "Name": "nofile",
+                "SoftLimit": 2048,
+                "HardLimit": 1024
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-ecs-svc-connect-client-alias-dns-name
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: A Service Connect ClientAlias.DnsName must be a valid DNS name
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The DNS name that you provided is invalid. The name must be a valid DNS name but doesn?t need to be fully-qualified. Up to 127 characters are allowed. The characters can include lowercase letters, numbers, underscores (_), hyphens (-), and periods (.). A hyphen can?t be the first character.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-connect-client-alias-dns-name.log"
+addedOn: 2026-09-08

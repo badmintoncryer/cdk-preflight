@@ -1,0 +1,12 @@
+id: pf-ecs-fargate-dns-servers
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: DnsServers is not supported with NetworkMode awsvpc
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: DNS servers are not supported on container when networkMode=awsvpc.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-fargate-dns-servers.log"
+addedOn: 2026-09-08

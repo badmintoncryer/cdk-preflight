@@ -1,0 +1,12 @@
+id: pf-ecs-host-network-host-port-mismatch
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: NetworkMode host requires HostPort to equal ContainerPort
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: When networkMode=host, the host ports and container ports in port mappings must match.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-host-network-host-port-mismatch.log"
+addedOn: 2026-09-08

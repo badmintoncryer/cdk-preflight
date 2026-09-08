@@ -1,0 +1,12 @@
+id: pf-ecs-svc-min-healthy-over-max-percent
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: MinimumHealthyPercent must stay below MaximumPercent
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-min-healthy-over-max-percent.log"
+addedOn: 2026-09-08

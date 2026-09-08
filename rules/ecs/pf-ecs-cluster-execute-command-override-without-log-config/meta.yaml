@@ -1,0 +1,12 @@
+id: pf-ecs-cluster-execute-command-override-without-log-config
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Cluster]
+severity: ERROR
+title: ExecuteCommand Logging OVERRIDE requires a LogConfiguration
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (CreateCluster Invalid Request: A CloudWatch log group name or S3 bucket name must be specified when overriding the default log configuration.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-cluster-execute-command-override-without-log-config.log"
+addedOn: 2026-09-08

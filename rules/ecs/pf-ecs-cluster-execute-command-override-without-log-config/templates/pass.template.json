@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "Configuration": {
+          "ExecuteCommandConfiguration": {
+            "Logging": "OVERRIDE",
+            "LogConfiguration": {
+              "CloudWatchLogGroupName": "pf"
+            }
+          }
+        }
+      }
+    }
+  }
+}

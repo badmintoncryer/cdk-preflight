@@ -1,0 +1,12 @@
+id: pf-ecs-svc-az-rebalancing-with-daemon
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: AvailabilityZoneRebalancing is not supported for DAEMON services
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The service couldn't be created because Availability Zone Rebalancing does not support DAEMON as scheduling strategy. Update scheduling strategy and try again.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-az-rebalancing-with-daemon.log"
+addedOn: 2026-09-08

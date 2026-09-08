@@ -1,0 +1,12 @@
+id: pf-ecs-svc-binpack-field
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: A binpack placement strategy accepts only cpu or memory
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (binpack field 'instanceId' is invalid.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-binpack-field.log"
+addedOn: 2026-09-08
