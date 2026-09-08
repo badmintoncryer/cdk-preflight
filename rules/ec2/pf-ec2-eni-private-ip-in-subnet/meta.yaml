@@ -1,0 +1,11 @@
+id: pf-ec2-eni-private-ip-in-subnet
+service: ec2
+resourceTypes: [AWS::EC2::NetworkInterface]
+severity: ERROR
+title: A network interface private IP must fall inside its subnet
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/AWS_EC2.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateNetworkInterface with a private IP outside the subnet CIDR -> \"InvalidParameterValue: Address does not fall within the subnet's address range\"; an in-range address created cleanly. bench 2026-09-08 ap-northeast-1: PrivateIpAddress 10.60.9.9 in a 10.60.1.0/24 subnet -> ROLLBACK_COMPLETE \"Address does not fall within the subnet's address range\"; 10.60.1.9 -> CREATE_COMPLETE."
+addedOn: 2026-09-08

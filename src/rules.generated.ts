@@ -2362,6 +2362,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-client-vpn-session-timeout\", \"ERROR\", name,\n\t\"Properties.SessionTimeoutHours\",\n\tsprintf(\"SessionTimeoutHours %v is not accepted (\\\"Session Timeout you provided is not valid; valid values are [8, 10, 12, 24]\\\")\", [n]),\n\t\"Use 8, 10, 12 or 24\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::ClientVpnEndpoint\")\n\tn := to_number(resolve(name, \"Properties.SessionTimeoutHours\"))\n\tnot n in {8, 10, 12, 24}\n}\n"
   },
   {
+    "id": "pf-ec2-eni-private-ip-in-subnet",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A network interface private IP must fall inside its subnet",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NetworkInterface"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-eni-private-ip-in-subnet\", \"ERROR\", name,\n\t\"Properties.PrivateIpAddress\",\n\tsprintf(\"PrivateIpAddress %s is outside subnet '%s' (%s); the create fails with \\\"Address does not fall within the subnet's address range\\\"\", [ip, sref, cidr]),\n\t\"Pick an address inside the subnet CIDR, or drop PrivateIpAddress and let EC2 assign one\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkinterface.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::NetworkInterface\")\n\tip := resolve(name, \"Properties.PrivateIpAddress\")\n\tis_string(ip)\n\tsref := resolve(name, \"Properties.SubnetId\")\n\tis_string(sref)\n\tsref in resources_of_type(\"AWS::EC2::Subnet\")\n\tcidr := resolve(sref, \"Properties.CidrBlock\")\n\tis_string(cidr)\n\tnot _pf_ec2lib_cidr_has_ip(cidr, ip)\n}\n"
+  },
+  {
     "id": "pf-ec2-flow-log-aggregation-interval",
     "service": "ec2",
     "severity": "ERROR",
@@ -2428,6 +2439,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-launch-template-name\", \"ERROR\", name,\n\t\"Properties.LaunchTemplateName\",\n\tsprintf(\"LaunchTemplateName '%s' is rejected: EC2 requires 3-128 characters of letters, numbers and - ( ) . / _\", [n]),\n\t\"Rename the launch template using only letters, numbers and - ( ) . / _ (3-128 characters)\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateLaunchTemplate.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n\tn := resolve(name, \"Properties.LaunchTemplateName\")\n\tis_string(n)\n\tnot regex.match(`^[a-zA-Z0-9()./_-]{3,128}$`, n)\n}\n"
   },
   {
+    "id": "pf-ec2-nacl-rule-number-unique",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Network ACL rule numbers must be unique per direction",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NetworkAclEntry"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Egress defaults to false, so an absent property takes the ingress table.\n_pf_ec2nre_egress(n) := e if {\n\te := coerce_to_bool(resolve(n, \"Properties.Egress\"))\n}\n\n_pf_ec2nre_egress(n) := false if _pf_ec2lib_absent(n, \"Egress\")\n\n_pf_ec2nre_key(n) := [acl, eg, num] if {\n\tacl := resolve(n, \"Properties.NetworkAclId\")\n\tis_string(acl)\n\teg := _pf_ec2nre_egress(n)\n\tnum := to_number(resolve(n, \"Properties.RuleNumber\"))\n}\n\n_pf_ec2nre_peers(k) := {n |\n\tsome n in resources_of_type(\"AWS::EC2::NetworkAclEntry\")\n\t_pf_ec2nre_key(n) == k\n}\n\nviolation contains make_diag_full(\"pf-ec2-nacl-rule-number-unique\", \"ERROR\", name,\n\t\"Properties.RuleNumber\",\n\tsprintf(\"Rule number %v is already taken on this network ACL in the same direction by '%s' (\\\"The network acl entry identified by %v already exists.\\\")\", [k[2], min(peers), k[2]]),\n\t\"Give each entry its own rule number within a direction; the ingress and egress tables are numbered separately\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkaclentry.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::NetworkAclEntry\")\n\tk := _pf_ec2nre_key(name)\n\tpeers := _pf_ec2nre_peers(k)\n\tcount(peers) > 1\n\tname != min(peers)\n}\n"
+  },
+  {
     "id": "pf-ec2-natgw-allocation",
     "service": "ec2",
     "severity": "ERROR",
@@ -2449,6 +2471,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::PlacementGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cross-resource: only fires when the referenced placement group is in\n# the template with Strategy cluster. A literal (pre-existing) group\n# name carries no strategy information and stays silent.\n_pf_ec2pgb_burstable(fam) if fam in {\"t2\", \"t3\", \"t3a\", \"t4g\"}\n\nviolation contains make_diag_full(\"pf-ec2-pg-cluster-burstable\", \"ERROR\", name,\n\t\"Properties.InstanceType\",\n\tsprintf(\"Cluster placement groups are not supported by the '%s' instance type; the launch fails at deploy\", [it]),\n\t\"Use a non-burstable type, or a spread/partition placement group\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\t_pf_ec2pgb_burstable(split(it, \".\")[0])\n\tpg := resolve(name, \"Properties.PlacementGroupName\")\n\tpg in resources_of_type(\"AWS::EC2::PlacementGroup\")\n\tresolve(pg, \"Properties.Strategy\") == \"cluster\"\n}\n"
+  },
+  {
+    "id": "pf-ec2-prefix-list-address-family",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Prefix list entries must match the declared address family",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PrefixList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2plaf_bad(\"IPv4\", cidr) if contains(cidr, \":\")\n\n_pf_ec2plaf_bad(\"IPv6\", cidr) if not contains(cidr, \":\")\n\nviolation contains make_diag_full(\"pf-ec2-prefix-list-address-family\", \"ERROR\", name,\n\tsprintf(\"Properties.Entries.%d.Cidr\", [e.index]),\n\tsprintf(\"An %s prefix list cannot hold the CIDR '%s' (\\\"An (%s) prefix list cannot contain an (%s) CIDR.\\\")\", [fam, cidr, fam, cidr]),\n\t\"Match the entry CIDRs to AddressFamily, or split them into one list per family\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-prefixlist.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::PrefixList\")\n\tfam := resolve(name, \"Properties.AddressFamily\")\n\tsome e in flatten_list(name, \"Properties.Entries\")\n\tcidr := object.get(e.value, \"Cidr\", \"\")\n\tis_string(cidr)\n\t_pf_ec2plaf_bad(fam, cidr)\n}\n"
+  },
+  {
+    "id": "pf-ec2-prefix-list-max-entries",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A managed prefix list cannot hold more entries than MaxEntries",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::PrefixList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-prefix-list-max-entries\", \"ERROR\", name,\n\t\"Properties.MaxEntries\",\n\tsprintf(\"MaxEntries is %v but Entries has %v members (\\\"The number of entries cannot be greater than the maximum number of entries\\\")\", [me, count(entries)]),\n\t\"Raise MaxEntries to at least the number of entries\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-prefixlist.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::PrefixList\")\n\tme := to_number(resolve(name, \"Properties.MaxEntries\"))\n\tentries := flatten_list(name, \"Properties.Entries\")\n\tcount(entries) > me\n}\n"
   },
   {
     "id": "pf-ec2-route-target-exactly-one",
@@ -2614,6 +2658,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only minimums: the historical 16384 GiB maximum no longer holds\n# (a 17000 GiB gp3 deployed clean on 2026-09-03).\n_pf_ec2vsm_min := {\"io1\": 4, \"io2\": 4, \"st1\": 125, \"sc1\": 125}\n\nviolation contains make_diag_full(\"pf-ec2-volume-size-minimum\", \"ERROR\", name,\n\t\"Properties.Size\",\n\tsprintf(\"Size %v GiB is below the %v GiB minimum for %s volumes (\\\"%s volumes must be at least %v GiB in size.\\\")\", [s, mn, vt, vt, mn]),\n\t\"Raise Size to the volume type minimum\",\n\t\"https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tmn := _pf_ec2vsm_min[vt]\n\ts := to_number(resolve(name, \"Properties.Size\"))\n\ts < mn\n}\n"
   },
   {
+    "id": "pf-ec2-vpc-cidr-block-overlap",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A secondary VPC CIDR cannot overlap the primary",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCCidrBlock"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-block-overlap\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"CidrBlock %s overlaps the primary CIDR %s of VPC '%s' (\\\"CidrConflict: CIDR range conflicts\\\")\", [c, primary, vref]),\n\t\"Choose a secondary range that does not overlap the primary CIDR\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpccidrblock.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCCidrBlock\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tvref := resolve(name, \"Properties.VpcId\")\n\tis_string(vref)\n\tvref in resources_of_type(\"AWS::EC2::VPC\")\n\tprimary := resolve(vref, \"Properties.CidrBlock\")\n\tis_string(primary)\n\t_pf_ec2lib_cidr_overlap(c, primary)\n}\n"
+  },
+  {
     "id": "pf-ec2-vpc-cidr-block-size",
     "service": "ec2",
     "severity": "ERROR",
@@ -2623,6 +2678,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPC"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine validates subnet containment (E3059) and overlap (E3060)\n# but accepts any VPC netmask; EC2 rejects anything outside /16../28.\nviolation contains make_diag_full(\"pf-ec2-vpc-cidr-block-size\", \"ERROR\", name,\n\t\"Properties.CidrBlock\",\n\tsprintf(\"VPC CIDR block '%s' has netmask /%v; EC2 only accepts /16 through /28 (\\\"The CIDR '%s' is invalid.\\\")\", [c, p, c]),\n\t\"Use a netmask between /16 and /28\",\n\t\"https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPC\")\n\tc := resolve(name, \"Properties.CidrBlock\")\n\tis_string(c)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$`, c)\n\tp := to_number(split(c, \"/\")[1])\n\t_pf_ec2vcs_out(p)\n}\n\n_pf_ec2vcs_out(p) if p < 16\n\n_pf_ec2vcs_out(p) if p > 28\n"
+  },
+  {
+    "id": "pf-ec2-vpc-single-igw",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A VPC accepts only one internet gateway attachment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCGatewayAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2sigw_vpc(n) := v if {\n\tv := resolve(n, \"Properties.VpcId\")\n\tis_string(v)\n\tnot _pf_ec2lib_absent(n, \"InternetGatewayId\")\n}\n\n_pf_ec2sigw_peers(v) := {n |\n\tsome n in resources_of_type(\"AWS::EC2::VPCGatewayAttachment\")\n\t_pf_ec2sigw_vpc(n) == v\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpc-single-igw\", \"ERROR\", name,\n\t\"Properties.InternetGatewayId\",\n\tsprintf(\"VPC '%s' already takes an internet gateway from '%s'; a second attachment fails with \\\"already has an internet gateway attached\\\"\", [v, min(peers)]),\n\t\"Attach one internet gateway per VPC, and route the rest through a different gateway type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcgatewayattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCGatewayAttachment\")\n\tv := _pf_ec2sigw_vpc(name)\n\tpeers := _pf_ec2sigw_peers(v)\n\tcount(peers) > 1\n\tname != min(peers)\n}\n"
   },
   {
     "id": "pf-ec2-vpce-gateway-service",
@@ -2645,6 +2711,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::VPCEndpoint"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vsr_url := \"https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html\"\n\n# Only com.amazonaws.<region>.<service> names where the third segment is\n# region-shaped; names like com.amazonaws.s3-global.accesspoint stay out.\n_pf_ec2vsr_parts(name) := parts if {\n\tsn := resolve(name, \"Properties.ServiceName\")\n\tis_string(sn)\n\tparts := split(sn, \".\")\n\tcount(parts) == 4\n\tparts[0] == \"com\"\n\tparts[1] == \"amazonaws\"\n\tregex.match(`^[a-z]{2}(-[a-z]+)+-[0-9]+$`, parts[2])\n}\n\n_pf_ec2vsr_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-service-region\", \"ERROR\", name,\n\t\"Properties.ServiceName\",\n\tsprintf(\"Endpoint service '%s' names region %s but this stack deploys to %s; without ServiceRegion the lookup is regional and the create fails\", [concat(\".\", parts), parts[2], region]),\n\t\"Use com.amazonaws.<deploy-region>.<service>, or set ServiceRegion for cross-region PrivateLink\",\n\t_pf_ec2vsr_url) if {\n\tregion := data.cdk_preflight.deploy_region\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tparts := _pf_ec2vsr_parts(name)\n\tparts[2] != region\n\t_pf_ec2vsr_absent(name, \"ServiceRegion\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-vpce-subnet-az-unique",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "An interface VPC endpoint takes at most one subnet per availability zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::VPCEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# flatten_list の .value は生のマーカーオブジェクトなので、論理 ID はドット記法の\n# resolve で取り直す（AGENTS.md: 配列要素は Properties.L.1）。AZ 側は解決できない\n# 式のままでも構わない — 同じ式なら同じマーカーになり、等値比較が成立する。\n_pf_ec2vaz_az(name, i) := az if {\n\tsref := resolve(name, sprintf(\"Properties.SubnetIds.%d\", [i]))\n\tis_string(sref)\n\taz := resolve(sref, \"Properties.AvailabilityZone\")\n}\n\n_pf_ec2vaz_azs(name) := [az |\n\tsome s in flatten_list(name, \"Properties.SubnetIds\")\n\taz := _pf_ec2vaz_az(name, s.index)\n]\n\n_pf_ec2vaz_dup(name) := az if {\n\tazs := _pf_ec2vaz_azs(name)\n\tsome az in azs\n\tcount([x | some x in azs; x == az]) > 1\n}\n\nviolation contains make_diag_full(\"pf-ec2-vpce-subnet-az-unique\", \"ERROR\", name,\n\t\"Properties.SubnetIds\",\n\tsprintf(\"SubnetIds names more than one subnet in '%s'; the create fails with \\\"Found another VPC endpoint subnet in the availability zone\\\"\", [az]),\n\t\"List one subnet per availability zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n\tresolve(name, \"Properties.VpcEndpointType\") == \"Interface\"\n\taz := _pf_ec2vaz_dup(name)\n}\n"
   },
   {
     "id": "pf-ec2-vpce-type-config",
@@ -10916,6 +10993,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cache",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ElastiCache and MemoryDB rules. Both services use the\n# same maintenance / snapshot window grammar, the same endpoint port range and\n# the same identifier rules, so the parsing lives here once.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# to_number(\"03\") is undefined in the engine's Rego build, so digits go\n# through a lookup table (same trick as pf-rds-window-overlap).\n_pf_cachelib_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_cachelib_days := {\"sun\": 0, \"mon\": 1, \"tue\": 2, \"wed\": 3, \"thu\": 4, \"fri\": 5, \"sat\": 6}\n\n# \"HH:MM\" -> minutes of day; undefined for anything else.\n_pf_cachelib_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_cachelib_digit[substring(t, 0, 1)] * 10) + _pf_cachelib_digit[substring(t, 1, 1)]\n\tmi := (_pf_cachelib_digit[substring(t, 3, 1)] * 10) + _pf_cachelib_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# \"ddd:hh24:mi-ddd:hh24:mi\" -> [start day, start minutes, end day, end minutes].\n_pf_cachelib_window(w) := [d1, m1, d2, m2] if {\n\tis_string(w)\n\tparts := split(lower(w), \"-\")\n\tcount(parts) == 2\n\tp1 := split(parts[0], \":\")\n\tp2 := split(parts[1], \":\")\n\tcount(p1) == 3\n\tcount(p2) == 3\n\td1 := _pf_cachelib_days[p1[0]]\n\td2 := _pf_cachelib_days[p2[0]]\n\tm1 := _pf_cachelib_min(sprintf(\"%s:%s\", [p1[1], p1[2]]))\n\tm2 := _pf_cachelib_min(sprintf(\"%s:%s\", [p2[1], p2[2]]))\n}\n\n# Length of a maintenance window in minutes (wrapping around the week).\n_pf_cachelib_window_minutes(w) := n if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(w)\n\tstart := (d1 * 1440) + m1\n\tend := (d2 * 1440) + m2\n\tn := ((end - start) + 10080) % 10080\n}\n\n# \"hh24:mi-hh24:mi\" -> [start minutes, end minutes] of a daily window.\n_pf_cachelib_daily(w) := [s, e] if {\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_cachelib_min(parts[0])\n\te := _pf_cachelib_min(parts[1])\n}\n\n# The snapshot window recurs daily, so a same-day maintenance window overlaps\n# whenever the two time-of-day intervals intersect (mirrors pf-rds-window-overlap;\n# a window that spans two days is left alone).\n_pf_cachelib_overlap(mw, sw) if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(mw)\n\td1 == d2\n\tm1 < m2\n\t[s, e] := _pf_cachelib_daily(sw)\n\ts < e\n\ts < m2\n\tm1 < e\n}\n\n# ElastiCache and MemoryDB both accept 1150-8004 and 8006-65535.\n_pf_cachelib_port_ok(p) if {\n\tp >= 1150\n\tp <= 8004\n}\n\n_pf_cachelib_port_ok(p) if {\n\tp >= 8006\n\tp <= 65535\n}\n\n# Identifiers: begin with a letter, letters/digits/hyphens only, no two\n# consecutive hyphens and no trailing hyphen.\n_pf_cachelib_identifier_ok(s) if regex.match(`^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$`, s)\n\n# Data tiering is only supported on the r6gd families (cache.r6gd.* / db.r6gd.*).\n_pf_cachelib_r6gd(t) if {\n\tis_string(t)\n\tparts := split(t, \".\")\n\tcount(parts) >= 2\n\tparts[1] == \"r6gd\"\n}\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_cachelib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# A literal string a user wrote, not a resolved Ref / GetAtt logical id.\n_pf_cachelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_cachelib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "name": "_lib/ec2",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# エンジンに net.cidr_* ビルトインは無い（1.7.0-beta で実測、rules/_lib/efs.rego\n# にも同じ注記がある）ので IPv4 のアドレス演算を自前で持つ。pow ビルトインも\n# 無いため 2^n は表で引く。IPv6 は扱わない（呼び出し側が \":\" の有無で弾く）。\n_pf_ec2lib_pow2 := {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64, 7: 128, 8: 256, 9: 512, 10: 1024, 11: 2048, 12: 4096, 13: 8192, 14: 16384, 15: 32768, 16: 65536, 17: 131072, 18: 262144, 19: 524288, 20: 1048576, 21: 2097152, 22: 4194304, 23: 8388608, 24: 16777216, 25: 33554432, 26: 67108864, 27: 134217728, 28: 268435456, 29: 536870912, 30: 1073741824, 31: 2147483648, 32: 4294967296}\n\n_pf_ec2lib_ip_int(s) := n if {\n\tparts := split(s, \".\")\n\tcount(parts) == 4\n\tnums := [to_number(p) | some p in parts]\n\tevery x in nums {\n\t\tx >= 0\n\t\tx <= 255\n\t}\n\tn := ((nums[0] * 16777216) + (nums[1] * 65536)) + ((nums[2] * 256) + nums[3])\n}\n\n# [ネットワークアドレス, ブロックサイズ] を返す。ホストビットが立っていても\n# 切り捨てて正規化するので \"10.0.0.5/24\" は \"10.0.0.0/24\" と同じ結果になる。\n_pf_ec2lib_cidr(s) := [start, size] if {\n\tparts := split(s, \"/\")\n\tcount(parts) == 2\n\tbase := _pf_ec2lib_ip_int(parts[0])\n\tp := to_number(parts[1])\n\tsize := _pf_ec2lib_pow2[32 - p]\n\tstart := floor(base / size) * size\n}\n\n_pf_ec2lib_cidr_has_ip(cidr, ip) if {\n\tc := _pf_ec2lib_cidr(cidr)\n\tn := _pf_ec2lib_ip_int(ip)\n\tn >= c[0]\n\tn < c[0] + c[1]\n}\n\n_pf_ec2lib_cidr_overlap(a, b) if {\n\tx := _pf_ec2lib_cidr(a)\n\ty := _pf_ec2lib_cidr(b)\n\tx[0] < y[0] + y[1]\n\ty[0] < x[0] + x[1]\n}\n\n# プロパティ不在の証明（AGENTS.md の sanctioned exception）\n_pf_ec2lib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "name": "_lib/ecr",
