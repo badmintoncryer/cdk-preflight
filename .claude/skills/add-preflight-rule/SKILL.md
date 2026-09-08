@@ -12,14 +12,11 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
 ## 手順
 
 1. **入力の確定**: 追加したい制約を 1 文で書く（対象リソース型、プロパティ、条件、出典 URL または実際に観測したデプロイエラーメッセージ）。制約がまだ特定できていない（「このサービスで何かルールを増やしたい」段階の）場合は、このスキルではなく `find-preflight-rules` を先に使う。
-2. **重複チェック（先にやる）**: 違反最小テンプレートを書き、エンジンに直接かける:
+2. **重複チェック（先にやる）**: 違反最小テンプレートを書き、素のエンジンに直接かける:
    ```bash
-   npx ts-node --project test/tsconfig.json -e "
-   import { loadEngine } from './src/private/enforce';
-   const e = loadEngine();
-   const r = new e.RegoEngine({}).validateDetailed(new e.TemplateFile('<template>'), {});
-   console.log(JSON.stringify(r.diagnostics, null, 2));"
+   npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts guard <dir>
    ```
+   出力は 1 件 1 行（`BLOCK <file> <ruleId>/<severity>` か `clean <file>`）。
    ERROR/FATAL（source: SCHEMA / CFN_LINT）が既に出るなら**ルールは書かない**。終了し、その旨を報告する。
    判定の全体像（WARN クラスのみ出るがデプロイは失敗するグレーゾーン、L2/cfn-lint/サーバー側検証との棲み分け）は AGENTS.md の「Where this pack sits among validation layers」に従う。L2 (aws-cdk-lib) が同じ検証を持っていても不採用理由にならず、既存ルールの廃止理由にもならない（原則 5）。廃止の引き金は同梱エンジン（か CFN サーバー側検証）がカバーしたときだけで、そのとき重複ガードが自動で赤くなる。
 3. **ルール作成**: `rules/<service>/<rule-id>/` に 4 ファイル。規約:
@@ -27,7 +24,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    - ヘルパーは `_pf_<短縮名>_` プレフィックスで一意に
    - `walk` ビルトインは無い。`to_number`/`object.get`/`flatten_list`/`resolve` で明示的に書く
    - fail テンプレートはこのルール**だけ**に違反、pass テンプレートは完全クリーン
-4. **ローカルゲート**: `npx projen bundle-rules && npx jest test/rules.test.ts test/structure.test.ts` が全緑になるまで直す。
+4. **ローカルゲート**: まず `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>...` を回す。`rules/` を直接読んで 1 エンジンに全ルールを載せ、fail が自分のルールで鳴るか / pass が全ルール無音か / どちらも組み込みエンジンに止められないかを返す（`bundle-rules` も meta.yaml の evidence も要らないので、実機ゲート前の直しはここで回す。80 本で数秒）。全部 `ok` になってから `npx projen bundle-rules && npx jest test/rules.test.ts test/structure.test.ts`。**jest は `-t` で対象を絞る**。フルスイートは PR 直前の 1 回だけでよく、実測では 401 回中 73 回がフル実行で合計 5.8 時間を溶かしている。
 5. **実機再現ゲート**: `bash bench/verify-rule.sh <rule-id>`（要 AWS 認証）。観測したエラーメッセージと日付を `meta.yaml#repro.evidence` に記録。
    - fail テンプレートがデプロイに**成功**したら、それはドキュメント側の誤り（BROKEN-EXPECTATION）。ルールを削除し、証拠を issue に残して終了する。CloudFront では明文化された制約 9 件中 3 件がこれだった（2026-09-02）
    - **予想と違う理由**で失敗した場合（他アカウントの ARN、ドメイン所有権の検証など）は証拠にならない。サービスエラーが対象の制約そのものを名指しするまでテンプレートを作り直すか、除去できない交絡は `evidence` に明記する
@@ -36,7 +33,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
 
 ## セッションの切り方（コンテキスト予算）
 
-API コストは **`往復回数 × 平均コンテキスト長`** でほぼ決まる（実測 2026-09-06: cache_read がトークン総量の 96%、AgentCore 回は 1,289 往復 × 平均 365k = 471M）。**1 サービスぶんを 1 セッションで通さない**。`find-preflight-rules` から `candidates.json` を受け取り、下の境界で `/clear` して scratchpad の `<service>/` 配下のファイルだけを引き継ぐ:
+API コストは **`往復回数 × 平均コンテキスト長`** でほぼ決まる（実測 2026-09-08、全 16 セッション集計: cache_read が入力の 98%、平均 258k tok/往復。平均 372k のセッションはルール 1 本 $5.2、213k で切ったセッションは $1.7）。**1 サービスぶんを 1 セッションで通さない**。`find-preflight-rules` から `candidates.json` を受け取り、下の境界で `/clear` して scratchpad の `<service>/` 配下のファイルだけを引き継ぐ:
 
 | フェーズ | 入口 | 出口 |
 |---|---|---|
@@ -46,7 +43,8 @@ API コストは **`往復回数 × 平均コンテキスト長`** でほぼ決�
 
 守ること:
 
-- **rule.rego と fail/pass テンプレートを 1 本ずつヒアドキュメントで書かない**。`candidates.json` を読むジェネレータ（`rgen.py` 相当）を 1 個置き、直しはジェネレータ側に入れて再生成する。実測では打ち込んだコマンド文字列のコストが Bash 出力とほぼ同額（$318 対 $389）で、その 73% が 4k 超のヒアドキュメント
-- **書いたファイルを `cat` で読み返さない**。確認は `npx projen bundle-rules` と `npx jest` の結果だけで足りる
+- **rule.rego と fail/pass テンプレートを 1 本ずつヒアドキュメントで書かない**。`candidates.json` を読むジェネレータ（`rgen.py` 相当）を 1 個置き、直しはジェネレータ側に入れて再生成する。実測では打ち込んだコマンド文字列（2.22 Mtok）が Bash 出力（2.52 Mtok）とほぼ同額で、その **63% が 416 回の 4k 超コマンド**
+- **書いたファイルを `cat` で読み返さない**。確認は `scripts/rule-check.ts check` と `npx jest` の結果だけで足りる
+- **独立した呼び出しは 1 レスポンスにまとめる**（実測 3,352 往復の 55% がツール 1 個だけ）。`git status` / `log` / `diff` の確認ループも同様で、1,592 回・3.4 時間かかっている
 - **実機ゲートは 1 本ずつ対話で回さない**。`pending.txt` を回す 1 スクリプトをバックグラウンドで走らせ、ログは `bench-out/<rule-id>.log` に書かせて、戻すのは 1 行のサマリだけにする。完了待ちのポーリングを 1 往復 1 回やらない（1 往復 ≒ 平均コンテキスト長ぶんの再読み込み）
 - ⑤ で候補が数十本あるなら、ジェネレータの入力（`candidates.json`）を直すサイクルに寄せる。個別ルールのデバッグは失敗した数本に絞る

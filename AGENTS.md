@@ -93,6 +93,7 @@ src/index.ts                # Preflight.apply / PreflightOptions (jsii surface �
 src/private/enforce.ts      # enforce-mode plugin (calls the engine directly)
 src/rules.generated.ts      # GENERATED from rules/ — never edit; run `npx projen bundle-rules`
 scripts/bundle-rules.ts     # generator + structural validation
+scripts/rule-check.ts       # one-process local gates: `guard` (bare engine) and `check` (fixtures, pre-bundle)
 test/                       # 4 layers: rules / loader / structure / cli
 bench/                      # real-deploy verification (needs an AWS account; not part of CI)
 ```
@@ -114,7 +115,7 @@ bench/                      # real-deploy verification (needs an AWS account; no
    - Helper rules must use a unique `_pf_<rule>_...` prefix (all rules share one package).
    - A helper several rules of one service need (parsing an opaque DSL, enumerating nested scopes) goes in `rules/_lib/<service>.rego` with a `_pf_<service>lib_` prefix (`rules/_lib/sfn.rego` is the reference: ASL from `DefinitionString` *or* the L1 `Definition` object, nested Parallel/Map scopes to depth 3, effective QueryLanguage). Rules never reference another rule's helpers — `exclude` can unload any rule, a lib is always loaded.
    - **Cheap screen for definition-level constraints**: some services expose their create-time validator as a free API (`aws stepfunctions validate-state-machine-definition --type STANDARD|EXPRESS` is the same validator CreateStateMachine runs). Use it to triage doc hypotheses before spending a CloudFormation deploy on each — 100 Step Functions hypotheses took minutes (2026-09-05). The real-deploy gate stays.
-3. `npx projen bundle-rules` then `npx jest test/rules.test.ts test/structure.test.ts` — the duplication guard and fixture checks run here.
+3. `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>` while iterating: it reads `rules/` straight from disk into a single engine (no bundle, no meta validation, no jest) and reports, per rule, whether the fail template fires its own rule, the pass template is silent for every rule, and neither trips a built-in ERROR/FATAL. Then `npx projen bundle-rules` and `npx jest test/rules.test.ts test/structure.test.ts` — the duplication guard and fixture checks run there for real. Prefer `jest -t` while iterating; the full suite is 3,228 tests / ~2 min (measured 2026-09-08), so keep it for the pre-PR run.
 4. **Real-deploy gate**: `bash bench/verify-rule.sh <rule-id>` deploys the fail template (expects CREATE to fail; records the service error message) and, where cheap, the pass template (expects success, then deletes). Paste the observed error into `meta.yaml#repro.evidence` with the date. Only `doc-only` rules may skip this, with justification.
 5. Update nothing else by hand — `docs/rules.md` and `src/rules.generated.ts` are generated.
 
@@ -122,6 +123,8 @@ bench/                      # real-deploy verification (needs an AWS account; no
 
 | Task | Command |
 |---|---|
+| Local rule gates, one process (pre-bundle) | `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check [service\|rule-id]` |
+| Duplication guard for candidate templates | `... scripts/rule-check.ts guard <dir>` |
 | Regenerate bundle + docs | `npx projen bundle-rules` |
 | Unit tests | `npx jest` |
 | Full build (jsii, lint, tests, package) | `npx projen build` |
