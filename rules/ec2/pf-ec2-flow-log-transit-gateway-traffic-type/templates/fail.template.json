@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Delete",
+      "Properties": {}
+    },
+    "Tgw": {
+      "Type": "AWS::EC2::TransitGateway",
+      "Properties": {
+        "Description": "cdkpf flow log fixture"
+      }
+    },
+    "Fl": {
+      "Type": "AWS::EC2::FlowLog",
+      "Properties": {
+        "ResourceType": "TransitGateway",
+        "ResourceId": {
+          "Ref": "Tgw"
+        },
+        "TrafficType": "ALL",
+        "LogDestinationType": "s3",
+        "LogDestination": {
+          "Fn::GetAtt": [
+            "Bucket",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

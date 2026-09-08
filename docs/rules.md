@@ -216,6 +216,10 @@
 | `pf-ec2-client-vpn-connection-log` | AWS::EC2::ClientVpnEndpoint | Client VPN ConnectionLogOptions.Enabled requires CloudwatchLogGroup | none |
 | `pf-ec2-client-vpn-port` | AWS::EC2::ClientVpnEndpoint | Client VPN VpnPort must be 443 or 1194 | none |
 | `pf-ec2-client-vpn-session-timeout` | AWS::EC2::ClientVpnEndpoint | Client VPN SessionTimeoutHours must be 8, 10, 12 or 24 | none |
+| `pf-ec2-flow-log-aggregation-interval` | AWS::EC2::FlowLog | Flow log MaxAggregationInterval accepts only 60 or 600 seconds | none |
+| `pf-ec2-flow-log-destination-config` | AWS::EC2::FlowLog | Flow log destination type requires its matching destination property | none |
+| `pf-ec2-flow-log-format-fields` | AWS::EC2::FlowLog | Flow log LogFormat accepts only documented field names | none |
+| `pf-ec2-flow-log-transit-gateway-traffic-type` | AWS::EC2::FlowLog | A Transit Gateway flow log cannot take TrafficType | none |
 | `pf-ec2-instance-ami-arch` | AWS::EC2::Instance | Instance type architecture must match the SSM public-parameter AMI architecture | none |
 | `pf-ec2-launch-template-name` | AWS::EC2::LaunchTemplate | Launch template names are 3-128 chars of letters, numbers and -()./_ | none |
 | `pf-ec2-natgw-allocation` | AWS::EC2::NatGateway | NAT gateway AllocationId is required for public connectivity and forbidden for private | none |
