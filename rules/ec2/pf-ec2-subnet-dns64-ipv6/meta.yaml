@@ -1,0 +1,11 @@
+id: pf-ec2-subnet-dns64-ipv6
+service: ec2
+resourceTypes: [AWS::EC2::Subnet]
+severity: ERROR
+title: EnableDns64 requires the subnet to have an IPv6 CIDR
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-subnet.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: ModifySubnetAttribute --enable-dns64 on an IPv4-only subnet -> \"Invalid value 'true' for enable-dns64. Cannot set enable-dns64 to true unless the subnet (subnet-0dca60a7f004a6833) has an IPv6 CIDR block associated with it.\"; the same call on a subnet with an IPv6 CIDR was accepted. bench 2026-09-09 ap-northeast-1: fail -> ROLLBACK_COMPLETE, pass -> CREATE_COMPLETE. Note the CloudFormation handler rejects it earlier with its own wording, \"Invalid request provided: Property Ipv6CidrBlock or Ipv6IpamPoolId cannot be empty.\", instead of relaying the EC2 message; the attribution still holds because an IPv4-only subnet without EnableDns64 deploys fine and EnableDns64 is the only difference"
+addedOn: 2026-09-09

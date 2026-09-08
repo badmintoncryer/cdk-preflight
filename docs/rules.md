@@ -377,6 +377,7 @@
 | `pf-dynamodb-warm-throughput-minimum` | AWS::DynamoDB::Table | WarmThroughput cannot go below the default 12000 read / 4000 write | none |
 | `pf-ec2-client-vpn-auth-type-config` | AWS::EC2::ClientVpnEndpoint | Client VPN AuthenticationOptions.Type must match the provided authentication sub-block | none |
 | `pf-ec2-client-vpn-authorization-rule-exclusive` | AWS::EC2::ClientVpnAuthorizationRule | Client VPN authorization rule cannot set both AccessGroupId and AuthorizeAllGroups | none |
+| `pf-ec2-client-vpn-cert-region` | AWS::EC2::ClientVpnEndpoint | The Client VPN server certificate must be in the deploy region | none |
 | `pf-ec2-client-vpn-cidr-size` | AWS::EC2::ClientVpnEndpoint | Client VPN ClientCidrBlock must be between /12 and /22 | none |
 | `pf-ec2-client-vpn-connection-log` | AWS::EC2::ClientVpnEndpoint | Client VPN ConnectionLogOptions.Enabled requires CloudwatchLogGroup | none |
 | `pf-ec2-client-vpn-port` | AWS::EC2::ClientVpnEndpoint | Client VPN VpnPort must be 443 or 1194 | none |
@@ -419,9 +420,11 @@
 | `pf-ec2-sg-rule-description` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule descriptions are limited to 255 chars of a restricted ASCII set | none |
 | `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | none |
 | `pf-ec2-subnet-cidr-size` | AWS::EC2::Subnet | Subnet IPv4 CIDR netmask must be between /16 and /28 | none |
+| `pf-ec2-subnet-dns64-ipv6` | AWS::EC2::Subnet | EnableDns64 requires the subnet to have an IPv6 CIDR | none |
 | `pf-ec2-subnet-ipv6-native-cidr` | AWS::EC2::Subnet | An IPv6-only subnet cannot carry IPv4 addressing | none |
 | `pf-ec2-tgw-amazon-side-asn` | AWS::EC2::TransitGateway | TransitGateway AmazonSideAsn must be in 64512-65534 or 4200000000-4294967294 | none |
 | `pf-ec2-tgw-cidr-block-size` | AWS::EC2::TransitGateway | TransitGatewayCidrBlocks must be /24 or larger for IPv4 | none |
+| `pf-ec2-tgw-route-blackhole-exclusive` | AWS::EC2::TransitGatewayRoute | A blackhole transit gateway route cannot name an attachment | none |
 | `pf-ec2-traffic-mirror-target-exactly-one` | AWS::EC2::TrafficMirrorTarget | A traffic mirror target names exactly one destination | none |
 | `pf-ec2-userdata-size` | AWS::EC2::Instance<br>AWS::EC2::LaunchTemplate | EC2 user data is limited to 16384 bytes | none |
 | `pf-ec2-volume-iops` | AWS::EC2::Volume | EBS Iops/Throughput must match the volume type's supported ranges and ratios | none |
@@ -432,11 +435,13 @@
 | `pf-ec2-volume-throughput-type` | AWS::EC2::Volume | EBS Throughput applies only to gp3 volumes | none |
 | `pf-ec2-vpc-cidr-block-overlap` | AWS::EC2::VPCCidrBlock | A secondary VPC CIDR cannot overlap the primary | none |
 | `pf-ec2-vpc-cidr-block-size` | AWS::EC2::VPC | VPC IPv4 CIDR block netmask must be between /16 and /28 | none |
+| `pf-ec2-vpc-cidr-reserved-range` | AWS::EC2::VPC | A VPC CIDR must not overlap a reserved IPv4 range | none |
 | `pf-ec2-vpc-single-igw` | AWS::EC2::VPCGatewayAttachment | A VPC accepts only one internet gateway attachment | none |
 | `pf-ec2-vpce-gateway-service` | AWS::EC2::VPCEndpoint | Gateway VPC endpoints only exist for S3 and DynamoDB | none |
 | `pf-ec2-vpce-service-region` | AWS::EC2::VPCEndpoint | VPC endpoint service names must use the deploy region unless ServiceRegion is set | none |
 | `pf-ec2-vpce-subnet-az-unique` | AWS::EC2::VPCEndpoint | An interface VPC endpoint takes at most one subnet per availability zone | none |
 | `pf-ec2-vpce-type-config` | AWS::EC2::VPCEndpoint | SubnetIds are not supported on Gateway endpoints (and RouteTableIds only on Gateway) | none |
+| `pf-ec2-vpn-gateway-exclusive` | AWS::EC2::VPNConnection | A VPN connection cannot name both a VPN gateway and a transit gateway | none |
 | `pf-ec2-vpn-phase-lifetime-order` | AWS::EC2::VPNConnection | VPN Phase2LifetimeSeconds must be less than Phase1LifetimeSeconds | none |
 | `pf-ec2-vpn-pre-shared-key` | AWS::EC2::VPNConnection | VPN tunnel PreSharedKey must be 8-64 characters of [A-Za-z0-9._] and must not start with 0 | none |
 | `pf-ec2-vpn-rekey-margin` | AWS::EC2::VPNConnection | VPN RekeyMarginTimeSeconds must be less than half of Phase2LifetimeSeconds | none |

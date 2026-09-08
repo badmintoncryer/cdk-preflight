@@ -1,0 +1,27 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Endpoint": {
+      "Type": "AWS::EC2::ClientVpnEndpoint",
+      "Properties": {
+        "AuthenticationOptions": [
+          {
+            "Type": "certificate-authentication",
+            "MutualAuthentication": {
+              "ClientRootCertificateChainArn": {
+                "Fn::Sub": "arn:${AWS::Partition}:acm:${AWS::Region}:${AWS::AccountId}:certificate/00000000-0000-0000-0000-000000000000"
+              }
+            }
+          }
+        ],
+        "ClientCidrBlock": "10.100.0.0/22",
+        "ConnectionLogOptions": {
+          "Enabled": false
+        },
+        "ServerCertificateArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:acm:${AWS::Region}:${AWS::AccountId}:certificate/00000000-0000-0000-0000-000000000000"
+        }
+      }
+    }
+  }
+}

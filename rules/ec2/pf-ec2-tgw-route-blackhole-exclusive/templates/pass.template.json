@@ -1,0 +1,29 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Tgw": {
+      "Type": "AWS::EC2::TransitGateway",
+      "Properties": {
+        "Description": "cdkpf fixture"
+      }
+    },
+    "Rtb": {
+      "Type": "AWS::EC2::TransitGatewayRouteTable",
+      "Properties": {
+        "TransitGatewayId": {
+          "Ref": "Tgw"
+        }
+      }
+    },
+    "Route": {
+      "Type": "AWS::EC2::TransitGatewayRoute",
+      "Properties": {
+        "TransitGatewayRouteTableId": {
+          "Ref": "Rtb"
+        },
+        "DestinationCidrBlock": "10.99.0.0/16",
+        "Blackhole": true
+      }
+    }
+  }
+}
