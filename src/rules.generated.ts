@@ -2846,6 +2846,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2cs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-credit-specification-burstable\", \"ERROR\", name,\n\t\"Properties.CreditSpecification\",\n\tsprintf(\"CreditSpecification is set on '%s', which is not a burstable (T family) type\", [it]),\n\t\"Remove CreditSpecification, or switch to a t2/t3/t3a/t4g instance type\",\n\t_pf_ec2cs_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tnot _pf_ec2lib_absent(name, \"CreditSpecification\")\n\tit := resolve(name, \"Properties.InstanceType\")\n\tis_string(it)\n\tnot regex.match(`^t[0-9]`, it)\n}\n"
   },
   {
+    "id": "pf-ec2-eip-association-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "An EIP association cannot set both AllocationId and EIP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::EIPAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2eipa_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-eipassociation.html\"\n\nviolation contains make_diag_full(\"pf-ec2-eip-association-exclusive\", \"ERROR\", name,\n\t\"Properties.EIP\",\n\t\"AllocationId and EIP cannot both be set (\\\"You may specify public IP or allocation id, but not both in the same call\\\")\",\n\t\"Keep AllocationId for a VPC address\",\n\t_pf_ec2eipa_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::EIPAssociation\")\n\tnot _pf_ec2lib_absent(name, \"AllocationId\")\n\tnot _pf_ec2lib_absent(name, \"EIP\")\n}\n"
+  },
+  {
     "id": "pf-ec2-enclave-hibernation-exclusive",
     "service": "ec2",
     "severity": "ERROR",
@@ -2855,6 +2866,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::Instance"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2eh_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-instance.html\"\n\nviolation contains make_diag_full(\"pf-ec2-enclave-hibernation-exclusive\", \"ERROR\", name,\n\t\"Properties.EnclaveOptions\",\n\t\"EnclaveOptions and HibernationOptions are both enabled (\\\"You cannot enable Nitro Enclaves and hibernation on the same instance.\\\")\",\n\t\"Enable one of the two\",\n\t_pf_ec2eh_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Instance\")\n\tcoerce_to_bool(resolve(name, \"Properties.EnclaveOptions.Enabled\")) == true\n\tcoerce_to_bool(resolve(name, \"Properties.HibernationOptions.Configured\")) == true\n}\n"
+  },
+  {
+    "id": "pf-ec2-eni-primary-single",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A network interface takes exactly one primary private IP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NetworkInterface"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2enip_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkinterface.html\"\n\n_pf_ec2enip_primaries(name) := [p |\n\tsome p in flatten_list(name, \"Properties.PrivateIpAddresses\")\n\tcoerce_to_bool(object.get(p.value, \"Primary\", false)) == true\n]\n\nviolation contains make_diag_full(\"pf-ec2-eni-primary-single\", \"ERROR\", name,\n\t\"Properties.PrivateIpAddresses\",\n\tsprintf(\"PrivateIpAddresses marks %v entries as Primary (\\\"Only one primary private IP address can be specified.\\\")\", [count(ps)]),\n\t\"Mark exactly one entry Primary and set the rest to false\",\n\t_pf_ec2enip_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::NetworkInterface\")\n\tps := _pf_ec2enip_primaries(name)\n\tcount(ps) > 1\n}\n"
   },
   {
     "id": "pf-ec2-eni-private-ip-in-subnet",
@@ -3011,6 +3033,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2nga_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-natgateway.html\"\n\n_pf_ec2nga_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# ConnectivityType defaults to public; an unresolvable value skips both directions.\n_pf_ec2nga_public(name) if _pf_ec2nga_absent(name, \"ConnectivityType\")\n\n_pf_ec2nga_public(name) if resolve(name, \"Properties.ConnectivityType\") == \"public\"\n\nviolation contains make_diag_full(\"pf-ec2-natgw-allocation\", \"ERROR\", name,\n\t\"Properties.AllocationId\",\n\t\"A private NAT gateway cannot take AllocationId (\\\"AllocationId cannot be specified for a NAT Gateway with Connectivity Type private.\\\")\",\n\t\"Remove AllocationId, or switch ConnectivityType to public\",\n\t_pf_ec2nga_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::NatGateway\")\n\tresolve(name, \"Properties.ConnectivityType\") == \"private\"\n\tnot _pf_ec2nga_absent(name, \"AllocationId\")\n}\n\nviolation contains make_diag_full(\"pf-ec2-natgw-allocation\", \"ERROR\", name,\n\t\"Properties.AllocationId\",\n\t\"A public NAT gateway requires AllocationId (\\\"The request must include the AllocationId parameter.\\\")\",\n\t\"Allocate an EIP and pass its AllocationId, or set ConnectivityType: private\",\n\t_pf_ec2nga_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::NatGateway\")\n\t_pf_ec2nga_public(name)\n\t_pf_ec2nga_absent(name, \"AllocationId\")\n}\n"
   },
   {
+    "id": "pf-ec2-natgw-secondary-ip-exclusive",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "NAT gateway secondary IP count and list are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::NatGateway"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2ngs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-natgateway.html\"\n\nviolation contains make_diag_full(\"pf-ec2-natgw-secondary-ip-exclusive\", \"ERROR\", name,\n\t\"Properties.SecondaryPrivateIpAddressCount\",\n\t\"SecondaryPrivateIpAddressCount cannot be combined with SecondaryPrivateIpAddresses\",\n\t\"Keep either the count or the explicit list\",\n\t_pf_ec2ngs_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::NatGateway\")\n\tnot _pf_ec2lib_absent(name, \"SecondaryPrivateIpAddressCount\")\n\tcount(flatten_list(name, \"Properties.SecondaryPrivateIpAddresses\")) > 0\n}\n"
+  },
+  {
     "id": "pf-ec2-pg-cluster-burstable",
     "service": "ec2",
     "severity": "ERROR",
@@ -3078,6 +3111,29 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::SecurityGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-ec2-sg-group-name\", \"ERROR\", name,\n\t\"Properties.GroupName\",\n\tsprintf(\"GroupName '%s' starts with the reserved prefix; EC2 rejects it with \\\"Group names may not be in the format sg-*\\\"\", [gn]),\n\t\"Pick a name that does not start with sg-\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tgn := resolve(name, \"Properties.GroupName\")\n\tis_string(gn)\n\tstartswith(gn, \"sg-\")\n}\n"
+  },
+  {
+    "id": "pf-ec2-sg-group-name-default",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "A security group cannot be named default",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::SecurityGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2sgn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-securitygroup.html\"\n\nviolation contains make_diag_full(\"pf-ec2-sg-group-name-default\", \"ERROR\", name,\n\t\"Properties.GroupName\",\n\t\"GroupName 'default' is reserved for the VPC default security group (\\\"Cannot use reserved security group name: default\\\")\",\n\t\"Pick another name, or drop GroupName and let CloudFormation generate one\",\n\t_pf_ec2sgn_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::SecurityGroup\")\n\tresolve(name, \"Properties.GroupName\") == \"default\"\n}\n"
+  },
+  {
+    "id": "pf-ec2-sg-icmp-type-code",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "ICMP type and code must be within -1 to 255",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::SecurityGroupIngress",
+      "AWS::EC2::SecurityGroupEgress"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2icmp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-securitygroupingress.html\"\n\n# For ICMP, FromPort carries the type and ToPort the code; both run -1..255,\n# which is far narrower than the 0..65535 the schema allows for ports.\n# resources_of_type は配列を返すので集合演算ができない。2 節の部分集合で束ねる\n_pf_ec2icmp_names contains n if some n in resources_of_type(\"AWS::EC2::SecurityGroupIngress\")\n\n_pf_ec2icmp_names contains n if some n in resources_of_type(\"AWS::EC2::SecurityGroupEgress\")\n\n_pf_ec2icmp_icmp(name) if lower(resolve(name, \"Properties.IpProtocol\")) in {\"icmp\", \"icmpv6\", \"58\"}\n\n_pf_ec2icmp_icmp(name) if to_number(resolve(name, \"Properties.IpProtocol\")) == 1\n\n_pf_ec2icmp_bad(name, key) := v if {\n\tv := to_number(resolve(name, sprintf(\"Properties.%s\", [key])))\n\tv > 255\n}\n\n_pf_ec2icmp_bad(name, key) := v if {\n\tv := to_number(resolve(name, sprintf(\"Properties.%s\", [key])))\n\tv < -1\n}\n\nviolation contains make_diag_full(\"pf-ec2-sg-icmp-type-code\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [key]),\n\tsprintf(\"For ICMP, %s carries the %s and must be -1..255; %v is out of range (\\\"ICMP %s (%v) out of range\\\")\", [key, part, v, part, v]),\n\t\"Use an ICMP type/code in -1..255, or -1 for all\",\n\t_pf_ec2icmp_url) if {\n\tsome name in _pf_ec2icmp_names\n\t_pf_ec2icmp_icmp(name)\n\tsome [key, part] in [[\"FromPort\", \"type\"], [\"ToPort\", \"code\"]]\n\tv := _pf_ec2icmp_bad(name, key)\n}\n"
   },
   {
     "id": "pf-ec2-sg-port-range",
@@ -3197,6 +3253,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vke_bad(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Encrypted\", \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_ec2vke_bad(name) if resolve(name, \"Properties.Encrypted\") == false\n\nviolation contains make_diag_full(\"pf-ec2-volume-kms-encrypted\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\t\"KmsKeyId is set but Encrypted is not true; EC2 rejects the volume with \\\"The parameter [KmsKeyId] requires the parameter Encrypted to be set.\\\"\",\n\t\"Set Encrypted: true alongside KmsKeyId\",\n\t\"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateVolume.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"KmsKeyId\", \"__pf_absent\") != \"__pf_absent\"\n\t_pf_ec2vke_bad(name)\n}\n"
   },
   {
+    "id": "pf-ec2-volume-multi-attach-type",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "Multi-Attach is only available on io1 and io2 volumes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Volume"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vma_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-volume.html\"\n\nviolation contains make_diag_full(\"pf-ec2-volume-multi-attach-type\", \"ERROR\", name,\n\t\"Properties.MultiAttachEnabled\",\n\tsprintf(\"MultiAttachEnabled is set on a '%s' volume; only io1 and io2 support Multi-Attach\", [vt]),\n\t\"Drop MultiAttachEnabled, or use io1/io2 with a provisioned Iops value\",\n\t_pf_ec2vma_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tcoerce_to_bool(resolve(name, \"Properties.MultiAttachEnabled\")) == true\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tis_string(vt)\n\tnot vt in {\"io1\", \"io2\"}\n}\n"
+  },
+  {
     "id": "pf-ec2-volume-size-minimum",
     "service": "ec2",
     "severity": "ERROR",
@@ -3206,6 +3273,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::EC2::Volume"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only minimums: the historical 16384 GiB maximum no longer holds\n# (a 17000 GiB gp3 deployed clean on 2026-09-03).\n_pf_ec2vsm_min := {\"io1\": 4, \"io2\": 4, \"st1\": 125, \"sc1\": 125}\n\nviolation contains make_diag_full(\"pf-ec2-volume-size-minimum\", \"ERROR\", name,\n\t\"Properties.Size\",\n\tsprintf(\"Size %v GiB is below the %v GiB minimum for %s volumes (\\\"%s volumes must be at least %v GiB in size.\\\")\", [s, mn, vt, vt, mn]),\n\t\"Raise Size to the volume type minimum\",\n\t\"https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html\") if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tmn := _pf_ec2vsm_min[vt]\n\ts := to_number(resolve(name, \"Properties.Size\"))\n\ts < mn\n}\n"
+  },
+  {
+    "id": "pf-ec2-volume-throughput-type",
+    "service": "ec2",
+    "severity": "ERROR",
+    "title": "EBS Throughput applies only to gp3 volumes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::EC2::Volume"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ec2vt_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-volume.html\"\n\nviolation contains make_diag_full(\"pf-ec2-volume-throughput-type\", \"ERROR\", name,\n\t\"Properties.Throughput\",\n\tsprintf(\"Throughput is set on a '%s' volume (\\\"The throughput parameter is not supported for %s volumes.\\\")\", [vt, vt]),\n\t\"Drop Throughput, or set VolumeType to gp3\",\n\t_pf_ec2vt_url) if {\n\tsome name in resources_of_type(\"AWS::EC2::Volume\")\n\tnot _pf_ec2lib_absent(name, \"Throughput\")\n\tvt := resolve(name, \"Properties.VolumeType\")\n\tis_string(vt)\n\tvt != \"gp3\"\n}\n"
   },
   {
     "id": "pf-ec2-vpc-cidr-block-overlap",

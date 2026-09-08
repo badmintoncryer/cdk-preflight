@@ -1,0 +1,11 @@
+id: pf-ec2-eni-primary-single
+service: ec2
+resourceTypes: [AWS::EC2::NetworkInterface]
+severity: ERROR
+title: A network interface takes exactly one primary private IP
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-networkinterface.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: CreateNetworkInterface with two Primary=true entries -> \"Only one primary private IP address can be specified.\"; one primary plus one secondary created cleanly. bench 2026-09-08 ap-northeast-1: two Primary entries -> ROLLBACK_COMPLETE with the same message; one -> CREATE_COMPLETE."
+addedOn: 2026-09-08

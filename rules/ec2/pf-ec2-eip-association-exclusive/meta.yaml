@@ -1,0 +1,11 @@
+id: pf-ec2-eip-association-exclusive
+service: ec2
+resourceTypes: [AWS::EC2::EIPAssociation]
+severity: ERROR
+title: An EIP association cannot set both AllocationId and EIP
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-eipassociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-08 ap-northeast-1: AssociateAddress with both --allocation-id and --public-ip -> \"You may specify public IP or allocation id, but not both in the same call\"; the no-target branch is not reproducible through CloudFormation (the handler answers \"Resource of type AWS::EC2::EIPAssociation with identifier ... already exists\" instead), so the rule keeps to the AllocationId/EIP exclusivity. bench 2026-09-08 ap-northeast-1: AllocationId + EIP on one association -> ROLLBACK_COMPLETE \"You may specify public IP or allocation id, but not both in the same call\"; AllocationId alone -> CREATE_COMPLETE. The pass fixture needs an internet gateway attached to the VPC, otherwise the association fails with \"Network vpc-... is not attached to any internet gateway\"."
+addedOn: 2026-09-08
