@@ -14,8 +14,13 @@ violation contains make_diag_full("pf-wafv2-logging-filter-condition", "ERROR", 
 	filters := input.resources[name].properties.LoggingFilter.Filters
 	some a
 	conds := filters[a].Conditions
-	some b
-	c := conds[b]
+
+	# 1 つの body に裸の `some` を 2 つ書くとエンジンが局所変数を重複定義し、
+	# Filters が 2 件以上のときカスタムパッケージ全体が落ちる（issue #150）。
+	# 2 つ目はキー付き反復で書く。`some .. in` はスカラーだと評価エラーなので
+	# is_array で守る。
+	is_array(conds)
+	some b, c in conds
 	is_object(c)
 	count(object.keys(c)) != 1
 }
