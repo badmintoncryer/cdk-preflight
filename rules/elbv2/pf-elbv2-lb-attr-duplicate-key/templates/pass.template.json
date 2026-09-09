@@ -14,8 +14,8 @@
         ],
         "LoadBalancerAttributes": [
           {
-            "Key": "deletion_protection.enabled",
-            "Value": "true"
+            "Key": "routing.http.desync_mitigation_mode",
+            "Value": "defensive"
           }
         ]
       }

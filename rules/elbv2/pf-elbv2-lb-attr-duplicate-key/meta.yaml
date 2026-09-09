@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Attribute key 'deletion_protection.enabled' has been specified more than once\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Attribute key 'routing.http.desync_mitigation_mode' has been specified more than once\"; the pass template reached CREATE_COMPLETE."
 addedOn: 2026-09-08
