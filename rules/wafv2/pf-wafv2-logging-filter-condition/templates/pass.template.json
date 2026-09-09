@@ -54,6 +54,28 @@
                   }
                 }
               ]
+            },
+            {
+              "Behavior": "KEEP",
+              "Requirement": "MEETS_ANY",
+              "Conditions": [
+                {
+                  "LabelNameCondition": {
+                    "LabelName": "awswaf:x"
+                  }
+                }
+              ]
+            },
+            {
+              "Behavior": "KEEP",
+              "Requirement": "MEETS_ALL",
+              "Conditions": [
+                {
+                  "ActionCondition": {
+                    "Action": "COUNT"
+                  }
+                }
+              ]
             }
           ]
         }
