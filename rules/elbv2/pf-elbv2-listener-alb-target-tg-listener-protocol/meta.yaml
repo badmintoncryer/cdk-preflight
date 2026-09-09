@@ -1,0 +1,12 @@
+id: pf-elbv2-listener-alb-target-tg-listener-protocol
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener, AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A target group of Application Load Balancers hangs off a TCP listener"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The listener and the following target groups have incompatible protocols: arn:aws:elasticloadbalancing:us-east-1:214794239830:targetgroup/cdkpf-pf-TG-VW3LKQRYBME4/1532d6606152a2cc\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

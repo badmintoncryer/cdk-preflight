@@ -1,0 +1,17 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "TargetType": "lambda",
+        "TargetGroupAttributes": [
+          {
+            "Key": "lambda.multi_value_headers.enabled",
+            "Value": "false"
+          }
+        ]
+      }
+    }
+  }
+}

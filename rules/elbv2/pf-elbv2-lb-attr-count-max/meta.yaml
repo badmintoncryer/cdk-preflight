@@ -1,0 +1,12 @@
+id: pf-elbv2-lb-attr-count-max
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "A load balancer carries at most 20 attributes"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"1 validation error detected: Value '[LoadBalancerAttribute(key=...), ... 21 entries]' at 'attributes' failed to satisfy constraint: Member must have length less than or equal to 20\"; the pass template (16 attributes, log buckets left out because the service checks S3 permissions even when logging is off) reached CREATE_COMPLETE."
+addedOn: 2026-09-08

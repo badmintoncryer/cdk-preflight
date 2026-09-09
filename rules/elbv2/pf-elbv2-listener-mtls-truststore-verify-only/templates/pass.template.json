@@ -1,0 +1,54 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Subnets": [
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
+        ],
+        "SecurityGroups": [
+          "sg-7d699f61"
+        ]
+      }
+    },
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LB"
+        },
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "TG"
+            }
+          }
+        ],
+        "Port": 443,
+        "Protocol": "HTTPS",
+        "Certificates": [
+          {
+            "CertificateArn": "arn:aws:acm:us-east-1:214794239830:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+          }
+        ],
+        "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+        "MutualAuthentication": {
+          "Mode": "passthrough"
+        }
+      }
+    }
+  }
+}

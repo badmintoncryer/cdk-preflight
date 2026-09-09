@@ -1,0 +1,12 @@
+id: pf-elbv2-listener-attr-x-frame-options-value
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener]
+severity: ERROR
+title: "X-Frame-Options is DENY or SAMEORIGIN"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The value of 'routing.http.response.x_frame_options.header_value' must be from the following: [DENY, SAMEORIGIN], but was 'ALLOW-FROM https://example.com'\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-elbv2-action-redirect-port-value
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener, AWS::ElasticLoadBalancingV2::ListenerRule]
+severity: ERROR
+title: "A redirect port is a port number or #{port}"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The Port parameter must be either an integer between 1 and 65535 or '#{port}'.\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

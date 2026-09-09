@@ -1,0 +1,93 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Subnets": [
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
+        ],
+        "SecurityGroups": [
+          "sg-7d699f61"
+        ]
+      }
+    },
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "TS": {
+      "Type": "AWS::ElasticLoadBalancingV2::TrustStore",
+      "Properties": {
+        "Name": "pf-ts-elblmvl",
+        "CaCertificatesBundleS3Bucket": "cdkpf-bench-layers",
+        "CaCertificatesBundleS3Key": "ca.pem"
+      }
+    },
+    "L0": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LB"
+        },
+        "Port": 8000,
+        "Protocol": "HTTPS",
+        "Certificates": [
+          {
+            "CertificateArn": "arn:aws:acm:us-east-1:214794239830:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+          }
+        ],
+        "MutualAuthentication": {
+          "Mode": "verify",
+          "TrustStoreArn": {
+            "Ref": "TS"
+          }
+        },
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "TG"
+            }
+          }
+        ]
+      }
+    },
+    "L1": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LB"
+        },
+        "Port": 8001,
+        "Protocol": "HTTPS",
+        "Certificates": [
+          {
+            "CertificateArn": "arn:aws:acm:us-east-1:214794239830:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+          }
+        ],
+        "MutualAuthentication": {
+          "Mode": "verify",
+          "TrustStoreArn": {
+            "Ref": "TS"
+          }
+        },
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "TG"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

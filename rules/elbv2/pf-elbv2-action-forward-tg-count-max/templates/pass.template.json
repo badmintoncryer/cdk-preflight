@@ -1,0 +1,112 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Subnets": [
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
+        ],
+        "SecurityGroups": [
+          "sg-7d699f61"
+        ]
+      }
+    },
+    "TGx0": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "TGx1": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 81,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "TGx2": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 82,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "TGx3": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 83,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "TGx4": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 84,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LB"
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "ForwardConfig": {
+              "TargetGroups": [
+                {
+                  "TargetGroupArn": {
+                    "Ref": "TGx0"
+                  },
+                  "Weight": 1
+                },
+                {
+                  "TargetGroupArn": {
+                    "Ref": "TGx1"
+                  },
+                  "Weight": 1
+                },
+                {
+                  "TargetGroupArn": {
+                    "Ref": "TGx2"
+                  },
+                  "Weight": 1
+                },
+                {
+                  "TargetGroupArn": {
+                    "Ref": "TGx3"
+                  },
+                  "Weight": 1
+                },
+                {
+                  "TargetGroupArn": {
+                    "Ref": "TGx4"
+                  },
+                  "Weight": 1
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

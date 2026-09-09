@@ -1,0 +1,20 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "ip",
+        "Targets": [
+          {
+            "Id": "10.0.1.5",
+            "AvailabilityZone": "all"
+          }
+        ]
+      }
+    }
+  }
+}

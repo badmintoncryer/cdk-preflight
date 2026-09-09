@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-attr-duplicate-key
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A target group attribute key appears at most once"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Target group attribute keys must be unique: '[load_balancing.algorithm.type]'\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

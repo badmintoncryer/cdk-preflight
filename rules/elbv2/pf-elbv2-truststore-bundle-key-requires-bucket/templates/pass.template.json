@@ -1,0 +1,13 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TS": {
+      "Type": "AWS::ElasticLoadBalancingV2::TrustStore",
+      "Properties": {
+        "Name": "pf-ts-elbtsb",
+        "CaCertificatesBundleS3Bucket": "cdkpf-bench-layers",
+        "CaCertificatesBundleS3Key": "ca.pem"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-elbv2-lb-ipv6-address-internet-facing-only
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "A mapped IPv6 address needs an internet-facing load balancer"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"IPv6 address 2600:1f13:1::1 does not belong to the cidr block associated with the subnet\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

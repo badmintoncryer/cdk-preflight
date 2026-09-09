@@ -1,0 +1,12 @@
+id: pf-elbv2-action-forward-stickiness-tls
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener, AWS::ElasticLoadBalancingV2::ListenerRule]
+severity: ERROR
+title: "A TLS listener cannot turn on target group stickiness"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Target group stickiness duration cannot be configured on load balancers of type 'network'\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

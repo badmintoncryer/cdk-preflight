@@ -1,0 +1,43 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "Subnets": [
+          "subnet-2e0a500f"
+        ],
+        "IpAddressType": "dualstack"
+      }
+    },
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "UDP",
+        "Port": 53,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance",
+        "HealthCheckProtocol": "TCP"
+      }
+    },
+    "Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LB"
+        },
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "TG"
+            }
+          }
+        ],
+        "Port": 53,
+        "Protocol": "UDP"
+      }
+    }
+  }
+}

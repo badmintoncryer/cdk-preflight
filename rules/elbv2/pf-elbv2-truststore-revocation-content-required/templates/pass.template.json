@@ -1,0 +1,27 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TS": {
+      "Type": "AWS::ElasticLoadBalancingV2::TrustStore",
+      "Properties": {
+        "Name": "pf-ts-elbtsr",
+        "CaCertificatesBundleS3Bucket": "cdkpf-bench-layers",
+        "CaCertificatesBundleS3Key": "ca.pem"
+      }
+    },
+    "Rev": {
+      "Type": "AWS::ElasticLoadBalancingV2::TrustStoreRevocation",
+      "Properties": {
+        "TrustStoreArn": {
+          "Ref": "TS"
+        },
+        "RevocationContents": [
+          {
+            "S3Bucket": "cdkpf-bench-layers",
+            "S3Key": "crl.pem"
+          }
+        ]
+      }
+    }
+  }
+}

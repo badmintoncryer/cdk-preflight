@@ -1,0 +1,24 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "SubnetMappings": [
+          {
+            "SubnetId": "subnet-2e0a500f",
+            "AllocationId": "eipalloc-0123456789abcdef0"
+          },
+          {
+            "SubnetId": "subnet-ab11fde7",
+            "AllocationId": "eipalloc-0123456789abcdef1"
+          }
+        ],
+        "SecurityGroups": [
+          "sg-7d699f61"
+        ]
+      }
+    }
+  }
+}

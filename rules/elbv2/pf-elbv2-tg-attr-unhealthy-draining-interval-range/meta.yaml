@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-attr-unhealthy-draining-interval-range
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "The unhealthy draining interval is 0-360000 seconds"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'target_health_state.unhealthy.draining_interval_seconds' value '400000' must be between '0-360000' inclusive\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

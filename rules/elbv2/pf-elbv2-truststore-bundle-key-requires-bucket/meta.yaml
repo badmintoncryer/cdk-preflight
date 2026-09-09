@@ -1,0 +1,12 @@
+id: pf-elbv2-truststore-bundle-key-requires-bucket
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TrustStore]
+severity: ERROR
+title: "A CA bundle needs both its bucket and its key"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-truststore.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"1 validation error detected: Value null at 'caCertificatesBundleS3Bucket' failed to satisfy constraint: Member must not be null\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

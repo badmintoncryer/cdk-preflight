@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-alb-target-type-protocol
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A target group of Application Load Balancers speaks TCP"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Target type 'alb' is not supported for target groups with HTTP protocol\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

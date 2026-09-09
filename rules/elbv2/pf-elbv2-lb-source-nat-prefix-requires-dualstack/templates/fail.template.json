@@ -1,0 +1,15 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "Subnets": [
+          "subnet-2e0a500f"
+        ],
+        "EnablePrefixForIpv6SourceNat": "on"
+      }
+    }
+  }
+}

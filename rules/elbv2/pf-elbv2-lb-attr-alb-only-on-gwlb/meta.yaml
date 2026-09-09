@@ -1,0 +1,12 @@
+id: pf-elbv2-lb-attr-alb-only-on-gwlb
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "A gateway load balancer takes only the two common attributes"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Load balancer attribute key 'access_logs.s3.enabled' is not recognized\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -1,0 +1,24 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "TCP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance",
+        "TargetGroupAttributes": [
+          {
+            "Key": "target_health_state.unhealthy.connection_termination.enabled",
+            "Value": "false"
+          },
+          {
+            "Key": "target_health_state.unhealthy.draining_interval_seconds",
+            "Value": "60"
+          }
+        ]
+      }
+    }
+  }
+}

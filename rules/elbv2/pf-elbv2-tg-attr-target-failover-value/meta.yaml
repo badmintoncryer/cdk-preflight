@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-attr-target-failover-value
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "Target failover is rebalance or no_rebalance"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'balance' must be one of [rebalance, no_rebalance]\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

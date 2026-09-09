@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-hc-enabled-required
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "Health checks can only be turned off for a Lambda target group"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Health check enabled must be true for target groups with target type 'instance'\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-attr-stickiness-type-gwlb
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A GENEVE target group sticks on the IP tuple"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'source_ip' must be one of [source_ip_dest_ip_proto, source_ip_dest_ip]\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

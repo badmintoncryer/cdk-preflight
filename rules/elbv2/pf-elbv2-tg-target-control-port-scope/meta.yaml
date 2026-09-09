@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-target-control-port-scope
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "TargetControlPort needs an HTTP target group of instances or IPs"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Target control port is not supported\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

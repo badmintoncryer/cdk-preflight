@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-matcher-grpc-requires-grpc
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A gRPC matcher needs ProtocolVersion GRPC"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Health check matcher HTTP code cannot be empty\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

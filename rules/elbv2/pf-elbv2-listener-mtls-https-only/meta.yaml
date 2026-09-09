@@ -1,0 +1,12 @@
+id: pf-elbv2-listener-mtls-https-only
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener]
+severity: ERROR
+title: "Mutual authentication is an HTTPS listener feature"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Mutual Authentication cannot be set for non secure listeners\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

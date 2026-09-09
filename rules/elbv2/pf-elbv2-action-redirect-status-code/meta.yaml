@@ -1,0 +1,12 @@
+id: pf-elbv2-action-redirect-status-code
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener, AWS::ElasticLoadBalancingV2::ListenerRule]
+severity: ERROR
+title: "A redirect answers with HTTP_301 or HTTP_302"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"1 validation error detected: Value 'HTTP_307' at 'defaultActions.1.member.redirectConfig.statusCode' failed to satisfy constraint: Member must satisfy enum value set: [HTTP_301, HTTP_302]\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08
