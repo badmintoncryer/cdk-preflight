@@ -45,6 +45,28 @@
           "DefaultBehavior": "KEEP",
           "Filters": [
             {
+              "Behavior": "KEEP",
+              "Requirement": "MEETS_ALL",
+              "Conditions": [
+                {
+                  "ActionCondition": {
+                    "Action": "COUNT"
+                  }
+                }
+              ]
+            },
+            {
+              "Behavior": "KEEP",
+              "Requirement": "MEETS_ANY",
+              "Conditions": [
+                {
+                  "LabelNameCondition": {
+                    "LabelName": "awswaf:x"
+                  }
+                }
+              ]
+            },
+            {
               "Behavior": "DROP",
               "Requirement": "MEETS_ALL",
               "Conditions": [

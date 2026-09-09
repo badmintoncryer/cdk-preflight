@@ -65,6 +65,17 @@
                   }
                 }
               ]
+            },
+            {
+              "Behavior": "KEEP",
+              "Requirement": "MEETS_ALL",
+              "Conditions": [
+                {
+                  "ActionCondition": {
+                    "Action": "COUNT"
+                  }
+                }
+              ]
             }
           ]
         }
