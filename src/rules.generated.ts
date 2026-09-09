@@ -1103,6 +1103,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# WebSocket APIs route by evaluating this expression against each message,\n# so the create call rejects its absence. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_agv2wrs_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RouteSelectionExpression\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-route-selection\", \"ERROR\", name,\n\t\"Properties.RouteSelectionExpression\",\n\t\"WebSocket API has no RouteSelectionExpression; the API create fails with \\\"Invalid routeSelectionExpression\\\"\",\n\t\"Set RouteSelectionExpression, e.g. $request.body.action\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(name, \"Properties.ProtocolType\") == \"WEBSOCKET\"\n\t_pf_agv2wrs_missing(name)\n}\n"
   },
   {
+    "id": "pf-asg-az-xor-azid",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group names zones by name or by id, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgazx_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-az-xor-azid\", \"ERROR\", name,\n\t\"Properties.AvailabilityZoneIds\",\n\t\"the group sets both AvailabilityZones and AvailabilityZoneIds; the group create fails with \\\"AvailabilityZones and AvailabilityZoneIds can't be used together\\\"\",\n\t\"Keep AvailabilityZones or AvailabilityZoneIds, not both\", _pf_asgazx_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tnot _pf_aslib_absent(name, \"AvailabilityZones\")\n\tnot _pf_aslib_absent(name, \"AvailabilityZoneIds\")\n}\n"
+  },
+  {
+    "id": "pf-asg-capacity-reservation-none-target-exclusive",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A capacity reservation target needs the capacity-reservations-only preference",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgcrn_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-capacity-reservation-none-target-exclusive\", \"ERROR\", name,\n\t\"Properties.CapacityReservationSpecification.CapacityReservationTarget\",\n\tsprintf(\"CapacityReservationPreference is %s, which never targets a reservation, yet CapacityReservationTarget is set; the group create fails with \\\"You can't specify CapacityReservationPreference as default or none and provide a CapacityReservationTarget in the same request\\\"\", [p]),\n\t\"Set CapacityReservationPreference to capacity-reservations-only, or drop CapacityReservationTarget\", _pf_asgcrn_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tp := resolve(name, \"Properties.CapacityReservationSpecification.CapacityReservationPreference\")\n\tp in [\"none\", \"default\"]\n\tnot _pf_aslib_absent_at(name, [\"CapacityReservationSpecification\", \"CapacityReservationTarget\"])\n}\n"
+  },
+  {
     "id": "pf-asg-cooldown-non-negative",
     "service": "autoscaling",
     "severity": "ERROR",
@@ -1125,6 +1147,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The sizes are string-typed in the schema; the between-relationship is\n# a three-way cross-property check. The min>max pair itself is engine\n# territory (E3706) and not repeated here.\nviolation contains make_diag_full(\"pf-asg-desired-capacity-range\", \"ERROR\", name,\n\t\"Properties.DesiredCapacity\",\n\tsprintf(\"DesiredCapacity %v is outside [%v, %v]; the group create fails with \\\"Desired capacity:%v must be between the specified min size:%v and max size:%v\\\"\", [dc, mn, mx, dc, mn, mx]),\n\t\"Keep MinSize <= DesiredCapacity <= MaxSize\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tdc := to_number(resolve(name, \"Properties.DesiredCapacity\"))\n\tmn := to_number(resolve(name, \"Properties.MinSize\"))\n\tmx := to_number(resolve(name, \"Properties.MaxSize\"))\n\tmn <= mx\n\t_pf_asgdcr_out(dc, mn, mx)\n}\n\n_pf_asgdcr_out(dc, mn, _) if dc < mn\n\n_pf_asgdcr_out(dc, _, mx) if dc > mx\n"
   },
   {
+    "id": "pf-asg-exactcapacity-nonnegative",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "ExactCapacity takes no negative ScalingAdjustment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgxcn_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-exactcapacity-nonnegative\", \"ERROR\", name,\n\t\"Properties.ScalingAdjustment\",\n\tsprintf(\"ScalingAdjustment %v is negative while AdjustmentType is ExactCapacity, which sets the capacity outright; the policy create fails with \\\"The lower range for adjustment is 0 with the specified adjustment type\\\"\", [n]),\n\t\"Use a ScalingAdjustment of 0 or more, or switch to ChangeInCapacity\", _pf_asgxcn_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tresolve(name, \"Properties.AdjustmentType\") == \"ExactCapacity\"\n\tn := _pf_aslib_num(name, \"Properties.ScalingAdjustment\")\n\tn < 0\n}\n"
+  },
+  {
     "id": "pf-asg-health-check-grace-period",
     "service": "autoscaling",
     "severity": "ERROR",
@@ -1134,6 +1167,314 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::AutoScaling::AutoScalingGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types it as a bare integer with no floor; zero is the\n# service default, so only negatives are claimed.\nviolation contains make_diag_full(\"pf-asg-health-check-grace-period\", \"ERROR\", name,\n\t\"Properties.HealthCheckGracePeriod\",\n\tsprintf(\"HealthCheckGracePeriod %v is negative; the group create fails with \\\"Grace period must be a positive integer.\\\"\", [g]),\n\t\"Use zero or a positive number of seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tg := to_number(resolve(name, \"Properties.HealthCheckGracePeriod\"))\n\tg < 0\n}\n"
+  },
+  {
+    "id": "pf-asg-healthchecktype-ec2-exclusive-with-others",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "EC2 health checks do not combine with the others",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asghce_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-healthchecktype-ec2-exclusive-with-others\", \"ERROR\", name,\n\t\"Properties.HealthCheckType\",\n\tsprintf(\"HealthCheckType '%s' lists EC2 alongside another check; EC2 is implied by every other type and the group create fails with \\\"Specifying EC2 in addition to other health check types is not supported\\\"\", [v]),\n\t\"Drop EC2 from the list; the remaining types already include it\", _pf_asghce_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tv := resolve(name, \"Properties.HealthCheckType\")\n\t_pf_aslib_lit(v)\n\tparts := [x | some x in split(v, \",\"); x != \"\"]\n\tcount(parts) > 1\n\tsome p in parts\n\tp == \"EC2\"\n}\n"
+  },
+  {
+    "id": "pf-asg-instance-maintenance-policy-range-diff",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An instance maintenance policy spans at most 100 points",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgimp_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-instance-maintenance-policy-range-diff\", \"ERROR\", name,\n\t\"Properties.InstanceMaintenancePolicy.MaxHealthyPercentage\",\n\tsprintf(\"MaxHealthyPercentage %v minus MinHealthyPercentage %v is %v; the spread may not exceed 100 and the group create fails with \\\"The difference between MaxHealthyPercentage and MinHealthyPercentage must be less than or equal to 100\\\"\", [mx, mn, mx - mn]),\n\t\"Narrow the two percentages to within 100 points of each other\", _pf_asgimp_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tmn := _pf_aslib_num(name, \"Properties.InstanceMaintenancePolicy.MinHealthyPercentage\")\n\tmx := _pf_aslib_num(name, \"Properties.InstanceMaintenancePolicy.MaxHealthyPercentage\")\n\tmx - mn > 100\n}\n"
+  },
+  {
+    "id": "pf-asg-instance-requirements-allowed-xor-excluded",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Instance requirements allow types or exclude them, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgirax_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-instance-requirements-allowed-xor-excluded\", \"ERROR\", name,\n\tsprintf(\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides.%d.InstanceRequirements.ExcludedInstanceTypes\", [i]),\n\t\"the instance requirements set both AllowedInstanceTypes and ExcludedInstanceTypes; the group create fails with \\\"You can specify either AllowedInstanceTypes or ExcludedInstanceTypes, but not both\\\"\",\n\t\"Keep one of the two lists\", _pf_asgirax_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tir := object.get(o, \"InstanceRequirements\", null)\n\tis_object(ir)\n\tobject.get(ir, \"AllowedInstanceTypes\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(ir, \"ExcludedInstanceTypes\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-asg-instance-requirements-spot-price-protection-xor",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Spot price protection takes one baseline, not two",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgirsp_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-instance-requirements-spot-price-protection-xor\", \"ERROR\", name,\n\tsprintf(\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides.%d.InstanceRequirements.MaxSpotPriceAsPercentageOfOptimalOnDemandPrice\", [i]),\n\t\"the instance requirements set both SpotMaxPricePercentageOverLowestPrice and MaxSpotPriceAsPercentageOfOptimalOnDemandPrice; the group create fails with \\\"Specify only one of these parameters\\\"\",\n\t\"Keep one spot price protection baseline\", _pf_asgirsp_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tir := object.get(o, \"InstanceRequirements\", null)\n\tis_object(ir)\n\tobject.get(ir, \"SpotMaxPricePercentageOverLowestPrice\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(ir, \"MaxSpotPriceAsPercentageOfOptimalOnDemandPrice\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-asg-instance-requirements-vcpu-min-max",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Instance requirement ranges run from Min up to Max",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgirvm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgirvm_ranges := [\"VCpuCount\", \"MemoryMiB\", \"MemoryGiBPerVCpu\", \"NetworkBandwidthGbps\", \"NetworkInterfaceCount\", \"TotalLocalStorageGB\", \"BaselineEbsBandwidthMbps\", \"AcceleratorCount\", \"AcceleratorTotalMemoryMiB\"]\n\nviolation contains make_diag_full(\"pf-asg-instance-requirements-vcpu-min-max\", \"ERROR\", name,\n\tsprintf(\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides.%d.InstanceRequirements.%s\", [i, k]),\n\tsprintf(\"%s has Min %v above Max %v; the group create fails with \\\"Invalid instance requirements. The Min value (%v) in %s must be less or equal to the Max value (%v)\\\"\", [k, mn, mx, mn, k, mx]),\n\tsprintf(\"Set the %s Min at or below its Max\", [k]), _pf_asgirvm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tir := object.get(o, \"InstanceRequirements\", null)\n\tis_object(ir)\n\tsome k in _pf_asgirvm_ranges\n\tr := object.get(ir, k, null)\n\tis_object(r)\n\tmn := object.get(r, \"Min\", null)\n\tmx := object.get(r, \"Max\", null)\n\tis_number(mn)\n\tis_number(mx)\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-default-result-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A lifecycle hook DefaultResult is CONTINUE or ABANDON",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhdr_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\nviolation contains make_diag_full(\"pf-asg-lh-default-result-enum\", \"ERROR\", name,\n\t\"Properties.DefaultResult\",\n\tsprintf(\"DefaultResult '%s' is not a hook result; the hook create fails with \\\"'DefaultResult' must be one of: CONTINUE, ABANDON\\\"\", [v]),\n\t\"Use CONTINUE or ABANDON\", _pf_asglhdr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tv := resolve(name, \"Properties.DefaultResult\")\n\t_pf_aslib_lit(v)\n\tnot v in [\"CONTINUE\", \"ABANDON\"]\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-fifo-queue-unsupported",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A FIFO SQS queue cannot be a lifecycle hook target",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhfq_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\n_pf_asglhfq_fifo(name) if {\n\tv := resolve(name, \"Properties.NotificationTargetARN\")\n\t_pf_aslib_lit(v)\n\tendswith(v, \".fifo\")\n}\n\n_pf_asglhfq_fifo(name) if {\n\tq := resolve(name, \"Properties.NotificationTargetARN\")\n\tq in resources_of_type(\"AWS::SQS::Queue\")\n\tresolve(q, \"Properties.FifoQueue\") == true\n}\n\nviolation contains make_diag_full(\"pf-asg-lh-fifo-queue-unsupported\", \"ERROR\", name,\n\t\"Properties.NotificationTargetARN\",\n\t\"the notification target is a FIFO queue; FIFO queues are not compatible with lifecycle hooks and the hook create fails with \\\"Unable to publish test message to notification target\\\"\",\n\t\"Point NotificationTargetARN at a standard queue, an SNS topic or a Lambda function\", _pf_asglhfq_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\t_pf_asglhfq_fifo(name)\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-heartbeat-timeout-range",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A lifecycle hook HeartbeatTimeout runs from 30 to 7200 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhht_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\n_pf_asglhht_bad(n) if n < 30\n\n_pf_asglhht_bad(n) if n > 7200\n\nviolation contains make_diag_full(\"pf-asg-lh-heartbeat-timeout-range\", \"ERROR\", name,\n\t\"Properties.HeartbeatTimeout\",\n\tsprintf(\"HeartbeatTimeout %v is outside 30-7200; the hook create fails with \\\"HeartbeatTimeout must be between 30 and 7200 seconds\\\"\", [n]),\n\t\"Use a HeartbeatTimeout between 30 and 7200 seconds\", _pf_asglhht_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tn := _pf_aslib_num(name, \"Properties.HeartbeatTimeout\")\n\t_pf_asglhht_bad(n)\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-role-forbidden-for-lambda-target",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A Lambda notification target takes no RoleARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhrl_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\nviolation contains make_diag_full(\"pf-asg-lh-role-forbidden-for-lambda-target\", \"ERROR\", name,\n\t\"Properties.RoleARN\",\n\t\"NotificationTargetARN is a Lambda function, so RoleARN must be left out; the hook create fails with \\\"'RoleARN' parameter should not be specified when 'NotificationTargetARN' is a Lambda function\\\"\",\n\t\"Drop RoleARN; Auto Scaling invokes the function through its own resource policy\", _pf_asglhrl_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\t_pf_aslib_target_lambda(name)\n\tnot _pf_aslib_absent(name, \"RoleARN\")\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-target-arn-format",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "NotificationTargetARN is an ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhaf_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\nviolation contains make_diag_full(\"pf-asg-lh-target-arn-format\", \"ERROR\", name,\n\t\"Properties.NotificationTargetARN\",\n\tsprintf(\"NotificationTargetARN '%s' is not an ARN; the hook create fails with \\\"'NotificationTargetARN' must be a valid ARN\\\"\", [v]),\n\t\"Use the full ARN of the SNS topic, SQS queue or Lambda function\", _pf_asglhaf_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tv := resolve(name, \"Properties.NotificationTargetARN\")\n\t_pf_aslib_lit(v)\n\tnot startswith(v, \"arn:\")\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-target-region-match",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A lifecycle hook target lives in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhrm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\nviolation contains make_diag_full(\"pf-asg-lh-target-region-match\", \"ERROR\", name,\n\t\"Properties.NotificationTargetARN\",\n\tsprintf(\"the notification target is in %s but the group deploys to %s; Auto Scaling can only reach a target in its own region and the hook create fails with \\\"Unable to publish test message to notification target\\\"\", [r, data.cdk_preflight.deploy_region]),\n\t\"Use a topic or queue in the same region as the Auto Scaling group\", _pf_asglhrm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tv := resolve(name, \"Properties.NotificationTargetARN\")\n\t_pf_aslib_arn_service(v) in [\"sns\", \"sqs\"]\n\tr := _pf_aslib_arn_region(v)\n\tr != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-target-role-mutual-required",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "NotificationTargetARN and RoleARN come as a pair",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglhtr_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\nviolation contains make_diag_full(\"pf-asg-lh-target-role-mutual-required\", \"ERROR\", name,\n\t\"Properties.NotificationTargetARN\",\n\t\"RoleARN is set but NotificationTargetARN is not; the hook create fails with \\\"'NotificationTargetARN' parameter required when 'RoleARN' parameter is specified\\\"\",\n\t\"Set NotificationTargetARN to the SNS topic or SQS queue, or drop RoleARN\", _pf_asglhtr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tnot _pf_aslib_absent(name, \"RoleARN\")\n\t_pf_aslib_absent(name, \"NotificationTargetARN\")\n}\n\nviolation contains make_diag_full(\"pf-asg-lh-target-role-mutual-required\", \"ERROR\", name,\n\t\"Properties.RoleARN\",\n\t\"NotificationTargetARN is set but RoleARN is not; the hook create fails with \\\"'RoleARN' parameter required when 'NotificationTargetARN' parameter is specified\\\"\",\n\t\"Set RoleARN to a role Auto Scaling can assume to publish to the target\", _pf_asglhtr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tnot _pf_aslib_absent(name, \"NotificationTargetARN\")\n\t_pf_aslib_absent(name, \"RoleARN\")\n\tnot _pf_aslib_target_lambda(name)\n}\n"
+  },
+  {
+    "id": "pf-asg-lh-transition-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "LifecycleTransition names one of the two lifecycle transitions",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AutoScaling::LifecycleHook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asglht_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html\"\n\n_pf_asglht_ok(v) if v in [\"autoscaling:EC2_INSTANCE_LAUNCHING\", \"autoscaling:EC2_INSTANCE_TERMINATING\"]\n\nviolation contains make_diag_full(\"pf-asg-lh-transition-enum\", \"ERROR\", name,\n\t\"Properties.LifecycleTransition\",\n\tsprintf(\"LifecycleTransition '%s' is not a lifecycle transition; the hook create fails with \\\"'LifecycleTransition' must be one of: autoscaling:EC2_INSTANCE_LAUNCHING, autoscaling:EC2_INSTANCE_TERMINATING\\\"\", [v]),\n\t\"Use autoscaling:EC2_INSTANCE_LAUNCHING or autoscaling:EC2_INSTANCE_TERMINATING\",\n\t_pf_asglht_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::LifecycleHook\")\n\tv := resolve(name, \"Properties.LifecycleTransition\")\n\t_pf_aslib_lit(v)\n\tnot _pf_asglht_ok(v)\n}\n"
+  },
+  {
+    "id": "pf-asg-lifecycle-hook-heartbeat-timeout-range",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An inline lifecycle hook HeartbeatTimeout runs from 30 to 7200 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgihh_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgihh_bad(n) if n < 30\n\n_pf_asgihh_bad(n) if n > 7200\n\nviolation contains make_diag_full(\"pf-asg-lifecycle-hook-heartbeat-timeout-range\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleHookSpecificationList.%d.HeartbeatTimeout\", [i]),\n\tsprintf(\"HeartbeatTimeout %v is outside 30-7200; the group create fails with \\\"HeartbeatTimeout must be between 30 and 7200 seconds\\\"\", [n]),\n\t\"Use a HeartbeatTimeout between 30 and 7200 seconds\", _pf_asgihh_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, h in _pf_aslib_hooks(name)\n\tis_object(h)\n\tv := object.get(h, \"HeartbeatTimeout\", null)\n\tv != null\n\tnot is_object(v)\n\tn := to_number(v)\n\t_pf_asgihh_bad(n)\n}\n"
+  },
+  {
+    "id": "pf-asg-lifecyclehook-defaultresult-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An inline lifecycle hook DefaultResult is CONTINUE or ABANDON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgihd_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-lifecyclehook-defaultresult-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleHookSpecificationList.%d.DefaultResult\", [i]),\n\tsprintf(\"DefaultResult '%s' is not a hook result; the group create fails with \\\"'DefaultResult' must be one of: CONTINUE, ABANDON\\\"\", [v]),\n\t\"Use CONTINUE or ABANDON\", _pf_asgihd_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, h in _pf_aslib_hooks(name)\n\tis_object(h)\n\tv := object.get(h, \"DefaultResult\", null)\n\t_pf_aslib_lit(v)\n\tnot v in [\"CONTINUE\", \"ABANDON\"]\n}\n"
+  },
+  {
+    "id": "pf-asg-lifecyclehook-name-duplicate-rejected",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Inline lifecycle hook names are unique within a group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgihn_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-lifecyclehook-name-duplicate-rejected\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleHookSpecificationList.%d.LifecycleHookName\", [j]),\n\tsprintf(\"two inline lifecycle hooks are both named '%s'; the group create fails with \\\"Multiple lifecycle hooks found for name '%s'\\\"\", [v, v]),\n\t\"Give every hook in the list its own LifecycleHookName\", _pf_asgihn_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\thooks := _pf_aslib_hooks(name)\n\tsome i, a in hooks\n\tsome j, b in hooks\n\ti < j\n\tis_object(a)\n\tis_object(b)\n\tv := object.get(a, \"LifecycleHookName\", null)\n\t_pf_aslib_lit(v)\n\tobject.get(b, \"LifecycleHookName\", null) == v\n}\n"
+  },
+  {
+    "id": "pf-asg-lifecyclehook-rolearn-requires-target",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An inline hook RoleARN needs a notification target",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgihr_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-lifecyclehook-rolearn-requires-target\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleHookSpecificationList.%d.NotificationTargetARN\", [i]),\n\t\"the inline lifecycle hook sets RoleARN but no NotificationTargetARN; the group create fails with \\\"'NotificationTargetARN' parameter required when 'RoleARN' parameter is specified\\\"\",\n\t\"Add NotificationTargetARN, or drop RoleARN\", _pf_asgihr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, h in _pf_aslib_hooks(name)\n\tis_object(h)\n\tobject.get(h, \"RoleARN\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(h, \"NotificationTargetARN\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-asg-lifecyclehook-transition-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An inline lifecycle hook names one of the two transitions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgiht_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-lifecyclehook-transition-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.LifecycleHookSpecificationList.%d.LifecycleTransition\", [i]),\n\tsprintf(\"LifecycleTransition '%s' is not a lifecycle transition; the group create fails with \\\"'LifecycleTransition' must be one of: autoscaling:EC2_INSTANCE_LAUNCHING, autoscaling:EC2_INSTANCE_TERMINATING\\\"\", [v]),\n\t\"Use autoscaling:EC2_INSTANCE_LAUNCHING or autoscaling:EC2_INSTANCE_TERMINATING\", _pf_asgiht_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, h in _pf_aslib_hooks(name)\n\tis_object(h)\n\tv := object.get(h, \"LifecycleTransition\", null)\n\t_pf_aslib_lit(v)\n\tnot v in [\"autoscaling:EC2_INSTANCE_LAUNCHING\", \"autoscaling:EC2_INSTANCE_TERMINATING\"]\n}\n"
+  },
+  {
+    "id": "pf-asg-lifecyclehookspec-max-5",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group creates at most five lifecycle hooks inline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgihm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-lifecyclehookspec-max-5\", \"ERROR\", name,\n\t\"Properties.LifecycleHookSpecificationList\",\n\tsprintf(\"the group declares %d inline lifecycle hooks; CreateAutoScalingGroup takes at most 5 (the 50-per-group quota applies to hooks added one at a time afterwards) and the create fails with \\\"You cannot specify more than 5 hooks\\\"\", [n]),\n\t\"Keep five hooks inline and add the rest as AWS::AutoScaling::LifecycleHook resources\", _pf_asgihm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := count(_pf_aslib_hooks(name))\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-asg-max-instance-lifetime-range",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "MaxInstanceLifetime is zero or a day to a year",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgmil_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgmil_bad(n) if {\n\tn > 0\n\tn < 86400\n}\n\n_pf_asgmil_bad(n) if n > 31536000\n\nviolation contains make_diag_full(\"pf-asg-max-instance-lifetime-range\", \"ERROR\", name,\n\t\"Properties.MaxInstanceLifetime\",\n\tsprintf(\"MaxInstanceLifetime %v is neither 0 nor within 86400-31536000 seconds; the group create fails with \\\"maxInstanceLifetime must be between 86400 and 31536000 seconds (inclusive)\\\"\", [n]),\n\t\"Use 0 to switch replacement off, or a value from 86400 (one day) to 31536000 (one year)\", _pf_asgmil_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := _pf_aslib_num(name, \"Properties.MaxInstanceLifetime\")\n\t_pf_asgmil_bad(n)\n}\n"
+  },
+  {
+    "id": "pf-asg-metrics-granularity-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Group metrics come at one-minute granularity",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgmge_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-metrics-granularity-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.MetricsCollection.%d.Granularity\", [i]),\n\tsprintf(\"Granularity '%s' is not offered; the only value Auto Scaling accepts is 1Minute and the group create fails with \\\"Valid metrics granularity type is: [1Minute]\\\"\", [v]),\n\t\"Use 1Minute\", _pf_asgmge_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, m in _pf_aslib_arr(name, [\"MetricsCollection\"])\n\tis_object(m)\n\tv := object.get(m, \"Granularity\", null)\n\t_pf_aslib_lit(v)\n\tv != \"1Minute\"\n}\n"
+  },
+  {
+    "id": "pf-asg-metrics-name-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Collected group metrics come from the published list",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgmne_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgmne_ok := {\n\t\"GroupMinSize\", \"GroupMaxSize\", \"GroupDesiredCapacity\", \"GroupInServiceInstances\",\n\t\"GroupPendingInstances\", \"GroupStandbyInstances\", \"GroupTerminatingInstances\", \"GroupTotalInstances\",\n\t\"GroupInServiceCapacity\", \"GroupPendingCapacity\", \"GroupStandbyCapacity\", \"GroupTerminatingCapacity\",\n\t\"GroupTotalCapacity\", \"WarmPoolDesiredCapacity\", \"WarmPoolWarmedCapacity\", \"WarmPoolPendingCapacity\",\n\t\"WarmPoolTerminatingCapacity\", \"WarmPoolTotalCapacity\", \"GroupAndWarmPoolDesiredCapacity\",\n\t\"GroupAndWarmPoolTotalCapacity\",\n}\n\nviolation contains make_diag_full(\"pf-asg-metrics-name-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.MetricsCollection.%d.Metrics.%d\", [i, j]),\n\tsprintf(\"'%s' is not a group metric; the group create fails with \\\"Valid metrics collection types are: [GroupMinSize, GroupMaxSize, ...]\\\"\", [v]),\n\t\"Use a metric name from the Auto Scaling group metrics list\", _pf_asgmne_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, m in _pf_aslib_arr(name, [\"MetricsCollection\"])\n\tis_object(m)\n\tms := object.get(m, \"Metrics\", null)\n\tis_array(ms)\n\tsome j, v in ms\n\t_pf_aslib_lit(v)\n\tnot v in _pf_asgmne_ok\n}\n"
+  },
+  {
+    "id": "pf-asg-minadjustmagnitude-positive",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "MinAdjustmentMagnitude is greater than zero",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgmam_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-minadjustmagnitude-positive\", \"ERROR\", name,\n\t\"Properties.MinAdjustmentMagnitude\",\n\tsprintf(\"MinAdjustmentMagnitude %v is not greater than zero; the policy create fails with \\\"If specified, MinAdjustmentMagnitude must be greater than zero\\\"\", [n]),\n\t\"Use 1 or more, or leave MinAdjustmentMagnitude out\", _pf_asgmam_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tn := _pf_aslib_num(name, \"Properties.MinAdjustmentMagnitude\")\n\tn <= 0\n}\n"
+  },
+  {
+    "id": "pf-asg-minadjustmagnitude-requires-percent",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "MinAdjustmentMagnitude only goes with PercentChangeInCapacity",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgmrp_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-minadjustmagnitude-requires-percent\", \"ERROR\", name,\n\t\"Properties.MinAdjustmentMagnitude\",\n\tsprintf(\"MinAdjustmentMagnitude is set while AdjustmentType is %s; it only applies to PercentChangeInCapacity and the policy create fails with \\\"MinAdjustmentMagnitude is not supported by the specified adjustment type\\\"\", [t]),\n\t\"Drop MinAdjustmentMagnitude, or switch AdjustmentType to PercentChangeInCapacity\", _pf_asgmrp_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tnot _pf_aslib_absent(name, \"MinAdjustmentMagnitude\")\n\tt := resolve(name, \"Properties.AdjustmentType\")\n\t_pf_aslib_lit(t)\n\tt != \"PercentChangeInCapacity\"\n}\n"
+  },
+  {
+    "id": "pf-asg-notification-sns-topics-max-10",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group notifies at most ten topics",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgnst_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgnst_topics(name) := {t |\n\tsome i, _ in _pf_aslib_arr(name, [\"NotificationConfigurations\"])\n\tt := resolve(name, sprintf(\"Properties.NotificationConfigurations.%d.TopicARN\", [i]))\n}\n\nviolation contains make_diag_full(\"pf-asg-notification-sns-topics-max-10\", \"ERROR\", name,\n\t\"Properties.NotificationConfigurations\",\n\tsprintf(\"the group notifies %d distinct SNS topics; the limit is 10 and the group create fails with \\\"can't have more than 10 topics\\\"\", [n]),\n\t\"Fan out from a single topic instead of attaching more than ten\", _pf_asgnst_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := count(_pf_asgnst_topics(name))\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-asg-notification-topic-cross-region-rejected",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A notification topic lives in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgncr_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-notification-topic-cross-region-rejected\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfigurations.%d.TopicARN\", [i]),\n\tsprintf(\"the notification topic is in %s but the group deploys to %s; Auto Scaling publishes only to a topic in its own region and the group create fails with \\\"Invalid parameter: TopicArn\\\"\", [r, data.cdk_preflight.deploy_region]),\n\t\"Use an SNS topic in the same region as the group\", _pf_asgncr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, _ in _pf_aslib_arr(name, [\"NotificationConfigurations\"])\n\tv := resolve(name, sprintf(\"Properties.NotificationConfigurations.%d.TopicARN\", [i]))\n\t_pf_aslib_arn_service(v) == \"sns\"\n\tr := _pf_aslib_arn_region(v)\n\tr != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-asg-notification-type-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A notification type comes from the published five",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgnte_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgnte_ok := {\n\t\"autoscaling:EC2_INSTANCE_LAUNCH\", \"autoscaling:EC2_INSTANCE_LAUNCH_ERROR\",\n\t\"autoscaling:EC2_INSTANCE_TERMINATE\", \"autoscaling:EC2_INSTANCE_TERMINATE_ERROR\",\n\t\"autoscaling:TEST_NOTIFICATION\",\n}\n\nviolation contains make_diag_full(\"pf-asg-notification-type-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.NotificationConfigurations.%d.NotificationTypes.%d\", [i, j]),\n\tsprintf(\"'%s' is not an Auto Scaling notification type; the group create fails with \\\"\\\\\\\"%s\\\\\\\" is not a valid Notification Type\\\"\", [v, v]),\n\t\"Use one of the five autoscaling: notification types\", _pf_asgnte_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, c in _pf_aslib_arr(name, [\"NotificationConfigurations\"])\n\tis_object(c)\n\tts := object.get(c, \"NotificationTypes\", null)\n\tis_array(ts)\n\tsome j, v in ts\n\t_pf_aslib_lit(v)\n\tnot v in _pf_asgnte_ok\n}\n"
+  },
+  {
+    "id": "pf-asg-ondemand-allocation-prioritized-invalid-with-instance-requirements",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Prioritized On-Demand allocation does not go with instance requirements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgoap_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgoap_usesir(name) if {\n\tsome o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tis_object(object.get(o, \"InstanceRequirements\", null))\n}\n\nviolation contains make_diag_full(\"pf-asg-ondemand-allocation-prioritized-invalid-with-instance-requirements\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandAllocationStrategy\",\n\t\"OnDemandAllocationStrategy is prioritized while the overrides pick instances by requirements, so there is no priority order to follow; the group create fails with \\\"The prioritized allocation strategy is not compatible with instance requirements. Valid options are [lowest-price]\\\"\",\n\t\"Use lowest-price, or list instance types in priority order instead of requirements\", _pf_asgoap_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tresolve(name, \"Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandAllocationStrategy\") == \"prioritized\"\n\t_pf_asgoap_usesir(name)\n}\n"
   },
   {
     "id": "pf-asg-ondemand-percentage-max",
@@ -1147,6 +1488,534 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A percentage split cannot exceed 100; the schema has no maximum.\nviolation contains make_diag_full(\"pf-asg-ondemand-percentage-max\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity\",\n\tsprintf(\"OnDemandPercentageAboveBaseCapacity %v is over 100; the group create fails with \\\"Member must have value less than or equal to 100\\\"\", [p]),\n\t\"Use a percentage between 0 and 100\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-autoscaling-autoscalinggroup-instancesdistribution.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tp := to_number(resolve(name, \"Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity\"))\n\tp > 100\n}\n"
   },
   {
+    "id": "pf-asg-overrides-instance-requirements-max-4",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "At most four overrides pick instances by requirements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgoim_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgoim_count(name) := count([1 |\n\tsome o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tis_object(object.get(o, \"InstanceRequirements\", null))\n])\n\nviolation contains make_diag_full(\"pf-asg-overrides-instance-requirements-max-4\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides\",\n\tsprintf(\"%d overrides use InstanceRequirements; at most 4 may, and the group create fails with \\\"You can only have 4 launch template overrides using instance requirements at most\\\"\", [n]),\n\t\"Merge the requirement sets so at most four remain\", _pf_asgoim_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := _pf_asgoim_count(name)\n\tn > 4\n}\n"
+  },
+  {
+    "id": "pf-asg-overrides-instance-requirements-xor-type",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An override names an instance type or its requirements, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgoix_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-overrides-instance-requirements-xor-type\", \"ERROR\", name,\n\tsprintf(\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides.%d.InstanceType\", [i]),\n\t\"the override sets both InstanceType and InstanceRequirements; the group create fails with \\\"The parameter InstanceType cannot be used in a launch template override using instance requirements\\\"\",\n\t\"Keep either InstanceType or InstanceRequirements in each override\", _pf_asgoix_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tis_object(object.get(o, \"InstanceRequirements\", null))\n\tobject.get(o, \"InstanceType\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-asg-overrides-instancetype-duplicate-rejected",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "An instance type appears once across the overrides",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgoid_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-overrides-instancetype-duplicate-rejected\", \"ERROR\", name,\n\tsprintf(\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides.%d.InstanceType\", [j]),\n\tsprintf(\"instance type %s is overridden twice; the group create fails with \\\"Cannot add same instance type override more than once\\\"\", [v]),\n\t\"Keep one override per instance type\", _pf_asgoid_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tovs := _pf_aslib_overrides(name)\n\tsome i, a in ovs\n\tsome j, b in ovs\n\ti < j\n\tis_object(a)\n\tis_object(b)\n\tv := object.get(a, \"InstanceType\", null)\n\t_pf_aslib_lit(v)\n\tobject.get(b, \"InstanceType\", null) == v\n}\n"
+  },
+  {
+    "id": "pf-asg-overrides-instancetype-max-40",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A mixed instances policy lists at most 40 overrides",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgoim40_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-overrides-instancetype-max-40\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides\",\n\tsprintf(\"the mixed instances policy lists %d overrides; the group create fails with \\\"The number of LaunchTemplateOverrides must be fewer than 40\\\" (measured: 40 deploys, 41 does not)\", [n]),\n\t\"Keep at most 40 overrides, or switch to InstanceRequirements\", _pf_asgoim40_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := count(_pf_aslib_overrides(name))\n\tn > 40\n}\n"
+  },
+  {
+    "id": "pf-asg-overrides-weighted-capacity-uniform",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Instance weights go on every override or none",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgowu_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgowu_weighted(name) := count([1 |\n\tsome o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tobject.get(o, \"WeightedCapacity\", \"__pf_absent\") != \"__pf_absent\"\n])\n\nviolation contains make_diag_full(\"pf-asg-overrides-weighted-capacity-uniform\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides\",\n\tsprintf(\"%d of %d overrides carry a WeightedCapacity; Auto Scaling needs a weight on all of them or on none, and the group create fails with \\\"Not all instance types have a defined WeightedCapacity\\\"\", [w, n]),\n\t\"Weight every override, or remove every weight\", _pf_asgowu_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := count(_pf_aslib_overrides(name))\n\tw := _pf_asgowu_weighted(name)\n\tw > 0\n\tw < n\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-alb-requires-resourcelabel",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A predictive ALB metric needs a ResourceLabel",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpar_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgpar_keys := [\"PredefinedMetricPairSpecification\", \"PredefinedScalingMetricSpecification\", \"PredefinedLoadMetricSpecification\"]\n\nviolation contains make_diag_full(\"pf-asg-predictive-alb-requires-resourcelabel\", \"ERROR\", name,\n\tsprintf(\"Properties.PredictiveScalingConfiguration.MetricSpecifications.%d.%s.ResourceLabel\", [i, k]),\n\tsprintf(\"%s is an Application Load Balancer metric but no ResourceLabel names the target group; the policy create fails with \\\"A resource label is required\\\"\", [t]),\n\t\"Set ResourceLabel to app/<lb>/<lb-id>/targetgroup/<tg>/<tg-id>\", _pf_asgpar_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_pmetrics(name)\n\tis_object(s)\n\tsome k in _pf_asgpar_keys\n\tspec := object.get(s, k, null)\n\tis_object(spec)\n\tt := object.get(spec, \"PredefinedMetricType\", \"\")\n\tstartswith(t, \"ALB\")\n\tobject.get(spec, \"ResourceLabel\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-buffer-forbidden-with-honormax",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "MaxCapacityBuffer only goes with IncreaseMaxCapacity",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpbh_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgpbh_behavior(name) := b if {\n\tb := resolve(name, \"Properties.PredictiveScalingConfiguration.MaxCapacityBreachBehavior\")\n\t_pf_aslib_lit(b)\n}\n\n_pf_asgpbh_behavior(name) := \"HonorMaxCapacity\" if _pf_aslib_absent_at(name, [\"PredictiveScalingConfiguration\", \"MaxCapacityBreachBehavior\"])\n\nviolation contains make_diag_full(\"pf-asg-predictive-buffer-forbidden-with-honormax\", \"ERROR\", name,\n\t\"Properties.PredictiveScalingConfiguration.MaxCapacityBuffer\",\n\t\"MaxCapacityBuffer is set while MaxCapacityBreachBehavior is HonorMaxCapacity (its default), so the buffer has nothing to grow into; the policy create fails with \\\"You must not specify max capacity buffer when using HonorMaxCapacity\\\"\",\n\t\"Remove MaxCapacityBuffer, or set MaxCapacityBreachBehavior to IncreaseMaxCapacity\", _pf_asgpbh_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tnot _pf_aslib_absent_at(name, [\"PredictiveScalingConfiguration\", \"MaxCapacityBuffer\"])\n\t_pf_asgpbh_behavior(name) == \"HonorMaxCapacity\"\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-buffer-requires-increasemode",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "IncreaseMaxCapacity needs a MaxCapacityBuffer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpbi_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-predictive-buffer-requires-increasemode\", \"ERROR\", name,\n\t\"Properties.PredictiveScalingConfiguration.MaxCapacityBuffer\",\n\t\"MaxCapacityBreachBehavior is IncreaseMaxCapacity but no MaxCapacityBuffer says by how much; the policy create fails with \\\"You must specify max capacity buffer when using IncreaseMaxCapacity\\\"\",\n\t\"Set MaxCapacityBuffer to the percentage the forecast may exceed MaxSize by\", _pf_asgpbi_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tresolve(name, \"Properties.PredictiveScalingConfiguration.MaxCapacityBreachBehavior\") == \"IncreaseMaxCapacity\"\n\t_pf_aslib_absent_at(name, [\"PredictiveScalingConfiguration\", \"MaxCapacityBuffer\"])\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-capacity-metric-requires-load-and-scaling",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A customized capacity metric is an add-on to a load and a scaling metric",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpcm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgpcm_has(s, key) if object.get(s, key, \"__pf_absent\") != \"__pf_absent\"\n\n_pf_asgpcm_scaling(s) if _pf_asgpcm_has(s, \"PredefinedScalingMetricSpecification\")\n\n_pf_asgpcm_scaling(s) if _pf_asgpcm_has(s, \"CustomizedScalingMetricSpecification\")\n\nviolation contains make_diag_full(\"pf-asg-predictive-capacity-metric-requires-load-and-scaling\", \"ERROR\", name,\n\tsprintf(\"Properties.PredictiveScalingConfiguration.MetricSpecifications.%d.CustomizedLoadMetricSpecification\", [i]),\n\t\"a customized capacity metric is set but the load metric is not a customized one; the capacity metric only refines a customized load metric, and the policy create fails with \\\"Capacity metric can only be used when you use customized load metric.\\\"\",\n\t\"Add CustomizedLoadMetricSpecification, or drop CustomizedCapacityMetricSpecification\", _pf_asgpcm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_pmetrics(name)\n\tis_object(s)\n\t_pf_asgpcm_has(s, \"CustomizedCapacityMetricSpecification\")\n\tnot _pf_asgpcm_has(s, \"CustomizedLoadMetricSpecification\")\n}\n\nviolation contains make_diag_full(\"pf-asg-predictive-capacity-metric-requires-load-and-scaling\", \"ERROR\", name,\n\tsprintf(\"Properties.PredictiveScalingConfiguration.MetricSpecifications.%d.CustomizedScalingMetricSpecification\", [i]),\n\t\"a customized capacity metric is set but no scaling metric is; the capacity metric only refines a load metric plus a scaling metric, and the policy create fails with \\\"A policy must have either one scaling metric and one load metric or one metric pair\\\"\",\n\t\"Add a scaling metric, or drop CustomizedCapacityMetricSpecification\", _pf_asgpcm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_pmetrics(name)\n\tis_object(s)\n\t_pf_asgpcm_has(s, \"CustomizedCapacityMetricSpecification\")\n\tnot _pf_asgpcm_scaling(s)\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-forbids-other-policy-props",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A predictive policy carries no other policy settings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpfo_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgpfo_forbidden := [\"TargetTrackingConfiguration\", \"AdjustmentType\", \"ScalingAdjustment\", \"StepAdjustments\", \"EstimatedInstanceWarmup\"]\n\nviolation contains make_diag_full(\"pf-asg-predictive-forbids-other-policy-props\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [k]),\n\tsprintf(\"%s belongs to another policy type, not to PredictiveScaling; the policy create fails with \\\"You can't specify %s for policy type: PredictiveScaling\\\"\", [k, k]),\n\tsprintf(\"Remove %s; predictive scaling is driven by PredictiveScalingConfiguration alone\", [k]), _pf_asgpfo_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"PredictiveScaling\"\n\tsome k in _pf_asgpfo_forbidden\n\tnot _pf_aslib_absent(name, k)\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-metric-pair-xor-individual",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A metric pair does not mix with individual load and scaling metrics",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgppx_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgppx_pair := [\"PredefinedMetricPairSpecification\", \"CustomizedMetricPairSpecification\"]\n\n_pf_asgppx_indiv := [\n\t\"PredefinedLoadMetricSpecification\", \"CustomizedLoadMetricSpecification\",\n\t\"PredefinedScalingMetricSpecification\", \"CustomizedScalingMetricSpecification\",\n]\n\n_pf_asgppx_hasany(s, keys) if {\n\tsome k in keys\n\tobject.get(s, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-asg-predictive-metric-pair-xor-individual\", \"ERROR\", name,\n\tsprintf(\"Properties.PredictiveScalingConfiguration.MetricSpecifications.%d\", [i]),\n\t\"the metric specification carries a metric pair and an individual load or scaling metric; the policy create fails with \\\"A policy must have either one scaling metric and one load metric or one metric pair\\\"\",\n\t\"Keep the metric pair on its own, or drop it and give a load metric plus a scaling metric\", _pf_asgppx_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_pmetrics(name)\n\tis_object(s)\n\t_pf_asgppx_hasany(s, _pf_asgppx_pair)\n\t_pf_asgppx_hasany(s, _pf_asgppx_indiv)\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-metricspecs-single-element",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Predictive scaling takes exactly one metric specification",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpse_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-predictive-metricspecs-single-element\", \"ERROR\", name,\n\t\"Properties.PredictiveScalingConfiguration.MetricSpecifications\",\n\tsprintf(\"MetricSpecifications holds %d entries; predictive scaling takes exactly one (the CloudFormation schema allows any size) and the policy create fails with \\\"You must specify one metric specification\\\"\", [n]),\n\t\"Keep a single MetricSpecifications entry\", _pf_asgpse_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tn := count(_pf_aslib_pmetrics(name))\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-mq-dup-id-per-array",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Metric data query ids are unique within one array",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgpdi_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgpdi_ids(qs) := [x |\n\tsome q in qs\n\tis_object(q)\n\tx := object.get(q, \"Id\", null)\n\tis_string(x)\n]\n\nviolation contains make_diag_full(\"pf-asg-predictive-mq-dup-id-per-array\", \"ERROR\", name,\n\tsprintf(\"Properties.PredictiveScalingConfiguration.MetricSpecifications.%d.%s.MetricDataQueries\", [i, k]),\n\tsprintf(\"%d of the %d metric data queries reuse an id already taken in the same array; CloudWatch rejects the duplicate and the policy create fails with \\\"The MetricDataQuery object ... has a problem or incorrect syntax\\\"\", [dups, count(ids)]),\n\t\"Give every MetricDataQuery in the array its own Id\", _pf_asgpdi_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_pmetrics(name)\n\tis_object(s)\n\tsome k in _pf_aslib_pcustom\n\tspec := object.get(s, k, null)\n\tis_object(spec)\n\tqs := object.get(spec, \"MetricDataQueries\", null)\n\tis_array(qs)\n\tids := _pf_asgpdi_ids(qs)\n\tuniq := count({x | some x in ids})\n\tdups := count(ids) - uniq\n\tdups > 0\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-mq-exactly-one-returndata",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Exactly one metric data query returns each predictive metric",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgprd_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgprd_returning(qs) := count([1 |\n\tsome q in qs\n\tis_object(q)\n\tobject.get(q, \"ReturnData\", true) == true\n])\n\nviolation contains make_diag_full(\"pf-asg-predictive-mq-exactly-one-returndata\", \"ERROR\", name,\n\tsprintf(\"Properties.PredictiveScalingConfiguration.MetricSpecifications.%d.%s.MetricDataQueries\", [i, k]),\n\tsprintf(\"%d of the metric data queries return data (ReturnData defaults to true); each customized metric must resolve to one time series and the policy create fails with \\\"Any expressions used must create exactly one time series\\\"\", [n]),\n\t\"Set ReturnData: false on every query but the final one\", _pf_asgprd_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_pmetrics(name)\n\tis_object(s)\n\tsome k in [\"CustomizedLoadMetricSpecification\", \"CustomizedScalingMetricSpecification\"]\n\tspec := object.get(s, k, null)\n\tis_object(spec)\n\tqs := object.get(spec, \"MetricDataQueries\", null)\n\tis_array(qs)\n\tn := _pf_asgprd_returning(qs)\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-asg-predictive-requires-config",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A PredictiveScaling policy carries its configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgprc_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-predictive-requires-config\", \"ERROR\", name,\n\t\"Properties.PredictiveScalingConfiguration\",\n\t\"a PredictiveScaling policy has no PredictiveScalingConfiguration; the policy create fails with \\\"You must specify PredictiveScalingConfiguration\\\"\",\n\t\"Add PredictiveScalingConfiguration with one MetricSpecifications entry\", _pf_asgprc_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"PredictiveScaling\"\n\t_pf_aslib_absent(name, \"PredictiveScalingConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-capacity-fields-ordering",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action keeps MinSize <= DesiredCapacity <= MaxSize",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsco_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\n_pf_asgsco_fix := \"Order the three fields so MinSize <= DesiredCapacity <= MaxSize\"\n\nviolation contains make_diag_full(\"pf-asg-sched-capacity-fields-ordering\", \"ERROR\", name,\n\t\"Properties.DesiredCapacity\",\n\tsprintf(\"DesiredCapacity %v is above MaxSize %v; the scheduled action create fails with \\\"Desired capacity must be less than or equal to max size\\\"\", [d, mx]),\n\t_pf_asgsco_fix, _pf_asgsco_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\td := _pf_aslib_num(name, \"Properties.DesiredCapacity\")\n\tmx := _pf_aslib_num(name, \"Properties.MaxSize\")\n\td > mx\n}\n\nviolation contains make_diag_full(\"pf-asg-sched-capacity-fields-ordering\", \"ERROR\", name,\n\t\"Properties.DesiredCapacity\",\n\tsprintf(\"DesiredCapacity %v is below MinSize %v; the scheduled action create fails with \\\"Desired capacity must be greater than or equal to min size\\\"\", [d, mn]),\n\t_pf_asgsco_fix, _pf_asgsco_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\td := _pf_aslib_num(name, \"Properties.DesiredCapacity\")\n\tmn := _pf_aslib_num(name, \"Properties.MinSize\")\n\td < mn\n}\n\nviolation contains make_diag_full(\"pf-asg-sched-capacity-fields-ordering\", \"ERROR\", name,\n\t\"Properties.MinSize\",\n\tsprintf(\"MinSize %v is above MaxSize %v; the scheduled action create fails with \\\"Min size must be less than or equal to max size\\\"\", [mn, mx]),\n\t_pf_asgsco_fix, _pf_asgsco_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tmn := _pf_aslib_num(name, \"Properties.MinSize\")\n\tmx := _pf_aslib_num(name, \"Properties.MaxSize\")\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-desiredcapacity-nonnegative",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action DesiredCapacity is not negative",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscdc_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-desiredcapacity-nonnegative\", \"ERROR\", name,\n\t\"Properties.DesiredCapacity\",\n\tsprintf(\"DesiredCapacity %v is negative; the scheduled action create fails with \\\"Desired capacity must be non-negative\\\"\", [n]),\n\t\"Use a DesiredCapacity of 0 or more\", _pf_asgscdc_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tn := _pf_aslib_num(name, \"Properties.DesiredCapacity\")\n\tn < 0\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-endtime-alone-requires-starttime-or-recurrence",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "EndTime alone does not describe a scheduled action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscea_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-endtime-alone-requires-starttime-or-recurrence\", \"ERROR\", name,\n\t\"Properties.EndTime\",\n\t\"EndTime is set but neither StartTime nor Recurrence is; the scheduled action create fails with \\\"Scheduled start time must be specified for non-recurrent future group action\\\"\",\n\t\"Add StartTime, or make the action recurring with Recurrence\", _pf_asgscea_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tnot _pf_aslib_absent(name, \"EndTime\")\n\t_pf_aslib_absent(name, \"StartTime\")\n\t_pf_aslib_absent(name, \"Recurrence\")\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-endtime-not-before-starttime",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action EndTime is not before its StartTime",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsces_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\n# ISO8601 の同一書式どうしは辞書順比較が時刻順と一致する\n_pf_asgsces_ts(name, key) := v if {\n\tv := resolve(name, sprintf(\"Properties.%s\", [key]))\n\t_pf_aslib_lit(v)\n\tregex.match(\"^[0-9]{4}-[0-9]{2}-[0-9]{2}T\", v)\n}\n\nviolation contains make_diag_full(\"pf-asg-sched-endtime-not-before-starttime\", \"ERROR\", name,\n\t\"Properties.EndTime\",\n\tsprintf(\"EndTime %s is before StartTime %s; the scheduled action create fails with \\\"Given end time must be after start time\\\"\", [e, s]),\n\t\"Move EndTime after StartTime\", _pf_asgsces_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\ts := _pf_asgsces_ts(name, \"StartTime\")\n\te := _pf_asgsces_ts(name, \"EndTime\")\n\te < s\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-endtime-not-past",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action EndTime is not a date already gone by",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscep_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\n# ponytail: 時計ビルトインが無いため下限は固定 (2026-09-09)。詳細は pf-asg-sched-starttime-not-past と同じ。\nviolation contains make_diag_full(\"pf-asg-sched-endtime-not-past\", \"ERROR\", name,\n\t\"Properties.EndTime\",\n\tsprintf(\"EndTime %s is in the past; the scheduled action create fails with \\\"Given end time is in the past\\\"\", [v]),\n\t\"Use a future EndTime\", _pf_asgscep_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.EndTime\")\n\t_pf_aslib_lit(v)\n\tregex.match(\"^[0-9]{4}-[0-9]{2}-[0-9]{2}T\", v)\n\tsubstring(v, 0, 10) < \"2026-09-09\"\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-minsize-nonnegative",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action MinSize is not negative",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscmn_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-minsize-nonnegative\", \"ERROR\", name,\n\t\"Properties.MinSize\",\n\tsprintf(\"MinSize %v is negative; the scheduled action create fails with \\\"Min size must be non-negative\\\"\", [n]),\n\t\"Use a MinSize of 0 or more\", _pf_asgscmn_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tn := _pf_aslib_num(name, \"Properties.MinSize\")\n\tn < 0\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-recurrence-field-range",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Every Recurrence cron field stays in its own range",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscfr_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\n_pf_asgscfr_lo := [0, 0, 1, 1, 0]\n\n_pf_asgscfr_hi := [59, 23, 31, 12, 7]\n\n_pf_asgscfr_field := [\"minute\", \"hour\", \"day-of-month\", \"month\", \"day-of-week\"]\n\n_pf_asgscfr_out(i, n) if n < _pf_asgscfr_lo[i]\n\n_pf_asgscfr_out(i, n) if n > _pf_asgscfr_hi[i]\n\nviolation contains make_diag_full(\"pf-asg-sched-recurrence-field-range\", \"ERROR\", name,\n\t\"Properties.Recurrence\",\n\tsprintf(\"Recurrence '%s' puts %d in the %s field, which runs %d-%d; the create fails with \\\"Given recurrence string: %s is invalid\\\"\", [v, n, _pf_asgscfr_field[i], _pf_asgscfr_lo[i], _pf_asgscfr_hi[i], v]),\n\t\"Bring every cron field into its own range\", _pf_asgscfr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.Recurrence\")\n\tf := _pf_aslib_cron_fields(v)\n\tcount(f) == 5\n\tsome i, field in f\n\tsome n in _pf_aslib_cron_nums(field)\n\t_pf_asgscfr_out(i, n)\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-recurrence-five-fields-no-cron-wrapper",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Recurrence is a bare five-field cron string",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscfw_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-recurrence-five-fields-no-cron-wrapper\", \"ERROR\", name,\n\t\"Properties.Recurrence\",\n\tsprintf(\"Recurrence '%s' uses the cron(...) wrapper; Auto Scaling takes a bare Unix cron string and the create fails with \\\"Given recurrence string: %s is invalid\\\"\", [v, v]),\n\t\"Drop the cron(...) wrapper and pass the five fields on their own\", _pf_asgscfw_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.Recurrence\")\n\t_pf_aslib_lit(v)\n\tstartswith(v, \"cron(\")\n}\n\nviolation contains make_diag_full(\"pf-asg-sched-recurrence-five-fields-no-cron-wrapper\", \"ERROR\", name,\n\t\"Properties.Recurrence\",\n\tsprintf(\"Recurrence '%s' has %d fields; Auto Scaling takes exactly five (minute hour day-of-month month day-of-week) and the create fails with \\\"Given recurrence string: %s is invalid\\\"\", [v, count(f), v]),\n\t\"Use exactly five cron fields; there is no seconds field\", _pf_asgscfw_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.Recurrence\")\n\tf := _pf_aslib_cron_fields(v)\n\tcount(f) != 5\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-recurrence-rejects-question-mark",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Recurrence takes no ? wildcard",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscqm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-recurrence-rejects-question-mark\", \"ERROR\", name,\n\t\"Properties.Recurrence\",\n\tsprintf(\"Recurrence '%s' uses the '?' wildcard; that is EventBridge cron syntax, and Auto Scaling's Unix cron rejects it with \\\"Given recurrence string: %s is invalid\\\"\", [v, v]),\n\t\"Use '*' instead of '?' in the day-of-month and day-of-week fields\", _pf_asgscqm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.Recurrence\")\n\tf := _pf_aslib_cron_fields(v)\n\tsome field in f\n\tcontains(field, \"?\")\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-requires-a-capacity-field",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action sets at least one capacity field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscap_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-requires-a-capacity-field\", \"ERROR\", name,\n\t\"Properties.DesiredCapacity\",\n\t\"the scheduled action changes nothing: MinSize, MaxSize and DesiredCapacity are all unset, and the create fails with \\\"At least one of max size, min size, or desired capacity must be specified\\\"\",\n\t\"Set at least one of MinSize, MaxSize or DesiredCapacity\", _pf_asgscap_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\t_pf_aslib_absent(name, \"MinSize\")\n\t_pf_aslib_absent(name, \"MaxSize\")\n\t_pf_aslib_absent(name, \"DesiredCapacity\")\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-starttime-not-past",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A scheduled action StartTime is not a date already gone by",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscsp_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\n# ponytail: engine に時計ビルトインが無いので、このルールが書かれた日 (2026-09-09) より前の\n# 日付しか捕まえない。誤検知はゼロだが、直近の過去日は見逃す。\nviolation contains make_diag_full(\"pf-asg-sched-starttime-not-past\", \"ERROR\", name,\n\t\"Properties.StartTime\",\n\tsprintf(\"StartTime %s is in the past; the scheduled action create fails with \\\"Given start time is in the past\\\"\", [v]),\n\t\"Use a future StartTime, or drop it and use Recurrence\", _pf_asgscsp_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.StartTime\")\n\t_pf_aslib_lit(v)\n\tregex.match(\"^[0-9]{4}-[0-9]{2}-[0-9]{2}T\", v)\n\tsubstring(v, 0, 10) < \"2026-09-09\"\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-starttime-unique-per-group",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Two scheduled actions on one group need different start times",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgscsu_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\nviolation contains make_diag_full(\"pf-asg-sched-starttime-unique-per-group\", \"ERROR\", name,\n\t\"Properties.StartTime\",\n\tsprintf(\"scheduled action %s already starts at %s on the same group; the second create fails with \\\"Scheduled action with this scheduled start time already exists\\\"\", [other, t]),\n\t\"Give the two actions different start times\", _pf_asgscsu_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tsome other in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tother < name\n\tt := resolve(name, \"Properties.StartTime\")\n\tis_string(t)\n\tresolve(other, \"Properties.StartTime\") == t\n\tg := resolve(name, \"Properties.AutoScalingGroupName\")\n\tresolve(other, \"Properties.AutoScalingGroupName\") == g\n}\n"
+  },
+  {
+    "id": "pf-asg-sched-timezone-iana-only",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "TimeZone is a canonical IANA zone name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScheduledAction"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsctz_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html\"\n\n_pf_asgsctz_area := {\n\t\"Africa\", \"America\", \"Antarctica\", \"Arctic\", \"Asia\", \"Atlantic\", \"Australia\",\n\t\"Brazil\", \"Canada\", \"Chile\", \"Etc\", \"Europe\", \"Indian\", \"Mexico\", \"Pacific\", \"US\",\n}\n\n_pf_asgsctz_ok(v) if v in [\"UTC\", \"GMT\", \"Local\"]\n\n_pf_asgsctz_ok(v) if {\n\tparts := split(v, \"/\")\n\tcount(parts) >= 2\n\tparts[0] in _pf_asgsctz_area\n\tregex.match(\"^[A-Za-z][A-Za-z0-9_+-]*(/[A-Za-z0-9_+-]+){1,2}$\", v)\n}\n\nviolation contains make_diag_full(\"pf-asg-sched-timezone-iana-only\", \"ERROR\", name,\n\t\"Properties.TimeZone\",\n\tsprintf(\"TimeZone '%s' is not an IANA zone name; abbreviations and UTC offsets are rejected with \\\"Time zone specified does not conform to standardized time zones found in IANA Time Zone Database\\\"\", [v]),\n\t\"Use a canonical IANA name such as Asia/Tokyo or America/New_York\", _pf_asgsctz_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScheduledAction\")\n\tv := resolve(name, \"Properties.TimeZone\")\n\t_pf_aslib_lit(v)\n\tnot _pf_asgsctz_ok(v)\n}\n"
+  },
+  {
+    "id": "pf-asg-simple-forbids-other-policy-props",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A SimpleScaling policy carries no step or target-tracking settings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsfo_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgsfo_forbidden := [\"MetricAggregationType\", \"EstimatedInstanceWarmup\", \"StepAdjustments\", \"TargetTrackingConfiguration\"]\n\nviolation contains make_diag_full(\"pf-asg-simple-forbids-other-policy-props\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [k]),\n\tsprintf(\"%s belongs to a step or target-tracking policy, not to SimpleScaling; the policy create fails with \\\"%s is not supported for a SimpleScaling policy\\\"\", [k, k]),\n\tsprintf(\"Remove %s, or change PolicyType to the one that owns it\", [k]), _pf_asgsfo_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"SimpleScaling\"\n\tsome k in _pf_asgsfo_forbidden\n\tnot _pf_aslib_absent(name, k)\n}\n"
+  },
+  {
+    "id": "pf-asg-simple-requires-adjustmenttype",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A SimpleScaling policy names an AdjustmentType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsat_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-simple-requires-adjustmenttype\", \"ERROR\", name,\n\t\"Properties.AdjustmentType\",\n\t\"a SimpleScaling policy has no AdjustmentType; the policy create fails with \\\"You must specify an AdjustmentType for policy type: SimpleScaling\\\"\",\n\t\"Set AdjustmentType to ChangeInCapacity, ExactCapacity or PercentChangeInCapacity\", _pf_asgsat_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"SimpleScaling\"\n\t_pf_aslib_absent(name, \"AdjustmentType\")\n}\n"
+  },
+  {
+    "id": "pf-asg-simple-requires-scalingadjustment",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A SimpleScaling policy names a ScalingAdjustment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgssa_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-simple-requires-scalingadjustment\", \"ERROR\", name,\n\t\"Properties.ScalingAdjustment\",\n\t\"a SimpleScaling policy has no ScalingAdjustment (PolicyType defaults to SimpleScaling when it is left out); the policy create fails with \\\"Scaling increment must be specified for a SimpleScaling policy\\\"\",\n\t\"Set ScalingAdjustment, or pick a different PolicyType\", _pf_asgssa_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"SimpleScaling\"\n\t_pf_aslib_absent(name, \"ScalingAdjustment\")\n}\n"
+  },
+  {
+    "id": "pf-asg-spot-allocation-capacity-optimized-prioritized-invalid-with-instance-requirements",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Capacity-optimized-prioritized Spot allocation does not go with instance requirements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsap_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgsap_usesir(name) if {\n\tsome o in _pf_aslib_overrides(name)\n\tis_object(o)\n\tis_object(object.get(o, \"InstanceRequirements\", null))\n}\n\nviolation contains make_diag_full(\"pf-asg-spot-allocation-capacity-optimized-prioritized-invalid-with-instance-requirements\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.InstancesDistribution.SpotAllocationStrategy\",\n\t\"SpotAllocationStrategy is capacity-optimized-prioritized while the overrides pick instances by requirements, so there is no priority order to follow; the group create fails with \\\"The capacity-optimized-prioritized allocation strategy is not compatible with instance requirements\\\"\",\n\t\"Use lowest-price, capacity-optimized or price-capacity-optimized\", _pf_asgsap_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tresolve(name, \"Properties.MixedInstancesPolicy.InstancesDistribution.SpotAllocationStrategy\") == \"capacity-optimized-prioritized\"\n\t_pf_asgsap_usesir(name)\n}\n"
+  },
+  {
+    "id": "pf-asg-spot-instance-pools-requires-lowest-price",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "SpotInstancePools only counts under lowest-price allocation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgsip_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-spot-instance-pools-requires-lowest-price\", \"ERROR\", name,\n\t\"Properties.MixedInstancesPolicy.InstancesDistribution.SpotInstancePools\",\n\tsprintf(\"SpotInstancePools is set while SpotAllocationStrategy is %s; the pool count only means something when Auto Scaling spreads across the cheapest pools, and the group create fails with \\\"SpotInstancePools option is only available with the lowest-price allocation strategy\\\"\", [s]),\n\t\"Drop SpotInstancePools, or set SpotAllocationStrategy to lowest-price\", _pf_asgsip_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tnot _pf_aslib_absent_at(name, [\"MixedInstancesPolicy\", \"InstancesDistribution\", \"SpotInstancePools\"])\n\ts := resolve(name, \"Properties.MixedInstancesPolicy.InstancesDistribution.SpotAllocationStrategy\")\n\t_pf_aslib_lit(s)\n\ts != \"lowest-price\"\n}\n"
+  },
+  {
+    "id": "pf-asg-step-adjustments-max-20",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A step policy holds at most 20 steps",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstmx_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-adjustments-max-20\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\tsprintf(\"the policy has %d StepAdjustments; the fixed quota is 20 and the policy create fails with \\\"Your policies can have at most 20 StepAdjustments\\\"\", [n]),\n\t\"Merge steps so at most 20 remain, or split the policy in two\", _pf_asgstmx_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tn := count(_pf_aslib_steps(name))\n\tn > 20\n}\n"
+  },
+  {
+    "id": "pf-asg-step-both-bounds-null-forbidden",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A step names at least one of its two bounds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstbn_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-both-bounds-null-forbidden\", \"ERROR\", name,\n\tsprintf(\"Properties.StepAdjustments.%d\", [i]),\n\t\"the step sets neither MetricIntervalLowerBound nor MetricIntervalUpperBound; the policy create fails with \\\"Both lower and upper bounds of a StepAdjustment cannot be left unspecified\\\"\",\n\t\"Give the step a lower bound, an upper bound, or both\", _pf_asgstbn_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_steps(name)\n\tis_object(s)\n\tobject.get(s, \"MetricIntervalLowerBound\", null) == null\n\tobject.get(s, \"MetricIntervalUpperBound\", null) == null\n}\n"
+  },
+  {
+    "id": "pf-asg-step-exactcapacity-nonnegative",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "ExactCapacity takes no negative step adjustment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstxc_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-exactcapacity-nonnegative\", \"ERROR\", name,\n\tsprintf(\"Properties.StepAdjustments.%d.ScalingAdjustment\", [i]),\n\tsprintf(\"step ScalingAdjustment %v is negative while AdjustmentType is ExactCapacity, which sets the capacity outright; the policy create fails with \\\"The lowest value for ScalingAdjustment parameter is 0 with the specified adjustment type\\\"\", [n]),\n\t\"Use 0 or more in every step, or switch to ChangeInCapacity\", _pf_asgstxc_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tresolve(name, \"Properties.AdjustmentType\") == \"ExactCapacity\"\n\tsome i, s in _pf_aslib_steps(name)\n\tis_object(s)\n\tv := object.get(s, \"ScalingAdjustment\", null)\n\tv != null\n\tnot is_object(v)\n\tn := to_number(v)\n\tn < 0\n}\n"
+  },
+  {
+    "id": "pf-asg-step-forbids-other-policy-props",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A StepScaling policy carries no simple or target-tracking settings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstfo_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgstfo_forbidden := [\"ScalingAdjustment\", \"TargetTrackingConfiguration\"]\n\nviolation contains make_diag_full(\"pf-asg-step-forbids-other-policy-props\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [k]),\n\tsprintf(\"%s belongs to a simple or target-tracking policy, not to StepScaling; the policy create fails with \\\"%s is not supported for a StepScaling policy\\\"\", [k, k]),\n\tsprintf(\"Remove %s; a step policy scales through StepAdjustments\", [k]), _pf_asgstfo_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"StepScaling\"\n\tsome k in _pf_asgstfo_forbidden\n\tnot _pf_aslib_absent(name, k)\n}\n"
+  },
+  {
+    "id": "pf-asg-step-interval-gap",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Step intervals leave no gap between them",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstgp_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-interval-gap\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\tsprintf(\"the steps leave the metric range %v to %v uncovered; the policy create fails with \\\"StepAdjustment intervals cannot have gaps between them\\\"\", [srt[k][1], srt[k + 1][0]]),\n\t\"Close the gap: the upper bound of one step is the lower bound of the next\", _pf_asgstgp_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_step_wellformed(name)\n\tsrt := sort(_pf_aslib_step_ivals(name))\n\tsome k in numbers.range(0, count(srt) - 2)\n\tsrt[k][1] < srt[k + 1][0]\n}\n"
+  },
+  {
+    "id": "pf-asg-step-interval-overlap",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Step intervals do not overlap",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstov_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-interval-overlap\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\tsprintf(\"steps %d and %d cover the same metric range; the policy create fails with \\\"StepAdjustment intervals cannot overlap\\\"\", [i, j]),\n\t\"Make the intervals touch at a single bound instead of overlapping\", _pf_asgstov_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_step_wellformed(name)\n\tiv := _pf_aslib_step_ivals(name)\n\tsome i, a in iv\n\tsome j, b in iv\n\ti < j\n\ta[0] < b[1]\n\tb[0] < a[1]\n}\n"
+  },
+  {
+    "id": "pf-asg-step-multiple-null-lower",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "At most one step leaves out its lower bound",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstnl_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-multiple-null-lower\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\tsprintf(\"%d steps leave MetricIntervalLowerBound unset; only the bottom step may, and the policy create fails with \\\"At most one StepAdjustment may have an unspecified lower bound\\\"\", [n]),\n\t\"Give every step but the bottom one an explicit MetricIntervalLowerBound\", _pf_asgstnl_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tn := _pf_aslib_step_nulls(name, \"MetricIntervalLowerBound\")\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-asg-step-multiple-null-upper",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "At most one step leaves out its upper bound",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstnu_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-multiple-null-upper\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\tsprintf(\"%d steps leave MetricIntervalUpperBound unset; only the top step may, and the policy create fails with \\\"At most one StepAdjustment may have an unspecified upper bound\\\"\", [n]),\n\t\"Give every step but the top one an explicit MetricIntervalUpperBound\", _pf_asgstnu_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tn := _pf_aslib_step_nulls(name, \"MetricIntervalUpperBound\")\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-asg-step-negative-lower-needs-null-lower",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A negative lower bound needs a step that runs to minus infinity",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstnn_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgstnn_negative(name) if {\n\tsome s in _pf_aslib_steps(name)\n\tis_object(s)\n\tobject.get(s, \"MetricIntervalLowerBound\", null) != null\n\t_pf_aslib_step_lo(s) < 0\n}\n\nviolation contains make_diag_full(\"pf-asg-step-negative-lower-needs-null-lower\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\t\"a step starts below the alarm threshold but no step leaves MetricIntervalLowerBound unset; the policy create fails with \\\"There must be a StepAdjustment with an unspecified lower bound ... when one StepAdjustment has a negative lower bound\\\"\",\n\t\"Add a bottom step with no MetricIntervalLowerBound\", _pf_asgstnn_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_asgstnn_negative(name)\n\t_pf_aslib_step_nulls(name, \"MetricIntervalLowerBound\") == 0\n}\n"
+  },
+  {
+    "id": "pf-asg-step-positive-upper-needs-null-upper",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A positive upper bound needs a step that runs to plus infinity",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstpu_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgstpu_positive(name) if {\n\tsome s in _pf_aslib_steps(name)\n\tis_object(s)\n\tobject.get(s, \"MetricIntervalUpperBound\", null) != null\n\t_pf_aslib_step_hi(s) > 0\n}\n\nviolation contains make_diag_full(\"pf-asg-step-positive-upper-needs-null-upper\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\t\"a step ends above the alarm threshold but no step leaves MetricIntervalUpperBound unset; the policy create fails with \\\"There must be a StepAdjustment with an unspecified upper bound ... when one StepAdjustment has a positive upper bound\\\"\",\n\t\"Add a top step with no MetricIntervalUpperBound\", _pf_asgstpu_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_asgstpu_positive(name)\n\t_pf_aslib_step_nulls(name, \"MetricIntervalUpperBound\") == 0\n}\n"
+  },
+  {
+    "id": "pf-asg-step-requires-adjustmenttype",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A StepScaling policy names an AdjustmentType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstat_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-requires-adjustmenttype\", \"ERROR\", name,\n\t\"Properties.AdjustmentType\",\n\t\"a StepScaling policy has no AdjustmentType; the policy create fails with \\\"You must specify an AdjustmentType for policy type: StepScaling\\\"\",\n\t\"Set AdjustmentType to ChangeInCapacity, ExactCapacity or PercentChangeInCapacity\", _pf_asgstat_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"StepScaling\"\n\t_pf_aslib_absent(name, \"AdjustmentType\")\n}\n"
+  },
+  {
+    "id": "pf-asg-step-requires-stepadjustments",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A StepScaling policy carries at least one step",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstrs_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgstrs_has(name) if count(_pf_aslib_steps(name)) > 0\n\nviolation contains make_diag_full(\"pf-asg-step-requires-stepadjustments\", \"ERROR\", name,\n\t\"Properties.StepAdjustments\",\n\t\"a StepScaling policy has no StepAdjustments; the policy create fails with \\\"You should specify at least one StepAdjustment with a StepScaling policy\\\"\",\n\t\"Add at least one StepAdjustment\", _pf_asgstrs_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"StepScaling\"\n\tnot _pf_asgstrs_has(name)\n}\n"
+  },
+  {
+    "id": "pf-asg-step-upper-must-exceed-lower",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A step upper bound sits above its lower bound",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgstul_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-step-upper-must-exceed-lower\", \"ERROR\", name,\n\tsprintf(\"Properties.StepAdjustments.%d.MetricIntervalUpperBound\", [i]),\n\tsprintf(\"the step runs from %v to %v; the upper bound has to be strictly above the lower bound and the policy create fails with \\\"LowerBound must be less than the UpperBound for StepAdjustment\\\"\", [lo, hi]),\n\t\"Raise MetricIntervalUpperBound above MetricIntervalLowerBound\", _pf_asgstul_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, s in _pf_aslib_steps(name)\n\tis_object(s)\n\tobject.get(s, \"MetricIntervalLowerBound\", null) != null\n\tobject.get(s, \"MetricIntervalUpperBound\", null) != null\n\tlo := _pf_aslib_step_lo(s)\n\thi := _pf_aslib_step_hi(s)\n\thi <= lo\n}\n"
+  },
+  {
+    "id": "pf-asg-tags-aws-prefix-rejected",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group tag key does not start with the reserved aws: prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgtap_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-tags-aws-prefix-rejected\", \"ERROR\", name,\n\tsprintf(\"Properties.Tags.%d.Key\", [i]),\n\tsprintf(\"tag key '%s' uses the aws: prefix, which AWS reserves for its own tags; the group create fails with \\\"Your account is not allowed to create tag %s\\\"\", [k, k]),\n\t\"Use a prefix of your own\", _pf_asgtap_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, t in _pf_aslib_tags(name)\n\tis_object(t)\n\tk := object.get(t, \"Key\", null)\n\t_pf_aslib_lit(k)\n\tstartswith(k, \"aws:\")\n}\n"
+  },
+  {
+    "id": "pf-asg-tags-max-50",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group carries at most 50 tags",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgtm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-tags-max-50\", \"ERROR\", name,\n\t\"Properties.Tags\",\n\tsprintf(\"the group carries %d tags; the limit is 50 and the group create fails with \\\"You tried to create more tags than allowed\\\"\", [n]),\n\t\"Keep at most 50 tags, counting the ones Tags.of() adds from enclosing scopes\", _pf_asgtm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tn := count(_pf_aslib_tags(name))\n\tn > 50\n}\n"
+  },
+  {
     "id": "pf-asg-target-value-positive",
     "service": "autoscaling",
     "severity": "ERROR",
@@ -1156,6 +2025,207 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::AutoScaling::ScalingPolicy"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service floor is effectively \"positive\" (8.5e-12); zero and\n# negatives are rejected.\nviolation contains make_diag_full(\"pf-asg-target-value-positive\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.TargetValue\",\n\tsprintf(\"TargetValue %v is not positive; the policy create fails with \\\"Target value must be between 8.51592E-12 and 1.174271E17\\\"\", [v]),\n\t\"Use a positive target value\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-scalingpolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tv := to_number(resolve(name, \"Properties.TargetTrackingConfiguration.TargetValue\"))\n\tv <= 0\n}\n"
+  },
+  {
+    "id": "pf-asg-termination-policy-lambda-arn-format",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A termination policy is a published name or a Lambda ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgtpl_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgtpl_ok := {\n\t\"AllocationStrategy\", \"ClosestToNextInstanceHour\", \"Default\", \"Lambda\",\n\t\"NewestInstance\", \"OldestInstance\", \"OldestLaunchConfiguration\", \"OldestLaunchTemplate\",\n}\n\n_pf_asgtpl_valid(v) if v in _pf_asgtpl_ok\n\n_pf_asgtpl_valid(v) if _pf_aslib_arn_service(v) == \"lambda\"\n\nviolation contains make_diag_full(\"pf-asg-termination-policy-lambda-arn-format\", \"ERROR\", name,\n\tsprintf(\"Properties.TerminationPolicies.%d\", [i]),\n\tsprintf(\"'%s' is neither a published termination policy nor a Lambda function ARN; the group create fails with \\\"[%s] is not a valid termination policy\\\"\", [v, v]),\n\t\"Use one of the published policy names, or the ARN of a termination-policy Lambda\", _pf_asgtpl_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tsome i, _ in _pf_aslib_arr(name, [\"TerminationPolicies\"])\n\tv := resolve(name, sprintf(\"Properties.TerminationPolicies.%d\", [i]))\n\t_pf_aslib_lit(v)\n\tnot _pf_asgtpl_valid(v)\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-alb-requires-resourcelabel",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "The ALB request-count metric needs a ResourceLabel",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttar_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-tt-alb-requires-resourcelabel\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.PredefinedMetricSpecification.ResourceLabel\",\n\t\"PredefinedMetricType is ALBRequestCountPerTarget but no ResourceLabel names the target group; the policy create fails with \\\"Resource label should be specified for predefined metric type ALBRequestCountPerTarget\\\"\",\n\t\"Set ResourceLabel to app/<lb>/<lb-id>/targetgroup/<tg>/<tg-id>\", _pf_asgttar_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tresolve(name, \"Properties.TargetTrackingConfiguration.PredefinedMetricSpecification.PredefinedMetricType\") == \"ALBRequestCountPerTarget\"\n\t_pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"PredefinedMetricSpecification\", \"ResourceLabel\"])\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-custom-metrics-array-exclusive",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A metric-math specification takes none of the single-metric fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttcx_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttcx_simple := [\"Dimensions\", \"MetricName\", \"Namespace\", \"Statistic\", \"Unit\", \"Period\"]\n\nviolation contains make_diag_full(\"pf-asg-tt-custom-metrics-array-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.%s\", [k]),\n\tsprintf(\"CustomizedMetricSpecification uses the Metrics (metric math) form, so %s cannot come with it; the policy create fails with \\\"A customized metric specification with 'Metrics' specified cannot have any of ['Dimensions', 'MetricName', 'Namespace', 'Statistic', 'Unit', 'Period'] specified as well\\\"\", [k]),\n\tsprintf(\"Move %s into the MetricStat inside Metrics, or drop Metrics\", [k]), _pf_asgttcx_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_arr(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", \"Metrics\"])\n\tsome k in _pf_asgttcx_simple\n\tnot _pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", k])\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-custom-simple-requires-namespace-and-statistic",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A single-metric specification names its Namespace and Statistic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttcs_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttcs_required := [\"Namespace\", \"Statistic\"]\n\nviolation contains make_diag_full(\"pf-asg-tt-custom-simple-requires-namespace-and-statistic\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.%s\", [k]),\n\tsprintf(\"CustomizedMetricSpecification uses the single-metric form but has no %s; the policy create fails with \\\"Value null at 'targetTrackingConfiguration.customizedMetricSpecification.%s' failed to satisfy constraint: Member must not be null\\\"\", [k, lower(k)]),\n\tsprintf(\"Set %s, or switch to the Metrics (metric math) form\", [k]), _pf_asgttcs_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_obj(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\"])\n\t_pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", \"Metrics\"])\n\tsome k in _pf_asgttcs_required\n\t_pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", k])\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-forbids-step-and-simple-props",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A target-tracking policy carries no step or simple settings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttfo_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttfo_forbidden := [\"MetricAggregationType\", \"MinAdjustmentMagnitude\", \"ScalingAdjustment\", \"StepAdjustments\", \"PredictiveScalingConfiguration\"]\n\nviolation contains make_diag_full(\"pf-asg-tt-forbids-step-and-simple-props\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [k]),\n\tsprintf(\"%s belongs to another policy type, not to TargetTrackingScaling; the policy create fails with \\\"%s are not supported for a TargetTracking policy\\\"\", [k, k]),\n\tsprintf(\"Remove %s; a target-tracking policy scales from TargetValue alone\", [k]), _pf_asgttfo_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"TargetTrackingScaling\"\n\tsome k in _pf_asgttfo_forbidden\n\tnot _pf_aslib_absent(name, k)\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-metric-spec-exclusive",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Target tracking takes exactly one metric specification",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttme_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttme_fix := \"Keep either PredefinedMetricSpecification or CustomizedMetricSpecification, not both and not neither\"\n\nviolation contains make_diag_full(\"pf-asg-tt-metric-spec-exclusive\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification\",\n\t\"the configuration sets both CustomizedMetricSpecification and PredefinedMetricSpecification; the policy create fails with \\\"You should provide either a CustomizedMetricSpecification or a PredefinedMetricSpecification\\\"\",\n\t_pf_asgttme_fix, _pf_asgttme_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tnot _pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\"])\n\tnot _pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"PredefinedMetricSpecification\"])\n}\n\nviolation contains make_diag_full(\"pf-asg-tt-metric-spec-exclusive\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration\",\n\t\"the configuration sets neither CustomizedMetricSpecification nor PredefinedMetricSpecification; the policy create fails with \\\"You should provide either a CustomizedMetricSpecification or a PredefinedMetricSpecification\\\"\",\n\t_pf_asgttme_fix, _pf_asgttme_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_obj(name, [\"TargetTrackingConfiguration\"])\n\t_pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\"])\n\t_pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"PredefinedMetricSpecification\"])\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-mq-exactly-one-returndata",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Exactly one metric data query returns the value to track",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttrd_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttrd_returning(name) := count([1 |\n\tsome q in _pf_aslib_arr(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", \"Metrics\"])\n\tis_object(q)\n\tobject.get(q, \"ReturnData\", true) == true\n])\n\nviolation contains make_diag_full(\"pf-asg-tt-mq-exactly-one-returndata\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.Metrics\",\n\tsprintf(\"%d of the metric data queries return data (ReturnData defaults to true); target tracking needs exactly one time series and the policy create fails with \\\"Exactly one element of the metrics list should return data\\\"\", [n]),\n\t\"Set ReturnData: false on every query but the one being tracked\", _pf_asgttrd_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_arr(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", \"Metrics\"])\n\tn := _pf_asgttrd_returning(name)\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-mq-expression-xor-metricstat",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A metric data query holds an Expression or a MetricStat, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttmx_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttmx_queries(name) := _pf_aslib_arr(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", \"Metrics\"])\n\n_pf_asgttmx_has(q, k) if object.get(q, k, \"__pf_absent\") != \"__pf_absent\"\n\nviolation contains make_diag_full(\"pf-asg-tt-mq-expression-xor-metricstat\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.Metrics.%d\", [i]),\n\t\"the metric data query sets both Expression and MetricStat; the policy create fails with \\\"The parameters MetricDataQuery Expression and MetricStat are mutually exclusive and you have specified both\\\"\",\n\t\"Keep either Expression or MetricStat in each query\", _pf_asgttmx_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, q in _pf_asgttmx_queries(name)\n\tis_object(q)\n\t_pf_asgttmx_has(q, \"Expression\")\n\t_pf_asgttmx_has(q, \"MetricStat\")\n}\n\nviolation contains make_diag_full(\"pf-asg-tt-mq-expression-xor-metricstat\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.Metrics.%d\", [i]),\n\t\"the metric data query sets neither Expression nor MetricStat; the policy create fails with \\\"The parameters MetricDataQuery Expression and MetricStat are mutually exclusive\\\"\",\n\t\"Give each query either an Expression or a MetricStat\", _pf_asgttmx_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tsome i, q in _pf_asgttmx_queries(name)\n\tis_object(q)\n\tnot _pf_asgttmx_has(q, \"Expression\")\n\tnot _pf_asgttmx_has(q, \"MetricStat\")\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-mq-same-period-required",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Every metric in one specification shares a period",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttsp_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\n_pf_asgttsp_periods(name) := {p |\n\tsome q in _pf_aslib_arr(name, [\"TargetTrackingConfiguration\", \"CustomizedMetricSpecification\", \"Metrics\"])\n\tis_object(q)\n\tst := object.get(q, \"MetricStat\", null)\n\tis_object(st)\n\tv := object.get(st, \"Period\", null)\n\tv != null\n\tnot is_object(v)\n\tp := to_number(v)\n}\n\nviolation contains make_diag_full(\"pf-asg-tt-mq-same-period-required\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.Metrics\",\n\tsprintf(\"the metric data queries use %d different periods; CloudWatch needs one period per alarm and the policy create fails with \\\"All metrics in the alarm should have the same period\\\"\", [count(ps)]),\n\t\"Give every MetricStat the same Period\", _pf_asgttsp_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tps := _pf_asgttsp_periods(name)\n\tcount(ps) > 1\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-non-alb-forbids-resourcelabel",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Only the ALB metric takes a ResourceLabel",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttnr_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-tt-non-alb-forbids-resourcelabel\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.PredefinedMetricSpecification.ResourceLabel\",\n\tsprintf(\"ResourceLabel is set for PredefinedMetricType %s; only ALBRequestCountPerTarget takes one, and the policy create fails with \\\"Resource label should not be specified for predefined metric type %s\\\"\", [t, t]),\n\t\"Remove ResourceLabel, or switch to ALBRequestCountPerTarget\", _pf_asgttnr_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tt := resolve(name, \"Properties.TargetTrackingConfiguration.PredefinedMetricSpecification.PredefinedMetricType\")\n\t_pf_aslib_lit(t)\n\tt != \"ALBRequestCountPerTarget\"\n\tnot _pf_aslib_absent_at(name, [\"TargetTrackingConfiguration\", \"PredefinedMetricSpecification\", \"ResourceLabel\"])\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-period-max-60",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A customized target-tracking metric uses a period of 60 seconds or less",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttpm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-tt-period-max-60\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.Period\",\n\tsprintf(\"Period %v is over 60 seconds; target tracking needs high-resolution data and the policy create fails with \\\"A metric period greater than 60 isn't supported\\\"\", [n]),\n\t\"Use a Period of 10, 30 or 60\", _pf_asgttpm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\tn := _pf_aslib_num(name, \"Properties.TargetTrackingConfiguration.CustomizedMetricSpecification.Period\")\n\tn > 60\n}\n"
+  },
+  {
+    "id": "pf-asg-tt-requires-config",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A TargetTrackingScaling policy carries its configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::ScalingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgttrc_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html\"\n\nviolation contains make_diag_full(\"pf-asg-tt-requires-config\", \"ERROR\", name,\n\t\"Properties.TargetTrackingConfiguration\",\n\t\"a TargetTrackingScaling policy has no TargetTrackingConfiguration; the policy create fails with \\\"You should provide a TargetTrackingConfiguration\\\"\",\n\t\"Add TargetTrackingConfiguration with a metric specification and a TargetValue\", _pf_asgttrc_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::ScalingPolicy\")\n\t_pf_aslib_ptype(name) == \"TargetTrackingScaling\"\n\t_pf_aslib_absent(name, \"TargetTrackingConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-asg-vpczone-az-mismatch",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "The listed zones cover the subnets the group launches into",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgvam_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\nviolation contains make_diag_full(\"pf-asg-vpczone-az-mismatch\", \"ERROR\", name,\n\tsprintf(\"Properties.VPCZoneIdentifier.%d\", [i]),\n\tsprintf(\"subnet %s sits in %s, which AvailabilityZones does not list; the group create fails with \\\"The availability zones of the specified subnets and the Auto Scaling group do not match\\\"\", [sub, az]),\n\t\"Drop AvailabilityZones and let the subnets decide, or list the subnets' zones\", _pf_asgvam_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tazs := _pf_aslib_arr(name, [\"AvailabilityZones\"])\n\tazset := {z | some z in azs; is_string(z)}\n\tcount(azset) > 0\n\tsome i, _ in _pf_aslib_arr(name, [\"VPCZoneIdentifier\"])\n\tsub := resolve(name, sprintf(\"Properties.VPCZoneIdentifier.%d\", [i]))\n\tsub in resources_of_type(\"AWS::EC2::Subnet\")\n\taz := resolve(sub, \"Properties.AvailabilityZone\")\n\t_pf_aslib_lit(az)\n\tnot az in azset\n}\n"
+  },
+  {
+    "id": "pf-asg-wp-hibernated-requires-encrypted-root",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A hibernating warm pool needs an encrypted root volume",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::WarmPool",
+      "AWS::EC2::LaunchTemplate"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgwphe_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html\"\n\n_pf_asgwphe_root(d) if d in [\"/dev/xvda\", \"/dev/sda1\"]\n\nviolation contains make_diag_full(\"pf-asg-wp-hibernated-requires-encrypted-root\", \"ERROR\", name,\n\tsprintf(\"Properties.LaunchTemplateData.BlockDeviceMappings.%d.Ebs.Encrypted\", [i]),\n\tsprintf(\"warm pool %s hibernates, but the root volume of launch template %s is not encrypted; the warm pool create fails with \\\"For hibernation, the root device volume must be encrypted.\\\"\", [name, lt]),\n\t\"Set Encrypted: true on the root block device mapping\", _pf_asgwphe_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::WarmPool\")\n\tresolve(name, \"Properties.PoolState\") == \"Hibernated\"\n\tlt := _pf_aslib_lt(_pf_aslib_group(name))\n\tsome i, m in _pf_aslib_arr(lt, [\"LaunchTemplateData\", \"BlockDeviceMappings\"])\n\tis_object(m)\n\t_pf_asgwphe_root(object.get(m, \"DeviceName\", \"\"))\n\tebs := object.get(m, \"Ebs\", null)\n\tis_object(ebs)\n\te := object.get(ebs, \"Encrypted\", false)\n\tnot is_object(e)\n\te != true\n}\n"
+  },
+  {
+    "id": "pf-asg-wp-poolstate-enum",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A warm pool PoolState is Stopped, Running or Hibernated",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AutoScaling::WarmPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgwpps_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html\"\n\nviolation contains make_diag_full(\"pf-asg-wp-poolstate-enum\", \"ERROR\", name,\n\t\"Properties.PoolState\",\n\tsprintf(\"PoolState '%s' is not a warm pool state; the warm pool create fails with \\\"Member must satisfy enum value set: [Stopped, Hibernated, Running]\\\"\", [v]),\n\t\"Use Stopped, Running or Hibernated\", _pf_asgwpps_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::WarmPool\")\n\tv := resolve(name, \"Properties.PoolState\")\n\t_pf_aslib_lit(v)\n\tnot v in [\"Stopped\", \"Running\", \"Hibernated\"]\n}\n"
+  },
+  {
+    "id": "pf-asg-wp-spot-incompatible",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A group asking for Spot instances takes no warm pool",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::WarmPool",
+      "AWS::EC2::LaunchTemplate"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgwpsi_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html\"\n\nviolation contains make_diag_full(\"pf-asg-wp-spot-incompatible\", \"ERROR\", name,\n\t\"Properties.AutoScalingGroupName\",\n\tsprintf(\"launch template %s requests Spot instances (InstanceMarketOptions.MarketType), so the warm pool create fails with \\\"You can't add a warm pool to an Auto Scaling group that requests Spot Instances\\\"\", [lt]),\n\t\"Drop the warm pool, or launch the group on On-Demand capacity\", _pf_asgwpsi_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::WarmPool\")\n\tlt := _pf_aslib_lt(_pf_aslib_group(name))\n\tresolve(lt, \"Properties.LaunchTemplateData.InstanceMarketOptions.MarketType\") == \"spot\"\n}\n"
+  },
+  {
+    "id": "pf-asg-wp-weighted-mixed-instances-incompatible",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "A weighted mixed instances policy takes no warm pool",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::WarmPool",
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgwpwm_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html\"\n\nviolation contains make_diag_full(\"pf-asg-wp-weighted-mixed-instances-incompatible\", \"ERROR\", name,\n\tsprintf(\"Properties.MixedInstancesPolicy.LaunchTemplate.Overrides.%d.WeightedCapacity\", [i]),\n\tsprintf(\"group %s weights its instance types, so the warm pool create fails with \\\"You can't add a warm pool to an Auto Scaling group that ... uses a mixed instances policy with ... instance weights\\\"\", [g]),\n\t\"Drop WeightedCapacity from the overrides, or drop the warm pool\", _pf_asgwpwm_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::WarmPool\")\n\tg := _pf_aslib_group(name)\n\tsome i, o in _pf_aslib_overrides(g)\n\tis_object(o)\n\tobject.get(o, \"WeightedCapacity\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation",
+    "service": "autoscaling",
+    "severity": "ERROR",
+    "title": "Zonal shift needs cross-zone load balancing on its target groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AutoScaling::AutoScalingGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_asgzs_url := \"https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html\"\n\n_pf_asgzs_skip(name) if resolve(name, \"Properties.SkipZonalShiftValidation\") == true\n\n_pf_asgzs_crosszone_off(tg) if {\n\tsome a in _pf_aslib_arr(tg, [\"TargetGroupAttributes\"])\n\tis_object(a)\n\tobject.get(a, \"Key\", \"\") == \"load_balancing.cross_zone.enabled\"\n\tobject.get(a, \"Value\", \"\") == \"false\"\n}\n\nviolation contains make_diag_full(\"pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupARNs.%d\", [i]),\n\tsprintf(\"zonal shift is enabled but target group %s has cross-zone load balancing turned off, so traffic cannot leave an impaired zone; the group create fails with \\\"The use of a cross-zone disabled load balancer with zonal shift enabled for an Auto Scaling group is not supported\\\"\", [tg]),\n\t\"Enable load_balancing.cross_zone.enabled on the target group, or set SkipZonalShiftValidation\", _pf_asgzs_url) if {\n\tsome name in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n\tresolve(name, \"Properties.AvailabilityZoneImpairmentPolicy.ZonalShiftEnabled\") == true\n\tnot _pf_asgzs_skip(name)\n\tsome i, _ in _pf_aslib_arr(name, [\"TargetGroupARNs\"])\n\ttg := resolve(name, sprintf(\"Properties.TargetGroupARNs.%d\", [i]))\n\ttg in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\t_pf_asgzs_crosszone_off(tg)\n}\n"
   },
   {
     "id": "pf-asg-zone-or-subnet-required",
@@ -17193,6 +18263,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/apigatewayv2",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Protocol of the Api a child resource points at (\"HTTP\" or \"WEBSOCKET\").\n# Undefined when ApiId is an imported id, so callers skip imported APIs. Half\n# of the ApiGatewayV2 constraints are protocol-dependent, which is why this is\n# a lib rather than a per-rule helper.\n_pf_apigwv2lib_protocol(name) := p if {\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tp := resolve(api, \"Properties.ProtocolType\")\n}\n"
+  },
+  {
+    "name": "_lib/autoscaling",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_aslib_props(name) := props if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n}\n\n# プロパティ不在の証明（AGENTS.md の sanctioned exception）\n_pf_aslib_absent(name, key) if object.get(_pf_aslib_props(name), key, \"__pf_absent\") == \"__pf_absent\"\n\n# ネストしたキーの不在判定。path は上位から順のキー列。\n_pf_aslib_absent_at(name, path) if {\n\tobj := object.get(_pf_aslib_props(name), array.slice(path, 0, count(path) - 1), {})\n\tis_object(obj)\n\tobject.get(obj, path[count(path) - 1], \"__pf_absent\") == \"__pf_absent\"\n}\n\n# 生プロパティ（オブジェクト内の値をそのまま読む。intrinsic はマーカーオブジェクトのまま）\n_pf_aslib_raw(name, path) := v if {\n\tv := object.get(_pf_aslib_props(name), path, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n# 配列。flatten_list と違い不在は undefined（不在と空配列を区別できる）\n_pf_aslib_arr(name, path) := a if {\n\ta := _pf_aslib_raw(name, path)\n\tis_array(a)\n}\n\n_pf_aslib_obj(name, path) := o if {\n\to := _pf_aslib_raw(name, path)\n\tis_object(o)\n\tnot o[\"__kind\"]\n\tnot o[\"__dynamic\"]\n}\n\n# ユーザーが書いたリテラル文字列。Ref/GetAtt はテンプレート内の論理 ID に解決されるので除く。\n_pf_aslib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# 数値。to_number は非数値で undefined なので Ref/トークンは自然に落ちる。\n_pf_aslib_num(name, path) := n if {\n\tv := resolve(name, path)\n\tv != null\n\tnot is_boolean(v)\n\tn := to_number(v)\n}\n\n# ScalingPolicy の実効 PolicyType（未指定時の既定は SimpleScaling）\n_pf_aslib_ptype(name) := t if {\n\tt := resolve(name, \"Properties.PolicyType\")\n\tis_string(t)\n}\n\n_pf_aslib_ptype(name) := \"SimpleScaling\" if _pf_aslib_absent(name, \"PolicyType\")\n\n# 子リソース（ScalingPolicy / ScheduledAction / LifecycleHook / WarmPool）から\n# 同一テンプレート内の AutoScalingGroup 論理 ID へ\n_pf_aslib_group(name) := g if {\n\tg := resolve(name, \"Properties.AutoScalingGroupName\")\n\tg in resources_of_type(\"AWS::AutoScaling::AutoScalingGroup\")\n}\n\n# AutoScalingGroup から同一テンプレート内の LaunchTemplate 論理 ID へ（単体・MixedInstancesPolicy 両方）\n_pf_aslib_lt(asg) := lt if {\n\tlt := resolve(asg, \"Properties.LaunchTemplate.LaunchTemplateId\")\n\tlt in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n}\n\n_pf_aslib_lt(asg) := lt if {\n\tlt := resolve(asg, \"Properties.MixedInstancesPolicy.LaunchTemplate.LaunchTemplateSpecification.LaunchTemplateId\")\n\tlt in resources_of_type(\"AWS::EC2::LaunchTemplate\")\n}\n\n_pf_aslib_overrides(name) := _pf_aslib_arr(name, [\"MixedInstancesPolicy\", \"LaunchTemplate\", \"Overrides\"])\n\n# ARN のセグメント（region は 3、account は 4、service は 2）\n_pf_aslib_arn(v) := parts if {\n\t_pf_aslib_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n\n_pf_aslib_arn_service(v) := _pf_aslib_arn(v)[2]\n\n_pf_aslib_arn_region(v) := r if {\n\tr := _pf_aslib_arn(v)[3]\n\tr != \"\"\n}\n\n# LifecycleHook の通知先が Lambda 関数か（リテラル ARN / テンプレート内リソースの両方）\n_pf_aslib_target_lambda(name) if _pf_aslib_arn_service(resolve(name, \"Properties.NotificationTargetARN\")) == \"lambda\"\n\n_pf_aslib_target_lambda(name) if {\n\tt := resolve(name, \"Properties.NotificationTargetARN\")\n\tt in resources_of_type(\"AWS::Lambda::Function\")\n}\n\n# Recurrence（裸の 5 フィールド Unix cron）をフィールドに分解する\n_pf_aslib_cron_fields(s) := f if {\n\t_pf_aslib_lit(s)\n\tf := [x | some x in split(s, \" \"); x != \"\"]\n}\n\n# 数字トークン。to_number(\"03\") は engine のビルドでは undefined なので先頭ゼロを落とす。\n_pf_aslib_int(s) := 0 if regex.match(\"^0+$\", s)\n\n_pf_aslib_int(s) := n if {\n\tregex.match(\"^[0-9]+$\", s)\n\tt := trim_left(s, \"0\")\n\tt != \"\"\n\tn := to_number(t)\n}\n\n# 1 フィールド内の裸の数値。範囲(a-b)・リスト(a,b)・ステップ(*/n)を分解した後の数字だけを見る。\n# 月名・曜日名・ワイルドカードは数値にならないので自然に無視される（誤検知を出さないための割り切り）。\n_pf_aslib_cron_nums(field) := [n |\n\tsome part in split(field, \",\")\n\tsome seg in split(split(part, \"/\")[0], \"-\")\n\tn := _pf_aslib_int(seg)\n]\n\n_pf_aslib_steps(name) := _pf_aslib_arr(name, [\"StepAdjustments\"])\n\n# StepAdjustment の境界。未指定は ±センチネル。Ref などのマーカーは undefined のまま返し、\n# その step を含む判定を丸ごと黙らせる（誤検知を出さないため）。\n_pf_aslib_step_lo(s) := n if {\n\tv := object.get(s, \"MetricIntervalLowerBound\", null)\n\tv != null\n\tnot is_object(v)\n\tn := to_number(v)\n}\n\n_pf_aslib_step_lo(s) := -1000000000 if object.get(s, \"MetricIntervalLowerBound\", null) == null\n\n_pf_aslib_step_hi(s) := n if {\n\tv := object.get(s, \"MetricIntervalUpperBound\", null)\n\tv != null\n\tnot is_object(v)\n\tn := to_number(v)\n}\n\n_pf_aslib_step_hi(s) := 1000000000 if object.get(s, \"MetricIntervalUpperBound\", null) == null\n\n_pf_aslib_step_ivals(name) := [[lo, hi] |\n\tsome s in _pf_aslib_steps(name)\n\tis_object(s)\n\tlo := _pf_aslib_step_lo(s)\n\thi := _pf_aslib_step_hi(s)\n]\n\n_pf_aslib_step_nulls(name, key) := count([1 |\n\tsome s in _pf_aslib_steps(name)\n\tis_object(s)\n\tobject.get(s, key, null) == null\n])\n\n_pf_aslib_step_bothnull(name) if {\n\tsome s in _pf_aslib_steps(name)\n\tis_object(s)\n\tobject.get(s, \"MetricIntervalLowerBound\", null) == null\n\tobject.get(s, \"MetricIntervalUpperBound\", null) == null\n}\n\n# 区間の重なり/隙間を見る前提条件。サービス側もこの順で検証するので、\n# null 境界の違反があるうちは重なり判定を出さない（ルール同士が二重に鳴らないように）。\n_pf_aslib_step_wellformed(name) if {\n\t_pf_aslib_step_nulls(name, \"MetricIntervalLowerBound\") <= 1\n\t_pf_aslib_step_nulls(name, \"MetricIntervalUpperBound\") <= 1\n\tnot _pf_aslib_step_bothnull(name)\n\tcount(_pf_aslib_step_ivals(name)) == count(_pf_aslib_steps(name))\n}\n\n_pf_aslib_pmetrics(name) := _pf_aslib_arr(name, [\"PredictiveScalingConfiguration\", \"MetricSpecifications\"])\n\n_pf_aslib_pcustom := [\"CustomizedLoadMetricSpecification\", \"CustomizedScalingMetricSpecification\", \"CustomizedCapacityMetricSpecification\"]\n\n_pf_aslib_hooks(name) := _pf_aslib_arr(name, [\"LifecycleHookSpecificationList\"])\n\n_pf_aslib_tags(name) := _pf_aslib_arr(name, [\"Tags\"])\n"
   },
   {
     "name": "_lib/bedrock",

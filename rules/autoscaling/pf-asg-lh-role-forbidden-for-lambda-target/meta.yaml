@@ -1,0 +1,12 @@
+id: pf-asg-lh-role-forbidden-for-lambda-target
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::LifecycleHook]
+severity: ERROR
+title: A Lambda notification target takes no RoleARN
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: 'RoleARN' parameter should not be specified when 'NotificationTargetARN' is a Lambda function. Remove 'RoleARN' from your request and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE. The pass template notifies an SNS topic: a Lambda-target hook cannot be deployed here at all (\"Unable to publish test message\" even with a lambda:InvokeFunction permission)."
+addedOn: 2026-09-09

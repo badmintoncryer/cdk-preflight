@@ -1,0 +1,163 @@
+{
+  "Resources": {
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "G": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "MixedInstancesPolicy": {
+          "LaunchTemplate": {
+            "LaunchTemplateSpecification": {
+              "LaunchTemplateId": {
+                "Ref": "LT"
+              },
+              "Version": {
+                "Fn::GetAtt": [
+                  "LT",
+                  "LatestVersionNumber"
+                ]
+              }
+            },
+            "Overrides": [
+              {
+                "InstanceType": "m5.large"
+              },
+              {
+                "InstanceType": "m5.xlarge"
+              },
+              {
+                "InstanceType": "m5.2xlarge"
+              },
+              {
+                "InstanceType": "m5.4xlarge"
+              },
+              {
+                "InstanceType": "m5.12xlarge"
+              },
+              {
+                "InstanceType": "c5.large"
+              },
+              {
+                "InstanceType": "c5.xlarge"
+              },
+              {
+                "InstanceType": "c5.2xlarge"
+              },
+              {
+                "InstanceType": "c5.4xlarge"
+              },
+              {
+                "InstanceType": "c5.12xlarge"
+              },
+              {
+                "InstanceType": "r5.large"
+              },
+              {
+                "InstanceType": "r5.xlarge"
+              },
+              {
+                "InstanceType": "r5.2xlarge"
+              },
+              {
+                "InstanceType": "r5.4xlarge"
+              },
+              {
+                "InstanceType": "r5.12xlarge"
+              },
+              {
+                "InstanceType": "m6i.large"
+              },
+              {
+                "InstanceType": "m6i.xlarge"
+              },
+              {
+                "InstanceType": "m6i.2xlarge"
+              },
+              {
+                "InstanceType": "m6i.4xlarge"
+              },
+              {
+                "InstanceType": "m6i.12xlarge"
+              },
+              {
+                "InstanceType": "c6i.large"
+              },
+              {
+                "InstanceType": "c6i.xlarge"
+              },
+              {
+                "InstanceType": "c6i.2xlarge"
+              },
+              {
+                "InstanceType": "c6i.4xlarge"
+              },
+              {
+                "InstanceType": "c6i.12xlarge"
+              },
+              {
+                "InstanceType": "r6i.large"
+              },
+              {
+                "InstanceType": "r6i.xlarge"
+              },
+              {
+                "InstanceType": "r6i.2xlarge"
+              },
+              {
+                "InstanceType": "r6i.4xlarge"
+              },
+              {
+                "InstanceType": "r6i.12xlarge"
+              },
+              {
+                "InstanceType": "m5a.large"
+              },
+              {
+                "InstanceType": "m5a.xlarge"
+              },
+              {
+                "InstanceType": "m5a.2xlarge"
+              },
+              {
+                "InstanceType": "m5a.4xlarge"
+              },
+              {
+                "InstanceType": "m5a.12xlarge"
+              },
+              {
+                "InstanceType": "r5a.large"
+              },
+              {
+                "InstanceType": "r5a.xlarge"
+              },
+              {
+                "InstanceType": "r5a.2xlarge"
+              },
+              {
+                "InstanceType": "r5a.4xlarge"
+              },
+              {
+                "InstanceType": "r5a.12xlarge"
+              },
+              {
+                "InstanceType": "m5n.large"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

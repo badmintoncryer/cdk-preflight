@@ -1,0 +1,12 @@
+id: pf-asg-sched-capacity-fields-ordering
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScheduledAction]
+severity: ERROR
+title: A scheduled action keeps MinSize <= DesiredCapacity <= MaxSize
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Desired capacity must be less than or equal to max size -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

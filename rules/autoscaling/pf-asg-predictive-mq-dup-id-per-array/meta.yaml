@@ -1,0 +1,12 @@
+id: pf-asg-predictive-mq-dup-id-per-array
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: Metric data query ids are unique within one array
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The MetricDataQuery object for the customized load metric has a problem or incorrect syntax. Verify that the object is valid by using the CloudWatch GetMetricData API to investigate the issue and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

@@ -1,0 +1,12 @@
+id: pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: Zonal shift needs cross-zone load balancing on its target groups
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The use of a cross-zone disabled load balancer with zonal shift enabled for an Auto Scaling group is not supported. Enable cross-zone load balancing for your ELB or set SkipZonalShiftValidation to true to override this validation. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

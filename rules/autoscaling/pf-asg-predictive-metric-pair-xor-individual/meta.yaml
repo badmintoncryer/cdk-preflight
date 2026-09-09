@@ -1,0 +1,12 @@
+id: pf-asg-predictive-metric-pair-xor-individual
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: A metric pair does not mix with individual load and scaling metrics
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The metric specification is invalid. A policy must have either one scaling metric and one load metric or one metric pair. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

@@ -1,0 +1,12 @@
+id: pf-asg-tt-period-max-60
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: A customized target-tracking metric uses a period of 60 seconds or less
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: A metric period greater than 60 isn't supported. Specify a 'period' value less than or equal to 60 and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

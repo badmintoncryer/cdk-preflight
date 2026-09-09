@@ -1,0 +1,12 @@
+id: pf-asg-lh-target-region-match
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::LifecycleHook]
+severity: ERROR
+title: A lifecycle hook target lives in the deploy region
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Unable to publish test message to notification target arn:aws:sns:us-west-2:214794239830:cdkpf-lh-region using IAM role arn:aws:iam::214794239830:role/cdkpf-pf-asg-lh-target-region-match-fail-Role-tI6JQMur5w9i. Please check your target and role configuration … -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE. The service message names the unreachable target rather than the region, so the region is the mechanism, not the wording."
+addedOn: 2026-09-09

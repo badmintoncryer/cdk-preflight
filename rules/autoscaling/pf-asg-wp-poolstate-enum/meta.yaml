@@ -1,0 +1,12 @@
+id: pf-asg-wp-poolstate-enum
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::WarmPool]
+severity: ERROR
+title: A warm pool PoolState is Stopped, Running or Hibernated
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html
+upstream: pending-engine
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Invalid request provided: 1 validation error detected: Value 'Terminated' at 'poolState' failed to satisfy constraint: Member must satisfy enum value set: [Stopped, Hibernated, Running] -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

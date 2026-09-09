@@ -1,0 +1,12 @@
+id: pf-asg-spot-allocation-capacity-optimized-prioritized-invalid-with-instance-requirements
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: Capacity-optimized-prioritized Spot allocation does not go with instance requirements
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The specified SpotAllocationStrategy is not valid. The capacity-optimized-prioritized allocation strategy is not compatible with instance requirements. Valid options are [lowest-price, capacity-optimized, price-capacity-optimized]. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

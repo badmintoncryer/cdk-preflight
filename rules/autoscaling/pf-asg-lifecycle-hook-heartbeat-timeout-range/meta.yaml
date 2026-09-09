@@ -1,0 +1,12 @@
+id: pf-asg-lifecycle-hook-heartbeat-timeout-range
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: An inline lifecycle hook HeartbeatTimeout runs from 30 to 7200 seconds
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: HeartbeatTimeout must be between 30 and 7200 seconds -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

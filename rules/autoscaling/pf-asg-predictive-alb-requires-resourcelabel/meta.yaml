@@ -1,0 +1,12 @@
+id: pf-asg-predictive-alb-requires-resourcelabel
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: A predictive ALB metric needs a ResourceLabel
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: A resource label is required. A resource label identifies the Application Load Balancer target group for the Application Load Balancer metric that's specified. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

@@ -1,0 +1,12 @@
+id: pf-asg-capacity-reservation-none-target-exclusive
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: A capacity reservation target needs the capacity-reservations-only preference
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: You can't specify CapacityReservationPreference as default or none and provide a CapacityReservationTarget in the same request. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

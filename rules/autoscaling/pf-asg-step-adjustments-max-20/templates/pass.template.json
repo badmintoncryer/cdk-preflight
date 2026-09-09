@@ -1,0 +1,144 @@
+{
+  "Resources": {
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "G": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LT"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LT",
+              "LatestVersionNumber"
+            ]
+          }
+        }
+      }
+    },
+    "R": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Ref": "G"
+        },
+        "PolicyType": "StepScaling",
+        "AdjustmentType": "ChangeInCapacity",
+        "StepAdjustments": [
+          {
+            "MetricIntervalUpperBound": 0,
+            "ScalingAdjustment": 0
+          },
+          {
+            "MetricIntervalLowerBound": 0,
+            "MetricIntervalUpperBound": 1,
+            "ScalingAdjustment": 1
+          },
+          {
+            "MetricIntervalLowerBound": 1,
+            "MetricIntervalUpperBound": 2,
+            "ScalingAdjustment": 2
+          },
+          {
+            "MetricIntervalLowerBound": 2,
+            "MetricIntervalUpperBound": 3,
+            "ScalingAdjustment": 3
+          },
+          {
+            "MetricIntervalLowerBound": 3,
+            "MetricIntervalUpperBound": 4,
+            "ScalingAdjustment": 4
+          },
+          {
+            "MetricIntervalLowerBound": 4,
+            "MetricIntervalUpperBound": 5,
+            "ScalingAdjustment": 5
+          },
+          {
+            "MetricIntervalLowerBound": 5,
+            "MetricIntervalUpperBound": 6,
+            "ScalingAdjustment": 6
+          },
+          {
+            "MetricIntervalLowerBound": 6,
+            "MetricIntervalUpperBound": 7,
+            "ScalingAdjustment": 7
+          },
+          {
+            "MetricIntervalLowerBound": 7,
+            "MetricIntervalUpperBound": 8,
+            "ScalingAdjustment": 8
+          },
+          {
+            "MetricIntervalLowerBound": 8,
+            "MetricIntervalUpperBound": 9,
+            "ScalingAdjustment": 9
+          },
+          {
+            "MetricIntervalLowerBound": 9,
+            "MetricIntervalUpperBound": 10,
+            "ScalingAdjustment": 10
+          },
+          {
+            "MetricIntervalLowerBound": 10,
+            "MetricIntervalUpperBound": 11,
+            "ScalingAdjustment": 11
+          },
+          {
+            "MetricIntervalLowerBound": 11,
+            "MetricIntervalUpperBound": 12,
+            "ScalingAdjustment": 12
+          },
+          {
+            "MetricIntervalLowerBound": 12,
+            "MetricIntervalUpperBound": 13,
+            "ScalingAdjustment": 13
+          },
+          {
+            "MetricIntervalLowerBound": 13,
+            "MetricIntervalUpperBound": 14,
+            "ScalingAdjustment": 14
+          },
+          {
+            "MetricIntervalLowerBound": 14,
+            "MetricIntervalUpperBound": 15,
+            "ScalingAdjustment": 15
+          },
+          {
+            "MetricIntervalLowerBound": 15,
+            "MetricIntervalUpperBound": 16,
+            "ScalingAdjustment": 16
+          },
+          {
+            "MetricIntervalLowerBound": 16,
+            "MetricIntervalUpperBound": 17,
+            "ScalingAdjustment": 17
+          },
+          {
+            "MetricIntervalLowerBound": 17,
+            "MetricIntervalUpperBound": 18,
+            "ScalingAdjustment": 18
+          },
+          {
+            "MetricIntervalLowerBound": 18,
+            "ScalingAdjustment": 19
+          }
+        ]
+      }
+    }
+  }
+}

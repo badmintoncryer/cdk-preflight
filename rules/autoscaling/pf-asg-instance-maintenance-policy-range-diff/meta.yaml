@@ -1,0 +1,12 @@
+id: pf-asg-instance-maintenance-policy-range-diff
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: An instance maintenance policy spans at most 100 points
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The difference between MaxHealthyPercentage and MinHealthyPercentage must be less than or equal to 100. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

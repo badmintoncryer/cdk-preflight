@@ -1,0 +1,12 @@
+id: pf-asg-step-negative-lower-needs-null-lower
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: A negative lower bound needs a step that runs to minus infinity
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: There must be a StepAdjustment with an unspecified lower bound (i.e., lower bound is null) when one StepAdjustment has a negative lower bound. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09
