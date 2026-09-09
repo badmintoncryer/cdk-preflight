@@ -1,7 +1,7 @@
 id: pf-rds-shard-group-acu
 service: rds
 resourceTypes: [AWS::RDS::DBShardGroup]
-severity: ERROR
+severity: WARN
 title: "DBShardGroup MaxACU must be at least MinACU"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html
 upstream: none

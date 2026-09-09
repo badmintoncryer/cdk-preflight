@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-cloudfront-acm-cert-region", "ERROR", name,
+violation contains make_diag_full("pf-cloudfront-acm-cert-region", "WARN", name,
 	"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn",
 	sprintf("CloudFront requires the ACM certificate to be in us-east-1, but the certificate is in %s", [region]),
 	"Issue or import the certificate in us-east-1 (e.g. a dedicated us-east-1 stack) and reference that ARN",

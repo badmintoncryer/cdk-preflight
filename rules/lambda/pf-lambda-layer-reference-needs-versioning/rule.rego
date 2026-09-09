@@ -6,7 +6,7 @@ _pf_llrv_fix := "Turn on versioning for the bucket that holds the layer content"
 
 _pf_llrv_url := "https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html"
 
-violation contains make_diag_full("pf-lambda-layer-reference-needs-versioning", "ERROR", name,
+violation contains make_diag_full("pf-lambda-layer-reference-needs-versioning", "WARN", name,
 	"Properties.Content.S3ObjectStorageMode",
 	"REFERENCE content in a bucket without versioning; the mode pins an object version and the bucket cannot produce one",
 	_pf_llrv_fix, _pf_llrv_url) if {

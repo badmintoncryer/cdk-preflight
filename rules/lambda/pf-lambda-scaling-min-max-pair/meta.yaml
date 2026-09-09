@@ -1,7 +1,7 @@
 id: pf-lambda-scaling-min-max-pair
 service: lambda
 resourceTypes: [AWS::Lambda::Function]
-severity: ERROR
+severity: WARN
 title: "FunctionScalingConfig takes both bounds"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html
 benchRegion: us-east-1

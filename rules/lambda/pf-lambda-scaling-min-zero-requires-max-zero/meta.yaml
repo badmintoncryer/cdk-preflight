@@ -1,7 +1,7 @@
 id: pf-lambda-scaling-min-zero-requires-max-zero
 service: lambda
 resourceTypes: [AWS::Lambda::Function]
-severity: ERROR
+severity: WARN
 title: "Scaling to zero means both bounds are zero"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html
 benchRegion: us-east-1

@@ -111,7 +111,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
         violations.push({
           ruleName: d.ruleId,
           description: d.message,
-          severity: 'error',
+          severity: mapSeverity(d.severity),
           violatingResources: [{
             resourceLogicalId: d.entity?.logicalId ?? '(unknown)',
             templatePath: st.templatePath,
@@ -122,7 +122,33 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       }
     }
 
-    return { success: violations.length === 0, violations };
+    // CDK 組み込みの CloudFormationValidatePlugin と同じ判定。warning だけなら
+    // レポートには載るが合成は通る（CLI 側は success/failure に関わらず必ず出力する）。
+    return { success: violations.every((v) => !BLOCKS_SYNTH.has(String(v.severity))), violations };
+  }
+}
+
+/** 合成を止める violation severity。 */
+const BLOCKS_SYNTH = new Set(['error', 'fatal']);
+
+/**
+ * エンジンの severity を policy validation の severity に写す。表は aws-cdk-lib 2.267.0 の
+ * CloudFormationValidatePlugin と同一。`repro.method: doc-only` のルールは WARN を出すので
+ * warning になり、報告はされるが synth は止めない（証拠が実機のデプロイ失敗ではないため）。
+ */
+function mapSeverity(severity: string | undefined): string {
+  switch (severity) {
+    case 'FATAL':
+    case 'ERROR':
+      return 'error';
+    case 'WARN':
+      return 'warning';
+    case 'INFO':
+      return 'informational';
+    case 'DEBUG':
+      return 'debug';
+    default:
+      return 'warning';
   }
 }
 
