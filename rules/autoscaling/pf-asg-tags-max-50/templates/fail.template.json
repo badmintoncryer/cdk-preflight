@@ -1,0 +1,291 @@
+{
+  "Resources": {
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "G": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LT"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LT",
+              "LatestVersionNumber"
+            ]
+          }
+        },
+        "Tags": [
+          {
+            "Key": "cdkpf0",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf1",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf2",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf3",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf4",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf5",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf6",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf7",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf8",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf9",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf10",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf11",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf12",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf13",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf14",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf15",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf16",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf17",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf18",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf19",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf20",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf21",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf22",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf23",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf24",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf25",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf26",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf27",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf28",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf29",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf30",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf31",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf32",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf33",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf34",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf35",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf36",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf37",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf38",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf39",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf40",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf41",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf42",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf43",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf44",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf45",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf46",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf47",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf48",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf49",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "cdkpf50",
+            "Value": "x",
+            "PropagateAtLaunch": false
+          }
+        ]
+      }
+    }
+  }
+}

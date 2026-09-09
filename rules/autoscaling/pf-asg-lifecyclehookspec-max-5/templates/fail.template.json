@@ -1,0 +1,66 @@
+{
+  "Resources": {
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "G": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LT"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LT",
+              "LatestVersionNumber"
+            ]
+          }
+        },
+        "LifecycleHookSpecificationList": [
+          {
+            "LifecycleHookName": "h1",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 31
+          },
+          {
+            "LifecycleHookName": "h2",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 32
+          },
+          {
+            "LifecycleHookName": "h3",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 33
+          },
+          {
+            "LifecycleHookName": "h4",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 34
+          },
+          {
+            "LifecycleHookName": "h5",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 35
+          },
+          {
+            "LifecycleHookName": "h6",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 36
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-asg-tags-aws-prefix-rejected
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: "A group tag key does not start with the reserved aws: prefix"
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: aws: prefixed tag key names are not allowed for external use. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

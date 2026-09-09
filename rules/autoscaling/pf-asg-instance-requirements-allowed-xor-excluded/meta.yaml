@@ -1,0 +1,12 @@
+id: pf-asg-instance-requirements-allowed-xor-excluded
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: Instance requirements allow types or exclude them, not both
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: You can specify either AllowedInstanceTypes or ExcludedInstanceTypes, but not both. Remove either AllowedInstanceTypes or ExcludedInstanceTypes, and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

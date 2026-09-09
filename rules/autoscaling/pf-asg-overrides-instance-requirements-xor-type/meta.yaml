@@ -1,0 +1,12 @@
+id: pf-asg-overrides-instance-requirements-xor-type
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: An override names an instance type or its requirements, not both
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The parameter InstanceType cannot be used in a launch template override using instance requirements. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

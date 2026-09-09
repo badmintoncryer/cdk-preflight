@@ -1,0 +1,12 @@
+id: pf-asg-wp-hibernated-requires-encrypted-root
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::WarmPool, AWS::EC2::LaunchTemplate]
+severity: ERROR
+title: A hibernating warm pool needs an encrypted root volume
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Invalid request provided: For hibernation, the root device volume must be encrypted. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

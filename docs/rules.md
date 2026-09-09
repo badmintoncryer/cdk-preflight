@@ -103,11 +103,108 @@
 | `pf-apigwv2-websocket-no-cors` | AWS::ApiGatewayV2::Api | WebSocket APIs take no CORS configuration | none |
 | `pf-apigwv2-websocket-payload-version` | AWS::ApiGatewayV2::Integration | WebSocket AWS_PROXY integrations reject payload format 2.0 | none |
 | `pf-apigwv2-websocket-route-selection` | AWS::ApiGatewayV2::Api | WebSocket APIs need RouteSelectionExpression | none |
+| `pf-asg-az-xor-azid` | AWS::AutoScaling::AutoScalingGroup | A group names zones by name or by id, not both | none |
+| `pf-asg-capacity-reservation-none-target-exclusive` | AWS::AutoScaling::AutoScalingGroup | A capacity reservation target needs the capacity-reservations-only preference | none |
 | `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | none |
 | `pf-asg-desired-capacity-range` | AWS::AutoScaling::AutoScalingGroup | DesiredCapacity must sit between MinSize and MaxSize | none |
+| `pf-asg-exactcapacity-nonnegative` | AWS::AutoScaling::ScalingPolicy | ExactCapacity takes no negative ScalingAdjustment | none |
 | `pf-asg-health-check-grace-period` | AWS::AutoScaling::AutoScalingGroup | HealthCheckGracePeriod cannot be negative | none |
+| `pf-asg-healthchecktype-ec2-exclusive-with-others` | AWS::AutoScaling::AutoScalingGroup | EC2 health checks do not combine with the others | none |
+| `pf-asg-instance-maintenance-policy-range-diff` | AWS::AutoScaling::AutoScalingGroup | An instance maintenance policy spans at most 100 points | none |
+| `pf-asg-instance-requirements-allowed-xor-excluded` | AWS::AutoScaling::AutoScalingGroup | Instance requirements allow types or exclude them, not both | none |
+| `pf-asg-instance-requirements-spot-price-protection-xor` | AWS::AutoScaling::AutoScalingGroup | Spot price protection takes one baseline, not two | none |
+| `pf-asg-instance-requirements-vcpu-min-max` | AWS::AutoScaling::AutoScalingGroup | Instance requirement ranges run from Min up to Max | none |
+| `pf-asg-lh-default-result-enum` | AWS::AutoScaling::LifecycleHook | A lifecycle hook DefaultResult is CONTINUE or ABANDON | pending-engine |
+| `pf-asg-lh-fifo-queue-unsupported` | AWS::AutoScaling::LifecycleHook | A FIFO SQS queue cannot be a lifecycle hook target | none |
+| `pf-asg-lh-heartbeat-timeout-range` | AWS::AutoScaling::LifecycleHook | A lifecycle hook HeartbeatTimeout runs from 30 to 7200 seconds | none |
+| `pf-asg-lh-role-forbidden-for-lambda-target` | AWS::AutoScaling::LifecycleHook | A Lambda notification target takes no RoleARN | none |
+| `pf-asg-lh-target-arn-format` | AWS::AutoScaling::LifecycleHook | NotificationTargetARN is an ARN | none |
+| `pf-asg-lh-target-region-match` | AWS::AutoScaling::LifecycleHook | A lifecycle hook target lives in the deploy region | none |
+| `pf-asg-lh-target-role-mutual-required` | AWS::AutoScaling::LifecycleHook | NotificationTargetARN and RoleARN come as a pair | none |
+| `pf-asg-lh-transition-enum` | AWS::AutoScaling::LifecycleHook | LifecycleTransition names one of the two lifecycle transitions | pending-engine |
+| `pf-asg-lifecycle-hook-heartbeat-timeout-range` | AWS::AutoScaling::AutoScalingGroup | An inline lifecycle hook HeartbeatTimeout runs from 30 to 7200 seconds | none |
+| `pf-asg-lifecyclehook-defaultresult-enum` | AWS::AutoScaling::AutoScalingGroup | An inline lifecycle hook DefaultResult is CONTINUE or ABANDON | none |
+| `pf-asg-lifecyclehook-name-duplicate-rejected` | AWS::AutoScaling::AutoScalingGroup | Inline lifecycle hook names are unique within a group | none |
+| `pf-asg-lifecyclehook-rolearn-requires-target` | AWS::AutoScaling::AutoScalingGroup | An inline hook RoleARN needs a notification target | none |
+| `pf-asg-lifecyclehook-transition-enum` | AWS::AutoScaling::AutoScalingGroup | An inline lifecycle hook names one of the two transitions | none |
+| `pf-asg-lifecyclehookspec-max-5` | AWS::AutoScaling::AutoScalingGroup | A group creates at most five lifecycle hooks inline | none |
+| `pf-asg-max-instance-lifetime-range` | AWS::AutoScaling::AutoScalingGroup | MaxInstanceLifetime is zero or a day to a year | none |
+| `pf-asg-metrics-granularity-enum` | AWS::AutoScaling::AutoScalingGroup | Group metrics come at one-minute granularity | none |
+| `pf-asg-metrics-name-enum` | AWS::AutoScaling::AutoScalingGroup | Collected group metrics come from the published list | none |
+| `pf-asg-minadjustmagnitude-positive` | AWS::AutoScaling::ScalingPolicy | MinAdjustmentMagnitude is greater than zero | none |
+| `pf-asg-minadjustmagnitude-requires-percent` | AWS::AutoScaling::ScalingPolicy | MinAdjustmentMagnitude only goes with PercentChangeInCapacity | none |
+| `pf-asg-notification-sns-topics-max-10` | AWS::AutoScaling::AutoScalingGroup | A group notifies at most ten topics | none |
+| `pf-asg-notification-topic-cross-region-rejected` | AWS::AutoScaling::AutoScalingGroup | A notification topic lives in the deploy region | none |
+| `pf-asg-notification-type-enum` | AWS::AutoScaling::AutoScalingGroup | A notification type comes from the published five | none |
+| `pf-asg-ondemand-allocation-prioritized-invalid-with-instance-requirements` | AWS::AutoScaling::AutoScalingGroup | Prioritized On-Demand allocation does not go with instance requirements | none |
 | `pf-asg-ondemand-percentage-max` | AWS::AutoScaling::AutoScalingGroup | OnDemandPercentageAboveBaseCapacity tops out at 100 | none |
+| `pf-asg-overrides-instance-requirements-max-4` | AWS::AutoScaling::AutoScalingGroup | At most four overrides pick instances by requirements | none |
+| `pf-asg-overrides-instance-requirements-xor-type` | AWS::AutoScaling::AutoScalingGroup | An override names an instance type or its requirements, not both | none |
+| `pf-asg-overrides-instancetype-duplicate-rejected` | AWS::AutoScaling::AutoScalingGroup | An instance type appears once across the overrides | none |
+| `pf-asg-overrides-instancetype-max-40` | AWS::AutoScaling::AutoScalingGroup | A mixed instances policy lists at most 40 overrides | none |
+| `pf-asg-overrides-weighted-capacity-uniform` | AWS::AutoScaling::AutoScalingGroup | Instance weights go on every override or none | none |
+| `pf-asg-predictive-alb-requires-resourcelabel` | AWS::AutoScaling::ScalingPolicy | A predictive ALB metric needs a ResourceLabel | none |
+| `pf-asg-predictive-buffer-forbidden-with-honormax` | AWS::AutoScaling::ScalingPolicy | MaxCapacityBuffer only goes with IncreaseMaxCapacity | none |
+| `pf-asg-predictive-buffer-requires-increasemode` | AWS::AutoScaling::ScalingPolicy | IncreaseMaxCapacity needs a MaxCapacityBuffer | none |
+| `pf-asg-predictive-capacity-metric-requires-load-and-scaling` | AWS::AutoScaling::ScalingPolicy | A customized capacity metric is an add-on to a load and a scaling metric | none |
+| `pf-asg-predictive-forbids-other-policy-props` | AWS::AutoScaling::ScalingPolicy | A predictive policy carries no other policy settings | none |
+| `pf-asg-predictive-metric-pair-xor-individual` | AWS::AutoScaling::ScalingPolicy | A metric pair does not mix with individual load and scaling metrics | none |
+| `pf-asg-predictive-metricspecs-single-element` | AWS::AutoScaling::ScalingPolicy | Predictive scaling takes exactly one metric specification | none |
+| `pf-asg-predictive-mq-dup-id-per-array` | AWS::AutoScaling::ScalingPolicy | Metric data query ids are unique within one array | none |
+| `pf-asg-predictive-mq-exactly-one-returndata` | AWS::AutoScaling::ScalingPolicy | Exactly one metric data query returns each predictive metric | none |
+| `pf-asg-predictive-requires-config` | AWS::AutoScaling::ScalingPolicy | A PredictiveScaling policy carries its configuration | none |
+| `pf-asg-sched-capacity-fields-ordering` | AWS::AutoScaling::ScheduledAction | A scheduled action keeps MinSize <= DesiredCapacity <= MaxSize | none |
+| `pf-asg-sched-desiredcapacity-nonnegative` | AWS::AutoScaling::ScheduledAction | A scheduled action DesiredCapacity is not negative | none |
+| `pf-asg-sched-endtime-alone-requires-starttime-or-recurrence` | AWS::AutoScaling::ScheduledAction | EndTime alone does not describe a scheduled action | none |
+| `pf-asg-sched-endtime-not-before-starttime` | AWS::AutoScaling::ScheduledAction | A scheduled action EndTime is not before its StartTime | none |
+| `pf-asg-sched-endtime-not-past` | AWS::AutoScaling::ScheduledAction | A scheduled action EndTime is not a date already gone by | none |
+| `pf-asg-sched-minsize-nonnegative` | AWS::AutoScaling::ScheduledAction | A scheduled action MinSize is not negative | none |
+| `pf-asg-sched-recurrence-field-range` | AWS::AutoScaling::ScheduledAction | Every Recurrence cron field stays in its own range | none |
+| `pf-asg-sched-recurrence-five-fields-no-cron-wrapper` | AWS::AutoScaling::ScheduledAction | Recurrence is a bare five-field cron string | none |
+| `pf-asg-sched-recurrence-rejects-question-mark` | AWS::AutoScaling::ScheduledAction | Recurrence takes no ? wildcard | none |
+| `pf-asg-sched-requires-a-capacity-field` | AWS::AutoScaling::ScheduledAction | A scheduled action sets at least one capacity field | none |
+| `pf-asg-sched-starttime-not-past` | AWS::AutoScaling::ScheduledAction | A scheduled action StartTime is not a date already gone by | none |
+| `pf-asg-sched-starttime-unique-per-group` | AWS::AutoScaling::ScheduledAction | Two scheduled actions on one group need different start times | none |
+| `pf-asg-sched-timezone-iana-only` | AWS::AutoScaling::ScheduledAction | TimeZone is a canonical IANA zone name | none |
+| `pf-asg-simple-forbids-other-policy-props` | AWS::AutoScaling::ScalingPolicy | A SimpleScaling policy carries no step or target-tracking settings | none |
+| `pf-asg-simple-requires-adjustmenttype` | AWS::AutoScaling::ScalingPolicy | A SimpleScaling policy names an AdjustmentType | none |
+| `pf-asg-simple-requires-scalingadjustment` | AWS::AutoScaling::ScalingPolicy | A SimpleScaling policy names a ScalingAdjustment | none |
+| `pf-asg-spot-allocation-capacity-optimized-prioritized-invalid-with-instance-requirements` | AWS::AutoScaling::AutoScalingGroup | Capacity-optimized-prioritized Spot allocation does not go with instance requirements | none |
+| `pf-asg-spot-instance-pools-requires-lowest-price` | AWS::AutoScaling::AutoScalingGroup | SpotInstancePools only counts under lowest-price allocation | none |
+| `pf-asg-step-adjustments-max-20` | AWS::AutoScaling::ScalingPolicy | A step policy holds at most 20 steps | none |
+| `pf-asg-step-both-bounds-null-forbidden` | AWS::AutoScaling::ScalingPolicy | A step names at least one of its two bounds | none |
+| `pf-asg-step-exactcapacity-nonnegative` | AWS::AutoScaling::ScalingPolicy | ExactCapacity takes no negative step adjustment | none |
+| `pf-asg-step-forbids-other-policy-props` | AWS::AutoScaling::ScalingPolicy | A StepScaling policy carries no simple or target-tracking settings | none |
+| `pf-asg-step-interval-gap` | AWS::AutoScaling::ScalingPolicy | Step intervals leave no gap between them | none |
+| `pf-asg-step-interval-overlap` | AWS::AutoScaling::ScalingPolicy | Step intervals do not overlap | none |
+| `pf-asg-step-multiple-null-lower` | AWS::AutoScaling::ScalingPolicy | At most one step leaves out its lower bound | none |
+| `pf-asg-step-multiple-null-upper` | AWS::AutoScaling::ScalingPolicy | At most one step leaves out its upper bound | none |
+| `pf-asg-step-negative-lower-needs-null-lower` | AWS::AutoScaling::ScalingPolicy | A negative lower bound needs a step that runs to minus infinity | none |
+| `pf-asg-step-positive-upper-needs-null-upper` | AWS::AutoScaling::ScalingPolicy | A positive upper bound needs a step that runs to plus infinity | none |
+| `pf-asg-step-requires-adjustmenttype` | AWS::AutoScaling::ScalingPolicy | A StepScaling policy names an AdjustmentType | none |
+| `pf-asg-step-requires-stepadjustments` | AWS::AutoScaling::ScalingPolicy | A StepScaling policy carries at least one step | none |
+| `pf-asg-step-upper-must-exceed-lower` | AWS::AutoScaling::ScalingPolicy | A step upper bound sits above its lower bound | none |
+| `pf-asg-tags-aws-prefix-rejected` | AWS::AutoScaling::AutoScalingGroup | A group tag key does not start with the reserved aws: prefix | none |
+| `pf-asg-tags-max-50` | AWS::AutoScaling::AutoScalingGroup | A group carries at most 50 tags | none |
 | `pf-asg-target-value-positive` | AWS::AutoScaling::ScalingPolicy | Target tracking needs a positive TargetValue | none |
+| `pf-asg-termination-policy-lambda-arn-format` | AWS::AutoScaling::AutoScalingGroup | A termination policy is a published name or a Lambda ARN | none |
+| `pf-asg-tt-alb-requires-resourcelabel` | AWS::AutoScaling::ScalingPolicy | The ALB request-count metric needs a ResourceLabel | none |
+| `pf-asg-tt-custom-metrics-array-exclusive` | AWS::AutoScaling::ScalingPolicy | A metric-math specification takes none of the single-metric fields | none |
+| `pf-asg-tt-custom-simple-requires-namespace-and-statistic` | AWS::AutoScaling::ScalingPolicy | A single-metric specification names its Namespace and Statistic | none |
+| `pf-asg-tt-forbids-step-and-simple-props` | AWS::AutoScaling::ScalingPolicy | A target-tracking policy carries no step or simple settings | none |
+| `pf-asg-tt-metric-spec-exclusive` | AWS::AutoScaling::ScalingPolicy | Target tracking takes exactly one metric specification | none |
+| `pf-asg-tt-mq-exactly-one-returndata` | AWS::AutoScaling::ScalingPolicy | Exactly one metric data query returns the value to track | none |
+| `pf-asg-tt-mq-expression-xor-metricstat` | AWS::AutoScaling::ScalingPolicy | A metric data query holds an Expression or a MetricStat, not both | none |
+| `pf-asg-tt-mq-same-period-required` | AWS::AutoScaling::ScalingPolicy | Every metric in one specification shares a period | none |
+| `pf-asg-tt-non-alb-forbids-resourcelabel` | AWS::AutoScaling::ScalingPolicy | Only the ALB metric takes a ResourceLabel | none |
+| `pf-asg-tt-period-max-60` | AWS::AutoScaling::ScalingPolicy | A customized target-tracking metric uses a period of 60 seconds or less | none |
+| `pf-asg-tt-requires-config` | AWS::AutoScaling::ScalingPolicy | A TargetTrackingScaling policy carries its configuration | none |
+| `pf-asg-vpczone-az-mismatch` | AWS::AutoScaling::AutoScalingGroup | The listed zones cover the subnets the group launches into | none |
+| `pf-asg-wp-hibernated-requires-encrypted-root` | AWS::AutoScaling::WarmPool<br>AWS::EC2::LaunchTemplate | A hibernating warm pool needs an encrypted root volume | none |
+| `pf-asg-wp-poolstate-enum` | AWS::AutoScaling::WarmPool | A warm pool PoolState is Stopped, Running or Hibernated | pending-engine |
+| `pf-asg-wp-spot-incompatible` | AWS::AutoScaling::WarmPool<br>AWS::EC2::LaunchTemplate | A group asking for Spot instances takes no warm pool | none |
+| `pf-asg-wp-weighted-mixed-instances-incompatible` | AWS::AutoScaling::WarmPool<br>AWS::AutoScaling::AutoScalingGroup | A weighted mixed instances policy takes no warm pool | none |
+| `pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation` | AWS::AutoScaling::AutoScalingGroup | Zonal shift needs cross-zone load balancing on its target groups | none |
 | `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | none |
 | `pf-batch-ce-name` | AWS::Batch::ComputeEnvironment | Compute environment names allow only letters, numbers, hyphen and underscore | none |
 | `pf-batch-ce-vcpus-order` | AWS::Batch::ComputeEnvironment | MaxvCpus must be at least MinvCpus | none |

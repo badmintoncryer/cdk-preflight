@@ -1,0 +1,12 @@
+id: pf-asg-lh-fifo-queue-unsupported
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::LifecycleHook]
+severity: ERROR
+title: A FIFO SQS queue cannot be a lifecycle hook target
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Unable to publish test message to notification target arn:aws:sqs:us-east-1:214794239830:cdkpf-lh-cdkpf-pf-asg-lh-fifo-queue-unsupported-fail.fifo using IAM role arn:aws:iam::214794239830:role/cdkpf-pf-asg-lh-fifo-queue-unsupported-fail-Role-twbGdaxTM9iz. Ple… -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

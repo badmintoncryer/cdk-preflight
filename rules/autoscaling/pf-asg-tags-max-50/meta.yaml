@@ -1,0 +1,12 @@
+id: pf-asg-tags-max-50
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: A group carries at most 50 tags
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: You tried to create more tags than allowed -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

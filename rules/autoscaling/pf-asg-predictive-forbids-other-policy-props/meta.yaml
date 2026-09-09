@@ -1,0 +1,12 @@
+id: pf-asg-predictive-forbids-other-policy-props
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: A predictive policy carries no other policy settings
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: You can't specify TargetTrackingConfiguration for policy type: PredictiveScaling -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

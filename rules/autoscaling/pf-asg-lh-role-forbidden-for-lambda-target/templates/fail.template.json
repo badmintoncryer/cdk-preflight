@@ -1,0 +1,137 @@
+{
+  "Resources": {
+    "LT": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+          "InstanceType": "t3.micro"
+        }
+      }
+    },
+    "G": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LT"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LT",
+              "LatestVersionNumber"
+            ]
+          }
+        }
+      }
+    },
+    "R": {
+      "Type": "AWS::AutoScaling::LifecycleHook",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Ref": "G"
+        },
+        "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+        "NotificationTargetARN": {
+          "Fn::GetAtt": [
+            "Notify",
+            "Arn"
+          ]
+        },
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "FnRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Notify": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.13",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "FnRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(event, context):\n    return None\n"
+        }
+      }
+    },
+    "Perm": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "Notify",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "autoscaling.amazonaws.com"
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "autoscaling.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "notify",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sns:Publish",
+                    "sqs:SendMessage",
+                    "sqs:GetQueueUrl"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

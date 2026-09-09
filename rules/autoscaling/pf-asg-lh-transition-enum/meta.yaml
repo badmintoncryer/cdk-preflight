@@ -1,0 +1,12 @@
+id: pf-asg-lh-transition-enum
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::LifecycleHook]
+severity: ERROR
+title: LifecycleTransition names one of the two lifecycle transitions
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutLifecycleHook.html
+upstream: pending-engine
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: 'LifecycleTransition' must be one of: autoscaling:EC2_INSTANCE_LAUNCHING, autoscaling:EC2_INSTANCE_TERMINATING -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

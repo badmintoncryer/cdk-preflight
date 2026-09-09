@@ -1,0 +1,12 @@
+id: pf-asg-overrides-instancetype-max-40
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: A mixed instances policy lists at most 40 overrides
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The number of LaunchTemplateOverrides must be fewer than 40. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE. 40 overrides deploy fine and 41 do not, so the real ceiling is 40 and the service message is off by one."
+addedOn: 2026-09-09

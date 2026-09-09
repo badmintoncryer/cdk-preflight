@@ -1,0 +1,12 @@
+id: pf-asg-wp-spot-incompatible
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::WarmPool, AWS::EC2::LaunchTemplate]
+severity: ERROR
+title: A group asking for Spot instances takes no warm pool
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutWarmPool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Invalid request provided: You can't add a warm pool to an Auto Scaling group that requests Spot Instances or uses a mixed instances policy with Spot allocation or instance weights. Warm pools support mixed instances policies only when they are configured for … -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

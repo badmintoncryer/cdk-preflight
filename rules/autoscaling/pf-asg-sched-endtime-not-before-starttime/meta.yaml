@@ -1,0 +1,12 @@
+id: pf-asg-sched-endtime-not-before-starttime
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScheduledAction]
+severity: ERROR
+title: A scheduled action EndTime is not before its StartTime
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Given end time must be after start time -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

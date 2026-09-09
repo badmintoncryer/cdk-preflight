@@ -1,0 +1,12 @@
+id: pf-asg-lifecyclehook-defaultresult-enum
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: An inline lifecycle hook DefaultResult is CONTINUE or ABANDON
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: 'DefaultResult' must be one of: CONTINUE, ABANDON -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

@@ -1,0 +1,12 @@
+id: pf-asg-sched-recurrence-rejects-question-mark
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScheduledAction]
+severity: ERROR
+title: Recurrence takes no ? wildcard
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScheduledUpdateGroupAction.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Given recurrence string: 30 6 ? * 2 is invalid -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

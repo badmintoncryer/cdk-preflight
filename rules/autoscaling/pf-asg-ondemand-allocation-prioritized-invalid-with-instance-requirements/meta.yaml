@@ -1,0 +1,12 @@
+id: pf-asg-ondemand-allocation-prioritized-invalid-with-instance-requirements
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: Prioritized On-Demand allocation does not go with instance requirements
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: The specified OnDemandAllocationStrategy is not valid. The prioritized allocation strategy is not compatible with instance requirements. Valid options are [lowest-price]. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09

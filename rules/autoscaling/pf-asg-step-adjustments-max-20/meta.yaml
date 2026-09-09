@@ -1,0 +1,12 @@
+id: pf-asg-step-adjustments-max-20
+service: autoscaling
+resourceTypes: [AWS::AutoScaling::ScalingPolicy]
+severity: ERROR
+title: A step policy holds at most 20 steps
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: Your policies can have at most 20 StepAdjustments. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+addedOn: 2026-09-09
