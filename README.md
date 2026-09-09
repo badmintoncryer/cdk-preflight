@@ -123,6 +123,12 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
 > and never on the console. Enforce mode is not affected: cdk-preflight reports such findings itself and fails
 > synthesis. This is a CLI-side bug (present since aws-cdk 2.1128.1), not a rule evaluation problem.
 
+> **If the rules cannot run, the build stops.** When the evaluation engine fails on a template (a rule pack that
+> does not compile, an engine bug), enforce mode reports it as a violation named `pf-engine-error` and fails
+> synthesis for that stack instead of passing green with no rule having run. The other stacks keep their rules.
+> `pf-engine-error` is not a bundled rule and cannot be `exclude`d; `enforce: false` unblocks the build if you
+> need one.
+
 | Option | Default | Effect |
 |---|---|---|
 | `enforce` | `true` | Violations of bundled rules fail synthesis; set to `false` to only warn |
