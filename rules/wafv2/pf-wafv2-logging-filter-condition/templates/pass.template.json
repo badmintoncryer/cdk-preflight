@@ -54,6 +54,17 @@
                   }
                 }
               ]
+            },
+            {
+              "Behavior": "KEEP",
+              "Requirement": "MEETS_ANY",
+              "Conditions": [
+                {
+                  "LabelNameCondition": {
+                    "LabelName": "awswaf:x"
+                  }
+                }
+              ]
             }
           ]
         }

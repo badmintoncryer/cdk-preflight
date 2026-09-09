@@ -66,3 +66,39 @@ test('repro evidence is required, and real-deploy must quote a bench run', () =>
     }),
   ).toBeUndefined();
 });
+
+/**
+ * 1 つの rule body に裸の `some x` が 2 つ以上あると、エンジンは 2 つ目の局所変数を
+ * 外側の反復ごとに定義し直そうとして "duplicated definition of local variable" で落ちる。
+ * 落ちるのはそのルールだけではなくカスタムパッケージ全体なので、テンプレート次第で
+ * 全ルールが黙って無効になる（issue #150）。2 つ目以降は `some k, v in coll` で書く。
+ */
+function bareSomeOffenders(name: string, rego: string): string[] {
+  const offenders: string[] = [];
+  let body: string[] | undefined;
+  for (const line of rego.split('\n')) {
+    if (body === undefined) {
+      if (/\{\s*$/.test(line)) body = [];
+      continue;
+    }
+    if (line === '}') {
+      const bare = body.filter((l) => /^\t*some\s+[A-Za-z_][A-Za-z0-9_]*\s*$/.test(l));
+      if (bare.length >= 2) offenders.push(`${name}: ${bare.map((l) => l.trim()).join(' + ')}`);
+      body = undefined;
+      continue;
+    }
+    body.push(line);
+  }
+  return offenders;
+}
+
+test('no rego body declares two bare `some` variables', () => {
+  // 検出器そのものが空振りしていないことの確認
+  expect(bareSomeOffenders('probe', 'violation contains 1 if {\n\tsome a\n\tsome b\n}\n')).toHaveLength(1);
+
+  const modules = [
+    ...BUNDLED_RULES.map((r) => ({ name: r.id, rego: r.rego })),
+    ...BUNDLED_LIBS.map((l) => ({ name: l.name, rego: l.rego })),
+  ];
+  expect(modules.flatMap((m) => bareSomeOffenders(m.name, m.rego))).toEqual([]);
+});
