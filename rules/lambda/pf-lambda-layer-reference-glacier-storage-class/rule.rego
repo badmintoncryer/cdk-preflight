@@ -8,7 +8,7 @@ _pf_llrg_url := "https://docs.aws.amazon.com/lambda/latest/dg/configuration-self
 
 _pf_llrg_glacier := {"GLACIER", "DEEP_ARCHIVE", "GLACIER_IR"}
 
-violation contains make_diag_full("pf-lambda-layer-reference-glacier-storage-class", "ERROR", name,
+violation contains make_diag_full("pf-lambda-layer-reference-glacier-storage-class", "WARN", name,
 	"Properties.Content.S3ObjectStorageMode",
 	"REFERENCE content in a bucket that transitions objects to Glacier; an archived object cannot be read at cold start",
 	_pf_llrg_fix, _pf_llrg_url) if {

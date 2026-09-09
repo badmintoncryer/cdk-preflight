@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-rds-shard-group-acu", "ERROR", name,
+violation contains make_diag_full("pf-rds-shard-group-acu", "WARN", name,
 	"Properties.MaxACU",
 	sprintf("MaxACU %v is below MinACU %v", [mx, mn]),
 	"Raise MaxACU to at least MinACU",

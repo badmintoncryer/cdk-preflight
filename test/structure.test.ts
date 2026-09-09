@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { collectLibs, collectRules, evidenceProblem, renderDocs, renderGenerated } from '../scripts/bundle-rules';
+import { collectLibs, collectRules, docOnlyProblem, evidenceProblem, renderDocs, renderGenerated, severityProblem } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -101,4 +101,31 @@ test('no rego body declares two bare `some` variables', () => {
     ...BUNDLED_LIBS.map((l) => ({ name: l.name, rego: l.rego })),
   ];
   expect(modules.flatMap((m) => bareSomeOffenders(m.name, m.rego))).toEqual([]);
+});
+
+test('meta.severity has to match the severity the rego actually emits', () => {
+  const rego = (sev: string) => `violation contains make_diag_full("pf-x", "${sev}", name,\n\t"Properties.A", "m", "f", "u") if { true }`;
+  expect(severityProblem('pf-x', 'ERROR', rego('ERROR'))).toBeUndefined();
+  expect(severityProblem('pf-x', 'WARN', rego('WARN'))).toBeUndefined();
+  // 実行時の severity は rego 側にあるので、meta だけ書き換えても効かない
+  expect(severityProblem('pf-x', 'WARN', rego('ERROR'))).toMatch(/emits ERROR but meta.severity is WARN/);
+  // 同じルールの複数の violation ブロックが食い違うのも弾く
+  expect(severityProblem('pf-x', 'WARN', `${rego('WARN')}\n${rego('ERROR')}`)).toMatch(/emits ERROR/);
+  // 別ルールの id を持つ呼び出しは見ない（_lib のヘルパー等を巻き込まないため）
+  expect(severityProblem('pf-x', 'WARN', `${rego('WARN')}\n${rego('ERROR').replace('pf-x', 'pf-y')}`)).toBeUndefined();
+  expect(severityProblem('pf-x', 'ERROR', 'violation contains 1 if { true }')).toMatch(/must emit its own rule id/);
+});
+
+test('doc-only rules are warnings: they must not fail synth', () => {
+  expect(docOnlyProblem({ method: 'doc-only' }, 'WARN')).toBeUndefined();
+  expect(docOnlyProblem({ method: 'doc-only' }, 'ERROR')).toMatch(/requires severity WARN/);
+  // 実機・研究ケースの証拠があるものは ERROR のままでよい
+  expect(docOnlyProblem({ method: 'real-deploy' }, 'ERROR')).toBeUndefined();
+  expect(docOnlyProblem({ method: 'research-case' }, 'ERROR')).toBeUndefined();
+});
+
+test('every doc-only rule ships as a warning', () => {
+  const docOnly = collectRules(root).filter((r) => r.severity !== 'ERROR');
+  expect(docOnly.length).toBeGreaterThan(0);
+  for (const r of docOnly) expect(r.severity).toBe('WARN');
 });

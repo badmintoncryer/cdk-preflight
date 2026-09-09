@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_lambda as lambda, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
@@ -46,6 +46,23 @@ function addBadSecurityGroup(stack: Stack): void {
     groupDescription: 'cdk-preflight loader test',
     vpcId: vpc.ref,
     securityGroupIngress: [{ ipProtocol: 'tcp', fromPort: 99999, toPort: 99999, cidrIp: '10.0.0.0/8' }],
+  });
+}
+
+/**
+ * doc-only ルール（pf-lambda-scaling-min-zero-requires-max-zero）に違反する関数。
+ * FunctionScalingConfig は L2 を通らないので addPropertyOverride で入れる。
+ */
+function addDocOnlyViolation(stack: Stack): void {
+  const fn = new lambda.CfnFunction(stack, 'F', {
+    role: 'arn:aws:iam::123456789012:role/lambda-role',
+    code: { zipFile: 'x' },
+    runtime: 'python3.13',
+    handler: 'index.handler',
+  });
+  fn.addPropertyOverride('FunctionScalingConfig', {
+    MinExecutionEnvironments: 0,
+    MaxExecutionEnvironments: 5,
   });
 }
 
@@ -136,6 +153,25 @@ describe('enforce mode (default)', () => {
     Preflight.apply(app, { exclude: ['pf-ec2-sg-port-range'] });
     addBadSecurityGroup(new Stack(app, 'S'));
     expect(() => app.synth()).not.toThrow();
+  });
+
+  test('a doc-only rule is reported as a warning and does not fail synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app);
+    addDocOnlyViolation(new Stack(app, 'S'));
+    expect(() => app.synth()).not.toThrow();
+    const v = readReport(app).filter((x) => x.ruleName === 'pf-lambda-scaling-min-zero-requires-max-zero');
+    expect(v).toHaveLength(1);
+    expect(v[0].severity).toBe('warning');
+  });
+
+  test('an error-severity rule still fails synthesis when a warning is present too', () => {
+    const app = makeApp();
+    Preflight.apply(app);
+    const stack = new Stack(app, 'S');
+    addDocOnlyViolation(stack);
+    addBadSecurityGroup(stack);
+    expect(() => app.synth()).toThrow(/cdk-preflight/);
   });
 
   test('passes synthesis for clean stacks', () => {

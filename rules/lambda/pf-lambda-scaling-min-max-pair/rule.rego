@@ -6,7 +6,7 @@ _pf_lsmp_fix := "Set MinExecutionEnvironments and MaxExecutionEnvironments toget
 
 _pf_lsmp_url := "https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html"
 
-violation contains make_diag_full("pf-lambda-scaling-min-max-pair", "ERROR", name,
+violation contains make_diag_full("pf-lambda-scaling-min-max-pair", "WARN", name,
 	"Properties.FunctionScalingConfig",
 	sprintf("FunctionScalingConfig with %v alone; the scaling bounds are set as a pair", [key]),
 	_pf_lsmp_fix, _pf_lsmp_url) if {
