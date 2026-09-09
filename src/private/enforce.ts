@@ -98,7 +98,8 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     try {
       eng = regoEngineCached(engine, this.rules, region, account);
     } catch (e) {
-      // ルールパックがコンパイルできない = どのテンプレートも検査できない。
+      // ルールパックがコンパイルできない = どのテンプレートも検査できないので、
+      // 全スタックぶん violation を立てる（1 枚ずつの catch には到達しない）。
       return { success: false, violations: context.stackTemplates.map((st) => engineErrorViolation(st, e)) };
     }
 
@@ -112,9 +113,11 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
           },
         });
       } catch (e) {
-        // ここで throw を外に出すと CDK は plugin failure として報告するだけで、
-        // CLI 経由では violation ゼロのレポートが黙って握り潰される（issue #151）。
-        // 「ルールが 1 本も走らなかった」ことを violation として立てて synth を止める。
+        // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
+        // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
+        // 残るのは `failed: undefined` だけになる（issue #151）。
+        // synth を止めるのは installEnforceGate の役目。ここは「どのスタックで何が
+        // 起きたか」をレポートに残し、他スタックのルールを走らせ続けるためのもの。
         violations.push(engineErrorViolation(st, e));
         continue;
       }
