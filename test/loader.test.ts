@@ -7,7 +7,14 @@ import * as os from 'os';
 import * as path from 'path';
 import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
-import { fallbackFormat, loadFormatter } from '../src/private/enforce';
+import {
+  ENGINE_ERROR_RULE,
+  PreflightEnforcePlugin,
+  fallbackFormat,
+  installEnforceGate,
+  loadFormatter,
+} from '../src/private/enforce';
+import { BUNDLED_RULES, type BundledRuleData } from '../src/rules.generated';
 
 function tmpOut(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-test-'));
@@ -287,5 +294,94 @@ describe('metadata', () => {
     expect(ids.length).toBeGreaterThanOrEqual(9);
     expect(ids).toContain('pf-cloudfront-ttl-order');
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('a rule pack that cannot run fails synthesis instead of passing silently', () => {
+  // CDK はプラグインが throw すると conclusion: failure / violations: [] のレポートを
+  // 書くだけで、CLI 経由ではそれが握り潰されて synth が緑のまま通る（issue #151）。
+  // ルールが 1 本も走らなかったことは violation として立てる。
+  const cliHandlesReporting = { '@aws-cdk/core:failSynthOnValidationErrors': false };
+
+  /** 評価時に必ずエンジンを落とす rego（スカラーの `some .. in` は hard error）。 */
+  const brokenRule: BundledRuleData = {
+    id: 'pf-broken-for-test',
+    service: 'test',
+    severity: 'ERROR',
+    title: 'deliberately broken',
+    upstream: 'none',
+    resourceTypes: [],
+    rego: [
+      'package cdk_preflight',
+      '',
+      'import rego.v1',
+      '',
+      'violation contains make_diag_full("pf-broken-for-test", "ERROR", "X", "(template)",',
+      '\t"boom", "fix", "https://example.com") if {',
+      '\tsome _ in true',
+      '}',
+      '',
+    ].join('\n'),
+  };
+
+  function appWithBrokenRules(): App {
+    const app = makeApp(cliHandlesReporting);
+    Validations.of(app).addPlugins(new PreflightEnforcePlugin([brokenRule], false));
+    installEnforceGate(app);
+    return app;
+  }
+
+  let stderr: jest.SpyInstance;
+  beforeEach(() => {
+    stderr = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    stderr.mockRestore();
+  });
+
+  test('reports pf-engine-error with the engine message and stops synthesis', () => {
+    const app = appWithBrokenRules();
+    new sqs.CfnQueue(new Stack(app, 'S'), 'Q', {});
+    expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
+
+    const violations = readReport(app);
+    expect(violations.map((v) => v.ruleName)).toContain(ENGINE_ERROR_RULE);
+    const engineError = violations.find((v) => v.ruleName === ENGINE_ERROR_RULE) as any;
+    // エンジンは Error ではなく素の文字列を投げることがある。`undefined` に潰さない。
+    expect(engineError.description).toMatch(/no preflight rule ran for it: .+/);
+    expect(engineError.description).not.toMatch(/undefined/);
+  });
+
+  test('one unevaluatable template costs one template, not the whole run', () => {
+    // QueueName を持つスタックだけでエンジンが落ちるルール。同じプラグインの
+    // もう 1 枚（SG のスタック）では通常どおりルールが走ることを見る。
+    const brokenForQueueNames: BundledRuleData = {
+      ...brokenRule,
+      id: 'pf-broken-for-queue-names',
+      rego: [
+        'package cdk_preflight',
+        '',
+        'import rego.v1',
+        '',
+        'violation contains make_diag_full("pf-broken-for-queue-names", "ERROR", name, "(template)",',
+        '\t"boom", "fix", "https://example.com") if {',
+        '\tsome name in resources_of_type("AWS::SQS::Queue")',
+        '\tsome _ in resolve(name, "Properties.QueueName")',
+        '}',
+        '',
+      ].join('\n'),
+    };
+    const sgRule = BUNDLED_RULES.find((r) => r.id === 'pf-ec2-sg-port-range')!;
+
+    const app = makeApp(cliHandlesReporting);
+    Validations.of(app).addPlugins(new PreflightEnforcePlugin([brokenForQueueNames, sgRule], false));
+    installEnforceGate(app);
+    new sqs.CfnQueue(new Stack(app, 'Broken'), 'Q', { queueName: 'q' });
+    addBadSecurityGroup(new Stack(app, 'Good'));
+
+    expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
+    const rules = readReport(app).map((v) => v.ruleName);
+    expect(new Set(rules)).toEqual(new Set([ENGINE_ERROR_RULE, 'pf-ec2-sg-port-range']));
+    expect(rules.filter((r) => r === ENGINE_ERROR_RULE)).toHaveLength(1);
   });
 });

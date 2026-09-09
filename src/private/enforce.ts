@@ -91,17 +91,33 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
 
     const region = isConcreteRegion(context.region) ? context.region : undefined;
     const account = isConcreteAccount(context.accountId) ? context.accountId : undefined;
-    const eng = regoEngineCached(engine, this.rules, region, account);
     const ours = new Set(this.rules.map((r) => r.id));
     const violations: PolicyViolation[] = [];
 
+    let eng: any;
+    try {
+      eng = regoEngineCached(engine, this.rules, region, account);
+    } catch (e) {
+      // ルールパックがコンパイルできない = どのテンプレートも検査できない。
+      return { success: false, violations: context.stackTemplates.map((st) => engineErrorViolation(st, e)) };
+    }
+
     for (const st of context.stackTemplates) {
-      const report = eng.validateDetailed(new engine.TemplateFile(st.templatePath), {
-        pseudoParameterOverrides: {
-          accountId: context.accountId,
-          region: context.region,
-        },
-      });
+      let report: any;
+      try {
+        report = eng.validateDetailed(new engine.TemplateFile(st.templatePath), {
+          pseudoParameterOverrides: {
+            accountId: context.accountId,
+            region: context.region,
+          },
+        });
+      } catch (e) {
+        // ここで throw を外に出すと CDK は plugin failure として報告するだけで、
+        // CLI 経由では violation ゼロのレポートが黙って握り潰される（issue #151）。
+        // 「ルールが 1 本も走らなかった」ことを violation として立てて synth を止める。
+        violations.push(engineErrorViolation(st, e));
+        continue;
+      }
       for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
         const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
         const isStrictHit = this.strict
@@ -124,6 +140,36 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
 
     return { success: violations.length === 0, violations };
   }
+}
+
+/**
+ * ルール評価そのものが失敗したことを表す violation の ruleName。
+ * バンドル済みルールの id ではないので `exclude` では消せない（消してよい状態ではない）。
+ */
+export const ENGINE_ERROR_RULE = 'pf-engine-error';
+
+/** エンジンが投げた値をメッセージに落とす。エンジンは Error ではなく素の文字列を投げることがある。 */
+function engineErrorText(e: unknown): string {
+  const message = (e as { message?: unknown } | undefined)?.message;
+  return typeof message === 'string' && message.length > 0 ? message : String(e);
+}
+
+/** 1 枚のテンプレートを検査できなかったことを violation として報告する。 */
+function engineErrorViolation(st: { stackConstructPath: string; templatePath: string }, e: unknown): PolicyViolation {
+  return {
+    ruleName: ENGINE_ERROR_RULE,
+    description:
+      'cdk-preflight could not evaluate its rules for this template, so no preflight rule ran for it: '
+      + engineErrorText(e),
+    severity: 'error',
+    fix: 'Report this at https://github.com/badmintoncryer/cdk-preflight/issues; '
+      + 'to unblock the build meanwhile, use Preflight.apply(app, { enforce: false }).',
+    violatingResources: [{
+      constructPath: st.stackConstructPath,
+      templatePath: st.templatePath,
+      locations: ['(template)'],
+    }],
+  };
 }
 
 /** The plugin name recorded in `validation-report.json` for our findings. */
