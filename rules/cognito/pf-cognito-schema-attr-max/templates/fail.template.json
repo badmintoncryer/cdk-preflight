@@ -1,0 +1,216 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "Schema": [
+          {
+            "Name": "c0",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c1",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c2",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c3",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c4",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c5",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c6",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c7",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c8",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c9",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c10",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c11",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c12",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c13",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c14",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c15",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c16",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c17",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c18",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c19",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c20",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c21",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c22",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c23",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c24",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c25",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c26",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c27",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c28",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c29",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c30",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c31",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c32",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c33",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c34",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c35",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c36",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c37",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c38",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c39",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c40",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c41",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c42",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c43",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c44",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c45",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c46",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c47",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c48",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c49",
+            "AttributeDataType": "String"
+          },
+          {
+            "Name": "c50",
+            "AttributeDataType": "String"
+          }
+        ]
+      }
+    }
+  }
+}

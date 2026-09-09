@@ -1,0 +1,426 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolResourceServer",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Identifier": "https://api.example.com",
+        "Name": "pfprobe",
+        "Scopes": [
+          {
+            "ScopeName": "s0",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s1",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s2",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s3",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s4",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s5",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s6",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s7",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s8",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s9",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s10",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s11",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s12",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s13",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s14",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s15",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s16",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s17",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s18",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s19",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s20",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s21",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s22",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s23",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s24",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s25",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s26",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s27",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s28",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s29",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s30",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s31",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s32",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s33",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s34",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s35",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s36",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s37",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s38",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s39",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s40",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s41",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s42",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s43",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s44",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s45",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s46",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s47",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s48",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s49",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s50",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s51",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s52",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s53",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s54",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s55",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s56",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s57",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s58",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s59",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s60",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s61",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s62",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s63",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s64",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s65",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s66",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s67",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s68",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s69",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s70",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s71",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s72",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s73",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s74",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s75",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s76",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s77",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s78",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s79",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s80",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s81",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s82",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s83",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s84",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s85",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s86",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s87",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s88",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s89",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s90",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s91",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s92",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s93",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s94",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s95",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s96",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s97",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s98",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s99",
+            "ScopeDescription": "d"
+          },
+          {
+            "ScopeName": "s100",
+            "ScopeDescription": "d"
+          }
+        ]
+      }
+    }
+  }
+}

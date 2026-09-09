@@ -1,0 +1,12 @@
+id: pf-cognito-custom-sender-kms-region
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "The custom sender KMS key must be in the pool region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Encountered error when CreateGrant was attempted on the input KMS key - Invalid arn ap-northeast-1\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

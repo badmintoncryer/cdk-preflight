@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "Policies": {
+          "SignInPolicy": {
+            "AllowedFirstAuthFactors": [
+              "WEB_AUTHN"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

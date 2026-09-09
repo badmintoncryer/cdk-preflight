@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "Schema": [
+          {
+            "Name": "department",
+            "AttributeDataType": "String"
+          }
+        ]
+      }
+    }
+  }
+}

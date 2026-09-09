@@ -1,0 +1,12 @@
+id: pf-cognito-role-attachment-roles-keys
+service: cognito
+resourceTypes: [AWS::Cognito::IdentityPoolRoleAttachment]
+severity: ERROR
+title: "Roles keys are authenticated and unauthenticated"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value '{admin=arn:aws:iam::214794239830:role/pfprobe}' at 'roles' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less than or equal to 128, Member must have length greater than or equal to 1, Member must satisfy regular expressio\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

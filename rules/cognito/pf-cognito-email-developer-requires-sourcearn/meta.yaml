@@ -1,0 +1,12 @@
+id: pf-cognito-email-developer-requires-sourcearn
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "DEVELOPER email sending needs a SES SourceArn"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Source ARN is required to use DEVELOPER email sending owner\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

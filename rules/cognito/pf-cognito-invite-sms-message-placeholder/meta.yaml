@@ -1,0 +1,12 @@
+id: pf-cognito-invite-sms-message-placeholder
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "The invite SMS needs {username} and {####}"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value 'Welcome aboard.' at 'adminCreateUserConfig.inviteMessage.smsMessage' failed to satisfy constraint: Member must satisfy regular expression pattern: (?s).*\\{####\\}(?s).*\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

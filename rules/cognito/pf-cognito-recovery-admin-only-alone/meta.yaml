@@ -1,0 +1,12 @@
+id: pf-cognito-recovery-admin-only-alone
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "admin_only cannot be combined with other recovery mechanisms"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid account recovery setting parameter. Account Recovery Setting cannot use admin_only setting with any other recovery mechanisms.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

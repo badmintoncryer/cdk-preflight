@@ -1,0 +1,12 @@
+id: pf-cognito-idp-oidc-issuer-https
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolIdentityProvider]
+severity: ERROR
+title: "The OIDC issuer must be an https URL"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"OIDC endpoint must start with https://\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

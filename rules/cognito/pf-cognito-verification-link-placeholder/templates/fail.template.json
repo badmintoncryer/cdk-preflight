@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "VerificationMessageTemplate": {
+          "DefaultEmailOption": "CONFIRM_WITH_LINK",
+          "EmailMessageByLink": "Click to verify.",
+          "EmailSubjectByLink": "Verify"
+        }
+      }
+    }
+  }
+}

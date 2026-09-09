@@ -1,0 +1,12 @@
+id: pf-cognito-unused-account-validity-range
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "UnusedAccountValidityDays must be between 0 and 365"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value '400' at 'adminCreateUserConfig.unusedAccountValidityDays' failed to satisfy constraint: Member must have value less than or equal to 365\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

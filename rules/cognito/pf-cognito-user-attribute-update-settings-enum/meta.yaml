@@ -1,0 +1,12 @@
+id: pf-cognito-user-attribute-update-settings-enum
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "Only email and phone_number can require verification before update"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value '[given_name]' at 'userAttributeUpdateSettings.attributesRequireVerificationBeforeUpdate' failed to satisfy constraint: Member must satisfy constraint: [Member must satisfy enum value set: [phone_number, email]]\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

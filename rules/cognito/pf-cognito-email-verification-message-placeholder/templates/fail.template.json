@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "EmailVerificationMessage": "Your verification code.",
+        "EmailVerificationSubject": "Verify"
+      }
+    }
+  }
+}

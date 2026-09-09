@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolGroup",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "GroupName": "pfprobe2",
+        "RoleArn": "arn:aws:iam::210987654321:role/pfprobe"
+      }
+    }
+  }
+}

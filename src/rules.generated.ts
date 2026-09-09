@@ -3362,6 +3362,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Key presence is the violation regardless of values, so this checks the\n# preprocessed document directly (see AGENTS.md).\n_pf_cogaue_set(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cognito-alias-username-exclusive\", \"ERROR\", name,\n\t\"Properties.UsernameAttributes\",\n\t\"Both AliasAttributes and UsernameAttributes are set; the pool create fails with \\\"Only one of the aliasAttributes or usernameAttributes can be set in a User pool.\\\"\",\n\t\"Keep one: aliases for sign-in alternatives, or username attributes to replace usernames\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_cogaue_set(name, \"AliasAttributes\")\n\t_pf_cogaue_set(name, \"UsernameAttributes\")\n}\n"
   },
   {
+    "id": "pf-cognito-analytics-application-requires-role",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Pinpoint ApplicationId needs a RoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-analytics-application-requires-role\", \"ERROR\", name,\n\t\"Properties.AnalyticsConfiguration.RoleArn\",\n\t\"AnalyticsConfiguration.ApplicationId is set without a RoleArn; the client create fails with \\\"Invalid analytics configuration given, either <application arn> or <application id, role arn, external id> are valid\\\"\",\n\t\"Add AnalyticsConfiguration.RoleArn (and ExternalId), or use ApplicationArn\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\t_pf_coglib_set(_pf_coglib_g2(name, \"AnalyticsConfiguration\", \"ApplicationId\"))\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"AnalyticsConfiguration\", \"RoleArn\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-analytics-arn-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The Pinpoint analytics app must be in the pool region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service reports it as an unsupported region rather than a mismatch:\n# \"The integration with Pinpoint is not supported for the requested <region>\n# region.\" data.cdk_preflight.deploy_region is injected only in enforce mode.\n\nviolation contains make_diag_full(\"pf-cognito-analytics-arn-region\", \"ERROR\", name,\n\t\"Properties.AnalyticsConfiguration.ApplicationArn\",\n\tsprintf(\"the Pinpoint project is in '%v' but the client deploys to '%v'; the client create fails with \\\"The integration with Pinpoint is not supported for the requested %v region.\\\"\", [r, region, r]),\n\t\"Use a Pinpoint project in the pool's own region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr := _pf_coglib_arn_region(resolve(name, \"Properties.AnalyticsConfiguration.ApplicationArn\"))\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-cognito-analytics-config-exclusive",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Pinpoint ApplicationArn excludes the id/role form",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-analytics-config-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.AnalyticsConfiguration.%s\", [k]),\n\tsprintf(\"AnalyticsConfiguration has both ApplicationArn and %s; the client create fails with \\\"Invalid analytics configuration given, either <application arn> or <application id, role arn, external id> are valid\\\"\", [k]),\n\t\"Use either ApplicationArn alone, or ApplicationId with RoleArn and ExternalId\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\t_pf_coglib_set(_pf_coglib_g2(name, \"AnalyticsConfiguration\", \"ApplicationArn\"))\n\tsome k in [\"ApplicationId\", \"RoleArn\", \"ExternalId\"]\n\t_pf_coglib_set(_pf_coglib_g2(name, \"AnalyticsConfiguration\", k))\n}\n"
+  },
+  {
+    "id": "pf-cognito-auto-verified-attributes-enum",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Only email and phone_number can be auto-verified",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-auto-verified-attributes-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.AutoVerifiedAttributes.%d\", [a.index]),\n\tsprintf(\"AutoVerifiedAttributes has '%s'; the pool create fails with \\\"Member must satisfy enum value set: [phone_number, email]\\\"\", [v]),\n\t\"Keep AutoVerifiedAttributes to email and/or phone_number\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.AutoVerifiedAttributes\")\n\tv := a.value\n\tis_string(v)\n\tnot v in {\"email\", \"phone_number\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-auto-verified-username-consistency",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Auto-verifying phone_number requires an SmsConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Measured constraint: the pairing is with SmsConfiguration, not with\n# UsernameAttributes as the documentation prose suggests.\n\nviolation contains make_diag_full(\"pf-cognito-auto-verified-username-consistency\", \"ERROR\", name,\n\t\"Properties.AutoVerifiedAttributes\",\n\t\"AutoVerifiedAttributes has phone_number but the pool has no SmsConfiguration; the pool create fails with \\\"SMS configuration is required when phone_number is selected for auto verification\\\"\",\n\t\"Add SmsConfiguration (SnsCallerArn + ExternalId), or drop phone_number from AutoVerifiedAttributes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.AutoVerifiedAttributes\")\n\ta.value == \"phone_number\"\n\t_pf_coglib_absent(_pf_coglib_g1(name, \"SmsConfiguration\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-callback-url-fragment",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Callback URLs cannot carry a fragment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-callback-url-fragment\", \"ERROR\", name,\n\tsprintf(\"Properties.CallbackURLs.%d\", [u.index]),\n\tsprintf(\"callback URL '%s' has a fragment; the client create fails with \\\"%s cannot use fragment\\\"\", [v, v]),\n\t\"Drop the #fragment from the callback URL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tsome u in flatten_list(name, \"Properties.CallbackURLs\")\n\tv := u.value\n\tis_string(v)\n\tcontains(v, \"#\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-callback-url-https",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Callback URLs must use https (except localhost)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgcuh_local(v) if regex.match(`^http://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:[0-9]+)?(/|$)`, v)\n\nviolation contains make_diag_full(\"pf-cognito-callback-url-https\", \"ERROR\", name,\n\tsprintf(\"Properties.CallbackURLs.%d\", [u.index]),\n\tsprintf(\"callback URL '%s' uses plain http; the client create fails with \\\"%s cannot use the HTTP protocol.\\\"\", [v, v]),\n\t\"Use https:// for the callback URL (plain http is only allowed for localhost)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tsome u in flatten_list(name, \"Properties.CallbackURLs\")\n\tv := u.value\n\tis_string(v)\n\tstartswith(v, \"http://\")\n\tnot _pf_cgcuh_local(v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-callback-urls-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "At most 100 callback URLs per client",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-callback-urls-max\", \"ERROR\", name,\n\t\"Properties.CallbackURLs\",\n\tsprintf(\"the client has %d callback URLs; the client create fails with \\\"Member must have length less than or equal to 100\\\"\", [count(us)]),\n\t\"Keep the callback URL list at 100 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tus := flatten_list(name, \"Properties.CallbackURLs\")\n\tcount(us) > 100\n}\n"
+  },
+  {
     "id": "pf-cognito-client-credentials-exclusive",
     "service": "cognito",
     "severity": "ERROR",
@@ -3395,6 +3483,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-client-name\", \"ERROR\", name,\n\t\"Properties.ClientName\",\n\tsprintf(\"ClientName '%s' is rejected by the service: word characters, spaces and + = , . @ -\", [v]),\n\t\"Rename it to satisfy word characters, spaces and + = , . @ -\",\n\t\"https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateUserPoolClient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tv := resolve(name, \"Properties.ClientName\")\n\tis_string(v)\n\tnot regex.match(`^[A-Za-z0-9_ \\t+=,.@-]+$`, v)\n}\n"
   },
   {
+    "id": "pf-cognito-custom-domain-cert-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A custom domain certificate must be in us-east-1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolDomain"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The hosted UI custom domain is fronted by CloudFront, so the certificate\n# follows the CloudFront rule regardless of where the pool lives.\n\nviolation contains make_diag_full(\"pf-cognito-custom-domain-cert-region\", \"ERROR\", name,\n\t\"Properties.CustomDomainConfig.CertificateArn\",\n\tsprintf(\"the certificate is in %v; the domain create fails with \\\"The specified SSL certificate doesn't exist, isn't in us-east-1 region, isn't valid, or doesn't include a valid certificate chain.\\\"\", [r]),\n\t\"Issue or import the certificate in us-east-1 and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\tarn := resolve(name, \"Properties.CustomDomainConfig.CertificateArn\")\n\tr := _pf_coglib_arn_region(arn)\n\tr != \"us-east-1\"\n}\n"
+  },
+  {
+    "id": "pf-cognito-custom-domain-fqdn",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A custom domain must be a fully qualified domain name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolDomain"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-custom-domain-fqdn\", \"ERROR\", name,\n\t\"Properties.Domain\",\n\tsprintf(\"CustomDomainConfig is set but Domain '%s' is a prefix, not an FQDN; the domain create fails with \\\"Custom domain is not a valid subdomain\\\"\", [d]),\n\t\"Use the full domain (auth.example.com) with CustomDomainConfig, or drop CustomDomainConfig for a prefix domain\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\t_pf_coglib_set(_pf_coglib_g1(name, \"CustomDomainConfig\"))\n\td := resolve(name, \"Properties.Domain\")\n\tis_string(d)\n\tnot contains(d, \".\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-custom-email-sender-kms",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A custom email sender trigger requires LambdaConfig.KMSKeyID",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-custom-email-sender-kms\", \"ERROR\", name,\n\t\"Properties.LambdaConfig.KMSKeyID\",\n\t\"LambdaConfig.CustomEmailSender is set but KMSKeyID is not; the pool create fails with \\\"KMSKeyId parameter is required when Custom SMS/Email Lambda trigger is used.\\\"\",\n\t\"Set LambdaConfig.KMSKeyID to the key Cognito should encrypt the codes with\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_coglib_set(_pf_coglib_g2(name, \"LambdaConfig\", \"CustomEmailSender\"))\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"LambdaConfig\", \"KMSKeyID\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-custom-sender-kms-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The custom sender KMS key must be in the pool region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise.\n\nviolation contains make_diag_full(\"pf-cognito-custom-sender-kms-region\", \"ERROR\", name,\n\t\"Properties.LambdaConfig.KMSKeyID\",\n\tsprintf(\"the custom sender KMS key is in '%v' but the pool deploys to '%v'; the CreateGrant call fails with \\\"Invalid arn %v\\\"\", [r, region, r]),\n\t\"Use a KMS key in the pool's own region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr := _pf_coglib_arn_region(resolve(name, \"Properties.LambdaConfig.KMSKeyID\"))\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-cognito-custom-sms-sender-kms",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A custom SMS sender trigger requires LambdaConfig.KMSKeyID",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-custom-sms-sender-kms\", \"ERROR\", name,\n\t\"Properties.LambdaConfig.KMSKeyID\",\n\t\"LambdaConfig.CustomSMSSender is set but KMSKeyID is not; the pool create fails with \\\"KMSKeyId parameter is required when Custom SMS/Email Lambda trigger is used.\\\"\",\n\t\"Set LambdaConfig.KMSKeyID to the key Cognito should encrypt the codes with\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_coglib_set(_pf_coglib_g2(name, \"LambdaConfig\", \"CustomSMSSender\"))\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"LambdaConfig\", \"KMSKeyID\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-default-redirect-uri-member",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "DefaultRedirectURI must be one of the callback URLs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgdrum_member(cbs, d) if {\n\tsome c in cbs\n\tc.value == d\n}\n\nviolation contains make_diag_full(\"pf-cognito-default-redirect-uri-member\", \"ERROR\", name,\n\t\"Properties.DefaultRedirectURI\",\n\tsprintf(\"DefaultRedirectURI '%s' is not in CallbackURLs; the client create fails with \\\"The default redirect URI %s is not in the callback URIs list.\\\"\", [d, d]),\n\t\"Use one of the CallbackURLs as the DefaultRedirectURI\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\td := resolve(name, \"Properties.DefaultRedirectURI\")\n\tis_string(d)\n\tcbs := flatten_list(name, \"Properties.CallbackURLs\")\n\tcount(cbs) > 0\n\tnot _pf_cgdrum_member(cbs, d)\n}\n"
+  },
+  {
+    "id": "pf-cognito-developer-provider-name-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "DeveloperProviderName takes no spaces",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-developer-provider-name-format\", \"ERROR\", name,\n\t\"Properties.DeveloperProviderName\",\n\tsprintf(\"DeveloperProviderName '%s' has characters outside [\\\\w._-]; the identity pool create fails with \\\"Member must satisfy regular expression pattern: [\\\\w._-]+\\\"\", [v]),\n\t\"Use letters, digits, dots, underscores and hyphens only\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPool\")\n\tv := resolve(name, \"Properties.DeveloperProviderName\")\n\tis_string(v)\n\tnot input.resources[v]\n\tnot regex.match(`^[\\w._-]+$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-domain-prefix-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A hosted UI domain prefix takes lower-case letters, digits and hyphens",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolDomain"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-domain-prefix-format\", \"ERROR\", name,\n\t\"Properties.Domain\",\n\tsprintf(\"domain prefix '%s' has characters outside [a-z0-9-]; the domain create fails with \\\"The domain name contains an invalid character. Domain names can only contain lower-case letters, numbers, and hyphens.\\\"\", [d]),\n\t\"Use lower-case letters, digits and hyphens only, starting and ending with a letter or digit\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\t_pf_coglib_absent(_pf_coglib_g1(name, \"CustomDomainConfig\"))\n\td := resolve(name, \"Properties.Domain\")\n\tis_string(d)\n\tnot input.resources[d]\n\tnot regex.match(`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`, d)\n}\n"
+  },
+  {
+    "id": "pf-cognito-domain-prefix-length",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A hosted UI domain prefix is capped at 63 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolDomain"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-domain-prefix-length\", \"ERROR\", name,\n\t\"Properties.Domain\",\n\tsprintf(\"domain prefix is %d characters; the domain create fails with \\\"Member must have length less than or equal to 63\\\"\", [count(d)]),\n\t\"Use a domain prefix of at most 63 characters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\t_pf_coglib_absent(_pf_coglib_g1(name, \"CustomDomainConfig\"))\n\td := resolve(name, \"Properties.Domain\")\n\tis_string(d)\n\tcount(d) > 63\n}\n"
+  },
+  {
     "id": "pf-cognito-domain-reserved-word",
     "service": "cognito",
     "severity": "ERROR",
@@ -3404,6 +3591,360 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Cognito::UserPoolDomain"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service refuses prefixes with a reserved word as a hyphen-delimited\n# token, with only a generic error. Pinned by controlled pairs: -aws- /\n# -amazon- / -cognito- fail while -awsome- deploys (bench c07-c07e), so\n# a token merely containing a word stays legal.\n_pf_cogdrw_words := {\"aws\", \"amazon\", \"cognito\"}\n\nviolation contains make_diag_full(\"pf-cognito-domain-reserved-word\", \"ERROR\", name,\n\t\"Properties.Domain\",\n\tsprintf(\"Domain prefix '%s' has the reserved word '%s' as a segment; the domain create fails with the generic \\\"Invalid request provided: AWS::Cognito::UserPoolDomain\\\"\", [d, w]),\n\t\"Rename or merge that segment (e.g. myapp-auth); words merely inside a longer segment are fine\",\n\t\"https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-assign-domain-prefix.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\td := resolve(name, \"Properties.Domain\")\n\tis_string(d)\n\tsome w in _pf_cogdrw_words\n\tw in split(d, \"-\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-email-cognito-default-with-sourcearn",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "COGNITO_DEFAULT email sending takes no SourceArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-email-cognito-default-with-sourcearn\", \"ERROR\", name,\n\t\"Properties.EmailConfiguration.SourceArn\",\n\t\"EmailSendingAccount is COGNITO_DEFAULT but a SourceArn is set; the pool create fails with \\\"Cognito is not allowed to use your email identity\\\"\",\n\t\"Switch EmailSendingAccount to DEVELOPER, or drop SourceArn\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_coglib_g2(name, \"EmailConfiguration\", \"EmailSendingAccount\") == \"COGNITO_DEFAULT\"\n\t_pf_coglib_set(_pf_coglib_g2(name, \"EmailConfiguration\", \"SourceArn\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-email-developer-requires-sourcearn",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "DEVELOPER email sending needs a SES SourceArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-email-developer-requires-sourcearn\", \"ERROR\", name,\n\t\"Properties.EmailConfiguration.SourceArn\",\n\t\"EmailSendingAccount is DEVELOPER but no SourceArn is set; the pool create fails with \\\"Source ARN is required to use DEVELOPER email sending owner\\\"\",\n\t\"Set EmailConfiguration.SourceArn to a verified SES identity, or use COGNITO_DEFAULT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_coglib_g2(name, \"EmailConfiguration\", \"EmailSendingAccount\") == \"DEVELOPER\"\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"EmailConfiguration\", \"SourceArn\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-email-from-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "EmailConfiguration.From must be an email address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-email-from-format\", \"ERROR\", name,\n\t\"Properties.EmailConfiguration.From\",\n\tsprintf(\"From '%s' is not an email address; the pool create fails with \\\"Provided From email address is invalid\\\"\", [f]),\n\t\"Use an address (user@example.com) or a display name form (\\\"Name <user@example.com>\\\")\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tf := resolve(name, \"Properties.EmailConfiguration.From\")\n\tis_string(f)\n\tnot input.resources[f]\n\tnot regex.match(`^[^@\\s]+@[^@\\s]+$`, f)\n\tnot regex.match(`<[^@\\s]+@[^@\\s]+>$`, f)\n}\n"
+  },
+  {
+    "id": "pf-cognito-email-reply-to-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "ReplyToEmailAddress must be an email address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-email-reply-to-format\", \"ERROR\", name,\n\t\"Properties.EmailConfiguration.ReplyToEmailAddress\",\n\tsprintf(\"ReplyToEmailAddress '%s' is not an email address; the pool create fails with \\\"Member must satisfy regular expression pattern: [\\\\p{L}\\\\p{M}\\\\p{S}\\\\p{N}\\\\p{P}]+@[\\\\p{L}\\\\p{M}\\\\p{S}\\\\p{N}\\\\p{P}]+\\\"\", [v]),\n\t\"Use an address of the form user@example.com\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := resolve(name, \"Properties.EmailConfiguration.ReplyToEmailAddress\")\n\tis_string(v)\n\tnot input.resources[v]\n\tnot regex.match(`^[^@\\s]+@[^@\\s]+$`, v)\n\tnot regex.match(`<[^@\\s]+@[^@\\s]+>$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-email-sourcearn-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The SES SourceArn must be in a Cognito-supported SES region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Not \"the deploy region\": the service takes a fixed allowlist of three SES\n# regions regardless of where the pool lives (measured 2026-09-08).\n\nviolation contains make_diag_full(\"pf-cognito-email-sourcearn-region\", \"ERROR\", name,\n\t\"Properties.EmailConfiguration.SourceArn\",\n\tsprintf(\"EmailConfiguration.SourceArn is in %v; the pool create fails with \\\"Provided SourceArn must be in one of the following SES regions: eu-west-1, us-east-1, us-west-2.\\\"\", [r]),\n\t\"Use a SES identity in eu-west-1, us-east-1 or us-west-2\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tarn := resolve(name, \"Properties.EmailConfiguration.SourceArn\")\n\tr := _pf_coglib_arn_region(arn)\n\tnot r in _pf_coglib_ses_regions\n}\n"
+  },
+  {
+    "id": "pf-cognito-email-verification-message-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "EmailVerificationMessage needs the {####} code placeholder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-email-verification-message-placeholder\", \"ERROR\", name,\n\t\"Properties.EmailVerificationMessage\",\n\t\"EmailVerificationMessage has no {####} placeholder; the pool create fails on the emailVerificationMessage pattern\",\n\t\"Put {####} where the verification code should appear\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.EmailVerificationMessage\")\n\tis_string(m)\n\tnot contains(m, \"{####}\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-explicit-auth-flows-legacy-mix",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Legacy and ALLOW_ auth flow names cannot be mixed",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-explicit-auth-flows-legacy-mix\", \"ERROR\", name,\n\tsprintf(\"Properties.ExplicitAuthFlows.%d\", [b.index]),\n\tsprintf(\"ExplicitAuthFlows mixes the legacy name '%s' with ALLOW_ names; the client create fails with \\\"Auth flow name with prefix 'ALLOW' cannot be used with legacy auth flow names.\\\"\", [b.value]),\n\t\"Use the ALLOW_* names only (ADMIN_NO_SRP_AUTH becomes ALLOW_ADMIN_USER_PASSWORD_AUTH)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tfs := flatten_list(name, \"Properties.ExplicitAuthFlows\")\n\tsome a in fs\n\tis_string(a.value)\n\tstartswith(a.value, \"ALLOW_\")\n\tsome b in fs\n\tis_string(b.value)\n\tnot startswith(b.value, \"ALLOW_\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-group-role-arn-account",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A group role must be in the deploying account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_account is injected only in enforce mode with a\n# concrete account; the rule skips otherwise.\n\nviolation contains make_diag_full(\"pf-cognito-group-role-arn-account\", \"ERROR\", name,\n\t\"Properties.RoleArn\",\n\tsprintf(\"the group role is in account %v but the pool deploys to %v; the group create fails with \\\"Cross-account pass role is not allowed.\\\"\", [a, acct]),\n\t\"Use a role from the same account as the user pool\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolGroup\")\n\tacct := data.cdk_preflight.deploy_account\n\tis_string(acct)\n\ta := _pf_coglib_arn_account(resolve(name, \"Properties.RoleArn\"))\n\ta != acct\n}\n"
+  },
+  {
+    "id": "pf-cognito-identity-pool-provider-name-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A user pool provider name is the full cognito-idp endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The pool id alone is the most common form of this mistake; the service wants\n# cognito-idp.<region>.amazonaws.com/<pool id>.\n\nviolation contains make_diag_full(\"pf-cognito-identity-pool-provider-name-format\", \"ERROR\", name,\n\tsprintf(\"Properties.CognitoIdentityProviders.%d.ProviderName\", [p.index]),\n\tsprintf(\"ProviderName '%s' is not a cognito-idp endpoint; the identity pool create fails with \\\"Invalid Cognito Identity Provider\\\"\", [n]),\n\t\"Use cognito-idp.<region>.amazonaws.com/<user pool id>\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPool\")\n\tsome p in flatten_list(name, \"Properties.CognitoIdentityProviders\")\n\tis_object(p.value)\n\tn := object.get(p.value, \"ProviderName\", \"\")\n\tis_string(n)\n\tn != \"\"\n\tnot regex.match(`^cognito-idp\\.[a-z0-9-]+\\.amazonaws\\.com/[a-z]{2}(-[a-z]+)+-[0-9]+_[A-Za-z0-9]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-cognito-identity-pool-saml-arn-account",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "SAML provider ARNs must be in the deploying account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Asymmetric with OIDC: OpenIdConnectProviderARNs from another account are\n# accepted, SAML ones are not (measured 2026-09-08).\n\nviolation contains make_diag_full(\"pf-cognito-identity-pool-saml-arn-account\", \"ERROR\", name,\n\tsprintf(\"Properties.SamlProviderARNs.%d\", [s.index]),\n\tsprintf(\"the SAML provider is in account %v but the identity pool deploys to %v; the create fails with \\\"Identity provider %v is not valid for account %v\\\"\", [a, acct, arn, acct]),\n\t\"Use an IAM SAML provider from the same account as the identity pool\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPool\")\n\tacct := data.cdk_preflight.deploy_account\n\tis_string(acct)\n\tsome s in flatten_list(name, \"Properties.SamlProviderARNs\")\n\tarn := s.value\n\ta := _pf_coglib_arn_account(arn)\n\ta != acct\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-apple-required-keys",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Sign in with Apple needs team_id, key_id and private_key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-apple-required-keys\", \"ERROR\", name,\n\tsprintf(\"Properties.ProviderDetails.%s\", [k]),\n\tsprintf(\"SignInWithApple ProviderDetails has no %s; the provider create fails with \\\"clientId, privateKey, teamId, and keyId are all required idp details.\\\"\", [k]),\n\t\"Set client_id, team_id, key_id, private_key and authorize_scopes in ProviderDetails\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(name, \"Properties.ProviderType\") == \"SignInWithApple\"\n\tsome k in [\"client_id\", \"team_id\", \"key_id\", \"private_key\", \"authorize_scopes\"]\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"ProviderDetails\", k))\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-identifiers-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "At most 50 IdP identifiers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-identifiers-max\", \"ERROR\", name,\n\t\"Properties.IdpIdentifiers\",\n\tsprintf(\"the provider has %d IdpIdentifiers; the provider create fails with \\\"Member must have length less than or equal to 50\\\"\", [count(ids)]),\n\t\"Keep IdpIdentifiers at 50 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tids := flatten_list(name, \"Properties.IdpIdentifiers\")\n\tcount(ids) > 50\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-oidc-attributes-request-method",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "attributes_request_method is GET or POST",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-oidc-attributes-request-method\", \"ERROR\", name,\n\t\"Properties.ProviderDetails.attributes_request_method\",\n\tsprintf(\"attributes_request_method '%s' is not GET or POST; the provider create fails with \\\"Member must satisfy enum value set: [POST, GET]\\\"\", [v]),\n\t\"Set ProviderDetails.attributes_request_method to GET or POST\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(name, \"Properties.ProviderType\") == \"OIDC\"\n\tv := _pf_coglib_str(_pf_coglib_g2(name, \"ProviderDetails\", \"attributes_request_method\"))\n\tnot v in {\"GET\", \"POST\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-oidc-issuer-https",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The OIDC issuer must be an https URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-oidc-issuer-https\", \"ERROR\", name,\n\t\"Properties.ProviderDetails.oidc_issuer\",\n\tsprintf(\"oidc_issuer '%s' is not https; the provider create fails with \\\"OIDC endpoint must start with https://\\\"\", [v]),\n\t\"Use an https:// issuer URL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(name, \"Properties.ProviderType\") == \"OIDC\"\n\tv := _pf_coglib_str(_pf_coglib_g2(name, \"ProviderDetails\", \"oidc_issuer\"))\n\tnot startswith(v, \"https://\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-oidc-required-keys",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "An OIDC provider needs four ProviderDetails keys",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-oidc-required-keys\", \"ERROR\", name,\n\tsprintf(\"Properties.ProviderDetails.%s\", [k]),\n\tsprintf(\"OIDC ProviderDetails has no %s; the provider create fails with \\\"clientId, authorizeScopes, oidcIssuer and attributesRequestMethod are all required idp details.\\\"\", [k]),\n\t\"Set client_id, authorize_scopes, oidc_issuer and attributes_request_method\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(name, \"Properties.ProviderType\") == \"OIDC\"\n\tsome k in [\"client_id\", \"authorize_scopes\", \"oidc_issuer\", \"attributes_request_method\"]\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"ProviderDetails\", k))\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-provider-name-length",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A provider name is capped at 32 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-provider-name-length\", \"ERROR\", name,\n\t\"Properties.ProviderName\",\n\tsprintf(\"ProviderName is %d characters; the provider create fails with \\\"Member must have length less than or equal to 32\\\"\", [count(n)]),\n\t\"Use a provider name of at most 32 characters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tn := resolve(name, \"Properties.ProviderName\")\n\tis_string(n)\n\tnot input.resources[n]\n\tcount(n) > 32\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-saml-metadata-exclusive",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "MetadataURL and MetadataFile are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-saml-metadata-exclusive\", \"ERROR\", name,\n\t\"Properties.ProviderDetails.MetadataFile\",\n\t\"ProviderDetails has both MetadataURL and MetadataFile; the provider create fails with \\\"Only one of the MetadataURL or MetadataFile should be provided.\\\"\",\n\t\"Keep one metadata source: MetadataURL or MetadataFile\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(name, \"Properties.ProviderType\") == \"SAML\"\n\t_pf_coglib_set(_pf_coglib_g2(name, \"ProviderDetails\", \"MetadataURL\"))\n\t_pf_coglib_set(_pf_coglib_g2(name, \"ProviderDetails\", \"MetadataFile\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-saml-metadata-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A SAML provider needs MetadataURL or MetadataFile",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-saml-metadata-required\", \"ERROR\", name,\n\t\"Properties.ProviderDetails\",\n\t\"ProviderType is SAML but ProviderDetails has neither MetadataURL nor MetadataFile; the provider create fails with \\\"At least one of the MetadataURL or MetadataFile should be provided.\\\"\",\n\t\"Set ProviderDetails.MetadataURL or ProviderDetails.MetadataFile\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(name, \"Properties.ProviderType\") == \"SAML\"\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"ProviderDetails\", \"MetadataURL\"))\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"ProviderDetails\", \"MetadataFile\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-social-provider-name-fixed",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A social provider name is fixed to its type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The name is the provider identifier the hosted UI uses, so it cannot be\n# chosen freely for the built-in social providers.\n\nviolation contains make_diag_full(\"pf-cognito-idp-social-provider-name-fixed\", \"ERROR\", name,\n\t\"Properties.ProviderName\",\n\tsprintf(\"ProviderName '%s' does not match ProviderType %s; the provider create fails with \\\"Provider %s cannot be of type %s.\\\"\", [n, t, n, t]),\n\t\"Name the provider exactly as its ProviderType (Google, Facebook, LoginWithAmazon, SignInWithApple)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tt := resolve(name, \"Properties.ProviderType\")\n\tt in _pf_coglib_social_idps\n\tn := resolve(name, \"Properties.ProviderName\")\n\tis_string(n)\n\tn != t\n}\n"
+  },
+  {
+    "id": "pf-cognito-idp-social-required-keys",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A social provider needs client_id, client_secret and authorize_scopes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-idp-social-required-keys\", \"ERROR\", name,\n\tsprintf(\"Properties.ProviderDetails.%s\", [k]),\n\tsprintf(\"%v ProviderDetails has no %s; the provider create fails with \\\"clientId, clientSecret and authorizeScopes are all required idp details.\\\"\", [t, k]),\n\t\"Set client_id, client_secret and authorize_scopes in ProviderDetails\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tt := resolve(name, \"Properties.ProviderType\")\n\tt in {\"Google\", \"Facebook\", \"LoginWithAmazon\"}\n\tsome k in [\"client_id\", \"client_secret\", \"authorize_scopes\"]\n\t_pf_coglib_absent(_pf_coglib_g2(name, \"ProviderDetails\", k))\n}\n"
+  },
+  {
+    "id": "pf-cognito-invite-message-username-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The invite email needs {username} and {####}",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgimup_bad(m) if not contains(m, \"{####}\")\n\n_pf_cgimup_bad(m) if not contains(m, \"{username}\")\n\nviolation contains make_diag_full(\"pf-cognito-invite-message-username-placeholder\", \"ERROR\", name,\n\t\"Properties.AdminCreateUserConfig.InviteMessageTemplate.EmailMessage\",\n\t\"The invite email message is missing {username} or {####}; the pool create fails on the adminCreateUserConfig.inviteMessage.emailMessage pattern\",\n\t\"Put both {username} and {####} in the invite email message\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.AdminCreateUserConfig.InviteMessageTemplate.EmailMessage\")\n\tis_string(m)\n\t_pf_cgimup_bad(m)\n}\n"
+  },
+  {
+    "id": "pf-cognito-invite-sms-message-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The invite SMS needs {username} and {####}",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgismp_bad(m) if not contains(m, \"{####}\")\n\n_pf_cgismp_bad(m) if not contains(m, \"{username}\")\n\nviolation contains make_diag_full(\"pf-cognito-invite-sms-message-placeholder\", \"ERROR\", name,\n\t\"Properties.AdminCreateUserConfig.InviteMessageTemplate.SMSMessage\",\n\t\"The invite SMS message is missing {username} or {####}; the pool create fails on the adminCreateUserConfig.inviteMessage.smsMessage pattern\",\n\t\"Put both {username} and {####} in the invite SMS message\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.AdminCreateUserConfig.InviteMessageTemplate.SMSMessage\")\n\tis_string(m)\n\t_pf_cgismp_bad(m)\n}\n"
+  },
+  {
+    "id": "pf-cognito-lambda-config-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "User pool triggers must be Lambda functions in the same region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Cross-account triggers are accepted; only the region has to match\n# (measured 2026-09-08). data.cdk_preflight.deploy_region is injected only in\n# enforce mode with a concrete region.\n\n_pf_cglcr_arn(v) := v if is_string(v)\n\n_pf_cglcr_arn(v) := a if {\n\tis_object(v)\n\ta := object.get(v, \"LambdaArn\", \"__pf_absent\")\n\tis_string(a)\n}\n\nviolation contains make_diag_full(\"pf-cognito-lambda-config-region\", \"ERROR\", name,\n\tsprintf(\"Properties.LambdaConfig.%s\", [k]),\n\tsprintf(\"the %v trigger is in '%v' but the pool deploys to '%v'; the pool create fails with \\\"Cross-region lambda functions are not supported\\\"\", [k, r, region]),\n\t\"Point the trigger at a function in the pool's own region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tlc := _pf_coglib_g1(name, \"LambdaConfig\")\n\tis_object(lc)\n\tsome k, v in lc\n\tarn := _pf_cglcr_arn(v)\n\t_pf_coglib_arn_service(arn) == \"lambda\"\n\tr := _pf_coglib_arn_region(arn)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-cognito-log-delivery-event-source-duplicate",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "One log configuration per event source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::LogDeliveryConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-log-delivery-event-source-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.LogConfigurations.%d.EventSource\", [b.index]),\n\tsprintf(\"event source '%v' has two log configurations; the log delivery call fails with \\\"Following event sources appear more then once in a request\\\"\", [es]),\n\t\"Merge the configurations that share an event source\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-logdeliveryconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::LogDeliveryConfiguration\")\n\tsome a in flatten_list(name, \"Properties.LogConfigurations\")\n\tsome b in flatten_list(name, \"Properties.LogConfigurations\")\n\ta.index < b.index\n\tes := _pf_coglib_at(a.value, \"EventSource\")\n\tis_string(es)\n\tes == _pf_coglib_at(b.value, \"EventSource\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-log-delivery-log-group-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The log group must be in the pool region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::LogDeliveryConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise.\n\nviolation contains make_diag_full(\"pf-cognito-log-delivery-log-group-region\", \"ERROR\", name,\n\tsprintf(\"Properties.LogConfigurations.%d.CloudWatchLogsConfiguration.LogGroupArn\", [c.index]),\n\tsprintf(\"the log group is in '%v' but the pool deploys to '%v'; the log delivery call fails with \\\"ARN does not belong to current region\\\"\", [r, region]),\n\t\"Use a log group in the pool's own region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-logdeliveryconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::LogDeliveryConfiguration\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome c in flatten_list(name, \"Properties.LogConfigurations\")\n\tarn := _pf_coglib_at2(c.value, \"CloudWatchLogsConfiguration\", \"LogGroupArn\")\n\tr := _pf_coglib_arn_region(arn)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-cognito-log-delivery-user-auth-events-tier",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "userAuthEvents logging needs the PLUS tier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::LogDeliveryConfiguration",
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The tier lives on the user pool and the event source on the log delivery\n# resource; ESSENTIALS is the default when UserPoolTier is omitted.\n\n_pf_cglduaet_tier(pool) := t if {\n\tt := _pf_coglib_g1(pool, \"UserPoolTier\")\n\tis_string(t)\n\tt != \"__pf_absent\"\n}\n\n_pf_cglduaet_tier(pool) := \"ESSENTIALS\" if _pf_coglib_absent(_pf_coglib_g1(pool, \"UserPoolTier\"))\n\nviolation contains make_diag_full(\"pf-cognito-log-delivery-user-auth-events-tier\", \"ERROR\", name,\n\tsprintf(\"Properties.LogConfigurations.%d.EventSource\", [c.index]),\n\tsprintf(\"userAuthEvents logging on a %v pool; the log delivery call fails with \\\"The following feature is not available for the %v pricing tier configured: Log Streaming\\\"\", [tier, tier]),\n\t\"Set UserPoolTier: PLUS on the pool, or log only userNotification events\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-logdeliveryconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::LogDeliveryConfiguration\")\n\tpool := resolve(name, \"Properties.UserPoolId\")\n\tpool in resources_of_type(\"AWS::Cognito::UserPool\")\n\ttier := _pf_cglduaet_tier(pool)\n\ttier != \"PLUS\"\n\tsome c in flatten_list(name, \"Properties.LogConfigurations\")\n\t_pf_coglib_at(c.value, \"EventSource\") == \"userAuthEvents\"\n}\n"
+  },
+  {
+    "id": "pf-cognito-logout-url-https",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Logout URLs must use https (except localhost)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgluh_local(v) if regex.match(`^http://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:[0-9]+)?(/|$)`, v)\n\nviolation contains make_diag_full(\"pf-cognito-logout-url-https\", \"ERROR\", name,\n\tsprintf(\"Properties.LogoutURLs.%d\", [u.index]),\n\tsprintf(\"logout URL '%s' uses plain http; the client create fails with \\\"%s cannot use the HTTP protocol.\\\"\", [v, v]),\n\t\"Use https:// for the logout URL (plain http is only allowed for localhost)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tsome u in flatten_list(name, \"Properties.LogoutURLs\")\n\tv := u.value\n\tis_string(v)\n\tstartswith(v, \"http://\")\n\tnot _pf_cgluh_local(v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-managed-login-branding-asset-extension",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Only a favicon asset takes the ICO extension",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::ManagedLoginBranding"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-managed-login-branding-asset-extension\", \"ERROR\", name,\n\tsprintf(\"Properties.Assets.%d.Extension\", [a.index]),\n\tsprintf(\"asset category %s carries an ICO file; ICO is only valid for the FAVICON_ICO category\", [cat]),\n\t\"Use PNG, JPEG, SVG or WEBP for page assets; ICO only for FAVICON_ICO\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-managedloginbranding.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::ManagedLoginBranding\")\n\tsome a in flatten_list(name, \"Properties.Assets\")\n\tis_object(a.value)\n\tcat := object.get(a.value, \"Category\", \"\")\n\tobject.get(a.value, \"Extension\", \"\") == \"ICO\"\n\tcat != \"FAVICON_ICO\"\n}\n"
+  },
+  {
+    "id": "pf-cognito-managed-login-branding-values-exclusive",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "UseCognitoProvidedValues excludes Settings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::ManagedLoginBranding"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Assets alongside UseCognitoProvidedValues are accepted (measured 2026-09-08);\n# only Settings is exclusive with it.\n\nviolation contains make_diag_full(\"pf-cognito-managed-login-branding-values-exclusive\", \"ERROR\", name,\n\t\"Properties.Settings\",\n\t\"UseCognitoProvidedValues is true together with Settings; the branding create fails with \\\"useCognitoProvidedValues or settings should be specified (but not both)\\\"\",\n\t\"Either keep UseCognitoProvidedValues: true alone, or drop it and supply your own Settings\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-managedloginbranding.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::ManagedLoginBranding\")\n\tresolve(name, \"Properties.UseCognitoProvidedValues\") == true\n\t_pf_coglib_set(_pf_coglib_g1(name, \"Settings\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-managed-login-version-tier",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Managed login version 2 needs ESSENTIALS or PLUS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolDomain",
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The tier lives on the user pool, the version on the domain: no single\n# resource carries both.\n\nviolation contains make_diag_full(\"pf-cognito-managed-login-version-tier\", \"ERROR\", name,\n\t\"Properties.ManagedLoginVersion\",\n\t\"ManagedLoginVersion 2 on a LITE user pool; the domain create fails with \\\"The following feature is not available for the LITE pricing tier configured: Managed Login Version 2\\\"\",\n\t\"Use UserPoolTier ESSENTIALS or PLUS on the pool, or ManagedLoginVersion 1\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\tto_number(resolve(name, \"Properties.ManagedLoginVersion\")) == 2\n\tpool := resolve(name, \"Properties.UserPoolId\")\n\tpool in resources_of_type(\"AWS::Cognito::UserPool\")\n\tresolve(pool, \"Properties.UserPoolTier\") == \"LITE\"\n}\n"
+  },
+  {
+    "id": "pf-cognito-mfa-email-otp-requires-developer",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "EMAIL_OTP needs the DEVELOPER email sending account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-mfa-email-otp-requires-developer\", \"ERROR\", name,\n\t\"Properties.EnabledMfas\",\n\t\"EnabledMfas has EMAIL_OTP but EmailConfiguration.EmailSendingAccount is not DEVELOPER; the pool create fails with \\\"Cannot set EmailMfaConfiguration when user pool EmailConfiguration contains an EmailSendingAccount of COGNITO_DEFAULT.\\\"\",\n\t\"Set EmailConfiguration.EmailSendingAccount to DEVELOPER with a SES SourceArn, or drop EMAIL_OTP\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.EnabledMfas\")\n\ta.value == \"EMAIL_OTP\"\n\t_pf_coglib_g2(name, \"EmailConfiguration\", \"EmailSendingAccount\") != \"DEVELOPER\"\n}\n"
+  },
+  {
+    "id": "pf-cognito-mfa-off-with-enabled-mfas",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "MfaConfiguration OFF takes no EnabledMfas",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-mfa-off-with-enabled-mfas\", \"ERROR\", name,\n\t\"Properties.EnabledMfas\",\n\t\"MfaConfiguration is OFF but EnabledMfas lists MFA factors; the MFA config call rejects factors while MFA is off\",\n\t\"Set MfaConfiguration to ON or OPTIONAL, or drop EnabledMfas\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tresolve(name, \"Properties.MfaConfiguration\") == \"OFF\"\n\tcount(flatten_list(name, \"Properties.EnabledMfas\")) > 0\n}\n"
   },
   {
     "id": "pf-cognito-mfa-sms-config",
@@ -3439,6 +3980,29 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both directions deploy-verified. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_cogofs_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogofs_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\"\n\n_pf_cogofs_msg := \"the client create fails with \\\"AllowedOAuthFlows and AllowedOAuthScopes are required if user pool client is allowed to use OAuth flows.\\\"\"\n\nviolation contains make_diag_full(\"pf-cognito-oauth-flows-scopes-required\", \"ERROR\", name,\n\t\"Properties.AllowedOAuthFlows\",\n\tsprintf(\"AllowedOAuthFlowsUserPoolClient is true but AllowedOAuthFlows is not set; %s\", [_pf_cogofs_msg]),\n\t\"Set AllowedOAuthFlows, or drop AllowedOAuthFlowsUserPoolClient\",\n\t_pf_cogofs_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tcoerce_to_bool(resolve(name, \"Properties.AllowedOAuthFlowsUserPoolClient\")) == true\n\t_pf_cogofs_absent(name, \"AllowedOAuthFlows\")\n}\n\nviolation contains make_diag_full(\"pf-cognito-oauth-flows-scopes-required\", \"ERROR\", name,\n\t\"Properties.AllowedOAuthScopes\",\n\tsprintf(\"AllowedOAuthFlowsUserPoolClient is true but AllowedOAuthScopes is not set; %s\", [_pf_cogofs_msg]),\n\t\"Set AllowedOAuthScopes, or drop AllowedOAuthFlowsUserPoolClient\",\n\t_pf_cogofs_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tcoerce_to_bool(resolve(name, \"Properties.AllowedOAuthFlowsUserPoolClient\")) == true\n\t_pf_cogofs_absent(name, \"AllowedOAuthScopes\")\n}\n"
   },
   {
+    "id": "pf-cognito-oauth-scopes-unknown",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "OAuth scopes must be standard or come from a resource server",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient",
+      "AWS::Cognito::UserPoolResourceServer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the pool is a sibling resource: an imported pool can carry\n# resource servers this template cannot see.\n\n_pf_cgosu_custom(pool, v) if {\n\tsome rs in resources_of_type(\"AWS::Cognito::UserPoolResourceServer\")\n\tresolve(rs, \"Properties.UserPoolId\") == pool\n\tid := resolve(rs, \"Properties.Identifier\")\n\tis_string(id)\n\tstartswith(v, concat(\"\", [id, \"/\"]))\n}\n\nviolation contains make_diag_full(\"pf-cognito-oauth-scopes-unknown\", \"ERROR\", name,\n\tsprintf(\"Properties.AllowedOAuthScopes.%d\", [s.index]),\n\tsprintf(\"OAuth scope '%s' is neither a standard scope nor a scope of a resource server on this pool; the client create fails with \\\"Invalid scope requested: %s\\\"\", [v, v]),\n\t\"Use a standard scope (openid, email, phone, profile, aws.cognito.signin.user.admin) or declare the resource server that owns it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tpool := resolve(name, \"Properties.UserPoolId\")\n\tpool in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome s in flatten_list(name, \"Properties.AllowedOAuthScopes\")\n\tv := s.value\n\tis_string(v)\n\tnot v in _pf_coglib_std_scopes\n\tnot _pf_cgosu_custom(pool, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-password-history-size-range",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "PasswordHistorySize must be between 0 and 24",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgphsr_bad(v) if v < 0\n\n_pf_cgphsr_bad(v) if v > 24\n\nviolation contains make_diag_full(\"pf-cognito-password-history-size-range\", \"ERROR\", name,\n\t\"Properties.Policies.PasswordPolicy.PasswordHistorySize\",\n\tsprintf(\"PasswordHistorySize %v is outside 0-24; the pool create fails with \\\"Member must have value less than or equal to 24\\\"\", [v]),\n\t\"Use a password history size between 0 and 24\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := to_number(resolve(name, \"Properties.Policies.PasswordPolicy.PasswordHistorySize\"))\n\t_pf_cgphsr_bad(v)\n}\n"
+  },
+  {
     "id": "pf-cognito-password-min-length",
     "service": "cognito",
     "severity": "ERROR",
@@ -3448,6 +4012,62 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Cognito::UserPool"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema types MinimumLength as a bare integer; both bounds\n# are deploy-verified.\n_pf_cogpml_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-passwordpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cognito-password-min-length\", \"ERROR\", name,\n\t\"Properties.Policies.PasswordPolicy.MinimumLength\",\n\tsprintf(\"MinimumLength %v is under the floor; the pool create fails with \\\"Member must have value greater than or equal to 6\\\"\", [ml]),\n\t\"Use a minimum password length between 6 and 99\",\n\t_pf_cogpml_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tml := to_number(resolve(name, \"Properties.Policies.PasswordPolicy.MinimumLength\"))\n\tml < 6\n}\n\nviolation contains make_diag_full(\"pf-cognito-password-min-length\", \"ERROR\", name,\n\t\"Properties.Policies.PasswordPolicy.MinimumLength\",\n\tsprintf(\"MinimumLength %v is over the cap; the pool create fails with \\\"Member must have value less than or equal to 99\\\"\", [ml]),\n\t\"Use a minimum password length between 6 and 99\",\n\t_pf_cogpml_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tml := to_number(resolve(name, \"Properties.Policies.PasswordPolicy.MinimumLength\"))\n\tml > 99\n}\n"
+  },
+  {
+    "id": "pf-cognito-pre-token-generation-config-tier",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Pre token generation V2_0 and later need ESSENTIALS or PLUS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-pre-token-generation-config-tier\", \"ERROR\", name,\n\t\"Properties.LambdaConfig.PreTokenGenerationConfig.LambdaVersion\",\n\tsprintf(\"PreTokenGenerationConfig.LambdaVersion %v needs a paid feature tier but UserPoolTier is LITE; the pool create fails with \\\"The following features need to be disabled for the LITE pricing tier configured: Token Customization with Pre-Token Generation Lambda %v\\\"\", [v, v]),\n\t\"Use UserPoolTier ESSENTIALS or PLUS, or set LambdaVersion to V1_0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tresolve(name, \"Properties.UserPoolTier\") == \"LITE\"\n\tv := resolve(name, \"Properties.LambdaConfig.PreTokenGenerationConfig.LambdaVersion\")\n\tv in {\"V2_0\", \"V3_0\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-pre-token-generation-legacy-mix",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "PreTokenGeneration and PreTokenGenerationConfig must name the same function",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PreTokenGenerationConfig supersedes PreTokenGeneration; the service keeps\n# both in sync and rejects two different ARNs.\n\nviolation contains make_diag_full(\"pf-cognito-pre-token-generation-legacy-mix\", \"ERROR\", name,\n\t\"Properties.LambdaConfig.PreTokenGenerationConfig.LambdaArn\",\n\t\"PreTokenGeneration and PreTokenGenerationConfig.LambdaArn name different functions; the pool create fails with \\\"Cannot use PreTokenGenerationLambda and PreTokenGeneration with different Lambda function ARN's\\\"\",\n\t\"Point both at the same function ARN, or set only PreTokenGenerationConfig\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tlegacy := _pf_coglib_str(_pf_coglib_g2(name, \"LambdaConfig\", \"PreTokenGeneration\"))\n\tv2 := _pf_coglib_str(_pf_coglib_g3(name, \"LambdaConfig\", \"PreTokenGenerationConfig\", \"LambdaArn\"))\n\tlegacy != v2\n}\n"
+  },
+  {
+    "id": "pf-cognito-propagate-context-requires-secret",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Propagating user context data requires a client secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgpcrs_secret(name) if resolve(name, \"Properties.GenerateSecret\") == true\n\nviolation contains make_diag_full(\"pf-cognito-propagate-context-requires-secret\", \"ERROR\", name,\n\t\"Properties.EnablePropagateAdditionalUserContextData\",\n\t\"EnablePropagateAdditionalUserContextData is true on a client with no secret; the client create fails with \\\"Client Secret is required to set EnablePropagateAdditionalUserContextData as true\\\"\",\n\t\"Set GenerateSecret: true, or drop EnablePropagateAdditionalUserContextData\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tresolve(name, \"Properties.EnablePropagateAdditionalUserContextData\") == true\n\tnot _pf_cgpcrs_secret(name)\n}\n"
+  },
+  {
+    "id": "pf-cognito-read-attributes-exists",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "ReadAttributes must name attributes the pool has",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient",
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the pool is a sibling resource, so its Schema is visible here.\n\n_pf_cgrae_declared(pool, v) if {\n\tsome att in flatten_list(pool, \"Properties.Schema\")\n\tis_object(att.value)\n\tn := object.get(att.value, \"Name\", \"\")\n\tv in {n, concat(\"\", [\"custom:\", n]), concat(\"\", [\"dev:custom:\", n])}\n}\n\nviolation contains make_diag_full(\"pf-cognito-read-attributes-exists\", \"ERROR\", name,\n\tsprintf(\"Properties.ReadAttributes.%d\", [a.index]),\n\tsprintf(\"ReadAttributes has '%s', which the pool does not define; the client create fails with \\\"Invalid read attributes specified while creating a client\\\"\", [v]),\n\t\"Declare the attribute in the pool Schema, or drop it from ReadAttributes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tpool := resolve(name, \"Properties.UserPoolId\")\n\tpool in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.ReadAttributes\")\n\tv := a.value\n\tis_string(v)\n\tnot v in _pf_coglib_std_attrs\n\tnot _pf_cgrae_declared(pool, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-recovery-admin-only-alone",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "admin_only cannot be combined with other recovery mechanisms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-recovery-admin-only-alone\", \"ERROR\", name,\n\tsprintf(\"Properties.AccountRecoverySetting.RecoveryMechanisms.%d\", [m.index]),\n\t\"admin_only is combined with other recovery mechanisms; the pool create fails with \\\"Account Recovery Setting cannot use admin_only setting with any other recovery mechanisms.\\\"\",\n\t\"Use admin_only on its own, or drop it and keep the verified_* mechanisms\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tms := flatten_list(name, \"Properties.AccountRecoverySetting.RecoveryMechanisms\")\n\tcount(ms) > 1\n\tsome m in ms\n\t_pf_coglib_at(m.value, \"Name\") == \"admin_only\"\n}\n"
   },
   {
     "id": "pf-cognito-recovery-duplicate",
@@ -3461,6 +4081,193 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Pairwise duplicate check on the mechanism list; the service error names\n# both duplicate priorities and duplicate mechanism names.\n_pf_cogrdp_dup(a, b) if {\n\tpa := to_number(object.get(a, \"Priority\", -1))\n\tpb := to_number(object.get(b, \"Priority\", -2))\n\tpa == pb\n}\n\n_pf_cogrdp_dup(a, b) if {\n\tn := object.get(a, \"Name\", \"__pf_a\")\n\tis_string(n)\n\tn == object.get(b, \"Name\", \"__pf_b\")\n}\n\nviolation contains make_diag_full(\"pf-cognito-recovery-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.AccountRecoverySetting.RecoveryMechanisms.%d\", [b.index]),\n\t\"Recovery mechanisms repeat a priority or name; the pool create fails with \\\"Account Recovery Setting cannot have duplicate priorities or recovery mechanisms.\\\"\",\n\t\"Give each recovery mechanism a distinct priority and name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-recoveryoption.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.AccountRecoverySetting.RecoveryMechanisms\")\n\tsome b in flatten_list(name, \"Properties.AccountRecoverySetting.RecoveryMechanisms\")\n\ta.index < b.index\n\tis_object(a.value)\n\tis_object(b.value)\n\t_pf_cogrdp_dup(a.value, b.value)\n}\n"
   },
   {
+    "id": "pf-cognito-recovery-mechanisms-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "At most two account recovery mechanisms",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-recovery-mechanisms-max\", \"ERROR\", name,\n\t\"Properties.AccountRecoverySetting.RecoveryMechanisms\",\n\tsprintf(\"%d recovery mechanisms are configured; the pool create fails with \\\"Member must have length less than or equal to 2\\\"\", [count(ms)]),\n\t\"Keep at most two recovery mechanisms\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tms := flatten_list(name, \"Properties.AccountRecoverySetting.RecoveryMechanisms\")\n\tcount(ms) > 2\n}\n"
+  },
+  {
+    "id": "pf-cognito-resource-server-identifier-charset",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A resource server identifier takes no spaces",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolResourceServer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-resource-server-identifier-charset\", \"ERROR\", name,\n\t\"Properties.Identifier\",\n\tsprintf(\"identifier '%s' has characters outside the allowed set; the resource server create fails with \\\"Member must satisfy regular expression pattern: [\\\\x21\\\\x23-\\\\x5B\\\\x5D-\\\\x7E]+\\\"\", [v]),\n\t\"Use an identifier without whitespace (e.g. https://api.example.com)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolresourceserver.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolResourceServer\")\n\tv := resolve(name, \"Properties.Identifier\")\n\tis_string(v)\n\tnot input.resources[v]\n\tv != \"\"\n\tnot regex.match(`^[\\x21\\x23-\\x5B\\x5D-\\x7E]+$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-resource-server-scope-name-charset",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Scope names take no spaces or quotes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolResourceServer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-resource-server-scope-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Scopes.%d.ScopeName\", [s.index]),\n\tsprintf(\"scope name '%s' has characters outside the allowed set; the resource server create fails with \\\"Member must satisfy regular expression pattern: [\\\\x21\\\\x23-\\\\x2E\\\\x30-\\\\x5B\\\\x5D-\\\\x7E]+\\\"\", [n]),\n\t\"Use a scope name without whitespace, double quotes, slashes or backslashes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolresourceserver.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolResourceServer\")\n\tsome s in flatten_list(name, \"Properties.Scopes\")\n\tis_object(s.value)\n\tn := object.get(s.value, \"ScopeName\", \"\")\n\tis_string(n)\n\tn != \"\"\n\tnot regex.match(`^[\\x21\\x23-\\x2E\\x30-\\x5B\\x5D-\\x7E]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-cognito-resource-server-scopes-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "At most 100 scopes per resource server",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolResourceServer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-resource-server-scopes-max\", \"ERROR\", name,\n\t\"Properties.Scopes\",\n\tsprintf(\"the resource server has %d scopes; the create fails with \\\"Member must have length less than or equal to 100\\\"\", [count(ss)]),\n\t\"Keep the scope list at 100 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolresourceserver.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolResourceServer\")\n\tss := flatten_list(name, \"Properties.Scopes\")\n\tcount(ss) > 100\n}\n"
+  },
+  {
+    "id": "pf-cognito-risk-account-takeover-event-action-enum",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Account takeover actions take four values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolRiskConfigurationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-risk-account-takeover-event-action-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.AccountTakeoverRiskConfiguration.Actions.%s.EventAction\", [k]),\n\tsprintf(\"%s.EventAction '%s' is not valid; the risk configuration call fails with \\\"Member must satisfy enum value set: [MFA_IF_CONFIGURED, BLOCK, NO_ACTION, MFA_REQUIRED]\\\"\", [k, v]),\n\t\"Use BLOCK, MFA_IF_CONFIGURED, MFA_REQUIRED or NO_ACTION\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolRiskConfigurationAttachment\")\n\tsome k in [\"LowAction\", \"MediumAction\", \"HighAction\"]\n\ta := _pf_coglib_g3(name, \"AccountTakeoverRiskConfiguration\", \"Actions\", k)\n\tv := _pf_coglib_str(_pf_coglib_at(a, \"EventAction\"))\n\tnot v in {\"BLOCK\", \"MFA_IF_CONFIGURED\", \"MFA_REQUIRED\", \"NO_ACTION\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-risk-compromised-event-action-enum",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Compromised credentials action is BLOCK or NO_ACTION",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolRiskConfigurationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-risk-compromised-event-action-enum\", \"ERROR\", name,\n\t\"Properties.CompromisedCredentialsRiskConfiguration.Actions.EventAction\",\n\tsprintf(\"EventAction '%s' is not valid here; the risk configuration call fails with \\\"Member must satisfy enum value set: [BLOCK, NO_ACTION]\\\"\", [v]),\n\t\"Use BLOCK or NO_ACTION (MFA actions belong to account takeover)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolRiskConfigurationAttachment\")\n\tv := _pf_coglib_str(_pf_coglib_g3(name, \"CompromisedCredentialsRiskConfiguration\", \"Actions\", \"EventAction\"))\n\tnot v in {\"BLOCK\", \"NO_ACTION\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-risk-compromised-event-filter-enum",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Compromised credentials event filter takes three values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolRiskConfigurationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-risk-compromised-event-filter-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.CompromisedCredentialsRiskConfiguration.EventFilter.%d\", [f.index]),\n\tsprintf(\"EventFilter has '%s'; the risk configuration call fails with \\\"Member must satisfy enum value set: [SIGN_IN, PASSWORD_CHANGE, SIGN_UP]\\\"\", [v]),\n\t\"Use SIGN_IN, PASSWORD_CHANGE and/or SIGN_UP\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolRiskConfigurationAttachment\")\n\tsome f in flatten_list(name, \"Properties.CompromisedCredentialsRiskConfiguration.EventFilter\")\n\tv := f.value\n\tis_string(v)\n\tnot v in {\"SIGN_IN\", \"PASSWORD_CHANGE\", \"SIGN_UP\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-risk-ip-range-cidr",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Blocked and skipped IP ranges are CIDR blocks",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolRiskConfigurationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-risk-ip-range-cidr\", \"ERROR\", name,\n\tsprintf(\"Properties.RiskExceptionConfiguration.BlockedIPRangeList.%d\", [r.index]),\n\tsprintf(\"'%s' is not a CIDR block; the risk configuration call fails with \\\"Incorrect CIDR format\\\"\", [v]),\n\t\"Write the range as CIDR, e.g. 203.0.113.0/24\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolRiskConfigurationAttachment\")\n\tsome r in flatten_list(name, \"Properties.RiskExceptionConfiguration.BlockedIPRangeList\")\n\tv := r.value\n\tis_string(v)\n\tnot contains(v, \"/\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-risk-ip-range-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "At most 200 blocked IP ranges",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolRiskConfigurationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-risk-ip-range-max\", \"ERROR\", name,\n\t\"Properties.RiskExceptionConfiguration.BlockedIPRangeList\",\n\tsprintf(\"the blocked IP range list has %d entries; the risk configuration call fails with \\\"Member must have length less than or equal to 200\\\"\", [count(rs)]),\n\t\"Keep BlockedIPRangeList at 200 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolRiskConfigurationAttachment\")\n\trs := flatten_list(name, \"Properties.RiskExceptionConfiguration.BlockedIPRangeList\")\n\tcount(rs) > 200\n}\n"
+  },
+  {
+    "id": "pf-cognito-risk-notify-source-arn-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The notification SourceArn must be in a Cognito-supported SES region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolRiskConfigurationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same fixed allowlist as EmailConfiguration.SourceArn, not the deploy region.\n\nviolation contains make_diag_full(\"pf-cognito-risk-notify-source-arn-region\", \"ERROR\", name,\n\t\"Properties.AccountTakeoverRiskConfiguration.NotifyConfiguration.SourceArn\",\n\tsprintf(\"NotifyConfiguration.SourceArn is in %v; the risk configuration call fails with \\\"Provided SourceArn must be in one of the following SES regions: eu-west-1, us-east-1, us-west-2.\\\"\", [r]),\n\t\"Use a SES identity in eu-west-1, us-east-1 or us-west-2\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolRiskConfigurationAttachment\")\n\tarn := _pf_coglib_g3(name, \"AccountTakeoverRiskConfiguration\", \"NotifyConfiguration\", \"SourceArn\")\n\tr := _pf_coglib_arn_region(arn)\n\tnot r in _pf_coglib_ses_regions\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-attachment-roles-keys",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Roles keys are authenticated and unauthenticated",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-role-attachment-roles-keys\", \"ERROR\", name,\n\tsprintf(\"Properties.Roles.%s\", [k]),\n\tsprintf(\"Roles has the key '%s'; SetIdentityPoolRoles only takes authenticated and unauthenticated\", [k]),\n\t\"Use the keys authenticated and/or unauthenticated\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\troles := resolve(name, \"Properties.Roles\")\n\tis_object(roles)\n\tsome k, _ in roles\n\tnot k in {\"authenticated\", \"unauthenticated\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-mapping-rule-match-type",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "MatchType is Equals, Contains, StartsWith or NotEqual",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-role-mapping-rule-match-type\", \"ERROR\", name,\n\tsprintf(\"Properties.RoleMappings.%s.RulesConfiguration.Rules\", [k]),\n\tsprintf(\"role mapping '%s' has MatchType '%v'; the roles call fails with \\\"Member must satisfy enum value set: [StartsWith, Equals, Contains, NotEqual]\\\"\", [k, mt]),\n\t\"Use one of Equals, Contains, StartsWith, NotEqual\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\trm := resolve(name, \"Properties.RoleMappings\")\n\tis_object(rm)\n\tsome k, v in rm\n\trules := _pf_coglib_at2(v, \"RulesConfiguration\", \"Rules\")\n\tis_array(rules)\n\tsome r in rules\n\tmt := _pf_coglib_at(r, \"MatchType\")\n\tis_string(mt)\n\tnot mt in {\"Equals\", \"Contains\", \"StartsWith\", \"NotEqual\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-mapping-rules-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "At most 25 rules per role mapping",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-role-mapping-rules-max\", \"ERROR\", name,\n\tsprintf(\"Properties.RoleMappings.%s.RulesConfiguration.Rules\", [k]),\n\tsprintf(\"role mapping '%s' has %d rules; the roles call fails with \\\"The number of rules in the request exceeded 25.\\\"\", [k, count(rules)]),\n\t\"Keep each RulesConfiguration.Rules list at 25 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\trm := resolve(name, \"Properties.RoleMappings\")\n\tis_object(rm)\n\tsome k, v in rm\n\trules := _pf_coglib_at2(v, \"RulesConfiguration\", \"Rules\")\n\tis_array(rules)\n\tcount(rules) > 25\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-mappings-ambiguous-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A role mapping needs AmbiguousRoleResolution",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-role-mappings-ambiguous-required\", \"ERROR\", name,\n\tsprintf(\"Properties.RoleMappings.%s.AmbiguousRoleResolution\", [k]),\n\tsprintf(\"role mapping '%s' is Type %v with no AmbiguousRoleResolution; the roles call rejects the mapping\", [k, t]),\n\t\"Set AmbiguousRoleResolution to AuthenticatedRole or Deny\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\trm := resolve(name, \"Properties.RoleMappings\")\n\tis_object(rm)\n\tsome k, v in rm\n\tt := _pf_coglib_at(v, \"Type\")\n\tt in {\"Token\", \"Rules\"}\n\t_pf_coglib_absent(_pf_coglib_at(v, \"AmbiguousRoleResolution\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-mappings-key-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A role mapping key is a provider name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The key is <provider>:<client id> for a user pool provider, or the provider\n# domain for a social one - always a dotted name.\n\nviolation contains make_diag_full(\"pf-cognito-role-mappings-key-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RoleMappings.%s\", [k]),\n\tsprintf(\"RoleMappings key '%s' is not a provider name; the roles call fails with \\\"(%s) is not a valid RoleMapping ProviderName or is not a configured provider.\\\"\", [k, k]),\n\t\"Use cognito-idp.<region>.amazonaws.com/<pool id>:<client id> (or the social provider domain)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\trm := resolve(name, \"Properties.RoleMappings\")\n\tis_object(rm)\n\tsome k, _ in rm\n\tis_string(k)\n\tnot contains(k, \".\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-mappings-rules-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A Rules role mapping needs RulesConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-role-mappings-rules-required\", \"ERROR\", name,\n\tsprintf(\"Properties.RoleMappings.%s.RulesConfiguration\", [k]),\n\tsprintf(\"role mapping '%s' is Type Rules with no RulesConfiguration; the roles call rejects the mapping\", [k]),\n\t\"Add RulesConfiguration.Rules, or set Type to Token\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\trm := resolve(name, \"Properties.RoleMappings\")\n\tis_object(rm)\n\tsome k, v in rm\n\t_pf_coglib_at(v, \"Type\") == \"Rules\"\n\t_pf_coglib_absent(_pf_coglib_at(v, \"RulesConfiguration\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-role-mappings-token-no-rules",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A Token role mapping takes no RulesConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::IdentityPoolRoleAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-role-mappings-token-no-rules\", \"ERROR\", name,\n\tsprintf(\"Properties.RoleMappings.%s.RulesConfiguration\", [k]),\n\tsprintf(\"role mapping '%s' is Type Token but carries a RulesConfiguration; the roles call rejects the mapping\", [k]),\n\t\"Set Type to Rules, or drop RulesConfiguration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::IdentityPoolRoleAttachment\")\n\trm := resolve(name, \"Properties.RoleMappings\")\n\tis_object(rm)\n\tsome k, v in rm\n\t_pf_coglib_at(v, \"Type\") == \"Token\"\n\t_pf_coglib_set(_pf_coglib_at(v, \"RulesConfiguration\"))\n}\n"
+  },
+  {
     "id": "pf-cognito-schema-attr-length-order",
     "service": "cognito",
     "severity": "ERROR",
@@ -3470,6 +4277,161 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Cognito::UserPool"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The constraints are typed as strings, so no schema layer can compare\n# them numerically.\nviolation contains make_diag_full(\"pf-cognito-schema-attr-length-order\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.StringAttributeConstraints\", [att.index]),\n\tsprintf(\"Attribute '%s' has MinLength %v over MaxLength %v; the pool create fails with \\\"cannot have a max length shorter than it's min length\\\"\", [object.get(att.value, \"Name\", \"<attr>\"), mn, mx]),\n\t\"Keep MinLength less than or equal to MaxLength\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-schemaattribute.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome att in flatten_list(name, \"Properties.Schema\")\n\tis_object(att.value)\n\tsac := object.get(att.value, \"StringAttributeConstraints\", {})\n\tis_object(sac)\n\tmn_raw := object.get(sac, \"MinLength\", \"__pf_absent\")\n\tmn_raw != \"__pf_absent\"\n\tmx_raw := object.get(sac, \"MaxLength\", \"__pf_absent\")\n\tmx_raw != \"__pf_absent\"\n\tmn := to_number(mn_raw)\n\tmx := to_number(mx_raw)\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-attr-max",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A user pool takes at most 50 custom attributes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Standard attributes do not count; the cap is over the custom ones only.\n\nviolation contains make_diag_full(\"pf-cognito-schema-attr-max\", \"ERROR\", name,\n\t\"Properties.Schema\",\n\tsprintf(\"the schema has %d custom attributes; the pool create fails with \\\"Member must have length less than or equal to 50\\\"\", [count(attrs)]),\n\t\"Keep the number of custom schema attributes at 50 or below\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tattrs := _pf_coglib_custom_attrs(name)\n\tcount(attrs) > 50\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-custom-name-length",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A schema attribute name is capped at 20 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The custom: prefix is added by the service and does not count towards the cap.\n\nviolation contains make_diag_full(\"pf-cognito-schema-custom-name-length\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.Name\", [a.index]),\n\tsprintf(\"schema attribute name '%s' is %d characters; the pool create fails with \\\"Value '%s' at 'schema.1.member.name' failed to satisfy constraint: Member must have length less than or equal to 20\\\"\", [n, count(n), n]),\n\t\"Use an attribute name of at most 20 characters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.Schema\")\n\tis_object(a.value)\n\tn := object.get(a.value, \"Name\", \"\")\n\tis_string(n)\n\tcount(n) > 20\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-custom-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Custom attributes cannot be required",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-schema-custom-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.Required\", [a.index]),\n\tsprintf(\"custom attribute '%s' is marked Required; the pool create fails with \\\"Required custom attributes are not supported currently.\\\"\", [n]),\n\t\"Drop Required from the custom attribute (only standard attributes can be required)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.Schema\")\n\tis_object(a.value)\n\tn := object.get(a.value, \"Name\", \"\")\n\tnot n in _pf_coglib_std_attrs\n\tobject.get(a.value, \"Required\", false) == true\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-name-duplicate",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Schema attribute names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-schema-name-duplicate\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.Name\", [b.index]),\n\tsprintf(\"Schema declares the attribute '%s' twice; the pool create fails with \\\"Duplicate custom attribute names custom:%s are not allowed in a user pool schema.\\\"\", [n, n]),\n\t\"Give each schema attribute a distinct Name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.Schema\")\n\tsome b in flatten_list(name, \"Properties.Schema\")\n\ta.index < b.index\n\tis_object(a.value)\n\tis_object(b.value)\n\tn := object.get(a.value, \"Name\", \"__pf_a\")\n\tis_string(n)\n\tn == object.get(b.value, \"Name\", \"__pf_b\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-number-min-max-order",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Number attribute MinValue must not exceed MaxValue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The constraints are typed as strings, so no schema layer compares them.\n\nviolation contains make_diag_full(\"pf-cognito-schema-number-min-max-order\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.NumberAttributeConstraints\", [a.index]),\n\tsprintf(\"attribute '%s' has MinValue %v over MaxValue %v; the pool create fails with \\\"Attribute custom:%s cannot have a max value smaller than it's min value\\\"\", [n, mn, mx, n]),\n\t\"Keep MinValue less than or equal to MaxValue\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.Schema\")\n\tis_object(a.value)\n\tn := object.get(a.value, \"Name\", \"\")\n\tnac := _pf_coglib_at(a.value, \"NumberAttributeConstraints\")\n\tis_object(nac)\n\tmn_raw := object.get(nac, \"MinValue\", \"__pf_absent\")\n\tmn_raw != \"__pf_absent\"\n\tmx_raw := object.get(nac, \"MaxValue\", \"__pf_absent\")\n\tmx_raw != \"__pf_absent\"\n\tmn := to_number(mn_raw)\n\tmx := to_number(mx_raw)\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-cognito-schema-standard-attr-datatype",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Standard attributes keep their fixed data type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema entry may re-declare a standard attribute (to make it required or\n# immutable) but not retype it; the type table is service knowledge.\n\nviolation contains make_diag_full(\"pf-cognito-schema-standard-attr-datatype\", \"ERROR\", name,\n\tsprintf(\"Properties.Schema.%d.AttributeDataType\", [a.index]),\n\tsprintf(\"standard attribute '%s' is declared as %s, but its type is fixed to %s; the pool create fails with \\\"You can not change AttributeDataType or set developerOnlyAttribute for standard schema attribute %s\\\"\", [n, dt, want, n]),\n\t\"Declare the standard attribute with its own data type, or use a custom attribute\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.Schema\")\n\tis_object(a.value)\n\tn := object.get(a.value, \"Name\", \"\")\n\twant := _pf_coglib_std_attr_types[n]\n\tdt := _pf_coglib_at(a.value, \"AttributeDataType\")\n\tis_string(dt)\n\tdt != want\n}\n"
+  },
+  {
+    "id": "pf-cognito-signin-policy-password-required",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "AllowedFirstAuthFactors must include PASSWORD",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgsppr_has_password(fs) if {\n\tsome f in fs\n\tf.value == \"PASSWORD\"\n}\n\nviolation contains make_diag_full(\"pf-cognito-signin-policy-password-required\", \"ERROR\", name,\n\t\"Properties.Policies.SignInPolicy.AllowedFirstAuthFactors\",\n\t\"AllowedFirstAuthFactors does not include PASSWORD; the pool create fails with \\\"Password should be configured as one of the allowed first auth factors.\\\"\",\n\t\"Add PASSWORD to Policies.SignInPolicy.AllowedFirstAuthFactors\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tfs := flatten_list(name, \"Properties.Policies.SignInPolicy.AllowedFirstAuthFactors\")\n\tcount(fs) > 0\n\tnot _pf_cgsppr_has_password(fs)\n}\n"
+  },
+  {
+    "id": "pf-cognito-signin-policy-webauthn-tier",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Passwordless sign-in factors need ESSENTIALS or PLUS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-signin-policy-webauthn-tier\", \"ERROR\", name,\n\tsprintf(\"Properties.Policies.SignInPolicy.AllowedFirstAuthFactors.%d\", [f.index]),\n\tsprintf(\"first auth factor '%s' needs a paid feature tier but UserPoolTier is LITE; the pool create fails with \\\"The following features need to be disabled for the LITE pricing tier configured: Passwordless Sign-In\\\"\", [f.value]),\n\t\"Use UserPoolTier ESSENTIALS or PLUS, or keep PASSWORD as the only first auth factor\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tresolve(name, \"Properties.UserPoolTier\") == \"LITE\"\n\tsome f in flatten_list(name, \"Properties.Policies.SignInPolicy.AllowedFirstAuthFactors\")\n\tf.value in {\"WEB_AUTHN\", \"EMAIL_OTP\", \"SMS_OTP\"}\n}\n"
+  },
+  {
+    "id": "pf-cognito-sms-authentication-message-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "SmsAuthenticationMessage needs the {####} code placeholder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-sms-authentication-message-placeholder\", \"ERROR\", name,\n\t\"Properties.SmsAuthenticationMessage\",\n\t\"SmsAuthenticationMessage has no {####} placeholder; the pool create fails on the smsAuthenticationMessage pattern\",\n\t\"Put {####} where the MFA code should appear\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.SmsAuthenticationMessage\")\n\tis_string(m)\n\tnot contains(m, \"{####}\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-sms-caller-arn-account",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The SMS caller role must be in the deploying account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_account is injected only in enforce mode with a\n# concrete account; the rule skips otherwise.\n\nviolation contains make_diag_full(\"pf-cognito-sms-caller-arn-account\", \"ERROR\", name,\n\t\"Properties.SmsConfiguration.SnsCallerArn\",\n\tsprintf(\"SnsCallerArn is in account %v but the pool deploys to %v; the pool create fails with \\\"Cross-account pass role is not allowed.\\\"\", [a, acct]),\n\t\"Use an SNS caller role from the same account as the user pool\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tacct := data.cdk_preflight.deploy_account\n\tis_string(acct)\n\tarn := resolve(name, \"Properties.SmsConfiguration.SnsCallerArn\")\n\ta := _pf_coglib_arn_account(arn)\n\ta != acct\n}\n"
+  },
+  {
+    "id": "pf-cognito-sms-configuration-sns-region",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "SnsRegion must be the region the pool deploys to",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise.\n\nviolation contains make_diag_full(\"pf-cognito-sms-configuration-sns-region\", \"ERROR\", name,\n\t\"Properties.SmsConfiguration.SnsRegion\",\n\tsprintf(\"SnsRegion is '%v' but the pool deploys to '%v'; the pool create fails with \\\"Invalid snsRegion. Allowed SNS region for %v is %v\\\"\", [r, region, region, region]),\n\t\"Set SmsConfiguration.SnsRegion to the pool's own region, or leave it out\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr := resolve(name, \"Properties.SmsConfiguration.SnsRegion\")\n\tis_string(r)\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-cognito-sms-verification-message-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "SmsVerificationMessage needs the {####} code placeholder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-sms-verification-message-placeholder\", \"ERROR\", name,\n\t\"Properties.SmsVerificationMessage\",\n\t\"SmsVerificationMessage has no {####} placeholder; the pool create fails on the smsVerificationMessage pattern\",\n\t\"Put {####} where the verification code should appear\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.SmsVerificationMessage\")\n\tis_string(m)\n\tnot contains(m, \"{####}\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-supported-identity-providers-exists",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Supported identity providers must exist on the pool",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient",
+      "AWS::Cognito::UserPoolIdentityProvider"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the pool is a sibling resource: an imported pool can carry\n# providers this template cannot see.\n\n_pf_cgsipe_declared(pool, v) if {\n\tsome idp in resources_of_type(\"AWS::Cognito::UserPoolIdentityProvider\")\n\tresolve(idp, \"Properties.UserPoolId\") == pool\n\tresolve(idp, \"Properties.ProviderName\") == v\n}\n\nviolation contains make_diag_full(\"pf-cognito-supported-identity-providers-exists\", \"ERROR\", name,\n\tsprintf(\"Properties.SupportedIdentityProviders.%d\", [p.index]),\n\tsprintf(\"identity provider '%s' is not defined for this pool; the client create fails with \\\"The provider %s does not exist for User Pool\\\"\", [v, v]),\n\t\"Add an AWS::Cognito::UserPoolIdentityProvider with that ProviderName, or drop it from SupportedIdentityProviders\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tpool := resolve(name, \"Properties.UserPoolId\")\n\tpool in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome p in flatten_list(name, \"Properties.SupportedIdentityProviders\")\n\tv := p.value\n\tis_string(v)\n\tv != \"COGNITO\"\n\tnot _pf_cgsipe_declared(pool, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-temporary-password-validity-range",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "TemporaryPasswordValidityDays must be between 0 and 365",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cgtpvr_bad(v) if v < 0\n\n_pf_cgtpvr_bad(v) if v > 365\n\nviolation contains make_diag_full(\"pf-cognito-temporary-password-validity-range\", \"ERROR\", name,\n\t\"Properties.Policies.PasswordPolicy.TemporaryPasswordValidityDays\",\n\tsprintf(\"TemporaryPasswordValidityDays %v is outside 0-365; the pool create fails with \\\"Member must have value less than or equal to 365\\\"\", [v]),\n\t\"Use a value between 0 and 365 days\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := to_number(resolve(name, \"Properties.Policies.PasswordPolicy.TemporaryPasswordValidityDays\"))\n\t_pf_cgtpvr_bad(v)\n}\n"
   },
   {
     "id": "pf-cognito-token-expiration-order",
@@ -3494,6 +4456,73 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types the validities as bare integers; the real ranges are\n# per token type AND unit (access/id: 5 minutes-1 day, refresh: 60\n# minutes-10 years). Unit defaults (hours/hours/days) are deploy-verified.\n_pf_cogtvr_unit_secs := {\"seconds\": 1, \"minutes\": 60, \"hours\": 3600, \"days\": 86400}\n\n_pf_cogtvr_unit(name, unitKey, _) := u if {\n\tu := resolve(name, sprintf(\"Properties.TokenValidityUnits.%s\", [unitKey]))\n\tis_string(u)\n}\n\n_pf_cogtvr_unit(name, unitKey, defUnit) := defUnit if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttvu := object.get(props, \"TokenValidityUnits\", {})\n\tis_object(tvu)\n\tobject.get(tvu, unitKey, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_cogtvr_secs(name, valKey, unitKey, defUnit) := s if {\n\tv := to_number(resolve(name, sprintf(\"Properties.%s\", [valKey])))\n\tu := _pf_cogtvr_unit(name, unitKey, defUnit)\n\ts := v * _pf_cogtvr_unit_secs[u]\n}\n\n_pf_cogtvr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\"\n\n_pf_cogtvr_ai_bad(s) if s < 300\n\n_pf_cogtvr_ai_bad(s) if s > 86400\n\n_pf_cogtvr_rt_bad(s) if s < 3600\n\n_pf_cogtvr_rt_bad(s) if s > 315360000\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.AccessTokenValidity\",\n\tsprintf(\"AccessTokenValidity works out to %v seconds, outside 5 minutes-1 day; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the access token validity between 5 minutes and 1 day\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"AccessTokenValidity\", \"AccessToken\", \"hours\")\n\t_pf_cogtvr_ai_bad(s)\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.IdTokenValidity\",\n\tsprintf(\"IdTokenValidity works out to %v seconds, outside 5 minutes-1 day; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the id token validity between 5 minutes and 1 day\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"IdTokenValidity\", \"IdToken\", \"hours\")\n\t_pf_cogtvr_ai_bad(s)\n}\n\nviolation contains make_diag_full(\"pf-cognito-token-validity-range\", \"ERROR\", name,\n\t\"Properties.RefreshTokenValidity\",\n\tsprintf(\"RefreshTokenValidity works out to %v seconds, outside 60 minutes-10 years; the client create fails with \\\"Invalid range for token validity.\\\"\", [s]),\n\t\"Keep the refresh token validity between 60 minutes and 10 years\",\n\t_pf_cogtvr_url) if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\ts := _pf_cogtvr_secs(name, \"RefreshTokenValidity\", \"RefreshToken\", \"days\")\n\t_pf_cogtvr_rt_bad(s)\n}\n"
   },
   {
+    "id": "pf-cognito-ui-customization-css-properties",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Hosted UI CSS only styles the -customizable classes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolUICustomizationAttachment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The CSS is an opaque string to every schema layer; the service only accepts\n# its own customizable class names as selectors.\n\nviolation contains make_diag_full(\"pf-cognito-ui-customization-css-properties\", \"ERROR\", name,\n\t\"Properties.CSS\",\n\tsprintf(\"CSS selector '%s' is not a Cognito customizable class; the UI customization call fails with \\\"The CSS class %s is not in the list of allowed classes.\\\"\", [sel, sel]),\n\t\"Style the Cognito classes (.banner-customizable, .submitButton-customizable, ...)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooluicustomizationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolUICustomizationAttachment\")\n\tcss := resolve(name, \"Properties.CSS\")\n\tis_string(css)\n\tsome chunk in split(css, \"}\")\n\tparts := split(chunk, \"{\")\n\tcount(parts) > 1\n\tsel := trim_space(parts[0])\n\tsel != \"\"\n\tnot contains(sel, \"-customizable\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-ui-customization-requires-domain",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Hosted UI customization requires a domain on the pool",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolUICustomizationAttachment",
+      "AWS::Cognito::UserPoolDomain"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The domain lives on a separate resource, so nothing but a template-wide view\n# can see that it is missing.\n\n_pf_cgucrd_has_domain(pool) if {\n\tsome d in resources_of_type(\"AWS::Cognito::UserPoolDomain\")\n\tresolve(d, \"Properties.UserPoolId\") == pool\n}\n\nviolation contains make_diag_full(\"pf-cognito-ui-customization-requires-domain\", \"ERROR\", name,\n\t\"Properties.UserPoolId\",\n\t\"The pool has no AWS::Cognito::UserPoolDomain in this template; the UI customization call fails with \\\"A domain must be associated with this user pool.\\\"\",\n\t\"Add an AWS::Cognito::UserPoolDomain for the pool (and DependsOn it)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooluicustomizationattachment.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolUICustomizationAttachment\")\n\tpool := resolve(name, \"Properties.UserPoolId\")\n\tpool in resources_of_type(\"AWS::Cognito::UserPool\")\n\tnot _pf_cgucrd_has_domain(pool)\n}\n"
+  },
+  {
+    "id": "pf-cognito-unused-account-validity-exclusive",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "UnusedAccountValidityDays and TemporaryPasswordValidityDays are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-unused-account-validity-exclusive\", \"ERROR\", name,\n\t\"Properties.AdminCreateUserConfig.UnusedAccountValidityDays\",\n\t\"Both UnusedAccountValidityDays and PasswordPolicy.TemporaryPasswordValidityDays are set; the pool create fails with \\\"Please use TemporaryPasswordValidityDays in PasswordPolicy instead of UnusedAccountValidityDays\\\"\",\n\t\"Keep TemporaryPasswordValidityDays (the successor) and drop UnusedAccountValidityDays\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\t_pf_coglib_set(_pf_coglib_g2(name, \"AdminCreateUserConfig\", \"UnusedAccountValidityDays\"))\n\t_pf_coglib_set(_pf_coglib_g3(name, \"Policies\", \"PasswordPolicy\", \"TemporaryPasswordValidityDays\"))\n}\n"
+  },
+  {
+    "id": "pf-cognito-unused-account-validity-range",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "UnusedAccountValidityDays must be between 0 and 365",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cguavr_bad(v) if v < 0\n\n_pf_cguavr_bad(v) if v > 365\n\nviolation contains make_diag_full(\"pf-cognito-unused-account-validity-range\", \"ERROR\", name,\n\t\"Properties.AdminCreateUserConfig.UnusedAccountValidityDays\",\n\tsprintf(\"UnusedAccountValidityDays %v is outside 0-365; the pool create fails with \\\"Member must have value less than or equal to 365\\\"\", [v]),\n\t\"Use a value between 0 and 365 days\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := to_number(resolve(name, \"Properties.AdminCreateUserConfig.UnusedAccountValidityDays\"))\n\t_pf_cguavr_bad(v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-user-attribute-update-requires-auto-verified",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Attributes requiring verification before update must be auto-verified",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cguaurav_auto_verified(name, v) if {\n\tsome b in flatten_list(name, \"Properties.AutoVerifiedAttributes\")\n\tb.value == v\n}\n\nviolation contains make_diag_full(\"pf-cognito-user-attribute-update-requires-auto-verified\", \"ERROR\", name,\n\tsprintf(\"Properties.UserAttributeUpdateSettings.AttributesRequireVerificationBeforeUpdate.%d\", [a.index]),\n\tsprintf(\"'%s' requires verification before update but is not in AutoVerifiedAttributes; the pool create fails with \\\"All attributes in AttributesRequireVerificationBeforeUpdate must exist in AutoVerifiedAttributes\\\"\", [v]),\n\t\"Add the same attribute to AutoVerifiedAttributes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.UserAttributeUpdateSettings.AttributesRequireVerificationBeforeUpdate\")\n\tv := a.value\n\tis_string(v)\n\tnot _pf_cguaurav_auto_verified(name, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-user-attribute-update-settings-enum",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Only email and phone_number can require verification before update",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-user-attribute-update-settings-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.UserAttributeUpdateSettings.AttributesRequireVerificationBeforeUpdate.%d\", [a.index]),\n\tsprintf(\"AttributesRequireVerificationBeforeUpdate has '%s'; the pool create fails with \\\"Member must satisfy enum value set: [phone_number, email]\\\"\", [v]),\n\t\"Keep AttributesRequireVerificationBeforeUpdate to email and/or phone_number\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tsome a in flatten_list(name, \"Properties.UserAttributeUpdateSettings.AttributesRequireVerificationBeforeUpdate\")\n\tv := a.value\n\tis_string(v)\n\tnot v in {\"email\", \"phone_number\"}\n}\n"
+  },
+  {
     "id": "pf-cognito-user-pool-name",
     "service": "cognito",
     "severity": "ERROR",
@@ -3503,6 +4532,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Cognito::UserPool"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-user-pool-name\", \"ERROR\", name,\n\t\"Properties.UserPoolName\",\n\tsprintf(\"UserPoolName '%s' is rejected by the service: word characters, spaces and + = , . @ -\", [v]),\n\t\"Rename it to satisfy word characters, spaces and + = , . @ -\",\n\t\"https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateUserPool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := resolve(name, \"Properties.UserPoolName\")\n\tis_string(v)\n\tnot regex.match(`^[A-Za-z0-9_ \\t+=,.@-]+$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-verification-code-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The verification email needs the {####} code placeholder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-verification-code-placeholder\", \"ERROR\", name,\n\t\"Properties.VerificationMessageTemplate.EmailMessage\",\n\t\"VerificationMessageTemplate.EmailMessage has no {####} placeholder; the pool create fails on the emailMessage pattern\",\n\t\"Put {####} where the verification code should appear\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.VerificationMessageTemplate.EmailMessage\")\n\tis_string(m)\n\tnot contains(m, \"{####}\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-verification-email-subject-length",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The verification email subject is capped at 140 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-verification-email-subject-length\", \"ERROR\", name,\n\t\"Properties.VerificationMessageTemplate.EmailSubject\",\n\tsprintf(\"EmailSubject is %d characters; the pool create fails with \\\"Member must have length less than or equal to 140\\\"\", [count(s)]),\n\t\"Shorten the subject to 140 characters or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\ts := resolve(name, \"Properties.VerificationMessageTemplate.EmailSubject\")\n\tis_string(s)\n\tcount(s) > 140\n}\n"
+  },
+  {
+    "id": "pf-cognito-verification-link-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "A link verification message needs the {##...##} placeholder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-verification-link-placeholder\", \"ERROR\", name,\n\t\"Properties.VerificationMessageTemplate.EmailMessageByLink\",\n\t\"DefaultEmailOption is CONFIRM_WITH_LINK but EmailMessageByLink has no {##...##} link placeholder; the pool create fails on the emailMessageByLink pattern\",\n\t\"Wrap the link text in {## and ##}, e.g. \\\"Click {##here##} to verify\\\"\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tresolve(name, \"Properties.VerificationMessageTemplate.DefaultEmailOption\") == \"CONFIRM_WITH_LINK\"\n\tm := resolve(name, \"Properties.VerificationMessageTemplate.EmailMessageByLink\")\n\tis_string(m)\n\tnot regex.match(`\\{##.*##\\}`, m)\n}\n"
+  },
+  {
+    "id": "pf-cognito-verification-sms-placeholder",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "The verification SMS needs the {####} code placeholder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-verification-sms-placeholder\", \"ERROR\", name,\n\t\"Properties.VerificationMessageTemplate.SmsMessage\",\n\t\"VerificationMessageTemplate.SmsMessage has no {####} placeholder; the pool create fails on the smsMessage pattern\",\n\t\"Put {####} where the verification code should appear\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tm := resolve(name, \"Properties.VerificationMessageTemplate.SmsMessage\")\n\tis_string(m)\n\tnot contains(m, \"{####}\")\n}\n"
+  },
+  {
+    "id": "pf-cognito-web-authn-relying-party-format",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "WebAuthnRelyingPartyID is a bare domain name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPool"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-web-authn-relying-party-format\", \"ERROR\", name,\n\t\"Properties.WebAuthnRelyingPartyID\",\n\tsprintf(\"WebAuthnRelyingPartyID '%s' is not a bare domain name; the relying party id takes no scheme, port or path\", [v]),\n\t\"Use the domain only (example.com), with no scheme, port or path\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPool\")\n\tv := resolve(name, \"Properties.WebAuthnRelyingPartyID\")\n\tis_string(v)\n\tnot input.resources[v]\n\tnot regex.match(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cognito-write-attributes-immutable",
+    "service": "cognito",
+    "severity": "ERROR",
+    "title": "Verified-status attributes cannot be written by a client",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Cognito::UserPoolClient"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cognito-write-attributes-immutable\", \"ERROR\", name,\n\tsprintf(\"Properties.WriteAttributes.%d\", [a.index]),\n\tsprintf(\"WriteAttributes has '%s', which no app client may write; the client create fails with \\\"Invalid write attributes specified while creating a client\\\"\", [a.value]),\n\t\"Drop email_verified / phone_number_verified / sub from WriteAttributes\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html\") if {\n\tsome name in resources_of_type(\"AWS::Cognito::UserPoolClient\")\n\tsome a in flatten_list(name, \"Properties.WriteAttributes\")\n\ta.value in {\"email_verified\", \"phone_number_verified\", \"sub\"}\n}\n"
   },
   {
     "id": "pf-dynamodb-attribute-definitions-usage",
@@ -13482,6 +14577,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cloudwatch",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch rules.\n\n# True absence needs the preprocessed document (see AGENTS.md); resolve() is\n# undefined for a missing key, so \"resolve(...) != x\" never fires on one.\n_pf_cwlib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The statistic grammar CloudWatch accepts wherever a statistic is a string:\n# MetricStat.Stat, a dashboard widget's \"stat\", PutAnomalyDetector's Stat and\n# a metric stream's AdditionalStatistics. Percentiles stop at 100, which is\n# why the numeric part is spelled out instead of [0-9.]+ (p101 is rejected by\n# the service with \"Unsupported statistic p101\").\n# ponytail: the trimmed-mean interval forms (TM(10%:90%)) are matched loosely;\n# a malformed interval passes the rule and is caught by the service.\n_pf_cwlib_stat_re := `^(SampleCount|Average|Sum|Minimum|Maximum|IQM|[pP](100|[0-9]{1,2}(\\.[0-9]{1,2})?)|(TM|TC|TS|WM|tm|tc|ts|wm)((100|[0-9]{1,2}(\\.[0-9]{1,2})?)%?|\\([0-9.%:]*\\))|PR\\([0-9.:]*\\))$`\n\n_pf_cwlib_stat_ok(s) if regex.match(_pf_cwlib_stat_re, s)\n\n# DashboardBody is an opaque JSON string; every dashboard rule reads it here.\n_pf_cwlib_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwlib_wprops(w) := p if {\n\tis_object(w)\n\tp := object.get(w, \"properties\", null)\n\tis_object(p)\n}\n\n_pf_cwlib_wtype(w, t) if {\n\tis_object(w)\n\tobject.get(w, \"type\", null) == t\n}\n\n# InsightRule RuleBody is the other opaque JSON DSL on this service.\n_pf_cwlib_rulebody(name) := obj if {\n\tb := resolve(name, \"Properties.RuleBody\")\n\tis_string(b)\n\tjson.is_valid(b)\n\tobj := json.unmarshal(b)\n\tis_object(obj)\n}\n\n# The three alarm action lists, shared by the action rules.\n_pf_cwlib_action_keys := {\"AlarmActions\", \"OKActions\", \"InsufficientDataActions\"}\n\n# Metric queries of one kind (MetricStat / Expression) on an alarm.\n_pf_cwlib_queries(name, key) := qs if {\n\tqs := [q |\n\t\tsome item in flatten_list(name, \"Properties.Metrics\")\n\t\tq := item.value\n\t\tis_object(q)\n\t\tobject.get(q, key, null) != null\n\t]\n}\n\n# A literal ARN split into its six-plus segments. Refs and GetAtts resolve to a\n# logical id, which has no \"arn:\" prefix, so they skip.\n_pf_cwlib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n"
+  },
+  {
+    "name": "_lib/cognito",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the Cognito rules (rules/cognito/pf-cognito-*).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n#\n# Absence has to be proven against the preprocessed document rather than read\n# through resolve(), which is also undefined for values it cannot resolve\n# (see AGENTS.md). The g1/g2/g3 getters walk a fixed depth - the engine's Rego\n# has no walk builtin and forbids recursion - and return the sentinel\n# \"__pf_absent\" when any level is missing.\n\n_pf_coglib_obj(v) := v if is_object(v)\n\n_pf_coglib_obj(v) := {} if not is_object(v)\n\n_pf_coglib_props(name) := _pf_coglib_obj(input.resources[name].properties)\n\n_pf_coglib_g1(name, a) := object.get(_pf_coglib_props(name), a, \"__pf_absent\")\n\n_pf_coglib_g2(name, a, b) := object.get(_pf_coglib_obj(_pf_coglib_g1(name, a)), b, \"__pf_absent\")\n\n_pf_coglib_g3(name, a, b, c) := object.get(_pf_coglib_obj(_pf_coglib_g2(name, a, b)), c, \"__pf_absent\")\n\n_pf_coglib_absent(v) if v == \"__pf_absent\"\n\n# A getter result that is really a string (the absence sentinel is one too).\n_pf_coglib_str(v) := v if {\n\tis_string(v)\n\tv != \"__pf_absent\"\n}\n\n_pf_coglib_set(v) if v != \"__pf_absent\"\n\n# Sub-object of an item pulled out of flatten_list, with the same sentinel.\n_pf_coglib_at(o, a) := object.get(_pf_coglib_obj(o), a, \"__pf_absent\")\n\n_pf_coglib_at2(o, a, b) := object.get(_pf_coglib_obj(_pf_coglib_at(o, a)), b, \"__pf_absent\")\n\n_pf_coglib_arn_part(arn, i) := p if {\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tp := parts[i]\n\tp != \"\"\n}\n\n_pf_coglib_arn_service(arn) := _pf_coglib_arn_part(arn, 2)\n\n_pf_coglib_arn_region(arn) := _pf_coglib_arn_part(arn, 3)\n\n_pf_coglib_arn_account(arn) := _pf_coglib_arn_part(arn, 4)\n\n# The user pool attributes every pool has, with the data type the service\n# fixes for each; a Schema entry may re-declare one but not retype it.\n_pf_coglib_std_attr_types := {\n\t\"address\": \"String\",\n\t\"birthdate\": \"String\",\n\t\"email\": \"String\",\n\t\"email_verified\": \"Boolean\",\n\t\"family_name\": \"String\",\n\t\"gender\": \"String\",\n\t\"given_name\": \"String\",\n\t\"locale\": \"String\",\n\t\"middle_name\": \"String\",\n\t\"name\": \"String\",\n\t\"nickname\": \"String\",\n\t\"phone_number\": \"String\",\n\t\"phone_number_verified\": \"Boolean\",\n\t\"picture\": \"String\",\n\t\"preferred_username\": \"String\",\n\t\"profile\": \"String\",\n\t\"sub\": \"String\",\n\t\"updated_at\": \"Number\",\n\t\"website\": \"String\",\n\t\"zoneinfo\": \"String\",\n}\n\n_pf_coglib_std_attrs := object.keys(_pf_coglib_std_attr_types)\n\n# Custom attributes only: the ones that count against the 50 attribute cap.\n_pf_coglib_custom_attrs(name) := [a |\n\tsome a in flatten_list(name, \"Properties.Schema\")\n\tis_object(a.value)\n\tn := object.get(a.value, \"Name\", \"\")\n\tnot n in _pf_coglib_std_attrs\n]\n\n_pf_coglib_std_scopes := {\"openid\", \"email\", \"phone\", \"profile\", \"aws.cognito.signin.user.admin\"}\n\n# SES identities are only reachable from Cognito in these three regions -\n# this is a fixed allowlist, not \"the deploy region\" (measured 2026-09-08).\n_pf_coglib_ses_regions := {\"eu-west-1\", \"us-east-1\", \"us-west-2\"}\n\n_pf_coglib_social_idps := {\"Google\", \"Facebook\", \"LoginWithAmazon\", \"SignInWithApple\"}\n"
   },
   {
     "name": "_lib/dynamodb",

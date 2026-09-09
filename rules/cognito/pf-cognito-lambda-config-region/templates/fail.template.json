@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "LambdaConfig": {
+          "PreSignUp": "arn:aws:lambda:ap-northeast-1:123456789012:function:pfprobe"
+        }
+      }
+    }
+  }
+}

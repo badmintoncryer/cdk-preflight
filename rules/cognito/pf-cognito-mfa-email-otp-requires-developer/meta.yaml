@@ -1,0 +1,12 @@
+id: pf-cognito-mfa-email-otp-requires-developer
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "EMAIL_OTP needs the DEVELOPER email sending account"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Cannot set EmailMfaConfiguration when user pool EmailConfiguration contains an EmailSendingAccount of COGNITO_DEFAULT. Update the value of EmailSendingAccount.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

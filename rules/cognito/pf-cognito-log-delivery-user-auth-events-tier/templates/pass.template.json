@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "UserPoolTier": "PLUS"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::LogDeliveryConfiguration",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "LogConfigurations": [
+          {
+            "EventSource": "userAuthEvents",
+            "LogLevel": "INFO",
+            "CloudWatchLogsConfiguration": {
+              "LogGroupArn": {
+                "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/cdkpf/ldc-tier"
+              }
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "LG",
+        "LP"
+      ]
+    },
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/cdkpf/ldc-tier",
+        "RetentionInDays": 1
+      }
+    },
+    "LP": {
+      "Type": "AWS::Logs::ResourcePolicy",
+      "Properties": {
+        "PolicyName": "cdkpf-ldc-tier",
+        "PolicyDocument": {
+          "Fn::Sub": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"cognito\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"cognito-idp.amazonaws.com\"},\"Action\":[\"logs:CreateLogStream\",\"logs:PutLogEvents\"],\"Resource\":\"arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/cdkpf/ldc-tier:*\"}]}"
+        }
+      }
+    }
+  }
+}

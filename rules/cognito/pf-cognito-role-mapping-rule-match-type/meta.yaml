@@ -1,0 +1,12 @@
+id: pf-cognito-role-mapping-rule-match-type
+service: cognito
+resourceTypes: [AWS::Cognito::IdentityPoolRoleAttachment]
+severity: ERROR
+title: "MatchType is Equals, Contains, StartsWith or NotEqual"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypoolroleattachment.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value 'Matches' at 'roleMappings.cognito-idp.us-east-1.amazonaws.com/us-east-1_abcdefghi:abcdefghijklmnopqrstuvwxyz.member.rulesConfiguration.rules.1.member.matchType' failed to satisfy constraint: Member must satisfy enum value set: [NotEqual, StartsWith, Contains, Equa\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

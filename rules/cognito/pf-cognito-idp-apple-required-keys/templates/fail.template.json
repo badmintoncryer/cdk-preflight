@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "SignInWithApple",
+        "ProviderType": "SignInWithApple",
+        "ProviderDetails": {
+          "client_id": "x",
+          "authorize_scopes": "email"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "VerificationMessageTemplate": {
+          "SmsMessage": "Your code is {####}."
+        }
+      }
+    }
+  }
+}

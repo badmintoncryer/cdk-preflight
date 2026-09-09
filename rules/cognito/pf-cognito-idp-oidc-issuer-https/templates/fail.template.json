@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "pfoidc2",
+        "ProviderType": "OIDC",
+        "ProviderDetails": {
+          "client_id": "x",
+          "client_secret": "y",
+          "attributes_request_method": "GET",
+          "oidc_issuer": "http://example.com",
+          "authorize_scopes": "openid"
+        }
+      }
+    }
+  }
+}

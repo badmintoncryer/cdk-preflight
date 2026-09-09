@@ -1,0 +1,12 @@
+id: pf-cognito-custom-domain-fqdn
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolDomain]
+severity: ERROR
+title: "A custom domain must be a fully qualified domain name"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Cognito::UserPoolDomain\"; the API names it: \"Custom domain is not a valid subdomain: Was not able to resolve a DNS A record for the parent domain or domain parent is a top-level domain.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

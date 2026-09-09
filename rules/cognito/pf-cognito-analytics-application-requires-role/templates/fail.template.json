@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientName": "pfprobe",
+        "AnalyticsConfiguration": {
+          "ApplicationId": "abcdef01234567890abcdef012345678"
+        }
+      }
+    }
+  }
+}

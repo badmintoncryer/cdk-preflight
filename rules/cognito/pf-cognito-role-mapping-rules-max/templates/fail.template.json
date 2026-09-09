@@ -1,0 +1,242 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "AllowUnauthenticatedIdentities": false,
+        "IdentityPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+      "Properties": {
+        "IdentityPoolId": {
+          "Ref": "P"
+        },
+        "Roles": {
+          "authenticated": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+          }
+        },
+        "RoleMappings": {
+          "cognito-idp.us-east-1.amazonaws.com/us-east-1_abcdefghi:abcdefghijklmnopqrstuvwxyz": {
+            "Type": "Rules",
+            "AmbiguousRoleResolution": "AuthenticatedRole",
+            "RulesConfiguration": {
+              "Rules": [
+                {
+                  "Claim": "c0",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c1",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c2",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c3",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c4",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c5",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c6",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c7",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c8",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c9",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c10",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c11",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c12",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c13",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c14",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c15",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c16",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c17",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c18",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c19",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c20",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c21",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c22",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c23",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c24",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                },
+                {
+                  "Claim": "c25",
+                  "MatchType": "Equals",
+                  "Value": "v",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

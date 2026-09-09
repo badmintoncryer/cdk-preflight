@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolUICustomizationAttachment",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientId": "ALL",
+        "CSS": ".banner-customizable { background: #ffffff; }"
+      },
+      "DependsOn": "D"
+    },
+    "D": {
+      "Type": "AWS::Cognito::UserPoolDomain",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Domain": "cdkpf-ui-css-pass"
+      }
+    }
+  }
+}

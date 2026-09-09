@@ -1,0 +1,12 @@
+id: pf-cognito-risk-account-takeover-event-action-enum
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolRiskConfigurationAttachment]
+severity: ERROR
+title: "Account takeover actions take four values"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value 'ALLOW' at 'accountTakeoverRiskConfiguration.actions.lowAction.eventAction' failed to satisfy constraint: Member must satisfy enum value set: [MFA_IF_CONFIGURED, BLOCK, NO_ACTION, MFA_REQUIRED]\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

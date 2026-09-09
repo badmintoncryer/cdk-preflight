@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::LogDeliveryConfiguration",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "LogConfigurations": [
+          {
+            "EventSource": "userNotification",
+            "LogLevel": "ERROR",
+            "CloudWatchLogsConfiguration": {
+              "LogGroupArn": "arn:aws:logs:ap-northeast-1:123456789012:log-group:/pf/probe"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

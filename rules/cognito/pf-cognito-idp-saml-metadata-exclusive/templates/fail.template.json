@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "pfsaml2",
+        "ProviderType": "SAML",
+        "ProviderDetails": {
+          "MetadataURL": "https://example.com/m.xml",
+          "MetadataFile": "<EntityDescriptor/>"
+        }
+      }
+    }
+  }
+}

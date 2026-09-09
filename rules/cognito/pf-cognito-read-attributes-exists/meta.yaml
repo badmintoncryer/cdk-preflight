@@ -1,0 +1,12 @@
+id: pf-cognito-read-attributes-exists
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolClient, AWS::Cognito::UserPool]
+severity: ERROR
+title: "ReadAttributes must name attributes the pool has"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid read attributes specified while creating a client\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

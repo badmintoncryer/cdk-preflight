@@ -1,0 +1,12 @@
+id: pf-cognito-domain-prefix-format
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolDomain]
+severity: ERROR
+title: "A hosted UI domain prefix takes lower-case letters, digits and hyphens"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Cognito::UserPoolDomain\"; the API names it: \"The domain name contains an invalid character. Domain names can only contain lower-case letters, numbers, and hyphens. Please enter a different name that follows this format: ^[a-z0-9](?:[a-z0-9\\-]{0,61}[a-z0-9])?$\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08
