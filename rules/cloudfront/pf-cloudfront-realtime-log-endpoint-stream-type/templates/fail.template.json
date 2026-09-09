@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::RealtimeLogConfig",
+      "Properties": {
+        "Name": "rlc",
+        "SamplingRate": 50,
+        "Fields": [
+          "timestamp"
+        ],
+        "EndPoints": [
+          {
+            "StreamType": "Firehose",
+            "KinesisStreamConfig": {
+              "RoleArn": "arn:aws:iam::111122223333:role/r",
+              "StreamArn": "arn:aws:kinesis:us-east-1:111122223333:stream/s"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

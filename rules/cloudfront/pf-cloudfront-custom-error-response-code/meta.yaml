@@ -1,0 +1,12 @@
+id: pf-cloudfront-custom-error-response-code
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'CustomErrorResponses ErrorCode must be one of the codes CloudFront caches'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter ErrorCode is invalid. (Service: CloudFront, Status Code: 400, Request ID: f26fc155-6c1f-4ec2-b318-04342a02e3b4) (SDK Attempt Count: 1)" (RequestToken: 6e9e2e42-c7ec-b78f-f305-c7f4bda7178e, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

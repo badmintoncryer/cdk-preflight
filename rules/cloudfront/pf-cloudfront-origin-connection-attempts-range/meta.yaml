@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-connection-attempts-range
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'ConnectionAttempts must be between 1 and 3'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Origin connection attempts out of range: [1,3]. (Service: CloudFront, Status Code: 400, Request ID: befb65f6-b4b4-4c40-880a-5c01c2cdb5a8) (SDK Attempt Count: 1)" (RequestToken: 0cb53044-0804-0890-5f34-8dbb7e304c9c, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

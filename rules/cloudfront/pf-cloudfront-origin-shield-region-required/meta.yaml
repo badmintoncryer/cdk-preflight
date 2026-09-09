@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-shield-region-required
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'Enabling Origin Shield requires OriginShieldRegion'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter region null does not exist!. (Service: CloudFront, Status Code: 400, Request ID: 8723eb8b-a8c6-420a-8a77-1ae3d2b13dda) (SDK Attempt Count: 1)" (RequestToken: b70aac93-775d-40f6-b810-29e3d3a9adcf, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

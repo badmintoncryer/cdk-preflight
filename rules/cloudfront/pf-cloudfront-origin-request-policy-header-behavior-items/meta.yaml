@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-request-policy-header-behavior-items
+service: cloudfront
+resourceTypes: [AWS::CloudFront::OriginRequestPolicy]
+severity: ERROR
+title: 'Origin request policy HeaderBehavior whitelist / allExcept requires Headers'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::OriginRequestPolicy: The parameter Headers needs to be provided when HeaderBehavior is whitelist. (Service: CloudFront, Status Code: 400, Request ID: 72f5a5de-09f7-47ae-87d9-456ed22e0dc1) (SDK Attempt Count: 1)" (RequestToken: cc433290-3e68-2768-9aa1-41cd05d5b6b4, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

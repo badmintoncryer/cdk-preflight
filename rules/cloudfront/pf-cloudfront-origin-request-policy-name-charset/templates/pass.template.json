@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::OriginRequestPolicy",
+      "Properties": {
+        "OriginRequestPolicyConfig": {
+          "Name": "good-name_1",
+          "HeadersConfig": {
+            "HeaderBehavior": "none"
+          },
+          "CookiesConfig": {
+            "CookieBehavior": "none"
+          },
+          "QueryStringsConfig": {
+            "QueryStringBehavior": "none"
+          }
+        }
+      }
+    }
+  }
+}

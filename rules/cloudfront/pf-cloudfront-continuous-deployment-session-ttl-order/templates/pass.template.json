@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ContinuousDeploymentPolicy",
+      "Properties": {
+        "ContinuousDeploymentPolicyConfig": {
+          "Enabled": true,
+          "StagingDistributionDnsNames": [
+            "a.cloudfront.net"
+          ],
+          "TrafficConfig": {
+            "Type": "SingleWeight",
+            "SingleWeightConfig": {
+              "Weight": 0.1,
+              "SessionStickinessConfig": {
+                "IdleTTL": 600,
+                "MaximumTTL": 3000
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

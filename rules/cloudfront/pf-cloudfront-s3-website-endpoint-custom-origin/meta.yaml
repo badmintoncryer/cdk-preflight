@@ -1,0 +1,12 @@
+id: pf-cloudfront-s3-website-endpoint-custom-origin
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'An S3 website endpoint origin must use CustomOriginConfig, not S3OriginConfig'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Origin DomainName does not refer to a valid S3 bucket. (Service: CloudFront, Status Code: 400, Request ID: 07161e64-c56a-4f23-86ea-972e60eb9c97) (SDK Attempt Count: 1)" (RequestToken: edc26e6f-94d9-dcfd-b338-2145046249b6, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

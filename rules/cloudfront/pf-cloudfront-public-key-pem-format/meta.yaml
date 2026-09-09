@@ -1,0 +1,12 @@
+id: pf-cloudfront-public-key-pem-format
+service: cloudfront
+resourceTypes: [AWS::CloudFront::PublicKey]
+severity: ERROR
+title: 'PublicKey EncodedKey must be a PEM-encoded public key'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-publickey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::PublicKey: Your request contains empty/invalid/out of limits RSA Encoded Key (Service: CloudFront, Status Code: 400, Request ID: 5d6198a4-1abb-49d7-b433-8bd4fe8941bd) (SDK Attempt Count: 1)" (RequestToken: 4b2643b8-53b4-b707-1bf3-1b8a1a065078, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

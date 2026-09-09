@@ -1,0 +1,12 @@
+id: pf-cloudfront-response-headers-policy-name-charset
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'Response headers policy names allow only alphanumerics, dash and underscore'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ResponseHeadersPolicy: The parameter bad name! contains characters other than alphanumericals, dashes, and underscores. (Service: CloudFront, Status Code: 400, Request ID: e5f7d825-14f9-4416-9948-ca1ced5fd678) (SDK Attempt Count: 1)" (RequestToken: 0941be0e-6dcb-a96e-8aae-f8c38a06ba0a, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

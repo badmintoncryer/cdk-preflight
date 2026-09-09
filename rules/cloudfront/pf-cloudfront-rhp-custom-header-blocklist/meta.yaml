@@ -1,0 +1,12 @@
+id: pf-cloudfront-rhp-custom-header-blocklist
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'CustomHeadersConfig cannot carry headers CloudFront reserves'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ResponseHeadersPolicy: The parameter CustomHeaders contains Transfer-Encoding that is not allowed. (Service: CloudFront, Status Code: 400, Request ID: 26c7ea68-0b8f-4d32-a588-64c922814b0b) (SDK Attempt Count: 1)" (RequestToken: d407ff1f-e884-7e0b-3ea1-697b322ec2aa, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

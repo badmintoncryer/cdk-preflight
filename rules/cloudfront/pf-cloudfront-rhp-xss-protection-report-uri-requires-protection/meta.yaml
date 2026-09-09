@@ -1,0 +1,12 @@
+id: pf-cloudfront-rhp-xss-protection-report-uri-requires-protection
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'XSSProtection ReportUri requires Protection true'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ResponseHeadersPolicy: The parameter X-XSS-Protection cannot contain Report URI or Mode block when protection is 0. (Service: CloudFront, Status Code: 400, Request ID: 10f6462f-041e-4076-9e40-b83ff2f1409b) (SDK Attempt Count: 1)" (RequestToken: 1892a021-09c6-fc1e-e696-bf02af4b726b, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-trusted-signers-account-format
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'TrustedSigners entries must be self or a 12-digit account id'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Trusted Signers must contain a valid AWS account number: 12 digits with no spaces. (Service: CloudFront, Status Code: 400, Request ID: 9e6a8e0b-8807-4dac-b9b8-186a41e4ee40) (SDK Attempt Count: 1)" (RequestToken: 40fefbff-c385-a639-2410-de82b18c087f, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

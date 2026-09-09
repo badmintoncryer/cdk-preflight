@@ -1,0 +1,12 @@
+id: pf-cloudfront-vpc-origin-arn-type
+service: cloudfront
+resourceTypes: [AWS::CloudFront::VpcOrigin]
+severity: ERROR
+title: 'A VPC origin ARN must point at an ALB, NLB or EC2 instance'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::VpcOrigin: The parameter VpcOriginEndpointConfig Arn Invalid Format. (Service: CloudFront, Status Code: 400, Request ID: c6d1a31c-5a61-4cc1-9cea-74478a7a6e52) (SDK Attempt Count: 1)" (RequestToken: 2a80b64e-fb89-008a-84b8-01e32acc8f32, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

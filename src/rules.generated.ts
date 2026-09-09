@@ -2636,6 +2636,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-acm-cert-region\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\",\n\tsprintf(\"CloudFront requires the ACM certificate to be in us-east-1, but the certificate is in %s\", [region]),\n\t\"Issue or import the certificate in us-east-1 (e.g. a dedicated us-east-1 stack) and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-certificate-issuer\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"acm\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != \"us-east-1\"\n}\n"
   },
   {
+    "id": "pf-cloudfront-alias-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Aliases must not contain duplicates",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_alias_unique_fix := \"List each alternate domain name once\"\n\n_pf_cf_alias_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-alias-unique\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\tsprintf(\"alias %v is listed more than once\", [k]),\n\t_pf_cf_alias_unique_fix, _pf_cf_alias_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\tal := object.get(cfg, \"Aliases\", null)\n\tis_array(al)\n\tsome k in al\n\tis_string(k)\n\tcount([x | some x in al; x == k]) > 1\n}\n"
+  },
+  {
     "id": "pf-cloudfront-aliases-require-custom-certificate",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -2645,6 +2656,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudFront::Distribution"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_aliascert_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-viewercertificate.html\"\n\n_pf_cf_aliascert_fix := \"Attach an ACM certificate (AcmCertificateArn, us-east-1) or an IAM certificate, together with SslSupportMethod and MinimumProtocolVersion\"\n\n_pf_cf_aliascert_count(name) := count([1 |\n\tsome _ in flatten_list(name, \"Properties.DistributionConfig.Aliases\")\n])\n\nviolation contains make_diag_full(\"pf-cloudfront-aliases-require-custom-certificate\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate\",\n\t\"A distribution with Aliases cannot use the CloudFront default certificate\",\n\t_pf_cf_aliascert_fix, _pf_cf_aliascert_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\t_pf_cf_aliascert_count(name) > 0\n\tresolve(name, \"Properties.DistributionConfig.ViewerCertificate.CloudFrontDefaultCertificate\") == true\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-allowed-methods-set",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "AllowedMethods must be one of the three sets CloudFront supports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_allowed_methods_set_fix := \"Use [GET,HEAD], [GET,HEAD,OPTIONS] or all seven methods\"\n\n_pf_cf_allowed_methods_set_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-allowed-methods-set\", \"ERROR\", name, b.path,\n\tsprintf(\"AllowedMethods %v is not one of the three sets CloudFront supports\", [am]),\n\t_pf_cf_allowed_methods_set_fix, _pf_cf_allowed_methods_set_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tam := object.get(b.value, \"AllowedMethods\", null)\n\tis_array(am)\n\tms := {m | some m in am}\n\tms != {\"GET\", \"HEAD\"}\n\tms != {\"GET\", \"HEAD\", \"OPTIONS\"}\n\tms != {\"GET\", \"HEAD\", \"OPTIONS\", \"PUT\", \"PATCH\", \"POST\", \"DELETE\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-anycast-ip-list-count",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "AnycastIpList IpCount must be 21",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::AnycastIpList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_anycast_ip_list_count_fix := \"Set IpCount to 21\"\n\n_pf_cf_anycast_ip_list_count_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-anycast-ip-list-count\", \"ERROR\", name, \"Properties.IpCount\",\n\tsprintf(\"IpCount %v is not supported; CloudFront allocates exactly 21 anycast IPs\", [c]),\n\t_pf_cf_anycast_ip_list_count_fix, _pf_cf_anycast_ip_list_count_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::AnycastIpList\")\n\traw := resolve(name, \"Properties.IpCount\")\n\tc := to_number(raw)\n\tc != 21\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-behavior-path-pattern-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache behavior PathPattern values must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_behavior_path_pattern_unique_fix := \"Give each cache behavior a distinct PathPattern\"\n\n_pf_cf_cache_behavior_path_pattern_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-behavior-path-pattern-unique\", \"ERROR\", name, \"Properties.DistributionConfig.CacheBehaviors\",\n\tsprintf(\"PathPattern %v is used by more than one cache behavior\", [k]),\n\t_pf_cf_cache_behavior_path_pattern_unique_fix, _pf_cf_cache_behavior_path_pattern_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tpats := [pp | some it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\"); pp := object.get(it.value, \"PathPattern\", null); is_string(pp)]\n\tsome k in pats\n\tcount([x | some x in pats; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-behavior-target-origin-exists",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache behavior TargetOriginId must match an origin or origin group Id",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_behavior_target_origin_exists_fix := \"Set TargetOriginId to one of the Origins[].Id or OriginGroups.Items[].Id values\"\n\n_pf_cf_cache_behavior_target_origin_exists_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-behavior-target-origin-exists\", \"ERROR\", name, b.path,\n\tsprintf(\"TargetOriginId %v does not match any origin or origin group Id %v\", [tid, ids]),\n\t_pf_cf_cache_behavior_target_origin_exists_fix, _pf_cf_cache_behavior_target_origin_exists_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\ttid := object.get(b.value, \"TargetOriginId\", null)\n\tis_string(tid)\n\tids := _pf_cflib_origin_ids(name)\n\tcount(ids) > 0\n\tnot tid in ids\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-accept-encoding-conflict",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Accept-Encoding cannot be whitelisted while EnableAcceptEncodingGzip/Brotli is true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_accept_encoding_conflict_fix := \"Drop Accept-Encoding from Headers, or turn off EnableAcceptEncodingGzip / EnableAcceptEncodingBrotli\"\n\n_pf_cf_cache_policy_accept_encoding_conflict_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-accept-encoding-conflict\", \"ERROR\", name, \"Properties.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin\",\n\tsprintf(\"%v cannot be true while the Accept-Encoding header is in the cache key\", [k]),\n\t_pf_cf_cache_policy_accept_encoding_conflict_fix, _pf_cf_cache_policy_accept_encoding_conflict_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tpk := object.get(_pf_cflib_props(name, \"CachePolicyConfig\"), \"ParametersInCacheKeyAndForwardedToOrigin\", null)\n\tis_object(pk)\n\tsome k in [\"EnableAcceptEncodingGzip\", \"EnableAcceptEncodingBrotli\"]\n\tobject.get(pk, k, false) == true\n\thc := object.get(pk, \"HeadersConfig\", null)\n\tis_object(hc)\n\tsome h in object.get(hc, \"Headers\", [])\n\tis_string(h)\n\tlower(h) == \"accept-encoding\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-cookie-behavior-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache policy CookieBehavior whitelist / allExcept requires Cookies",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_cookie_behavior_items_fix := \"List at least one entry in Cookies\"\n\n_pf_cf_cache_policy_cookie_behavior_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-cookie-behavior-items\", \"ERROR\", name, \"Properties.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin.CookiesConfig\",\n\tsprintf(\"CookieBehavior %v requires at least one entry in Cookies\", [bh]),\n\t_pf_cf_cache_policy_cookie_behavior_items_fix, _pf_cf_cache_policy_cookie_behavior_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tpk := object.get(_pf_cflib_props(name, \"CachePolicyConfig\"), \"ParametersInCacheKeyAndForwardedToOrigin\", null)\n\tis_object(pk)\n\tsc := object.get(pk, \"CookiesConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"CookieBehavior\", null)\n\tbh in {\"whitelist\", \"allExcept\"}\n\tcount(object.get(sc, \"Cookies\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-header-behavior-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache policy HeaderBehavior whitelist requires Headers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_header_behavior_items_fix := \"List at least one entry in Headers\"\n\n_pf_cf_cache_policy_header_behavior_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-header-behavior-items\", \"ERROR\", name, \"Properties.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin.HeadersConfig\",\n\tsprintf(\"HeaderBehavior %v requires at least one entry in Headers\", [bh]),\n\t_pf_cf_cache_policy_header_behavior_items_fix, _pf_cf_cache_policy_header_behavior_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tpk := object.get(_pf_cflib_props(name, \"CachePolicyConfig\"), \"ParametersInCacheKeyAndForwardedToOrigin\", null)\n\tis_object(pk)\n\tsc := object.get(pk, \"HeadersConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"HeaderBehavior\", null)\n\tbh in {\"whitelist\"}\n\tcount(object.get(sc, \"Headers\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-header-behavior-none-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache policy HeaderBehavior none cannot carry Headers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_header_behavior_none_items_fix := \"Remove Headers, or change HeaderBehavior\"\n\n_pf_cf_cache_policy_header_behavior_none_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-header-behavior-none-items\", \"ERROR\", name, \"Properties.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin.HeadersConfig\",\n\tsprintf(\"HeaderBehavior %v cannot be combined with Headers\", [bh]),\n\t_pf_cf_cache_policy_header_behavior_none_items_fix, _pf_cf_cache_policy_header_behavior_none_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tpk := object.get(_pf_cflib_props(name, \"CachePolicyConfig\"), \"ParametersInCacheKeyAndForwardedToOrigin\", null)\n\tis_object(pk)\n\tsc := object.get(pk, \"HeadersConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"HeaderBehavior\", null)\n\tbh in {\"none\"}\n\tcount(object.get(sc, \"Headers\", [])) > 0\n}\n"
   },
   {
     "id": "pf-cloudfront-cache-policy-name",
@@ -2658,6 +2757,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-name\", \"ERROR\", name,\n\t\"Properties.CachePolicyConfig.Name\",\n\tsprintf(\"CachePolicyConfig.Name '%s' is rejected by the service: alphanumerics, dash and underscore\", [v]),\n\t\"Rename it to satisfy alphanumerics, dash and underscore\",\n\t\"https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_CreateCachePolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tv := resolve(name, \"Properties.CachePolicyConfig.Name\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, v)\n}\n"
   },
   {
+    "id": "pf-cloudfront-cache-policy-or-forwarded-values-required",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A cache behavior must set either CachePolicyId or ForwardedValues",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_or_forwarded_values_required_fix := \"Attach a cache policy with CachePolicyId\"\n\n_pf_cf_cache_policy_or_forwarded_values_required_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-or-forwarded-values-required\", \"ERROR\", name, b.path,\n\t\"a cache behavior must include either CachePolicyId or ForwardedValues\",\n\t_pf_cf_cache_policy_or_forwarded_values_required_fix, _pf_cf_cache_policy_or_forwarded_values_required_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tis_object(b.value)\n\tobject.get(b.value, \"CachePolicyId\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(b.value, \"ForwardedValues\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-query-string-behavior-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache policy QueryStringBehavior whitelist / allExcept requires QueryStrings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_query_string_behavior_items_fix := \"List at least one entry in QueryStrings\"\n\n_pf_cf_cache_policy_query_string_behavior_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-query-string-behavior-items\", \"ERROR\", name, \"Properties.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin.QueryStringsConfig\",\n\tsprintf(\"QueryStringBehavior %v requires at least one entry in QueryStrings\", [bh]),\n\t_pf_cf_cache_policy_query_string_behavior_items_fix, _pf_cf_cache_policy_query_string_behavior_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tpk := object.get(_pf_cflib_props(name, \"CachePolicyConfig\"), \"ParametersInCacheKeyAndForwardedToOrigin\", null)\n\tis_object(pk)\n\tsc := object.get(pk, \"QueryStringsConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"QueryStringBehavior\", null)\n\tbh in {\"whitelist\", \"allExcept\"}\n\tcount(object.get(sc, \"QueryStrings\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-cache-policy-ttl-default-in-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Cache policy DefaultTTL must be between MinTTL and MaxTTL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::CachePolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_cache_policy_ttl_default_in_range_fix := \"Order the TTLs as MinTTL <= DefaultTTL <= MaxTTL\"\n\n_pf_cf_cache_policy_ttl_default_in_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-ttl-default-in-range\", \"ERROR\", name, \"Properties.CachePolicyConfig\",\n\tsprintf(\"DefaultTTL (%v) is below MinTTL (%v)\", [df, mn]),\n\t_pf_cf_cache_policy_ttl_default_in_range_fix, _pf_cf_cache_policy_ttl_default_in_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tcfgv := _pf_cflib_props(name, \"CachePolicyConfig\")\n\tmn := to_number(object.get(cfgv, \"MinTTL\", null))\n\tdf := to_number(object.get(cfgv, \"DefaultTTL\", null))\n\tdf < mn\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-cache-policy-ttl-default-in-range\", \"ERROR\", name, \"Properties.CachePolicyConfig\",\n\tsprintf(\"DefaultTTL (%v) is above MaxTTL (%v)\", [df, mx]),\n\t_pf_cf_cache_policy_ttl_default_in_range_fix, _pf_cf_cache_policy_ttl_default_in_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::CachePolicy\")\n\tcfgv := _pf_cflib_props(name, \"CachePolicyConfig\")\n\tmx := to_number(object.get(cfgv, \"MaxTTL\", null))\n\tdf := to_number(object.get(cfgv, \"DefaultTTL\", null))\n\tdf > mx\n}\n"
+  },
+  {
     "id": "pf-cloudfront-cached-methods-subset",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -2667,6 +2799,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudFront::Distribution"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_methods_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\n_pf_cf_methods_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\n# CloudFront defaults AllowedMethods to GET/HEAD when the property is omitted,\n# so an omitted AllowedMethods still constrains what may be cached.\n_pf_cf_methods_allowed(b) := object.get(b.value, \"AllowedMethods\", [\"GET\", \"HEAD\"])\n\nviolation contains make_diag_full(\"pf-cloudfront-cached-methods-subset\", \"ERROR\", name,\n\tsprintf(\"%s.CachedMethods\", [b.path]),\n\tsprintf(\"CachedMethods contains %s, which is not in AllowedMethods %v\", [method, allowed]),\n\t\"Every method in CachedMethods must also appear in AllowedMethods\",\n\t_pf_cf_methods_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_methods_behaviors(name)\n\tis_object(b.value)\n\tcached := object.get(b.value, \"CachedMethods\", null)\n\tis_array(cached)\n\tallowed := _pf_cf_methods_allowed(b)\n\tis_array(allowed)\n\tsome method in cached\n\tnot method in allowed\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-continuous-deployment-header-prefix",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "SingleHeaderConfig Header must start with aws-cf-cd-",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ContinuousDeploymentPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_continuous_deployment_header_prefix_fix := \"Prefix the header name with aws-cf-cd-\"\n\n_pf_cf_continuous_deployment_header_prefix_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-header-prefix\", \"ERROR\", name, \"Properties.ContinuousDeploymentPolicyConfig.TrafficConfig\",\n\tsprintf(\"header %v must start with aws-cf-cd-\", [h]),\n\t_pf_cf_continuous_deployment_header_prefix_fix, _pf_cf_continuous_deployment_header_prefix_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ContinuousDeploymentPolicy\")\n\ttc := object.get(_pf_cflib_props(name, \"ContinuousDeploymentPolicyConfig\"), \"TrafficConfig\", null)\n\tis_object(tc)\n\tsh := object.get(tc, \"SingleHeaderConfig\", null)\n\tis_object(sh)\n\th := object.get(sh, \"Header\", null)\n\tis_string(h)\n\tnot startswith(lower(h), \"aws-cf-cd-\")\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-continuous-deployment-policy-excludes-staging",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ContinuousDeploymentPolicyId cannot be set on a staging distribution",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_continuous_deployment_policy_excludes_staging_fix := \"Attach the continuous deployment policy to the primary distribution only\"\n\n_pf_cf_continuous_deployment_policy_excludes_staging_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-policy-excludes-staging\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\t\"ContinuousDeploymentPolicyId belongs on the primary distribution, not the staging one\",\n\t_pf_cf_continuous_deployment_policy_excludes_staging_fix, _pf_cf_continuous_deployment_policy_excludes_staging_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\tobject.get(cfg, \"Staging\", false) == true\n\tobject.get(cfg, \"ContinuousDeploymentPolicyId\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-continuous-deployment-session-ttl-order",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "SessionStickinessConfig IdleTTL cannot exceed MaximumTTL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ContinuousDeploymentPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_continuous_deployment_session_ttl_order_fix := \"Set IdleTTL to at most MaximumTTL\"\n\n_pf_cf_continuous_deployment_session_ttl_order_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-session-ttl-order\", \"ERROR\", name, \"Properties.ContinuousDeploymentPolicyConfig.TrafficConfig\",\n\tsprintf(\"IdleTTL (%v) is greater than MaximumTTL (%v)\", [i, m]),\n\t_pf_cf_continuous_deployment_session_ttl_order_fix, _pf_cf_continuous_deployment_session_ttl_order_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ContinuousDeploymentPolicy\")\n\ttc := object.get(_pf_cflib_props(name, \"ContinuousDeploymentPolicyConfig\"), \"TrafficConfig\", null)\n\tis_object(tc)\n\tsw := object.get(tc, \"SingleWeightConfig\", null)\n\tis_object(sw)\n\tss := object.get(sw, \"SessionStickinessConfig\", null)\n\tis_object(ss)\n\ti := to_number(object.get(ss, \"IdleTTL\", null))\n\tm := to_number(object.get(ss, \"MaximumTTL\", null))\n\ti > m\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-continuous-deployment-staging-dns-count",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A continuous deployment policy takes exactly one staging distribution DNS name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ContinuousDeploymentPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_continuous_deployment_staging_dns_count_fix := \"List a single staging distribution domain name\"\n\n_pf_cf_continuous_deployment_staging_dns_count_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-staging-dns-count\", \"ERROR\", name, \"Properties.ContinuousDeploymentPolicyConfig.StagingDistributionDnsNames\",\n\tsprintf(\"%v staging DNS names are declared; CloudFront accepts exactly one\", [count(ns)]),\n\t_pf_cf_continuous_deployment_staging_dns_count_fix, _pf_cf_continuous_deployment_staging_dns_count_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ContinuousDeploymentPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ContinuousDeploymentPolicyConfig\")\n\tns := object.get(cfgv, \"StagingDistributionDnsNames\", [])\n\tcount(ns) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-continuous-deployment-traffic-config-match",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "TrafficConfig Type must match the config block that is present",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ContinuousDeploymentPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_continuous_deployment_traffic_config_match_fix := \"Pair Type SingleWeight with SingleWeightConfig, and SingleHeader with SingleHeaderConfig\"\n\n_pf_cf_continuous_deployment_traffic_config_match_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-traffic-config-match\", \"ERROR\", name, \"Properties.ContinuousDeploymentPolicyConfig.TrafficConfig\",\n\t\"TrafficConfig.Type is SingleWeight but SingleWeightConfig is missing\",\n\t_pf_cf_continuous_deployment_traffic_config_match_fix, _pf_cf_continuous_deployment_traffic_config_match_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ContinuousDeploymentPolicy\")\n\ttc := object.get(_pf_cflib_props(name, \"ContinuousDeploymentPolicyConfig\"), \"TrafficConfig\", null)\n\tis_object(tc)\n\tobject.get(tc, \"Type\", null) == \"SingleWeight\"\n\tobject.get(tc, \"SingleWeightConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-traffic-config-match\", \"ERROR\", name, \"Properties.ContinuousDeploymentPolicyConfig.TrafficConfig\",\n\t\"TrafficConfig.Type is SingleHeader but SingleHeaderConfig is missing\",\n\t_pf_cf_continuous_deployment_traffic_config_match_fix, _pf_cf_continuous_deployment_traffic_config_match_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ContinuousDeploymentPolicy\")\n\ttc := object.get(_pf_cflib_props(name, \"ContinuousDeploymentPolicyConfig\"), \"TrafficConfig\", null)\n\tis_object(tc)\n\tobject.get(tc, \"Type\", null) == \"SingleHeader\"\n\tobject.get(tc, \"SingleHeaderConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-continuous-deployment-weight-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "SingleWeightConfig Weight must be between 0 and 0.15",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ContinuousDeploymentPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_continuous_deployment_weight_range_fix := \"Use a weight of 0.15 or lower\"\n\n_pf_cf_continuous_deployment_weight_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-continuous-deployment-weight-range\", \"ERROR\", name, \"Properties.ContinuousDeploymentPolicyConfig.TrafficConfig\",\n\tsprintf(\"Weight %v is above the 0.15 maximum\", [w]),\n\t_pf_cf_continuous_deployment_weight_range_fix, _pf_cf_continuous_deployment_weight_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ContinuousDeploymentPolicy\")\n\ttc := object.get(_pf_cflib_props(name, \"ContinuousDeploymentPolicyConfig\"), \"TrafficConfig\", null)\n\tis_object(tc)\n\tsw := object.get(tc, \"SingleWeightConfig\", null)\n\tis_object(sw)\n\traw := object.get(sw, \"Weight\", \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tw := to_number(raw)\n\tw > 0.15\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-custom-error-response-code",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CustomErrorResponses ErrorCode must be one of the codes CloudFront caches",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_custom_error_response_code_fix := \"Use 400, 403, 404, 405, 414, 416, 500, 501, 502, 503 or 504\"\n\n_pf_cf_custom_error_response_code_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-custom-error-response-code\", \"ERROR\", name, sprintf(\"Properties.DistributionConfig.CustomErrorResponses.%d\", [it.index]),\n\tsprintf(\"%v is not an HTTP status code CloudFront can customize\", [c]),\n\t_pf_cf_custom_error_response_code_fix, _pf_cf_custom_error_response_code_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.CustomErrorResponses\")\n\te := it.value\n\traw := object.get(e, \"ErrorCode\", \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tc := to_number(raw)\n\tnot c in {400, 403, 404, 405, 414, 416, 500, 501, 502, 503, 504}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-custom-error-response-page-path-format",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ResponsePagePath must start with /",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_custom_error_response_page_path_format_fix := \"Write the custom error page path as /404.html\"\n\n_pf_cf_custom_error_response_page_path_format_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-custom-error-response-page-path-format\", \"ERROR\", name, sprintf(\"Properties.DistributionConfig.CustomErrorResponses.%d\", [it.index]),\n\tsprintf(\"ResponsePagePath %v does not start with /\", [pp]),\n\t_pf_cf_custom_error_response_page_path_format_fix, _pf_cf_custom_error_response_page_path_format_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.CustomErrorResponses\")\n\te := it.value\n\tpp := object.get(e, \"ResponsePagePath\", null)\n\tis_string(pp)\n\tnot startswith(pp, \"/\")\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-custom-error-response-page-path-pair",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ResponsePagePath and ResponseCode must be specified together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_custom_error_response_page_path_pair_fix := \"Set both ResponsePagePath and ResponseCode, or neither\"\n\n_pf_cf_custom_error_response_page_path_pair_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-custom-error-response-page-path-pair\", \"ERROR\", name, sprintf(\"Properties.DistributionConfig.CustomErrorResponses.%d\", [it.index]),\n\t\"ResponsePagePath is set but ResponseCode is missing\",\n\t_pf_cf_custom_error_response_page_path_pair_fix, _pf_cf_custom_error_response_page_path_pair_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.CustomErrorResponses\")\n\te := it.value\n\tobject.get(e, \"ResponsePagePath\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(e, \"ResponseCode\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-custom-error-response-page-path-pair\", \"ERROR\", name, sprintf(\"Properties.DistributionConfig.CustomErrorResponses.%d\", [it.index]),\n\t\"ResponseCode is set but ResponsePagePath is missing\",\n\t_pf_cf_custom_error_response_page_path_pair_fix, _pf_cf_custom_error_response_page_path_pair_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.CustomErrorResponses\")\n\te := it.value\n\tobject.get(e, \"ResponseCode\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(e, \"ResponsePagePath\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-cloudfront-edge-lambda-region",
@@ -2691,6 +2922,303 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_edgever_fix := \"Associate a version ARN (in the CDK, fn.currentVersion.edgeArn) instead of the unqualified function ARN, an alias, or $LATEST\"\n\n_pf_cf_edgever_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-lambdafunctionassociation.html\"\n\n_pf_cf_edgever_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\"} |\n\t\tsome _ in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index])} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\n# Lambda ARNs split into 7 segments when unqualified\n# (arn:partition:lambda:region:account:function:name) and 8 when a version or\n# alias qualifier is appended. Only an all-digit qualifier is a version.\n_pf_cf_edgever_arns(name) := [{\"path\": path, \"arn\": arn, \"parts\": parts} |\n\tsome b in _pf_cf_edgever_behaviors(name)\n\tsome a in flatten_list(name, sprintf(\"%s.LambdaFunctionAssociations\", [b.path]))\n\tarn := object.get(a.value, \"LambdaFunctionARN\", null)\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tparts[0] == \"arn\"\n\tparts[2] == \"lambda\"\n\tparts[5] == \"function\"\n\tpath := sprintf(\"%s.LambdaFunctionAssociations.%d.LambdaFunctionARN\", [b.path, a.index])\n]\n\nviolation contains make_diag_full(\"pf-cloudfront-edge-lambda-version\", \"ERROR\", name, it.path,\n\t\"Lambda@Edge requires a version-qualified function ARN, but this ARN has no qualifier\",\n\t_pf_cf_edgever_fix, _pf_cf_edgever_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in _pf_cf_edgever_arns(name)\n\tcount(it.parts) == 7\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-edge-lambda-version\", \"ERROR\", name, it.path,\n\tsprintf(\"Lambda@Edge requires a version-qualified function ARN, but '%s' is an alias or $LATEST\", [qualifier]),\n\t_pf_cf_edgever_fix, _pf_cf_edgever_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome it in _pf_cf_edgever_arns(name)\n\tcount(it.parts) == 8\n\tqualifier := it.parts[7]\n\tnot regex.match(\"^[0-9]+$\", qualifier)\n}\n"
   },
   {
+    "id": "pf-cloudfront-field-level-encryption-requires-post",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "FieldLevelEncryptionId requires POST or PUT in AllowedMethods",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_field_level_encryption_requires_post_fix := \"Allow POST/PUT on the behavior, or drop FieldLevelEncryptionId\"\n\n_pf_cf_field_level_encryption_requires_post_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-field-level-encryption-requires-post\", \"ERROR\", name, b.path,\n\tsprintf(\"FieldLevelEncryptionId is set but AllowedMethods %v has neither POST nor PUT\", [am]),\n\t_pf_cf_field_level_encryption_requires_post_fix, _pf_cf_field_level_encryption_requires_post_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tfle := object.get(b.value, \"FieldLevelEncryptionId\", \"__pf_absent\")\n\tfle != \"__pf_absent\"\n\tfle != \"\"\n\tam := object.get(b.value, \"AllowedMethods\", [\"GET\", \"HEAD\"])\n\tis_array(am)\n\tnot \"POST\" in am\n\tnot \"PUT\" in am\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-function-association-event-type",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CloudFront Functions only support viewer-request and viewer-response",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_function_association_event_type_fix := \"Use viewer-request or viewer-response, or switch to Lambda@Edge\"\n\n_pf_cf_function_association_event_type_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-function-association-event-type\", \"ERROR\", name, b.path,\n\tsprintf(\"FunctionAssociations cannot use the origin-facing event type %v\", [et]),\n\t_pf_cf_function_association_event_type_fix, _pf_cf_function_association_event_type_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tfa := object.get(b.value, \"FunctionAssociations\", null)\n\tis_array(fa)\n\tsome a in fa\n\tet := object.get(a, \"EventType\", null)\n\tis_string(et)\n\tnot et in {\"viewer-request\", \"viewer-response\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-function-association-event-type-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Each CloudFront Function EventType can appear only once per cache behavior",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_function_association_event_type_unique_fix := \"Associate at most one function per event type\"\n\n_pf_cf_function_association_event_type_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-function-association-event-type-unique\", \"ERROR\", name, b.path,\n\tsprintf(\"EventType %v is associated with more than one CloudFront Function\", [k]),\n\t_pf_cf_function_association_event_type_unique_fix, _pf_cf_function_association_event_type_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tfa := object.get(b.value, \"FunctionAssociations\", null)\n\tis_array(fa)\n\tets := [e | some a in fa; e := object.get(a, \"EventType\", null); is_string(e)]\n\tsome k in ets\n\tcount([x | some x in ets; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-function-code-size",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CloudFront Function code is limited to 10 KB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_function_code_size_fix := \"Shorten the function code to 10240 bytes or fewer\"\n\n_pf_cf_function_code_size_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-function-code-size\", \"ERROR\", name, \"Properties.FunctionCode\",\n\tsprintf(\"FunctionCode is %v bytes, over the 10240 limit\", [count(code)]),\n\t_pf_cf_function_code_size_fix, _pf_cf_function_code_size_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Function\")\n\tcode := resolve(name, \"Properties.FunctionCode\")\n\tis_string(code)\n\tcount(code) > 10240\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-function-kvs-association-count",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A CloudFront Function can associate at most one key value store",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_function_kvs_association_count_fix := \"Associate a single key value store\"\n\n_pf_cf_function_kvs_association_count_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-function-kvs-association-count\", \"ERROR\", name, \"Properties.FunctionConfig\",\n\tsprintf(\"%v key value stores are associated; the limit is 1\", [count(kvs)]),\n\t_pf_cf_function_kvs_association_count_fix, _pf_cf_function_kvs_association_count_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Function\")\n\tfc := _pf_cflib_props(name, \"FunctionConfig\")\n\tis_object(fc)\n\tkvs := object.get(fc, \"KeyValueStoreAssociations\", [])\n\tcount(kvs) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-function-kvs-requires-runtime-2",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "KeyValueStoreAssociations require the cloudfront-js-2.0 runtime",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_function_kvs_requires_runtime_2_fix := \"Set Runtime to cloudfront-js-2.0\"\n\n_pf_cf_function_kvs_requires_runtime_2_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-function-kvs-requires-runtime-2\", \"ERROR\", name, \"Properties.FunctionConfig\",\n\tsprintf(\"a key value store association requires cloudfront-js-2.0, not %v\", [rt]),\n\t_pf_cf_function_kvs_requires_runtime_2_fix, _pf_cf_function_kvs_requires_runtime_2_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Function\")\n\tfc := _pf_cflib_props(name, \"FunctionConfig\")\n\tis_object(fc)\n\tcount(object.get(fc, \"KeyValueStoreAssociations\", [])) > 0\n\trt := object.get(fc, \"Runtime\", null)\n\tis_string(rt)\n\trt != \"cloudfront-js-2.0\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-function-runtime-enum",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CloudFront Function Runtime must be cloudfront-js-1.0 or cloudfront-js-2.0",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::Function"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_function_runtime_enum_fix := \"Use cloudfront-js-2.0\"\n\n_pf_cf_function_runtime_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-function-runtime-enum\", \"ERROR\", name, \"Properties.FunctionConfig\",\n\tsprintf(\"Runtime %v is not a valid CloudFront Functions runtime\", [rt]),\n\t_pf_cf_function_runtime_enum_fix, _pf_cf_function_runtime_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Function\")\n\tfc := _pf_cflib_props(name, \"FunctionConfig\")\n\tis_object(fc)\n\trt := object.get(fc, \"Runtime\", null)\n\tis_string(rt)\n\tnot rt in {\"cloudfront-js-1.0\", \"cloudfront-js-2.0\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-geo-restriction-country-code",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "GeoRestriction locations must be two-letter uppercase country codes",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_geo_restriction_country_code_fix := \"Use the ISO 3166-1 alpha-2 code (JP, not JPN)\"\n\n_pf_cf_geo_restriction_country_code_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-geo-restriction-country-code\", \"ERROR\", name, \"Properties.DistributionConfig.Restrictions.GeoRestriction\",\n\tsprintf(\"%v is not an ISO 3166-1 alpha-2 country code\", [c]),\n\t_pf_cf_geo_restriction_country_code_fix, _pf_cf_geo_restriction_country_code_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\trs := object.get(_pf_cflib_config(name), \"Restrictions\", null)\n\tis_object(rs)\n\tgr := object.get(rs, \"GeoRestriction\", null)\n\tis_object(gr)\n\tsome c in object.get(gr, \"Locations\", [])\n\tis_string(c)\n\tnot regex.match(\"^[A-Z]{2}$\", c)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-geo-restriction-locations-exclusive",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "RestrictionType none cannot carry Locations",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_geo_restriction_locations_exclusive_fix := \"Drop Locations, or switch to whitelist / blacklist\"\n\n_pf_cf_geo_restriction_locations_exclusive_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-geo-restriction-locations-exclusive\", \"ERROR\", name, \"Properties.DistributionConfig.Restrictions.GeoRestriction\",\n\t\"RestrictionType none cannot be combined with Locations\",\n\t_pf_cf_geo_restriction_locations_exclusive_fix, _pf_cf_geo_restriction_locations_exclusive_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\trs := object.get(_pf_cflib_config(name), \"Restrictions\", null)\n\tis_object(rs)\n\tgr := object.get(rs, \"GeoRestriction\", null)\n\tis_object(gr)\n\tobject.get(gr, \"RestrictionType\", null) == \"none\"\n\tcount(object.get(gr, \"Locations\", [])) > 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-grpc-requires-http2",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "GrpcConfig requires an HTTP/2 capable HttpVersion",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_grpc_requires_http2_fix := \"Set HttpVersion to http2 or http2and3\"\n\n_pf_cf_grpc_requires_http2_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-grpc-requires-http2\", \"ERROR\", name, b.path,\n\tsprintf(\"GrpcConfig is enabled but HttpVersion is %v\", [hv]),\n\t_pf_cf_grpc_requires_http2_fix, _pf_cf_grpc_requires_http2_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tgrpc := object.get(b.value, \"GrpcConfig\", null)\n\tis_object(grpc)\n\tobject.get(grpc, \"Enabled\", false) == true\n\thv := object.get(_pf_cflib_config(name), \"HttpVersion\", null)\n\tis_string(hv)\n\tnot hv in {\"http2\", \"http2and3\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-grpc-requires-post-method",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "GrpcConfig requires POST in AllowedMethods",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_grpc_requires_post_method_fix := \"Allow all seven methods on the behavior that enables gRPC\"\n\n_pf_cf_grpc_requires_post_method_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-grpc-requires-post-method\", \"ERROR\", name, b.path,\n\tsprintf(\"GrpcConfig is enabled but AllowedMethods %v does not include POST\", [am]),\n\t_pf_cf_grpc_requires_post_method_fix, _pf_cf_grpc_requires_post_method_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tgrpc := object.get(b.value, \"GrpcConfig\", null)\n\tis_object(grpc)\n\tobject.get(grpc, \"Enabled\", false) == true\n\tam := object.get(b.value, \"AllowedMethods\", [\"GET\", \"HEAD\"])\n\tis_array(am)\n\tnot \"POST\" in am\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-http-version-enum",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "HttpVersion must be http1.1, http2, http2and3 or http3",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_http_version_enum_fix := \"Use http1.1, http2, http2and3 or http3\"\n\n_pf_cf_http_version_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-http-version-enum\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\tsprintf(\"HttpVersion %v is not a valid value\", [hv]),\n\t_pf_cf_http_version_enum_fix, _pf_cf_http_version_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\thv := object.get(cfg, \"HttpVersion\", null)\n\tis_string(hv)\n\tnot hv in {\"http1.1\", \"http2\", \"http2and3\", \"http3\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-key-group-item-count",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A key group holds at most 5 public keys",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::KeyGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_key_group_item_count_fix := \"Split the keys across multiple key groups\"\n\n_pf_cf_key_group_item_count_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keygroup.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-key-group-item-count\", \"ERROR\", name, \"Properties.KeyGroupConfig\",\n\tsprintf(\"the key group lists %v public keys; the limit is 5\", [count(its)]),\n\t_pf_cf_key_group_item_count_fix, _pf_cf_key_group_item_count_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::KeyGroup\")\n\tcfgv := _pf_cflib_props(name, \"KeyGroupConfig\")\n\tits := object.get(cfgv, \"Items\", [])\n\tcount(its) > 5\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-key-group-item-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A key group must not list the same public key twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::KeyGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_key_group_item_unique_fix := \"List each public key id once\"\n\n_pf_cf_key_group_item_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keygroup.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-key-group-item-unique\", \"ERROR\", name, \"Properties.KeyGroupConfig\",\n\tsprintf(\"public key %v is listed more than once\", [k]),\n\t_pf_cf_key_group_item_unique_fix, _pf_cf_key_group_item_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::KeyGroup\")\n\tcfgv := _pf_cflib_props(name, \"KeyGroupConfig\")\n\tits := [i | some i in object.get(cfgv, \"Items\", []); is_string(i)]\n\tsome k in its\n\tcount([x | some x in its; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-key-value-store-import-source-arn",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "KeyValueStore ImportSource SourceArn must be an S3 object ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::KeyValueStore"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_key_value_store_import_source_arn_fix := \"Use arn:aws:s3:::<bucket>/<key>, not an s3:// URL\"\n\n_pf_cf_key_value_store_import_source_arn_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keyvaluestore.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-key-value-store-import-source-arn\", \"ERROR\", name, \"Properties.ImportSource\",\n\tsprintf(\"SourceArn %v is not an S3 object ARN\", [sa]),\n\t_pf_cf_key_value_store_import_source_arn_fix, _pf_cf_key_value_store_import_source_arn_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::KeyValueStore\")\n\tis := _pf_cflib_props(name, \"ImportSource\")\n\tis_object(is)\n\tsa := object.get(is, \"SourceArn\", null)\n\tis_string(sa)\n\tsa != \"\"\n\tnot regex.match(\"^arn:[a-z0-9-]+:s3:::.+/.+\", sa)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-key-value-store-import-source-type",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "KeyValueStore ImportSource SourceType must be S3",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::KeyValueStore"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_key_value_store_import_source_type_fix := \"Set SourceType to S3\"\n\n_pf_cf_key_value_store_import_source_type_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keyvaluestore.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-key-value-store-import-source-type\", \"ERROR\", name, \"Properties.ImportSource\",\n\tsprintf(\"SourceType %v is not supported; only S3 is\", [st]),\n\t_pf_cf_key_value_store_import_source_type_fix, _pf_cf_key_value_store_import_source_type_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::KeyValueStore\")\n\tis := _pf_cflib_props(name, \"ImportSource\")\n\tis_object(is)\n\tst := object.get(is, \"SourceType\", null)\n\tis_string(st)\n\tst != \"S3\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-lambda-association-event-type-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Each Lambda@Edge EventType can appear only once per cache behavior",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_lambda_association_event_type_unique_fix := \"Associate at most one function per event type\"\n\n_pf_cf_lambda_association_event_type_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-lambda-association-event-type-unique\", \"ERROR\", name, b.path,\n\tsprintf(\"EventType %v is associated with more than one Lambda@Edge function\", [k]),\n\t_pf_cf_lambda_association_event_type_unique_fix, _pf_cf_lambda_association_event_type_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tla := object.get(b.value, \"LambdaFunctionAssociations\", null)\n\tis_array(la)\n\tets := [e | some a in la; e := object.get(a, \"EventType\", null); is_string(e)]\n\tsome k in ets\n\tcount([x | some x in ets; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-lambda-association-include-body-event-type",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "IncludeBody is only valid for viewer-request and origin-request",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_lambda_association_include_body_event_type_fix := \"Drop IncludeBody, or move the association to a request event type\"\n\n_pf_cf_lambda_association_include_body_event_type_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-lambda-association-include-body-event-type\", \"ERROR\", name, b.path,\n\tsprintf(\"IncludeBody cannot be set on the %v event type\", [et]),\n\t_pf_cf_lambda_association_include_body_event_type_fix, _pf_cf_lambda_association_include_body_event_type_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tla := object.get(b.value, \"LambdaFunctionAssociations\", null)\n\tis_array(la)\n\tsome a in la\n\tobject.get(a, \"IncludeBody\", false) == true\n\tet := object.get(a, \"EventType\", null)\n\tis_string(et)\n\tnot et in {\"viewer-request\", \"origin-request\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-logging-bucket-format",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Logging.Bucket must be the S3 bucket DNS name, not the bare bucket name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_logging_bucket_format_fix := \"Use <bucket>.s3.<region>.amazonaws.com\"\n\n_pf_cf_logging_bucket_format_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-logging-bucket-format\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\tsprintf(\"Logging.Bucket %v is not an S3 bucket DNS name\", [bk]),\n\t_pf_cf_logging_bucket_format_fix, _pf_cf_logging_bucket_format_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\tlg := object.get(cfg, \"Logging\", null)\n\tis_object(lg)\n\tbk := object.get(lg, \"Bucket\", null)\n\tis_string(bk)\n\tbk != \"\"\n\tnot endswith(bk, \".amazonaws.com\")\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-oac-excludes-origin-access-identity",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginAccessControlId and S3OriginConfig.OriginAccessIdentity are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_oac_excludes_origin_access_identity_fix := \"Use origin access control alone and leave OriginAccessIdentity empty\"\n\n_pf_cf_oac_excludes_origin_access_identity_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-oac-excludes-origin-access-identity\", \"ERROR\", name, o.path,\n\tsprintf(\"origin %v sets both OriginAccessControlId and OriginAccessIdentity (%v)\", [object.get(o.value, \"Id\", \"<unnamed>\"), oai]),\n\t_pf_cf_oac_excludes_origin_access_identity_fix, _pf_cf_oac_excludes_origin_access_identity_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\toac := object.get(o.value, \"OriginAccessControlId\", \"__pf_absent\")\n\toac != \"__pf_absent\"\n\toac != \"\"\n\ts3 := object.get(o.value, \"S3OriginConfig\", null)\n\tis_object(s3)\n\toai := object.get(s3, \"OriginAccessIdentity\", \"\")\n\toai != \"\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-config-required",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Every origin must declare exactly one origin type configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_config_required_fix := \"Add S3OriginConfig, CustomOriginConfig or VpcOriginConfig to the origin\"\n\n_pf_cf_origin_config_required_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-config-required\", \"ERROR\", name, o.path,\n\tsprintf(\"origin %v has none of S3OriginConfig / CustomOriginConfig / VpcOriginConfig\", [object.get(o.value, \"Id\", \"<unnamed>\")]),\n\t_pf_cf_origin_config_required_fix, _pf_cf_origin_config_required_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\tobject.get(o.value, \"S3OriginConfig\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(o.value, \"CustomOriginConfig\", \"__pf_absent\") == \"__pf_absent\"\n\tobject.get(o.value, \"VpcOriginConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-connection-attempts-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ConnectionAttempts must be between 1 and 3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_connection_attempts_range_fix := \"Use a value between 1 and 3 for ConnectionAttempts\"\n\n_pf_cf_origin_connection_attempts_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-connection-attempts-range\", \"ERROR\", name, o.path,\n\tsprintf(\"ConnectionAttempts %v is less than 1\", [v]),\n\t_pf_cf_origin_connection_attempts_range_fix, _pf_cf_origin_connection_attempts_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\traw := object.get(o.value, \"ConnectionAttempts\", \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tv := to_number(raw)\n\tv < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-connection-attempts-range\", \"ERROR\", name, o.path,\n\tsprintf(\"ConnectionAttempts %v is greater than 3\", [v]),\n\t_pf_cf_origin_connection_attempts_range_fix, _pf_cf_origin_connection_attempts_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\traw := object.get(o.value, \"ConnectionAttempts\", \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tv := to_number(raw)\n\tv > 3\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-connection-timeout-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ConnectionTimeout must be between 1 and 10",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_connection_timeout_range_fix := \"Use a value between 1 and 10 for ConnectionTimeout\"\n\n_pf_cf_origin_connection_timeout_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-connection-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"ConnectionTimeout %v is less than 1\", [v]),\n\t_pf_cf_origin_connection_timeout_range_fix, _pf_cf_origin_connection_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\traw := object.get(o.value, \"ConnectionTimeout\", \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tv := to_number(raw)\n\tv < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-connection-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"ConnectionTimeout %v is greater than 10\", [v]),\n\t_pf_cf_origin_connection_timeout_range_fix, _pf_cf_origin_connection_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\traw := object.get(o.value, \"ConnectionTimeout\", \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tv := to_number(raw)\n\tv > 10\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-custom-header-blocklist",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginCustomHeaders cannot carry headers CloudFront reserves",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_custom_header_blocklist_fix := \"Remove the reserved header from OriginCustomHeaders\"\n\n_pf_cf_origin_custom_header_blocklist_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/add-origin-custom-headers.html\"\n\n_pf_cf_origin_custom_header_blocklist_names := {\n\t\"cache-control\",\n\t\"connection\",\n\t\"content-length\",\n\t\"cookie\",\n\t\"host\",\n\t\"if-match\",\n\t\"if-modified-since\",\n\t\"if-none-match\",\n\t\"if-range\",\n\t\"if-unmodified-since\",\n\t\"max-forwards\",\n\t\"pragma\",\n\t\"proxy-authenticate\",\n\t\"proxy-authorization\",\n\t\"proxy-connection\",\n\t\"range\",\n\t\"request-range\",\n\t\"te\",\n\t\"trailer\",\n\t\"transfer-encoding\",\n\t\"upgrade\",\n\t\"via\",\n\t\"x-real-ip\",\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-custom-header-blocklist\", \"ERROR\", name, o.path,\n\tsprintf(\"CloudFront cannot add the reserved header %v to origin requests\", [n]),\n\t_pf_cf_origin_custom_header_blocklist_fix, _pf_cf_origin_custom_header_blocklist_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tsome h in object.get(o.value, \"OriginCustomHeaders\", [])\n\tn := object.get(h, \"HeaderName\", null)\n\tis_string(n)\n\tlower(n) in _pf_cf_origin_custom_header_blocklist_names\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-custom-header-blocklist\", \"ERROR\", name, o.path,\n\tsprintf(\"CloudFront cannot add the reserved header %v to origin requests\", [n]),\n\t_pf_cf_origin_custom_header_blocklist_fix, _pf_cf_origin_custom_header_blocklist_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tsome h in object.get(o.value, \"OriginCustomHeaders\", [])\n\tn := object.get(h, \"HeaderName\", null)\n\tis_string(n)\n\tsome p in [\"x-amz-\", \"x-edge-\"]\n\tstartswith(lower(n), p)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-custom-header-name-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginCustomHeaders header names must be unique per origin",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_custom_header_name_unique_fix := \"Declare each header name once\"\n\n_pf_cf_origin_custom_header_name_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-custom-header-name-unique\", \"ERROR\", name, o.path,\n\tsprintf(\"header name %v appears more than once in OriginCustomHeaders\", [k]),\n\t_pf_cf_origin_custom_header_name_unique_fix, _pf_cf_origin_custom_header_name_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tns := [lower(n) | some h in object.get(o.value, \"OriginCustomHeaders\", []); n := object.get(h, \"HeaderName\", null); is_string(n)]\n\tsome k in ns\n\tcount([x | some x in ns; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-group-failover-status-codes",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin group failover status codes are limited to a fixed set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_group_failover_status_codes_fix := \"Use 400, 403, 404, 405, 410, 414, 416, 500, 502, 503 or 504\"\n\n_pf_cf_origin_group_failover_status_codes_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-group-failover-status-codes\", \"ERROR\", name, g.path,\n\tsprintf(\"%v is not a valid origin group failover status code\", [n]),\n\t_pf_cf_origin_group_failover_status_codes_fix, _pf_cf_origin_group_failover_status_codes_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome g in _pf_cflib_origin_groups(name)\n\tfc := object.get(g.value, \"FailoverCriteria\", null)\n\tis_object(fc)\n\tsc := object.get(fc, \"StatusCodes\", null)\n\tis_object(sc)\n\tsome c in object.get(sc, \"Items\", [])\n\tn := to_number(c)\n\tnot n in {400, 403, 404, 405, 410, 414, 416, 500, 502, 503, 504}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-group-id-collides-with-origin",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "An origin group Id cannot reuse an origin Id",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_group_id_collides_with_origin_fix := \"Give the origin group an Id that no origin uses\"\n\n_pf_cf_origin_group_id_collides_with_origin_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-group-id-collides-with-origin\", \"ERROR\", name, g.path,\n\tsprintf(\"origin group Id %v collides with an origin Id\", [gid]),\n\t_pf_cf_origin_group_id_collides_with_origin_fix, _pf_cf_origin_group_id_collides_with_origin_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome g in _pf_cflib_origin_groups(name)\n\tgid := object.get(g.value, \"Id\", null)\n\tis_string(gid)\n\toids := {i | some o in _pf_cflib_origins(name); i := object.get(o.value, \"Id\", null); is_string(i)}\n\tgid in oids\n}\n"
+  },
+  {
     "id": "pf-cloudfront-origin-group-member-origin",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -2702,6 +3230,369 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_ogmember_ids(name) := {id |\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.Origins\")\n\tid := object.get(it.value, \"Id\", null)\n\tis_string(id)\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-group-member-origin\", \"ERROR\", name,\n\tsprintf(\"Properties.DistributionConfig.OriginGroups.Items.%d.Members\", [g.index]),\n\tsprintf(\"Origin group member '%s' does not match any origin Id in the distribution\", [oid]),\n\t\"Point every origin group member at the Id of an origin declared in Origins\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-origingroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome g in flatten_list(name, \"Properties.DistributionConfig.OriginGroups.Items\")\n\tmembers := object.get(object.get(g.value, \"Members\", {}), \"Items\", [])\n\tsome m in members\n\toid := object.get(m, \"OriginId\", null)\n\tis_string(oid)\n\tnot oid in _pf_cf_ogmember_ids(name)\n}\n"
   },
   {
+    "id": "pf-cloudfront-origin-http-port-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "HTTPPort must be 80, 443 or in 1024-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_http_port_range_fix := \"Use 80, 443, or a port in 1024-65535 for HTTPPort\"\n\n_pf_cf_origin_http_port_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-http-port-range\", \"ERROR\", name, o.path,\n\tsprintf(\"HTTPPort %v is below the allowed range (80, 443 or 1024-65535)\", [p]),\n\t_pf_cf_origin_http_port_range_fix, _pf_cf_origin_http_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tpraw := object.get(oc, \"HTTPPort\", \"__pf_absent\")\n\tpraw != \"__pf_absent\"\n\tp := to_number(praw)\n\tp != 80\n\tp != 443\n\tp < 1024\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-http-port-range\", \"ERROR\", name, o.path,\n\tsprintf(\"HTTPPort %v is above the allowed range (80, 443 or 1024-65535)\", [p]),\n\t_pf_cf_origin_http_port_range_fix, _pf_cf_origin_http_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tpraw := object.get(oc, \"HTTPPort\", \"__pf_absent\")\n\tpraw != \"__pf_absent\"\n\tp := to_number(praw)\n\tp > 65535\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-https-port-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "HTTPSPort must be 80, 443 or in 1024-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_https_port_range_fix := \"Use 80, 443, or a port in 1024-65535 for HTTPSPort\"\n\n_pf_cf_origin_https_port_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-https-port-range\", \"ERROR\", name, o.path,\n\tsprintf(\"HTTPSPort %v is below the allowed range (80, 443 or 1024-65535)\", [p]),\n\t_pf_cf_origin_https_port_range_fix, _pf_cf_origin_https_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tpraw := object.get(oc, \"HTTPSPort\", \"__pf_absent\")\n\tpraw != \"__pf_absent\"\n\tp := to_number(praw)\n\tp != 80\n\tp != 443\n\tp < 1024\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-https-port-range\", \"ERROR\", name, o.path,\n\tsprintf(\"HTTPSPort %v is above the allowed range (80, 443 or 1024-65535)\", [p]),\n\t_pf_cf_origin_https_port_range_fix, _pf_cf_origin_https_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tpraw := object.get(oc, \"HTTPSPort\", \"__pf_absent\")\n\tpraw != \"__pf_absent\"\n\tp := to_number(praw)\n\tp > 65535\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-id-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin Id values must be unique within a distribution",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_id_unique_fix := \"Give each origin a distinct Id\"\n\n_pf_cf_origin_id_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-id-unique\", \"ERROR\", name, \"Properties.DistributionConfig.Origins\",\n\tsprintf(\"origin Id %v is used more than once\", [k]),\n\t_pf_cf_origin_id_unique_fix, _pf_cf_origin_id_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tids := [i | some o in _pf_cflib_origins(name); i := object.get(o.value, \"Id\", null); is_string(i)]\n\tsome k in ids\n\tcount([x | some x in ids; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-keepalive-timeout-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginKeepaliveTimeout must be between 1 and 300",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_keepalive_timeout_range_fix := \"Use a value between 1 and 300 for OriginKeepaliveTimeout\"\n\n_pf_cf_origin_keepalive_timeout_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-keepalive-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginKeepaliveTimeout %v is less than 1\", [v]),\n\t_pf_cf_origin_keepalive_timeout_range_fix, _pf_cf_origin_keepalive_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginKeepaliveTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-keepalive-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginKeepaliveTimeout %v is greater than 300\", [v]),\n\t_pf_cf_origin_keepalive_timeout_range_fix, _pf_cf_origin_keepalive_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginKeepaliveTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv > 300\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-path-format",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginPath must start with / and must not end with /",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_path_format_fix := \"Write the origin path as /path with no trailing slash\"\n\n_pf_cf_origin_path_format_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-path-format\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginPath %v does not start with /\", [op]),\n\t_pf_cf_origin_path_format_fix, _pf_cf_origin_path_format_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\top := object.get(o.value, \"OriginPath\", \"\")\n\tis_string(op)\n\top != \"\"\n\tnot startswith(op, \"/\")\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-path-format\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginPath %v must not end with /\", [op]),\n\t_pf_cf_origin_path_format_fix, _pf_cf_origin_path_format_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\top := object.get(o.value, \"OriginPath\", \"\")\n\tis_string(op)\n\top != \"/\"\n\tendswith(op, \"/\")\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-protocol-policy-enum",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginProtocolPolicy must be http-only, https-only or match-viewer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_protocol_policy_enum_fix := \"Use http-only, https-only or match-viewer\"\n\n_pf_cf_origin_protocol_policy_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-protocol-policy-enum\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginProtocolPolicy %v is not a valid value\", [pp]),\n\t_pf_cf_origin_protocol_policy_enum_fix, _pf_cf_origin_protocol_policy_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tpp := object.get(oc, \"OriginProtocolPolicy\", null)\n\tis_string(pp)\n\tnot pp in {\"http-only\", \"https-only\", \"match-viewer\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-read-timeout-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginReadTimeout must be between 1 and 120",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_read_timeout_range_fix := \"Use a value between 1 and 120 for OriginReadTimeout\"\n\n_pf_cf_origin_read_timeout_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-read-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginReadTimeout %v is less than 1\", [v]),\n\t_pf_cf_origin_read_timeout_range_fix, _pf_cf_origin_read_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginReadTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-read-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginReadTimeout %v is greater than 120\", [v]),\n\t_pf_cf_origin_read_timeout_range_fix, _pf_cf_origin_read_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginReadTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv > 120\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-request-policy-cloudfront-headers",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "allViewerAndWhitelistCloudFront only accepts CloudFront-* headers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::OriginRequestPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_request_policy_cloudfront_headers_fix := \"List only CloudFront-* headers, or use a different HeaderBehavior\"\n\n_pf_cf_origin_request_policy_cloudfront_headers_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-request-policy-cloudfront-headers\", \"ERROR\", name, \"Properties.OriginRequestPolicyConfig.HeadersConfig\",\n\tsprintf(\"%v is not a CloudFront-* header\", [h]),\n\t_pf_cf_origin_request_policy_cloudfront_headers_fix, _pf_cf_origin_request_policy_cloudfront_headers_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::OriginRequestPolicy\")\n\tcfgv := _pf_cflib_props(name, \"OriginRequestPolicyConfig\")\n\thc := object.get(cfgv, \"HeadersConfig\", null)\n\tis_object(hc)\n\tobject.get(hc, \"HeaderBehavior\", null) == \"allViewerAndWhitelistCloudFront\"\n\tsome h in object.get(hc, \"Headers\", [])\n\tis_string(h)\n\tnot startswith(lower(h), \"cloudfront-\")\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-request-policy-cookie-behavior-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin request policy CookieBehavior whitelist / allExcept requires Cookies",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::OriginRequestPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_request_policy_cookie_behavior_items_fix := \"List at least one entry in Cookies\"\n\n_pf_cf_origin_request_policy_cookie_behavior_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-request-policy-cookie-behavior-items\", \"ERROR\", name, \"Properties.OriginRequestPolicyConfig.CookiesConfig\",\n\tsprintf(\"CookieBehavior %v requires at least one entry in Cookies\", [bh]),\n\t_pf_cf_origin_request_policy_cookie_behavior_items_fix, _pf_cf_origin_request_policy_cookie_behavior_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::OriginRequestPolicy\")\n\tcfgv := _pf_cflib_props(name, \"OriginRequestPolicyConfig\")\n\tsc := object.get(cfgv, \"CookiesConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"CookieBehavior\", null)\n\tbh in {\"whitelist\", \"allExcept\"}\n\tcount(object.get(sc, \"Cookies\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-request-policy-excludes-forwarded-values",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A cache behavior cannot set both OriginRequestPolicyId and ForwardedValues",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_request_policy_excludes_forwarded_values_fix := \"Drop ForwardedValues and keep the origin request policy\"\n\n_pf_cf_origin_request_policy_excludes_forwarded_values_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-request-policy-excludes-forwarded-values\", \"ERROR\", name, b.path,\n\t\"a cache behavior cannot set both OriginRequestPolicyId and the legacy ForwardedValues\",\n\t_pf_cf_origin_request_policy_excludes_forwarded_values_fix, _pf_cf_origin_request_policy_excludes_forwarded_values_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tis_object(b.value)\n\tobject.get(b.value, \"OriginRequestPolicyId\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(b.value, \"ForwardedValues\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-request-policy-header-behavior-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin request policy HeaderBehavior whitelist / allExcept requires Headers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::OriginRequestPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_request_policy_header_behavior_items_fix := \"List at least one entry in Headers\"\n\n_pf_cf_origin_request_policy_header_behavior_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-request-policy-header-behavior-items\", \"ERROR\", name, \"Properties.OriginRequestPolicyConfig.HeadersConfig\",\n\tsprintf(\"HeaderBehavior %v requires at least one entry in Headers\", [bh]),\n\t_pf_cf_origin_request_policy_header_behavior_items_fix, _pf_cf_origin_request_policy_header_behavior_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::OriginRequestPolicy\")\n\tcfgv := _pf_cflib_props(name, \"OriginRequestPolicyConfig\")\n\tsc := object.get(cfgv, \"HeadersConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"HeaderBehavior\", null)\n\tbh in {\"whitelist\", \"allExcept\", \"allViewerAndWhitelistCloudFront\"}\n\tcount(object.get(sc, \"Headers\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-request-policy-name-charset",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin request policy names allow only alphanumerics, dash and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::OriginRequestPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_request_policy_name_charset_fix := \"Use only A-Z, a-z, 0-9, - and _ in the policy name\"\n\n_pf_cf_origin_request_policy_name_charset_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-request-policy-name-charset\", \"ERROR\", name, \"Properties.OriginRequestPolicyConfig.Name\",\n\tsprintf(\"OriginRequestPolicyConfig.Name '%s' is rejected by the service: alphanumerics, dash and underscore\", [v]),\n\t_pf_cf_origin_request_policy_name_charset_fix, _pf_cf_origin_request_policy_name_charset_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::OriginRequestPolicy\")\n\tcfgv := _pf_cflib_props(name, \"OriginRequestPolicyConfig\")\n\tv := object.get(cfgv, \"Name\", null)\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-request-policy-query-string-behavior-items",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Origin request policy QueryStringBehavior whitelist / allExcept requires QueryStrings",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::OriginRequestPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_request_policy_query_string_behavior_items_fix := \"List at least one entry in QueryStrings\"\n\n_pf_cf_origin_request_policy_query_string_behavior_items_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-request-policy-query-string-behavior-items\", \"ERROR\", name, \"Properties.OriginRequestPolicyConfig.QueryStringsConfig\",\n\tsprintf(\"QueryStringBehavior %v requires at least one entry in QueryStrings\", [bh]),\n\t_pf_cf_origin_request_policy_query_string_behavior_items_fix, _pf_cf_origin_request_policy_query_string_behavior_items_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::OriginRequestPolicy\")\n\tcfgv := _pf_cflib_props(name, \"OriginRequestPolicyConfig\")\n\tsc := object.get(cfgv, \"QueryStringsConfig\", null)\n\tis_object(sc)\n\tbh := object.get(sc, \"QueryStringBehavior\", null)\n\tbh in {\"whitelist\", \"allExcept\"}\n\tcount(object.get(sc, \"QueryStrings\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-shield-region-required",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Enabling Origin Shield requires OriginShieldRegion",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_shield_region_required_fix := \"Set OriginShieldRegion to the region closest to the origin\"\n\n_pf_cf_origin_shield_region_required_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-shield-region-required\", \"ERROR\", name, o.path,\n\t\"OriginShield is enabled but OriginShieldRegion is not set\",\n\t_pf_cf_origin_shield_region_required_fix, _pf_cf_origin_shield_region_required_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tos := object.get(o.value, \"OriginShield\", null)\n\tis_object(os)\n\tobject.get(os, \"Enabled\", false) == true\n\tobject.get(os, \"OriginShieldRegion\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-origin-shield-region-supported",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "OriginShieldRegion must be a region where CloudFront offers Origin Shield",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_shield_region_supported_fix := \"Pick one of the 13 regions where Origin Shield is available\"\n\n_pf_cf_origin_shield_region_supported_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-shield-region-supported\", \"ERROR\", name, o.path,\n\tsprintf(\"Origin Shield is not offered in %v\", [r]),\n\t_pf_cf_origin_shield_region_supported_fix, _pf_cf_origin_shield_region_supported_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tos := object.get(o.value, \"OriginShield\", null)\n\tis_object(os)\n\tr := object.get(os, \"OriginShieldRegion\", null)\n\tis_string(r)\n\tnot r in {\"us-east-1\", \"us-east-2\", \"us-west-2\", \"ap-south-1\", \"ap-northeast-1\", \"ap-northeast-2\", \"ap-southeast-1\", \"ap-southeast-2\", \"eu-central-1\", \"eu-west-1\", \"eu-west-2\", \"sa-east-1\", \"me-central-1\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-price-class-enum",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "PriceClass must be PriceClass_100, PriceClass_200 or PriceClass_All",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_price_class_enum_fix := \"Use PriceClass_100, PriceClass_200 or PriceClass_All\"\n\n_pf_cf_price_class_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-price-class-enum\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\tsprintf(\"PriceClass %v is not a valid value\", [pc]),\n\t_pf_cf_price_class_enum_fix, _pf_cf_price_class_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\tpc := object.get(cfg, \"PriceClass\", null)\n\tis_string(pc)\n\tnot pc in {\"PriceClass_100\", \"PriceClass_200\", \"PriceClass_All\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-public-key-pem-format",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "PublicKey EncodedKey must be a PEM-encoded public key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::PublicKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_public_key_pem_format_fix := \"Paste the PEM block, including the BEGIN PUBLIC KEY header\"\n\n_pf_cf_public_key_pem_format_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-publickey.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-public-key-pem-format\", \"ERROR\", name, \"Properties.PublicKeyConfig.EncodedKey\",\n\t\"EncodedKey is not a PEM-encoded public key (no -----BEGIN PUBLIC KEY----- header)\",\n\t_pf_cf_public_key_pem_format_fix, _pf_cf_public_key_pem_format_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::PublicKey\")\n\tcfgv := _pf_cflib_props(name, \"PublicKeyConfig\")\n\tv := object.get(cfgv, \"EncodedKey\", null)\n\tis_string(v)\n\tv != \"\"\n\tnot startswith(v, \"-----BEGIN PUBLIC KEY-----\")\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-realtime-log-endpoint-count",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A real-time log configuration takes exactly one endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::RealtimeLogConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_realtime_log_endpoint_count_fix := \"Declare a single Kinesis endpoint\"\n\n_pf_cf_realtime_log_endpoint_count_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-realtimelogconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-realtime-log-endpoint-count\", \"ERROR\", name, \"Properties.EndPoints\",\n\tsprintf(\"%v endpoints are declared; CloudFront accepts exactly one\", [count(eps)]),\n\t_pf_cf_realtime_log_endpoint_count_fix, _pf_cf_realtime_log_endpoint_count_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::RealtimeLogConfig\")\n\teps := [e | some e in flatten_list(name, \"Properties.EndPoints\")]\n\tcount(eps) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-realtime-log-endpoint-stream-type",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Real-time log endpoints must have StreamType Kinesis",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::RealtimeLogConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_realtime_log_endpoint_stream_type_fix := \"Set StreamType to Kinesis\"\n\n_pf_cf_realtime_log_endpoint_stream_type_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-realtimelogconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-realtime-log-endpoint-stream-type\", \"ERROR\", name, sprintf(\"Properties.EndPoints.%d\", [it.index]),\n\tsprintf(\"StreamType %v is not supported; only Kinesis is\", [st]),\n\t_pf_cf_realtime_log_endpoint_stream_type_fix, _pf_cf_realtime_log_endpoint_stream_type_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::RealtimeLogConfig\")\n\tsome it in flatten_list(name, \"Properties.EndPoints\")\n\tst := object.get(it.value, \"StreamType\", null)\n\tis_string(st)\n\tst != \"Kinesis\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-realtime-log-field-names",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Real-time log Fields must name fields CloudFront defines",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::RealtimeLogConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_realtime_log_field_names_fix := \"Use one of the documented real-time log field names\"\n\n_pf_cf_realtime_log_field_names_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-realtimelogconfig.html\"\n\n_pf_cf_realtime_log_field_names_known := {\n\t\"asn\",\n\t\"c-country\",\n\t\"c-ip\",\n\t\"c-ip-version\",\n\t\"c-port\",\n\t\"cache-behavior-path-pattern\",\n\t\"cmcd-buffer-length\",\n\t\"cmcd-buffer-starvation\",\n\t\"cmcd-content-id\",\n\t\"cmcd-deadline\",\n\t\"cmcd-encoded-bitrate\",\n\t\"cmcd-measured-throughput\",\n\t\"cmcd-next-object-request\",\n\t\"cmcd-next-range-request\",\n\t\"cmcd-object-duration\",\n\t\"cmcd-object-type\",\n\t\"cmcd-playback-rate\",\n\t\"cmcd-requested-maximum-throughput\",\n\t\"cmcd-session-id\",\n\t\"cmcd-startup\",\n\t\"cmcd-stream-type\",\n\t\"cmcd-streaming-format\",\n\t\"cmcd-top-bitrate\",\n\t\"cmcd-version\",\n\t\"connection-id\",\n\t\"cs-accept\",\n\t\"cs-accept-encoding\",\n\t\"cs-bytes\",\n\t\"cs-cookie\",\n\t\"cs-header-names\",\n\t\"cs-headers\",\n\t\"cs-headers-count\",\n\t\"cs-host\",\n\t\"cs-method\",\n\t\"cs-protocol\",\n\t\"cs-protocol-version\",\n\t\"cs-referer\",\n\t\"cs-uri-query\",\n\t\"cs-uri-stem\",\n\t\"cs-user-agent\",\n\t\"distribution-tenant-id\",\n\t\"fle-encrypted-fields\",\n\t\"fle-status\",\n\t\"origin-fbl\",\n\t\"origin-lbl\",\n\t\"primary-distribution-dns-name\",\n\t\"primary-distribution-id\",\n\t\"r-host\",\n\t\"s-ip\",\n\t\"sc-bytes\",\n\t\"sc-content-len\",\n\t\"sc-content-type\",\n\t\"sc-range-end\",\n\t\"sc-range-start\",\n\t\"sc-status\",\n\t\"sr-reason\",\n\t\"ssl-cipher\",\n\t\"ssl-protocol\",\n\t\"time-taken\",\n\t\"time-to-first-byte\",\n\t\"timestamp\",\n\t\"viewer-request-log-data\",\n\t\"viewer-response-log-data\",\n\t\"x-edge-detailed-result-type\",\n\t\"x-edge-location\",\n\t\"x-edge-mqcs\",\n\t\"x-edge-request-id\",\n\t\"x-edge-response-result-type\",\n\t\"x-edge-result-type\",\n\t\"x-forwarded-for\",\n\t\"x-host-header\",\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-realtime-log-field-names\", \"ERROR\", name, \"Properties.Fields\",\n\tsprintf(\"%v is not a CloudFront real-time log field\", [f]),\n\t_pf_cf_realtime_log_field_names_fix, _pf_cf_realtime_log_field_names_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::RealtimeLogConfig\")\n\tsome it in flatten_list(name, \"Properties.Fields\")\n\tf := it.value\n\tis_string(f)\n\tnot f in _pf_cf_realtime_log_field_names_known\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-response-headers-policy-name-charset",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "Response headers policy names allow only alphanumerics, dash and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_response_headers_policy_name_charset_fix := \"Use only A-Z, a-z, 0-9, - and _ in the policy name\"\n\n_pf_cf_response_headers_policy_name_charset_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-response-headers-policy-name-charset\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.Name\",\n\tsprintf(\"ResponseHeadersPolicyConfig.Name '%s' is rejected by the service: alphanumerics, dash and underscore\", [v]),\n\t_pf_cf_response_headers_policy_name_charset_fix, _pf_cf_response_headers_policy_name_charset_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tv := object.get(cfgv, \"Name\", null)\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, v)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-content-security-policy-length",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ContentSecurityPolicy is limited to 1783 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_content_security_policy_length_fix := \"Shorten the Content-Security-Policy value to 1783 characters or fewer\"\n\n_pf_cf_rhp_content_security_policy_length_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-content-security-policy-length\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.ContentSecurityPolicy\",\n\tsprintf(\"ContentSecurityPolicy is %v characters, over the 1783 limit\", [count(v)]),\n\t_pf_cf_rhp_content_security_policy_length_fix, _pf_cf_rhp_content_security_policy_length_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tsh := object.get(cfgv, \"SecurityHeadersConfig\", null)\n\tis_object(sh)\n\tcsp := object.get(sh, \"ContentSecurityPolicy\", null)\n\tis_object(csp)\n\tv := object.get(csp, \"ContentSecurityPolicy\", null)\n\tis_string(v)\n\tcount(v) > 1783\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-cors-allow-methods-enum",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "AccessControlAllowMethods accepts only the eight documented values",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_cors_allow_methods_enum_fix := \"Use GET, POST, OPTIONS, PUT, DELETE, PATCH, HEAD or ALL\"\n\n_pf_cf_rhp_cors_allow_methods_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-cors-allow-methods-enum\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.CorsConfig.AccessControlAllowMethods\",\n\tsprintf(\"%v is not a valid AccessControlAllowMethods value\", [m]),\n\t_pf_cf_rhp_cors_allow_methods_enum_fix, _pf_cf_rhp_cors_allow_methods_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tcc := object.get(cfgv, \"CorsConfig\", null)\n\tis_object(cc)\n\tsub := object.get(cc, \"AccessControlAllowMethods\", null)\n\tis_object(sub)\n\tits := object.get(sub, \"Items\", [])\n\tis_array(its)\n\tsome m in its\n\tis_string(m)\n\tnot m in {\"ALL\", \"DELETE\", \"GET\", \"HEAD\", \"OPTIONS\", \"PATCH\", \"POST\", \"PUT\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-custom-header-blocklist",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CustomHeadersConfig cannot carry headers CloudFront reserves",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_custom_header_blocklist_fix := \"Remove the reserved header from CustomHeadersConfig\"\n\n_pf_cf_rhp_custom_header_blocklist_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\n_pf_cf_rhp_custom_header_blocklist_names := {\n\t\"connection\",\n\t\"content-encoding\",\n\t\"content-length\",\n\t\"expect\",\n\t\"host\",\n\t\"keep-alive\",\n\t\"proxy-authenticate\",\n\t\"proxy-authorization\",\n\t\"proxy-connection\",\n\t\"trailer\",\n\t\"transfer-encoding\",\n\t\"upgrade\",\n\t\"via\",\n\t\"warning\",\n\t\"x-accel-buffering\",\n\t\"x-accel-charset\",\n\t\"x-accel-limit-rate\",\n\t\"x-accel-redirect\",\n\t\"x-amzn-auth\",\n\t\"x-amzn-cf-billing\",\n\t\"x-amzn-cf-id\",\n\t\"x-amzn-cf-xff\",\n\t\"x-amzn-errortype\",\n\t\"x-amzn-fle-profile\",\n\t\"x-amzn-header-count\",\n\t\"x-amzn-header-order\",\n\t\"x-amzn-lambda-integration-tag\",\n\t\"x-amzn-requestid\",\n\t\"x-forwarded-proto\",\n\t\"x-real-ip\",\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-custom-header-blocklist\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.CustomHeadersConfig\",\n\tsprintf(\"CustomHeaders contains %v, which CloudFront does not allow\", [h]),\n\t_pf_cf_rhp_custom_header_blocklist_fix, _pf_cf_rhp_custom_header_blocklist_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tchc := object.get(cfgv, \"CustomHeadersConfig\", null)\n\tis_object(chc)\n\tsome it in object.get(chc, \"Items\", [])\n\th := object.get(it, \"Header\", null)\n\tis_string(h)\n\tlower(h) in _pf_cf_rhp_custom_header_blocklist_names\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-custom-header-blocklist\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.CustomHeadersConfig\",\n\tsprintf(\"CustomHeaders contains %v, which CloudFront does not allow\", [h]),\n\t_pf_cf_rhp_custom_header_blocklist_fix, _pf_cf_rhp_custom_header_blocklist_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tchc := object.get(cfgv, \"CustomHeadersConfig\", null)\n\tis_object(chc)\n\tsome it in object.get(chc, \"Items\", [])\n\th := object.get(it, \"Header\", null)\n\tis_string(h)\n\tsome p in [\"x-amz-cf-\",\"x-edge-\"]\n\tstartswith(lower(h), p)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-custom-header-unique",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "CustomHeadersConfig must not repeat a header name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_custom_header_unique_fix := \"Declare each response header once\"\n\n_pf_cf_rhp_custom_header_unique_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-custom-header-unique\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.CustomHeadersConfig\",\n\tsprintf(\"header %v is declared more than once\", [k]),\n\t_pf_cf_rhp_custom_header_unique_fix, _pf_cf_rhp_custom_header_unique_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tchc := object.get(cfgv, \"CustomHeadersConfig\", null)\n\tis_object(chc)\n\tns := [lower(h) | some it in object.get(chc, \"Items\", []); h := object.get(it, \"Header\", null); is_string(h)]\n\tsome k in ns\n\tcount([x | some x in ns; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-remove-header-blocklist",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "RemoveHeadersConfig cannot remove headers CloudFront controls",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_remove_header_blocklist_fix := \"Remove the reserved header from RemoveHeadersConfig\"\n\n_pf_cf_rhp_remove_header_blocklist_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/understanding-response-headers-policies.html\"\n\n_pf_cf_rhp_remove_header_blocklist_names := {\n\t\"connection\",\n\t\"content-encoding\",\n\t\"content-length\",\n\t\"expect\",\n\t\"host\",\n\t\"keep-alive\",\n\t\"proxy-authenticate\",\n\t\"proxy-authorization\",\n\t\"proxy-connection\",\n\t\"trailer\",\n\t\"transfer-encoding\",\n\t\"upgrade\",\n\t\"via\",\n\t\"warning\",\n\t\"x-accel-buffering\",\n\t\"x-accel-charset\",\n\t\"x-accel-limit-rate\",\n\t\"x-accel-redirect\",\n\t\"x-amzn-auth\",\n\t\"x-amzn-cf-billing\",\n\t\"x-amzn-cf-id\",\n\t\"x-amzn-cf-xff\",\n\t\"x-amzn-errortype\",\n\t\"x-amzn-fle-profile\",\n\t\"x-amzn-header-count\",\n\t\"x-amzn-header-order\",\n\t\"x-amzn-lambda-integration-tag\",\n\t\"x-amzn-requestid\",\n\t\"x-cache\",\n\t\"x-forwarded-proto\",\n\t\"x-real-ip\",\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-remove-header-blocklist\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.RemoveHeadersConfig\",\n\tsprintf(\"%v cannot be removed with a response headers policy\", [h]),\n\t_pf_cf_rhp_remove_header_blocklist_fix, _pf_cf_rhp_remove_header_blocklist_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\trhc := object.get(cfgv, \"RemoveHeadersConfig\", null)\n\tis_object(rhc)\n\tsome it in object.get(rhc, \"Items\", [])\n\th := object.get(it, \"Header\", null)\n\tis_string(h)\n\tlower(h) in _pf_cf_rhp_remove_header_blocklist_names\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-remove-header-blocklist\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.RemoveHeadersConfig\",\n\tsprintf(\"%v cannot be removed with a response headers policy\", [h]),\n\t_pf_cf_rhp_remove_header_blocklist_fix, _pf_cf_rhp_remove_header_blocklist_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\trhc := object.get(cfgv, \"RemoveHeadersConfig\", null)\n\tis_object(rhc)\n\tsome it in object.get(rhc, \"Items\", [])\n\th := object.get(it, \"Header\", null)\n\tis_string(h)\n\tsome p in [\"x-amz-cf-\",\"x-edge-\"]\n\tstartswith(lower(h), p)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-server-timing-sampling-rate-required",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ServerTimingHeadersConfig requires SamplingRate when enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_server_timing_sampling_rate_required_fix := \"Set SamplingRate (0-100) alongside Enabled: true\"\n\n_pf_cf_rhp_server_timing_sampling_rate_required_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-server-timing-sampling-rate-required\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.ServerTimingHeadersConfig\",\n\t\"ServerTimingHeadersConfig is enabled but SamplingRate is not set\",\n\t_pf_cf_rhp_server_timing_sampling_rate_required_fix, _pf_cf_rhp_server_timing_sampling_rate_required_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tst := object.get(cfgv, \"ServerTimingHeadersConfig\", null)\n\tis_object(st)\n\tobject.get(st, \"Enabled\", false) == true\n\tobject.get(st, \"SamplingRate\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-xss-protection-report-uri-mode-block",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "XSSProtection cannot set both ReportUri and ModeBlock",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_xss_protection_report_uri_mode_block_fix := \"Keep either ReportUri or ModeBlock, not both\"\n\n_pf_cf_rhp_xss_protection_report_uri_mode_block_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-xss-protection-report-uri-mode-block\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.XSSProtection\",\n\t\"XSSProtection accepts ModeBlock or ReportUri, but not both\",\n\t_pf_cf_rhp_xss_protection_report_uri_mode_block_fix, _pf_cf_rhp_xss_protection_report_uri_mode_block_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tsh := object.get(cfgv, \"SecurityHeadersConfig\", null)\n\tis_object(sh)\n\txs := object.get(sh, \"XSSProtection\", null)\n\tis_object(xs)\n\tobject.get(xs, \"ReportUri\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(xs, \"ModeBlock\", false) == true\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-rhp-xss-protection-report-uri-requires-protection",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "XSSProtection ReportUri requires Protection true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::ResponseHeadersPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_xss_protection_report_uri_requires_protection_fix := \"Set Protection to true, or drop ReportUri\"\n\n_pf_cf_rhp_xss_protection_report_uri_requires_protection_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-xss-protection-report-uri-requires-protection\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.XSSProtection\",\n\t\"ReportUri can only be set when Protection is true\",\n\t_pf_cf_rhp_xss_protection_report_uri_requires_protection_fix, _pf_cf_rhp_xss_protection_report_uri_requires_protection_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tsh := object.get(cfgv, \"SecurityHeadersConfig\", null)\n\tis_object(sh)\n\txs := object.get(sh, \"XSSProtection\", null)\n\tis_object(xs)\n\tobject.get(xs, \"ReportUri\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(xs, \"Protection\", false) == false\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-s3-website-endpoint-custom-origin",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "An S3 website endpoint origin must use CustomOriginConfig, not S3OriginConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_s3_website_endpoint_custom_origin_fix := \"Replace S3OriginConfig with CustomOriginConfig for a *.s3-website-* domain\"\n\n_pf_cf_s3_website_endpoint_custom_origin_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-s3-website-endpoint-custom-origin\", \"ERROR\", name, o.path,\n\tsprintf(\"origin %v is an S3 website endpoint and cannot use S3OriginConfig\", [dn]),\n\t_pf_cf_s3_website_endpoint_custom_origin_fix, _pf_cf_s3_website_endpoint_custom_origin_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\tis_object(o.value)\n\tdn := object.get(o.value, \"DomainName\", null)\n\tis_string(dn)\n\tregex.match(`\\.s3-website[.-]`, dn)\n\tobject.get(o.value, \"S3OriginConfig\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-staging-requires-no-aliases",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A staging distribution cannot have Aliases",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_staging_requires_no_aliases_fix := \"Remove Aliases from the staging distribution\"\n\n_pf_cf_staging_requires_no_aliases_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-staging-requires-no-aliases\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\t\"a staging distribution cannot declare alternate domain names\",\n\t_pf_cf_staging_requires_no_aliases_fix, _pf_cf_staging_requires_no_aliases_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\tobject.get(cfg, \"Staging\", false) == true\n\tcount(object.get(cfg, \"Aliases\", [])) > 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-trusted-key-groups-excludes-trusted-signers",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "TrustedKeyGroups and TrustedSigners cannot both be used on a cache behavior",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_trusted_key_groups_excludes_trusted_signers_fix := \"Use TrustedKeyGroups alone; TrustedSigners is the deprecated form\"\n\n_pf_cf_trusted_key_groups_excludes_trusted_signers_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-trusted-key-groups-excludes-trusted-signers\", \"ERROR\", name, b.path,\n\tsprintf(\"a cache behavior cannot set both TrustedKeyGroups (%v) and TrustedSigners (%v)\", [kg, sg]),\n\t_pf_cf_trusted_key_groups_excludes_trusted_signers_fix, _pf_cf_trusted_key_groups_excludes_trusted_signers_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tkg := object.get(b.value, \"TrustedKeyGroups\", [])\n\tis_array(kg)\n\tcount(kg) > 0\n\tsg := object.get(b.value, \"TrustedSigners\", [])\n\tis_array(sg)\n\tcount(sg) > 0\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-trusted-signers-account-format",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "TrustedSigners entries must be self or a 12-digit account id",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_trusted_signers_account_format_fix := \"Use \\\"self\\\" or a 12-digit AWS account id\"\n\n_pf_cf_trusted_signers_account_format_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-trusted-signers-account-format\", \"ERROR\", name, b.path,\n\tsprintf(\"TrustedSigners entry %v is neither \\\"self\\\" nor a 12-digit account id\", [s]),\n\t_pf_cf_trusted_signers_account_format_fix, _pf_cf_trusted_signers_account_format_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tsg := object.get(b.value, \"TrustedSigners\", null)\n\tis_array(sg)\n\tsome s in sg\n\tis_string(s)\n\ts != \"self\"\n\tnot regex.match(\"^[0-9]{12}$\", s)\n}\n"
+  },
+  {
     "id": "pf-cloudfront-ttl-order",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -2711,6 +3602,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudFront::Distribution"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_ttl_fix := \"Order the TTLs as MinTTL <= DefaultTTL <= MaxTTL\"\n\n_pf_cf_ttl_url := \"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html\"\n\n_pf_cf_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"MinTTL (%v) must be less than or equal to MaxTTL (%v)\", [mn, mx]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tmn := to_number(object.get(b.value, \"MinTTL\", null))\n\tmx := to_number(object.get(b.value, \"MaxTTL\", null))\n\tmn > mx\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"MinTTL (%v) must be less than or equal to DefaultTTL (%v)\", [mn, df]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tmn := to_number(object.get(b.value, \"MinTTL\", null))\n\tdf := to_number(object.get(b.value, \"DefaultTTL\", null))\n\tmn > df\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-ttl-order\", \"ERROR\", name, b.path,\n\tsprintf(\"DefaultTTL (%v) must be less than or equal to MaxTTL (%v)\", [df, mx]),\n\t_pf_cf_ttl_fix, _pf_cf_ttl_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cf_behaviors(name)\n\tis_object(b.value)\n\tdf := to_number(object.get(b.value, \"DefaultTTL\", null))\n\tmx := to_number(object.get(b.value, \"MaxTTL\", null))\n\tdf > mx\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-viewer-certificate-exactly-one",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ViewerCertificate must name exactly one certificate source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_viewer_certificate_exactly_one_fix := \"Keep only one of CloudFrontDefaultCertificate, AcmCertificateArn or IamCertificateId\"\n\n_pf_cf_viewer_certificate_exactly_one_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-viewercertificate.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-viewer-certificate-exactly-one\", \"ERROR\", name, \"Properties.DistributionConfig.ViewerCertificate\",\n\tsprintf(\"ViewerCertificate names %v certificate sources (%v); exactly one is allowed\", [count(ks), ks]),\n\t_pf_cf_viewer_certificate_exactly_one_fix, _pf_cf_viewer_certificate_exactly_one_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tvc := object.get(_pf_cflib_config(name), \"ViewerCertificate\", null)\n\tis_object(vc)\n\tks := {k | some k in [\"CloudFrontDefaultCertificate\", \"AcmCertificateArn\", \"IamCertificateId\"]; object.get(vc, k, \"__pf_absent\") != \"__pf_absent\"}\n\tcount(ks) > 1\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-viewer-certificate-sni-min-protocol",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "sni-only requires MinimumProtocolVersion of TLSv1 or higher",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_viewer_certificate_sni_min_protocol_fix := \"Use TLSv1.2_2021 (or another TLS version) instead of SSLv3\"\n\n_pf_cf_viewer_certificate_sni_min_protocol_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-viewercertificate.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-viewer-certificate-sni-min-protocol\", \"ERROR\", name, \"Properties.DistributionConfig.ViewerCertificate\",\n\t\"SslSupportMethod sni-only cannot be combined with MinimumProtocolVersion SSLv3\",\n\t_pf_cf_viewer_certificate_sni_min_protocol_fix, _pf_cf_viewer_certificate_sni_min_protocol_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tvc := object.get(_pf_cflib_config(name), \"ViewerCertificate\", null)\n\tis_object(vc)\n\tobject.get(vc, \"SslSupportMethod\", null) == \"sni-only\"\n\tobject.get(vc, \"MinimumProtocolVersion\", null) == \"SSLv3\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-viewer-certificate-vip-deprecated",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "SslSupportMethod vip cannot be used for new distributions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_viewer_certificate_vip_deprecated_fix := \"Use sni-only\"\n\n_pf_cf_viewer_certificate_vip_deprecated_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-viewercertificate.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-viewer-certificate-vip-deprecated\", \"ERROR\", name, \"Properties.DistributionConfig.ViewerCertificate\",\n\t\"SslSupportMethod vip (dedicated IP) is no longer available for new distributions\",\n\t_pf_cf_viewer_certificate_vip_deprecated_fix, _pf_cf_viewer_certificate_vip_deprecated_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tvc := object.get(_pf_cflib_config(name), \"ViewerCertificate\", null)\n\tis_object(vc)\n\tobject.get(vc, \"SslSupportMethod\", null) == \"vip\"\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-viewer-protocol-policy-enum",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "ViewerProtocolPolicy must be allow-all, https-only or redirect-to-https",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CloudFront::Distribution"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_viewer_protocol_policy_enum_fix := \"Use allow-all, https-only or redirect-to-https\"\n\n_pf_cf_viewer_protocol_policy_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-viewer-protocol-policy-enum\", \"ERROR\", name, b.path,\n\tsprintf(\"ViewerProtocolPolicy %v is not a valid value\", [vp]),\n\t_pf_cf_viewer_protocol_policy_enum_fix, _pf_cf_viewer_protocol_policy_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome b in _pf_cflib_behaviors(name)\n\tvp := object.get(b.value, \"ViewerProtocolPolicy\", null)\n\tis_string(vp)\n\tnot vp in {\"allow-all\", \"https-only\", \"redirect-to-https\"}\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-vpc-origin-arn-type",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "A VPC origin ARN must point at an ALB, NLB or EC2 instance",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::VpcOrigin"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_vpc_origin_arn_type_fix := \"Use an elasticloadbalancing or ec2 instance ARN\"\n\n_pf_cf_vpc_origin_arn_type_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-arn-type\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig.Arn\",\n\tsprintf(\"%v is neither a load balancer nor an EC2 instance ARN\", [a]),\n\t_pf_cf_vpc_origin_arn_type_fix, _pf_cf_vpc_origin_arn_type_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\ta := object.get(cfgv, \"Arn\", null)\n\tis_string(a)\n\tstartswith(a, \"arn:\")\n\tnot regex.match(\"^arn:[a-z0-9-]+:elasticloadbalancing:\", a)\n\tnot regex.match(\"^arn:[a-z0-9-]+:ec2:[a-z0-9-]*:[0-9]*:instance/\", a)\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-vpc-origin-port-range",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "VPC origin HTTPPort and HTTPSPort must be between 1 and 65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::VpcOrigin"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_vpc_origin_port_range_fix := \"Use a port in 1-65535\"\n\n_pf_cf_vpc_origin_port_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-port-range\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"%v %v is below 1\", [k, p]),\n\t_pf_cf_vpc_origin_port_range_fix, _pf_cf_vpc_origin_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tsome k in [\"HTTPPort\", \"HTTPSPort\"]\n\traw := object.get(cfgv, k, \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tp := to_number(raw)\n\tp < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-port-range\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"%v %v is above 65535\", [k, p]),\n\t_pf_cf_vpc_origin_port_range_fix, _pf_cf_vpc_origin_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tsome k in [\"HTTPPort\", \"HTTPSPort\"]\n\traw := object.get(cfgv, k, \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tp := to_number(raw)\n\tp > 65535\n}\n"
+  },
+  {
+    "id": "pf-cloudfront-vpc-origin-ssl-protocols-required",
+    "service": "cloudfront",
+    "severity": "ERROR",
+    "title": "An HTTPS-capable VPC origin must list OriginSSLProtocols",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CloudFront::VpcOrigin"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_vpc_origin_ssl_protocols_required_fix := \"Add OriginSSLProtocols (for example [\\\"TLSv1.2\\\"])\"\n\n_pf_cf_vpc_origin_ssl_protocols_required_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-ssl-protocols-required\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"OriginProtocolPolicy is %v but OriginSSLProtocols is not set\", [pp]),\n\t_pf_cf_vpc_origin_ssl_protocols_required_fix, _pf_cf_vpc_origin_ssl_protocols_required_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tpp := object.get(cfgv, \"OriginProtocolPolicy\", null)\n\tpp in {\"https-only\", \"match-viewer\"}\n\tobject.get(cfgv, \"OriginSSLProtocols\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-cloudfront-wafv2-webacl-scope",
@@ -14573,6 +15541,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cache",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ElastiCache and MemoryDB rules. Both services use the\n# same maintenance / snapshot window grammar, the same endpoint port range and\n# the same identifier rules, so the parsing lives here once.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# to_number(\"03\") is undefined in the engine's Rego build, so digits go\n# through a lookup table (same trick as pf-rds-window-overlap).\n_pf_cachelib_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_cachelib_days := {\"sun\": 0, \"mon\": 1, \"tue\": 2, \"wed\": 3, \"thu\": 4, \"fri\": 5, \"sat\": 6}\n\n# \"HH:MM\" -> minutes of day; undefined for anything else.\n_pf_cachelib_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_cachelib_digit[substring(t, 0, 1)] * 10) + _pf_cachelib_digit[substring(t, 1, 1)]\n\tmi := (_pf_cachelib_digit[substring(t, 3, 1)] * 10) + _pf_cachelib_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# \"ddd:hh24:mi-ddd:hh24:mi\" -> [start day, start minutes, end day, end minutes].\n_pf_cachelib_window(w) := [d1, m1, d2, m2] if {\n\tis_string(w)\n\tparts := split(lower(w), \"-\")\n\tcount(parts) == 2\n\tp1 := split(parts[0], \":\")\n\tp2 := split(parts[1], \":\")\n\tcount(p1) == 3\n\tcount(p2) == 3\n\td1 := _pf_cachelib_days[p1[0]]\n\td2 := _pf_cachelib_days[p2[0]]\n\tm1 := _pf_cachelib_min(sprintf(\"%s:%s\", [p1[1], p1[2]]))\n\tm2 := _pf_cachelib_min(sprintf(\"%s:%s\", [p2[1], p2[2]]))\n}\n\n# Length of a maintenance window in minutes (wrapping around the week).\n_pf_cachelib_window_minutes(w) := n if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(w)\n\tstart := (d1 * 1440) + m1\n\tend := (d2 * 1440) + m2\n\tn := ((end - start) + 10080) % 10080\n}\n\n# \"hh24:mi-hh24:mi\" -> [start minutes, end minutes] of a daily window.\n_pf_cachelib_daily(w) := [s, e] if {\n\tis_string(w)\n\tparts := split(w, \"-\")\n\tcount(parts) == 2\n\ts := _pf_cachelib_min(parts[0])\n\te := _pf_cachelib_min(parts[1])\n}\n\n# The snapshot window recurs daily, so a same-day maintenance window overlaps\n# whenever the two time-of-day intervals intersect (mirrors pf-rds-window-overlap;\n# a window that spans two days is left alone).\n_pf_cachelib_overlap(mw, sw) if {\n\t[d1, m1, d2, m2] := _pf_cachelib_window(mw)\n\td1 == d2\n\tm1 < m2\n\t[s, e] := _pf_cachelib_daily(sw)\n\ts < e\n\ts < m2\n\tm1 < e\n}\n\n# ElastiCache and MemoryDB both accept 1150-8004 and 8006-65535.\n_pf_cachelib_port_ok(p) if {\n\tp >= 1150\n\tp <= 8004\n}\n\n_pf_cachelib_port_ok(p) if {\n\tp >= 8006\n\tp <= 65535\n}\n\n# Identifiers: begin with a letter, letters/digits/hyphens only, no two\n# consecutive hyphens and no trailing hyphen.\n_pf_cachelib_identifier_ok(s) if regex.match(`^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$`, s)\n\n# Data tiering is only supported on the r6gd families (cache.r6gd.* / db.r6gd.*).\n_pf_cachelib_r6gd(t) if {\n\tis_string(t)\n\tparts := split(t, \".\")\n\tcount(parts) >= 2\n\tparts[1] == \"r6gd\"\n}\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_cachelib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n# A literal string a user wrote, not a resolved Ref / GetAtt logical id.\n_pf_cachelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_cachelib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "name": "_lib/cloudfront",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DistributionConfig の中身。Distribution 系ルールのほぼ全部が入口にする。\n_pf_cflib_config(name) := v if {\n\tsome it in flatten_list(name, \"Properties.DistributionConfig\")\n\tv := it.value\n}\n\n# 任意のリソースの Properties.<root>。子リソース型（CachePolicy など）用。\n_pf_cflib_props(name, root) := v if {\n\tsome it in flatten_list(name, sprintf(\"Properties.%s\", [root]))\n\tv := it.value\n}\n\n# DefaultCacheBehavior と CacheBehaviors[] を 1 本のリストに束ねる。\n# CloudFront の制約はほぼ全部「どのビヘイビアでも同じように効く」ので、\n# 個々のルールが 2 回ずつ書かなくて済むようにここへ寄せている。\n_pf_cflib_behaviors(name) := array.concat(\n\t[{\"path\": \"Properties.DistributionConfig.DefaultCacheBehavior\", \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.DefaultCacheBehavior\")],\n\t[{\"path\": sprintf(\"Properties.DistributionConfig.CacheBehaviors.%d\", [it.index]), \"value\": it.value} |\n\t\tsome it in flatten_list(name, \"Properties.DistributionConfig.CacheBehaviors\")],\n)\n\n_pf_cflib_origins(name) := [{\"path\": sprintf(\"Properties.DistributionConfig.Origins.%d\", [it.index]), \"value\": it.value} |\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.Origins\")]\n\n_pf_cflib_origin_groups(name) := [{\"path\": sprintf(\"Properties.DistributionConfig.OriginGroups.Items.%d\", [it.index]), \"value\": it.value} |\n\tsome it in flatten_list(name, \"Properties.DistributionConfig.OriginGroups.Items\")]\n\n# TargetOriginId が指せる Id の全体（Origins と OriginGroups の両方）。\n_pf_cflib_origin_ids(name) := a | b if {\n\ta := {id |\n\t\tsome o in _pf_cflib_origins(name)\n\t\tid := object.get(o.value, \"Id\", null)\n\t\tis_string(id)\n\t}\n\tb := {id |\n\t\tsome g in _pf_cflib_origin_groups(name)\n\t\tid := object.get(g.value, \"Id\", null)\n\t\tis_string(id)\n\t}\n}\n"
   },
   {
     "name": "_lib/cloudwatch",

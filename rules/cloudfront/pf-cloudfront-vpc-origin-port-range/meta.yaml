@@ -1,0 +1,12 @@
+id: pf-cloudfront-vpc-origin-port-range
+service: cloudfront
+resourceTypes: [AWS::CloudFront::VpcOrigin]
+severity: ERROR
+title: 'VPC origin HTTPPort and HTTPSPort must be between 1 and 65535'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::VpcOrigin: The parameter origin port is not within allowed range. (Service: CloudFront, Status Code: 400, Request ID: fa8c8522-94f8-47ca-b8fc-3272f03849b9) (SDK Attempt Count: 1)" (RequestToken: 8a9d21da-12e0-3f20-8224-3815e29795df, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

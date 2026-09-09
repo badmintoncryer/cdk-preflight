@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": "p1",
+          "CorsConfig": {
+            "AccessControlAllowCredentials": false,
+            "AccessControlAllowHeaders": {
+              "Items": [
+                "X-A"
+              ]
+            },
+            "AccessControlAllowMethods": {
+              "Items": [
+                "CONNECT"
+              ]
+            },
+            "AccessControlAllowOrigins": {
+              "Items": [
+                "https://a.example.com"
+              ]
+            },
+            "OriginOverride": false
+          }
+        }
+      }
+    }
+  }
+}

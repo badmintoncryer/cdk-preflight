@@ -1,0 +1,12 @@
+id: pf-cloudfront-cache-policy-header-behavior-none-items
+service: cloudfront
+resourceTypes: [AWS::CloudFront::CachePolicy]
+severity: ERROR
+title: 'Cache policy HeaderBehavior none cannot carry Headers'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::CachePolicy: The parameter Headers must be empty for provided HeaderBehavior value. (Service: CloudFront, Status Code: 400, Request ID: 4a07cedf-ab6a-4594-b4d7-2ea08af09188) (SDK Attempt Count: 1)" (RequestToken: 8809a9d8-1a62-0d23-c61c-b9c9898f3342, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

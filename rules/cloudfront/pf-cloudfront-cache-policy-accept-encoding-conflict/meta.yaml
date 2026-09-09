@@ -1,0 +1,12 @@
+id: pf-cloudfront-cache-policy-accept-encoding-conflict
+service: cloudfront
+resourceTypes: [AWS::CloudFront::CachePolicy]
+severity: ERROR
+title: 'Accept-Encoding cannot be whitelisted while EnableAcceptEncodingGzip/Brotli is true'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-cachepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::CachePolicy: The parameter EnableAcceptEncodingGzip cannot be set to true when accept-encoding header is whitelisted in cache policy. (Service: CloudFront, Status Code: 400, Request ID: e7731b01-a272-4995-8cba-771b25f9c157) (SDK Attempt Count: 1)" (RequestToken: f508278b-44ea-5655-d56f-0c90e4ac5490, HandlerErrorCode: In'
+addedOn: 2026-09-08
+benchRegion: us-east-1

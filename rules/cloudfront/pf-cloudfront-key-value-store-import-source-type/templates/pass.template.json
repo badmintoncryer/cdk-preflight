@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::KeyValueStore",
+      "Properties": {
+        "Name": "kvs",
+        "ImportSource": {
+          "SourceType": "S3",
+          "SourceArn": "arn:aws:s3:::b/k.json"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": "p1",
+          "RemoveHeadersConfig": {
+            "Items": [
+              {
+                "Header": "Content-Encoding"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

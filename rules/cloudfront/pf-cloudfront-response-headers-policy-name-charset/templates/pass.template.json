@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": "good-name_1"
+        }
+      }
+    }
+  }
+}

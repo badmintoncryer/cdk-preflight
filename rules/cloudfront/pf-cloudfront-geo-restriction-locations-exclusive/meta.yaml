@@ -1,0 +1,12 @@
+id: pf-cloudfront-geo-restriction-locations-exclusive
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'RestrictionType none cannot carry Locations'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: Your request contains invalid Restriction parameters. (Service: CloudFront, Status Code: 400, Request ID: 6f9f439f-128d-47a5-886b-e73882f14060) (SDK Attempt Count: 1)" (RequestToken: 8b345321-4f08-6db3-2514-fa5e36d1ea55, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

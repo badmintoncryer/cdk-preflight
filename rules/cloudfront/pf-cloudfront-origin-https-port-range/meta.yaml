@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-https-port-range
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'HTTPSPort must be 80, 443 or in 1024-65535'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter origin port is not within allowed range. (Service: CloudFront, Status Code: 400, Request ID: f9df2822-7d59-413f-a800-672b446d6e14) (SDK Attempt Count: 1)" (RequestToken: 64d4597d-3851-7a23-e935-5f1e82506301, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

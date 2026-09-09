@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-request-policy-name-charset
+service: cloudfront
+resourceTypes: [AWS::CloudFront::OriginRequestPolicy]
+severity: ERROR
+title: 'Origin request policy names allow only alphanumerics, dash and underscore'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::OriginRequestPolicy: The parameter Name contains characters other than alphanumericals, dashes, and underscores. (Service: CloudFront, Status Code: 400, Request ID: be466532-f835-403a-ba33-fdc69ec53268) (SDK Attempt Count: 1)" (RequestToken: f8b4adac-6536-0758-335f-22e82eb2688c, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

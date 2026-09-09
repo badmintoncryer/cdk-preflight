@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": "p1",
+          "SecurityHeadersConfig": {
+            "ContentSecurityPolicy": {
+              "Override": false,
+              "ContentSecurityPolicy": "default-src 'self'"
+            }
+          }
+        }
+      }
+    }
+  }
+}

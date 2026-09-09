@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-connection-timeout-range
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'ConnectionTimeout must be between 1 and 10'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Origin connection timeout out of range: [1,10]. (Service: CloudFront, Status Code: 400, Request ID: 6ce149a0-7402-488c-b19e-10b06833101e) (SDK Attempt Count: 1)" (RequestToken: 4aa76ded-19e3-b1e8-805a-7076d8bffaad, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

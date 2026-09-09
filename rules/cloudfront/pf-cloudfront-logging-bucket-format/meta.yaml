@@ -1,0 +1,12 @@
+id: pf-cloudfront-logging-bucket-format
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'Logging.Bucket must be the S3 bucket DNS name, not the bare bucket name'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Logging Bucket does not refer to a valid S3 bucket. (Service: CloudFront, Status Code: 400, Request ID: 40389fa9-e5c0-4f87-bdbf-646f7492d292) (SDK Attempt Count: 1)" (RequestToken: 2225d999-835f-0d00-0e6b-ed325064a61c, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

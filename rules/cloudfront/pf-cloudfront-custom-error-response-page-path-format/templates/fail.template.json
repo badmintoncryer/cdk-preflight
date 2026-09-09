@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": false,
+          "Origins": [
+            {
+              "Id": "o1",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "http-only"
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "o1",
+            "ViewerProtocolPolicy": "allow-all",
+            "ForwardedValues": {
+              "QueryString": false
+            }
+          },
+          "CustomErrorResponses": [
+            {
+              "ErrorCode": 404,
+              "ResponsePagePath": "404.html",
+              "ResponseCode": 404
+            }
+          ]
+        }
+      }
+    }
+  }
+}

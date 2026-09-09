@@ -1,0 +1,12 @@
+id: pf-cloudfront-rhp-custom-header-unique
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'CustomHeadersConfig must not repeat a header name'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ResponseHeadersPolicy: The parameter HeaderName : x-a is invalid as it is a duplicate. (Service: CloudFront, Status Code: 400, Request ID: aff5533c-2799-478a-bba3-61cb09740c12) (SDK Attempt Count: 1)" (RequestToken: 8f5b2703-7004-4957-2fc1-409b0dd7c720, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-grpc-requires-post-method
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'GrpcConfig requires POST in AllowedMethods'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter gRPC only supports the POST method. (Service: CloudFront, Status Code: 400, Request ID: 84c215c5-c2ed-4780-b979-d4abf3eef261) (SDK Attempt Count: 1)" (RequestToken: 020209db-9ad7-c70d-976a-7b18c6233690, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

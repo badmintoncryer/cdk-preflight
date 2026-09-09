@@ -1,0 +1,12 @@
+id: pf-cloudfront-price-class-enum
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'PriceClass must be PriceClass_100, PriceClass_200 or PriceClass_All'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation error detected: Value ''PriceClass_150'' at ''distributionConfigWithTags.distributionConfig.priceClass'' failed to satisfy constraint: Member must satisfy enum value set: [PriceClass_100, PriceClass_200, PriceClass_All, None] (Service: CloudFront, Status Code: 400, Request ID: c0669e72-3bc3-4179-8cac-e148673b85d8) (SDK Attempt '
+addedOn: 2026-09-08
+benchRegion: us-east-1

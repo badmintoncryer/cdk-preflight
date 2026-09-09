@@ -1,0 +1,12 @@
+id: pf-cloudfront-rhp-remove-header-blocklist
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'RemoveHeadersConfig cannot remove headers CloudFront controls'
+constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/understanding-response-headers-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ResponseHeadersPolicy: The parameter RemoveHeaders contains Content-Encoding that is not allowed. (Service: CloudFront, Status Code: 400, Request ID: e8e7838f-4264-4eba-8dde-bae2548246b4) (SDK Attempt Count: 1)" (RequestToken: 3507c4fd-0b64-b80c-3e63-5a53d8815c60, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

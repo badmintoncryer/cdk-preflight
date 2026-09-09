@@ -1,0 +1,12 @@
+id: pf-cloudfront-function-kvs-association-count
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Function]
+severity: ERROR
+title: 'A CloudFront Function can associate at most one key value store'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Function: The parameter KeyValueStoreAssociations is invalid; too many KeyValueStore associations per Function. (Service: CloudFront, Status Code: 400, Request ID: f73c9d14-955c-4a18-9939-fbefc2f77a11) (SDK Attempt Count: 1)" (RequestToken: 45b3d6ed-fc6e-7a40-6ddd-ff8dede254b1, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-protocol-policy-enum
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'OriginProtocolPolicy must be http-only, https-only or match-viewer'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation error detected: Value ''https'' at ''distributionConfigWithTags.distributionConfig.origins.items.1.member.customOriginConfig.originProtocolPolicy'' failed to satisfy constraint: Member must satisfy enum value set: [https-only, http-only, match-viewer] (Service: CloudFront, Status Code: 400, Request ID: c950efc4-2b27-4c3f-a107-3'
+addedOn: 2026-09-08
+benchRegion: us-east-1

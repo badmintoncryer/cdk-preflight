@@ -1,0 +1,12 @@
+id: pf-cloudfront-realtime-log-endpoint-count
+service: cloudfront
+resourceTypes: [AWS::CloudFront::RealtimeLogConfig]
+severity: ERROR
+title: 'A real-time log configuration takes exactly one endpoint'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-realtimelogconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Access denied for operation ''AWS::CloudFront::RealtimeLogConfig''." (RequestToken: 485c532e-db4f-56e6-5ade-29b78ec97970, HandlerErrorCode: AccessDenied)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-function-runtime-enum
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Function]
+severity: ERROR
+title: 'CloudFront Function Runtime must be cloudfront-js-1.0 or cloudfront-js-2.0'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation error detected: Value ''cloudfront-js-3.0'' at ''functionConfig.runtime'' failed to satisfy constraint: Member must satisfy enum value set: [cloudfront-js-1.0, cloudfront-js-2.0] (Service: CloudFront, Status Code: 400, Request ID: 66c2125e-7ab1-4062-8527-72cf341109eb) (SDK Attempt Count: 1)" (RequestToken: 3e9a2a0e-cff2-3339-66'
+addedOn: 2026-09-08
+benchRegion: us-east-1

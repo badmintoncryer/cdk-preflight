@@ -1,0 +1,12 @@
+id: pf-cloudfront-key-group-item-count
+service: cloudfront
+resourceTypes: [AWS::CloudFront::KeyGroup]
+severity: ERROR
+title: 'A key group holds at most 5 public keys'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keygroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::KeyGroup: The specified CloudFront public key does not exist in key group. (Service: CloudFront, Status Code: 400, Request ID: f63fc845-398b-4608-bbbe-e19e8dffcb3a) (SDK Attempt Count: 1)" (RequestToken: 4f2d26be-4745-cc80-497c-ae3d0b687ceb, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1
