@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "AdminCreateUserConfig": {
+          "InviteMessageTemplate": {
+            "SMSMessage": "Welcome {username}, your temporary password is {####}."
+          }
+        }
+      }
+    }
+  }
+}

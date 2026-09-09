@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientName": "pfprobe",
+        "AnalyticsConfiguration": {
+          "ApplicationArn": "arn:aws:mobiletargeting:ap-northeast-1:123456789012:apps/abcdef01234567890abcdef012345678"
+        }
+      }
+    }
+  }
+}

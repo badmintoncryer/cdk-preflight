@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "pfsaml",
+        "ProviderType": "SAML",
+        "ProviderDetails": {
+          "IDPSignout": "true"
+        }
+      }
+    }
+  }
+}

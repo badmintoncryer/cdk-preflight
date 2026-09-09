@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "AllowUnauthenticatedIdentities": false,
+        "IdentityPoolName": "pfprobe",
+        "SamlProviderARNs": [
+          "arn:aws:iam::210987654321:saml-provider/pfprobe"
+        ]
+      }
+    }
+  }
+}

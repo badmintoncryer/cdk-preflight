@@ -1,0 +1,12 @@
+id: pf-cognito-propagate-context-requires-secret
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolClient]
+severity: ERROR
+title: "Propagating user context data requires a client secret"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Client Secret is required to set EnablePropagateAdditionalUserContextData as true\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

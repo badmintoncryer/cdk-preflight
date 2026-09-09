@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "UserPoolTier": "PLUS",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 8,
+            "PasswordHistorySize": 12
+          }
+        }
+      }
+    }
+  }
+}

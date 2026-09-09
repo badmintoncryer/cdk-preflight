@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1
+            },
+            {
+              "Name": "verified_phone_number",
+              "Priority": 2
+            },
+            {
+              "Name": "admin_only",
+              "Priority": 3
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientName": "pfprobe",
+        "ExplicitAuthFlows": [
+          "ALLOW_ADMIN_USER_PASSWORD_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH"
+        ]
+      }
+    }
+  }
+}

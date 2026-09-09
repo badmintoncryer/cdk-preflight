@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "UserPoolTier": "ESSENTIALS",
+        "WebAuthnRelyingPartyID": "https://example.com/path"
+      }
+    }
+  }
+}

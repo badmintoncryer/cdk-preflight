@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolDomain",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Domain": "pfprobe",
+        "CustomDomainConfig": {
+          "CertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/11111111-2222-3333-4444-555555555555"
+        }
+      }
+    }
+  }
+}

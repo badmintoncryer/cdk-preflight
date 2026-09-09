@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "AllowUnauthenticatedIdentities": false,
+        "IdentityPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+      "Properties": {
+        "IdentityPoolId": {
+          "Ref": "P"
+        },
+        "Roles": {
+          "authenticated": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+          }
+        },
+        "RoleMappings": {
+          "bogus": {
+            "Type": "Token",
+            "AmbiguousRoleResolution": "AuthenticatedRole"
+          }
+        }
+      }
+    }
+  }
+}

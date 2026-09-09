@@ -1,0 +1,12 @@
+id: pf-cognito-developer-provider-name-format
+service: cognito
+resourceTypes: [AWS::Cognito::IdentityPool]
+severity: ERROR
+title: "DeveloperProviderName takes no spaces"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-identitypool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value 'my provider' at 'developerProviderName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\w._-]+\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

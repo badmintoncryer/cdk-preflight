@@ -1,0 +1,12 @@
+id: pf-cognito-auto-verified-username-consistency
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "Auto-verifying phone_number requires an SmsConfiguration"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"SMS configuration is required when phone_number is selected for auto verification\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

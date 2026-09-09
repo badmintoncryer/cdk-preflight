@@ -1,0 +1,12 @@
+id: pf-cognito-pre-token-generation-config-tier
+service: cognito
+resourceTypes: [AWS::Cognito::UserPool]
+severity: ERROR
+title: "Pre token generation V2_0 and later need ESSENTIALS or PLUS"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The following features need to be disabled for the LITE pricing tier configured: Token Customization with Pre-Token Generation Lambda V2_0\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

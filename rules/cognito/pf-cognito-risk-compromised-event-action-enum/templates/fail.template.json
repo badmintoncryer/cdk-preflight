@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolRiskConfigurationAttachment",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientId": "ALL",
+        "CompromisedCredentialsRiskConfiguration": {
+          "EventFilter": [
+            "SIGN_IN"
+          ],
+          "Actions": {
+            "EventAction": "MFA_REQUIRED"
+          }
+        }
+      }
+    }
+  }
+}

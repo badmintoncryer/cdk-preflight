@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "EmailConfiguration": {
+          "EmailSendingAccount": "COGNITO_DEFAULT",
+          "SourceArn": {
+            "Fn::Sub": "arn:aws:ses:us-east-1:${AWS::AccountId}:identity/pf@example.com"
+          }
+        }
+      }
+    }
+  }
+}

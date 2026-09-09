@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "SmsConfiguration": {
+          "SnsCallerArn": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe-sns"
+          },
+          "ExternalId": "pfprobe",
+          "SnsRegion": "ap-northeast-1"
+        }
+      }
+    }
+  }
+}

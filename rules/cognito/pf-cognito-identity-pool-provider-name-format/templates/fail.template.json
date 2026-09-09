@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "AllowUnauthenticatedIdentities": false,
+        "IdentityPoolName": "pfprobe",
+        "CognitoIdentityProviders": [
+          {
+            "ProviderName": "us-east-1_abcdefghi",
+            "ClientId": "abcdefghijklmnopqrstuvwxyz"
+          }
+        ]
+      }
+    }
+  }
+}

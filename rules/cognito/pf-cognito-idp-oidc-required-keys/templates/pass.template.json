@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "pfoidc",
+        "ProviderType": "OIDC",
+        "ProviderDetails": {
+          "client_id": "cdkpf-fixture",
+          "client_secret": "cdkpf-fixture-secret",
+          "authorize_scopes": "openid",
+          "oidc_issuer": "https://accounts.google.com",
+          "attributes_request_method": "GET"
+        }
+      }
+    }
+  }
+}

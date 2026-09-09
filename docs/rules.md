@@ -307,19 +307,118 @@
 | `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | none |
+| `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | none |
+| `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | none |
+| `pf-cognito-analytics-config-exclusive` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationArn excludes the id/role form | none |
+| `pf-cognito-auto-verified-attributes-enum` | AWS::Cognito::UserPool | Only email and phone_number can be auto-verified | none |
+| `pf-cognito-auto-verified-username-consistency` | AWS::Cognito::UserPool | Auto-verifying phone_number requires an SmsConfiguration | none |
+| `pf-cognito-callback-url-fragment` | AWS::Cognito::UserPoolClient | Callback URLs cannot carry a fragment | none |
+| `pf-cognito-callback-url-https` | AWS::Cognito::UserPoolClient | Callback URLs must use https (except localhost) | none |
+| `pf-cognito-callback-urls-max` | AWS::Cognito::UserPoolClient | At most 100 callback URLs per client | none |
 | `pf-cognito-client-credentials-exclusive` | AWS::Cognito::UserPoolClient | client_credentials cannot combine with code or implicit | none |
 | `pf-cognito-client-credentials-secret` | AWS::Cognito::UserPoolClient | client_credentials needs a client secret | none |
 | `pf-cognito-client-name` | AWS::Cognito::UserPoolClient | User pool client names allow only word characters, spaces and +=,.@- | none |
+| `pf-cognito-custom-domain-cert-region` | AWS::Cognito::UserPoolDomain | A custom domain certificate must be in us-east-1 | none |
+| `pf-cognito-custom-domain-fqdn` | AWS::Cognito::UserPoolDomain | A custom domain must be a fully qualified domain name | none |
+| `pf-cognito-custom-email-sender-kms` | AWS::Cognito::UserPool | A custom email sender trigger requires LambdaConfig.KMSKeyID | none |
+| `pf-cognito-custom-sender-kms-region` | AWS::Cognito::UserPool | The custom sender KMS key must be in the pool region | none |
+| `pf-cognito-custom-sms-sender-kms` | AWS::Cognito::UserPool | A custom SMS sender trigger requires LambdaConfig.KMSKeyID | none |
+| `pf-cognito-default-redirect-uri-member` | AWS::Cognito::UserPoolClient | DefaultRedirectURI must be one of the callback URLs | none |
+| `pf-cognito-developer-provider-name-format` | AWS::Cognito::IdentityPool | DeveloperProviderName takes no spaces | none |
+| `pf-cognito-domain-prefix-format` | AWS::Cognito::UserPoolDomain | A hosted UI domain prefix takes lower-case letters, digits and hyphens | none |
+| `pf-cognito-domain-prefix-length` | AWS::Cognito::UserPoolDomain | A hosted UI domain prefix is capped at 63 characters | none |
 | `pf-cognito-domain-reserved-word` | AWS::Cognito::UserPoolDomain | Domain prefixes cannot contain reserved words | none |
+| `pf-cognito-email-cognito-default-with-sourcearn` | AWS::Cognito::UserPool | COGNITO_DEFAULT email sending takes no SourceArn | none |
+| `pf-cognito-email-developer-requires-sourcearn` | AWS::Cognito::UserPool | DEVELOPER email sending needs a SES SourceArn | none |
+| `pf-cognito-email-from-format` | AWS::Cognito::UserPool | EmailConfiguration.From must be an email address | none |
+| `pf-cognito-email-reply-to-format` | AWS::Cognito::UserPool | ReplyToEmailAddress must be an email address | none |
+| `pf-cognito-email-sourcearn-region` | AWS::Cognito::UserPool | The SES SourceArn must be in a Cognito-supported SES region | none |
+| `pf-cognito-email-verification-message-placeholder` | AWS::Cognito::UserPool | EmailVerificationMessage needs the {####} code placeholder | none |
+| `pf-cognito-explicit-auth-flows-legacy-mix` | AWS::Cognito::UserPoolClient | Legacy and ALLOW_ auth flow names cannot be mixed | none |
+| `pf-cognito-group-role-arn-account` | AWS::Cognito::UserPoolGroup | A group role must be in the deploying account | none |
+| `pf-cognito-identity-pool-provider-name-format` | AWS::Cognito::IdentityPool | A user pool provider name is the full cognito-idp endpoint | none |
+| `pf-cognito-identity-pool-saml-arn-account` | AWS::Cognito::IdentityPool | SAML provider ARNs must be in the deploying account | none |
+| `pf-cognito-idp-apple-required-keys` | AWS::Cognito::UserPoolIdentityProvider | Sign in with Apple needs team_id, key_id and private_key | none |
+| `pf-cognito-idp-identifiers-max` | AWS::Cognito::UserPoolIdentityProvider | At most 50 IdP identifiers | none |
+| `pf-cognito-idp-oidc-attributes-request-method` | AWS::Cognito::UserPoolIdentityProvider | attributes_request_method is GET or POST | none |
+| `pf-cognito-idp-oidc-issuer-https` | AWS::Cognito::UserPoolIdentityProvider | The OIDC issuer must be an https URL | none |
+| `pf-cognito-idp-oidc-required-keys` | AWS::Cognito::UserPoolIdentityProvider | An OIDC provider needs four ProviderDetails keys | none |
+| `pf-cognito-idp-provider-name-length` | AWS::Cognito::UserPoolIdentityProvider | A provider name is capped at 32 characters | none |
+| `pf-cognito-idp-saml-metadata-exclusive` | AWS::Cognito::UserPoolIdentityProvider | MetadataURL and MetadataFile are exclusive | none |
+| `pf-cognito-idp-saml-metadata-required` | AWS::Cognito::UserPoolIdentityProvider | A SAML provider needs MetadataURL or MetadataFile | none |
+| `pf-cognito-idp-social-provider-name-fixed` | AWS::Cognito::UserPoolIdentityProvider | A social provider name is fixed to its type | none |
+| `pf-cognito-idp-social-required-keys` | AWS::Cognito::UserPoolIdentityProvider | A social provider needs client_id, client_secret and authorize_scopes | none |
+| `pf-cognito-invite-message-username-placeholder` | AWS::Cognito::UserPool | The invite email needs {username} and {####} | none |
+| `pf-cognito-invite-sms-message-placeholder` | AWS::Cognito::UserPool | The invite SMS needs {username} and {####} | none |
+| `pf-cognito-lambda-config-region` | AWS::Cognito::UserPool | User pool triggers must be Lambda functions in the same region | none |
+| `pf-cognito-log-delivery-event-source-duplicate` | AWS::Cognito::LogDeliveryConfiguration | One log configuration per event source | none |
+| `pf-cognito-log-delivery-log-group-region` | AWS::Cognito::LogDeliveryConfiguration | The log group must be in the pool region | none |
+| `pf-cognito-log-delivery-user-auth-events-tier` | AWS::Cognito::LogDeliveryConfiguration<br>AWS::Cognito::UserPool | userAuthEvents logging needs the PLUS tier | none |
+| `pf-cognito-logout-url-https` | AWS::Cognito::UserPoolClient | Logout URLs must use https (except localhost) | none |
+| `pf-cognito-managed-login-branding-asset-extension` | AWS::Cognito::ManagedLoginBranding | Only a favicon asset takes the ICO extension | none |
+| `pf-cognito-managed-login-branding-values-exclusive` | AWS::Cognito::ManagedLoginBranding | UseCognitoProvidedValues excludes Settings | none |
+| `pf-cognito-managed-login-version-tier` | AWS::Cognito::UserPoolDomain<br>AWS::Cognito::UserPool | Managed login version 2 needs ESSENTIALS or PLUS | none |
+| `pf-cognito-mfa-email-otp-requires-developer` | AWS::Cognito::UserPool | EMAIL_OTP needs the DEVELOPER email sending account | none |
+| `pf-cognito-mfa-off-with-enabled-mfas` | AWS::Cognito::UserPool | MfaConfiguration OFF takes no EnabledMfas | none |
 | `pf-cognito-mfa-sms-config` | AWS::Cognito::UserPool | MFA without any factor configuration cannot deploy | none |
 | `pf-cognito-oauth-callback-required` | AWS::Cognito::UserPoolClient | code and implicit OAuth flows need CallbackURLs | none |
 | `pf-cognito-oauth-flows-scopes-required` | AWS::Cognito::UserPoolClient | Enabling OAuth requires both AllowedOAuthFlows and AllowedOAuthScopes | none |
+| `pf-cognito-oauth-scopes-unknown` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPoolResourceServer | OAuth scopes must be standard or come from a resource server | none |
+| `pf-cognito-password-history-size-range` | AWS::Cognito::UserPool | PasswordHistorySize must be between 0 and 24 | none |
 | `pf-cognito-password-min-length` | AWS::Cognito::UserPool | PasswordPolicy MinimumLength runs 6 to 99 | none |
+| `pf-cognito-pre-token-generation-config-tier` | AWS::Cognito::UserPool | Pre token generation V2_0 and later need ESSENTIALS or PLUS | none |
+| `pf-cognito-pre-token-generation-legacy-mix` | AWS::Cognito::UserPool | PreTokenGeneration and PreTokenGenerationConfig must name the same function | none |
+| `pf-cognito-propagate-context-requires-secret` | AWS::Cognito::UserPoolClient | Propagating user context data requires a client secret | none |
+| `pf-cognito-read-attributes-exists` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPool | ReadAttributes must name attributes the pool has | none |
+| `pf-cognito-recovery-admin-only-alone` | AWS::Cognito::UserPool | admin_only cannot be combined with other recovery mechanisms | none |
 | `pf-cognito-recovery-duplicate` | AWS::Cognito::UserPool | Recovery mechanisms cannot repeat priorities or names | none |
+| `pf-cognito-recovery-mechanisms-max` | AWS::Cognito::UserPool | At most two account recovery mechanisms | none |
+| `pf-cognito-resource-server-identifier-charset` | AWS::Cognito::UserPoolResourceServer | A resource server identifier takes no spaces | none |
+| `pf-cognito-resource-server-scope-name-charset` | AWS::Cognito::UserPoolResourceServer | Scope names take no spaces or quotes | none |
+| `pf-cognito-resource-server-scopes-max` | AWS::Cognito::UserPoolResourceServer | At most 100 scopes per resource server | none |
+| `pf-cognito-risk-account-takeover-event-action-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Account takeover actions take four values | none |
+| `pf-cognito-risk-compromised-event-action-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Compromised credentials action is BLOCK or NO_ACTION | none |
+| `pf-cognito-risk-compromised-event-filter-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Compromised credentials event filter takes three values | none |
+| `pf-cognito-risk-ip-range-cidr` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Blocked and skipped IP ranges are CIDR blocks | none |
+| `pf-cognito-risk-ip-range-max` | AWS::Cognito::UserPoolRiskConfigurationAttachment | At most 200 blocked IP ranges | none |
+| `pf-cognito-risk-notify-source-arn-region` | AWS::Cognito::UserPoolRiskConfigurationAttachment | The notification SourceArn must be in a Cognito-supported SES region | none |
+| `pf-cognito-role-attachment-roles-keys` | AWS::Cognito::IdentityPoolRoleAttachment | Roles keys are authenticated and unauthenticated | none |
+| `pf-cognito-role-mapping-rule-match-type` | AWS::Cognito::IdentityPoolRoleAttachment | MatchType is Equals, Contains, StartsWith or NotEqual | none |
+| `pf-cognito-role-mapping-rules-max` | AWS::Cognito::IdentityPoolRoleAttachment | At most 25 rules per role mapping | none |
+| `pf-cognito-role-mappings-ambiguous-required` | AWS::Cognito::IdentityPoolRoleAttachment | A role mapping needs AmbiguousRoleResolution | none |
+| `pf-cognito-role-mappings-key-format` | AWS::Cognito::IdentityPoolRoleAttachment | A role mapping key is a provider name | none |
+| `pf-cognito-role-mappings-rules-required` | AWS::Cognito::IdentityPoolRoleAttachment | A Rules role mapping needs RulesConfiguration | none |
+| `pf-cognito-role-mappings-token-no-rules` | AWS::Cognito::IdentityPoolRoleAttachment | A Token role mapping takes no RulesConfiguration | none |
 | `pf-cognito-schema-attr-length-order` | AWS::Cognito::UserPool | Schema attribute MaxLength cannot undercut MinLength | none |
+| `pf-cognito-schema-attr-max` | AWS::Cognito::UserPool | A user pool takes at most 50 custom attributes | none |
+| `pf-cognito-schema-custom-name-length` | AWS::Cognito::UserPool | A schema attribute name is capped at 20 characters | none |
+| `pf-cognito-schema-custom-required` | AWS::Cognito::UserPool | Custom attributes cannot be required | none |
+| `pf-cognito-schema-name-duplicate` | AWS::Cognito::UserPool | Schema attribute names must be unique | none |
+| `pf-cognito-schema-number-min-max-order` | AWS::Cognito::UserPool | Number attribute MinValue must not exceed MaxValue | none |
+| `pf-cognito-schema-standard-attr-datatype` | AWS::Cognito::UserPool | Standard attributes keep their fixed data type | none |
+| `pf-cognito-signin-policy-password-required` | AWS::Cognito::UserPool | AllowedFirstAuthFactors must include PASSWORD | none |
+| `pf-cognito-signin-policy-webauthn-tier` | AWS::Cognito::UserPool | Passwordless sign-in factors need ESSENTIALS or PLUS | none |
+| `pf-cognito-sms-authentication-message-placeholder` | AWS::Cognito::UserPool | SmsAuthenticationMessage needs the {####} code placeholder | none |
+| `pf-cognito-sms-caller-arn-account` | AWS::Cognito::UserPool | The SMS caller role must be in the deploying account | none |
+| `pf-cognito-sms-configuration-sns-region` | AWS::Cognito::UserPool | SnsRegion must be the region the pool deploys to | none |
+| `pf-cognito-sms-verification-message-placeholder` | AWS::Cognito::UserPool | SmsVerificationMessage needs the {####} code placeholder | none |
+| `pf-cognito-supported-identity-providers-exists` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPoolIdentityProvider | Supported identity providers must exist on the pool | none |
+| `pf-cognito-temporary-password-validity-range` | AWS::Cognito::UserPool | TemporaryPasswordValidityDays must be between 0 and 365 | none |
 | `pf-cognito-token-expiration-order` | AWS::Cognito::UserPoolClient | Access and id tokens cannot outlive the refresh token | none |
 | `pf-cognito-token-validity-range` | AWS::Cognito::UserPoolClient | Token validity ranges depend on token type and unit | none |
+| `pf-cognito-ui-customization-css-properties` | AWS::Cognito::UserPoolUICustomizationAttachment | Hosted UI CSS only styles the -customizable classes | none |
+| `pf-cognito-ui-customization-requires-domain` | AWS::Cognito::UserPoolUICustomizationAttachment<br>AWS::Cognito::UserPoolDomain | Hosted UI customization requires a domain on the pool | none |
+| `pf-cognito-unused-account-validity-exclusive` | AWS::Cognito::UserPool | UnusedAccountValidityDays and TemporaryPasswordValidityDays are exclusive | none |
+| `pf-cognito-unused-account-validity-range` | AWS::Cognito::UserPool | UnusedAccountValidityDays must be between 0 and 365 | none |
+| `pf-cognito-user-attribute-update-requires-auto-verified` | AWS::Cognito::UserPool | Attributes requiring verification before update must be auto-verified | none |
+| `pf-cognito-user-attribute-update-settings-enum` | AWS::Cognito::UserPool | Only email and phone_number can require verification before update | none |
 | `pf-cognito-user-pool-name` | AWS::Cognito::UserPool | User pool names allow only word characters, spaces and +=,.@- | none |
+| `pf-cognito-verification-code-placeholder` | AWS::Cognito::UserPool | The verification email needs the {####} code placeholder | none |
+| `pf-cognito-verification-email-subject-length` | AWS::Cognito::UserPool | The verification email subject is capped at 140 characters | none |
+| `pf-cognito-verification-link-placeholder` | AWS::Cognito::UserPool | A link verification message needs the {##...##} placeholder | none |
+| `pf-cognito-verification-sms-placeholder` | AWS::Cognito::UserPool | The verification SMS needs the {####} code placeholder | none |
+| `pf-cognito-web-authn-relying-party-format` | AWS::Cognito::UserPool | WebAuthnRelyingPartyID is a bare domain name | none |
+| `pf-cognito-write-attributes-immutable` | AWS::Cognito::UserPoolClient | Verified-status attributes cannot be written by a client | none |
 | `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | none |
 | `pf-dynamodb-attribute-type` | AWS::DynamoDB::Table | AttributeType must be S, N or B | pending-engine |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | none |

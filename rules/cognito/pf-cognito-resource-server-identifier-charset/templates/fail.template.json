@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolResourceServer",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Identifier": "my api",
+        "Name": "pfprobe"
+      }
+    }
+  }
+}

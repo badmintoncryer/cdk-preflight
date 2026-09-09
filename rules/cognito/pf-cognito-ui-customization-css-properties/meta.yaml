@@ -1,0 +1,12 @@
+id: pf-cognito-ui-customization-css-properties
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolUICustomizationAttachment]
+severity: ERROR
+title: "Hosted UI CSS only styles the -customizable classes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooluicustomizationattachment.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The CSS class body is not in the list of allowed classes.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

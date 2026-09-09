@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "SmsAuthenticationMessage": "Your MFA code."
+      }
+    }
+  }
+}

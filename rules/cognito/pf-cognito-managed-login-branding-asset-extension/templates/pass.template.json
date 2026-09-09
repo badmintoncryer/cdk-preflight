@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::ManagedLoginBranding",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Assets": [
+          {
+            "Category": "PAGE_BACKGROUND",
+            "ColorMode": "LIGHT",
+            "Extension": "PNG",
+            "Bytes": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+          }
+        ],
+        "ClientId": {
+          "Ref": "C"
+        },
+        "Settings": {}
+      }
+    },
+    "C": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientName": "cdkpf"
+      }
+    }
+  }
+}

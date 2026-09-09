@@ -1,0 +1,12 @@
+id: pf-cognito-log-delivery-user-auth-events-tier
+service: cognito
+resourceTypes: [AWS::Cognito::LogDeliveryConfiguration, AWS::Cognito::UserPool]
+severity: ERROR
+title: "userAuthEvents logging needs the PLUS tier"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-logdeliveryconfiguration.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The following feature is not available for the ESSENTIALS pricing tier configured: Log Streaming\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "UserPoolTier": "LITE"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolDomain",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Domain": "cdkpf-managed-login-version-tier",
+        "ManagedLoginVersion": 2
+      }
+    }
+  }
+}

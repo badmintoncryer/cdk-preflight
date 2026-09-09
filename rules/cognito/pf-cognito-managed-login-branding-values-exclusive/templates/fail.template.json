@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::ManagedLoginBranding",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "UseCognitoProvidedValues": true,
+        "ClientId": {
+          "Ref": "C"
+        },
+        "Settings": {}
+      }
+    },
+    "C": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientName": "cdkpf"
+      }
+    }
+  }
+}

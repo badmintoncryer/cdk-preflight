@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "Schema": [
+          {
+            "Name": "n2",
+            "AttributeDataType": "Number",
+            "NumberAttributeConstraints": {
+              "MinValue": "10",
+              "MaxValue": "1"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

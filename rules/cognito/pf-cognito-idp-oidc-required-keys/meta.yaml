@@ -1,0 +1,12 @@
+id: pf-cognito-idp-oidc-required-keys
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolIdentityProvider]
+severity: ERROR
+title: "An OIDC provider needs four ProviderDetails keys"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"clientId, authorizeScopes, oidcIssuer and attributesRequestMethod are all required idp details.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

@@ -1,0 +1,12 @@
+id: pf-cognito-supported-identity-providers-exists
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolClient, AWS::Cognito::UserPoolIdentityProvider]
+severity: ERROR
+title: "Supported identity providers must exist on the pool"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The provider Google does not exist for User Pool us-east-1_l9gfya7RC.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

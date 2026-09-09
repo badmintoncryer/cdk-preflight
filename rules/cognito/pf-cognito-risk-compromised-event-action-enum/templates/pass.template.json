@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe",
+        "UserPoolAddOns": {
+          "AdvancedSecurityMode": "AUDIT"
+        }
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolRiskConfigurationAttachment",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ClientId": "ALL",
+        "CompromisedCredentialsRiskConfiguration": {
+          "EventFilter": [
+            "SIGN_IN"
+          ],
+          "Actions": {
+            "EventAction": "BLOCK"
+          }
+        }
+      }
+    }
+  }
+}

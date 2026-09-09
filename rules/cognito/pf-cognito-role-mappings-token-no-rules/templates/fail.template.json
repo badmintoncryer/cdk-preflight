@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "AllowUnauthenticatedIdentities": false,
+        "IdentityPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+      "Properties": {
+        "IdentityPoolId": {
+          "Ref": "P"
+        },
+        "Roles": {
+          "authenticated": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+          }
+        },
+        "RoleMappings": {
+          "cognito-idp.us-east-1.amazonaws.com/us-east-1_abcdefghi:abcdefghijklmnopqrstuvwxyz": {
+            "Type": "Token",
+            "AmbiguousRoleResolution": "AuthenticatedRole",
+            "RulesConfiguration": {
+              "Rules": [
+                {
+                  "Claim": "dept",
+                  "MatchType": "Equals",
+                  "Value": "eng",
+                  "RoleARN": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/pfprobe"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

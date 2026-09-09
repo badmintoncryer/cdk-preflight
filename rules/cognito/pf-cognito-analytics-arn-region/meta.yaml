@@ -1,0 +1,12 @@
+id: pf-cognito-analytics-arn-region
+service: cognito
+resourceTypes: [AWS::Cognito::UserPoolClient]
+severity: ERROR
+title: "The Pinpoint analytics app must be in the pool region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The integration with Pinpoint is not supported for the requested ap-northeast-1 region.\"; pass template -> CREATE_COMPLETE"
+addedOn: 2026-09-08

@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolResourceServer",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "Identifier": "https://api.example.com",
+        "Name": "pfprobe",
+        "Scopes": [
+          {
+            "ScopeName": "read all",
+            "ScopeDescription": "r"
+          }
+        ]
+      }
+    }
+  }
+}

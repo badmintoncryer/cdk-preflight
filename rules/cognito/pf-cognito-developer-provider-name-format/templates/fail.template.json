@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "X": {
+      "Type": "AWS::Cognito::IdentityPool",
+      "Properties": {
+        "AllowUnauthenticatedIdentities": false,
+        "IdentityPoolName": "pfprobe",
+        "DeveloperProviderName": "my provider"
+      }
+    }
+  }
+}

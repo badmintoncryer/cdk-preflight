@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "MyGoogle",
+        "ProviderType": "Google",
+        "ProviderDetails": {
+          "client_id": "x",
+          "client_secret": "y",
+          "authorize_scopes": "email"
+        }
+      }
+    }
+  }
+}

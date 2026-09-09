@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "pfprobe"
+      }
+    },
+    "X": {
+      "Type": "AWS::Cognito::UserPoolIdentityProvider",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "P"
+        },
+        "ProviderName": "cdkpfsaml2",
+        "ProviderType": "SAML",
+        "ProviderDetails": {
+          "MetadataFile": "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"https://cdkpf.example.com/saml\"><IDPSSODescriptor protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\"><KeyDescriptor use=\"signing\"><KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><X509Data><X509Certificate>MIIDJTCCAg2gAwIBAgIUfyZ5IvtVyVG6/YmTMLna1y5Esy4wDQYJKoZIhvcNAQELBQAwIjEgMB4GA1UEAwwXY2RrcGYtcHJlZmxpZ2h0LWZpeHR1cmUwHhcNMjYwOTA4MTM0OTIzWhcNNDYwOTAzMTM0OTIzWjAiMSAwHgYDVQQDDBdjZGtwZi1wcmVmbGlnaHQtZml4dHVyZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALofoRdEcJiWb2YPZYzBCNtTp+pugfClNMf7vD8abI8zdHxS1JSZr7/zitEQIewhV53QYBW4YlaVe50vjKxH4k1aeYaDF73s3zWkPNVM/7Kl73gR9WMD04pvHjet8mEafhVj8AZO3KIWLYuGY0kBY5bPsxs0wKzmv7gwRVxWH3JLzL5h9TLcLu/U6qlFsaSqHvN5V2bOQtcjbdxmYNtjg7nF61AokCYsJA5+vmShDEJeR8wJDQbyQ9IJS2oD7bxj3nhEOsBWGj4U2JNbe+sU/eAaKZDxePvBGTITzKQgnGj8dcYtu91YemM8fw8JhrPtEFPx/GHzIcZE4LONlE27nlsCAwEAAaNTMFEwHQYDVR0OBBYEFIEBp2MF1X1fdtFF2rek5L7TH5JZMB8GA1UdIwQYMBaAFIEBp2MF1X1fdtFF2rek5L7TH5JZMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAKd35diUYZ5mqB4jnalro6ZSyf+7lN9dTwQQ3RYlgA2CdK2yqTTINmCPSoN6gkVgZ3myW/fcpmiu5/v/PcwBwzenED15LMuwvQjoK7K1tr3vjy5wF7SQ8L+5DcxcOMAGkNvtW4gl8wlKPKQaLJpXCPoVeacbOL2nJVIlFaHfQwVVXDNgrItO1gZ/EIfWNuLTrV/K2zwY+Ja2SNJ7CMoHjcwMGkxnK1ZOBdzY4mBkAJU4Hwe9854EGjPnViDmkv3hB5HbpiAZdWPTY84rYpHjgjFtMBR3B9sGT1xZWRkhOYp7BSRbC2Ln1ndLTi5IBTGgmaJfPss3TFGml3XF68CNWtc=</X509Certificate></X509Data></KeyInfo></KeyDescriptor><NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat><SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://cdkpf.example.com/saml/sso\"/></IDPSSODescriptor></EntityDescriptor>"
+        }
+      }
+    }
+  }
+}
