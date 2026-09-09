@@ -1,0 +1,12 @@
+id: pf-elbv2-listener-cert-region
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener]
+severity: ERROR
+title: "A listener certificate lives in the load balancer region"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Certificate ARN 'arn:aws:acm:eu-west-1:123456789012:certificate/11111111-1111-1111-1111-111111111111' is not valid\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

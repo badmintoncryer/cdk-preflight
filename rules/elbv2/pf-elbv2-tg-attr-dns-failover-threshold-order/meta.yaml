@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-attr-dns-failover-threshold-order
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "The DNS failover threshold is at least the unhealthy-state routing threshold"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"DNS failover threshold must be greater than or equal to unhealthy state routing threshold\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

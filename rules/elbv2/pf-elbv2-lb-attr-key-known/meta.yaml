@@ -1,0 +1,12 @@
+id: pf-elbv2-lb-attr-key-known
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "A load balancer attribute key must be one the service recognises"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Load balancer attribute key 'routing.http.idle_timeout.seconds' is not recognized\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

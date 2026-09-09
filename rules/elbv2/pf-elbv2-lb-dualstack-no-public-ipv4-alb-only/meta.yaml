@@ -1,0 +1,12 @@
+id: pf-elbv2-lb-dualstack-no-public-ipv4-alb-only
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "dualstack-without-public-ipv4 is an application load balancer address type"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The specified IP address type is not supported on load balancers with type 'network'.\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

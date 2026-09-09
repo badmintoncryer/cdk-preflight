@@ -1,0 +1,12 @@
+id: pf-elbv2-listener-attr-key-lb-type
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::Listener, AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "A listener attribute belongs to the load balancer type it is set on"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The provided listener attribute is not supported\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

@@ -8677,6 +8677,246 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_ecugt_url := \"https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_CreateReplicationGroup.html\"\n\n_pf_ecugt_fix := \"Set TransitEncryptionEnabled: true on a replication group that uses UserGroupIds\"\n\nviolation contains make_diag_full(\"pf-elasticache-user-group-transit-encryption\", \"ERROR\", name,\n\t\"Properties.UserGroupIds\",\n\t\"UserGroupIds is set but TransitEncryptionEnabled is not true; the create call fails with \\\"User group based access control requires encryption-in-transit to be enabled on the replication group.\\\"\",\n\t_pf_ecugt_fix, _pf_ecugt_url) if {\n\tsome name in resources_of_type(\"AWS::ElastiCache::ReplicationGroup\")\n\tgroups := resolve(name, \"Properties.UserGroupIds\")\n\tis_array(groups)\n\tcount(groups) > 0\n\tnot _pf_ecugt_transit(name)\n}\n\n_pf_ecugt_transit(name) if resolve(name, \"Properties.TransitEncryptionEnabled\") == true\n"
   },
   {
+    "id": "pf-elbv2-action-cognito-userpool-region",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The Cognito user pool sits in the load balancer region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbacur_fix := \"Point at a user pool in the region this stack deploys to\"\n\n_pf_elbacur_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_AuthenticateCognitoActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-cognito-userpool-region\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.AuthenticateCognitoConfig.UserPoolArn\", [a.prop, a.index]),\n\tsprintf(\"The user pool is in %s but this stack deploys to %s; a listener can only authenticate against a user pool in its own region\", [r, _pf_elb_region]),\n\t_pf_elbacur_fix, _pf_elbacur_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tcc := _pf_elb_oget(a.value, \"AuthenticateCognitoConfig\")\n\tarn := _pf_elb_oget(cc, \"UserPoolArn\")\n\tr := _pf_elb_arn_region(arn)\n\tr != _pf_elb_region\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-fixed-response-content-type",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A fixed response uses one of the five supported content types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafct_fix := \"Use text/plain, text/css, text/html, application/javascript or application/json\"\n\n_pf_elbafct_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_FixedResponseActionConfig.html\"\n\n_pf_elbafct_types := {\"text/plain\", \"text/css\", \"text/html\", \"application/javascript\", \"application/json\"}\n\nviolation contains make_diag_full(\"pf-elbv2-action-fixed-response-content-type\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.FixedResponseConfig.ContentType\", [a.prop, a.index]),\n\tsprintf(\"The fixed response is served as '%s'; a listener only serves text/plain, text/css, text/html, application/javascript or application/json\", [ct]),\n\t_pf_elbafct_fix, _pf_elbafct_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tfr := _pf_elb_oget(a.value, \"FixedResponseConfig\")\n\tct := _pf_elb_oget(fr, \"ContentType\")\n\tnot ct in _pf_elbafct_types\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-same-ip-type",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Target groups in one forward action share a IP address type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafsi_fix := \"Give every target group of this action the same IpAddressType\"\n\n_pf_elbafsi_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-same-ip-type\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroups\", [a.prop, a.index]),\n\tsprintf(\"The forward action spreads over target groups with different IP address types (%s); one action can only forward to target groups that agree on it\", [seen]),\n\t_pf_elbafsi_fix, _pf_elbafsi_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\ttgs := _pf_elb_fwd_tgs(a.value)\n\tvals := {v |\n\t\tsome tg in tgs\n\t\tg := _pf_elb_tuple_tg(tg)\n\t\tv := object.get(_pf_elb_props(g), \"IpAddressType\", \"ipv4\")\n\t}\n\tcount(vals) > 1\n\tseen := concat(\", \", sort(vals))\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-same-protocol",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Target groups in one forward action share a protocol",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafsp_fix := \"Give every target group of this action the same protocol\"\n\n_pf_elbafsp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-same-protocol\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroups\", [a.prop, a.index]),\n\tsprintf(\"The forward action spreads over target groups with different protocols (%s); one action can only forward to target groups that agree on it\", [seen]),\n\t_pf_elbafsp_fix, _pf_elbafsp_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\ttgs := _pf_elb_fwd_tgs(a.value)\n\tvals := {v |\n\t\tsome tg in tgs\n\t\tg := _pf_elb_tuple_tg(tg)\n\t\tv := object.get(_pf_elb_props(g), \"Protocol\", \"\")\n\t}\n\tcount(vals) > 1\n\tseen := concat(\", \", sort(vals))\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-stickiness-duration-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Target group stickiness lasts between 1 and 604800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafsd_fix := \"Set DurationSeconds to at most 604800 (7 days)\"\n\n_pf_elbafsd_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupStickinessConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-stickiness-duration-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroupStickinessConfig.DurationSeconds\", [a.prop, a.index]),\n\tsprintf(\"Target group stickiness is set to %v seconds; the service takes 1 to 604800 (7 days)\", [d]),\n\t_pf_elbafsd_fix, _pf_elbafsd_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tfc := _pf_elb_oget(a.value, \"ForwardConfig\")\n\tsc := _pf_elb_oget(fc, \"TargetGroupStickinessConfig\")\n\td := _pf_elb_num(_pf_elb_oget(sc, \"DurationSeconds\"))\n\t_pf_elb_outside(d, 1, 604800)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-stickiness-duration-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Enabled target group stickiness carries a duration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafsr_fix := \"Add DurationSeconds next to Enabled: true\"\n\n_pf_elbafsr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupStickinessConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-stickiness-duration-required\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroupStickinessConfig.DurationSeconds\", [a.prop, a.index]),\n\t\"Target group stickiness is enabled without DurationSeconds; the service has no default to fall back on\",\n\t_pf_elbafsr_fix, _pf_elbafsr_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tfc := _pf_elb_oget(a.value, \"ForwardConfig\")\n\tsc := _pf_elb_oget(fc, \"TargetGroupStickinessConfig\")\n\tobject.get(sc, \"Enabled\", false) in _pf_elb_true\n\tnot _pf_elb_ohas(sc, \"DurationSeconds\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-stickiness-tls",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A TLS listener cannot turn on target group stickiness",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafst_fix := \"Drop TargetGroupStickinessConfig, or move the action to a TCP listener\"\n\n_pf_elbafst_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-stickiness-tls\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroupStickinessConfig.Enabled\", [a.prop, a.index]),\n\t\"Target group stickiness is enabled on a TLS listener, which terminates the connection and cannot pin it to a target group\",\n\t_pf_elbafst_fix, _pf_elbafst_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tfc := _pf_elb_oget(a.value, \"ForwardConfig\")\n\tsc := _pf_elb_oget(fc, \"TargetGroupStickinessConfig\")\n\tobject.get(sc, \"Enabled\", false) in _pf_elb_true\n\t_pf_elb_listener_proto(name) == \"TLS\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-tg-count-max",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A forward action spreads over at most five target groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaftc_fix := \"Forward to five target groups or fewer (the quota cannot be raised)\"\n\n_pf_elbaftc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-limits.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-tg-count-max\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroups\", [a.prop, a.index]),\n\tsprintf(\"The forward action lists %d target groups; a single action takes at most 5\", [n]),\n\t_pf_elbaftc_fix, _pf_elbaftc_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\ttgs := _pf_elb_fwd_tgs(a.value)\n\tn := count(tgs)\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-tgarn-conflict",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "TargetGroupArn and ForwardConfig name the same single target group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafta_fix := \"Drop TargetGroupArn and keep the target groups in ForwardConfig\"\n\n_pf_elbafta_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_Action.html\"\n\n_pf_elbafta_ok(arn, tgs) if {\n\tcount(tgs) == 1\n\t_pf_elb_ref(object.get(tgs[0], \"TargetGroupArn\", null)) == arn\n}\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-tgarn-conflict\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig\", [a.prop, a.index]),\n\t\"The action sets both TargetGroupArn and ForwardConfig; when both are present ForwardConfig has to hold exactly that one target group\",\n\t_pf_elbafta_fix, _pf_elbafta_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\ttgs := _pf_elb_fwd_tgs(a.value)\n\tcount(tgs) > 0\n\tarn := _pf_elb_ref(_pf_elb_oget(a.value, \"TargetGroupArn\"))\n\tnot _pf_elbafta_ok(arn, tgs)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-weight-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group weight is between 0 and 999",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafwt_fix := \"Give every target group a weight in 0-999\"\n\n_pf_elbafwt_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupTuple.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-weight-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroups.%d.Weight\", [a.prop, a.index, i]),\n\tsprintf(\"The target group weight is %v; a weight runs from 0 to 999\", [w]),\n\t_pf_elbafwt_fix, _pf_elbafwt_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\ttgs := _pf_elb_fwd_tgs(a.value)\n\tsome i, tg in tgs\n\tw := _pf_elb_num(_pf_elb_oget(tg, \"Weight\"))\n\t_pf_elb_outside(w, 0, 999)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-forward-weight-required-multi",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Every target group of a multi-target forward action has a weight",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbafwr_fix := \"Set Weight on each target group of the action\"\n\n_pf_elbafwr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupTuple.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-forward-weight-required-multi\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.ForwardConfig.TargetGroups.%d.Weight\", [a.prop, a.index, i]),\n\t\"The forward action spreads over several target groups but this one has no Weight; the service needs a weight on each to split the traffic\",\n\t_pf_elbafwr_fix, _pf_elbafwr_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\ttgs := _pf_elb_fwd_tgs(a.value)\n\tcount(tgs) > 1\n\tsome i, tg in tgs\n\tnot _pf_elb_ohas(tg, \"Weight\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-oidc-endpoint-https",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Every OIDC endpoint is a full HTTPS URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaoeh_fix := \"Write the endpoint as https://host/path\"\n\n_pf_elbaoeh_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_AuthenticateOidcActionConfig.html\"\n\n_pf_elbaoeh_keys := {\"Issuer\", \"AuthorizationEndpoint\", \"TokenEndpoint\", \"UserInfoEndpoint\"}\n\nviolation contains make_diag_full(\"pf-elbv2-action-oidc-endpoint-https\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.AuthenticateOidcConfig.%s\", [a.prop, a.index, k]),\n\tsprintf(\"The OIDC %s is '%s'; the service needs a full URL including the https:// protocol\", [k, v]),\n\t_pf_elbaoeh_fix, _pf_elbaoeh_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\toc := _pf_elb_oget(a.value, \"AuthenticateOidcConfig\")\n\tsome k in _pf_elbaoeh_keys\n\tv := _pf_elb_oget(oc, k)\n\tis_string(v)\n\tnot startswith(v, \"https://\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-oidc-extra-params-max",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An authentication action carries at most ten extra parameters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaoep_fix := \"Keep AuthenticationRequestExtraParams to ten entries\"\n\n_pf_elbaoep_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_AuthenticateOidcActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-oidc-extra-params-max\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s.AuthenticationRequestExtraParams\", [a.prop, a.index, cfg]),\n\tsprintf(\"The action passes %d extra authentication parameters; the service takes at most 10\", [n]),\n\t_pf_elbaoep_fix, _pf_elbaoep_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tsome cfg in _pf_elb_auth_configs\n\toc := _pf_elb_oget(a.value, cfg)\n\tps := _pf_elb_oget(oc, \"AuthenticationRequestExtraParams\")\n\tis_object(ps)\n\tn := count(ps)\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-oidc-on-unauthenticated-values",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "OnUnauthenticatedRequest is deny, allow or authenticate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaoua_fix := \"Use deny, allow or authenticate\"\n\n_pf_elbaoua_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_AuthenticateOidcActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-oidc-on-unauthenticated-values\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s.OnUnauthenticatedRequest\", [a.prop, a.index, cfg]),\n\tsprintf(\"OnUnauthenticatedRequest is '%s'; the service takes deny, allow or authenticate\", [v]),\n\t_pf_elbaoua_fix, _pf_elbaoua_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tsome cfg in _pf_elb_auth_configs\n\toc := _pf_elb_oget(a.value, cfg)\n\tv := _pf_elb_oget(oc, \"OnUnauthenticatedRequest\")\n\tnot v in {\"deny\", \"allow\", \"authenticate\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-redirect-https-to-http",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An HTTPS listener does not redirect down to HTTP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbarhh_fix := \"Redirect to HTTPS, or leave Protocol as #{protocol}\"\n\n_pf_elbarhh_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-redirect-https-to-http\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.RedirectConfig.Protocol\", [a.prop, a.index]),\n\t\"The redirect sends an HTTPS listener back to HTTP; the service only allows HTTP to HTTPS, not the other way around\",\n\t_pf_elbarhh_fix, _pf_elbarhh_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\trc := _pf_elb_oget(a.value, \"RedirectConfig\")\n\tobject.get(rc, \"Protocol\", \"#{protocol}\") == \"HTTP\"\n\t_pf_elb_listener_proto(name) == \"HTTPS\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-redirect-no-change",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A redirect changes at least one part of the URI",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbarnc_fix := \"Change the protocol, host, port or path (a query-only redirect still loops)\"\n\n_pf_elbarnc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html\"\n\n_pf_elbarnc_keep := {\n\t\"Protocol\": \"#{protocol}\",\n\t\"Host\": \"#{host}\",\n\t\"Port\": \"#{port}\",\n\t\"Path\": \"/#{path}\",\n}\n\nviolation contains make_diag_full(\"pf-elbv2-action-redirect-no-change\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.RedirectConfig\", [a.prop, a.index]),\n\t\"The redirect keeps the protocol, host, port and path of the request, so it would answer every request with a redirect to itself\",\n\t_pf_elbarnc_fix, _pf_elbarnc_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\trc := _pf_elb_oget(a.value, \"RedirectConfig\")\n\tchanged := {k |\n\t\tsome k, ph in _pf_elbarnc_keep\n\t\tobject.get(rc, k, ph) != ph\n\t}\n\tcount(changed) == 0\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-redirect-path-leading-slash",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A redirect path is absolute",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbarpl_fix := \"Start Path with /\"\n\n_pf_elbarpl_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-redirect-path-leading-slash\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.RedirectConfig.Path\", [a.prop, a.index]),\n\tsprintf(\"The redirect path is '%s'; the service takes an absolute path that starts with /\", [p]),\n\t_pf_elbarpl_fix, _pf_elbarpl_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\trc := _pf_elb_oget(a.value, \"RedirectConfig\")\n\tp := _pf_elb_oget(rc, \"Path\")\n\tis_string(p)\n\tnot startswith(p, \"/\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-redirect-port-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A redirect port is a port number or #{port}",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbarpv_fix := \"Use a port between 1 and 65535, or the #{port} placeholder\"\n\n_pf_elbarpv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html\"\n\n_pf_elbarpv_ok(p) if {\n\tn := _pf_elb_num(p)\n\tnot _pf_elb_outside(n, 1, 65535)\n}\n\nviolation contains make_diag_full(\"pf-elbv2-action-redirect-port-value\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.RedirectConfig.Port\", [a.prop, a.index]),\n\tsprintf(\"The redirect port is '%v'; it has to be 1-65535 or the #{port} placeholder\", [p]),\n\t_pf_elbarpv_fix, _pf_elbarpv_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\trc := _pf_elb_oget(a.value, \"RedirectConfig\")\n\tp := _pf_elb_oget(rc, \"Port\")\n\tp != \"#{port}\"\n\tnot _pf_elbarpv_ok(p)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-redirect-status-code",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A redirect answers with HTTP_301 or HTTP_302",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbarsc_fix := \"Use HTTP_301 (permanent) or HTTP_302 (temporary)\"\n\n_pf_elbarsc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RedirectActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-redirect-status-code\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.RedirectConfig.StatusCode\", [a.prop, a.index]),\n\tsprintf(\"The redirect answers with '%v'; a listener redirect is either HTTP_301 or HTTP_302\", [sc]),\n\t_pf_elbarsc_fix, _pf_elbarsc_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\trc := _pf_elb_oget(a.value, \"RedirectConfig\")\n\tsc := _pf_elb_oget(rc, \"StatusCode\")\n\tnot sc in {\"HTTP_301\", \"HTTP_302\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-action-session-timeout-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An authentication session lasts between 1 and 604800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbastr_fix := \"Set SessionTimeout to at most 604800 (7 days)\"\n\n_pf_elbastr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_AuthenticateOidcActionConfig.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-action-session-timeout-range\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s.SessionTimeout\", [a.prop, a.index, cfg]),\n\tsprintf(\"The authentication session is set to %v seconds; the service takes 1 to 604800 (7 days)\", [t]),\n\t_pf_elbastr_fix, _pf_elbastr_url) if {\n\tsome a in _pf_elb_all_actions\n\tname := a.name\n\tsome cfg in _pf_elb_auth_configs\n\toc := _pf_elb_oget(a.value, cfg)\n\tt := _pf_elb_num(_pf_elb_oget(oc, \"SessionTimeout\"))\n\t_pf_elb_outside(t, 1, 604800)\n}\n"
+  },
+  {
     "id": "pf-elbv2-alb-subnet-count",
     "service": "elbv2",
     "severity": "ERROR",
@@ -8721,6 +8961,237 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-elbv2-lambda-target-protocol\", \"ERROR\", name,\n\t\"Properties.Protocol\",\n\t\"TargetType lambda cannot take Protocol (\\\"Protocol cannot be specified for target groups with target type 'lambda'\\\")\",\n\t\"Remove Protocol from the lambda target group\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tresolve(name, \"Properties.TargetType\") == \"lambda\"\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"Protocol\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-elbv2-lb-attr-access-logs-bucket-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Enabling access logs needs the destination bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaalb_fix := \"Set access_logs.s3.bucket to the bucket that carries the ELB log-delivery policy\"\n\n_pf_elbaalb_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-access-logs-bucket-required\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\t\"access_logs.s3.enabled is 'true' with no access_logs.s3.bucket; ModifyLoadBalancerAttributes fails with \\\"The key 'access_logs.s3.bucket' must set in order to enable access logs\\\"\",\n\t_pf_elbaalb_fix, _pf_elbaalb_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"access_logs.s3.enabled\"\n\tp.value == \"true\"\n\tnot _pf_elb_attrhas(name, \"LoadBalancerAttributes\", \"access_logs.s3.bucket\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-alb-cross-zone-immutable",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Cross-zone load balancing cannot be turned off on an application load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbacz_fix := \"Leave load_balancing.cross_zone.enabled at true (turn it off per target group instead)\"\n\n_pf_elbacz_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-alb-cross-zone-immutable\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\t\"load_balancing.cross_zone.enabled is 'false' on an application load balancer; the service answers \\\"The value for 'load_balancing.cross_zone.enabled' must always be 'true' for an Application Load Balancer\\\"\",\n\t_pf_elbacz_fix, _pf_elbacz_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\t_pf_elb_lbtype(name) == \"application\"\n\tp.key == \"load_balancing.cross_zone.enabled\"\n\tp.value == \"false\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-alb-only-on-gwlb",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A gateway load balancer takes only the two common attributes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbagw_fix := \"On a Gateway Load Balancer keep deletion_protection.enabled and load_balancing.cross_zone.enabled only\"\n\n_pf_elbagw_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-alb-only-on-gwlb\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Key\", [p.index]),\n\tsprintf(\"Attribute key '%s' is set on a gateway load balancer, which only supports deletion_protection.enabled and load_balancing.cross_zone.enabled\", [p.key]),\n\t_pf_elbagw_fix, _pf_elbagw_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\t_pf_elb_lbtype(name) == \"gateway\"\n\tp.key in _pf_elb_lbattr_known\n\tnot p.key in _pf_elb_lbattr_common\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-boolean-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A boolean load balancer attribute takes only true or false",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbabv_fix := \"Write the value as the string \\\"true\\\" or \\\"false\\\"\"\n\n_pf_elbabv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-boolean-value\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"The value of '%s' must be 'true' or 'false', but was '%s'\", [p.key, p.value]),\n\t_pf_elbabv_fix, _pf_elbabv_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\t_pf_elb_bool_key(p.key)\n\tis_string(p.value)\n\tnot p.value in {\"true\", \"false\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-client-keep-alive-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The client keep-alive duration is 60-604800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbacka_fix := \"Use a value between 60 and 604800 seconds\"\n\n_pf_elbacka_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-client-keep-alive-range\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is %v, outside the accepted range 60-604800\", [p.key, n]),\n\t_pf_elbacka_fix, _pf_elbacka_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"client_keep_alive.seconds\"\n\tn := _pf_elb_num(p.value)\n\t_pf_elb_outside(n, 60, 604800)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-connection-logs-bucket-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Enabling connection logs needs the destination bucket",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaclb_fix := \"Set connection_logs.s3.bucket to the bucket that carries the ELB log-delivery policy\"\n\n_pf_elbaclb_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-connection-logs-bucket-required\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\t\"connection_logs.s3.enabled is 'true' with no connection_logs.s3.bucket; ModifyLoadBalancerAttributes fails with \\\"The key 'connection_logs.s3.bucket' must set in order to enable connection logs\\\"\",\n\t_pf_elbaclb_fix, _pf_elbaclb_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"connection_logs.s3.enabled\"\n\tp.value == \"true\"\n\tnot _pf_elb_attrhas(name, \"LoadBalancerAttributes\", \"connection_logs.s3.bucket\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-count-max",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer carries at most 20 attributes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbacnt_fix := \"Keep LoadBalancerAttributes at 20 entries or fewer\"\n\n_pf_elbacnt_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-count-max\", \"ERROR\", name,\n\t\"Properties.LoadBalancerAttributes\",\n\tsprintf(\"The load balancer declares %d attributes; ModifyLoadBalancerAttributes accepts at most 20\", [n]),\n\t_pf_elbacnt_fix, _pf_elbacnt_url) if {\n\tsome name in _pf_elb_lbs\n\tn := count(flatten_list(name, \"Properties.LoadBalancerAttributes\"))\n\tn > 20\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-desync-mitigation-mode",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Desync mitigation mode is monitor, defensive or strictest",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbadm_fix := \"Use monitor, defensive or strictest\"\n\n_pf_elbadm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nelbadm_allowed := {\"monitor\", \"defensive\", \"strictest\"}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-desync-mitigation-mode\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elbadm_allowed]),\n\t_pf_elbadm_fix, _pf_elbadm_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"routing.http.desync_mitigation_mode\"\n\tis_string(p.value)\n\tnot p.value in elbadm_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-dns-record-client-routing-policy",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The DNS client routing policy is one of three zonal affinity values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbadns_fix := \"Use availability_zone_affinity, partial_availability_zone_affinity or any_availability_zone\"\n\n_pf_elbadns_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nelbadns_allowed := {\"availability_zone_affinity\", \"partial_availability_zone_affinity\", \"any_availability_zone\"}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-dns-record-client-routing-policy\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elbadns_allowed]),\n\t_pf_elbadns_fix, _pf_elbadns_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"dns_record.client_routing_policy\"\n\tis_string(p.value)\n\tnot p.value in elbadns_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-duplicate-key",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer attribute key appears at most once",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbadup_fix := \"Keep one entry per attribute key\"\n\n_pf_elbadup_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-duplicate-key\", \"ERROR\", name,\n\t\"Properties.LoadBalancerAttributes\",\n\tsprintf(\"Attribute key '%s' is specified more than once; ModifyLoadBalancerAttributes fails with \\\"Attribute key '%s' has been specified more than once\\\"\", [k, k]),\n\t_pf_elbadup_fix, _pf_elbadup_url) if {\n\tsome name in _pf_elb_lbs\n\tkeys := [x.key | some x in _pf_elb_pairs(name, \"LoadBalancerAttributes\")]\n\tsome k in keys\n\tcount([x | some x in keys; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-key-known",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer attribute key must be one the service recognises",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbakk_fix := \"Use a key from the LoadBalancerAttribute table (a typo is rejected, not ignored)\"\n\n_pf_elbakk_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-key-known\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Key\", [p.index]),\n\tsprintf(\"Load balancer attribute key '%s' is not recognized; ModifyLoadBalancerAttributes rejects unknown keys\", [p.key]),\n\t_pf_elbakk_fix, _pf_elbakk_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tnot p.key in _pf_elb_lbattr_known\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-key-lb-type",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer attribute key is bound to the load balancer type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbakt_fix := \"Keep type-only attributes on the load balancer type that supports them\"\n\n_pf_elbakt_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-key-lb-type\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Key\", [p.index]),\n\tsprintf(\"Attribute key '%s' is not supported on a %s load balancer; ModifyLoadBalancerAttributes reports it as not recognized\", [p.key, t]),\n\t_pf_elbakt_fix, _pf_elbakt_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tt := _pf_elb_lbtype(name)\n\tt in {\"application\", \"network\"}\n\tp.key in _pf_elb_lbattr_known\n\tnot p.key in _pf_elb_lbattr_for[t]\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-secondary-ips-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Auto-assigned secondary IPs per subnet are 0-7",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbasip_fix := \"Use a value between 0 and 7\"\n\n_pf_elbasip_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-secondary-ips-range\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is %v, outside the accepted range 0-7\", [p.key, n]),\n\t_pf_elbasip_fix, _pf_elbasip_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"secondary_ips.auto_assigned.per_subnet\"\n\tn := _pf_elb_num(p.value)\n\t_pf_elb_outside(n, 0, 7)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-attr-xff-header-processing-mode",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "X-Forwarded-For processing is append, preserve or remove",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaxff_fix := \"Use append, preserve or remove\"\n\n_pf_elbaxff_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html\"\n\nelbaxff_allowed := {\"append\", \"preserve\", \"remove\"}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-attr-xff-header-processing-mode\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elbaxff_allowed]),\n\t_pf_elbaxff_fix, _pf_elbaxff_url) if {\n\tsome name in _pf_elb_lbs\n\tsome p in _pf_elb_pairs(name, \"LoadBalancerAttributes\")\n\tp.key == \"routing.http.xff_header_processing.mode\"\n\tis_string(p.value)\n\tnot p.value in elbaxff_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-dualstack-no-public-ipv4-alb-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "dualstack-without-public-ipv4 is an application load balancer address type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbdwp_fix := \"Use dualstack on a network load balancer, or make this an application load balancer\"\n\n_pf_elbdwp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-dualstack-no-public-ipv4-alb-only\", \"ERROR\", name,\n\t\"Properties.IpAddressType\",\n\tsprintf(\"IpAddressType 'dualstack-without-public-ipv4' is set on a %s load balancer; CreateLoadBalancer fails with \\\"The specified IP address type is not supported on load balancers with type '%s'.\\\"\", [t, t]),\n\t_pf_elbdwp_fix, _pf_elbdwp_url) if {\n\tsome name in _pf_elb_lbs\n\tt := _pf_elb_lbtype(name)\n\tt != \"application\"\n\t_pf_elb_str(name, \"IpAddressType\") == \"dualstack-without-public-ipv4\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-eip-nlb-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Only a network load balancer takes Elastic IPs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbeip_fix := \"Drop SubnetMappings[].AllocationId, or make this a network load balancer\"\n\n_pf_elbeip_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-eip-nlb-only\", \"ERROR\", name,\n\tsprintf(\"Properties.SubnetMappings.%d.AllocationId\", [m.index]),\n\tsprintf(\"An Elastic IP is mapped on a %s load balancer; CreateLoadBalancer fails with \\\"Elastic IPs are not supported for load balancers with type '%s'\\\"\", [t, t]),\n\t_pf_elbeip_fix, _pf_elbeip_url) if {\n\tsome name in _pf_elb_lbs\n\tt := _pf_elb_lbtype(name)\n\tt != \"network\"\n\tsome m in flatten_list(name, \"Properties.SubnetMappings\")\n\t_pf_elb_ohas(m.value, \"AllocationId\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-eip-with-private-ipv4",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "One subnet mapping cannot carry both an Elastic IP and a private IPv4 address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbeipp_fix := \"Keep either AllocationId (internet-facing) or PrivateIPv4Address (internal) in a mapping\"\n\n_pf_elbeipp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-eip-with-private-ipv4\", \"ERROR\", name,\n\tsprintf(\"Properties.SubnetMappings.%d\", [m.index]),\n\t\"The subnet mapping carries both AllocationId and PrivateIPv4Address; the two address forms are mutually exclusive in one mapping\",\n\t_pf_elbeipp_fix, _pf_elbeipp_url) if {\n\tsome name in _pf_elb_lbs\n\tsome m in flatten_list(name, \"Properties.SubnetMappings\")\n\t_pf_elb_ohas(m.value, \"AllocationId\")\n\t_pf_elb_ohas(m.value, \"PrivateIPv4Address\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-enforce-sg-privatelink-nlb-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "PrivateLink inbound-rule enforcement is a network load balancer setting",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbepl_fix := \"Drop EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic, or make this a network load balancer\"\n\n_pf_elbepl_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-enforce-sg-privatelink-nlb-only\", \"ERROR\", name,\n\t\"Properties.EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic\",\n\tsprintf(\"EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic is set on a %s load balancer; it only applies to a network load balancer that has security groups\", [t]),\n\t_pf_elbepl_fix, _pf_elbepl_url) if {\n\tsome name in _pf_elb_lbs\n\tt := _pf_elb_lbtype(name)\n\tt != \"network\"\n\t_pf_elb_has(name, \"EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-enforce-sg-privatelink-requires-sg",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "PrivateLink inbound-rule enforcement needs security groups on the load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbeps_fix := \"Give the network load balancer SecurityGroups, or drop the setting\"\n\n_pf_elbeps_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-enforce-sg-privatelink-requires-sg\", \"ERROR\", name,\n\t\"Properties.EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic\",\n\t\"EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic is set on a load balancer that has no SecurityGroups; there are no inbound rules to enforce\",\n\t_pf_elbeps_fix, _pf_elbeps_url) if {\n\tsome name in _pf_elb_lbs\n\t_pf_elb_has(name, \"EnforceSecurityGroupInboundRulesOnPrivateLinkTraffic\")\n\t_pf_elb_absent(name, \"SecurityGroups\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-gwlb-no-scheme",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A gateway load balancer cannot declare a Scheme",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgs_fix := \"Drop Scheme; a Gateway Load Balancer is always reached through its endpoint service\"\n\n_pf_elbgs_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-gwlb-no-scheme\", \"ERROR\", name,\n\t\"Properties.Scheme\",\n\t\"Scheme is set on a gateway load balancer; CreateLoadBalancer fails with \\\"Scheme is not supported for Gateway Load Balancers.\\\"\",\n\t_pf_elbgs_fix, _pf_elbgs_url) if {\n\tsome name in _pf_elb_lbs\n\t_pf_elb_lbtype(name) == \"gateway\"\n\t_pf_elb_has(name, \"Scheme\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-gwlb-no-security-groups",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A gateway load balancer cannot carry security groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgsg_fix := \"Drop SecurityGroups; filter traffic on the appliance targets instead\"\n\n_pf_elbgsg_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-gwlb-no-security-groups\", \"ERROR\", name,\n\t\"Properties.SecurityGroups\",\n\t\"SecurityGroups is set on a gateway load balancer; CreateLoadBalancer fails with \\\"Security Groups are not supported for Gateway Load Balancers.\\\"\",\n\t_pf_elbgsg_fix, _pf_elbgsg_url) if {\n\tsome name in _pf_elb_lbs\n\t_pf_elb_lbtype(name) == \"gateway\"\n\t_pf_elb_has(name, \"SecurityGroups\")\n}\n"
+  },
+  {
     "id": "pf-elbv2-lb-idle-timeout-range",
     "service": "elbv2",
     "severity": "ERROR",
@@ -8732,6 +9203,29 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_idle_timeout_out(n) if n < 1\n\n_pf_idle_timeout_out(n) if n > 4000\n\n_pf_non_alb(name) if {\n\tt := resolve(name, \"Properties.Type\")\n\tt != \"application\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-idle-timeout-range\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerAttributes.%d.Value\", [item.index]),\n\tsprintf(\"idle_timeout.timeout_seconds is %v but must be between 1 and 4000 seconds\", [num]),\n\t\"Set idle_timeout.timeout_seconds to a value between 1 and 4000\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html#connection-idle-timeout\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tnot _pf_non_alb(name)\n\tsome item in flatten_list(name, \"Properties.LoadBalancerAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"idle_timeout.timeout_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_idle_timeout_out(num)\n}\n"
   },
   {
+    "id": "pf-elbv2-lb-ipv6-address-internet-facing-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A mapped IPv6 address needs an internet-facing load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbv6a_fix := \"Leave Scheme at internet-facing, or drop SubnetMappings[].IPv6Address\"\n\n_pf_elbv6a_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-ipv6-address-internet-facing-only\", \"ERROR\", name,\n\tsprintf(\"Properties.SubnetMappings.%d.IPv6Address\", [m.index]),\n\t\"IPv6Address is mapped on an internal load balancer; a mapped IPv6 address is only accepted on an internet-facing dualstack network load balancer\",\n\t_pf_elbv6a_fix, _pf_elbv6a_url) if {\n\tsome name in _pf_elb_lbs\n\tobject.get(_pf_elb_props(name), \"Scheme\", \"internet-facing\") != \"internet-facing\"\n\tsome m in flatten_list(name, \"Properties.SubnetMappings\")\n\t_pf_elb_ohas(m.value, \"IPv6Address\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-mtls-verify-listener-max",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer runs at most two mTLS verify listeners",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmvl_fix := \"Keep two listeners in mutual authentication verify mode per load balancer (the quota cannot be raised)\"\n\n_pf_elblmvl_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-limits.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-mtls-verify-listener-max\", \"ERROR\", lb,\n\t\"Properties\",\n\tsprintf(\"The load balancer has %d listeners in mutual authentication 'verify' mode; the quota is 2\", [n]),\n\t_pf_elblmvl_fix, _pf_elblmvl_url) if {\n\tsome lb in _pf_elb_lbs\n\tn := count([l |\n\t\tsome l in _pf_elb_listeners\n\t\t_pf_elb_lb_of(l) == lb\n\t\tma := _pf_elb_oget(_pf_elb_props(l), \"MutualAuthentication\")\n\t\tis_object(ma)\n\t\tobject.get(ma, \"Mode\", \"off\") == \"verify\"\n\t])\n\tn > 2\n}\n"
+  },
+  {
     "id": "pf-elbv2-lb-name",
     "service": "elbv2",
     "severity": "ERROR",
@@ -8741,6 +9235,409 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ElasticLoadBalancingV2::LoadBalancer"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbname_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tstartswith(n, \"internal-\")\n\twhy := \"cannot begin with 'internal-'\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tendswith(n, \"-\")\n\twhy := \"cannot end with a hyphen(-)\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tstartswith(n, \"-\")\n\twhy := \"cannot begin with a hyphen(-)\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tcount(n) > 32\n\twhy := \"cannot be longer than '32' characters\"\n}\n\n_pf_elbname_bad contains [name, n, why] if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot regex.match(`^[A-Za-z0-9-]*$`, n)\n\twhy := \"can only contain characters that are alphanumeric characters and hyphens(-)\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The load balancer name '%s' %s; ELB rejects the create call\", [n, why]),\n\t\"Rename the load balancer to at most 32 alphanumeric or hyphen characters, without a leading/trailing hyphen or the reserved internal- prefix\",\n\t_pf_elbname_url) if {\n\tsome [name, n, why] in _pf_elbname_bad\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-one-subnet-per-az",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer takes at most one subnet per availability zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "AWS::EC2::Subnet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbaz_fix := \"Give the load balancer one subnet per availability zone\"\n\n_pf_elbaz_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\n_pf_elbaz_az(v) := az if {\n\tsub := _pf_elb_ref(v)\n\tsub in resources_of_type(\"AWS::EC2::Subnet\")\n\taz := resolve(sub, \"Properties.AvailabilityZone\")\n\tis_string(az)\n}\n\n_pf_elbaz_azs(name) := [az |\n\tsome s in flatten_list(name, \"Properties.Subnets\")\n\taz := _pf_elbaz_az(s.value)\n]\n\nviolation contains make_diag_full(\"pf-elbv2-lb-one-subnet-per-az\", \"ERROR\", name,\n\t\"Properties.Subnets\",\n\tsprintf(\"Two subnets of the load balancer sit in availability zone %s; CreateLoadBalancer fails with \\\"A load balancer cannot be attached to multiple subnets in the same Availability Zone.\\\"\", [az]),\n\t_pf_elbaz_fix, _pf_elbaz_url) if {\n\tsome name in _pf_elb_lbs\n\tazs := _pf_elbaz_azs(name)\n\tsome az in azs\n\tcount([x | some x in azs; x == az]) > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-private-ipv4-internal-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A private IPv4 address needs an internal network load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbpip_fix := \"Set Scheme to internal on a network load balancer, or drop PrivateIPv4Address\"\n\n_pf_elbpip_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\n_pf_elbpip_internal_nlb(name) if {\n\t_pf_elb_lbtype(name) == \"network\"\n\tobject.get(_pf_elb_props(name), \"Scheme\", \"internet-facing\") == \"internal\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-lb-private-ipv4-internal-only\", \"ERROR\", name,\n\tsprintf(\"Properties.SubnetMappings.%d.PrivateIPv4Address\", [m.index]),\n\t\"PrivateIPv4Address is mapped on a load balancer that is not an internal network load balancer; CreateLoadBalancer fails with \\\"You can only specify private IPv4 addresses for Network Load Balancers with scheme 'internal'.\\\"\",\n\t_pf_elbpip_fix, _pf_elbpip_url) if {\n\tsome name in _pf_elb_lbs\n\tnot _pf_elbpip_internal_nlb(name)\n\tsome m in flatten_list(name, \"Properties.SubnetMappings\")\n\t_pf_elb_ohas(m.value, \"PrivateIPv4Address\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-sg-vpc-match",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A load balancer security group lives in the VPC of its subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblsvm_fix := \"Create the security group in the VPC the subnets belong to\"\n\n_pf_elblsvm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-sg-vpc-match\", \"ERROR\", lb,\n\tsprintf(\"Properties.SecurityGroups.%d\", [g.index]),\n\tsprintf(\"Security group '%s' is in VPC '%s' but the subnets are in VPC '%s'\", [sg, sgvpc, vpc]),\n\t_pf_elblsvm_fix, _pf_elblsvm_url) if {\n\tsome lb in _pf_elb_lbs\n\tvpc := _pf_elb_lb_vpc(lb)\n\tsome g in flatten_list(lb, \"Properties.SecurityGroups\")\n\tsg := _pf_elb_ref(g.value)\n\tsgvpc := resolve(sg, \"Properties.VpcId\")\n\tsgvpc != vpc\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-source-nat-prefix-netmask",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A source NAT IPv6 prefix is a /80 or auto_assigned",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbsnp_fix := \"Use auto_assigned, or a /80 prefix out of the subnet IPv6 CIDR\"\n\n_pf_elbsnp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-source-nat-prefix-netmask\", \"ERROR\", name,\n\tsprintf(\"Properties.SubnetMappings.%d.SourceNatIpv6Prefix\", [m.index]),\n\tsprintf(\"SourceNatIpv6Prefix '%s' is neither auto_assigned nor a /80 prefix; the service only accepts a /80 netmask\", [p]),\n\t_pf_elbsnp_fix, _pf_elbsnp_url) if {\n\tsome name in _pf_elb_lbs\n\tsome m in flatten_list(name, \"Properties.SubnetMappings\")\n\tp := _pf_elb_oget(m.value, \"SourceNatIpv6Prefix\")\n\t_pf_elb_lit(p)\n\tp != \"auto_assigned\"\n\tnot endswith(p, \"/80\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-source-nat-prefix-nlb-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "IPv6 source NAT prefixes are a network load balancer feature",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbsnn_fix := \"Drop EnablePrefixForIpv6SourceNat, or make this a network load balancer\"\n\n_pf_elbsnn_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-source-nat-prefix-nlb-only\", \"ERROR\", name,\n\t\"Properties.EnablePrefixForIpv6SourceNat\",\n\tsprintf(\"EnablePrefixForIpv6SourceNat is set on a %s load balancer; CreateLoadBalancer fails with \\\"'EnablePrefixForIpv6SourceNat' can only be specified for LoadBalancer type 'network'.\\\"\", [t]),\n\t_pf_elbsnn_fix, _pf_elbsnn_url) if {\n\tsome name in _pf_elb_lbs\n\tt := _pf_elb_lbtype(name)\n\tt != \"network\"\n\t_pf_elb_has(name, \"EnablePrefixForIpv6SourceNat\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-lb-source-nat-prefix-requires-dualstack",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "IPv6 source NAT prefixes need a dualstack load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbsnd_fix := \"Set IpAddressType to dualstack, or drop EnablePrefixForIpv6SourceNat\"\n\n_pf_elbsnd_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-lb-source-nat-prefix-requires-dualstack\", \"ERROR\", name,\n\t\"Properties.EnablePrefixForIpv6SourceNat\",\n\tsprintf(\"EnablePrefixForIpv6SourceNat is 'on' with IpAddressType '%s'; CreateLoadBalancer fails with \\\"'EnablePrefixForIpv6SourceNat' can only be specified when using IpAddressType 'dualstack'.\\\"\", [ipt]),\n\t_pf_elbsnd_fix, _pf_elbsnd_url) if {\n\tsome name in _pf_elb_lbs\n\t_pf_elb_str(name, \"EnablePrefixForIpv6SourceNat\") == \"on\"\n\tipt := object.get(_pf_elb_props(name), \"IpAddressType\", \"ipv4\")\n\tipt != \"dualstack\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-action-config-type-match",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An action config must match the action type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblacm_fix := \"Carry only the *Config that belongs to Action.Type\"\n\n_pf_elblacm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\n_pf_elblacm_lists := [\n\t[\"AWS::ElasticLoadBalancingV2::Listener\", \"DefaultActions\"],\n\t[\"AWS::ElasticLoadBalancingV2::ListenerRule\", \"Actions\"],\n]\n\nviolation contains make_diag_full(\"pf-elbv2-listener-action-config-type-match\", \"ERROR\", name,\n\tsprintf(\"Properties.%s.%d.%s\", [prop, a.index, cfg]),\n\tsprintf(\"The action is Type '%s' but carries %s; the service reads only the config that belongs to the type\", [t, cfg]),\n\t_pf_elblacm_fix, _pf_elblacm_url) if {\n\tsome entry in _pf_elblacm_lists\n\tsome name in resources_of_type(entry[0])\n\tprop := entry[1]\n\tsome a in _pf_elb_actions(name, prop)\n\tsome cfg, want in _pf_elb_action_config\n\t_pf_elb_ohas(a.value, cfg)\n\tt := object.get(a.value, \"Type\", \"\")\n\tt != want\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-action-order-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Several actions on one listener need an explicit order",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblaor_fix := \"Give every action an Order (authentication first, routing last)\"\n\n_pf_elblaor_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-action-order-required\", \"ERROR\", name,\n\tsprintf(\"Properties.DefaultActions.%d.Order\", [a.index]),\n\t\"DefaultActions holds more than one action but this one has no Order; the service needs the order to know which action runs first\",\n\t_pf_elblaor_fix, _pf_elblaor_url) if {\n\tsome name in _pf_elb_listeners\n\tacts := _pf_elb_actions(name, \"DefaultActions\")\n\tcount(acts) > 1\n\tsome a in acts\n\tnot _pf_elb_ohas(a.value, \"Order\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-alb-target-tg-listener-protocol",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group of Application Load Balancers hangs off a TCP listener",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblatp_fix := \"Forward to the TargetType: alb target group from a TCP listener of a Network Load Balancer\"\n\n_pf_elblatp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-alb-target-tg-listener-protocol\", \"ERROR\", p.listener,\n\t\"Properties.Protocol\",\n\tsprintf(\"Target group '%s' targets an Application Load Balancer but the listener is %s; only a TCP listener of a Network Load Balancer can forward to it\", [p.tg, proto]),\n\t_pf_elblatp_fix, _pf_elblatp_url) if {\n\tsome p in _pf_elb_listener_tgs\n\t_pf_elb_tgtype(p.tg) == \"alb\"\n\tproto := object.get(_pf_elb_props(p.listener), \"Protocol\", \"\")\n\tproto != \"TCP\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-alpn-single",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener carries a single ALPN policy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblas_fix := \"Keep one ALPN policy\"\n\n_pf_elblas_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-alpn-single\", \"ERROR\", name,\n\t\"Properties.AlpnPolicy\",\n\tsprintf(\"%d ALPN policies are set; a listener negotiates with exactly one\", [n]),\n\t_pf_elblas_fix, _pf_elblas_url) if {\n\tsome name in _pf_elb_listeners\n\tn := count(flatten_list(name, \"Properties.AlpnPolicy\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-alpn-tls-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "ALPN is negotiated on a TLS listener only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblat_fix := \"Drop AlpnPolicy unless the listener protocol is TLS\"\n\n_pf_elblat_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-alpn-tls-only\", \"ERROR\", name,\n\t\"Properties.AlpnPolicy\",\n\tsprintf(\"AlpnPolicy is set on a %s listener; CreateListener answers \\\"You cannot set ALPN policy on load balancers of type '%s'\\\"\", [proto, t]),\n\t_pf_elblat_fix, _pf_elblat_url) if {\n\tsome name in _pf_elb_listeners\n\t_pf_elb_has(name, \"AlpnPolicy\")\n\tproto := object.get(_pf_elb_props(name), \"Protocol\", \"GENEVE\")\n\tproto != \"TLS\"\n\tt := _pf_elb_listener_lbtype(name)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-alpn-values",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An ALPN policy is one of five named values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblav_fix := \"Use HTTP1Only, HTTP2Only, HTTP2Optional, HTTP2Preferred or None\"\n\n_pf_elblav_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-alpn-values\", \"ERROR\", name,\n\tsprintf(\"Properties.AlpnPolicy.%d\", [a.index]),\n\tsprintf(\"'%s' is not an ALPN policy; the accepted values are HTTP1Only, HTTP2Only, HTTP2Optional, HTTP2Preferred and None\", [a.value]),\n\t_pf_elblav_fix, _pf_elblav_url) if {\n\tsome name in _pf_elb_listeners\n\tsome a in flatten_list(name, \"Properties.AlpnPolicy\")\n\t_pf_elb_lit(a.value)\n\tnot a.value in {\"HTTP1Only\", \"HTTP2Only\", \"HTTP2Optional\", \"HTTP2Preferred\", \"None\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-header-name-format",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A renamed request header is a valid HTTP header name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblahn_fix := \"Use RFC 7230 token characters only (letters, digits and !#$%&'*+-.^_`|~)\"\n\n_pf_elblahn_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-header-name-format\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid HTTP header name for '%s'; a header name is made of RFC 7230 token characters\", [p.value, p.key]),\n\t_pf_elblahn_fix, _pf_elblahn_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tendswith(p.key, \".header_name\")\n\tis_string(p.value)\n\tnot regex.match(\"^[-!#$%&'*+.^_\\u0060|~0-9A-Za-z]+$\", p.value)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-key-known",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener attribute key is one the service knows",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblak_fix := \"Fix the attribute key (the service drops nothing silently, it rejects the call)\"\n\n_pf_elblak_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-key-known\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Key\", [p.index]),\n\tsprintf(\"'%s' is not a listener attribute key\", [p.key]),\n\t_pf_elblak_fix, _pf_elblak_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tnot p.key in _pf_elb_lsattr_known\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-key-lb-type",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener attribute belongs to the load balancer type it is set on",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblalt_fix := \"Move the attribute to a listener of the load balancer type that supports it\"\n\n_pf_elblalt_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-key-lb-type\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Key\", [p.index]),\n\tsprintf(\"'%s' is not supported on a listener of a %s load balancer\", [p.key, lbt]),\n\t_pf_elblalt_fix, _pf_elblalt_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tp.key in _pf_elb_lsattr_known\n\tlbt := _pf_elb_listener_lbtype(name)\n\tnot p.key in _pf_elb_lsattr_for[lbt]\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-server-enabled-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The response server header switch is true or false",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblase_fix := \"Use \\\"true\\\" or \\\"false\\\"\"\n\n_pf_elblase_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nelblase_allowed := {\"true\", \"false\"}\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-server-enabled-value\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elblase_allowed]),\n\t_pf_elblase_fix, _pf_elblase_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tp.key == \"routing.http.response.server.enabled\"\n\tis_string(p.value)\n\tnot p.value in elblase_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-tcp-idle-timeout-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The TCP idle timeout runs from 60 to 6000 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblati_fix := \"Set tcp.idle_timeout.seconds between 60 and 6000\"\n\n_pf_elblati_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-tcp-idle-timeout-range\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'tcp.idle_timeout.seconds' is %v, outside the accepted range 60-6000\", [n]),\n\t_pf_elblati_fix, _pf_elblati_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tp.key == \"tcp.idle_timeout.seconds\"\n\tn := _pf_elb_num(p.value)\n\t_pf_elb_outside(n, 60, 6000)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-x-content-type-options-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "X-Content-Type-Options is nosniff",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblaxc_fix := \"Use nosniff, or drop the attribute to leave the header off\"\n\n_pf_elblaxc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nelblaxc_allowed := {\"nosniff\"}\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-x-content-type-options-value\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elblaxc_allowed]),\n\t_pf_elblaxc_fix, _pf_elblaxc_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tp.key == \"routing.http.response.x_content_type_options.header_value\"\n\tis_string(p.value)\n\tnot p.value in elblaxc_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-attr-x-frame-options-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "X-Frame-Options is DENY or SAMEORIGIN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblaxf_fix := \"Use DENY or SAMEORIGIN (the listener does not serve ALLOW-FROM)\"\n\n_pf_elblaxf_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html\"\n\nelblaxf_allowed := {\"DENY\", \"SAMEORIGIN\"}\n\nviolation contains make_diag_full(\"pf-elbv2-listener-attr-x-frame-options-value\", \"ERROR\", name,\n\tsprintf(\"Properties.ListenerAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elblaxf_allowed]),\n\t_pf_elblaxf_fix, _pf_elblaxf_url) if {\n\tsome name in _pf_elb_listeners\n\tsome p in _pf_elb_pairs(name, \"ListenerAttributes\")\n\tp.key == \"routing.http.response.x_frame_options.header_value\"\n\tis_string(p.value)\n\tnot p.value in elblaxf_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-auth-action-https-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Authentication actions need an HTTPS listener",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblaah_fix := \"Move the authenticate action to an HTTPS listener\"\n\n_pf_elblaah_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-auth-action-https-only\", \"ERROR\", name,\n\tsprintf(\"Properties.DefaultActions.%d.Type\", [a.index]),\n\tsprintf(\"An '%s' action is on a %s listener; the OIDC and Cognito flows need TLS, so they are only accepted on an HTTPS listener\", [t, proto]),\n\t_pf_elblaah_fix, _pf_elblaah_url) if {\n\tsome name in _pf_elb_listeners\n\tsome a in _pf_elb_actions(name, \"DefaultActions\")\n\tt := object.get(a.value, \"Type\", \"\")\n\tt in {\"authenticate-cognito\", \"authenticate-oidc\"}\n\tproto := object.get(_pf_elb_props(name), \"Protocol\", \"GENEVE\")\n\tproto != \"HTTPS\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-cert-exactly-one",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener declares a single default certificate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblc1_fix := \"Keep one certificate here and add the others as AWS::ElasticLoadBalancingV2::ListenerCertificate resources\"\n\n_pf_elblc1_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-cert-exactly-one\", \"ERROR\", name,\n\t\"Properties.Certificates\",\n\tsprintf(\"The listener declares %d certificates; CreateListener takes exactly one default certificate\", [n]),\n\t_pf_elblc1_fix, _pf_elblc1_url) if {\n\tsome name in _pf_elb_listeners\n\tn := count(flatten_list(name, \"Properties.Certificates\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-cert-insecure-protocol",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Only an HTTPS or TLS listener takes a certificate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblci_fix := \"Drop Certificates, or make the listener HTTPS (ALB) or TLS (NLB)\"\n\n_pf_elblci_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-cert-insecure-protocol\", \"ERROR\", name,\n\t\"Properties.Certificates\",\n\tsprintf(\"A certificate is attached to a %s listener; only HTTPS and TLS listeners terminate TLS\", [proto]),\n\t_pf_elblci_fix, _pf_elblci_url) if {\n\tsome name in _pf_elb_listeners\n\tcount(flatten_list(name, \"Properties.Certificates\")) > 0\n\tproto := object.get(_pf_elb_props(name), \"Protocol\", \"GENEVE\")\n\tnot proto in _pf_elb_secure\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-cert-not-acm-or-iam",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener certificate comes from ACM or IAM",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblca_fix := \"Point CertificateArn at an ACM certificate (acm) or a server certificate uploaded to IAM (iam)\"\n\n_pf_elblca_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-cert-not-acm-or-iam\", \"ERROR\", name,\n\tsprintf(\"Properties.Certificates.%d.CertificateArn\", [c.index]),\n\tsprintf(\"CertificateArn names the '%s' service; a listener certificate is an ACM or IAM certificate\", [svc]),\n\t_pf_elblca_fix, _pf_elblca_url) if {\n\tsome name in _pf_elb_listeners\n\tsome c in flatten_list(name, \"Properties.Certificates\")\n\tarn := _pf_elb_oget(c.value, \"CertificateArn\")\n\t_pf_elb_lit(arn)\n\tsvc := _pf_elb_arn_service(arn)\n\tnot svc in {\"acm\", \"iam\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-cert-region",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener certificate lives in the load balancer region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblcr_fix := \"Import or request the certificate in the region the load balancer is deployed to\"\n\n_pf_elblcr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-cert-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Certificates.%d.CertificateArn\", [c.index]),\n\tsprintf(\"The certificate is in %s but the load balancer is deployed to %s; a listener certificate must be in the same region\", [cr, _pf_elb_region]),\n\t_pf_elblcr_fix, _pf_elblcr_url) if {\n\tsome name in _pf_elb_listeners\n\tsome c in flatten_list(name, \"Properties.Certificates\")\n\tarn := _pf_elb_oget(c.value, \"CertificateArn\")\n\t_pf_elb_lit(arn)\n\tcr := _pf_elb_arn_region(arn)\n\tcr != _pf_elb_region\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-certificate-region",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An extra certificate lives in the load balancer region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerCertificate"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblcrg_fix := \"Use a certificate issued in the region this stack deploys to\"\n\n_pf_elblcrg_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-listenercertificate.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-certificate-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Certificates.%d.CertificateArn\", [c.index]),\n\tsprintf(\"The certificate is in %s but this stack deploys to %s; a listener can only serve certificates from its own region\", [r, _pf_elb_region]),\n\t_pf_elblcrg_fix, _pf_elblcrg_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerCertificate\")\n\tsome c in flatten_list(name, \"Properties.Certificates\")\n\tr := _pf_elb_arn_region(object.get(c.value, \"CertificateArn\", null))\n\tr != _pf_elb_region\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-certificate-secure-listener",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Extra certificates go on an HTTPS or TLS listener",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerCertificate",
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblcsl_fix := \"Attach the certificate to an HTTPS (ALB) or TLS (NLB) listener\"\n\n_pf_elblcsl_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-listenercertificate.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-certificate-secure-listener\", \"ERROR\", name,\n\t\"Properties.ListenerArn\",\n\tsprintf(\"The certificate is attached to a %s listener; only HTTPS and TLS listeners terminate TLS\", [proto]),\n\t_pf_elblcsl_fix, _pf_elblcsl_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerCertificate\")\n\tl := resolve(name, \"Properties.ListenerArn\")\n\tl in _pf_elb_listeners\n\tproto := object.get(_pf_elb_props(l), \"Protocol\", \"GENEVE\")\n\tnot proto in _pf_elb_secure\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-default-action-routing-last",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The last default action routes the request",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbldal_fix := \"End DefaultActions with a forward, redirect or fixed-response action\"\n\n_pf_elbldal_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\n_pf_elbldal_last(acts) := t if {\n\torders := [o | some a in acts; o := object.get(a.value, \"Order\", null); is_number(o)]\n\tcount(orders) == count(acts)\n\tsome a in acts\n\tobject.get(a.value, \"Order\", null) == max(orders)\n\tt := object.get(a.value, \"Type\", \"\")\n}\n\n_pf_elbldal_last(acts) := t if {\n\torders := [o | some a in acts; o := object.get(a.value, \"Order\", null); is_number(o)]\n\tcount(orders) != count(acts)\n\tsome a in acts\n\ta.index == max([x.index | some x in acts])\n\tt := object.get(a.value, \"Type\", \"\")\n}\n\nviolation contains make_diag_full(\"pf-elbv2-listener-default-action-routing-last\", \"ERROR\", name,\n\t\"Properties.DefaultActions\",\n\tsprintf(\"The last default action is '%s'; an action list has to end on a forward, redirect or fixed-response action\", [t]),\n\t_pf_elbldal_fix, _pf_elbldal_url) if {\n\tsome name in _pf_elb_listeners\n\tacts := _pf_elb_actions(name, \"DefaultActions\")\n\tcount(acts) > 0\n\tt := _pf_elbldal_last(acts)\n\tnot t in _pf_elb_routing_actions\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-advertise-verify-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Advertising trust store CA names only applies to verify mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmav_fix := \"Drop AdvertiseTrustStoreCaNames, or set Mode to verify\"\n\n_pf_elblmav_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-advertise-verify-only\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication.AdvertiseTrustStoreCaNames\",\n\tsprintf(\"AdvertiseTrustStoreCaNames is set with Mode '%s'; the CA names come from the trust store used in verify mode\", [mode]),\n\t_pf_elblmav_fix, _pf_elblmav_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\t_pf_elb_ohas(ma, \"AdvertiseTrustStoreCaNames\")\n\tmode := object.get(ma, \"Mode\", \"off\")\n\tmode != \"verify\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-https-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Mutual authentication is an HTTPS listener feature",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmh_fix := \"Drop MutualAuthentication unless the listener protocol is HTTPS\"\n\n_pf_elblmh_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-https-only\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication\",\n\tsprintf(\"MutualAuthentication is set on a %s listener; mutual TLS is only configured on an HTTPS listener of an Application Load Balancer\", [proto]),\n\t_pf_elblmh_fix, _pf_elblmh_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\tproto := object.get(_pf_elb_props(name), \"Protocol\", \"GENEVE\")\n\tproto != \"HTTPS\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-ignore-expiry-verify-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Ignoring certificate expiry only applies to verify mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmie_fix := \"Drop IgnoreClientCertificateExpiry, or set Mode to verify\"\n\n_pf_elblmie_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-ignore-expiry-verify-only\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication.IgnoreClientCertificateExpiry\",\n\tsprintf(\"IgnoreClientCertificateExpiry is set with Mode '%s'; expiry is only checked when the listener verifies client certificates\", [mode]),\n\t_pf_elblmie_fix, _pf_elblmie_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\t_pf_elb_ohas(ma, \"IgnoreClientCertificateExpiry\")\n\tmode := object.get(ma, \"Mode\", \"off\")\n\tmode != \"verify\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-mode-values",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The mutual authentication mode is off, passthrough or verify",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmm_fix := \"Use off, passthrough or verify\"\n\n_pf_elblmm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-mode-values\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication.Mode\",\n\tsprintf(\"'%s' is not a mutual authentication mode; the accepted values are off, passthrough and verify\", [mode]),\n\t_pf_elblmm_fix, _pf_elblmm_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\tmode := object.get(ma, \"Mode\", \"off\")\n\tis_string(mode)\n\tnot mode in {\"off\", \"passthrough\", \"verify\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-truststore-region",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A trust store lives in the load balancer region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmtr_fix := \"Create the trust store in the region the load balancer is deployed to\"\n\n_pf_elblmtr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-truststore-region\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication.TrustStoreArn\",\n\tsprintf(\"The trust store is in %s but the load balancer is deployed to %s; a trust store is a regional resource\", [tr, _pf_elb_region]),\n\t_pf_elblmtr_fix, _pf_elblmtr_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\tarn := _pf_elb_oget(ma, \"TrustStoreArn\")\n\t_pf_elb_lit(arn)\n\ttr := _pf_elb_arn_region(arn)\n\ttr != _pf_elb_region\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-truststore-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Verify mode needs a trust store",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmt_fix := \"Set MutualAuthentication.TrustStoreArn to the trust store holding the client CA bundle\"\n\n_pf_elblmt_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-truststore-required\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication.TrustStoreArn\",\n\t\"MutualAuthentication.Mode is 'verify' without a TrustStoreArn; there is no CA bundle to verify client certificates against\",\n\t_pf_elblmt_fix, _pf_elblmt_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\tobject.get(ma, \"Mode\", \"off\") == \"verify\"\n\tnot _pf_elb_ohas(ma, \"TrustStoreArn\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-mtls-truststore-verify-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A trust store only belongs to verify mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblmtv_fix := \"Drop TrustStoreArn, or set Mode to verify\"\n\n_pf_elblmtv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_MutualAuthenticationAttributes.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-mtls-truststore-verify-only\", \"ERROR\", name,\n\t\"Properties.MutualAuthentication.TrustStoreArn\",\n\tsprintf(\"TrustStoreArn is set with Mode '%s'; a trust store is only used when the listener verifies client certificates\", [mode]),\n\t_pf_elblmtv_fix, _pf_elblmtv_url) if {\tsome name in _pf_elb_listeners\n\tma := resolve(name, \"Properties.MutualAuthentication\")\n\tis_object(ma)\n\t_pf_elb_ohas(ma, \"TrustStoreArn\")\n\tmode := object.get(ma, \"Mode\", \"off\")\n\tmode != \"verify\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-nlb-action-forward-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A network or gateway load balancer listener only forwards",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblnaf_fix := \"Use a forward action (redirect, fixed-response and authentication are Application Load Balancer features)\"\n\n_pf_elblnaf_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-nlb-action-forward-only\", \"ERROR\", name,\n\tsprintf(\"Properties.DefaultActions.%d.Type\", [a.index]),\n\tsprintf(\"A '%s' action is on a listener of a %s load balancer, which can only forward to a target group\", [t, lbt]),\n\t_pf_elblnaf_fix, _pf_elblnaf_url) if {\n\tsome name in _pf_elb_listeners\n\tlbt := _pf_elb_listener_lbtype(name)\n\tlbt != \"application\"\n\tsome a in _pf_elb_actions(name, \"DefaultActions\")\n\tt := object.get(a.value, \"Type\", \"\")\n\tt != \"forward\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-port-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener needs a port unless it is on a gateway load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblpr_fix := \"Set Port on the listener\"\n\n_pf_elblpr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-port-required\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"The listener on a %s load balancer has no Port; only a gateway load balancer listener may omit it\", [t]),\n\t_pf_elblpr_fix, _pf_elblpr_url) if {\n\tsome name in _pf_elb_listeners\n\tt := _pf_elb_listener_lbtype(name)\n\tt != \"gateway\"\n\t_pf_elb_absent(name, \"Port\")\n}\n"
   },
   {
     "id": "pf-elbv2-listener-protocol-lb-type",
@@ -8755,6 +9652,185 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Allow-sets verbatim from the two benched service errors.\n_pf_elblpt_allow := {\"application\": {\"HTTP\", \"HTTPS\"}, \"network\": {\"TCP\", \"QUIC\", \"TCP_QUIC\", \"UDP\", \"TCP_UDP\", \"TLS\"}}\n\n_pf_elblpt_type(lb) := t if {\n\tprops := input.resources[lb].properties\n\tis_object(props)\n\tt := object.get(props, \"Type\", \"application\")\n}\n\nviolation contains make_diag_full(\"pf-elbv2-listener-protocol-lb-type\", \"ERROR\", name,\n\t\"Properties.Protocol\",\n\tsprintf(\"Listener protocol '%s' is not valid for a %s load balancer (allowed: %v)\", [proto, t, allow]),\n\t\"Use HTTP/HTTPS on application LBs and TCP/UDP/TLS/QUIC variants on network LBs\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::Listener\")\n\tlb := resolve(name, \"Properties.LoadBalancerArn\")\n\tlb in resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\tt := _pf_elblpt_type(lb)\n\tallow := _pf_elblpt_allow[t]\n\tproto := resolve(name, \"Properties.Protocol\")\n\tis_string(proto)\n\tnot proto in allow\n}\n"
   },
   {
+    "id": "pf-elbv2-listener-sslpolicy-known",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A security policy name must be one the service predefines",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblsk_fix := \"Use a predefined ELBSecurityPolicy-* name (there are no custom policies)\"\n\n_pf_elblsk_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-sslpolicy-known\", \"ERROR\", name,\n\t\"Properties.SslPolicy\",\n\tsprintf(\"'%s' is not a predefined security policy; CreateListener only accepts the ELBSecurityPolicy-* names the service publishes\", [pol]),\n\t_pf_elblsk_fix, _pf_elblsk_url) if {\n\tsome name in _pf_elb_listeners\n\tpol := _pf_elb_str(name, \"SslPolicy\")\n\tnot pol in _pf_elb_sslpolicies\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-sslpolicy-secure-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A security policy belongs to an HTTPS or TLS listener",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elblss_fix := \"Drop SslPolicy, or make the listener HTTPS (ALB) or TLS (NLB)\"\n\n_pf_elblss_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-sslpolicy-secure-only\", \"ERROR\", name,\n\t\"Properties.SslPolicy\",\n\tsprintf(\"SslPolicy is set on a %s listener; a security policy only applies where the listener terminates TLS\", [proto]),\n\t_pf_elblss_fix, _pf_elblss_url) if {\n\tsome name in _pf_elb_listeners\n\t_pf_elb_has(name, \"SslPolicy\")\n\tproto := object.get(_pf_elb_props(name), \"Protocol\", \"GENEVE\")\n\tnot proto in _pf_elb_secure\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-tg-protocol-match",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener forwards to a target group of a compatible protocol",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbltpm_fix := \"Line the target group protocol up with the listener protocol\"\n\n_pf_elbltpm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-tg-protocol-match\", \"ERROR\", p.listener,\n\t\"Properties.Protocol\",\n\tsprintf(\"The listener is %s but target group '%s' is %s; the listener and the target group have incompatible protocols\", [lproto, p.tg, tproto]),\n\t_pf_elbltpm_fix, _pf_elbltpm_url) if {\n\tsome p in _pf_elb_listener_tgs\n\t_pf_elb_tgtype(p.tg) != \"alb\"\n\tlproto := object.get(_pf_elb_props(p.listener), \"Protocol\", \"\")\n\tallowed := object.get(_pf_elb_lproto_tgproto, lproto, set())\n\tcount(allowed) > 0\n\ttproto := _pf_elb_oget(_pf_elb_props(p.tg), \"Protocol\")\n\tnot tproto in allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-tg-vpc-match",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group lives in the VPC of the load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbltvm_fix := \"Create the target group in the VPC the load balancer subnets belong to\"\n\n_pf_elbltvm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-tg-vpc-match\", \"ERROR\", p.tg,\n\t\"Properties.VpcId\",\n\tsprintf(\"The target group is in VPC '%s' but listener '%s' hangs off a load balancer in VPC '%s'\", [tvpc, p.listener, lbvpc]),\n\t_pf_elbltvm_fix, _pf_elbltvm_url) if {\n\tsome p in _pf_elb_listener_tgs\n\tlbvpc := _pf_elb_lb_vpc(_pf_elb_lb_of(p.listener))\n\ttvpc := resolve(p.tg, \"Properties.VpcId\")\n\ttvpc != lbvpc\n}\n"
+  },
+  {
+    "id": "pf-elbv2-listener-udp-dualstack",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A dualstack network load balancer takes no UDP listener",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbludp_fix := \"Keep the load balancer on IpAddressType ipv4, or use a TCP/TLS listener\"\n\n_pf_elbludp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-listener-udp-dualstack\", \"ERROR\", name,\n\t\"Properties.Protocol\",\n\tsprintf(\"A %s listener sits on a dualstack load balancer; UDP-based listeners are only available on an IPv4 network load balancer\", [proto]),\n\t_pf_elbludp_fix, _pf_elbludp_url) if {\n\tsome name in _pf_elb_listeners\n\tproto := _pf_elb_str(name, \"Protocol\")\n\tproto in {\"UDP\", \"TCP_UDP\", \"QUIC\", \"TCP_QUIC\"}\n\tlb := _pf_elb_lb_of(name)\n\tobject.get(_pf_elb_props(lb), \"IpAddressType\", \"ipv4\") == \"dualstack\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-actions-exactly-one-routing",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule ends on exactly one routing action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbraor_fix := \"Keep one forward, redirect or fixed-response action (authentication actions go before it)\"\n\n_pf_elbraor_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_Action.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-actions-exactly-one-routing\", \"ERROR\", name,\n\t\"Properties.Actions\",\n\tsprintf(\"The rule holds %d routing actions (forward, redirect, fixed-response); a rule ends on exactly one of them\", [n]),\n\t_pf_elbraor_fix, _pf_elbraor_url) if {\n\tsome name in _pf_elb_rules\n\tn := count([a |\n\t\tsome a in _pf_elb_actions(name, \"Actions\")\n\t\tobject.get(a.value, \"Type\", \"\") in _pf_elb_routing_actions\n\t])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-condition-duplicate-field",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule uses each single-valued condition field once",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrcd_fix := \"Merge the values into one condition of that field\"\n\n_pf_elbrcd_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\n_pf_elbrcd_once := {\"host-header\", \"path-pattern\", \"http-request-method\", \"source-ip\"}\n\nviolation contains make_diag_full(\"pf-elbv2-rule-condition-duplicate-field\", \"ERROR\", name,\n\t\"Properties.Conditions\",\n\tsprintf(\"A rule can only have one '%s' condition; this rule has %d\", [f, n]),\n\t_pf_elbrcd_fix, _pf_elbrcd_url) if {\n\tsome name in _pf_elb_rules\n\tsome f in _pf_elbrcd_once\n\tn := count([c | some c in _pf_elb_conditions(name); object.get(c.value, \"Field\", \"\") == f])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-condition-empty-values",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule condition matches at least one value",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrce_fix := \"Put at least one entry in Values (or RegexValues)\"\n\n_pf_elbrce_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-condition-empty-values\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d.%s\", [c.index, cfg]),\n\tsprintf(\"You must provide exactly one of the following: ['Values' 'RegexValues'] for config of type '%s'\", [cfg]),\n\t_pf_elbrce_fix, _pf_elbrce_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tf := object.get(c.value, \"Field\", \"\")\n\tcfg := object.get(_pf_elb_cond_config, f, \"\")\n\t_pf_elb_ohas(c.value, cfg)\n\tcount(_pf_elb_cond_values(c.value)) == 0\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-condition-field-config-match",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule condition carries the config that belongs to its field",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrcc_fix := \"Add the *Config that matches Field (or plain Values / RegexValues)\"\n\n_pf_elbrcc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-condition-field-config-match\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d\", [c.index]),\n\tsprintf(\"For conditions of type '%s', you must specify the following fields: 'Values or RegexValues or %s'\", [f, cfg]),\n\t_pf_elbrcc_fix, _pf_elbrcc_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tf := object.get(c.value, \"Field\", \"\")\n\tcfg := object.get(_pf_elb_cond_config, f, \"\")\n\tcfg != \"\"\n\tnot _pf_elb_ohas(c.value, cfg)\n\tnot _pf_elb_ohas(c.value, \"Values\")\n\tnot _pf_elb_ohas(c.value, \"RegexValues\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-condition-field-values",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule condition uses one of the six condition fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrcf_fix := \"Use host-header, path-pattern, http-header, http-request-method, query-string or source-ip\"\n\n_pf_elbrcf_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-condition-field-values\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d.Field\", [c.index]),\n\tsprintf(\"Condition field '%s' must be one of 'http-header,http-request-method,host-header,query-string,source-ip,path-pattern'\", [f]),\n\t_pf_elbrcf_fix, _pf_elbrcf_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tf := _pf_elb_oget(c.value, \"Field\")\n\tnot f in object.keys(_pf_elb_cond_config)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-condition-values-max",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule matches at most five condition values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrcv_fix := \"Keep the condition values (and regex values) of the whole rule to five, or split the rule\"\n\n_pf_elbrcv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-update-rules.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-condition-values-max\", \"ERROR\", name,\n\t\"Properties.Conditions\",\n\tsprintf(\"A rule can only have '5' condition values and regex values; this rule has %d\", [n]),\n\t_pf_elbrcv_fix, _pf_elbrcv_url) if {\n\tsome name in _pf_elb_rules\n\tn := sum([count(_pf_elb_cond_values(c.value)) | some c in _pf_elb_conditions(name)])\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-conditions-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A listener rule has at least one condition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrcr_fix := \"Add a condition (only the listener default action runs without one)\"\n\n_pf_elbrcr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-conditions-required\", \"ERROR\", name,\n\t\"Properties.Conditions\",\n\t\"A condition must be specified; only the listener's default action matches every request\",\n\t_pf_elbrcr_fix, _pf_elbrcr_url) if {\n\tsome name in _pf_elb_rules\n\tcount(_pf_elb_conditions(name)) == 0\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-host-header-format",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A host-header value is a host name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrhh_fix := \"Write a host name with at least one dot, ending in an alphabetic label\"\n\n_pf_elbrhh_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\n_pf_elbrhh_ok(v) if {\n\tparts := split(v, \".\")\n\tcount(parts) > 1\n\tregex.match(\"^[A-Za-z][A-Za-z0-9*?-]*$\", parts[count(parts) - 1])\n}\n\nviolation contains make_diag_full(\"pf-elbv2-rule-host-header-format\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d\", [c.index]),\n\tsprintf(\"Condition value '%s' contains a character that is not valid; a host-header value is a host name ending in an alphabetic label\", [v]),\n\t_pf_elbrhh_fix, _pf_elbrhh_url) if {\n\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tobject.get(c.value, \"Field\", \"\") == \"host-header\"\n\tsome i, v in _pf_elb_cond_values(c.value)\n\tis_string(v)\n\tnot _pf_elbrhh_ok(v)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-http-header-name-length",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An http-header condition names a header of at most 40 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrhn_fix := \"Shorten HttpHeaderName to 40 characters\"\n\n_pf_elbrhn_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-http-header-name-length\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d.HttpHeaderConfig.HttpHeaderName\", [c.index]),\n\tsprintf(\"Condition value for 'http-header' cannot contain more than 40 characters (this one has %d)\", [count(h)]),\n\t_pf_elbrhn_fix, _pf_elbrhn_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\th := _pf_elb_oget(_pf_elb_cond_cfg(c.value), \"HttpHeaderName\")\n\tis_string(h)\n\tcount(h) > 40\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-http-header-not-host",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The Host header is matched by a host-header condition",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrnh_fix := \"Use a host-header condition instead of an http-header condition on Host\"\n\n_pf_elbrnh_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-http-header-not-host\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d.HttpHeaderConfig.HttpHeaderName\", [c.index]),\n\t\"You cannot specify 'host' as an HTTP header name; the load balancer routes on the Host header through a host-header condition\",\n\t_pf_elbrnh_fix, _pf_elbrnh_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\th := _pf_elb_oget(_pf_elb_cond_cfg(c.value), \"HttpHeaderName\")\n\tis_string(h)\n\tlower(h) == \"host\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-http-method-charset",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An HTTP method condition is written in upper case",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrhm_fix := \"Use up to 40 characters of A-Z, - and _ (the service does not case-fold)\"\n\n_pf_elbrhm_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-http-method-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d\", [c.index]),\n\tsprintf(\"Condition value '%s' contains a character that is not valid; an HTTP method is up to 40 characters of A-Z, - and _\", [v]),\n\t_pf_elbrhm_fix, _pf_elbrhm_url) if {\n\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tobject.get(c.value, \"Field\", \"\") == \"http-request-method\"\n\tsome i, v in _pf_elb_cond_values(c.value)\n\tis_string(v)\n\tnot regex.match(\"^[A-Z_-]{1,40}$\", v)\n}\n"
+  },
+  {
     "id": "pf-elbv2-rule-priority-unique",
     "service": "elbv2",
     "severity": "ERROR",
@@ -8764,6 +9840,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ElasticLoadBalancingV2::ListenerRule"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# resolve() turns a Ref/GetAtt to a sibling listener into its logical\n# id, so both Ref-wired and identical-literal ListenerArns compare equal.\nviolation contains make_diag_full(\"pf-elbv2-rule-priority-unique\", \"ERROR\", r2,\n\t\"Properties.Priority\",\n\tsprintf(\"Priority %v is also used by '%s' on the same listener (\\\"Priority '%v' is currently in use\\\")\", [p1, r1, p1]),\n\t\"Give each rule on a listener a distinct priority\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateRule.html\") if {\n\tsome r1 in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerRule\")\n\tsome r2 in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerRule\")\n\tr1 < r2\n\tl1 := resolve(r1, \"Properties.ListenerArn\")\n\tl2 := resolve(r2, \"Properties.ListenerArn\")\n\tl1 == l2\n\tp1 := to_number(resolve(r1, \"Properties.Priority\"))\n\tp2 := to_number(resolve(r2, \"Properties.Priority\"))\n\tp1 == p2\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-regex-and-values-exclusive",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A rule condition matches either literals or a regex",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrrv_fix := \"Keep Values or RegexValues, not both\"\n\n_pf_elbrrv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-regex-and-values-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d.%s\", [c.index, cfg]),\n\tsprintf(\"You must provide exactly one of the following: ['Values' 'RegexValues'] for config of type '%s'\", [cfg]),\n\t_pf_elbrrv_fix, _pf_elbrrv_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tcount(_pf_elb_cond_of(c.value, \"Values\")) > 0\n\tcount(_pf_elb_cond_of(c.value, \"RegexValues\")) > 0\n\tcfg := object.get(_pf_elb_cond_config, object.get(c.value, \"Field\", \"\"), \"\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-regex-values-fields",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Only three condition fields take a regular expression",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrrf_fix := \"Use RegexValues on an http-header, host-header or path-pattern condition\"\n\n_pf_elbrrf_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-regex-values-fields\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d.RegexValues\", [c.index]),\n\tsprintf(\"'RegexValues' is not supported for a condition of type '%s'\", [f]),\n\t_pf_elbrrf_fix, _pf_elbrrf_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tcount(_pf_elb_cond_of(c.value, \"RegexValues\")) > 0\n\tf := object.get(c.value, \"Field\", \"\")\n\tnot f in {\"http-header\", \"host-header\", \"path-pattern\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-source-ip-cidr",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A source-ip condition takes CIDR blocks",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrsc_fix := \"Write the address as a CIDR block (10.0.0.1/32 for a single address)\"\n\n_pf_elbrsc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\n_pf_elbrsc_ok(v) if regex.match(`^[0-9]{1,3}(\\.[0-9]{1,3}){3}/[0-9]{1,2}$`, v)\n\n_pf_elbrsc_ok(v) if regex.match(`^[0-9A-Fa-f:]+/[0-9]{1,3}$`, v)\n\nviolation contains make_diag_full(\"pf-elbv2-rule-source-ip-cidr\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d\", [c.index]),\n\tsprintf(\"The specified value '%s' is not a valid CIDR block\", [v]),\n\t_pf_elbrsc_fix, _pf_elbrsc_url) if {\n\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tobject.get(c.value, \"Field\", \"\") == \"source-ip\"\n\tsome i, v in _pf_elb_cond_values(c.value)\n\tis_string(v)\n\tnot _pf_elbrsc_ok(v)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-rule-value-length-128",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A condition value is at most 128 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::ListenerRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbrvl_fix := \"Shorten the value to 128 characters\"\n\n_pf_elbrvl_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-rule-value-length-128\", \"ERROR\", name,\n\tsprintf(\"Properties.Conditions.%d\", [c.index]),\n\tsprintf(\"Condition value for '%s' cannot contain more than 128 characters (this one has %d)\", [f, count(v)]),\n\t_pf_elbrvl_fix, _pf_elbrvl_url) if {\n\tsome name in _pf_elb_rules\n\tsome c in _pf_elb_conditions(name)\n\tf := object.get(c.value, \"Field\", \"\")\n\tsome v in _pf_elb_cond_values(c.value)\n\tis_string(v)\n\tcount(v) > 128\n}\n"
   },
   {
     "id": "pf-elbv2-stickiness-type-protocol",
@@ -8788,6 +9908,281 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtchp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\n_pf_elbtchp_tcp_hc(name) if resolve(name, \"Properties.HealthCheckProtocol\") == \"TCP\"\n\n# HealthCheckProtocol defaults to the target group protocol (benched via e04b).\n_pf_elbtchp_tcp_hc(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"HealthCheckProtocol\", \"__pf_absent\") == \"__pf_absent\"\n\tresolve(name, \"Properties.Protocol\") == \"TCP\"\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tcp-health-check-path\", \"ERROR\", name,\n\t\"Properties.HealthCheckPath\",\n\t\"The effective health check protocol is TCP, which cannot take HealthCheckPath (\\\"Health check paths are not supported for TCP health checks\\\")\",\n\t\"Remove HealthCheckPath, or use an HTTP/HTTPS health check protocol\",\n\t_pf_elbtchp_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\t_pf_elbtchp_tcp_hc(name)\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"HealthCheckPath\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-elbv2-tg-alb-single-target",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group of type alb holds a single load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbta1_fix := \"Register one Application Load Balancer per target group (this quota cannot be raised)\"\n\n_pf_elbta1_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-alb-single-target\", \"ERROR\", name,\n\t\"Properties.Targets\",\n\tsprintf(\"%d targets are registered on a target group of type alb; only one Application Load Balancer can be registered\", [n]),\n\t_pf_elbta1_fix, _pf_elbta1_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"alb\"\n\tn := count(flatten_list(name, \"Properties.Targets\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-alb-target-type-protocol",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group of Application Load Balancers speaks TCP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtalb_fix := \"Set Protocol to TCP for a target group with TargetType alb\"\n\n_pf_elbtalb_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-alb-target-type-protocol\", \"ERROR\", name,\n\t\"Properties.Protocol\",\n\tsprintf(\"TargetType is 'alb' with Protocol '%s'; an ALB target is registered behind a network load balancer, so the protocol must be TCP\", [p]),\n\t_pf_elbtalb_fix, _pf_elbtalb_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"alb\"\n\tp := _pf_elb_str(name, \"Protocol\")\n\tp != \"TCP\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-algorithm-type",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The load balancing algorithm is one of three named values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgalg_fix := \"Use round_robin, least_outstanding_requests or weighted_random\"\n\n_pf_elbgalg_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nelbgalg_allowed := {\"round_robin\", \"least_outstanding_requests\", \"weighted_random\"}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-algorithm-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elbgalg_allowed]),\n\t_pf_elbgalg_fix, _pf_elbgalg_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"load_balancing.algorithm.type\"\n\tis_string(p.value)\n\tnot p.value in elbgalg_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-anomaly-mitigation-requires-weighted-random",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Anomaly mitigation needs the weighted random algorithm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgamw_fix := \"Set load_balancing.algorithm.type to weighted_random, or turn anomaly mitigation off\"\n\n_pf_elbgamw_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-anomaly-mitigation-requires-weighted-random\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"load_balancing.algorithm.anomaly_mitigation is 'on' while the algorithm is '%s'; anomaly mitigation is only available with weighted_random\", [alg]),\n\t_pf_elbgamw_fix, _pf_elbgamw_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"load_balancing.algorithm.anomaly_mitigation\"\n\tp.value == \"on\"\n\talg := _pf_elbgamw_alg(name)\n\talg != \"weighted_random\"\n}\n\n_pf_elbgamw_alg(name) := a if {\n\ts := _pf_elb_attrset(name, \"TargetGroupAttributes\", \"load_balancing.algorithm.type\")\n\tcount(s) == 1\n\tsome a in s\n}\n\n_pf_elbgamw_alg(name) := \"round_robin\" if {\n\tcount(_pf_elb_attrset(name, \"TargetGroupAttributes\", \"load_balancing.algorithm.type\")) == 0\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-anomaly-mitigation-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Anomaly mitigation is on or off",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgamv_fix := \"Use on or off (not true/false)\"\n\n_pf_elbgamv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nelbgamv_allowed := {\"on\", \"off\"}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-anomaly-mitigation-value\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elbgamv_allowed]),\n\t_pf_elbgamv_fix, _pf_elbgamv_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"load_balancing.algorithm.anomaly_mitigation\"\n\tis_string(p.value)\n\tnot p.value in elbgamv_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-app-cookie-duration-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Application cookie stickiness lasts 1-604800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgacd_fix := \"Use a duration between 1 second and 7 days\"\n\n_pf_elbgacd_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-app-cookie-duration-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is %v, outside the accepted range 1-604800\", [p.key, n]),\n\t_pf_elbgacd_fix, _pf_elbgacd_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"stickiness.app_cookie.duration_seconds\"\n\tn := _pf_elb_num(p.value)\n\t_pf_elb_outside(n, 1, 604800)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-boolean-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A boolean target group attribute takes only true or false",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgbv_fix := \"Write the value as the string \\\"true\\\" or \\\"false\\\"\"\n\n_pf_elbgbv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-boolean-value\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"The value of '%s' must be 'true' or 'false', but was '%s'\", [p.key, p.value]),\n\t_pf_elbgbv_fix, _pf_elbgbv_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\t_pf_elb_bool_key(p.key)\n\tp.key != \"load_balancing.cross_zone.enabled\"\n\tis_string(p.value)\n\tnot p.value in {\"true\", \"false\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-cross-zone-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Target group cross-zone load balancing takes a third value",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgcz_fix := \"Use true, false or use_load_balancer_configuration\"\n\n_pf_elbgcz_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nelbgcz_allowed := {\"true\", \"false\", \"use_load_balancer_configuration\"}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-cross-zone-value\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: %v)\", [p.value, p.key, elbgcz_allowed]),\n\t_pf_elbgcz_fix, _pf_elbgcz_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"load_balancing.cross_zone.enabled\"\n\tis_string(p.value)\n\tnot p.value in elbgcz_allowed\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-dereg-delay-lambda",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A Lambda target group has no deregistration delay",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgdd_fix := \"Drop deregistration_delay.timeout_seconds on a lambda target group\"\n\n_pf_elbgdd_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-dereg-delay-lambda\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Key\", [p.index]),\n\t\"deregistration_delay.timeout_seconds is set on a lambda target group; a Lambda target has no connections to drain\",\n\t_pf_elbgdd_fix, _pf_elbgdd_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"deregistration_delay.timeout_seconds\"\n\t_pf_elb_tgtype(name) == \"lambda\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-dns-failover-threshold-order",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The DNS failover threshold is at least the unhealthy-state routing threshold",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgdfo_fix := \"Raise the dns_failover threshold to at least the unhealthy_state_routing one\"\n\n_pf_elbgdfo_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\n_pf_elbgdfo_n(name, k) := n if {\n\ts := _pf_elb_attrset(name, \"TargetGroupAttributes\", k)\n\tcount(s) == 1\n\tsome v in s\n\tn := _pf_elb_num(v)\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-dns-failover-threshold-order\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes: target_group_health.dns_failover.minimum_healthy_targets.%s\", [unit]),\n\tsprintf(\"The DNS failover threshold (%v) is below the unhealthy-state routing threshold (%v); DNS failover must be at least as strict\", [d, u]),\n\t_pf_elbgdfo_fix, _pf_elbgdfo_url) if {\n\tsome name in _pf_elb_tgs\n\tsome unit in [\"count\", \"percentage\"]\n\td := _pf_elbgdfo_n(name, sprintf(\"target_group_health.dns_failover.minimum_healthy_targets.%s\", [unit]))\n\tu := _pf_elbgdfo_n(name, sprintf(\"target_group_health.unhealthy_state_routing.minimum_healthy_targets.%s\", [unit]))\n\td < u\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-draining-interval-requires-termination-off",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An unhealthy draining interval needs connection termination off",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgdit_fix := \"Set target_health_state.unhealthy.connection_termination.enabled to false, or drop the draining interval\"\n\n_pf_elbgdit_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-draining-interval-requires-termination-off\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\t\"target_health_state.unhealthy.draining_interval_seconds is set while target_health_state.unhealthy.connection_termination.enabled is 'true'; a connection that is terminated has nothing to drain\",\n\t_pf_elbgdit_fix, _pf_elbgdit_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"target_health_state.unhealthy.draining_interval_seconds\"\n\t\"true\" in _pf_elb_attrset(name, \"TargetGroupAttributes\", \"target_health_state.unhealthy.connection_termination.enabled\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-duplicate-key",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group attribute key appears at most once",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgdup_fix := \"Keep one entry per attribute key\"\n\n_pf_elbgdup_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-duplicate-key\", \"ERROR\", name,\n\t\"Properties.TargetGroupAttributes\",\n\tsprintf(\"Attribute key '%s' is specified more than once; ModifyTargetGroupAttributes fails with \\\"Attribute key '%s' has been specified more than once\\\"\", [k, k]),\n\t_pf_elbgdup_fix, _pf_elbgdup_url) if {\n\tsome name in _pf_elb_tgs\n\tkeys := [x.key | some x in _pf_elb_pairs(name, \"TargetGroupAttributes\")]\n\tsome k in keys\n\tcount([x | some x in keys; x == k]) > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-health-count-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A minimum healthy target count is off or a positive integer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbghc_fix := \"Use off, or a count of at least 1\"\n\n_pf_elbghc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-health-count-value\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is '%s'; the count is either 'off' or an integer of at least 1\", [p.key, p.value]),\n\t_pf_elbghc_fix, _pf_elbghc_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tendswith(p.key, \"minimum_healthy_targets.count\")\n\tis_string(p.value)\n\tp.value != \"off\"\n\tnot _pf_elbghc_ok(p.value)\n}\n\n_pf_elbghc_ok(v) if {\n\tn := _pf_elb_num(v)\n\tn >= 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-health-percentage-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A minimum healthy target percentage is off or 1-100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbghp_fix := \"Use off, or a percentage between 1 and 100\"\n\n_pf_elbghp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-health-percentage-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is '%s'; the percentage is either 'off' or between 1 and 100\", [p.key, p.value]),\n\t_pf_elbghp_fix, _pf_elbghp_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tendswith(p.key, \"minimum_healthy_targets.percentage\")\n\tis_string(p.value)\n\tp.value != \"off\"\n\tnot _pf_elbghp_ok(p.value)\n}\n\n_pf_elbghp_ok(v) if {\n\tn := _pf_elb_num(v)\n\tn >= 1\n\tn <= 100\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-key-known",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group attribute key must be one the service recognises",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgkk_fix := \"Use a key from the TargetGroupAttribute table (a typo is rejected, not ignored)\"\n\n_pf_elbgkk_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-key-known\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Key\", [p.index]),\n\tsprintf(\"Target group attribute key '%s' is not recognized; ModifyTargetGroupAttributes rejects unknown keys\", [p.key]),\n\t_pf_elbgkk_fix, _pf_elbgkk_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tnot p.key in _pf_elb_tgattr_known\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-key-protocol-scope",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group attribute key is bound to the target group protocol",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgks_fix := \"Keep protocol-only attributes on a target group of that protocol family\"\n\n_pf_elbgks_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\n# これらのキーは専用ルールが担当する（重複して鳴らせない）\n_pf_elbgks_owned := {\n\t\"slow_start.duration_seconds\", \"lambda.multi_value_headers.enabled\",\n\t\"deregistration_delay.timeout_seconds\",\n\t\"send_tcp_reset.on_unhealthy.enabled\", \"send_tcp_reset.on_deregistration.enabled\",\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-key-protocol-scope\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Key\", [p.index]),\n\tsprintf(\"Attribute key '%s' is not supported on a %s target group; ModifyTargetGroupAttributes reports it as not recognized\", [p.key, f]),\n\t_pf_elbgks_fix, _pf_elbgks_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tf := _pf_elb_tgfamily(name)\n\tp.key in _pf_elb_tgattr_known\n\tnot p.key in _pf_elbgks_owned\n\tnot p.key in _pf_elb_tgattr_for[f]\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-lambda-scope",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Multi-value headers are a Lambda target group setting",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgls_fix := \"Drop lambda.multi_value_headers.enabled unless TargetType is lambda\"\n\n_pf_elbgls_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-lambda-scope\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Key\", [p.index]),\n\tsprintf(\"lambda.multi_value_headers.enabled is set on a '%s' target group; it only applies to a lambda target group\", [t]),\n\t_pf_elbgls_fix, _pf_elbgls_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"lambda.multi_value_headers.enabled\"\n\tt := _pf_elb_tgtype(name)\n\tt != \"lambda\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-lb-cookie-duration-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Load balancer cookie stickiness lasts 1-604800 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbglcd_fix := \"Use a duration between 1 second and 7 days\"\n\n_pf_elbglcd_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-lb-cookie-duration-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is %v, outside the accepted range 1-604800\", [p.key, n]),\n\t_pf_elbglcd_fix, _pf_elbglcd_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"stickiness.lb_cookie.duration_seconds\"\n\tn := _pf_elb_num(p.value)\n\t_pf_elb_outside(n, 1, 604800)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-preserve-client-ip-udp",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Client IP preservation cannot be turned off for UDP target groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgpci_fix := \"Leave preserve_client_ip.enabled at true on a UDP, TCP_UDP or QUIC target group\"\n\n_pf_elbgpci_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-preserve-client-ip-udp\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"preserve_client_ip.enabled is 'false' on a %s target group; client IP preservation cannot be disabled for UDP-based target groups\", [proto]),\n\t_pf_elbgpci_fix, _pf_elbgpci_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"preserve_client_ip.enabled\"\n\tp.value == \"false\"\n\tproto := _pf_elb_str(name, \"Protocol\")\n\tproto in {\"UDP\", \"TCP_UDP\", \"QUIC\", \"TCP_QUIC\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-send-tcp-reset-gwlb-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "TCP reset attributes belong to a GENEVE target group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgstr_fix := \"Drop send_tcp_reset.on_* unless the target group protocol is GENEVE\"\n\n_pf_elbgstr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-send-tcp-reset-gwlb-only\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Key\", [p.index]),\n\tsprintf(\"'%s' is set on a %s target group; the TCP reset attributes are only supported by Gateway Load Balancers\", [p.key, f]),\n\t_pf_elbgstr_fix, _pf_elbgstr_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tstartswith(p.key, \"send_tcp_reset.\")\n\tf := _pf_elb_tgfamily(name)\n\tf != \"gateway\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-slow-start-scope",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Slow start needs an HTTP target group of instances or IPs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgss_fix := \"Drop slow_start.duration_seconds unless the target group is HTTP/HTTPS with instance or ip targets\"\n\n_pf_elbgss_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-slow-start-scope\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Key\", [p.index]),\n\tsprintf(\"slow_start.duration_seconds is set on a %s target group with target type '%s'; slow start only applies to an Application Load Balancer target group of instance or ip targets\", [f, t]),\n\t_pf_elbgss_fix, _pf_elbgss_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"slow_start.duration_seconds\"\n\tf := object.get(_pf_elb_family_of, object.get(_pf_elb_props(name), \"Protocol\", \"\"), \"lambda\")\n\tt := _pf_elb_tgtype(name)\n\tnot _pf_elbgss_ok(f, t)\n}\n\n_pf_elbgss_ok(f, t) if {\n\tf == \"application\"\n\tt in {\"instance\", \"ip\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-stickiness-type-gwlb",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A GENEVE target group sticks on the IP tuple",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgstg_fix := \"Use source_ip_dest_ip or source_ip_dest_ip_proto on a GENEVE target group\"\n\n_pf_elbgstg_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-stickiness-type-gwlb\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"stickiness.type '%s' on a GENEVE target group; a Gateway Load Balancer only supports source_ip_dest_ip and source_ip_dest_ip_proto\", [p.value]),\n\t_pf_elbgstg_fix, _pf_elbgstg_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\t_pf_elb_tgfamily(name) == \"gateway\"\n\tp.key == \"stickiness.type\"\n\tis_string(p.value)\n\tnot p.value in {\"source_ip_dest_ip\", \"source_ip_dest_ip_proto\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-target-failover-pair-equal",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The two target failover attributes must agree",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgtfp_fix := \"Give target_failover.on_deregistration and target_failover.on_unhealthy the same value\"\n\n_pf_elbgtfp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\n_pf_elbgtfp_v(name, k) := v if {\n\ts := _pf_elb_attrset(name, \"TargetGroupAttributes\", k)\n\tcount(s) == 1\n\tsome v in s\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-target-failover-pair-equal\", \"ERROR\", name,\n\t\"Properties.TargetGroupAttributes: target_failover\",\n\tsprintf(\"target_failover.on_deregistration is '%s' but target_failover.on_unhealthy is '%s'; the service requires the same value for both\", [d, u]),\n\t_pf_elbgtfp_fix, _pf_elbgtfp_url) if {\n\tsome name in _pf_elb_tgs\n\td := _pf_elbgtfp_v(name, \"target_failover.on_deregistration\")\n\tu := _pf_elbgtfp_v(name, \"target_failover.on_unhealthy\")\n\td != u\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-target-failover-value",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Target failover is rebalance or no_rebalance",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgtfv_fix := \"Use rebalance or no_rebalance\"\n\n_pf_elbgtfv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-target-failover-value\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is not a valid value for '%s' (allowed: rebalance, no_rebalance)\", [p.value, p.key]),\n\t_pf_elbgtfv_fix, _pf_elbgtfv_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tstartswith(p.key, \"target_failover.\")\n\tis_string(p.value)\n\tnot p.value in {\"rebalance\", \"no_rebalance\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-attr-unhealthy-draining-interval-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The unhealthy draining interval is 0-360000 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbgudi_fix := \"Use a value between 0 and 360000 seconds\"\n\n_pf_elbgudi_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_TargetGroupAttribute.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-attr-unhealthy-draining-interval-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [p.index]),\n\tsprintf(\"'%s' is %v, outside the accepted range 0-360000\", [p.key, n]),\n\t_pf_elbgudi_fix, _pf_elbgudi_url) if {\n\tsome name in _pf_elb_tgs\n\tsome p in _pf_elb_pairs(name, \"TargetGroupAttributes\")\n\tp.key == \"target_health_state.unhealthy.draining_interval_seconds\"\n\tn := _pf_elb_num(p.value)\n\t_pf_elb_outside(n, 0, 360000)\n}\n"
+  },
+  {
     "id": "pf-elbv2-tg-deregistration-delay-range",
     "service": "elbv2",
     "severity": "ERROR",
@@ -8797,6 +10192,172 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ElasticLoadBalancingV2::TargetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dereg_delay_out(n) if n < 0\n\n_pf_dereg_delay_out(n) if n > 3600\n\nviolation contains make_diag_full(\"pf-elbv2-tg-deregistration-delay-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [item.index]),\n\tsprintf(\"deregistration_delay.timeout_seconds is %v but must be between 0 and 3600 seconds\", [num]),\n\t\"Set deregistration_delay.timeout_seconds to a value between 0 and 3600\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#deregistration-delay\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"deregistration_delay.timeout_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_dereg_delay_out(num)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-geneve-port",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A GENEVE target group listens on port 6081",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtgp_fix := \"Set Port to 6081\"\n\n_pf_elbtgp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-geneve-port\", \"ERROR\", name,\n\t\"Properties.Port\",\n\tsprintf(\"A GENEVE target group is on port %v; the protocol only runs on 6081\", [port]),\n\t_pf_elbtgp_fix, _pf_elbtgp_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_str(name, \"Protocol\") == \"GENEVE\"\n\tport := resolve(name, \"Properties.Port\")\n\tis_number(port)\n\tport != 6081\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-hc-enabled-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Health checks can only be turned off for a Lambda target group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbthce_fix := \"Leave HealthCheckEnabled at true (only a lambda target group may disable it)\"\n\n_pf_elbthce_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-hc-enabled-required\", \"ERROR\", name,\n\t\"Properties.HealthCheckEnabled\",\n\tsprintf(\"HealthCheckEnabled is false on a '%s' target group; health checks are required unless the target type is lambda\", [t]),\n\t_pf_elbthce_fix, _pf_elbthce_url) if {\n\tsome name in _pf_elb_tgs\n\tt := _pf_elb_tgtype(name)\n\tt != \"lambda\"\n\tresolve(name, \"Properties.HealthCheckEnabled\") == false\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-hc-port-format",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "The health check port is traffic-port or a port number",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbthcpt_fix := \"Use traffic-port (with a hyphen) or a number between 1 and 65535\"\n\n_pf_elbthcpt_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-hc-port-format\", \"ERROR\", name,\n\t\"Properties.HealthCheckPort\",\n\tsprintf(\"HealthCheckPort '%s' is neither traffic-port nor a port number in 1-65535\", [v]),\n\t_pf_elbthcpt_fix, _pf_elbthcpt_url) if {\n\tsome name in _pf_elb_tgs\n\tv := _pf_elb_str(name, \"HealthCheckPort\")\n\tv != \"traffic-port\"\n\tnot _pf_elbthcpt_port(v)\n}\n\n_pf_elbthcpt_port(v) if {\n\tn := _pf_elb_num(v)\n\tn >= 1\n\tn <= 65535\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-hc-protocol-unsupported",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "Health checks run over HTTP, HTTPS or TCP only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbthcp_fix := \"Set HealthCheckProtocol to HTTP, HTTPS or TCP\"\n\n_pf_elbthcp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-hc-protocol-unsupported\", \"ERROR\", name,\n\t\"Properties.HealthCheckProtocol\",\n\tsprintf(\"HealthCheckProtocol '%s' is not a health check protocol; the service only probes over HTTP, HTTPS or TCP\", [hp]),\n\t_pf_elbthcp_fix, _pf_elbthcp_url) if {\n\tsome name in _pf_elb_tgs\n\thp := _pf_elb_str(name, \"HealthCheckProtocol\")\n\tnot hp in _pf_elb_hc_protocols\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-hc-tcp-for-http-tg",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An HTTP or HTTPS target group is health checked over HTTP or HTTPS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbthct_fix := \"Set HealthCheckProtocol to HTTP or HTTPS\"\n\n_pf_elbthct_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-hc-tcp-for-http-tg\", \"ERROR\", name,\n\t\"Properties.HealthCheckProtocol\",\n\tsprintf(\"HealthCheckProtocol 'TCP' on a %s target group; the health check protocol of an HTTP/HTTPS target group must be HTTP or HTTPS\", [p]),\n\t_pf_elbthct_fix, _pf_elbthct_url) if {\n\tsome name in _pf_elb_tgs\n\tp := _pf_elb_str(name, \"Protocol\")\n\tp in _pf_elb_alb_protocols\n\t_pf_elb_str(name, \"HealthCheckProtocol\") == \"TCP\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-ipv6-with-ipv4-lb",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "An IPv6 target group needs a dualstack load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::Listener",
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtgil_fix := \"Give the load balancer IpAddressType: dualstack, or make the target group ipv4\"\n\n_pf_elbtgil_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-ipv6-with-ipv4-lb\", \"ERROR\", p.tg,\n\t\"Properties.IpAddressType\",\n\tsprintf(\"The target group is IPv6 but listener '%s' hangs off a load balancer with an 'ipv4' IP address type\", [p.listener]),\n\t_pf_elbtgil_fix, _pf_elbtgil_url) if {\n\tsome p in _pf_elb_listener_tgs\n\tobject.get(_pf_elb_props(p.tg), \"IpAddressType\", \"ipv4\") == \"ipv6\"\n\tlb := _pf_elb_lb_of(p.listener)\n\tobject.get(_pf_elb_props(lb), \"IpAddressType\", \"ipv4\") == \"ipv4\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-ipv6-with-lambda",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A Lambda target group has no IPv6 address type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbt6l_fix := \"Drop IpAddressType on a lambda target group\"\n\n_pf_elbt6l_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-ipv6-with-lambda\", \"ERROR\", name,\n\t\"Properties.IpAddressType\",\n\t\"IpAddressType 'ipv6' is set on a lambda target group; a Lambda target is not addressed by IP\",\n\t_pf_elbt6l_fix, _pf_elbt6l_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"lambda\"\n\t_pf_elb_str(name, \"IpAddressType\") == \"ipv6\"\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-ipv6-with-quic",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "QUIC target groups are IPv4",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbt6q_fix := \"Drop IpAddressType ipv6, or use a TCP/UDP target group\"\n\n_pf_elbt6q_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-ipv6-with-quic\", \"ERROR\", name,\n\t\"Properties.IpAddressType\",\n\tsprintf(\"IpAddressType 'ipv6' with Protocol '%s'; QUIC target groups do not support IPv6\", [p]),\n\t_pf_elbt6q_fix, _pf_elbt6q_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_str(name, \"IpAddressType\") == \"ipv6\"\n\tp := _pf_elb_str(name, \"Protocol\")\n\tp in {\"QUIC\", \"TCP_QUIC\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-lambda-no-port",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A Lambda target group cannot declare a Port",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtlp_fix := \"Drop Port; a Lambda target is invoked, not connected to\"\n\n_pf_elbtlp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-lambda-no-port\", \"ERROR\", name,\n\t\"Properties.Port\",\n\t\"Port is set on a lambda target group; CreateTargetGroup rejects a protocol or port for target type 'lambda'\",\n\t_pf_elbtlp_fix, _pf_elbtlp_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"lambda\"\n\t_pf_elb_has(name, \"Port\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-lambda-no-vpc",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A Lambda target group cannot declare a VpcId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtlv_fix := \"Drop VpcId; a Lambda target is reached through the function ARN\"\n\n_pf_elbtlv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-lambda-no-vpc\", \"ERROR\", name,\n\t\"Properties.VpcId\",\n\t\"VpcId is set on a lambda target group; CreateTargetGroup rejects a VPC for target type 'lambda'\",\n\t_pf_elbtlv_fix, _pf_elbtlv_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"lambda\"\n\t_pf_elb_has(name, \"VpcId\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-lambda-single-target",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A Lambda target group holds a single function",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtl1_fix := \"Register one function per target group (this quota cannot be raised)\"\n\n_pf_elbtl1_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-lambda-single-target\", \"ERROR\", name,\n\t\"Properties.Targets\",\n\tsprintf(\"%d targets are registered on a lambda target group; RegisterTargets answers \\\"Up to '1' Lambda function target(s) can be registered, but '%d' were specified\\\"\", [n, n]),\n\t_pf_elbtl1_fix, _pf_elbtl1_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"lambda\"\n\tn := count(flatten_list(name, \"Properties.Targets\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-matcher-grpc-range",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "gRPC status codes run from 0 to 99",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtmgc_fix := \"Keep Matcher.GrpcCode inside 0-99\"\n\n_pf_elbtmgc_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-matcher-grpc-range\", \"ERROR\", name,\n\t\"Properties.Matcher.GrpcCode\",\n\tsprintf(\"Matcher.GrpcCode '%s' includes %v, outside the gRPC status code range 0-99\", [code, n]),\n\t_pf_elbtmgc_fix, _pf_elbtmgc_url) if {\n\tsome name in _pf_elb_tgs\n\tcode := resolve(name, \"Properties.Matcher.GrpcCode\")\n\tis_string(code)\n\tsome n in _pf_elb_codes(code)\n\t_pf_elb_outside(n, 0, 99)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-matcher-grpc-requires-grpc",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A gRPC matcher needs ProtocolVersion GRPC",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtmgr_fix := \"Set ProtocolVersion to GRPC, or match on Matcher.HttpCode instead\"\n\n_pf_elbtmgr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-matcher-grpc-requires-grpc\", \"ERROR\", name,\n\t\"Properties.Matcher.GrpcCode\",\n\tsprintf(\"Matcher.GrpcCode is set with ProtocolVersion '%s'; gRPC status codes are only matched on a GRPC target group\", [pv]),\n\t_pf_elbtmgr_fix, _pf_elbtmgr_url) if {\n\tsome name in _pf_elb_tgs\n\tpv := object.get(_pf_elb_props(name), \"ProtocolVersion\", \"HTTP1\")\n\tpv != \"GRPC\"\n\tis_string(resolve(name, \"Properties.Matcher.GrpcCode\"))\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-matcher-range-alb",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "HTTP success codes run from 200 to 499",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtmra_fix := \"Keep Matcher.HttpCode inside 200-499\"\n\n_pf_elbtmra_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-matcher-range-alb\", \"ERROR\", name,\n\t\"Properties.Matcher.HttpCode\",\n\tsprintf(\"Matcher.HttpCode '%s' includes %v, outside the accepted range 200-499\", [code, n]),\n\t_pf_elbtmra_fix, _pf_elbtmra_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_str(name, \"Protocol\") in _pf_elb_alb_protocols\n\tcode := resolve(name, \"Properties.Matcher.HttpCode\")\n\tis_string(code)\n\tsome n in _pf_elb_codes(code)\n\t_pf_elb_outside(n, 200, 499)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-matcher-range-geneve",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A GENEVE target group accepts success codes 200 to 399",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtmrg_fix := \"Keep Matcher.HttpCode inside 200-399\"\n\n_pf_elbtmrg_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-matcher-range-geneve\", \"ERROR\", name,\n\t\"Properties.Matcher.HttpCode\",\n\tsprintf(\"Matcher.HttpCode '%s' includes %v; a GENEVE target group only accepts 200-399\", [code, n]),\n\t_pf_elbtmrg_fix, _pf_elbtmrg_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_str(name, \"Protocol\") == \"GENEVE\"\n\tcode := resolve(name, \"Properties.Matcher.HttpCode\")\n\tis_string(code)\n\tsome n in _pf_elb_codes(code)\n\t_pf_elb_outside(n, 200, 399)\n}\n"
   },
   {
     "id": "pf-elbv2-tg-name",
@@ -8810,6 +10371,50 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_tgname_bad(n) := \"cannot be longer than 32 characters\" if count(n) > 32\n\n_pf_tgname_bad(n) := \"may use only alphanumerics and hyphens, and cannot start or end with a hyphen\" if {\n\tcount(n) <= 32\n\tnot regex.match(`^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$`, n)\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The target group name '%s' %s; ELB rejects the create call\", [n, why]),\n\t\"Rename the target group to at most 32 alphanumeric or hyphen characters, not starting or ending with a hyphen\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\twhy := _pf_tgname_bad(n)\n}\n"
   },
   {
+    "id": "pf-elbv2-tg-protocol-required-non-lambda",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A non-Lambda target group needs Protocol and Port",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtpr_fix := \"Set Protocol and Port (they are only omitted for a lambda target group)\"\n\n_pf_elbtpr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-protocol-required-non-lambda\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [k]),\n\tsprintf(\"TargetType is '%s' but %s is missing; CreateTargetGroup fails with \\\"A target group of type '%s' must have a protocol and a port\\\"\", [t, k, t]),\n\t_pf_elbtpr_fix, _pf_elbtpr_url) if {\n\tsome name in _pf_elb_tgs\n\tt := _pf_elb_tgtype(name)\n\tt != \"lambda\"\n\tsome k in [\"Protocol\", \"Port\"]\n\t_pf_elb_absent(name, k)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-protocol-version-http-only",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "ProtocolVersion belongs to an HTTP or HTTPS target group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtpvh_fix := \"Drop ProtocolVersion, or set Protocol to HTTP or HTTPS\"\n\n_pf_elbtpvh_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-protocol-version-http-only\", \"ERROR\", name,\n\t\"Properties.ProtocolVersion\",\n\tsprintf(\"ProtocolVersion is set on a %s target group; it only applies to HTTP and HTTPS target groups\", [p]),\n\t_pf_elbtpvh_fix, _pf_elbtpvh_url) if {\n\tsome name in _pf_elb_tgs\n\tp := _pf_elb_str(name, \"Protocol\")\n\tnot p in _pf_elb_alb_protocols\n\t_pf_elb_has(name, \"ProtocolVersion\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-protocol-version-values",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "ProtocolVersion is GRPC, HTTP1 or HTTP2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtpvv_fix := \"Use GRPC, HTTP1 or HTTP2\"\n\n_pf_elbtpvv_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-protocol-version-values\", \"ERROR\", name,\n\t\"Properties.ProtocolVersion\",\n\tsprintf(\"ProtocolVersion '%s' is not one of GRPC, HTTP1, HTTP2\", [pv]),\n\t_pf_elbtpvv_fix, _pf_elbtpvv_url) if {\n\tsome name in _pf_elb_tgs\n\tpv := _pf_elb_str(name, \"ProtocolVersion\")\n\tnot pv in {\"GRPC\", \"HTTP1\", \"HTTP2\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-single-load-balancer",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A target group belongs to one load balancer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtgsl_fix := \"Give each load balancer its own target group (the quota cannot be raised)\"\n\n_pf_elbtgsl_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-limits.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-single-load-balancer\", \"ERROR\", g,\n\t\"Properties\",\n\tsprintf(\"The target group is used by %d load balancers; a target group can only be associated with one\", [count(lbs)]),\n\t_pf_elbtgsl_fix, _pf_elbtgsl_url) if {\n\tsome g in _pf_elb_tgs\n\tlbs := {lb |\n\t\tsome p in _pf_elb_listener_tgs\n\t\tp.tg == g\n\t\tlb := _pf_elb_lb_of(p.listener)\n\t}\n\tcount(lbs) > 1\n}\n"
+  },
+  {
     "id": "pf-elbv2-tg-slow-start-range",
     "service": "elbv2",
     "severity": "ERROR",
@@ -8819,6 +10424,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::ElasticLoadBalancingV2::TargetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_slow_start_out(n) if n < 0\n\n_pf_slow_start_out(n) if {\n\tn > 0\n\tn < 30\n}\n\n_pf_slow_start_out(n) if n > 900\n\nviolation contains make_diag_full(\"pf-elbv2-tg-slow-start-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TargetGroupAttributes.%d.Value\", [item.index]),\n\tsprintf(\"slow_start.duration_seconds is %v but must be 0 (disabled) or between 30 and 900 seconds\", [num]),\n\t\"Set slow_start.duration_seconds to 0 or a value between 30 and 900\",\n\t\"https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#slow-start-mode\") if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\tsome item in flatten_list(name, \"Properties.TargetGroupAttributes\")\n\tattr := item.value\n\tis_object(attr)\n\tobject.get(attr, \"Key\", \"\") == \"slow_start.duration_seconds\"\n\tnum := to_number(object.get(attr, \"Value\", null))\n\t_pf_slow_start_out(num)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-target-control-port-scope",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "TargetControlPort needs an HTTP target group of instances or IPs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtcp_fix := \"Drop TargetControlPort unless the target group is HTTP/HTTPS with instance or ip targets\"\n\n_pf_elbtcp_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-target-control-port-scope\", \"ERROR\", name,\n\t\"Properties.TargetControlPort\",\n\tsprintf(\"TargetControlPort is set on a %s target group with target type '%s'; the target optimizer only supports HTTP/HTTPS target groups of instance or ip targets\", [p, t]),\n\t_pf_elbtcp_fix, _pf_elbtcp_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_has(name, \"TargetControlPort\")\n\tp := object.get(_pf_elb_props(name), \"Protocol\", \"none\")\n\tt := _pf_elb_tgtype(name)\n\tnot _pf_elbtcp_ok(p, t)\n}\n\n_pf_elbtcp_ok(p, t) if {\n\tp in _pf_elb_alb_protocols\n\tt in {\"instance\", \"ip\"}\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-target-ip-not-public",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "IP targets are private addresses",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtip_fix := \"Register an address from the VPC CIDR, RFC 1918 or RFC 6598 space\"\n\n_pf_elbtip_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\n_pf_elbtip_private := [\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\", \"100.64.0.0/10\"]\n\n_pf_elbtip_ok(ip) if {\n\tsome cidr in _pf_elbtip_private\n\t_pf_ec2lib_cidr_has_ip(cidr, ip)\n}\n\nviolation contains make_diag_full(\"pf-elbv2-tg-target-ip-not-public\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%d.Id\", [t.index]),\n\tsprintf(\"Target '%s' is a publicly routable address; RegisterTargets only accepts addresses from the VPC CIDR, RFC 1918 or RFC 6598 space\", [ip]),\n\t_pf_elbtip_fix, _pf_elbtip_url) if {\n\tsome name in _pf_elb_tgs\n\t_pf_elb_tgtype(name) == \"ip\"\n\tsome t in flatten_list(name, \"Properties.Targets\")\n\tip := _pf_elb_oget(t.value, \"Id\")\n\t_pf_elb_lit(ip)\n\tregex.match(`^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$`, ip)\n\tnot _pf_elbtip_ok(ip)\n}\n"
+  },
+  {
+    "id": "pf-elbv2-tg-vpc-required-non-lambda",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A non-Lambda target group needs a VpcId",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TargetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtvr_fix := \"Set VpcId to the VPC the targets live in\"\n\n_pf_elbtvr_url := \"https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-tg-vpc-required-non-lambda\", \"ERROR\", name,\n\t\"Properties.VpcId\",\n\tsprintf(\"TargetType is '%s' but VpcId is missing; only a lambda target group may omit it\", [t]),\n\t_pf_elbtvr_fix, _pf_elbtvr_url) if {\n\tsome name in _pf_elb_tgs\n\tt := _pf_elb_tgtype(name)\n\tt != \"lambda\"\n\t_pf_elb_absent(name, \"VpcId\")\n}\n"
+  },
+  {
+    "id": "pf-elbv2-truststore-bundle-key-requires-bucket",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A CA bundle needs both its bucket and its key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TrustStore"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtsb_fix := \"Set CaCertificatesBundleS3Bucket and CaCertificatesBundleS3Key together\"\n\n_pf_elbtsb_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-truststore.html\"\n\n_pf_elbtsb_pairs := [[\"CaCertificatesBundleS3Key\", \"CaCertificatesBundleS3Bucket\"], [\"CaCertificatesBundleS3Bucket\", \"CaCertificatesBundleS3Key\"]]\n\nviolation contains make_diag_full(\"pf-elbv2-truststore-bundle-key-requires-bucket\", \"ERROR\", name,\n\tsprintf(\"Properties.%s\", [pair[1]]),\n\tsprintf(\"'%s' is set without '%s'; the trust store needs the whole S3 location of the CA bundle\", [pair[0], pair[1]]),\n\t_pf_elbtsb_fix, _pf_elbtsb_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TrustStore\")\n\tsome pair in _pf_elbtsb_pairs\n\t_pf_elb_has(name, pair[0])\n\t_pf_elb_absent(name, pair[1])\n}\n"
+  },
+  {
+    "id": "pf-elbv2-truststore-revocation-content-required",
+    "service": "elbv2",
+    "severity": "ERROR",
+    "title": "A trust store revocation carries a revocation list",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::ElasticLoadBalancingV2::TrustStoreRevocation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_elbtsr_fix := \"Add RevocationContents pointing at the CRL in S3\"\n\n_pf_elbtsr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-truststorerevocation.html\"\n\nviolation contains make_diag_full(\"pf-elbv2-truststore-revocation-content-required\", \"ERROR\", name,\n\t\"Properties.RevocationContents\",\n\t\"The revocation has no RevocationContents, so there is nothing to add to the trust store\",\n\t_pf_elbtsr_fix, _pf_elbtsr_url) if {\n\tsome name in resources_of_type(\"AWS::ElasticLoadBalancingV2::TrustStoreRevocation\")\n\t_pf_elb_absent(name, \"RevocationContents\")\n}\n"
   },
   {
     "id": "pf-events-apidestination-endpoint",
@@ -15573,6 +17233,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/efs",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the EFS rules (rules/efs/pf-efs-*).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# [partition, service, region, account, resource...] of a literal ARN.\n_pf_efslib_arn(s) := parts if {\n\tis_string(s)\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n}\n\n_pf_efslib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The file system resource a mount target / access point points at, when it is\n# declared in the same template (Ref or Fn::GetAtt both resolve to the id).\n_pf_efslib_fs_of(name) := fs if {\n\tfs := resolve(name, \"Properties.FileSystemId\")\n\tfs in resources_of_type(\"AWS::EFS::FileSystem\")\n}\n\n# The subnet a mount target uses, when the subnet is in the same template.\n_pf_efslib_subnet_of(name) := sub if {\n\tsub := resolve(name, \"Properties.SubnetId\")\n\tsub in resources_of_type(\"AWS::EC2::Subnet\")\n}\n\n# Availability zone of that subnet, when it is written as a literal.\n_pf_efslib_subnet_az(name) := az if {\n\taz := resolve(_pf_efslib_subnet_of(name), \"Properties.AvailabilityZone\")\n\tis_string(az)\n\tnot input.resources[az]\n}\n\n_pf_efslib_vpc_of(res) := vpc if {\n\tvpc := resolve(res, \"Properties.VpcId\")\n\tvpc in resources_of_type(\"AWS::EC2::VPC\")\n}\n\n# ponytail: IPv4 only — the engine has no net.cidr_* builtins and an Ipv6Address\n# outside the subnet is rarer than a hand-picked IPv4. IPv6 addresses are skipped.\n# IPv4 dotted quad as a number; undefined for anything else.\n_pf_efslib_ip(s) := n if {\n\tis_string(s)\n\tparts := split(s, \".\")\n\tcount(parts) == 4\n\ta := to_number(parts[0])\n\tb := to_number(parts[1])\n\tc := to_number(parts[2])\n\td := to_number(parts[3])\n\tn := (((a * 16777216) + (b * 65536)) + (c * 256)) + d\n}\n\n# [network number, block size] of an IPv4 CIDR; undefined for anything else.\n_pf_efslib_cidr(s) := [base, size] if {\n\tis_string(s)\n\tparts := split(s, \"/\")\n\tcount(parts) == 2\n\tbase := _pf_efslib_ip(parts[0])\n\tprefix := to_number(parts[1])\n\tprefix >= 0\n\tprefix <= 32\n\tsize := bits.lsh(1, 32 - prefix)\n}\n\n_pf_efslib_in_cidr(ip, cidr) if {\n\t[base, size] := _pf_efslib_cidr(cidr)\n\tn := _pf_efslib_ip(ip)\n\tfloor(n / size) == floor(base / size)\n}\n"
+  },
+  {
+    "name": "_lib/elbv2",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the ELBv2 rules. The three attribute properties\n# (LoadBalancerAttributes / TargetGroupAttributes / ListenerAttributes) are\n# [{Key, Value}] string pairs, so every value arrives as a string and every\n# lookup goes through _pf_elb_attrset (a set, so a duplicated key never turns\n# into an object-comprehension conflict that silences the other rules).\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_elb_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_elb_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absence has to be proven against the raw document: resolve() cannot tell\n# \"absent\" from \"unresolvable\".\n_pf_elb_absent(name, key) if {\n\tobject.get(object.get(input.resources[name], \"properties\", {}), key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_elb_oget(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_elb_ohas(o, k) if {\n\t_pf_elb_oget(o, k)\n}\n\n_pf_elb_get(name, k) := _pf_elb_oget(_pf_elb_props(name), k)\n\n_pf_elb_has(name, k) if {\n\tnot _pf_elb_absent(name, k)\n}\n\n_pf_elb_str(name, k) := v if {\n\tv := resolve(name, sprintf(\"Properties.%s\", [k]))\n\tis_string(v)\n}\n\n# Attribute values are strings; ordinary properties are numbers.\n_pf_elb_num(v) := v if is_number(v)\n\n_pf_elb_num(v) := n if {\n\tis_string(v)\n\tregex.match(`^-?[0-9]+$`, v)\n\tn := to_number(v)\n}\n\n# A Ref that survives inside a list is {\"__ref\": \"<logical id>\"} (flatten_list\n# does not resolve it the way resolve() does on a scalar property).\n_pf_elb_ref(v) := v if is_string(v)\n\n_pf_elb_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n_pf_elb_lbs := resources_of_type(\"AWS::ElasticLoadBalancingV2::LoadBalancer\")\n\n_pf_elb_tgs := resources_of_type(\"AWS::ElasticLoadBalancingV2::TargetGroup\")\n\n_pf_elb_listeners := resources_of_type(\"AWS::ElasticLoadBalancingV2::Listener\")\n\n# application unless stated otherwise (the CFN default).\n_pf_elb_lbtype(lb) := t if {\n\tt := object.get(_pf_elb_props(lb), \"Type\", \"application\")\n\tis_string(t)\n}\n\n# The load balancer a listener points at, only when it lives in this template.\n_pf_elb_lb_of(listener) := lb if {\n\tlb := resolve(listener, \"Properties.LoadBalancerArn\")\n\tlb in _pf_elb_lbs\n}\n\n_pf_elb_listener_lbtype(listener) := _pf_elb_lbtype(_pf_elb_lb_of(listener))\n\n_pf_elb_listener_of(rule) := l if {\n\tl := resolve(rule, \"Properties.ListenerArn\")\n\tl in _pf_elb_listeners\n}\n\n# Every value carried under one attribute key. Empty when the key is absent.\n_pf_elb_attrset(name, prop, key) := {v |\n\tsome it in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tobject.get(it.value, \"Key\", null) == key\n\tv := object.get(it.value, \"Value\", null)\n}\n\n_pf_elb_attrhas(name, prop, key) if {\n\tcount(_pf_elb_attrset(name, prop, key)) > 0\n}\n\n# The single value of an attribute key, when it is written exactly once.\n_pf_elb_attr(name, prop, key) := v if {\n\ts := _pf_elb_attrset(name, prop, key)\n\tcount(s) == 1\n\tsome v in s\n}\n\n_pf_elb_secure := {\"HTTPS\", \"TLS\"}\n\n# LoadBalancerAttributes: which keys the service recognises per load balancer\n# type. Common -> every type; the ALB/NLB pair adds logging and IGW/zonal\n# shift; the rest are type-only.\n_pf_elb_lbattr_common := {\"deletion_protection.enabled\", \"load_balancing.cross_zone.enabled\"}\n\n_pf_elb_lbattr_shared := {\n\t\"access_logs.s3.enabled\", \"access_logs.s3.bucket\", \"access_logs.s3.prefix\",\n\t\"ipv6.deny_all_igw_traffic\", \"zonal_shift.config.enabled\",\n}\n\n_pf_elb_lbattr_alb := {\n\t\"idle_timeout.timeout_seconds\", \"client_keep_alive.seconds\",\n\t\"connection_logs.s3.enabled\", \"connection_logs.s3.bucket\", \"connection_logs.s3.prefix\",\n\t\"health_check_logs.s3.enabled\", \"health_check_logs.s3.bucket\", \"health_check_logs.s3.prefix\",\n\t\"routing.http.desync_mitigation_mode\", \"routing.http.drop_invalid_header_fields.enabled\",\n\t\"routing.http.preserve_host_header.enabled\", \"routing.http.x_amzn_tls_version_and_cipher_suite.enabled\",\n\t\"routing.http.xff_client_port.enabled\", \"routing.http.xff_header_processing.mode\",\n\t\"routing.http2.enabled\", \"waf.fail_open.enabled\",\n}\n\n_pf_elb_lbattr_nlb := {\"dns_record.client_routing_policy\", \"secondary_ips.auto_assigned.per_subnet\"}\n\n_pf_elb_lbattr_for := {\n\t\"application\": (_pf_elb_lbattr_common | _pf_elb_lbattr_shared) | _pf_elb_lbattr_alb,\n\t\"network\": (_pf_elb_lbattr_common | _pf_elb_lbattr_shared) | _pf_elb_lbattr_nlb,\n\t\"gateway\": _pf_elb_lbattr_common,\n}\n\n_pf_elb_lbattr_known := (_pf_elb_lbattr_for.application | _pf_elb_lbattr_for.network) | _pf_elb_lbattr_for.gateway\n\n# Every [{Key, Value}] pair of one attribute property, as {index, key, value}.\n_pf_elb_pairs(name, prop) := [{\"index\": it.index, \"key\": k, \"value\": object.get(it.value, \"Value\", null)} |\n\tsome it in flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\tk := object.get(it.value, \"Key\", null)\n\tis_string(k)\n]\n\n# Attribute keys that only take \"true\" or \"false\".\n_pf_elb_bool_key(k) if endswith(k, \".enabled\")\n\n_pf_elb_bool_key(k) if k == \"ipv6.deny_all_igw_traffic\"\n\n_pf_elb_outside(v, lo, _) if v < lo\n\n_pf_elb_outside(v, _, hi) if v > hi\n\n_pf_elb_tgtype(tg) := t if {\n\tt := object.get(_pf_elb_props(tg), \"TargetType\", \"instance\")\n\tis_string(t)\n}\n\n# Matcher.HttpCode / Matcher.GrpcCode are \"200\", \"200,202\" or \"200-299\".\n_pf_elb_codes(s) := [n |\n\tsome part in split(s, \",\")\n\tsome b in split(part, \"-\")\n\tt := trim_space(b)\n\tregex.match(`^[0-9]+$`, t)\n\tn := to_number(t)\n]\n\n_pf_elb_hc_protocols := {\"HTTP\", \"HTTPS\", \"TCP\"}\n\n_pf_elb_alb_protocols := {\"HTTP\", \"HTTPS\"}\n\n# TargetGroupAttributes are scoped by the protocol family of the target group\n# (a target group is created before it is attached to any load balancer).\n_pf_elb_tgfamily(tg) := \"lambda\" if _pf_elb_tgtype(tg) == \"lambda\"\n\n_pf_elb_tgfamily(tg) := f if {\n\t_pf_elb_tgtype(tg) != \"lambda\"\n\tp := object.get(_pf_elb_props(tg), \"Protocol\", \"\")\n\tf := _pf_elb_family_of[p]\n}\n\n_pf_elb_family_of := {\n\t\"HTTP\": \"application\", \"HTTPS\": \"application\",\n\t\"TCP\": \"network\", \"TLS\": \"network\", \"UDP\": \"network\",\n\t\"TCP_UDP\": \"network\", \"QUIC\": \"network\", \"TCP_QUIC\": \"network\",\n\t\"GENEVE\": \"gateway\",\n}\n\n_pf_elb_tgattr_common := {\"deregistration_delay.timeout_seconds\", \"stickiness.enabled\", \"stickiness.type\"}\n\n_pf_elb_tgattr_shared := {\n\t\"load_balancing.cross_zone.enabled\",\n\t\"target_group_health.dns_failover.minimum_healthy_targets.count\",\n\t\"target_group_health.dns_failover.minimum_healthy_targets.percentage\",\n\t\"target_group_health.unhealthy_state_routing.minimum_healthy_targets.count\",\n\t\"target_group_health.unhealthy_state_routing.minimum_healthy_targets.percentage\",\n}\n\n_pf_elb_tgattr_alb := {\n\t\"load_balancing.algorithm.type\", \"load_balancing.algorithm.anomaly_mitigation\",\n\t\"slow_start.duration_seconds\", \"stickiness.app_cookie.cookie_name\",\n\t\"stickiness.app_cookie.duration_seconds\", \"stickiness.lb_cookie.duration_seconds\",\n}\n\n_pf_elb_tgattr_nlb := {\n\t\"deregistration_delay.connection_termination.enabled\", \"preserve_client_ip.enabled\",\n\t\"proxy_protocol_v2.enabled\", \"target_health_state.unhealthy.connection_termination.enabled\",\n\t\"target_health_state.unhealthy.draining_interval_seconds\",\n}\n\n_pf_elb_tgattr_gwlb := {\n\t\"target_failover.on_deregistration\", \"target_failover.on_unhealthy\",\n\t\"send_tcp_reset.on_unhealthy.enabled\", \"send_tcp_reset.on_deregistration.enabled\",\n}\n\n_pf_elb_tgattr_lambda := {\"lambda.multi_value_headers.enabled\"}\n\n_pf_elb_tgattr_for := {\n\t\"application\": (_pf_elb_tgattr_common | _pf_elb_tgattr_shared) | _pf_elb_tgattr_alb,\n\t\"network\": (_pf_elb_tgattr_common | _pf_elb_tgattr_shared) | _pf_elb_tgattr_nlb,\n\t\"gateway\": _pf_elb_tgattr_common | _pf_elb_tgattr_gwlb,\n\t\"lambda\": _pf_elb_tgattr_common | _pf_elb_tgattr_lambda,\n}\n\n_pf_elb_tgattr_known := ((_pf_elb_tgattr_for.application | _pf_elb_tgattr_for.network) |\n\t_pf_elb_tgattr_for.gateway) | _pf_elb_tgattr_for.lambda\n\n_pf_elb_region := r if {\n\tr := data.cdk_preflight.deploy_region\n\tis_string(r)\n}\n\n_pf_elb_arn_part(arn, i) := v if {\n\tis_string(arn)\n\tp := split(arn, \":\")\n\tcount(p) >= 6\n\tp[0] == \"arn\"\n\tv := p[i]\n\tv != \"\"\n}\n\n_pf_elb_arn_service(arn) := _pf_elb_arn_part(arn, 2)\n\n_pf_elb_arn_region(arn) := _pf_elb_arn_part(arn, 3)\n\n# The predefined security policies, from the ALB and NLB \"security policies\"\n# tables (2026-09). ELBSecurityPolicy-2015-05 appears only in the NLB table.\n_pf_elb_sslpolicy_nlb_only := {\"ELBSecurityPolicy-2015-05\"}\n\n_pf_elb_sslpolicies := _pf_elb_sslpolicy_nlb_only | {\n\t\"ELBSecurityPolicy-2016-08\", \"ELBSecurityPolicy-FS-1-1-2019-08\",\n\t\"ELBSecurityPolicy-FS-1-2-2019-08\", \"ELBSecurityPolicy-FS-1-2-Res-2019-08\",\n\t\"ELBSecurityPolicy-FS-1-2-Res-2020-10\", \"ELBSecurityPolicy-FS-2018-06\",\n\t\"ELBSecurityPolicy-TLS-1-1-2017-01\", \"ELBSecurityPolicy-TLS-1-2-2017-01\",\n\t\"ELBSecurityPolicy-TLS-1-2-Ext-2018-06\",\n\t\"ELBSecurityPolicy-TLS13-1-0-2021-06\", \"ELBSecurityPolicy-TLS13-1-0-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-0-FIPS-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-0-PQ-2025-09\",\n\t\"ELBSecurityPolicy-TLS13-1-1-2021-06\", \"ELBSecurityPolicy-TLS13-1-1-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-2-2021-06\", \"ELBSecurityPolicy-TLS13-1-2-Ext0-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Ext0-FIPS-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-2-Ext0-RFC9151-FIPS-2023-07\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Ext1-2021-06\", \"ELBSecurityPolicy-TLS13-1-2-Ext1-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Ext1-FIPS-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-2-Ext1-PQ-2025-09\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Ext2-2021-06\", \"ELBSecurityPolicy-TLS13-1-2-Ext2-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Ext2-FIPS-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-2-Ext2-PQ-2025-09\",\n\t\"ELBSecurityPolicy-TLS13-1-2-FIPS-2023-04\", \"ELBSecurityPolicy-TLS13-1-2-FIPS-PQ-2025-09\",\n\t\"ELBSecurityPolicy-TLS13-1-2-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-2-RFC9151-FIPS-2023-07\",\n\t\"ELBSecurityPolicy-TLS13-1-2-RFC9151-INTEROP1-FIPS-2023-07\",\n\t\"ELBSecurityPolicy-TLS13-1-2-RFC9151-INTEROP2-FIPS-2023-07\",\n\t\"ELBSecurityPolicy-TLS13-1-2-RFC9151-INTEROP3-FIPS-2023-07\",\n\t\"ELBSecurityPolicy-TLS13-1-2-RFC9151-INTEROP4-FIPS-2023-07\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Res-2021-06\", \"ELBSecurityPolicy-TLS13-1-2-Res-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-2-Res-FIPS-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09\",\n\t\"ELBSecurityPolicy-TLS13-1-3-2021-06\", \"ELBSecurityPolicy-TLS13-1-3-FIPS-2023-04\",\n\t\"ELBSecurityPolicy-TLS13-1-3-FIPS-PQ-2025-09\", \"ELBSecurityPolicy-TLS13-1-3-PQ-2025-09\",\n\t\"ELBSecurityPolicy-TLS13-1-3-RFC9151-FIPS-2023-07\",\n}\n\n# An action list ends on one of these.\n_pf_elb_routing_actions := {\"forward\", \"redirect\", \"fixed-response\"}\n\n_pf_elb_action_config := {\n\t\"ForwardConfig\": \"forward\",\n\t\"AuthenticateCognitoConfig\": \"authenticate-cognito\",\n\t\"AuthenticateOidcConfig\": \"authenticate-oidc\",\n\t\"RedirectConfig\": \"redirect\",\n\t\"FixedResponseConfig\": \"fixed-response\",\n}\n\n_pf_elb_actions(name, prop) := flatten_list(name, sprintf(\"Properties.%s\", [prop]))\n\n# Actions live on two properties, so every action rule walks both.\n_pf_elb_action_lists := [\n\t[\"AWS::ElasticLoadBalancingV2::Listener\", \"DefaultActions\"],\n\t[\"AWS::ElasticLoadBalancingV2::ListenerRule\", \"Actions\"],\n]\n\n_pf_elb_all_actions contains {\"name\": name, \"prop\": entry[1], \"index\": a.index, \"value\": a.value} if {\n\tsome entry in _pf_elb_action_lists\n\tsome name in resources_of_type(entry[0])\n\tsome a in _pf_elb_actions(name, entry[1])\n}\n\n# The listener an action runs on (a rule's actions run on its listener).\n_pf_elb_action_listener(name) := name if name in _pf_elb_listeners\n\n_pf_elb_action_listener(name) := _pf_elb_listener_of(name) if {\n\tname in resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerRule\")\n}\n\n_pf_elb_listener_proto(name) := object.get(_pf_elb_props(_pf_elb_action_listener(name)), \"Protocol\", \"\")\n\n# The target groups a forward action spreads over.\n_pf_elb_fwd_tgs(a) := tgs if {\n\tfc := object.get(a, \"ForwardConfig\", {})\n\tis_object(fc)\n\ttgs := object.get(fc, \"TargetGroups\", [])\n\tis_array(tgs)\n}\n\n# A target group in this template, from a TargetGroupTuple.\n_pf_elb_tuple_tg(tg) := g if {\n\tg := _pf_elb_ref(object.get(tg, \"TargetGroupArn\", null))\n\tg in _pf_elb_tgs\n}\n\n_pf_elb_auth_configs := {\"AuthenticateOidcConfig\", \"AuthenticateCognitoConfig\"}\n\n_pf_elb_true := {true, \"true\"}\n\n# ListenerAttributes: the idle timeout is a Network/Gateway knob, the TCP reset\n# a Gateway one, and everything else (mTLS header names, response headers) is\n# Application only.\n_pf_elb_lsattr_alb := {\n\t\"routing.http.request.x_amzn_mtls_clientcert.header_name\",\n\t\"routing.http.request.x_amzn_mtls_clientcert_serial_number.header_name\",\n\t\"routing.http.request.x_amzn_mtls_clientcert_issuer.header_name\",\n\t\"routing.http.request.x_amzn_mtls_clientcert_subject.header_name\",\n\t\"routing.http.request.x_amzn_mtls_clientcert_validity.header_name\",\n\t\"routing.http.request.x_amzn_mtls_clientcert_leaf.header_name\",\n\t\"routing.http.request.x_amzn_tls_version.header_name\",\n\t\"routing.http.request.x_amzn_tls_cipher_suite.header_name\",\n\t\"routing.http.response.server.enabled\",\n\t\"routing.http.response.strict_transport_security.header_value\",\n\t\"routing.http.response.access_control_allow_origin.header_value\",\n\t\"routing.http.response.access_control_allow_methods.header_value\",\n\t\"routing.http.response.access_control_allow_headers.header_value\",\n\t\"routing.http.response.access_control_allow_credentials.header_value\",\n\t\"routing.http.response.access_control_expose_headers.header_value\",\n\t\"routing.http.response.access_control_max_age.header_value\",\n\t\"routing.http.response.content_security_policy.header_value\",\n\t\"routing.http.response.x_content_type_options.header_value\",\n\t\"routing.http.response.x_frame_options.header_value\",\n}\n\n_pf_elb_lsattr_for := {\n\t\"application\": _pf_elb_lsattr_alb,\n\t\"network\": {\"tcp.idle_timeout.seconds\"},\n\t\"gateway\": {\"tcp.idle_timeout.seconds\", \"send_tcp_reset.on_idle_timeout.enabled\"},\n}\n\n_pf_elb_lsattr_known := (_pf_elb_lsattr_for.application | _pf_elb_lsattr_for.network) | _pf_elb_lsattr_for.gateway\n\n_pf_elb_rules := resources_of_type(\"AWS::ElasticLoadBalancingV2::ListenerRule\")\n\n# The *Config that belongs to each RuleCondition.Field.\n_pf_elb_cond_config := {\n\t\"host-header\": \"HostHeaderConfig\",\n\t\"path-pattern\": \"PathPatternConfig\",\n\t\"http-header\": \"HttpHeaderConfig\",\n\t\"http-request-method\": \"HttpRequestMethodConfig\",\n\t\"query-string\": \"QueryStringConfig\",\n\t\"source-ip\": \"SourceIpConfig\",\n}\n\n_pf_elb_conditions(rule) := flatten_list(rule, \"Properties.Conditions\")\n\n_pf_elb_cond_cfg(cond) := c if {\n\tf := object.get(cond, \"Field\", \"\")\n\tc := object.get(cond, object.get(_pf_elb_cond_config, f, \"\"), {})\n\tis_object(c)\n}\n\n# Values / RegexValues can sit on the condition itself or inside its *Config.\n_pf_elb_cond_list(o, key) := l if {\n\tl := object.get(o, key, [])\n\tis_array(l)\n}\n\n_pf_elb_cond_of(cond, key) := array.concat(\n\t_pf_elb_cond_list(cond, key),\n\t_pf_elb_cond_list(_pf_elb_cond_cfg(cond), key),\n)\n\n_pf_elb_cond_values(cond) := array.concat(_pf_elb_cond_of(cond, \"Values\"), _pf_elb_cond_of(cond, \"RegexValues\"))\n\n# The target groups one action forwards to, from either shape.\n_pf_elb_action_tgs(a) := {g |\n\tsome tg in array.concat([{\"TargetGroupArn\": object.get(a, \"TargetGroupArn\", null)}], _pf_elb_fwd_tgs(a))\n\tg := _pf_elb_tuple_tg(tg)\n}\n\n# Every (listener, target group) pair this template wires up.\n_pf_elb_listener_tgs contains {\"listener\": l, \"tg\": g} if {\n\tsome a in _pf_elb_all_actions\n\tl := _pf_elb_action_listener(a.name)\n\tsome g in _pf_elb_action_tgs(a.value)\n}\n\n# The target group protocols each listener protocol accepts. QUIC is left out\n# on purpose: the docs only pin down TCP_QUIC.\n_pf_elb_lproto_tgproto := {\n\t\"HTTP\": {\"HTTP\", \"HTTPS\"},\n\t\"HTTPS\": {\"HTTP\", \"HTTPS\"},\n\t\"TCP\": {\"TCP\", \"TLS\", \"TCP_UDP\"},\n\t\"TLS\": {\"TCP\", \"TLS\", \"TCP_UDP\"},\n\t\"UDP\": {\"UDP\", \"TCP_UDP\"},\n\t\"TCP_UDP\": {\"TCP_UDP\"},\n\t\"TCP_QUIC\": {\"TCP_QUIC\"},\n\t\"GENEVE\": {\"GENEVE\"},\n}\n\n# The VPC of a load balancer, when its subnets are resources of this template.\n_pf_elb_lb_vpc(lb) := v if {\n\tvpcs := {x |\n\t\tsome s in flatten_list(lb, \"Properties.Subnets\")\n\t\tsub := _pf_elb_ref(s.value)\n\t\tx := resolve(sub, \"Properties.VpcId\")\n\t}\n\tcount(vpcs) == 1\n\tsome v in vpcs\n}\n"
   },
   {
     "name": "_lib/events",

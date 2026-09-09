@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-protocol-version-values
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "ProtocolVersion is GRPC, HTTP1 or HTTP2"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Target group protocol version 'HTTP/2' must be one of '[HTTP2, HTTP1, GRPC]'\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

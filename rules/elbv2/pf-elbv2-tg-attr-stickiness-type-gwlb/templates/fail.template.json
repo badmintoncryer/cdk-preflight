@@ -1,0 +1,21 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "GENEVE",
+        "Port": 6081,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "ip",
+        "HealthCheckProtocol": "TCP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "stickiness.type",
+            "Value": "source_ip"
+          }
+        ]
+      }
+    }
+  }
+}

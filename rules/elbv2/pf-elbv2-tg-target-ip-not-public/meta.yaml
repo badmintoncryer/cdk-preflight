@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-target-ip-not-public
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "IP targets are private addresses"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The IP address '8.8.8.8' is not allowed, as it must be an address from a VPC subnet, RFC1918, or RFC6598\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

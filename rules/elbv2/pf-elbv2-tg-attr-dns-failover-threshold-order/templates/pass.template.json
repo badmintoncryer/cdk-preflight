@@ -1,0 +1,24 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance",
+        "TargetGroupAttributes": [
+          {
+            "Key": "target_group_health.dns_failover.minimum_healthy_targets.percentage",
+            "Value": "50"
+          },
+          {
+            "Key": "target_group_health.unhealthy_state_routing.minimum_healthy_targets.percentage",
+            "Value": "20"
+          }
+        ]
+      }
+    }
+  }
+}

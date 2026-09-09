@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "SubnetMappings": [
+          {
+            "SubnetId": "subnet-2e0a500f",
+            "SourceNatIpv6Prefix": "2600:1f13:1::/64"
+          }
+        ],
+        "IpAddressType": "dualstack"
+      }
+    }
+  }
+}

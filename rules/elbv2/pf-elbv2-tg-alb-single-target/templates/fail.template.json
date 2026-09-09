@@ -1,0 +1,22 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "TCP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/a/1"
+          },
+          {
+            "Id": "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/b/2"
+          }
+        ]
+      }
+    }
+  }
+}

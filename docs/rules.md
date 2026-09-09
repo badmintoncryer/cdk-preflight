@@ -787,19 +787,167 @@
 | `pf-elasticache-user-authentication` | AWS::ElastiCache::User | A user needs exactly one authentication mode, and passwords are 16-128 characters with at most two per user | none |
 | `pf-elasticache-user-group-default-user` | AWS::ElastiCache::UserGroup | A Redis user group must contain a user named default, and a Valkey group rejects password-less users | none |
 | `pf-elasticache-user-group-transit-encryption` | AWS::ElastiCache::ReplicationGroup | UserGroupIds requires in-transit encryption | none |
+| `pf-elbv2-action-cognito-userpool-region` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | The Cognito user pool sits in the load balancer region | none |
+| `pf-elbv2-action-fixed-response-content-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A fixed response uses one of the five supported content types | none |
+| `pf-elbv2-action-forward-same-ip-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Target groups in one forward action share a IP address type | none |
+| `pf-elbv2-action-forward-same-protocol` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Target groups in one forward action share a protocol | none |
+| `pf-elbv2-action-forward-stickiness-duration-range` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Target group stickiness lasts between 1 and 604800 seconds | none |
+| `pf-elbv2-action-forward-stickiness-duration-required` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Enabled target group stickiness carries a duration | none |
+| `pf-elbv2-action-forward-stickiness-tls` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A TLS listener cannot turn on target group stickiness | none |
+| `pf-elbv2-action-forward-tg-count-max` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A forward action spreads over at most five target groups | none |
+| `pf-elbv2-action-forward-tgarn-conflict` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | TargetGroupArn and ForwardConfig name the same single target group | none |
+| `pf-elbv2-action-forward-weight-range` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A target group weight is between 0 and 999 | none |
+| `pf-elbv2-action-forward-weight-required-multi` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Every target group of a multi-target forward action has a weight | none |
+| `pf-elbv2-action-oidc-endpoint-https` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Every OIDC endpoint is a full HTTPS URL | none |
+| `pf-elbv2-action-oidc-extra-params-max` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | An authentication action carries at most ten extra parameters | none |
+| `pf-elbv2-action-oidc-on-unauthenticated-values` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | OnUnauthenticatedRequest is deny, allow or authenticate | none |
+| `pf-elbv2-action-redirect-https-to-http` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | An HTTPS listener does not redirect down to HTTP | none |
+| `pf-elbv2-action-redirect-no-change` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A redirect changes at least one part of the URI | none |
+| `pf-elbv2-action-redirect-path-leading-slash` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A redirect path is absolute | none |
+| `pf-elbv2-action-redirect-port-value` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A redirect port is a port number or #{port} | none |
+| `pf-elbv2-action-redirect-status-code` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A redirect answers with HTTP_301 or HTTP_302 | none |
+| `pf-elbv2-action-session-timeout-range` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | An authentication session lasts between 1 and 604800 seconds | none |
 | `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | none |
 | `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | none |
 | `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | none |
 | `pf-elbv2-lambda-target-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Lambda target groups cannot specify Protocol | none |
+| `pf-elbv2-lb-attr-access-logs-bucket-required` | AWS::ElasticLoadBalancingV2::LoadBalancer | Enabling access logs needs the destination bucket | none |
+| `pf-elbv2-lb-attr-alb-cross-zone-immutable` | AWS::ElasticLoadBalancingV2::LoadBalancer | Cross-zone load balancing cannot be turned off on an application load balancer | none |
+| `pf-elbv2-lb-attr-alb-only-on-gwlb` | AWS::ElasticLoadBalancingV2::LoadBalancer | A gateway load balancer takes only the two common attributes | none |
+| `pf-elbv2-lb-attr-boolean-value` | AWS::ElasticLoadBalancingV2::LoadBalancer | A boolean load balancer attribute takes only true or false | none |
+| `pf-elbv2-lb-attr-client-keep-alive-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | The client keep-alive duration is 60-604800 seconds | none |
+| `pf-elbv2-lb-attr-connection-logs-bucket-required` | AWS::ElasticLoadBalancingV2::LoadBalancer | Enabling connection logs needs the destination bucket | none |
+| `pf-elbv2-lb-attr-count-max` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer carries at most 20 attributes | none |
+| `pf-elbv2-lb-attr-desync-mitigation-mode` | AWS::ElasticLoadBalancingV2::LoadBalancer | Desync mitigation mode is monitor, defensive or strictest | none |
+| `pf-elbv2-lb-attr-dns-record-client-routing-policy` | AWS::ElasticLoadBalancingV2::LoadBalancer | The DNS client routing policy is one of three zonal affinity values | none |
+| `pf-elbv2-lb-attr-duplicate-key` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key appears at most once | none |
+| `pf-elbv2-lb-attr-key-known` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key must be one the service recognises | none |
+| `pf-elbv2-lb-attr-key-lb-type` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key is bound to the load balancer type | none |
+| `pf-elbv2-lb-attr-secondary-ips-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | Auto-assigned secondary IPs per subnet are 0-7 | none |
+| `pf-elbv2-lb-attr-xff-header-processing-mode` | AWS::ElasticLoadBalancingV2::LoadBalancer | X-Forwarded-For processing is append, preserve or remove | none |
+| `pf-elbv2-lb-dualstack-no-public-ipv4-alb-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | dualstack-without-public-ipv4 is an application load balancer address type | none |
+| `pf-elbv2-lb-eip-nlb-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | Only a network load balancer takes Elastic IPs | none |
+| `pf-elbv2-lb-eip-with-private-ipv4` | AWS::ElasticLoadBalancingV2::LoadBalancer | One subnet mapping cannot carry both an Elastic IP and a private IPv4 address | none |
+| `pf-elbv2-lb-enforce-sg-privatelink-nlb-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | PrivateLink inbound-rule enforcement is a network load balancer setting | none |
+| `pf-elbv2-lb-enforce-sg-privatelink-requires-sg` | AWS::ElasticLoadBalancingV2::LoadBalancer | PrivateLink inbound-rule enforcement needs security groups on the load balancer | none |
+| `pf-elbv2-lb-gwlb-no-scheme` | AWS::ElasticLoadBalancingV2::LoadBalancer | A gateway load balancer cannot declare a Scheme | none |
+| `pf-elbv2-lb-gwlb-no-security-groups` | AWS::ElasticLoadBalancingV2::LoadBalancer | A gateway load balancer cannot carry security groups | none |
 | `pf-elbv2-lb-idle-timeout-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | ALB idle_timeout.timeout_seconds must be between 1 and 4000 | none |
+| `pf-elbv2-lb-ipv6-address-internet-facing-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | A mapped IPv6 address needs an internet-facing load balancer | none |
+| `pf-elbv2-lb-mtls-verify-listener-max` | AWS::ElasticLoadBalancingV2::LoadBalancer<br>AWS::ElasticLoadBalancingV2::Listener | A load balancer runs at most two mTLS verify listeners | none |
 | `pf-elbv2-lb-name` | AWS::ElasticLoadBalancingV2::LoadBalancer | Load balancer names are at most 32 alphanumeric/hyphen chars and cannot begin with internal- or a hyphen | none |
+| `pf-elbv2-lb-one-subnet-per-az` | AWS::ElasticLoadBalancingV2::LoadBalancer<br>AWS::EC2::Subnet | A load balancer takes at most one subnet per availability zone | none |
+| `pf-elbv2-lb-private-ipv4-internal-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | A private IPv4 address needs an internal network load balancer | none |
+| `pf-elbv2-lb-sg-vpc-match` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer security group lives in the VPC of its subnets | none |
+| `pf-elbv2-lb-source-nat-prefix-netmask` | AWS::ElasticLoadBalancingV2::LoadBalancer | A source NAT IPv6 prefix is a /80 or auto_assigned | none |
+| `pf-elbv2-lb-source-nat-prefix-nlb-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | IPv6 source NAT prefixes are a network load balancer feature | none |
+| `pf-elbv2-lb-source-nat-prefix-requires-dualstack` | AWS::ElasticLoadBalancingV2::LoadBalancer | IPv6 source NAT prefixes need a dualstack load balancer | none |
+| `pf-elbv2-listener-action-config-type-match` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | An action config must match the action type | none |
+| `pf-elbv2-listener-action-order-required` | AWS::ElasticLoadBalancingV2::Listener | Several actions on one listener need an explicit order | none |
+| `pf-elbv2-listener-alb-target-tg-listener-protocol` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::TargetGroup | A target group of Application Load Balancers hangs off a TCP listener | none |
+| `pf-elbv2-listener-alpn-single` | AWS::ElasticLoadBalancingV2::Listener | A listener carries a single ALPN policy | none |
+| `pf-elbv2-listener-alpn-tls-only` | AWS::ElasticLoadBalancingV2::Listener | ALPN is negotiated on a TLS listener only | none |
+| `pf-elbv2-listener-alpn-values` | AWS::ElasticLoadBalancingV2::Listener | An ALPN policy is one of five named values | none |
+| `pf-elbv2-listener-attr-header-name-format` | AWS::ElasticLoadBalancingV2::Listener | A renamed request header is a valid HTTP header name | none |
+| `pf-elbv2-listener-attr-key-known` | AWS::ElasticLoadBalancingV2::Listener | A listener attribute key is one the service knows | none |
+| `pf-elbv2-listener-attr-key-lb-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | A listener attribute belongs to the load balancer type it is set on | none |
+| `pf-elbv2-listener-attr-server-enabled-value` | AWS::ElasticLoadBalancingV2::Listener | The response server header switch is true or false | none |
+| `pf-elbv2-listener-attr-tcp-idle-timeout-range` | AWS::ElasticLoadBalancingV2::Listener | The TCP idle timeout runs from 60 to 6000 seconds | none |
+| `pf-elbv2-listener-attr-x-content-type-options-value` | AWS::ElasticLoadBalancingV2::Listener | X-Content-Type-Options is nosniff | none |
+| `pf-elbv2-listener-attr-x-frame-options-value` | AWS::ElasticLoadBalancingV2::Listener | X-Frame-Options is DENY or SAMEORIGIN | none |
+| `pf-elbv2-listener-auth-action-https-only` | AWS::ElasticLoadBalancingV2::Listener | Authentication actions need an HTTPS listener | none |
+| `pf-elbv2-listener-cert-exactly-one` | AWS::ElasticLoadBalancingV2::Listener | A listener declares a single default certificate | none |
+| `pf-elbv2-listener-cert-insecure-protocol` | AWS::ElasticLoadBalancingV2::Listener | Only an HTTPS or TLS listener takes a certificate | none |
+| `pf-elbv2-listener-cert-not-acm-or-iam` | AWS::ElasticLoadBalancingV2::Listener | A listener certificate comes from ACM or IAM | none |
+| `pf-elbv2-listener-cert-region` | AWS::ElasticLoadBalancingV2::Listener | A listener certificate lives in the load balancer region | none |
+| `pf-elbv2-listener-certificate-region` | AWS::ElasticLoadBalancingV2::ListenerCertificate | An extra certificate lives in the load balancer region | none |
+| `pf-elbv2-listener-certificate-secure-listener` | AWS::ElasticLoadBalancingV2::ListenerCertificate<br>AWS::ElasticLoadBalancingV2::Listener | Extra certificates go on an HTTPS or TLS listener | none |
+| `pf-elbv2-listener-default-action-routing-last` | AWS::ElasticLoadBalancingV2::Listener | The last default action routes the request | none |
+| `pf-elbv2-listener-mtls-advertise-verify-only` | AWS::ElasticLoadBalancingV2::Listener | Advertising trust store CA names only applies to verify mode | none |
+| `pf-elbv2-listener-mtls-https-only` | AWS::ElasticLoadBalancingV2::Listener | Mutual authentication is an HTTPS listener feature | none |
+| `pf-elbv2-listener-mtls-ignore-expiry-verify-only` | AWS::ElasticLoadBalancingV2::Listener | Ignoring certificate expiry only applies to verify mode | none |
+| `pf-elbv2-listener-mtls-mode-values` | AWS::ElasticLoadBalancingV2::Listener | The mutual authentication mode is off, passthrough or verify | none |
+| `pf-elbv2-listener-mtls-truststore-region` | AWS::ElasticLoadBalancingV2::Listener | A trust store lives in the load balancer region | none |
+| `pf-elbv2-listener-mtls-truststore-required` | AWS::ElasticLoadBalancingV2::Listener | Verify mode needs a trust store | none |
+| `pf-elbv2-listener-mtls-truststore-verify-only` | AWS::ElasticLoadBalancingV2::Listener | A trust store only belongs to verify mode | none |
+| `pf-elbv2-listener-nlb-action-forward-only` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | A network or gateway load balancer listener only forwards | none |
+| `pf-elbv2-listener-port-required` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | A listener needs a port unless it is on a gateway load balancer | none |
 | `pf-elbv2-listener-protocol-lb-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | Listener protocols must match the load balancer type | none |
+| `pf-elbv2-listener-sslpolicy-known` | AWS::ElasticLoadBalancingV2::Listener | A security policy name must be one the service predefines | none |
+| `pf-elbv2-listener-sslpolicy-secure-only` | AWS::ElasticLoadBalancingV2::Listener | A security policy belongs to an HTTPS or TLS listener | none |
+| `pf-elbv2-listener-tg-protocol-match` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::TargetGroup | A listener forwards to a target group of a compatible protocol | none |
+| `pf-elbv2-listener-tg-vpc-match` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::TargetGroup | A target group lives in the VPC of the load balancer | none |
+| `pf-elbv2-listener-udp-dualstack` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | A dualstack network load balancer takes no UDP listener | none |
+| `pf-elbv2-rule-actions-exactly-one-routing` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule ends on exactly one routing action | none |
+| `pf-elbv2-rule-condition-duplicate-field` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule uses each single-valued condition field once | none |
+| `pf-elbv2-rule-condition-empty-values` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule condition matches at least one value | none |
+| `pf-elbv2-rule-condition-field-config-match` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule condition carries the config that belongs to its field | none |
+| `pf-elbv2-rule-condition-field-values` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule condition uses one of the six condition fields | none |
+| `pf-elbv2-rule-condition-values-max` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule matches at most five condition values | none |
+| `pf-elbv2-rule-conditions-required` | AWS::ElasticLoadBalancingV2::ListenerRule | A listener rule has at least one condition | none |
+| `pf-elbv2-rule-host-header-format` | AWS::ElasticLoadBalancingV2::ListenerRule | A host-header value is a host name | none |
+| `pf-elbv2-rule-http-header-name-length` | AWS::ElasticLoadBalancingV2::ListenerRule | An http-header condition names a header of at most 40 characters | none |
+| `pf-elbv2-rule-http-header-not-host` | AWS::ElasticLoadBalancingV2::ListenerRule | The Host header is matched by a host-header condition | none |
+| `pf-elbv2-rule-http-method-charset` | AWS::ElasticLoadBalancingV2::ListenerRule | An HTTP method condition is written in upper case | none |
 | `pf-elbv2-rule-priority-unique` | AWS::ElasticLoadBalancingV2::ListenerRule | Listener rules on the same listener must have distinct priorities | none |
+| `pf-elbv2-rule-regex-and-values-exclusive` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule condition matches either literals or a regex | none |
+| `pf-elbv2-rule-regex-values-fields` | AWS::ElasticLoadBalancingV2::ListenerRule | Only three condition fields take a regular expression | none |
+| `pf-elbv2-rule-source-ip-cidr` | AWS::ElasticLoadBalancingV2::ListenerRule | A source-ip condition takes CIDR blocks | none |
+| `pf-elbv2-rule-value-length-128` | AWS::ElasticLoadBalancingV2::ListenerRule | A condition value is at most 128 characters | none |
 | `pf-elbv2-stickiness-type-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Stickiness type lb_cookie needs an HTTP-protocol target group, source_ip a TCP one | none |
 | `pf-elbv2-tcp-health-check-path` | AWS::ElasticLoadBalancingV2::TargetGroup | TCP health checks cannot take a health check path | none |
+| `pf-elbv2-tg-alb-single-target` | AWS::ElasticLoadBalancingV2::TargetGroup | A target group of type alb holds a single load balancer | none |
+| `pf-elbv2-tg-alb-target-type-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | A target group of Application Load Balancers speaks TCP | none |
+| `pf-elbv2-tg-attr-algorithm-type` | AWS::ElasticLoadBalancingV2::TargetGroup | The load balancing algorithm is one of three named values | none |
+| `pf-elbv2-tg-attr-anomaly-mitigation-requires-weighted-random` | AWS::ElasticLoadBalancingV2::TargetGroup | Anomaly mitigation needs the weighted random algorithm | none |
+| `pf-elbv2-tg-attr-anomaly-mitigation-value` | AWS::ElasticLoadBalancingV2::TargetGroup | Anomaly mitigation is on or off | none |
+| `pf-elbv2-tg-attr-app-cookie-duration-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Application cookie stickiness lasts 1-604800 seconds | none |
+| `pf-elbv2-tg-attr-boolean-value` | AWS::ElasticLoadBalancingV2::TargetGroup | A boolean target group attribute takes only true or false | none |
+| `pf-elbv2-tg-attr-cross-zone-value` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group cross-zone load balancing takes a third value | none |
+| `pf-elbv2-tg-attr-dereg-delay-lambda` | AWS::ElasticLoadBalancingV2::TargetGroup | A Lambda target group has no deregistration delay | none |
+| `pf-elbv2-tg-attr-dns-failover-threshold-order` | AWS::ElasticLoadBalancingV2::TargetGroup | The DNS failover threshold is at least the unhealthy-state routing threshold | none |
+| `pf-elbv2-tg-attr-draining-interval-requires-termination-off` | AWS::ElasticLoadBalancingV2::TargetGroup | An unhealthy draining interval needs connection termination off | none |
+| `pf-elbv2-tg-attr-duplicate-key` | AWS::ElasticLoadBalancingV2::TargetGroup | A target group attribute key appears at most once | none |
+| `pf-elbv2-tg-attr-health-count-value` | AWS::ElasticLoadBalancingV2::TargetGroup | A minimum healthy target count is off or a positive integer | none |
+| `pf-elbv2-tg-attr-health-percentage-range` | AWS::ElasticLoadBalancingV2::TargetGroup | A minimum healthy target percentage is off or 1-100 | none |
+| `pf-elbv2-tg-attr-key-known` | AWS::ElasticLoadBalancingV2::TargetGroup | A target group attribute key must be one the service recognises | none |
+| `pf-elbv2-tg-attr-key-protocol-scope` | AWS::ElasticLoadBalancingV2::TargetGroup | A target group attribute key is bound to the target group protocol | none |
+| `pf-elbv2-tg-attr-lambda-scope` | AWS::ElasticLoadBalancingV2::TargetGroup | Multi-value headers are a Lambda target group setting | none |
+| `pf-elbv2-tg-attr-lb-cookie-duration-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Load balancer cookie stickiness lasts 1-604800 seconds | none |
+| `pf-elbv2-tg-attr-preserve-client-ip-udp` | AWS::ElasticLoadBalancingV2::TargetGroup | Client IP preservation cannot be turned off for UDP target groups | none |
+| `pf-elbv2-tg-attr-send-tcp-reset-gwlb-only` | AWS::ElasticLoadBalancingV2::TargetGroup | TCP reset attributes belong to a GENEVE target group | none |
+| `pf-elbv2-tg-attr-slow-start-scope` | AWS::ElasticLoadBalancingV2::TargetGroup | Slow start needs an HTTP target group of instances or IPs | none |
+| `pf-elbv2-tg-attr-stickiness-type-gwlb` | AWS::ElasticLoadBalancingV2::TargetGroup | A GENEVE target group sticks on the IP tuple | none |
+| `pf-elbv2-tg-attr-target-failover-pair-equal` | AWS::ElasticLoadBalancingV2::TargetGroup | The two target failover attributes must agree | none |
+| `pf-elbv2-tg-attr-target-failover-value` | AWS::ElasticLoadBalancingV2::TargetGroup | Target failover is rebalance or no_rebalance | none |
+| `pf-elbv2-tg-attr-unhealthy-draining-interval-range` | AWS::ElasticLoadBalancingV2::TargetGroup | The unhealthy draining interval is 0-360000 seconds | none |
 | `pf-elbv2-tg-deregistration-delay-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group deregistration_delay.timeout_seconds must be between 0 and 3600 | none |
+| `pf-elbv2-tg-geneve-port` | AWS::ElasticLoadBalancingV2::TargetGroup | A GENEVE target group listens on port 6081 | none |
+| `pf-elbv2-tg-hc-enabled-required` | AWS::ElasticLoadBalancingV2::TargetGroup | Health checks can only be turned off for a Lambda target group | none |
+| `pf-elbv2-tg-hc-port-format` | AWS::ElasticLoadBalancingV2::TargetGroup | The health check port is traffic-port or a port number | none |
+| `pf-elbv2-tg-hc-protocol-unsupported` | AWS::ElasticLoadBalancingV2::TargetGroup | Health checks run over HTTP, HTTPS or TCP only | none |
+| `pf-elbv2-tg-hc-tcp-for-http-tg` | AWS::ElasticLoadBalancingV2::TargetGroup | An HTTP or HTTPS target group is health checked over HTTP or HTTPS | none |
+| `pf-elbv2-tg-ipv6-with-ipv4-lb` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::TargetGroup | An IPv6 target group needs a dualstack load balancer | none |
+| `pf-elbv2-tg-ipv6-with-lambda` | AWS::ElasticLoadBalancingV2::TargetGroup | A Lambda target group has no IPv6 address type | none |
+| `pf-elbv2-tg-ipv6-with-quic` | AWS::ElasticLoadBalancingV2::TargetGroup | QUIC target groups are IPv4 | none |
+| `pf-elbv2-tg-lambda-no-port` | AWS::ElasticLoadBalancingV2::TargetGroup | A Lambda target group cannot declare a Port | none |
+| `pf-elbv2-tg-lambda-no-vpc` | AWS::ElasticLoadBalancingV2::TargetGroup | A Lambda target group cannot declare a VpcId | none |
+| `pf-elbv2-tg-lambda-single-target` | AWS::ElasticLoadBalancingV2::TargetGroup | A Lambda target group holds a single function | none |
+| `pf-elbv2-tg-matcher-grpc-range` | AWS::ElasticLoadBalancingV2::TargetGroup | gRPC status codes run from 0 to 99 | none |
+| `pf-elbv2-tg-matcher-grpc-requires-grpc` | AWS::ElasticLoadBalancingV2::TargetGroup | A gRPC matcher needs ProtocolVersion GRPC | none |
+| `pf-elbv2-tg-matcher-range-alb` | AWS::ElasticLoadBalancingV2::TargetGroup | HTTP success codes run from 200 to 499 | none |
+| `pf-elbv2-tg-matcher-range-geneve` | AWS::ElasticLoadBalancingV2::TargetGroup | A GENEVE target group accepts success codes 200 to 399 | none |
 | `pf-elbv2-tg-name` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group names are at most 32 alphanumeric/hyphen chars and cannot start or end with a hyphen | none |
+| `pf-elbv2-tg-protocol-required-non-lambda` | AWS::ElasticLoadBalancingV2::TargetGroup | A non-Lambda target group needs Protocol and Port | none |
+| `pf-elbv2-tg-protocol-version-http-only` | AWS::ElasticLoadBalancingV2::TargetGroup | ProtocolVersion belongs to an HTTP or HTTPS target group | none |
+| `pf-elbv2-tg-protocol-version-values` | AWS::ElasticLoadBalancingV2::TargetGroup | ProtocolVersion is GRPC, HTTP1 or HTTP2 | none |
+| `pf-elbv2-tg-single-load-balancer` | AWS::ElasticLoadBalancingV2::TargetGroup | A target group belongs to one load balancer | none |
 | `pf-elbv2-tg-slow-start-range` | AWS::ElasticLoadBalancingV2::TargetGroup | Target group slow_start.duration_seconds must be 0 or between 30 and 900 | none |
+| `pf-elbv2-tg-target-control-port-scope` | AWS::ElasticLoadBalancingV2::TargetGroup | TargetControlPort needs an HTTP target group of instances or IPs | none |
+| `pf-elbv2-tg-target-ip-not-public` | AWS::ElasticLoadBalancingV2::TargetGroup | IP targets are private addresses | none |
+| `pf-elbv2-tg-vpc-required-non-lambda` | AWS::ElasticLoadBalancingV2::TargetGroup | A non-Lambda target group needs a VpcId | none |
+| `pf-elbv2-truststore-bundle-key-requires-bucket` | AWS::ElasticLoadBalancingV2::TrustStore | A CA bundle needs both its bucket and its key | none |
+| `pf-elbv2-truststore-revocation-content-required` | AWS::ElasticLoadBalancingV2::TrustStoreRevocation | A trust store revocation carries a revocation list | none |
 | `pf-events-apidestination-endpoint` | AWS::Events::ApiDestination | An API destination needs an HTTPS endpoint and a same-Region connection | none |
 | `pf-events-archive-source` | AWS::Events::Archive | An archive source must be an event bus in the archive's Region | none |
 | `pf-events-bus-dlq-arn-type` | AWS::Events::EventBus | An event bus dead-letter queue must be an SQS queue | none |

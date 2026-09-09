@@ -1,0 +1,25 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "GENEVE",
+        "Port": 6081,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "ip",
+        "HealthCheckProtocol": "TCP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "target_failover.on_deregistration",
+            "Value": "rebalance"
+          },
+          {
+            "Key": "target_failover.on_unhealthy",
+            "Value": "no_rebalance"
+          }
+        ]
+      }
+    }
+  }
+}

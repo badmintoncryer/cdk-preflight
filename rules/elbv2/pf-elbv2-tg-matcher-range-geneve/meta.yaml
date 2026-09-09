@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-matcher-range-geneve
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A GENEVE target group accepts success codes 200 to 399"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Custom health check matchers are not supported for the requested target group\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

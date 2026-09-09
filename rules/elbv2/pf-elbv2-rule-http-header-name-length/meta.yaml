@@ -1,0 +1,12 @@
+id: pf-elbv2-rule-http-header-name-length
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::ListenerRule]
+severity: ERROR
+title: "An http-header condition names a header of at most 40 characters"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_RuleCondition.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Condition value for 'http-header' cannot contain more than 40 characters\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

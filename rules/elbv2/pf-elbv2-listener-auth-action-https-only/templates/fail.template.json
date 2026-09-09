@@ -1,0 +1,55 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Subnets": [
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
+        ],
+        "SecurityGroups": [
+          "sg-7d699f61"
+        ]
+      }
+    },
+    "TG": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "HTTP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "instance"
+      }
+    },
+    "Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LB"
+        },
+        "DefaultActions": [
+          {
+            "Type": "authenticate-cognito",
+            "Order": 1,
+            "AuthenticateCognitoConfig": {
+              "UserPoolArn": "arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_aaaaaaaaa",
+              "UserPoolClientId": "1example23456789",
+              "UserPoolDomain": "example"
+            }
+          },
+          {
+            "Type": "forward",
+            "Order": 2,
+            "TargetGroupArn": {
+              "Ref": "TG"
+            }
+          }
+        ],
+        "Port": 80,
+        "Protocol": "HTTP"
+      }
+    }
+  }
+}

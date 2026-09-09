@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "SubnetMappings": [
+          {
+            "SubnetId": "subnet-2e0a500f",
+            "PrivateIPv4Address": "10.0.1.5"
+          }
+        ],
+        "Scheme": "internet-facing"
+      }
+    }
+  }
+}

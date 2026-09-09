@@ -1,0 +1,12 @@
+id: pf-elbv2-lb-enforce-sg-privatelink-nlb-only
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
+severity: ERROR
+title: "PrivateLink inbound-rule enforcement is a network load balancer setting"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateLoadBalancer.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"This security group setting for PrivateLink traffic is only available for Network Load Balancers with security groups\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

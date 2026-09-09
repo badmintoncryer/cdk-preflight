@@ -1,0 +1,12 @@
+id: pf-elbv2-tg-alb-single-target
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
+severity: ERROR
+title: "A target group of type alb holds a single load balancer"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Up to '1' Application Load Balancer target(s) can be registered, but '2' were specified\"; the pass template reached CREATE_COMPLETE."
+addedOn: 2026-09-08

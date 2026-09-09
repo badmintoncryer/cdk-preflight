@@ -1854,16 +1854,16 @@ describe('elbv2 rules', () => {
   });
 
   test('listener protocol rule: NLB QUIC is legal per the service allow-set; literal LB ARNs stay silent', () => {
-    const nlb = (proto: string, lbRef: unknown = { Ref: 'L' }) => ({
+    const nlb = (proto: string, lbRef: unknown = { Ref: 'L' }, tgProto = 'TCP') => ({
       Resources: {
         L: { Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer', Properties: { Type: 'network', Scheme: 'internal', Subnets: ['subnet-11112222', 'subnet-33334444'] } },
-        T: { Type: 'AWS::ElasticLoadBalancingV2::TargetGroup', Properties: { Protocol: 'TCP', Port: 80, VpcId: VPC, TargetType: 'instance' } },
+        T: { Type: 'AWS::ElasticLoadBalancingV2::TargetGroup', Properties: { Protocol: tgProto, Port: 80, VpcId: VPC, TargetType: 'instance' } },
         S: { Type: 'AWS::ElasticLoadBalancingV2::Listener', Properties: { LoadBalancerArn: lbRef, Protocol: proto, Port: 80, DefaultActions: [{ Type: 'forward', TargetGroupArn: { Ref: 'T' } }] } },
       },
     });
     expect(ids(diagnoseTemplate(nlb('QUIC')))).toHaveLength(0);
-    expect(ids(diagnoseTemplate(nlb('HTTP')))).toContain('pf-elbv2-listener-protocol-lb-type');
-    expect(ids(diagnoseTemplate(nlb('HTTP', 'arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/net/x/1')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(nlb('HTTP', { Ref: 'L' }, 'HTTP')))).toContain('pf-elbv2-listener-protocol-lb-type');
+    expect(ids(diagnoseTemplate(nlb('HTTP', 'arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/net/x/1', 'HTTP')))).toHaveLength(0);
   });
 
   test('alb subnet count ignores NLBs and SubnetMappings-based load balancers', () => {
@@ -1876,8 +1876,8 @@ describe('elbv2 rules', () => {
   test('rule priorities only clash on the same listener', () => {
     const two = (arn2: unknown) => ({
       Resources: {
-        R1: { Type: 'AWS::ElasticLoadBalancingV2::ListenerRule', Properties: { ListenerArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/a', Priority: 10, Conditions: [], Actions: [] } },
-        R2: { Type: 'AWS::ElasticLoadBalancingV2::ListenerRule', Properties: { ListenerArn: arn2, Priority: 10, Conditions: [], Actions: [] } },
+        R1: { Type: 'AWS::ElasticLoadBalancingV2::ListenerRule', Properties: { ListenerArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/a', Priority: 10, Conditions: [{ Field: 'path-pattern', PathPatternConfig: { Values: ['/a'] } }], Actions: [{ Type: 'forward', TargetGroupArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/t/50dc6c495c0c9188' }] } },
+        R2: { Type: 'AWS::ElasticLoadBalancingV2::ListenerRule', Properties: { ListenerArn: arn2, Priority: 10, Conditions: [{ Field: 'path-pattern', PathPatternConfig: { Values: ['/a'] } }], Actions: [{ Type: 'forward', TargetGroupArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/t/50dc6c495c0c9188' }] } },
       },
     });
     expect(ids(diagnoseTemplate(two('arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/a')))).toContain('pf-elbv2-rule-priority-unique');
