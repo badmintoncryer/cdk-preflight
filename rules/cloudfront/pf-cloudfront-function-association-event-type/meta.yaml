@@ -1,0 +1,12 @@
+id: pf-cloudfront-function-association-event-type
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'CloudFront Functions only support viewer-request and viewer-response'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation errors detected: Value ''origin-request'' at ''distributionConfig.defaultCacheBehavior.functionAssociations.items.1.member.eventType'' failed to satisfy constraint: Member must satisfy value set: [viewer-request, viewer-response] (Service: CloudFront, Status Code: 400, Request ID: 4f7d087d-e602-4940-89b4-42c3f4e23a7a) (SDK Atte'
+addedOn: 2026-09-08
+benchRegion: us-east-1

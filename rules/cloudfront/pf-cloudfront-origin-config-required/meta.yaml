@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-config-required
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'Every origin must declare exactly one origin type configuration'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: Exactly one of CustomOriginConfig, VpcOriginConfig and S3OriginConfig must be specified" (RequestToken: dae6b097-f93e-a329-40be-b9669d3188d5, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-cache-behavior-target-origin-exists
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'Cache behavior TargetOriginId must match an origin or origin group Id'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: One or more of your cache behavior target origins or origin groups do not exist. (Service: CloudFront, Status Code: 404, Request ID: 3566a999-0f54-48cf-932a-4c4e1dbecaf2) (SDK Attempt Count: 1)" (RequestToken: b55eccee-e8ca-803a-b413-53501b421734, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

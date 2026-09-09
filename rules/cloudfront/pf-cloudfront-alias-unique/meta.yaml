@@ -1,0 +1,12 @@
+id: pf-cloudfront-alias-unique
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'Aliases must not contain duplicates'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The specified SSL certificate doesn''t exist, isn''t in us-east-1 region, isn''t valid, or doesn''t include a valid certificate chain. (Service: CloudFront, Status Code: 400, Request ID: 99fb663e-413c-4318-9b8f-6d2b191693e4) (SDK Attempt Count: 1)" (RequestToken: e9e133a3-d270-cf0b-dce4-dc95c18b409f, HandlerEr'
+addedOn: 2026-09-08
+benchRegion: us-east-1

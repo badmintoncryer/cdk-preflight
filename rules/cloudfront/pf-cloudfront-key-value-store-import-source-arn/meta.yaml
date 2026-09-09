@@ -1,0 +1,12 @@
+id: pf-cloudfront-key-value-store-import-source-arn
+service: cloudfront
+resourceTypes: [AWS::CloudFront::KeyValueStore]
+severity: ERROR
+title: 'KeyValueStore ImportSource SourceArn must be an S3 object ARN'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keyvaluestore.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::KeyValueStore: The parameter SourceARN is invalid. (Service: CloudFront, Status Code: 400, Request ID: 19a83bec-f04d-44e8-ac32-830d3845cef4) (SDK Attempt Count: 1)" (RequestToken: 01a6a8eb-0e5f-b05d-51cd-eb715b3ffd7a, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

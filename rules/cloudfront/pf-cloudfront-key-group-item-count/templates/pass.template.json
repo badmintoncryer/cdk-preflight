@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::KeyGroup",
+      "Properties": {
+        "KeyGroupConfig": {
+          "Name": "kg",
+          "Items": [
+            "k1",
+            "k2",
+            "k3",
+            "k4",
+            "k5"
+          ]
+        }
+      }
+    }
+  }
+}

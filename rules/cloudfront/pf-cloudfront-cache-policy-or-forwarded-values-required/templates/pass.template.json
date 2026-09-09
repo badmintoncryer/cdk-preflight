@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": false,
+          "Origins": [
+            {
+              "Id": "o1",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "http-only"
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "o1",
+            "ViewerProtocolPolicy": "allow-all",
+            "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"
+          }
+        }
+      }
+    }
+  }
+}

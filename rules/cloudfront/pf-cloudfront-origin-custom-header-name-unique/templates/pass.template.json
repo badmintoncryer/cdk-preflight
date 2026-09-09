@@ -1,0 +1,38 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": false,
+          "Origins": [
+            {
+              "Id": "o1",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "http-only"
+              },
+              "OriginCustomHeaders": [
+                {
+                  "HeaderName": "X-A",
+                  "HeaderValue": "1"
+                },
+                {
+                  "HeaderName": "X-B",
+                  "HeaderValue": "2"
+                }
+              ]
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "o1",
+            "ViewerProtocolPolicy": "allow-all",
+            "ForwardedValues": {
+              "QueryString": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

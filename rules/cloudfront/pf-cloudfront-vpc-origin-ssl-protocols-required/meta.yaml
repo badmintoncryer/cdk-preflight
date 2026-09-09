@@ -1,0 +1,12 @@
+id: pf-cloudfront-vpc-origin-ssl-protocols-required
+service: cloudfront
+resourceTypes: [AWS::CloudFront::VpcOrigin]
+severity: ERROR
+title: 'An HTTPS-capable VPC origin must list OriginSSLProtocols'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::VpcOrigin: The parameter VpcOriginEndpointConfig Arn contains a mismatched AWS account. (Service: CloudFront, Status Code: 400, Request ID: 35c0ab1c-72dc-47f7-8a52-800fc8a1eb14) (SDK Attempt Count: 1)" (RequestToken: ec52a80b-1a5e-6805-276c-5453f938af62, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

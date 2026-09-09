@@ -1,0 +1,12 @@
+id: pf-cloudfront-key-group-item-unique
+service: cloudfront
+resourceTypes: [AWS::CloudFront::KeyGroup]
+severity: ERROR
+title: 'A key group must not list the same public key twice'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keygroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::KeyGroup: The specified CloudFront public key does not exist in key group. (Service: CloudFront, Status Code: 400, Request ID: 1e5e4c7f-52dc-414e-b5c8-656968623082) (SDK Attempt Count: 1)" (RequestToken: a3a7c1aa-b192-e4f2-3d96-44cd7a941e48, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

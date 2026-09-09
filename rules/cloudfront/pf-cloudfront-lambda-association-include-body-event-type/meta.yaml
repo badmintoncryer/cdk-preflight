@@ -1,0 +1,12 @@
+id: pf-cloudfront-lambda-association-include-body-event-type
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'IncludeBody is only valid for viewer-request and origin-request'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The CloudFront distribution under account 214794239830 cannot be associated with a Lambda function under a different account: 111122223333. Function: arn:aws:lambda:us-east-1:111122223333:function:f:1 (Service: CloudFront, Status Code: 400, Request ID: e4d53b5d-4efa-457f-b79e-968cbe121ee8) (SDK Attempt Cou'
+addedOn: 2026-09-08
+benchRegion: us-east-1

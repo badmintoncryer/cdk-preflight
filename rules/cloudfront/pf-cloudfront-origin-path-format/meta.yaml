@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-path-format
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'OriginPath must start with / and must not end with /'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter originPath contains one or more parameters that are not valid. (Service: CloudFront, Status Code: 400, Request ID: 1a3e42e2-9927-40b7-a4ea-ce14c65ab3d8) (SDK Attempt Count: 1)" (RequestToken: b6ecca1d-f5b3-1242-a352-49bc32682465, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

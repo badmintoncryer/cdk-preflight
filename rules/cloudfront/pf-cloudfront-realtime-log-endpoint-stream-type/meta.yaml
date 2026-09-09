@@ -1,0 +1,12 @@
+id: pf-cloudfront-realtime-log-endpoint-stream-type
+service: cloudfront
+resourceTypes: [AWS::CloudFront::RealtimeLogConfig]
+severity: ERROR
+title: 'Real-time log endpoints must have StreamType Kinesis'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-realtimelogconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Access denied for operation ''AWS::CloudFront::RealtimeLogConfig''." (RequestToken: 95f6323d-dc3d-a21d-2b44-b3a1e725c56c, HandlerErrorCode: AccessDenied)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

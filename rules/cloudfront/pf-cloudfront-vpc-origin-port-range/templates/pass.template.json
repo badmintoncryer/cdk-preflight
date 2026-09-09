@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::VpcOrigin",
+      "Properties": {
+        "VpcOriginEndpointConfig": {
+          "Name": "vo",
+          "Arn": "arn:aws:elasticloadbalancing:us-east-1:111122223333:loadbalancer/app/x/50dc6c495c0c9188",
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only"
+        }
+      }
+    }
+  }
+}

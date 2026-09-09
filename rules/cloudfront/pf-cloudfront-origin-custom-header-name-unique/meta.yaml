@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-custom-header-name-unique
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'OriginCustomHeaders header names must be unique per origin'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter HeaderName : X-A is invalid as it is a duplicate. (Service: CloudFront, Status Code: 400, Request ID: 538ff055-a36f-4fa7-b311-319c4836c64a) (SDK Attempt Count: 1)" (RequestToken: d88ce779-14f8-f9a6-6f21-5a7171fe39f7, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

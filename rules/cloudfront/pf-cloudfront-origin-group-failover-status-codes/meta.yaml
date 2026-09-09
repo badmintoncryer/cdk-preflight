@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-group-failover-status-codes
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'Origin group failover status codes are limited to a fixed set'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter StatusCodes cannot include [418] status codes for an origin group. Valid status codes are the following: [400, 403, 404, 416, 429, 500, 502, 503, 504]. (Service: CloudFront, Status Code: 400, Request ID: 5a571b8b-d9d7-4c42-88fe-0862ee4abe2c) (SDK Attempt Count: 1)" (RequestToken: 4fec780f-4ec'
+addedOn: 2026-09-08
+benchRegion: us-east-1

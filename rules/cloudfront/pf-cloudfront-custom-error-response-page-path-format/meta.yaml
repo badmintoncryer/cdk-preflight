@@ -1,0 +1,12 @@
+id: pf-cloudfront-custom-error-response-page-path-format
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'ResponsePagePath must start with /'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter ResponsePagePath is invalid. (Service: CloudFront, Status Code: 400, Request ID: 7b661cea-34aa-4c85-87d9-6c5608b5859c) (SDK Attempt Count: 1)" (RequestToken: 6a177961-685a-aebf-8cb9-861b321ca8c2, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

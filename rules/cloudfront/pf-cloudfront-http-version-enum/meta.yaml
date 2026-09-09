@@ -1,0 +1,12 @@
+id: pf-cloudfront-http-version-enum
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'HttpVersion must be http1.1, http2, http2and3 or http3'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation error detected: Value ''http4'' at ''distributionConfigWithTags.distributionConfig.httpVersion'' failed to satisfy constraint: Member must satisfy enum value set: [http2and3, http2, http3, http1.1] (Service: CloudFront, Status Code: 400, Request ID: 2a85c44e-0919-42d2-a8f2-cc2649b2217c) (SDK Attempt Count: 1)" (RequestToken: aa'
+addedOn: 2026-09-08
+benchRegion: us-east-1

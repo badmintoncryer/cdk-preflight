@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::AnycastIpList",
+      "Properties": {
+        "Name": "ail",
+        "IpCount": 5
+      }
+    }
+  }
+}

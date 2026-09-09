@@ -1,0 +1,12 @@
+id: pf-cloudfront-continuous-deployment-header-prefix
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ContinuousDeploymentPolicy]
+severity: ERROR
+title: 'SingleHeaderConfig Header must start with aws-cf-cd-'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ContinuousDeploymentPolicy: The parameter StagingDistributionDnsNames is not a default CloudFront domain name. (Service: CloudFront, Status Code: 400, Request ID: 05408e29-ee1f-4f8d-ad99-f87c24614567) (SDK Attempt Count: 1)" (RequestToken: bc159652-364b-8545-b216-c29e6a6744e9, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

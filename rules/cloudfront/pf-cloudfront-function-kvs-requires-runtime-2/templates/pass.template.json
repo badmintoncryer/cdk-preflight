@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::Function",
+      "Properties": {
+        "Name": "f1",
+        "AutoPublish": true,
+        "FunctionCode": "function handler(e){return e.request}",
+        "FunctionConfig": {
+          "Comment": "c",
+          "Runtime": "cloudfront-js-2.0",
+          "KeyValueStoreAssociations": [
+            {
+              "KeyValueStoreARN": "arn:aws:cloudfront::111122223333:key-value-store/11111111-2222-3333-4444-555555555555"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::PublicKey",
+      "Properties": {
+        "PublicKeyConfig": {
+          "Name": "pk",
+          "CallerReference": "r1",
+          "EncodedKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234\n-----END PUBLIC KEY-----"
+        }
+      }
+    }
+  }
+}

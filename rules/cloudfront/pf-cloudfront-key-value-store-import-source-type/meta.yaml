@@ -1,0 +1,12 @@
+id: pf-cloudfront-key-value-store-import-source-type
+service: cloudfront
+resourceTypes: [AWS::CloudFront::KeyValueStore]
+severity: ERROR
+title: 'KeyValueStore ImportSource SourceType must be S3'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keyvaluestore.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation error detected: Value ''HTTP'' at ''importSource.sourceType'' failed to satisfy constraint: Member must satisfy enum value set: [S3] (Service: CloudFront, Status Code: 400, Request ID: bb17ae1b-37f7-4ff6-83e4-6487288e3b5b) (SDK Attempt Count: 1)" (RequestToken: 9a70c68e-b169-78f2-334b-c38e3cf3231d, HandlerErrorCode: InvalidRequ'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-staging-requires-no-aliases
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'A staging distribution cannot have Aliases'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Aliases is set for a staging distribution. (Service: CloudFront, Status Code: 400, Request ID: 33972f4a-de60-47cd-92c5-cc0821079b43) (SDK Attempt Count: 1)" (RequestToken: 52617371-0b94-59fd-3362-dfda10c5aa2f, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

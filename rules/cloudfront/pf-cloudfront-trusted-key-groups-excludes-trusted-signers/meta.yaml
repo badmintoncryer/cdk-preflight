@@ -1,0 +1,12 @@
+id: pf-cloudfront-trusted-key-groups-excludes-trusted-signers
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'TrustedKeyGroups and TrustedSigners cannot both be used on a cache behavior'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter TrustedSigners|KeyGroups Both can''t be enabled in cache behavior. (Service: CloudFront, Status Code: 400, Request ID: 98e1c071-3424-4e46-91da-782c07ae44e9) (SDK Attempt Count: 1)" (RequestToken: bfddc447-3d4e-a6c9-e5d6-1e45a4a7f571, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

@@ -1,0 +1,12 @@
+id: pf-cloudfront-rhp-content-security-policy-length
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'ContentSecurityPolicy is limited to 1783 characters'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Limit exceeded for resource of type ''AWS::CloudFront::ResponseHeadersPolicy''. Reason: Your request contains longer Content Security Policy value in the Response Headers Policy than is allowed. (Service: CloudFront, Status Code: 400, Request ID: 5e791741-a89d-4f2e-9e76-93077c5c1b65) (SDK Attempt Count: 1)" (RequestToken: 4deb5322-f0a6-4226-fb41-cbaa0558e41b, Hand'
+addedOn: 2026-09-08
+benchRegion: us-east-1

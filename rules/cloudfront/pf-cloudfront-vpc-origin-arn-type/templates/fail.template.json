@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::VpcOrigin",
+      "Properties": {
+        "VpcOriginEndpointConfig": {
+          "Name": "vo",
+          "Arn": "arn:aws:s3:::my-bucket",
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only"
+        }
+      }
+    }
+  }
+}

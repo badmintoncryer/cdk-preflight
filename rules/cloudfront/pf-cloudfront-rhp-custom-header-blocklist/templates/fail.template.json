@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": "p1",
+          "CustomHeadersConfig": {
+            "Items": [
+              {
+                "Header": "Transfer-Encoding",
+                "Value": "chunked",
+                "Override": true
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

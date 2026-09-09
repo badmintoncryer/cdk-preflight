@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": "p1",
+          "CustomHeadersConfig": {
+            "Items": [
+              {
+                "Header": "X-A",
+                "Value": "1",
+                "Override": true
+              },
+              {
+                "Header": "x-a",
+                "Value": "2",
+                "Override": true
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

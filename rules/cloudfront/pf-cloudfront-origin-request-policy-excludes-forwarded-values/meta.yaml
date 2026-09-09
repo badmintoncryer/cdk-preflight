@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-request-policy-excludes-forwarded-values
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'A cache behavior cannot set both OriginRequestPolicyId and ForwardedValues'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Origin request policy cannot be attached without a cache policy. (Service: CloudFront, Status Code: 400, Request ID: c2a22dfb-8b7c-4447-9b59-b34ea2eb5cf7) (SDK Attempt Count: 1)" (RequestToken: 42247812-9342-a534-6d86-8f78d7f17ba9, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

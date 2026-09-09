@@ -1,0 +1,12 @@
+id: pf-cloudfront-function-kvs-requires-runtime-2
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Function]
+severity: ERROR
+title: 'KeyValueStoreAssociations require the cloudfront-js-2.0 runtime'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-function.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Function: The parameter KeyValueStoreAssociations is invalid; ''cloudfront-js-2.0'' runtime and later support KeyValueStore associations. (Service: CloudFront, Status Code: 400, Request ID: 4371895e-1a23-4c53-ab41-93a17f607e1c) (SDK Attempt Count: 1)" (RequestToken: 59026e41-8e9f-6306-a27e-02edd7072280, HandlerErrorCode: '
+addedOn: 2026-09-08
+benchRegion: us-east-1

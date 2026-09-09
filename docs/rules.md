@@ -241,13 +241,101 @@
 | `pf-agentcore-runtime-session-storage-single` | AWS::BedrockAgentCore::Runtime | An AgentCore Runtime allows at most one SessionStorage filesystem configuration | none |
 | `pf-agentcore-vpc-network-mode-config` | AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::BrowserCustom<br>AWS::BedrockAgentCore::CodeInterpreterCustom<br>AWS::BedrockAgentCore::Harness | NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness) | none |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | none |
+| `pf-cloudfront-alias-unique` | AWS::CloudFront::Distribution | Aliases must not contain duplicates | none |
 | `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | none |
+| `pf-cloudfront-allowed-methods-set` | AWS::CloudFront::Distribution | AllowedMethods must be one of the three sets CloudFront supports | none |
+| `pf-cloudfront-anycast-ip-list-count` | AWS::CloudFront::AnycastIpList | AnycastIpList IpCount must be 21 | none |
+| `pf-cloudfront-cache-behavior-path-pattern-unique` | AWS::CloudFront::Distribution | Cache behavior PathPattern values must be unique | none |
+| `pf-cloudfront-cache-behavior-target-origin-exists` | AWS::CloudFront::Distribution | Cache behavior TargetOriginId must match an origin or origin group Id | none |
+| `pf-cloudfront-cache-policy-accept-encoding-conflict` | AWS::CloudFront::CachePolicy | Accept-Encoding cannot be whitelisted while EnableAcceptEncodingGzip/Brotli is true | none |
+| `pf-cloudfront-cache-policy-cookie-behavior-items` | AWS::CloudFront::CachePolicy | Cache policy CookieBehavior whitelist / allExcept requires Cookies | none |
+| `pf-cloudfront-cache-policy-header-behavior-items` | AWS::CloudFront::CachePolicy | Cache policy HeaderBehavior whitelist requires Headers | none |
+| `pf-cloudfront-cache-policy-header-behavior-none-items` | AWS::CloudFront::CachePolicy | Cache policy HeaderBehavior none cannot carry Headers | none |
 | `pf-cloudfront-cache-policy-name` | AWS::CloudFront::CachePolicy | Cache policy names allow only alphanumerics, dash and underscore | none |
+| `pf-cloudfront-cache-policy-or-forwarded-values-required` | AWS::CloudFront::Distribution | A cache behavior must set either CachePolicyId or ForwardedValues | none |
+| `pf-cloudfront-cache-policy-query-string-behavior-items` | AWS::CloudFront::CachePolicy | Cache policy QueryStringBehavior whitelist / allExcept requires QueryStrings | none |
+| `pf-cloudfront-cache-policy-ttl-default-in-range` | AWS::CloudFront::CachePolicy | Cache policy DefaultTTL must be between MinTTL and MaxTTL | none |
 | `pf-cloudfront-cached-methods-subset` | AWS::CloudFront::Distribution | CachedMethods must be a subset of AllowedMethods | none |
+| `pf-cloudfront-continuous-deployment-header-prefix` | AWS::CloudFront::ContinuousDeploymentPolicy | SingleHeaderConfig Header must start with aws-cf-cd- | none |
+| `pf-cloudfront-continuous-deployment-policy-excludes-staging` | AWS::CloudFront::Distribution | ContinuousDeploymentPolicyId cannot be set on a staging distribution | none |
+| `pf-cloudfront-continuous-deployment-session-ttl-order` | AWS::CloudFront::ContinuousDeploymentPolicy | SessionStickinessConfig IdleTTL cannot exceed MaximumTTL | none |
+| `pf-cloudfront-continuous-deployment-staging-dns-count` | AWS::CloudFront::ContinuousDeploymentPolicy | A continuous deployment policy takes exactly one staging distribution DNS name | none |
+| `pf-cloudfront-continuous-deployment-traffic-config-match` | AWS::CloudFront::ContinuousDeploymentPolicy | TrafficConfig Type must match the config block that is present | none |
+| `pf-cloudfront-continuous-deployment-weight-range` | AWS::CloudFront::ContinuousDeploymentPolicy | SingleWeightConfig Weight must be between 0 and 0.15 | none |
+| `pf-cloudfront-custom-error-response-code` | AWS::CloudFront::Distribution | CustomErrorResponses ErrorCode must be one of the codes CloudFront caches | pending-engine |
+| `pf-cloudfront-custom-error-response-page-path-format` | AWS::CloudFront::Distribution | ResponsePagePath must start with / | none |
+| `pf-cloudfront-custom-error-response-page-path-pair` | AWS::CloudFront::Distribution | ResponsePagePath and ResponseCode must be specified together | none |
 | `pf-cloudfront-edge-lambda-region` | AWS::CloudFront::Distribution | Lambda@Edge functions associated with a distribution must be in us-east-1 | none |
 | `pf-cloudfront-edge-lambda-version` | AWS::CloudFront::Distribution | Lambda@Edge associations must reference a version ARN, not an alias or $LATEST | none |
+| `pf-cloudfront-field-level-encryption-requires-post` | AWS::CloudFront::Distribution | FieldLevelEncryptionId requires POST or PUT in AllowedMethods | none |
+| `pf-cloudfront-function-association-event-type` | AWS::CloudFront::Distribution | CloudFront Functions only support viewer-request and viewer-response | none |
+| `pf-cloudfront-function-association-event-type-unique` | AWS::CloudFront::Distribution | Each CloudFront Function EventType can appear only once per cache behavior | none |
+| `pf-cloudfront-function-code-size` | AWS::CloudFront::Function | CloudFront Function code is limited to 10 KB | none |
+| `pf-cloudfront-function-kvs-association-count` | AWS::CloudFront::Function | A CloudFront Function can associate at most one key value store | none |
+| `pf-cloudfront-function-kvs-requires-runtime-2` | AWS::CloudFront::Function | KeyValueStoreAssociations require the cloudfront-js-2.0 runtime | none |
+| `pf-cloudfront-function-runtime-enum` | AWS::CloudFront::Function | CloudFront Function Runtime must be cloudfront-js-1.0 or cloudfront-js-2.0 | pending-engine |
+| `pf-cloudfront-geo-restriction-country-code` | AWS::CloudFront::Distribution | GeoRestriction locations must be two-letter uppercase country codes | pending-engine |
+| `pf-cloudfront-geo-restriction-locations-exclusive` | AWS::CloudFront::Distribution | RestrictionType none cannot carry Locations | none |
+| `pf-cloudfront-grpc-requires-http2` | AWS::CloudFront::Distribution | GrpcConfig requires an HTTP/2 capable HttpVersion | none |
+| `pf-cloudfront-grpc-requires-post-method` | AWS::CloudFront::Distribution | GrpcConfig requires POST in AllowedMethods | none |
+| `pf-cloudfront-http-version-enum` | AWS::CloudFront::Distribution | HttpVersion must be http1.1, http2, http2and3 or http3 | pending-engine |
+| `pf-cloudfront-key-group-item-count` | AWS::CloudFront::KeyGroup | A key group holds at most 5 public keys | none |
+| `pf-cloudfront-key-group-item-unique` | AWS::CloudFront::KeyGroup | A key group must not list the same public key twice | none |
+| `pf-cloudfront-key-value-store-import-source-arn` | AWS::CloudFront::KeyValueStore | KeyValueStore ImportSource SourceArn must be an S3 object ARN | none |
+| `pf-cloudfront-key-value-store-import-source-type` | AWS::CloudFront::KeyValueStore | KeyValueStore ImportSource SourceType must be S3 | pending-engine |
+| `pf-cloudfront-lambda-association-event-type-unique` | AWS::CloudFront::Distribution | Each Lambda@Edge EventType can appear only once per cache behavior | none |
+| `pf-cloudfront-lambda-association-include-body-event-type` | AWS::CloudFront::Distribution | IncludeBody is only valid for viewer-request and origin-request | none |
+| `pf-cloudfront-logging-bucket-format` | AWS::CloudFront::Distribution | Logging.Bucket must be the S3 bucket DNS name, not the bare bucket name | none |
+| `pf-cloudfront-oac-excludes-origin-access-identity` | AWS::CloudFront::Distribution | OriginAccessControlId and S3OriginConfig.OriginAccessIdentity are mutually exclusive | none |
+| `pf-cloudfront-origin-config-required` | AWS::CloudFront::Distribution | Every origin must declare exactly one origin type configuration | none |
+| `pf-cloudfront-origin-connection-attempts-range` | AWS::CloudFront::Distribution | ConnectionAttempts must be between 1 and 3 | none |
+| `pf-cloudfront-origin-connection-timeout-range` | AWS::CloudFront::Distribution | ConnectionTimeout must be between 1 and 10 | none |
+| `pf-cloudfront-origin-custom-header-blocklist` | AWS::CloudFront::Distribution | OriginCustomHeaders cannot carry headers CloudFront reserves | none |
+| `pf-cloudfront-origin-custom-header-name-unique` | AWS::CloudFront::Distribution | OriginCustomHeaders header names must be unique per origin | none |
+| `pf-cloudfront-origin-group-failover-status-codes` | AWS::CloudFront::Distribution | Origin group failover status codes are limited to a fixed set | none |
+| `pf-cloudfront-origin-group-id-collides-with-origin` | AWS::CloudFront::Distribution | An origin group Id cannot reuse an origin Id | none |
 | `pf-cloudfront-origin-group-member-origin` | AWS::CloudFront::Distribution | Origin group members must reference an origin declared in the distribution | none |
+| `pf-cloudfront-origin-http-port-range` | AWS::CloudFront::Distribution | HTTPPort must be 80, 443 or in 1024-65535 | none |
+| `pf-cloudfront-origin-https-port-range` | AWS::CloudFront::Distribution | HTTPSPort must be 80, 443 or in 1024-65535 | none |
+| `pf-cloudfront-origin-id-unique` | AWS::CloudFront::Distribution | Origin Id values must be unique within a distribution | none |
+| `pf-cloudfront-origin-keepalive-timeout-range` | AWS::CloudFront::Distribution | OriginKeepaliveTimeout must be between 1 and 300 | none |
+| `pf-cloudfront-origin-path-format` | AWS::CloudFront::Distribution | OriginPath must start with / and must not end with / | none |
+| `pf-cloudfront-origin-protocol-policy-enum` | AWS::CloudFront::Distribution | OriginProtocolPolicy must be http-only, https-only or match-viewer | none |
+| `pf-cloudfront-origin-read-timeout-range` | AWS::CloudFront::Distribution | OriginReadTimeout must be between 1 and 120 | none |
+| `pf-cloudfront-origin-request-policy-cloudfront-headers` | AWS::CloudFront::OriginRequestPolicy | allViewerAndWhitelistCloudFront only accepts CloudFront-* headers | none |
+| `pf-cloudfront-origin-request-policy-cookie-behavior-items` | AWS::CloudFront::OriginRequestPolicy | Origin request policy CookieBehavior whitelist / allExcept requires Cookies | none |
+| `pf-cloudfront-origin-request-policy-excludes-forwarded-values` | AWS::CloudFront::Distribution | A cache behavior cannot set both OriginRequestPolicyId and ForwardedValues | none |
+| `pf-cloudfront-origin-request-policy-header-behavior-items` | AWS::CloudFront::OriginRequestPolicy | Origin request policy HeaderBehavior whitelist / allExcept requires Headers | none |
+| `pf-cloudfront-origin-request-policy-name-charset` | AWS::CloudFront::OriginRequestPolicy | Origin request policy names allow only alphanumerics, dash and underscore | none |
+| `pf-cloudfront-origin-request-policy-query-string-behavior-items` | AWS::CloudFront::OriginRequestPolicy | Origin request policy QueryStringBehavior whitelist / allExcept requires QueryStrings | none |
+| `pf-cloudfront-origin-shield-region-required` | AWS::CloudFront::Distribution | Enabling Origin Shield requires OriginShieldRegion | none |
+| `pf-cloudfront-origin-shield-region-supported` | AWS::CloudFront::Distribution | OriginShieldRegion must be a region where CloudFront offers Origin Shield | none |
+| `pf-cloudfront-price-class-enum` | AWS::CloudFront::Distribution | PriceClass must be PriceClass_100, PriceClass_200 or PriceClass_All | pending-engine |
+| `pf-cloudfront-public-key-pem-format` | AWS::CloudFront::PublicKey | PublicKey EncodedKey must be a PEM-encoded public key | none |
+| `pf-cloudfront-realtime-log-endpoint-count` | AWS::CloudFront::RealtimeLogConfig | A real-time log configuration takes exactly one endpoint | none |
+| `pf-cloudfront-realtime-log-endpoint-stream-type` | AWS::CloudFront::RealtimeLogConfig | Real-time log endpoints must have StreamType Kinesis | none |
+| `pf-cloudfront-realtime-log-field-names` | AWS::CloudFront::RealtimeLogConfig | Real-time log Fields must name fields CloudFront defines | none |
+| `pf-cloudfront-response-headers-policy-name-charset` | AWS::CloudFront::ResponseHeadersPolicy | Response headers policy names allow only alphanumerics, dash and underscore | none |
+| `pf-cloudfront-rhp-content-security-policy-length` | AWS::CloudFront::ResponseHeadersPolicy | ContentSecurityPolicy is limited to 1783 characters | none |
+| `pf-cloudfront-rhp-cors-allow-methods-enum` | AWS::CloudFront::ResponseHeadersPolicy | AccessControlAllowMethods accepts only the eight documented values | pending-engine |
+| `pf-cloudfront-rhp-custom-header-blocklist` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig cannot carry headers CloudFront reserves | none |
+| `pf-cloudfront-rhp-custom-header-unique` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig must not repeat a header name | none |
+| `pf-cloudfront-rhp-remove-header-blocklist` | AWS::CloudFront::ResponseHeadersPolicy | RemoveHeadersConfig cannot remove headers CloudFront controls | none |
+| `pf-cloudfront-rhp-server-timing-sampling-rate-required` | AWS::CloudFront::ResponseHeadersPolicy | ServerTimingHeadersConfig requires SamplingRate when enabled | none |
+| `pf-cloudfront-rhp-xss-protection-report-uri-mode-block` | AWS::CloudFront::ResponseHeadersPolicy | XSSProtection cannot set both ReportUri and ModeBlock | none |
+| `pf-cloudfront-rhp-xss-protection-report-uri-requires-protection` | AWS::CloudFront::ResponseHeadersPolicy | XSSProtection ReportUri requires Protection true | none |
+| `pf-cloudfront-s3-website-endpoint-custom-origin` | AWS::CloudFront::Distribution | An S3 website endpoint origin must use CustomOriginConfig, not S3OriginConfig | none |
+| `pf-cloudfront-staging-requires-no-aliases` | AWS::CloudFront::Distribution | A staging distribution cannot have Aliases | none |
+| `pf-cloudfront-trusted-key-groups-excludes-trusted-signers` | AWS::CloudFront::Distribution | TrustedKeyGroups and TrustedSigners cannot both be used on a cache behavior | none |
+| `pf-cloudfront-trusted-signers-account-format` | AWS::CloudFront::Distribution | TrustedSigners entries must be self or a 12-digit account id | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | none |
+| `pf-cloudfront-viewer-certificate-exactly-one` | AWS::CloudFront::Distribution | ViewerCertificate must name exactly one certificate source | none |
+| `pf-cloudfront-viewer-certificate-sni-min-protocol` | AWS::CloudFront::Distribution | sni-only requires MinimumProtocolVersion of TLSv1 or higher | none |
+| `pf-cloudfront-viewer-certificate-vip-deprecated` | AWS::CloudFront::Distribution | SslSupportMethod vip cannot be used for new distributions | none |
+| `pf-cloudfront-viewer-protocol-policy-enum` | AWS::CloudFront::Distribution | ViewerProtocolPolicy must be allow-all, https-only or redirect-to-https | pending-engine |
+| `pf-cloudfront-vpc-origin-arn-type` | AWS::CloudFront::VpcOrigin | A VPC origin ARN must point at an ALB, NLB or EC2 instance | none |
+| `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin HTTPPort and HTTPSPort must be between 1 and 65535 | none |
+| `pf-cloudfront-vpc-origin-ssl-protocols-required` | AWS::CloudFront::VpcOrigin | An HTTPS-capable VPC origin must list OriginSSLProtocols | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | none |
 | `pf-cloudwatch-alarm-action-vendor` | AWS::CloudWatch::Alarm | Alarm actions accept only the CloudWatch action vendors | none |
 | `pf-cloudwatch-alarm-actions-max` | AWS::CloudWatch::Alarm | Each alarm action list holds at most 5 ARNs | none |

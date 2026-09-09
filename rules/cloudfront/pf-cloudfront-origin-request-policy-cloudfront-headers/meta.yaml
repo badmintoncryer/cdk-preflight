@@ -1,0 +1,12 @@
+id: pf-cloudfront-origin-request-policy-cloudfront-headers
+service: cloudfront
+resourceTypes: [AWS::CloudFront::OriginRequestPolicy]
+severity: ERROR
+title: 'allViewerAndWhitelistCloudFront only accepts CloudFront-* headers'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-originrequestpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::OriginRequestPolicy: The parameter Headers contains X-A that is not a valid CloudFront-* header. (Service: CloudFront, Status Code: 400, Request ID: 5064b751-8d61-493f-a3c7-04391e97b5db) (SDK Attempt Count: 1)" (RequestToken: 139e7c7d-d234-9b82-d10d-4dd0fce92c05, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

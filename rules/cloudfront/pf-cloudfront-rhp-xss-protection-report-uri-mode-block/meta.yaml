@@ -1,0 +1,12 @@
+id: pf-cloudfront-rhp-xss-protection-report-uri-mode-block
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ResponseHeadersPolicy]
+severity: ERROR
+title: 'XSSProtection cannot set both ReportUri and ModeBlock'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ResponseHeadersPolicy: The parameter X-XSS-Protection cannot contain both Report URI and Mode block. (Service: CloudFront, Status Code: 400, Request ID: 708f6e70-7d41-4a45-8cb4-a96bbcc002c5) (SDK Attempt Count: 1)" (RequestToken: 081e6573-6896-e82e-1be8-12275b3c2e58, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

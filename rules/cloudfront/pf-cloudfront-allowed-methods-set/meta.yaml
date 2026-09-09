@@ -1,0 +1,12 @@
+id: pf-cloudfront-allowed-methods-set
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'AllowedMethods must be one of the three sets CloudFront supports'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter AllowedMethods is invalid (must be: [HEAD, GET] or [HEAD, GET, OPTIONS] or [HEAD, DELETE, POST, GET, OPTIONS, PUT, PATCH]). (Service: CloudFront, Status Code: 400, Request ID: 6a46d9f6-8450-40e5-96ff-0376b49f01e0) (SDK Attempt Count: 1)" (RequestToken: 3f1afe30-15f6-2840-2ec4-c6998e69164d, Ha'
+addedOn: 2026-09-08
+benchRegion: us-east-1

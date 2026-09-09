@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": false,
+          "Origins": [
+            {
+              "Id": "o1",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "http-only"
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "o1",
+            "ViewerProtocolPolicy": "allow-all",
+            "ForwardedValues": {
+              "QueryString": false
+            },
+            "FunctionAssociations": [
+              {
+                "EventType": "viewer-request",
+                "FunctionARN": "arn:aws:cloudfront::111122223333:function/f"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

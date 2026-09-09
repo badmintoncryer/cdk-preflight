@@ -1,0 +1,12 @@
+id: pf-cloudfront-field-level-encryption-requires-post
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'FieldLevelEncryptionId requires POST or PUT in AllowedMethods'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-cachebehavior.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The specified field level encryption config does not exist. (Service: CloudFront, Status Code: 404, Request ID: 78462be6-5a3d-47ee-ad53-00dd1d4166dc) (SDK Attempt Count: 1)" (RequestToken: 72cfc1d5-3f7b-9fa0-9cf4-c82b0d522506, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1

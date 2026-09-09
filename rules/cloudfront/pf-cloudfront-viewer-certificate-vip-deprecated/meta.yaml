@@ -1,0 +1,12 @@
+id: pf-cloudfront-viewer-certificate-vip-deprecated
+service: cloudfront
+resourceTypes: [AWS::CloudFront::Distribution]
+severity: ERROR
+title: 'SslSupportMethod vip cannot be used for new distributions'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-viewercertificate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter ViewerCertificate The specified distribution is configured for SNI and the minimum SSL protocol version is specified as SSLv3. You cannot specify both. (Service: CloudFront, Status Code: 400, Request ID: 79c1f249-aaca-4e41-a0f0-4e3123b20cea) (SDK Attempt Count: 1)" (RequestToken: 2eb84f11-5ed'
+addedOn: 2026-09-08
+benchRegion: us-east-1

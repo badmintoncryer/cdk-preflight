@@ -1,0 +1,12 @@
+id: pf-cloudfront-continuous-deployment-weight-range
+service: cloudfront
+resourceTypes: [AWS::CloudFront::ContinuousDeploymentPolicy]
+severity: ERROR
+title: 'SingleWeightConfig Weight must be between 0 and 0.15'
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-continuousdeploymentpolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ContinuousDeploymentPolicy: The parameter StagingDistributionDnsNames is not a default CloudFront domain name. (Service: CloudFront, Status Code: 400, Request ID: 34c9f7df-710b-40af-8ed0-9223b9e789ac) (SDK Attempt Count: 1)" (RequestToken: c2a96b77-d342-8027-8fd5-d2f53d1caf82, HandlerErrorCode: InvalidRequest)'
+addedOn: 2026-09-08
+benchRegion: us-east-1
