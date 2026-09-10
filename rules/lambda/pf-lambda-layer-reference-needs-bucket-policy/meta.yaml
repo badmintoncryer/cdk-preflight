@@ -1,7 +1,7 @@
 id: pf-lambda-layer-reference-needs-bucket-policy
 service: lambda
 resourceTypes: [AWS::Lambda::LayerVersion]
-severity: ERROR
+severity: WARN
 title: "REFERENCE content needs a bucket policy for Lambda"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html
 benchRegion: us-east-1

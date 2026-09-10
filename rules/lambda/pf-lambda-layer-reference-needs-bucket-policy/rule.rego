@@ -6,7 +6,7 @@ _pf_llrb_fix := "Grant lambda.amazonaws.com s3:GetObject and s3:GetObjectVersion
 
 _pf_llrb_url := "https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html"
 
-violation contains make_diag_full("pf-lambda-layer-reference-needs-bucket-policy", "ERROR", name,
+violation contains make_diag_full("pf-lambda-layer-reference-needs-bucket-policy", "WARN", name,
 	"Properties.Content.S3ObjectStorageMode",
 	"REFERENCE content in a bucket with no policy for lambda.amazonaws.com; Lambda reads the object on every cold start and needs s3:GetObject and s3:GetObjectVersion",
 	_pf_llrb_fix, _pf_llrb_url) if {

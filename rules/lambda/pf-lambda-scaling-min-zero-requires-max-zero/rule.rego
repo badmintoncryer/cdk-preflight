@@ -6,7 +6,7 @@ _pf_lsmz_fix := "Set MaxExecutionEnvironments to 0 as well, or raise the minimum
 
 _pf_lsmz_url := "https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html"
 
-violation contains make_diag_full("pf-lambda-scaling-min-zero-requires-max-zero", "ERROR", name,
+violation contains make_diag_full("pf-lambda-scaling-min-zero-requires-max-zero", "WARN", name,
 	"Properties.FunctionScalingConfig.MinExecutionEnvironments",
 	sprintf("MinExecutionEnvironments 0 with MaxExecutionEnvironments %v; zero is the way to turn managed scaling off and is only accepted when both bounds are zero", [mx]),
 	_pf_lsmz_fix, _pf_lsmz_url) if {

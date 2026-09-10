@@ -18,7 +18,7 @@ Some CloudFormation constraints are not expressed in resource provider schemas �
 
 cdk-preflight is a curated [Rego rule pack](docs/rules.md) for exactly those constraints, evaluated with the CloudFormation validation engine that ships inside `aws-cdk-lib` (>= 2.267.0). By default a violation **fails `cdk synth`** — a template that is known to fail at deploy time never leaves your machine.
 
-The pack aims at **every deploy-time failure that no existing CDK mechanism already catches** — nothing narrower. Every bundled rule is backed by a `fail`/`pass` template pair, and the failure has been reproduced against real AWS (or is explicitly marked `doc-only`). Rules that the built-in validation engine already covers are deliberately **not** duplicated — a test suite enforces this.
+The pack aims at **every deploy-time failure that no existing CDK mechanism already catches** — nothing narrower. Every bundled rule is backed by a `fail`/`pass` template pair, and the failure has been reproduced against real AWS. The handful of rules that could not be reproduced are marked `doc-only` and report as **warnings**: they show up in the validation report but never fail synth. Rules that the built-in validation engine already covers are deliberately **not** duplicated — a test suite enforces this.
 
 > **Requires `aws-cdk-lib` >= 2.267.0** (released 2026-08-27) — the first release that bundles
 > the CloudFormation validation engine. On older versions the rules cannot run at all.
@@ -122,6 +122,12 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
 > before printing them, so in observe-only mode those findings appear **only** in `cdk.out/validation-report.json`
 > and never on the console. Enforce mode is not affected: cdk-preflight reports such findings itself and fails
 > synthesis. This is a CLI-side bug (present since aws-cdk 2.1128.1), not a rule evaluation problem.
+
+> **If the rules cannot run, the build stops.** When the evaluation engine fails on a template (a rule pack that
+> does not compile, an engine bug), enforce mode reports it as a violation named `pf-engine-error` and fails
+> synthesis for that stack instead of passing green with no rule having run. The other stacks keep their rules.
+> `pf-engine-error` is not a bundled rule and cannot be `exclude`d; `enforce: false` unblocks the build if you
+> need one.
 
 | Option | Default | Effect |
 |---|---|---|

@@ -91,17 +91,36 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
 
     const region = isConcreteRegion(context.region) ? context.region : undefined;
     const account = isConcreteAccount(context.accountId) ? context.accountId : undefined;
-    const eng = regoEngineCached(engine, this.rules, region, account);
     const ours = new Set(this.rules.map((r) => r.id));
     const violations: PolicyViolation[] = [];
 
+    let eng: any;
+    try {
+      eng = regoEngineCached(engine, this.rules, region, account);
+    } catch (e) {
+      // ルールパックがコンパイルできない = どのテンプレートも検査できないので、
+      // 全スタックぶん violation を立てる（1 枚ずつの catch には到達しない）。
+      return { success: false, violations: context.stackTemplates.map((st) => engineErrorViolation(st, e)) };
+    }
+
     for (const st of context.stackTemplates) {
-      const report = eng.validateDetailed(new engine.TemplateFile(st.templatePath), {
-        pseudoParameterOverrides: {
-          accountId: context.accountId,
-          region: context.region,
-        },
-      });
+      let report: any;
+      try {
+        report = eng.validateDetailed(new engine.TemplateFile(st.templatePath), {
+          pseudoParameterOverrides: {
+            accountId: context.accountId,
+            region: context.region,
+          },
+        });
+      } catch (e) {
+        // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
+        // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
+        // 残るのは `failed: undefined` だけになる（issue #151）。
+        // synth を止めるのは installEnforceGate の役目。ここは「どのスタックで何が
+        // 起きたか」をレポートに残し、他スタックのルールを走らせ続けるためのもの。
+        violations.push(engineErrorViolation(st, e));
+        continue;
+      }
       for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
         const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
         const isStrictHit = this.strict
@@ -111,7 +130,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
         violations.push({
           ruleName: d.ruleId,
           description: d.message,
-          severity: 'error',
+          severity: mapSeverity(d.severity),
           violatingResources: [{
             resourceLogicalId: d.entity?.logicalId ?? '(unknown)',
             templatePath: st.templatePath,
@@ -122,8 +141,64 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       }
     }
 
-    return { success: violations.length === 0, violations };
+    // CDK 組み込みの CloudFormationValidatePlugin と同じ判定。warning だけなら
+    // レポートには載るが合成は通る（CLI 側は success/failure に関わらず必ず出力する）。
+    return { success: violations.every((v) => !BLOCKS_SYNTH.has(String(v.severity))), violations };
   }
+}
+
+/** 合成を止める violation severity。 */
+const BLOCKS_SYNTH = new Set(['error', 'fatal']);
+
+/**
+ * エンジンの severity を policy validation の severity に写す。表は aws-cdk-lib 2.267.0 の
+ * CloudFormationValidatePlugin と同一。`repro.method: doc-only` のルールは WARN を出すので
+ * warning になり、報告はされるが synth は止めない（証拠が実機のデプロイ失敗ではないため）。
+ */
+function mapSeverity(severity: string | undefined): string {
+  switch (severity) {
+    case 'FATAL':
+    case 'ERROR':
+      return 'error';
+    case 'WARN':
+      return 'warning';
+    case 'INFO':
+      return 'informational';
+    case 'DEBUG':
+      return 'debug';
+    default:
+      return 'warning';
+  }
+}
+
+/**
+ * ルール評価そのものが失敗したことを表す violation の ruleName。
+ * バンドル済みルールの id ではないので `exclude` では消せない（消してよい状態ではない）。
+ */
+export const ENGINE_ERROR_RULE = 'pf-engine-error';
+
+/** エンジンが投げた値をメッセージに落とす。エンジンは Error ではなく素の文字列を投げることがある。 */
+function engineErrorText(e: unknown): string {
+  const message = (e as { message?: unknown } | undefined)?.message;
+  return typeof message === 'string' && message.length > 0 ? message : String(e);
+}
+
+/** 1 枚のテンプレートを検査できなかったことを violation として報告する。 */
+function engineErrorViolation(st: { stackConstructPath: string; templatePath: string }, e: unknown): PolicyViolation {
+  return {
+    ruleName: ENGINE_ERROR_RULE,
+    description:
+      'cdk-preflight could not evaluate its rules for this template, so no preflight rule ran for it: '
+      + engineErrorText(e),
+    severity: 'error',
+    fix: 'Report this at https://github.com/badmintoncryer/cdk-preflight/issues; '
+      + 'to unblock the build meanwhile, use Preflight.apply(app, { enforce: false }).',
+    violatingResources: [{
+      constructPath: st.stackConstructPath,
+      templatePath: st.templatePath,
+      locations: ['(template)'],
+    }],
+  };
 }
 
 /** The plugin name recorded in `validation-report.json` for our findings. */

@@ -3697,13 +3697,13 @@ export const BUNDLED_RULES: BundledRuleData[] = [
   {
     "id": "pf-cloudfront-acm-cert-region",
     "service": "cloudfront",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "CloudFront viewer certificates must live in us-east-1",
     "upstream": "none",
     "resourceTypes": [
       "AWS::CloudFront::Distribution"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-acm-cert-region\", \"ERROR\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\",\n\tsprintf(\"CloudFront requires the ACM certificate to be in us-east-1, but the certificate is in %s\", [region]),\n\t\"Issue or import the certificate in us-east-1 (e.g. a dedicated us-east-1 stack) and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-certificate-issuer\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"acm\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != \"us-east-1\"\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-cloudfront-acm-cert-region\", \"WARN\", name,\n\t\"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\",\n\tsprintf(\"CloudFront requires the ACM certificate to be in us-east-1, but the certificate is in %s\", [region]),\n\t\"Issue or import the certificate in us-east-1 (e.g. a dedicated us-east-1 stack) and reference that ARN\",\n\t\"https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-certificate-issuer\") if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tarn := resolve(name, \"Properties.DistributionConfig.ViewerCertificate.AcmCertificateArn\")\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"acm\"\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != \"us-east-1\"\n}\n"
   },
   {
     "id": "pf-cloudfront-alias-unique",
@@ -14510,13 +14510,13 @@ export const BUNDLED_RULES: BundledRuleData[] = [
   {
     "id": "pf-lambda-esm-poller-group-esm-count",
     "service": "lambda",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "A poller group holds at most 100 event source mappings",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Lambda::EventSourceMapping"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lepgc_fix := \"Split the mappings across more than one PollerGroupName\"\n\n_pf_lepgc_url := \"https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameters.html\"\n\n_pf_lepgc_names := {g |\n\tsome name in _pf_lam_esm\n\tg := object.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\")\n\tg != \"\"\n}\n\n_pf_lepgc_count(g) := count([name |\n\tsome name in _pf_lam_esm\n\tobject.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\") == g\n])\n\nviolation contains make_diag_full(\"pf-lambda-esm-poller-group-esm-count\", \"ERROR\", \"PollerGroupName\",\n\t\"Properties.ProvisionedPollerConfig.PollerGroupName\",\n\tsprintf(\"poller group '%v' holds %v event source mappings; the group limit is 100\", [g, n]),\n\t_pf_lepgc_fix, _pf_lepgc_url) if {\n\tsome g in _pf_lepgc_names\n\tn := _pf_lepgc_count(g)\n\tn > 100\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lepgc_fix := \"Split the mappings across more than one PollerGroupName\"\n\n_pf_lepgc_url := \"https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameters.html\"\n\n_pf_lepgc_names := {g |\n\tsome name in _pf_lam_esm\n\tg := object.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\")\n\tg != \"\"\n}\n\n_pf_lepgc_count(g) := count([name |\n\tsome name in _pf_lam_esm\n\tobject.get(_pf_lam_ppc(name), \"PollerGroupName\", \"\") == g\n])\n\nviolation contains make_diag_full(\"pf-lambda-esm-poller-group-esm-count\", \"WARN\", \"PollerGroupName\",\n\t\"Properties.ProvisionedPollerConfig.PollerGroupName\",\n\tsprintf(\"poller group '%v' holds %v event source mappings; the group limit is 100\", [g, n]),\n\t_pf_lepgc_fix, _pf_lepgc_url) if {\n\tsome g in _pf_lepgc_names\n\tn := _pf_lepgc_count(g)\n\tn > 100\n}\n"
   },
   {
     "id": "pf-lambda-esm-poller-group-name-kafka-only",
@@ -14807,24 +14807,24 @@ export const BUNDLED_RULES: BundledRuleData[] = [
   {
     "id": "pf-lambda-layer-reference-glacier-storage-class",
     "service": "lambda",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "REFERENCE content cannot be archived",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Lambda::LayerVersion"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrg_fix := \"Keep the layer object out of Glacier storage classes\"\n\n_pf_llrg_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\n_pf_llrg_glacier := {\"GLACIER\", \"DEEP_ARCHIVE\", \"GLACIER_IR\"}\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-glacier-storage-class\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket that transitions objects to Glacier; an archived object cannot be read at cold start\",\n\t_pf_llrg_fix, _pf_llrg_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbp := object.get(object.get(input.resources, bkt, {}), \"properties\", {})\n\tlc := object.get(bp, \"LifecycleConfiguration\", {})\n\tsome rule in _pf_lam_list(object.get(lc, \"Rules\", []))\n\tsome t in _pf_lam_list(object.get(rule, \"Transitions\", []))\n\tobject.get(t, \"StorageClass\", \"\") in _pf_llrg_glacier\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrg_fix := \"Keep the layer object out of Glacier storage classes\"\n\n_pf_llrg_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\n_pf_llrg_glacier := {\"GLACIER\", \"DEEP_ARCHIVE\", \"GLACIER_IR\"}\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-glacier-storage-class\", \"WARN\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket that transitions objects to Glacier; an archived object cannot be read at cold start\",\n\t_pf_llrg_fix, _pf_llrg_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbp := object.get(object.get(input.resources, bkt, {}), \"properties\", {})\n\tlc := object.get(bp, \"LifecycleConfiguration\", {})\n\tsome rule in _pf_lam_list(object.get(lc, \"Rules\", []))\n\tsome t in _pf_lam_list(object.get(rule, \"Transitions\", []))\n\tobject.get(t, \"StorageClass\", \"\") in _pf_llrg_glacier\n}\n"
   },
   {
     "id": "pf-lambda-layer-reference-needs-bucket-policy",
     "service": "lambda",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "REFERENCE content needs a bucket policy for Lambda",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Lambda::LayerVersion"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrb_fix := \"Grant lambda.amazonaws.com s3:GetObject and s3:GetObjectVersion on the content bucket\"\n\n_pf_llrb_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-bucket-policy\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket with no policy for lambda.amazonaws.com; Lambda reads the object on every cold start and needs s3:GetObject and s3:GetObjectVersion\",\n\t_pf_llrb_fix, _pf_llrb_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbkt in resources_of_type(\"AWS::S3::Bucket\")\n\tnot _pf_llrb_policy(bkt)\n}\n\n_pf_llrb_policy(bkt) if {\n\tsome p in resources_of_type(\"AWS::S3::BucketPolicy\")\n\tresolve(p, \"Properties.Bucket\") == bkt\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrb_fix := \"Grant lambda.amazonaws.com s3:GetObject and s3:GetObjectVersion on the content bucket\"\n\n_pf_llrb_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-bucket-policy\", \"WARN\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket with no policy for lambda.amazonaws.com; Lambda reads the object on every cold start and needs s3:GetObject and s3:GetObjectVersion\",\n\t_pf_llrb_fix, _pf_llrb_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbkt in resources_of_type(\"AWS::S3::Bucket\")\n\tnot _pf_llrb_policy(bkt)\n}\n\n_pf_llrb_policy(bkt) if {\n\tsome p in resources_of_type(\"AWS::S3::BucketPolicy\")\n\tresolve(p, \"Properties.Bucket\") == bkt\n}\n"
   },
   {
     "id": "pf-lambda-layer-reference-needs-object-version",
@@ -14840,13 +14840,13 @@ export const BUNDLED_RULES: BundledRuleData[] = [
   {
     "id": "pf-lambda-layer-reference-needs-versioning",
     "service": "lambda",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "REFERENCE content needs a versioned bucket",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Lambda::LayerVersion"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrv_fix := \"Turn on versioning for the bucket that holds the layer content\"\n\n_pf_llrv_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-versioning\", \"ERROR\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket without versioning; the mode pins an object version and the bucket cannot produce one\",\n\t_pf_llrv_fix, _pf_llrv_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbkt in resources_of_type(\"AWS::S3::Bucket\")\n\t# Properties ごと無いバケットもあるので object.get で降りる\n\tbp := object.get(object.get(input.resources, bkt, {}), \"properties\", {})\n\tvc := object.get(bp, \"VersioningConfiguration\", {})\n\tobject.get(vc, \"Status\", \"\") != \"Enabled\"\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llrv_fix := \"Turn on versioning for the bucket that holds the layer content\"\n\n_pf_llrv_url := \"https://docs.aws.amazon.com/lambda/latest/dg/configuration-self-managed-storage.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layer-reference-needs-versioning\", \"WARN\", name,\n\t\"Properties.Content.S3ObjectStorageMode\",\n\t\"REFERENCE content in a bucket without versioning; the mode pins an object version and the bucket cannot produce one\",\n\t_pf_llrv_fix, _pf_llrv_url) if {\n\tsome name in _pf_lam_layer\n\tc := _pf_lam_obj(_pf_lam_props(name), \"Content\")\n\tobject.get(c, \"S3ObjectStorageMode\", \"\") == \"REFERENCE\"\n\tbkt := resolve(name, \"Properties.Content.S3Bucket\")\n\tbkt in resources_of_type(\"AWS::S3::Bucket\")\n\t# Properties ごと無いバケットもあるので object.get で降りる\n\tbp := object.get(object.get(input.resources, bkt, {}), \"properties\", {})\n\tvc := object.get(bp, \"VersioningConfiguration\", {})\n\tobject.get(vc, \"Status\", \"\") != \"Enabled\"\n}\n"
   },
   {
     "id": "pf-lambda-layerperm-arn-length",
@@ -15104,24 +15104,24 @@ export const BUNDLED_RULES: BundledRuleData[] = [
   {
     "id": "pf-lambda-scaling-min-max-pair",
     "service": "lambda",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "FunctionScalingConfig takes both bounds",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Lambda::Function"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lsmp_fix := \"Set MinExecutionEnvironments and MaxExecutionEnvironments together\"\n\n_pf_lsmp_url := \"https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html\"\n\nviolation contains make_diag_full(\"pf-lambda-scaling-min-max-pair\", \"ERROR\", name,\n\t\"Properties.FunctionScalingConfig\",\n\tsprintf(\"FunctionScalingConfig with %v alone; the scaling bounds are set as a pair\", [key]),\n\t_pf_lsmp_fix, _pf_lsmp_url) if {\n\tsome name in _pf_lam_fn\n\tsc := _pf_lam_obj(_pf_lam_props(name), \"FunctionScalingConfig\")\n\tpair := {\"MinExecutionEnvironments\": \"MaxExecutionEnvironments\", \"MaxExecutionEnvironments\": \"MinExecutionEnvironments\"}\n\tsome key, other in pair\n\t_pf_lam_has_key(sc, key)\n\tnot _pf_lam_has_key(sc, other)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lsmp_fix := \"Set MinExecutionEnvironments and MaxExecutionEnvironments together\"\n\n_pf_lsmp_url := \"https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html\"\n\nviolation contains make_diag_full(\"pf-lambda-scaling-min-max-pair\", \"WARN\", name,\n\t\"Properties.FunctionScalingConfig\",\n\tsprintf(\"FunctionScalingConfig with %v alone; the scaling bounds are set as a pair\", [key]),\n\t_pf_lsmp_fix, _pf_lsmp_url) if {\n\tsome name in _pf_lam_fn\n\tsc := _pf_lam_obj(_pf_lam_props(name), \"FunctionScalingConfig\")\n\tpair := {\"MinExecutionEnvironments\": \"MaxExecutionEnvironments\", \"MaxExecutionEnvironments\": \"MinExecutionEnvironments\"}\n\tsome key, other in pair\n\t_pf_lam_has_key(sc, key)\n\tnot _pf_lam_has_key(sc, other)\n}\n"
   },
   {
     "id": "pf-lambda-scaling-min-zero-requires-max-zero",
     "service": "lambda",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "Scaling to zero means both bounds are zero",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Lambda::Function"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lsmz_fix := \"Set MaxExecutionEnvironments to 0 as well, or raise the minimum to 1\"\n\n_pf_lsmz_url := \"https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html\"\n\nviolation contains make_diag_full(\"pf-lambda-scaling-min-zero-requires-max-zero\", \"ERROR\", name,\n\t\"Properties.FunctionScalingConfig.MinExecutionEnvironments\",\n\tsprintf(\"MinExecutionEnvironments 0 with MaxExecutionEnvironments %v; zero is the way to turn managed scaling off and is only accepted when both bounds are zero\", [mx]),\n\t_pf_lsmz_fix, _pf_lsmz_url) if {\n\tsome name in _pf_lam_fn\n\tsc := _pf_lam_obj(_pf_lam_props(name), \"FunctionScalingConfig\")\n\tobject.get(sc, \"MinExecutionEnvironments\", -1) == 0\n\tmx := object.get(sc, \"MaxExecutionEnvironments\", 0)\n\tmx != 0\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_lsmz_fix := \"Set MaxExecutionEnvironments to 0 as well, or raise the minimum to 1\"\n\n_pf_lsmz_url := \"https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-scaling.html\"\n\nviolation contains make_diag_full(\"pf-lambda-scaling-min-zero-requires-max-zero\", \"WARN\", name,\n\t\"Properties.FunctionScalingConfig.MinExecutionEnvironments\",\n\tsprintf(\"MinExecutionEnvironments 0 with MaxExecutionEnvironments %v; zero is the way to turn managed scaling off and is only accepted when both bounds are zero\", [mx]),\n\t_pf_lsmz_fix, _pf_lsmz_url) if {\n\tsome name in _pf_lam_fn\n\tsc := _pf_lam_obj(_pf_lam_props(name), \"FunctionScalingConfig\")\n\tobject.get(sc, \"MinExecutionEnvironments\", -1) == 0\n\tmx := object.get(sc, \"MaxExecutionEnvironments\", 0)\n\tmx != 0\n}\n"
   },
   {
     "id": "pf-lambda-system-log-level-enum",
@@ -16512,13 +16512,13 @@ export const BUNDLED_RULES: BundledRuleData[] = [
   {
     "id": "pf-rds-shard-group-acu",
     "service": "rds",
-    "severity": "ERROR",
+    "severity": "WARN",
     "title": "DBShardGroup MaxACU must be at least MinACU",
     "upstream": "none",
     "resourceTypes": [
       "AWS::RDS::DBShardGroup"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-shard-group-acu\", \"ERROR\", name,\n\t\"Properties.MaxACU\",\n\tsprintf(\"MaxACU %v is below MinACU %v\", [mx, mn]),\n\t\"Raise MaxACU to at least MinACU\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBShardGroup\")\n\tmx := to_number(resolve(name, \"Properties.MaxACU\"))\n\tmn := to_number(resolve(name, \"Properties.MinACU\"))\n\tmx < mn\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-shard-group-acu\", \"WARN\", name,\n\t\"Properties.MaxACU\",\n\tsprintf(\"MaxACU %v is below MinACU %v\", [mx, mn]),\n\t\"Raise MaxACU to at least MinACU\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBShardGroup\")\n\tmx := to_number(resolve(name, \"Properties.MaxACU\"))\n\tmn := to_number(resolve(name, \"Properties.MinACU\"))\n\tmx < mn\n}\n"
   },
   {
     "id": "pf-rds-sqlserver-dbname-null",

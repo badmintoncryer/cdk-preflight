@@ -1,7 +1,7 @@
 id: pf-lambda-esm-poller-group-esm-count
 service: lambda
 resourceTypes: [AWS::Lambda::EventSourceMapping]
-severity: ERROR
+severity: WARN
 title: "A poller group holds at most 100 event source mappings"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameters.html
 benchRegion: us-east-1

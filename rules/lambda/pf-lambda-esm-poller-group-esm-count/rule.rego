@@ -17,7 +17,7 @@ _pf_lepgc_count(g) := count([name |
 	object.get(_pf_lam_ppc(name), "PollerGroupName", "") == g
 ])
 
-violation contains make_diag_full("pf-lambda-esm-poller-group-esm-count", "ERROR", "PollerGroupName",
+violation contains make_diag_full("pf-lambda-esm-poller-group-esm-count", "WARN", "PollerGroupName",
 	"Properties.ProvisionedPollerConfig.PollerGroupName",
 	sprintf("poller group '%v' holds %v event source mappings; the group limit is 100", [g, n]),
 	_pf_lepgc_fix, _pf_lepgc_url) if {
