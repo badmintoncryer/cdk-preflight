@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-rule-single-bundle-action
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayRule]
+severity: ERROR
+title: "A gateway rule carries at most one ConfigurationBundle action"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: Actions with two ConfigurationBundle entries -> ROLLBACK_COMPLETE, \"At most one configurationBundle action is allowed per rule (BedrockAgentCoreControl, 400 InvalidRequest)\". The schema allows two Actions entries and says nothing about their kinds."
+addedOn: 2026-09-10

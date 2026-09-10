@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-rule-traffic-split-sum
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayRule]
+severity: ERROR
+title: "TrafficSplit weights must sum to exactly 100"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: a WeightedOverride with weights 30 and 30 -> ROLLBACK_COMPLETE, \"Traffic split weights must sum to exactly 100, but sum is 60 (BedrockAgentCoreControl, 400 InvalidRequest)\". The schema carries the per-entry 1..99 range and the exactly-two-entries shape, never the sum."
+addedOn: 2026-09-10

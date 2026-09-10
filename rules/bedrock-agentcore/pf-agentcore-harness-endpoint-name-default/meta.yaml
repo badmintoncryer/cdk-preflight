@@ -1,0 +1,12 @@
+id: pf-agentcore-harness-endpoint-name-default
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::HarnessEndpoint]
+severity: ERROR
+title: "A HarnessEndpoint cannot be named DEFAULT (the name is reserved)"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateHarnessEndpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: EndpointName DEFAULT -> ROLLBACK_COMPLETE, \"Endpoint name 'DEFAULT' is reserved. Use a different name.\" (Bedrock AgentCore Control CreateHarnessEndpoint, 400 ValidationException). The schema only checks the name pattern, which DEFAULT satisfies."
+addedOn: 2026-09-10
