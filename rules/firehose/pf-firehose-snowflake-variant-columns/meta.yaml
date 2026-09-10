@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_S
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: DataLoadingOption VARIANT_CONTENT_AND_METADATA_MAPPING with only ContentColumnName -> InvalidArgumentException \"Must provide ContentColumnName and MetadataColumnName when Data Loading Option is VARIANT_CONTENT_AND_METADATA_MAPPING.\" Benched fail-only: the pass fixture carries a placeholder private key."
+  evidence: "bench 2026-09-10 ap-northeast-1: Must provide ContentColumnName and MetadataColumnName when Data Loading Option is VARIANT_CONTENT_AND_METADATA_MAPPING. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: DataLoadingOption VARIANT_CONTENT_AND_METADATA_MAPPING with only ContentColumnName -> InvalidArgumentException \"Must provide ContentColumnName and MetadataColumnName when Data Loading Option is VARIANT_CONTENT_AND_METADATA_MAPPING.\" Benched fail-only: the pass fixture carries a placeholder private key."
 addedOn: 2026-09-10

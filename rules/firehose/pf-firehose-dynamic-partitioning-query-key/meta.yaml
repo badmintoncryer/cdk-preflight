@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partit
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: a jq query producing key \"a\" with Prefix \"p/!{partitionKeyFromQuery:missing}/\" -> InvalidArgumentException \"MetaDataExtraction JQ Query can't contain keys that are not present in the S3 Prefix expression\"."
+  evidence: "bench 2026-09-10 ap-northeast-1: MetaDataExtraction JQ Query can't contain keys that are not present in the S3 Prefix expression -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: a jq query producing key \"a\" with Prefix \"p/!{partitionKeyFromQuery:missing}/\" -> InvalidArgumentException \"MetaDataExtraction JQ Query can't contain keys that are not present in the S3 Prefix expression\"."
 addedOn: 2026-09-10

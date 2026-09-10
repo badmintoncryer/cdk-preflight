@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_E
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: BucketARN \"arn:aws:s3:us-east-1:<account>:<bucket>\" -> ValidationException \"Value at 'extendedS3DestinationConfiguration.bucketARN' failed to satisfy constraint: Member must satisfy regular expression pattern: arn:.*:s3:::[\\\\w\\\\.\\\\-]{1,255}\". The bundled schema carries no pattern for this property."
+  evidence: "bench 2026-09-10 ap-northeast-1: 1 validation error detected: Value at 'extendedS3DestinationConfiguration.bucketARN' failed to satisfy constraint: Member must satisfy regular expression pattern: arn:.*:s3:::[\\w\\.\\-]{1,255} -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: BucketARN \"arn:aws:s3:us-east-1:<account>:<bucket>\" -> ValidationException \"Value at 'extendedS3DestinationConfiguration.bucketARN' failed to satisfy constraint: Member must satisfy regular expression pattern: arn:.*:s3:::[\\\\w\\\\.\\\\-]{1,255}\". The bundled schema carries no pattern for this property."
 addedOn: 2026-09-10

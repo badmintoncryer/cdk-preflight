@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_H
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: TimestampFormats [\"bbbb\"] -> InvalidArgumentException \"Invalid deserializer option(s): One or more SerDe options are invalid for org.apache.hcatalog.data.JsonSerDe: [Key: timestamp.formats Value: bbbb]\". The rejected pattern letters are the same set the S3 prefix timestamp namespace rejects."
+  evidence: "bench 2026-09-10 ap-northeast-1: Invalid deserializer option(s): One or more SerDe options are invalid for org.apache.hcatalog.data.JsonSerDe: [Key: timestamp.formats Value: bbbb] -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: TimestampFormats [\"bbbb\"] -> InvalidArgumentException \"Invalid deserializer option(s): One or more SerDe options are invalid for org.apache.hcatalog.data.JsonSerDe: [Key: timestamp.formats Value: bbbb]\". The rejected pattern letters are the same set the S3 prefix timestamp namespace rejects."
 addedOn: 2026-09-10

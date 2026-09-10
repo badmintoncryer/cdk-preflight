@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.ht
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: Prefix \"a/!{timestamp:yyyy}/\" with no ErrorOutputPrefix -> InvalidArgumentException \"ErrorOutputPrefix cannot be null or empty when Prefix contains expressions\". A plain literal ErrorOutputPrefix (\"plainerror/\") satisfies it; only absent or empty fails."
+  evidence: "bench 2026-09-10 ap-northeast-1: The supplied prefix(es) do not satisfy the following constraint: ErrorOutputPrefix cannot be null or empty when Prefix contains expressions -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: Prefix \"a/!{timestamp:yyyy}/\" with no ErrorOutputPrefix -> InvalidArgumentException \"ErrorOutputPrefix cannot be null or empty when Prefix contains expressions\". A plain literal ErrorOutputPrefix (\"plainerror/\") satisfies it; only absent or empty fails."
 addedOn: 2026-09-10
