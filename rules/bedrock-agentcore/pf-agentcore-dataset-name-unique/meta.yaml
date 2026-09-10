@@ -1,0 +1,12 @@
+id: pf-agentcore-dataset-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Dataset]
+severity: ERROR
+title: "DatasetName must be unique within the account, compared case-insensitively"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateDataset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: two datasets named cdkpf_dsdup and CDKPF_DSDUP in one stack -> ROLLBACK_COMPLETE, \"A dataset with this name already exists in your account. Please choose a different name and try again.\" (AgentCoreEvaluationControlPlane CreateDataset, 409 ConflictException) — the collision is case-insensitive, matching the registry schema description \"Unique within the account (case-insensitive)\". The bundled engine's E3019 does not fire because the primaryIdentifier is the read-only DatasetArn, not DatasetName."
+addedOn: 2026-09-10

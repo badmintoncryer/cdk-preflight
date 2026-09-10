@@ -1,0 +1,77 @@
+{
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "p",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "logs:*",
+          "bedrock:InvokeModel"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "G": {
+   "Type": "AWS::BedrockAgentCore::Gateway",
+   "Properties": {
+    "Name": "cdkpf-gtrtf",
+    "ProtocolType": "MCP",
+    "AuthorizerType": "AWS_IAM",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "T": {
+   "Type": "AWS::BedrockAgentCore::GatewayTarget",
+   "Properties": {
+    "GatewayIdentifier": {
+     "Fn::GetAtt": [
+      "G",
+      "GatewayIdentifier"
+     ]
+    },
+    "Name": "rt",
+    "TargetConfiguration": {
+     "Http": {
+      "AgentcoreRuntime": {
+       "Arn": "arn:aws:bedrock-agentcore:eu-west-1:214794239830:runtime/cdkpf_nosuch-abcdefghij"
+      }
+     }
+    },
+    "CredentialProviderConfigurations": [
+     {
+      "CredentialProviderType": "GATEWAY_IAM_ROLE"
+     }
+    ]
+   }
+  }
+ }
+}

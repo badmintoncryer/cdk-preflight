@@ -301,13 +301,18 @@
 | `pf-bedrock-prompt-variant-template-type` | AWS::Bedrock::Prompt | A prompt variant's TemplateConfiguration must match its TemplateType | ERROR | none |
 | `pf-agentcore-apikey-provider-secret-source` | AWS::BedrockAgentCore::ApiKeyCredentialProvider | An API key credential provider takes ApiKey when the secret is MANAGED and ApiKeySecretConfig when it is EXTERNAL, never both | ERROR | none |
 | `pf-agentcore-config-bundle-components-empty` | AWS::BedrockAgentCore::ConfigurationBundle | A configuration bundle needs at least one component | ERROR | none |
+| `pf-agentcore-config-bundle-name-unique` | AWS::BedrockAgentCore::ConfigurationBundle | BundleName must be unique within the account | ERROR | none |
+| `pf-agentcore-dataset-name-unique` | AWS::BedrockAgentCore::Dataset | DatasetName must be unique within the account, compared case-insensitively | ERROR | none |
 | `pf-agentcore-dataset-source-exactly-one` | AWS::BedrockAgentCore::Dataset | Dataset Source must hold exactly one of InlineExamples or S3Source | ERROR | none |
+| `pf-agentcore-evaluator-name-unique` | AWS::BedrockAgentCore::Evaluator | EvaluatorName must be unique within the account | ERROR | none |
 | `pf-agentcore-evaluator-rating-scale-empty` | AWS::BedrockAgentCore::Evaluator | An LLM-as-a-judge evaluator RatingScale must list at least one scale entry | ERROR | none |
+| `pf-agentcore-execution-role-account` | AWS::BedrockAgentCore::OnlineEvaluationConfig<br>AWS::BedrockAgentCore::Memory | An AgentCore execution role must live in the deploy account | ERROR | none |
 | `pf-agentcore-gateway-authorizer-config-unexpected` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType AWS_IAM or NONE must not set AuthorizerConfiguration | ERROR | none |
 | `pf-agentcore-gateway-interceptor-point-unique` | AWS::BedrockAgentCore::Gateway | Gateway interceptors may bind each interception point (REQUEST / RESPONSE) only once | ERROR | none |
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::PaymentManager | Gateways and payment managers with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | ERROR | none |
 | `pf-agentcore-gateway-mcp-supported-versions` | AWS::BedrockAgentCore::Gateway | Gateway MCP SupportedVersions must be MCP protocol versions the service supports | ERROR | none |
 | `pf-agentcore-gateway-target-credential-provider-required` | AWS::BedrockAgentCore::GatewayTarget | Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block | ERROR | none |
+| `pf-agentcore-gateway-target-http-unsupported` | AWS::BedrockAgentCore::GatewayTarget | TargetConfiguration.Http cannot be used: CloudFormation gateways are always MCP | ERROR | none |
 | `pf-agentcore-gateway-target-iam-credential-provider` | AWS::BedrockAgentCore::GatewayTarget | OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service) | ERROR | none |
 | `pf-agentcore-gateway-target-lambda-credential-type` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets accept only the GATEWAY_IAM_ROLE credential provider | ERROR | none |
 | `pf-agentcore-gateway-target-lambda-region` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets must be in the gateway's own region | ERROR | none |
@@ -315,6 +320,7 @@
 | `pf-agentcore-gateway-target-lambda-tool-schema-empty` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets need at least one tool in ToolSchema.InlinePayload | ERROR | none |
 | `pf-agentcore-gateway-target-openapi-schema` | AWS::BedrockAgentCore::GatewayTarget | Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation | ERROR | none |
 | `pf-agentcore-jwt-authorizer-claims` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::Harness | A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims | ERROR | none |
+| `pf-agentcore-kms-key-region` | AWS::BedrockAgentCore::Dataset<br>AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::ConfigurationBundle | A KmsKeyArn must name a key in the deploy region | ERROR | none |
 | `pf-agentcore-memory-custom-strategy-execution-role` | AWS::BedrockAgentCore::Memory | Memories with a custom strategy require MemoryExecutionRoleArn | ERROR | none |
 | `pf-agentcore-memory-strategy-exactly-one` | AWS::BedrockAgentCore::Memory | Each MemoryStrategies entry must hold exactly one strategy type, and a CustomMemoryStrategy exactly one Configuration override | ERROR | pending-engine |
 | `pf-agentcore-memory-strategy-name-unique` | AWS::BedrockAgentCore::Memory | Memory strategy names must be unique within a memory | ERROR | none |
@@ -327,6 +333,7 @@
 | `pf-agentcore-online-eval-evaluators-or-insights` | AWS::BedrockAgentCore::OnlineEvaluationConfig | An online evaluation config needs a non-empty Evaluators list (or Insights) | ERROR | none |
 | `pf-agentcore-payment-credential-provider-vendor-config` | AWS::BedrockAgentCore::PaymentCredentialProvider | ProviderConfigurationInput must contain the block matching CredentialProviderVendor (CoinbaseCDP / StripePrivy) | ERROR | none |
 | `pf-agentcore-policy-cedar-statement` | AWS::BedrockAgentCore::Policy | A Cedar policy statement must be a permit/forbid clause that constrains the resource and, for permit, carries a condition | ERROR | none |
+| `pf-agentcore-policy-name-unique` | AWS::BedrockAgentCore::Policy | Policy names must be unique within one policy engine | ERROR | none |
 | `pf-agentcore-required-union-empty` | AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::GatewayTarget<br>AWS::BedrockAgentCore::Policy | Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects | ERROR | pending-engine |
 | `pf-agentcore-resource-policy-document` | AWS::BedrockAgentCore::ResourcePolicy | A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN | ERROR | none |
 | `pf-agentcore-runtime-artifact-exactly-one` | AWS::BedrockAgentCore::Runtime | AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration | ERROR | none |

@@ -1,0 +1,38 @@
+{
+ "Resources": {
+  "B1": {
+   "Type": "AWS::BedrockAgentCore::ConfigurationBundle",
+   "Properties": {
+    "BundleName": "cdkpf_cbdup",
+    "Components": {
+     "harness": {
+      "Configuration": {
+       "model": {
+        "bedrockModelConfig": {
+         "modelId": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "B2": {
+   "Type": "AWS::BedrockAgentCore::ConfigurationBundle",
+   "Properties": {
+    "BundleName": "cdkpf_cbdup2",
+    "Components": {
+     "harness": {
+      "Configuration": {
+       "model": {
+        "bedrockModelConfig": {
+         "modelId": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

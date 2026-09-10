@@ -1,0 +1,62 @@
+{
+ "Resources": {
+  "E1": {
+   "Type": "AWS::BedrockAgentCore::Evaluator",
+   "Properties": {
+    "EvaluatorName": "cdkpf_evdup",
+    "Level": "TRACE",
+    "EvaluatorConfig": {
+     "LlmAsAJudge": {
+      "Instructions": "Rate the {assistant_turn} given {context}",
+      "ModelConfig": {
+       "BedrockEvaluatorModelConfig": {
+        "ModelId": "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+       }
+      },
+      "RatingScale": {
+       "Categorical": [
+        {
+         "Label": "good",
+         "Definition": "ok"
+        },
+        {
+         "Label": "bad",
+         "Definition": "no"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "E2": {
+   "Type": "AWS::BedrockAgentCore::Evaluator",
+   "Properties": {
+    "EvaluatorName": "cdkpf_evdup2",
+    "Level": "TRACE",
+    "EvaluatorConfig": {
+     "LlmAsAJudge": {
+      "Instructions": "Rate the {assistant_turn} given {context}",
+      "ModelConfig": {
+       "BedrockEvaluatorModelConfig": {
+        "ModelId": "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+       }
+      },
+      "RatingScale": {
+       "Categorical": [
+        {
+         "Label": "good",
+         "Definition": "ok"
+        },
+        {
+         "Label": "bad",
+         "Definition": "no"
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,12 @@
+id: pf-agentcore-execution-role-account
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::OnlineEvaluationConfig, AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "An AgentCore execution role must live in the deploy account"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOnlineEvaluationConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: EvaluationExecutionRoleArn in account 999999999999 -> ROLLBACK_COMPLETE, \"User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: bedrock-agentcore:CreateOnlineEvaluationConfig (403)\"; the control template, identical but for a role in the deploy account, reaches CREATE_COMPLETE. MemoryExecutionRoleArn behaves the same way (403 on CreateMemory with a foreign account, CREATE_COMPLETE with the local role). The service reports a cross-account role as an authorization failure on the create call itself, which reads like a missing IAM permission rather than a bad ARN."
+addedOn: 2026-09-10

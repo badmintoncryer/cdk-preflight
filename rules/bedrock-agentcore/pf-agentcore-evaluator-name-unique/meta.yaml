@@ -1,0 +1,12 @@
+id: pf-agentcore-evaluator-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Evaluator]
+severity: ERROR
+title: "EvaluatorName must be unique within the account"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateEvaluator.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: two evaluators named cdkpf_evdup in one stack -> ROLLBACK_COMPLETE, \"Evaluator with same name already exist\" (Bedrock AgentCore Control CreateEvaluator, 409 ConflictException). E3019 does not fire because the primaryIdentifier is the read-only EvaluatorArn."
+addedOn: 2026-09-10

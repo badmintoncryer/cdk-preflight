@@ -1,0 +1,12 @@
+id: pf-agentcore-kms-key-region
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Dataset, AWS::BedrockAgentCore::Evaluator, AWS::BedrockAgentCore::ConfigurationBundle]
+severity: ERROR
+title: "A KmsKeyArn must name a key in the deploy region"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateDataset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1 (Dataset): KmsKeyArn in eu-west-1 -> ROLLBACK_COMPLETE, \"The KMS key was not found: arn:aws:kms:eu-west-1:...  Invalid arn eu-west-1 (Service: Kms, Status Code: 400)\"; the control template, a key id that does not exist in us-east-1, fails differently (\"... does not exist\"), so the cross-region ARN is rejected before the key is looked up - the same ordering measured for Kinesis on 2026-09-06. Evaluator and ConfigurationBundle carry the identical KmsKeyArn pattern and are covered by the same rule; only Dataset is bench-verified."
+addedOn: 2026-09-10
