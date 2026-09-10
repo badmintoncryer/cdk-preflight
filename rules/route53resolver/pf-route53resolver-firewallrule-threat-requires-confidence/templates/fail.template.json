@@ -7,7 +7,7 @@
           "Fn::Join": [
             "",
             [
-              "rg-",
+              "cdkpf-rg-",
               {
                 "Fn::Select": [
                   2,

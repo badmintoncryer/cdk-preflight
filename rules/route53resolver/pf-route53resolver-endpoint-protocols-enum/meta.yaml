@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-11 us-east-1: fail template -> 1 validation error detected: Value '[null]' at 'protocols' failed to satisfy constraint: Member must satisfy constraint: [Member must satisfy enum value set: [Do53, DoH-FIPS, DoH]] (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

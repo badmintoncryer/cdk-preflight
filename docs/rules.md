@@ -1582,6 +1582,75 @@
 | `pf-route53-weighted-group-same-ttl` | AWS::Route53::RecordSetGroup | Weighted record sets sharing a name and type must have the same TTL | ERROR | none |
 | `pf-route53-weighted-max-100-same-name-type` | AWS::Route53::RecordSetGroup | A weighted group may hold at most 100 record sets per name and type | ERROR | none |
 | `pf-route53-zonename-trailing-dot` | AWS::Route53::RecordSet | HostedZoneName must end with a trailing dot | ERROR | none |
+| `pf-route53profiles-profileassociation-one-per-vpc` | AWS::Route53Profiles::ProfileAssociation | A VPC can only be associated with one Route 53 Profile | ERROR | none |
+| `pf-route53profiles-profileresourceassociation-priority-range` | AWS::Route53Profiles::ProfileResourceAssociation | A ProfileResourceAssociation priority must be between 101 and 9899 | ERROR | none |
+| `pf-route53profiles-profileresourceassociation-querylogging-max` | AWS::Route53Profiles::ProfileResourceAssociation | A Profile cannot hold more than one Resolver query logging config | ERROR | none |
+| `pf-route53profiles-profileresourceassociation-resourcearn-type` | AWS::Route53Profiles::ProfileResourceAssociation | A Profile can only take a private hosted zone, DNS Firewall rule group, Resolver rule or interface VPC endpoint | ERROR | none |
+| `pf-route53profiles-profileresourceassociation-resourceproperties-json` | AWS::Route53Profiles::ProfileResourceAssociation | ProfileResourceAssociation ResourceProperties must be a JSON object string | ERROR | none |
+| `pf-route53profiles-profileresourceassociation-rulegroup-requires-properties` | AWS::Route53Profiles::ProfileResourceAssociation | Associating a DNS Firewall rule group with a Profile requires ResourceProperties | ERROR | none |
+| `pf-route53profiles-profileresourceassociation-rulegroups-max` | AWS::Route53Profiles::ProfileResourceAssociation | A Profile cannot hold more than 5 DNS Firewall rule groups | ERROR | none |
+| `pf-route53resolver-dnssecconfig-one-per-vpc` | AWS::Route53Resolver::ResolverDNSSECConfig | A VPC can only have one Resolver DNSSEC validation config | ERROR | none |
+| `pf-route53resolver-endpoint-delegation-do53-only` | AWS::Route53Resolver::ResolverEndpoint | An inbound delegation Resolver endpoint only supports Do53 | ERROR | none |
+| `pf-route53resolver-endpoint-direction-enum` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint Direction must be INBOUND, OUTBOUND or INBOUND_DELEGATION | ERROR | pending-engine |
+| `pf-route53resolver-endpoint-dns64-inbound-only` | AWS::Route53Resolver::ResolverEndpoint | Dns64Enabled is only supported on inbound Resolver endpoints | ERROR | none |
+| `pf-route53resolver-endpoint-doh-dohfips-exclusive` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint cannot declare both DoH and DoH-FIPS | ERROR | none |
+| `pf-route53resolver-endpoint-dohfips-inbound-only` | AWS::Route53Resolver::ResolverEndpoint | DoH-FIPS is only supported on inbound Resolver endpoints | ERROR | none |
+| `pf-route53resolver-endpoint-instance-type-requires-outpostarn` | AWS::Route53Resolver::ResolverEndpoint | PreferredInstanceType can only be set on an Outpost-local Resolver endpoint | ERROR | none |
+| `pf-route53resolver-endpoint-ip-format` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint IpAddresses[].Ip must be a valid IPv4 address | ERROR | none |
+| `pf-route53resolver-endpoint-ipaddresses-max-six` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint cannot have more than 6 IP addresses | ERROR | none |
+| `pf-route53resolver-endpoint-ipv6-internet-access-outbound-only` | AWS::Route53Resolver::ResolverEndpoint | Ipv6InternetAccessEnabled is only supported on outbound Resolver endpoints | ERROR | none |
+| `pf-route53resolver-endpoint-outpostarn-requires-instance-type` | AWS::Route53Resolver::ResolverEndpoint | An Outpost-local Resolver endpoint must also set PreferredInstanceType | ERROR | none |
+| `pf-route53resolver-endpoint-protocols-enum` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint protocol must be Do53, DoH or DoH-FIPS | ERROR | pending-engine |
+| `pf-route53resolver-endpoint-subnet-address-family` | AWS::Route53Resolver::ResolverEndpoint<br>AWS::EC2::Subnet | An IPv6 Resolver endpoint needs subnets that have an IPv6 CIDR | ERROR | none |
+| `pf-route53resolver-endpoint-subnets-same-vpc` | AWS::Route53Resolver::ResolverEndpoint<br>AWS::EC2::Subnet | All subnets of a Resolver endpoint must belong to the same VPC | ERROR | none |
+| `pf-route53resolver-endpoint-targetnameserver-metrics-outbound-only` | AWS::Route53Resolver::ResolverEndpoint | TargetNameServerMetricsEnabled is only supported on outbound Resolver endpoints | ERROR | none |
+| `pf-route53resolver-endpoint-type-enum` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint ResolverEndpointType must be IPV4, IPV6 or DUALSTACK | ERROR | pending-engine |
+| `pf-route53resolver-endpoint-type-ipv4-address-family` | AWS::Route53Resolver::ResolverEndpoint | An IPV4 Resolver endpoint cannot carry IPv6 addresses | ERROR | none |
+| `pf-route53resolver-endpoint-type-ipv6-address-family` | AWS::Route53Resolver::ResolverEndpoint | An IPV6 Resolver endpoint cannot carry IPv4 addresses | ERROR | none |
+| `pf-route53resolver-firewalldomainlist-domain-format` | AWS::Route53Resolver::FirewallDomainList | DNS Firewall domain list entries must be plain ASCII domains with the wildcard first | ERROR | none |
+| `pf-route53resolver-firewalldomainlist-domains-fileurl-exclusive` | AWS::Route53Resolver::FirewallDomainList | A DNS Firewall domain list cannot set both Domains and DomainFileUrl | ERROR | none |
+| `pf-route53resolver-firewalldomainlist-domains-max` | AWS::Route53Resolver::FirewallDomainList | A DNS Firewall domain list cannot take more than 1000 domains in one request | ERROR | none |
+| `pf-route53resolver-firewallrule-action-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule Action must be ALLOW, BLOCK or ALERT | ERROR | pending-engine |
+| `pf-route53resolver-firewallrule-block-requires-blockresponse` | AWS::Route53Resolver::FirewallRuleGroup | A BLOCK DNS Firewall rule must set BlockResponse | ERROR | none |
+| `pf-route53resolver-firewallrule-blockoverridednstype-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule BlockOverrideDnsType must be CNAME | ERROR | pending-engine |
+| `pf-route53resolver-firewallrule-blockresponse-block-only` | AWS::Route53Resolver::FirewallRuleGroup | BlockResponse can only be set on a BLOCK DNS Firewall rule | ERROR | none |
+| `pf-route53resolver-firewallrule-blockresponse-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule BlockResponse must be NODATA, NXDOMAIN or OVERRIDE | ERROR | pending-engine |
+| `pf-route53resolver-firewallrule-confidencethreshold-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall threat rule ConfidenceThreshold must be LOW, MEDIUM or HIGH | ERROR | pending-engine |
+| `pf-route53resolver-firewallrule-dnsthreatprotection-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall DnsThreatProtection must be DGA, DNS_TUNNELING or DICTIONARY_DGA | ERROR | pending-engine |
+| `pf-route53resolver-firewallrule-domainlist-qtype-unique` | AWS::Route53Resolver::FirewallRuleGroup | A rule group cannot have two rules with the same domain list and Qtype | ERROR | none |
+| `pf-route53resolver-firewallrule-domainlist-threat-exclusive` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule cannot combine a domain list with DnsThreatProtection | ERROR | none |
+| `pf-route53resolver-firewallrule-match-source-required` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule must declare what it matches | ERROR | none |
+| `pf-route53resolver-firewallrule-override-attrs-require-override` | AWS::Route53Resolver::FirewallRuleGroup | BlockOverride properties are only allowed when BlockResponse is OVERRIDE | ERROR | none |
+| `pf-route53resolver-firewallrule-override-requires-all-three` | AWS::Route53Resolver::FirewallRuleGroup | An OVERRIDE DNS Firewall rule must set all three BlockOverride properties | ERROR | none |
+| `pf-route53resolver-firewallrule-priority-unique` | AWS::Route53Resolver::FirewallRuleGroup | DNS Firewall rule priorities must be unique inside a rule group | ERROR | none |
+| `pf-route53resolver-firewallrule-qtype-values` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule Qtype must be a known record type or TYPENUMBER | ERROR | none |
+| `pf-route53resolver-firewallrule-redirectionaction-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall FirewallDomainRedirectionAction must be spelled in upper case | ERROR | pending-engine |
+| `pf-route53resolver-firewallrule-ruletype-toplevel-exclusive` | AWS::Route53Resolver::FirewallRuleGroup | FirewallRuleType cannot be combined with FirewallDomainListId or DnsThreatProtection | ERROR | none |
+| `pf-route53resolver-firewallrule-threat-action-not-allow` | AWS::Route53Resolver::FirewallRuleGroup | A DnsThreatProtection rule cannot use Action ALLOW | ERROR | none |
+| `pf-route53resolver-firewallrule-threat-requires-confidence` | AWS::Route53Resolver::FirewallRuleGroup | DnsThreatProtection and ConfidenceThreshold must be set together | ERROR | none |
+| `pf-route53resolver-firewallrulegroup-rules-max` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule group cannot hold more than 100 rules | ERROR | none |
+| `pf-route53resolver-firewallrulegroupassociation-max-per-vpc` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A VPC cannot have more than 5 DNS Firewall rule groups associated | ERROR | none |
+| `pf-route53resolver-firewallrulegroupassociation-mutationprotection-enum` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A DNS Firewall rule group association MutationProtection must be ENABLED or DISABLED | ERROR | pending-engine |
+| `pf-route53resolver-firewallrulegroupassociation-priority-range` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A DNS Firewall rule group association Priority must be between 101 and 9899 | ERROR | none |
+| `pf-route53resolver-firewallrulegroupassociation-priority-unique` | AWS::Route53Resolver::FirewallRuleGroupAssociation | Two DNS Firewall rule groups on the same VPC cannot share a priority | ERROR | none |
+| `pf-route53resolver-querylogconfig-destination-arn-service` | AWS::Route53Resolver::ResolverQueryLoggingConfig | A Resolver query logging destination must be S3, CloudWatch Logs or Firehose | ERROR | none |
+| `pf-route53resolver-querylogconfigassociation-one-per-destination-type` | AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation | A VPC can only have one Resolver query log association per destination type | ERROR | none |
+| `pf-route53resolver-rule-delegate-forbids-targetips-and-domainname` | AWS::Route53Resolver::ResolverRule | A DELEGATE Resolver rule cannot set TargetIps or DomainName | ERROR | none |
+| `pf-route53resolver-rule-delegate-requires-endpoint-and-record` | AWS::Route53Resolver::ResolverRule | A DELEGATE Resolver rule needs both ResolverEndpointId and DelegationRecord | ERROR | none |
+| `pf-route53resolver-rule-endpointid-must-be-outbound` | AWS::Route53Resolver::ResolverRule<br>AWS::Route53Resolver::ResolverEndpoint | A Resolver rule must point at an outbound Resolver endpoint | ERROR | none |
+| `pf-route53resolver-rule-forward-requires-endpoint-and-targetips` | AWS::Route53Resolver::ResolverRule | A FORWARD Resolver rule needs both ResolverEndpointId and TargetIps | ERROR | none |
+| `pf-route53resolver-rule-recursive-not-creatable` | AWS::Route53Resolver::ResolverRule | A RECURSIVE Resolver rule cannot be created by a customer | ERROR | none |
+| `pf-route53resolver-rule-ruletype-enum` | AWS::Route53Resolver::ResolverRule | A Resolver rule RuleType must be FORWARD, SYSTEM, RECURSIVE or DELEGATE | ERROR | pending-engine |
+| `pf-route53resolver-rule-system-forbids-endpoint-and-targetips` | AWS::Route53Resolver::ResolverRule | A SYSTEM Resolver rule cannot set ResolverEndpointId or TargetIps | ERROR | none |
+| `pf-route53resolver-rule-system-requires-domainname` | AWS::Route53Resolver::ResolverRule | A SYSTEM Resolver rule must set DomainName | ERROR | none |
+| `pf-route53resolver-rule-targetip-ip-format` | AWS::Route53Resolver::ResolverRule | A Resolver rule TargetIps[].Ip must be a valid IPv4 address | ERROR | none |
+| `pf-route53resolver-rule-targetip-ipv6-format` | AWS::Route53Resolver::ResolverRule | A Resolver rule TargetIps[].Ipv6 must be a valid IPv6 address | ERROR | none |
+| `pf-route53resolver-rule-targetip-protocol-enum` | AWS::Route53Resolver::ResolverRule | A Resolver rule target protocol must be Do53, DoH or DoH-FIPS | ERROR | pending-engine |
+| `pf-route53resolver-rule-targetip-protocol-matches-endpoint` | AWS::Route53Resolver::ResolverRule<br>AWS::Route53Resolver::ResolverEndpoint | A Resolver rule target protocol must be enabled on the outbound endpoint | ERROR | none |
+| `pf-route53resolver-rule-targetip-sni-doh-only` | AWS::Route53Resolver::ResolverRule | ServerNameIndication on a Resolver rule target requires Protocol DoH | ERROR | none |
+| `pf-route53resolver-rule-targetips-address-family-exclusive` | AWS::Route53Resolver::ResolverRule | Resolver rule target IPs cannot mix IPv4 and IPv6 | ERROR | none |
+| `pf-route53resolver-rule-targetips-max-six` | AWS::Route53Resolver::ResolverRule | A Resolver rule cannot have more than 6 target IPs | ERROR | none |
+| `pf-route53resolver-ruleassociation-duplicate-rule-vpc` | AWS::Route53Resolver::ResolverRuleAssociation | The same Resolver rule cannot be associated with the same VPC twice | ERROR | none |
 | `pf-s3-accelerate-dotted-name` | AWS::S3::Bucket | Transfer Acceleration rejects bucket names with periods | ERROR | none |
 | `pf-s3-acl-public-blocked` | AWS::S3::Bucket | A public canned ACL cannot be applied while Block Public Access is on | ERROR | none |
 | `pf-s3-ap-name-alias-suffix` | AWS::S3::AccessPoint | An access point name must not end with an alias suffix | ERROR | none |

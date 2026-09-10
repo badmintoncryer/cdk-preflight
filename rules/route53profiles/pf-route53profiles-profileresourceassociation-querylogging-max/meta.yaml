@@ -3,10 +3,10 @@ service: route53profiles
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53Profiles::ProfileResourceAssociation]
 severity: ERROR
-title: "A Profile cannot hold more than 2 Resolver query logging configs"
+title: "A Profile cannot hold more than one Resolver query logging config"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-11 us-east-1: fail template (2 query logging configs on one Profile) -> stack ROLLBACK_COMPLETE, Service returned error code ConflictException (Service: Route53Profiles, Status Code: 400); pass template (1 config) -> CREATE_COMPLETE. Route53Profiles returns no message body, but the two templates differ by exactly one ProfileResourceAssociation, and the same shape with 5 firewall rule group associations deploys clean, so this is the query logging limit and not a concurrency conflict. DNSLimitations documents the limit as 2; the service enforces 1"
 addedOn: 2026-09-10

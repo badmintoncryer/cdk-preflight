@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSL
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00309] Account '214794239830' has exceeded 'max-target-ips-per-resolver-rule'. (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

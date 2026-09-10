@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00422] PreferredInstanceType can only be provided for Outpost-local endpoints; specify Outpost Arn if this is desired (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

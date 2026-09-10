@@ -7,7 +7,7 @@
           "Fn::Join": [
             "",
             [
-              "pr-",
+              "cdkpf-pr-",
               {
                 "Fn::Select": [
                   2,
@@ -60,7 +60,7 @@
           "Fn::Join": [
             "",
             [
-              "ql0-",
+              "cdkpf-ql0-",
               {
                 "Fn::Select": [
                   2,
@@ -92,7 +92,7 @@
           "Fn::Join": [
             "",
             [
-              "ra0-",
+              "cdkpf-ra0-",
               {
                 "Fn::Select": [
                   2,
@@ -115,100 +115,6 @@
         "ResourceArn": {
           "Fn::GetAtt": [
             "Ql0",
-            "Arn"
-          ]
-        }
-      }
-    },
-    "Lg1": {
-      "Type": "AWS::Logs::LogGroup",
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/cdkpf/1/",
-              {
-                "Fn::Select": [
-                  2,
-                  {
-                    "Fn::Split": [
-                      "/",
-                      {
-                        "Ref": "AWS::StackId"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        "RetentionInDays": 1
-      }
-    },
-    "Ql1": {
-      "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfig",
-      "Properties": {
-        "Name": {
-          "Fn::Join": [
-            "",
-            [
-              "ql1-",
-              {
-                "Fn::Select": [
-                  2,
-                  {
-                    "Fn::Split": [
-                      "/",
-                      {
-                        "Ref": "AWS::StackId"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        "DestinationArn": {
-          "Fn::GetAtt": [
-            "Lg1",
-            "Arn"
-          ]
-        }
-      }
-    },
-    "Ra1": {
-      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
-      "Properties": {
-        "Name": {
-          "Fn::Join": [
-            "",
-            [
-              "ra1-",
-              {
-                "Fn::Select": [
-                  2,
-                  {
-                    "Fn::Split": [
-                      "/",
-                      {
-                        "Ref": "AWS::StackId"
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          ]
-        },
-        "ProfileId": {
-          "Ref": "Profile"
-        },
-        "ResourceArn": {
-          "Fn::GetAtt": [
-            "Ql1",
             "Arn"
           ]
         }

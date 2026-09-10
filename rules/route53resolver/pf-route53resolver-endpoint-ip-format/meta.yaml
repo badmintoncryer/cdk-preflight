@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00405] IPv6 address \"999.999.999.999\" is either not in subnet \"subnet-0c1dbc8ee62f2d9bd\" CIDR range or is reserved. (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

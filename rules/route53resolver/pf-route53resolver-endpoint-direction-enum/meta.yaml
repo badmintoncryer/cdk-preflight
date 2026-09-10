@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> 1 validation error detected: Value 'BOTH' at 'direction' failed to satisfy constraint: Member must satisfy enum value set: [INBOUND_DELEGATION, OUTBOUND, INBOUND] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-11 us-east-1: fail template -> 1 validation error detected: Value 'BOTH' at 'direction' failed to satisfy constraint: Member must satisfy enum value set: [INBOUND_DELEGATION, OUTBOUND, INBOUND] (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

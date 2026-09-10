@@ -17662,6 +17662,769 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_zdot_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_zdot_msg(zn) := sprintf(\"HostedZoneName '%s' is missing the trailing dot, so CloudFormation fails the lookup with \\\"No hosted zone with name ... found\\\"\", [zn])\n\n_pf_r53_zdot_bad(zn) if {\n\tis_string(zn)\n\tzn != \"\"\n\tnot endswith(zn, \".\")\n}\n\n# CloudFormation looks the zone up by the literal HostedZoneName and does not\n# normalize the trailing dot: the same stack deployed clean with\n# \"zone.example.\" and failed with NotFound for \"zone.example\" (2026-09-02).\n# RecordSetGroup carries the same property and the same lookup.\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\t_pf_r53_zdot_msg(zn),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t_pf_r53_zdot_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\t_pf_r53_zdot_bad(zn)\n}\n\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\t_pf_r53_zdot_msg(zn),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t_pf_r53_zdot_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\t_pf_r53_zdot_bad(zn)\n}\n"
   },
   {
+    "id": "pf-route53profiles-profileassociation-one-per-vpc",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "A VPC can only be associated with one Route 53 Profile",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileassociation-one-per-vpc\", \"ERROR\", name,\n\t\"Properties.ResourceId\",\n\t\"another ProfileAssociation in this template attaches a second Profile to the same VPC\",\n\t\"Attach one Profile per VPC\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateProfile.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileAssociation\")\n\tk := _pf_r53r_key(_pf_r53r_props(name), \"ResourceId\")\n\tdup := [1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Profiles::ProfileAssociation\")\n\t\t_pf_r53r_key(_pf_r53r_props(o), \"ResourceId\") == k\n\t]\n\tcount(dup) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53profiles-profileresourceassociation-priority-range",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "A ProfileResourceAssociation priority must be between 101 and 9899",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileResourceAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileresourceassociation-priority-range\", \"ERROR\", name,\n\t\"Properties.ResourceProperties\",\n\tsprintf(\"ResourceProperties asks for priority %d; Route 53 Profiles reserves 100 and below and 9900 and above\", [v]),\n\t\"Use a priority between 101 and 9899\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateResourceToProfile.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\tv := _pf_r53r_rp_priority(_pf_r53r_str(_pf_r53r_props(name), \"ResourceProperties\"))\n\t_pf_r53r_outside_101_9899(v)\n}\n"
+  },
+  {
+    "id": "pf-route53profiles-profileresourceassociation-querylogging-max",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "A Profile cannot hold more than one Resolver query logging config",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileResourceAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileresourceassociation-querylogging-max\", \"ERROR\", name,\n\t\"Properties.ResourceArn\",\n\tsprintf(\"this template associates %d Resolver query logging configs with the same Profile; only one is allowed\", [n]),\n\t\"Associate at most one query logging config per Profile\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_pra_kind(p) == \"resolver-query-log-config\"\n\tk := _pf_r53r_key(p, \"ProfileId\")\n\tn := count([1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\t\tq := _pf_r53r_props(o)\n\t\t_pf_r53r_pra_kind(q) == \"resolver-query-log-config\"\n\t\t_pf_r53r_key(q, \"ProfileId\") == k\n\t])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-route53profiles-profileresourceassociation-resourcearn-type",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "A Profile can only take a private hosted zone, DNS Firewall rule group, Resolver rule or interface VPC endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileResourceAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileresourceassociation-resourcearn-type\", \"ERROR\", name,\n\t\"Properties.ResourceArn\",\n\tsprintf(\"ResourceArn is a %s ARN; a Profile only takes a private hosted zone, a DNS Firewall rule group, a Resolver rule or an interface VPC endpoint\", [k]),\n\t\"Point ResourceArn at one of the four supported resource types\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateResourceToProfile.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\tk := _pf_r53r_arn_kind(_pf_r53r_str(_pf_r53r_props(name), \"ResourceArn\"))\n\tnot k in {\"route53:hostedzone\", \"route53resolver:firewall-rule-group\", \"route53resolver:resolver-rule\", \"ec2:vpc-endpoint\"}\n}\n"
+  },
+  {
+    "id": "pf-route53profiles-profileresourceassociation-resourceproperties-json",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "ProfileResourceAssociation ResourceProperties must be a JSON object string",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileResourceAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileresourceassociation-resourceproperties-json\", \"ERROR\", name,\n\t\"Properties.ResourceProperties\",\n\tsprintf(\"ResourceProperties is '%s', which is not a JSON object\", [s]),\n\t\"Pass a JSON object string such as {\\\"priority\\\": 101}\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53profiles-profileresourceassociation.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\ts := _pf_r53r_str(_pf_r53r_props(name), \"ResourceProperties\")\n\tnot regex.match(`^\\s*\\{`, s)\n}\n"
+  },
+  {
+    "id": "pf-route53profiles-profileresourceassociation-rulegroup-requires-properties",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "Associating a DNS Firewall rule group with a Profile requires ResourceProperties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileResourceAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileresourceassociation-rulegroup-requires-properties\", \"ERROR\", name,\n\t\"Properties.ResourceProperties\",\n\t\"a DNS Firewall rule group is being associated without ResourceProperties; the priority is required\",\n\t\"Add ResourceProperties, for example {\\\"priority\\\": 101}\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateResourceToProfile.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_pra_kind(p) == \"firewall-rule-group\"\n\tnot _pf_r53r_has(p, \"ResourceProperties\")\n}\n"
+  },
+  {
+    "id": "pf-route53profiles-profileresourceassociation-rulegroups-max",
+    "service": "route53profiles",
+    "severity": "ERROR",
+    "title": "A Profile cannot hold more than 5 DNS Firewall rule groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Profiles::ProfileResourceAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53profiles-profileresourceassociation-rulegroups-max\", \"ERROR\", name,\n\t\"Properties.ResourceArn\",\n\tsprintf(\"this template associates %d DNS Firewall rule groups with the same Profile; the limit is 5\", [n]),\n\t\"Associate at most 5 rule groups per Profile\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_pra_kind(p) == \"firewall-rule-group\"\n\tk := _pf_r53r_key(p, \"ProfileId\")\n\tn := count([1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Profiles::ProfileResourceAssociation\")\n\t\tq := _pf_r53r_props(o)\n\t\t_pf_r53r_pra_kind(q) == \"firewall-rule-group\"\n\t\t_pf_r53r_key(q, \"ProfileId\") == k\n\t])\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-dnssecconfig-one-per-vpc",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A VPC can only have one Resolver DNSSEC validation config",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverDNSSECConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-dnssecconfig-one-per-vpc\", \"ERROR\", name,\n\t\"Properties.ResourceId\",\n\t\"another ResolverDNSSECConfig in this template targets the same VPC\",\n\t\"Keep one ResolverDNSSECConfig per VPC\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_UpdateResolverDnssecConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverDNSSECConfig\")\n\tk := _pf_r53r_key(_pf_r53r_props(name), \"ResourceId\")\n\tdup := [1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Resolver::ResolverDNSSECConfig\")\n\t\t_pf_r53r_key(_pf_r53r_props(o), \"ResourceId\") == k\n\t]\n\tcount(dup) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-delegation-do53-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "An inbound delegation Resolver endpoint only supports Do53",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-delegation-do53-only\", \"ERROR\", name,\n\t\"Properties.Protocols\",\n\tsprintf(\"the inbound delegation endpoint declares protocol '%s'; delegation endpoints only support Do53\", [x]),\n\t\"Drop Protocols, or set it to Do53 only\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"Direction\") == \"INBOUND_DELEGATION\"\n\tsome x in _pf_r53r_protos(p)\n\tx != \"Do53\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-direction-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver endpoint Direction must be INBOUND, OUTBOUND or INBOUND_DELEGATION",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-direction-enum\", \"ERROR\", name,\n\t\"Properties.Direction\",\n\tsprintf(\"Direction is '%s'; Route 53 Resolver only accepts INBOUND, OUTBOUND or INBOUND_DELEGATION\", [d]),\n\t\"Set Direction to INBOUND, OUTBOUND or INBOUND_DELEGATION\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\td := _pf_r53r_str(p, \"Direction\")\n\tnot d in {\"INBOUND\", \"OUTBOUND\", \"INBOUND_DELEGATION\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-dns64-inbound-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "Dns64Enabled is only supported on inbound Resolver endpoints",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-dns64-inbound-only\", \"ERROR\", name,\n\t\"Properties.Dns64Enabled\",\n\t\"the outbound endpoint sets Dns64Enabled; DNS64 is an inbound-endpoint feature\",\n\t\"Drop Dns64Enabled, or move it to an inbound endpoint\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_get(p, \"Dns64Enabled\") == true\n\t_pf_r53r_str(p, \"Direction\") == \"OUTBOUND\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-doh-dohfips-exclusive",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver endpoint cannot declare both DoH and DoH-FIPS",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-doh-dohfips-exclusive\", \"ERROR\", name,\n\t\"Properties.Protocols\",\n\t\"the endpoint declares both DoH and DoH-FIPS; a Resolver endpoint can only have one of them\",\n\t\"Keep either DoH or DoH-FIPS, not both\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tpr := _pf_r53r_protos(p)\n\t\"DoH\" in pr\n\t\"DoH-FIPS\" in pr\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-dohfips-inbound-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "DoH-FIPS is only supported on inbound Resolver endpoints",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-dohfips-inbound-only\", \"ERROR\", name,\n\t\"Properties.Protocols\",\n\t\"the outbound endpoint declares DoH-FIPS; only inbound endpoints support it\",\n\t\"Use Do53 or DoH on an outbound endpoint\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"Direction\") == \"OUTBOUND\"\n\t\"DoH-FIPS\" in _pf_r53r_protos(p)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-instance-type-requires-outpostarn",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "PreferredInstanceType can only be set on an Outpost-local Resolver endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-instance-type-requires-outpostarn\", \"ERROR\", name,\n\t\"Properties.PreferredInstanceType\",\n\t\"PreferredInstanceType is set but OutpostArn is missing; it is only accepted for Outpost-local endpoints\",\n\t\"Add OutpostArn, or drop PreferredInstanceType\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_has(p, \"PreferredInstanceType\")\n\tnot _pf_r53r_has(p, \"OutpostArn\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-ip-format",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver endpoint IpAddresses[].Ip must be a valid IPv4 address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-ip-format\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\tsprintf(\"IpAddresses contains Ip '%s', which is not a valid IPv4 address\", [v]),\n\t\"Use a dotted-quad IPv4 address inside the subnet CIDR\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tsome ip in _pf_r53r_ips(p)\n\tv := _pf_r53r_str(ip, \"Ip\")\n\tnot _pf_r53r_ipv4(v)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-ipaddresses-max-six",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver endpoint cannot have more than 6 IP addresses",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-ipaddresses-max-six\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\tsprintf(\"the endpoint declares %d IP addresses; Route 53 Resolver allows at most 6 per endpoint\", [n]),\n\t\"Keep at most 6 entries in IpAddresses, or split across endpoints\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tn := count(_pf_r53r_ips(p))\n\tn > 6\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-ipv6-internet-access-outbound-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "Ipv6InternetAccessEnabled is only supported on outbound Resolver endpoints",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-ipv6-internet-access-outbound-only\", \"ERROR\", name,\n\t\"Properties.Ipv6InternetAccessEnabled\",\n\t\"the inbound endpoint sets Ipv6InternetAccessEnabled; it is an outbound-endpoint feature\",\n\t\"Drop Ipv6InternetAccessEnabled, or move it to an outbound endpoint\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_get(p, \"Ipv6InternetAccessEnabled\") == true\n\t_pf_r53r_str(p, \"Direction\") == \"INBOUND\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-outpostarn-requires-instance-type",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "An Outpost-local Resolver endpoint must also set PreferredInstanceType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-outpostarn-requires-instance-type\", \"ERROR\", name,\n\t\"Properties.OutpostArn\",\n\t\"OutpostArn is set but PreferredInstanceType is missing; both are required for an Outpost-local endpoint\",\n\t\"Add PreferredInstanceType, or drop OutpostArn\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_has(p, \"OutpostArn\")\n\tnot _pf_r53r_has(p, \"PreferredInstanceType\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-protocols-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver endpoint protocol must be Do53, DoH or DoH-FIPS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-protocols-enum\", \"ERROR\", name,\n\t\"Properties.Protocols\",\n\tsprintf(\"Protocols contains '%s'; Route 53 Resolver only accepts Do53, DoH and DoH-FIPS\", [x]),\n\t\"Use Do53, DoH or DoH-FIPS\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tsome x in _pf_r53r_arr(p, \"Protocols\")\n\tis_string(x)\n\tnot x in {\"Do53\", \"DoH\", \"DoH-FIPS\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-subnet-address-family",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "An IPv6 Resolver endpoint needs subnets that have an IPv6 CIDR",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint",
+      "AWS::EC2::Subnet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-subnet-address-family\", \"ERROR\", name,\n\t\"Properties.ResolverEndpointType\",\n\tsprintf(\"ResolverEndpointType is %s but subnet %s has no Ipv6CidrBlock\", [t, s]),\n\t\"Give the subnet an IPv6 CIDR, or use ResolverEndpointType IPV4\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries.html#resolver-forwarding-inbound-queries-values\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tt := _pf_r53r_str(p, \"ResolverEndpointType\")\n\tt in {\"IPV6\", \"DUALSTACK\"}\n\tsome s in _pf_r53r_subnets(p)\n\tnot _pf_r53r_has(_pf_r53r_props(s), \"Ipv6CidrBlock\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-subnets-same-vpc",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "All subnets of a Resolver endpoint must belong to the same VPC",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint",
+      "AWS::EC2::Subnet"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-subnets-same-vpc\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\t\"IpAddresses points at subnets in more than one VPC; a Resolver endpoint lives in a single VPC\",\n\t\"Use subnets from one VPC, or create one endpoint per VPC\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tvpcs := {v |\n\t\tsome s in _pf_r53r_subnets(p)\n\t\tv := _pf_r53r_key(_pf_r53r_props(s), \"VpcId\")\n\t}\n\tcount(vpcs) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-targetnameserver-metrics-outbound-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "TargetNameServerMetricsEnabled is only supported on outbound Resolver endpoints",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-targetnameserver-metrics-outbound-only\", \"ERROR\", name,\n\t\"Properties.TargetNameServerMetricsEnabled\",\n\t\"the inbound endpoint sets TargetNameServerMetricsEnabled; target name server metrics are outbound only\",\n\t\"Drop TargetNameServerMetricsEnabled, or move it to an outbound endpoint\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_get(p, \"TargetNameServerMetricsEnabled\") == true\n\t_pf_r53r_str(p, \"Direction\") == \"INBOUND\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-type-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver endpoint ResolverEndpointType must be IPV4, IPV6 or DUALSTACK",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-type-enum\", \"ERROR\", name,\n\t\"Properties.ResolverEndpointType\",\n\tsprintf(\"ResolverEndpointType is '%s'; Route 53 Resolver only accepts IPV4, IPV6 or DUALSTACK\", [t]),\n\t\"Set ResolverEndpointType to IPV4, IPV6 or DUALSTACK\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tt := _pf_r53r_str(p, \"ResolverEndpointType\")\n\tnot t in {\"IPV4\", \"IPV6\", \"DUALSTACK\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-type-ipv4-address-family",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "An IPV4 Resolver endpoint cannot carry IPv6 addresses",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-type-ipv4-address-family\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\t\"ResolverEndpointType is IPV4 but IpAddresses declares an Ipv6 address\",\n\t\"Drop the Ipv6 entries, or set ResolverEndpointType to IPV6 or DUALSTACK\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"ResolverEndpointType\") == \"IPV4\"\n\tsome ip in _pf_r53r_ips(p)\n\t_pf_r53r_has(ip, \"Ipv6\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-endpoint-type-ipv6-address-family",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "An IPV6 Resolver endpoint cannot carry IPv4 addresses",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-type-ipv6-address-family\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\t\"ResolverEndpointType is IPV6 but IpAddresses declares an Ip (IPv4) address\",\n\t\"Drop the Ip entries, or set ResolverEndpointType to IPV4 or DUALSTACK\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"ResolverEndpointType\") == \"IPV6\"\n\tsome ip in _pf_r53r_ips(p)\n\t_pf_r53r_has(ip, \"Ip\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewalldomainlist-domain-format",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "DNS Firewall domain list entries must be plain ASCII domains with the wildcard first",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallDomainList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewalldomainlist-domain-format\", \"ERROR\", name,\n\t\"Properties.Domains\",\n\tsprintf(\"domain '%s' puts * somewhere other than the first label\", [d]),\n\t\"Only use * as the leading label, as in *.example.com\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dns-firewall-user-managed-domain-lists.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallDomainList\")\n\tsome d in _pf_r53r_arr(_pf_r53r_props(name), \"Domains\")\n\tis_string(d)\n\tcontains(d, \"*\")\n\tnot startswith(d, \"*\")\n}\n\nviolation contains make_diag_full(\"pf-route53resolver-firewalldomainlist-domain-format\", \"ERROR\", name,\n\t\"Properties.Domains\",\n\tsprintf(\"domain '%s' contains a space or a non-ASCII character\", [d]),\n\t\"Use printable ASCII without spaces (punycode for internationalized names)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dns-firewall-user-managed-domain-lists.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallDomainList\")\n\tsome d in _pf_r53r_arr(_pf_r53r_props(name), \"Domains\")\n\tis_string(d)\n\tnot regex.match(`^[!-~]+$`, d)\n}\n\nviolation contains make_diag_full(\"pf-route53resolver-firewalldomainlist-domain-format\", \"ERROR\", name,\n\t\"Properties.Domains\",\n\tsprintf(\"domain '%s' starts with a dot\", [d]),\n\t\"Drop the leading dot\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dns-firewall-user-managed-domain-lists.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallDomainList\")\n\tsome d in _pf_r53r_arr(_pf_r53r_props(name), \"Domains\")\n\tis_string(d)\n\tstartswith(d, \".\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewalldomainlist-domains-fileurl-exclusive",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall domain list cannot set both Domains and DomainFileUrl",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallDomainList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewalldomainlist-domains-fileurl-exclusive\", \"ERROR\", name,\n\t\"Properties.DomainFileUrl\",\n\t\"both Domains and DomainFileUrl are set; a domain list is filled from one or the other\",\n\t\"Keep either the inline Domains or the DomainFileUrl import\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dns-firewall-user-managed-domain-lists.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallDomainList\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_has(p, \"Domains\")\n\t_pf_r53r_has(p, \"DomainFileUrl\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewalldomainlist-domains-max",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall domain list cannot take more than 1000 domains in one request",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallDomainList"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewalldomainlist-domains-max\", \"ERROR\", name,\n\t\"Properties.Domains\",\n\tsprintf(\"the domain list declares %d domains; one request takes at most 1000\", [n]),\n\t\"Split the domains across several lists, or import them with DomainFileUrl\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_UpdateFirewallDomains.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallDomainList\")\n\tn := count(_pf_r53r_arr(_pf_r53r_props(name), \"Domains\"))\n\tn > 1000\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-action-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule Action must be ALLOW, BLOCK or ALERT",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-action-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"Action is '%s'; DNS Firewall only accepts ALERT | ALLOW | BLOCK\", [v]),\n\t\"Use one of ALERT | ALLOW | BLOCK\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_str(r, \"Action\")\n\tnot v in {\"ALERT\", \"ALLOW\", \"BLOCK\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-block-requires-blockresponse",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A BLOCK DNS Firewall rule must set BlockResponse",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-block-requires-blockresponse\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"Action is BLOCK but BlockResponse is missing\",\n\t\"Set BlockResponse to NODATA, NXDOMAIN or OVERRIDE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\t_pf_r53r_str(r, \"Action\") == \"BLOCK\"\n\tnot _pf_r53r_has(r, \"BlockResponse\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-blockoverridednstype-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule BlockOverrideDnsType must be CNAME",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-blockoverridednstype-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"BlockOverrideDnsType is '%s'; DNS Firewall only accepts CNAME\", [v]),\n\t\"Use one of CNAME\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_str(r, \"BlockOverrideDnsType\")\n\tnot v in {\"CNAME\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-blockresponse-block-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "BlockResponse can only be set on a BLOCK DNS Firewall rule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-blockresponse-block-only\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"Action is %s but BlockResponse is set; block options only apply to BLOCK rules\", [a]),\n\t\"Drop BlockResponse, or set Action to BLOCK\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\ta := _pf_r53r_str(r, \"Action\")\n\ta in {\"ALLOW\", \"ALERT\"}\n\t_pf_r53r_has(r, \"BlockResponse\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-blockresponse-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule BlockResponse must be NODATA, NXDOMAIN or OVERRIDE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-blockresponse-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"BlockResponse is '%s'; DNS Firewall only accepts NODATA | NXDOMAIN | OVERRIDE\", [v]),\n\t\"Use one of NODATA | NXDOMAIN | OVERRIDE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_str(r, \"BlockResponse\")\n\tnot v in {\"NODATA\", \"NXDOMAIN\", \"OVERRIDE\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-confidencethreshold-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall threat rule ConfidenceThreshold must be LOW, MEDIUM or HIGH",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-confidencethreshold-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"ConfidenceThreshold is '%s'; DNS Firewall only accepts HIGH | LOW | MEDIUM\", [v]),\n\t\"Use one of HIGH | LOW | MEDIUM\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_str(r, \"ConfidenceThreshold\")\n\tnot v in {\"HIGH\", \"LOW\", \"MEDIUM\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-dnsthreatprotection-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall DnsThreatProtection must be DGA, DNS_TUNNELING or DICTIONARY_DGA",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-dnsthreatprotection-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"DnsThreatProtection is '%s'; DNS Firewall only accepts DGA | DICTIONARY_DGA | DNS_TUNNELING\", [v]),\n\t\"Use one of DGA | DICTIONARY_DGA | DNS_TUNNELING\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_str(r, \"DnsThreatProtection\")\n\tnot v in {\"DGA\", \"DICTIONARY_DGA\", \"DNS_TUNNELING\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-domainlist-qtype-unique",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A rule group cannot have two rules with the same domain list and Qtype",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-domainlist-qtype-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"another rule in this rule group already uses the same FirewallDomainListId and Qtype\",\n\t\"Give the rules different Qtypes, or use one rule per domain list\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tk := sprintf(\"%s|%v\", [_pf_r53r_key(r, \"FirewallDomainListId\"), object.get(r, \"Qtype\", \"\")])\n\tdup := [1 |\n\t\tsome o in _pf_r53r_frules(name)\n\t\tsprintf(\"%s|%v\", [_pf_r53r_key(o, \"FirewallDomainListId\"), object.get(o, \"Qtype\", \"\")]) == k\n\t]\n\tcount(dup) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-domainlist-threat-exclusive",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule cannot combine a domain list with DnsThreatProtection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-domainlist-threat-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"the rule sets both FirewallDomainListId and DnsThreatProtection; they are mutually exclusive\",\n\t\"Split them into two rules\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\t_pf_r53r_has(r, \"FirewallDomainListId\")\n\t_pf_r53r_has(r, \"DnsThreatProtection\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-match-source-required",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule must declare what it matches",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-match-source-required\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"the rule sets none of FirewallDomainListId, DnsThreatProtection and FirewallRuleType\",\n\t\"Point the rule at a domain list, a threat detector or a managed rule type\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tcount(_pf_r53r_match_used(r)) == 0\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-override-attrs-require-override",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "BlockOverride properties are only allowed when BlockResponse is OVERRIDE",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-override-attrs-require-override\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"BlockResponse is %s but %s is set; override properties only apply to OVERRIDE\", [b, k]),\n\t\"Drop the BlockOverride properties, or set BlockResponse to OVERRIDE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tb := _pf_r53r_str(r, \"BlockResponse\")\n\tb in {\"NODATA\", \"NXDOMAIN\"}\n\tsome k in {\"BlockOverrideDnsType\", \"BlockOverrideDomain\", \"BlockOverrideTtl\"}\n\t_pf_r53r_has(r, k)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-override-requires-all-three",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "An OVERRIDE DNS Firewall rule must set all three BlockOverride properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-override-requires-all-three\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"BlockResponse is OVERRIDE but %s is missing; all of BlockOverrideDnsType, BlockOverrideDomain and BlockOverrideTtl are required\", [k]),\n\t\"Set BlockOverrideDnsType, BlockOverrideDomain and BlockOverrideTtl\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\t_pf_r53r_str(r, \"BlockResponse\") == \"OVERRIDE\"\n\tsome k in {\"BlockOverrideDnsType\", \"BlockOverrideDomain\", \"BlockOverrideTtl\"}\n\tnot _pf_r53r_has(r, k)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-priority-unique",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "DNS Firewall rule priorities must be unique inside a rule group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-priority-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"priority %d is used by more than one rule in this rule group\", [v]),\n\t\"Give each rule in the group its own priority\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_num(r, \"Priority\")\n\tdup := [1 | some o in _pf_r53r_frules(name); _pf_r53r_num(o, \"Priority\") == v]\n\tcount(dup) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-qtype-values",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule Qtype must be a known record type or TYPENUMBER",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-qtype-values\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"Qtype is '%s', which is neither a supported record type nor a TYPENUMBER value\", [q]),\n\t\"Use a record type such as A, AAAA or TXT, or the TYPENUMBER form (for example TYPE65535)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tq := _pf_r53r_str(r, \"Qtype\")\n\tnot upper(q) in _pf_r53r_qtypes\n\tnot regex.match(`^TYPE[0-9]+$`, upper(q))\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-redirectionaction-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall FirewallDomainRedirectionAction must be spelled in upper case",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-redirectionaction-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"FirewallDomainRedirectionAction is '%s'; DNS Firewall only accepts INSPECT_REDIRECTION_DOMAIN | TRUST_REDIRECTION_DOMAIN\", [v]),\n\t\"Use one of INSPECT_REDIRECTION_DOMAIN | TRUST_REDIRECTION_DOMAIN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tv := _pf_r53r_str(r, \"FirewallDomainRedirectionAction\")\n\tnot v in {\"INSPECT_REDIRECTION_DOMAIN\", \"TRUST_REDIRECTION_DOMAIN\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-ruletype-toplevel-exclusive",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "FirewallRuleType cannot be combined with FirewallDomainListId or DnsThreatProtection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-ruletype-toplevel-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\tsprintf(\"the rule sets FirewallRuleType together with %s; they are mutually exclusive\", [k]),\n\t\"Split them into two rules\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\t_pf_r53r_has(r, \"FirewallRuleType\")\n\tsome k in {\"FirewallDomainListId\", \"DnsThreatProtection\"}\n\t_pf_r53r_has(r, k)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-threat-action-not-allow",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DnsThreatProtection rule cannot use Action ALLOW",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-threat-action-not-allow\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"the threat protection rule sets Action ALLOW; only ALERT and BLOCK are accepted\",\n\t\"Use ALERT or BLOCK\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\t_pf_r53r_has(r, \"DnsThreatProtection\")\n\t_pf_r53r_str(r, \"Action\") == \"ALLOW\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrule-threat-requires-confidence",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "DnsThreatProtection and ConfidenceThreshold must be set together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-threat-requires-confidence\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"DnsThreatProtection and ConfidenceThreshold must be present together\",\n\t\"Set both, or neither\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tcount({k | some k in {\"DnsThreatProtection\", \"ConfidenceThreshold\"}; _pf_r53r_has(r, k)}) == 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrulegroup-rules-max",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule group cannot hold more than 100 rules",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrulegroup-rules-max\", \"ERROR\", name,\n\t\"Properties.FirewallRules\",\n\tsprintf(\"the rule group declares %d rules; DNS Firewall allows at most 100\", [n]),\n\t\"Split the rules across several rule groups\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tn := count(_pf_r53r_frules(name))\n\tn > 100\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrulegroupassociation-max-per-vpc",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A VPC cannot have more than 5 DNS Firewall rule groups associated",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroupAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrulegroupassociation-max-per-vpc\", \"ERROR\", name,\n\t\"Properties.VpcId\",\n\tsprintf(\"this template associates %d DNS Firewall rule groups with the same VPC; the limit is 5\", [n]),\n\t\"Associate at most 5 rule groups per VPC\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroupAssociation\")\n\tk := _pf_r53r_key(_pf_r53r_props(name), \"VpcId\")\n\tn := count([1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroupAssociation\")\n\t\t_pf_r53r_key(_pf_r53r_props(o), \"VpcId\") == k\n\t])\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrulegroupassociation-mutationprotection-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule group association MutationProtection must be ENABLED or DISABLED",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroupAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrulegroupassociation-mutationprotection-enum\", \"ERROR\", name,\n\t\"Properties.MutationProtection\",\n\tsprintf(\"MutationProtection is '%s'; only ENABLED and DISABLED are accepted\", [v]),\n\t\"Use ENABLED or DISABLED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-firewallrulegroupassociation.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroupAssociation\")\n\tv := _pf_r53r_str(_pf_r53r_props(name), \"MutationProtection\")\n\tnot v in {\"ENABLED\", \"DISABLED\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrulegroupassociation-priority-range",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DNS Firewall rule group association Priority must be between 101 and 9899",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroupAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrulegroupassociation-priority-range\", \"ERROR\", name,\n\t\"Properties.Priority\",\n\tsprintf(\"Priority is %d; DNS Firewall reserves 100 and below and 9900 and above\", [v]),\n\t\"Use a priority between 101 and 9899\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-firewallrulegroupassociation.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroupAssociation\")\n\tv := _pf_r53r_num(_pf_r53r_props(name), \"Priority\")\n\tis_number(v)\n\t_pf_r53r_outside_101_9899(v)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-firewallrulegroupassociation-priority-unique",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "Two DNS Firewall rule groups on the same VPC cannot share a priority",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::FirewallRuleGroupAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrulegroupassociation-priority-unique\", \"ERROR\", name,\n\t\"Properties.Priority\",\n\tsprintf(\"priority %d is already used by another rule group association on the same VPC\", [v]),\n\t\"Give each association on the VPC its own priority\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-firewallrulegroupassociation.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroupAssociation\")\n\tp := _pf_r53r_props(name)\n\tv := _pf_r53r_num(p, \"Priority\")\n\tk := sprintf(\"%s|%v\", [_pf_r53r_key(p, \"VpcId\"), v])\n\tdup := [1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroupAssociation\")\n\t\tq := _pf_r53r_props(o)\n\t\tsprintf(\"%s|%v\", [_pf_r53r_key(q, \"VpcId\"), _pf_r53r_num(q, \"Priority\")]) == k\n\t]\n\tcount(dup) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-querylogconfig-destination-arn-service",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver query logging destination must be S3, CloudWatch Logs or Firehose",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverQueryLoggingConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-querylogconfig-destination-arn-service\", \"ERROR\", name,\n\t\"Properties.DestinationArn\",\n\tsprintf(\"DestinationArn points at %s; Resolver query logs only go to S3, CloudWatch Logs or Firehose\", [svc]),\n\t\"Point DestinationArn at an S3 bucket, a CloudWatch Logs log group or a Firehose delivery stream\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverQueryLogConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverQueryLoggingConfig\")\n\tsvc := _pf_r53r_arn_service(_pf_r53r_str(_pf_r53r_props(name), \"DestinationArn\"))\n\tnot svc in {\"s3\", \"logs\", \"firehose\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-querylogconfigassociation-one-per-destination-type",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A VPC can only have one Resolver query log association per destination type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-querylogconfigassociation-one-per-destination-type\", \"ERROR\", name,\n\t\"Properties.ResourceId\",\n\t\"another query log association in this template sends the same VPC to the same destination type\",\n\t\"Keep one association per VPC and destination type\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-query-logging-configurations-managing.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation\")\n\tp := _pf_r53r_props(name)\n\tk := sprintf(\"%s|%s\", [_pf_r53r_key(p, \"ResourceId\"), _pf_r53r_qlca_dest(p)])\n\tdup := [1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation\")\n\t\tq := _pf_r53r_props(o)\n\t\tsprintf(\"%s|%s\", [_pf_r53r_key(q, \"ResourceId\"), _pf_r53r_qlca_dest(q)]) == k\n\t]\n\tcount(dup) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-delegate-forbids-targetips-and-domainname",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DELEGATE Resolver rule cannot set TargetIps or DomainName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-delegate-forbids-targetips-and-domainname\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\t\"RuleType is DELEGATE but TargetIps is set; delegate rules take neither target IPs nor a domain name\",\n\t\"Drop TargetIps\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"DELEGATE\"\n\t_pf_r53r_has(p, \"TargetIps\")\n}\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-delegate-forbids-targetips-and-domainname\", \"ERROR\", name,\n\t\"Properties.DomainName\",\n\t\"RuleType is DELEGATE but DomainName is set; delegate rules take neither target IPs nor a domain name\",\n\t\"Drop DomainName\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"DELEGATE\"\n\t_pf_r53r_has(p, \"DomainName\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-delegate-requires-endpoint-and-record",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A DELEGATE Resolver rule needs both ResolverEndpointId and DelegationRecord",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-delegate-requires-endpoint-and-record\", \"ERROR\", name,\n\t\"Properties.ResolverEndpointId\",\n\t\"RuleType is DELEGATE but ResolverEndpointId is missing\",\n\t\"Point ResolverEndpointId at an outbound Resolver endpoint\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"DELEGATE\"\n\tnot _pf_r53r_has(p, \"ResolverEndpointId\")\n}\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-delegate-requires-endpoint-and-record\", \"ERROR\", name,\n\t\"Properties.DelegationRecord\",\n\t\"RuleType is DELEGATE but DelegationRecord is missing\",\n\t\"Add the delegation record for the delegated zone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"DELEGATE\"\n\tnot _pf_r53r_has(p, \"DelegationRecord\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-endpointid-must-be-outbound",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule must point at an outbound Resolver endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule",
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-endpointid-must-be-outbound\", \"ERROR\", name,\n\t\"Properties.ResolverEndpointId\",\n\tsprintf(\"the rule points at endpoint %s, whose Direction is %s; Resolver rules require an outbound endpoint\", [e, d]),\n\t\"Point the rule at an OUTBOUND Resolver endpoint\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\te := _pf_r53r_endpoint_of(p)\n\td := _pf_r53r_str(_pf_r53r_props(e), \"Direction\")\n\td != \"OUTBOUND\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-forward-requires-endpoint-and-targetips",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A FORWARD Resolver rule needs both ResolverEndpointId and TargetIps",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-forward-requires-endpoint-and-targetips\", \"ERROR\", name,\n\t\"Properties.ResolverEndpointId\",\n\t\"RuleType is FORWARD but ResolverEndpointId is missing\",\n\t\"Point ResolverEndpointId at an outbound Resolver endpoint\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"FORWARD\"\n\tnot _pf_r53r_has(p, \"ResolverEndpointId\")\n}\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-forward-requires-endpoint-and-targetips\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\t\"RuleType is FORWARD but TargetIps is missing\",\n\t\"Add the target name server addresses to TargetIps\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"FORWARD\"\n\tnot _pf_r53r_has(p, \"TargetIps\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-recursive-not-creatable",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A RECURSIVE Resolver rule cannot be created by a customer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-recursive-not-creatable\", \"ERROR\", name,\n\t\"Properties.RuleType\",\n\t\"RuleType is RECURSIVE; only Route 53 Resolver itself creates recursive rules\",\n\t\"Use FORWARD, SYSTEM or DELEGATE\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"RECURSIVE\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-ruletype-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule RuleType must be FORWARD, SYSTEM, RECURSIVE or DELEGATE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-ruletype-enum\", \"ERROR\", name,\n\t\"Properties.RuleType\",\n\tsprintf(\"RuleType is '%s'; Route 53 Resolver only accepts FORWARD, SYSTEM, RECURSIVE and DELEGATE\", [t]),\n\t\"Set RuleType to FORWARD, SYSTEM, RECURSIVE or DELEGATE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\tt := _pf_r53r_str(p, \"RuleType\")\n\tnot t in {\"FORWARD\", \"SYSTEM\", \"RECURSIVE\", \"DELEGATE\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-system-forbids-endpoint-and-targetips",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A SYSTEM Resolver rule cannot set ResolverEndpointId or TargetIps",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-system-forbids-endpoint-and-targetips\", \"ERROR\", name,\n\t\"Properties.ResolverEndpointId\",\n\t\"RuleType is SYSTEM but ResolverEndpointId is set; system rules take neither an endpoint nor target IPs\",\n\t\"Drop ResolverEndpointId, or use RuleType FORWARD\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"SYSTEM\"\n\t_pf_r53r_has(p, \"ResolverEndpointId\")\n}\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-system-forbids-endpoint-and-targetips\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\t\"RuleType is SYSTEM but TargetIps is set; system rules take neither an endpoint nor target IPs\",\n\t\"Drop TargetIps, or use RuleType FORWARD\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"SYSTEM\"\n\t_pf_r53r_has(p, \"TargetIps\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-system-requires-domainname",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A SYSTEM Resolver rule must set DomainName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-system-requires-domainname\", \"ERROR\", name,\n\t\"Properties.DomainName\",\n\t\"RuleType is SYSTEM but DomainName is missing (CloudFormation marks it optional, the API does not)\",\n\t\"Add the domain name the system rule should apply to\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-outbound-queries.html#resolver-forwarding-outbound-queries-rule-values\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\t_pf_r53r_str(p, \"RuleType\") == \"SYSTEM\"\n\tnot _pf_r53r_has(p, \"DomainName\")\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetip-ip-format",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule TargetIps[].Ip must be a valid IPv4 address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetip-ip-format\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\tsprintf(\"TargetIps contains Ip '%s', which is not a valid IPv4 address\", [v]),\n\t\"Use a dotted-quad IPv4 address\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\tsome t in _pf_r53r_arr(p, \"TargetIps\")\n\tv := _pf_r53r_str(t, \"Ip\")\n\tnot _pf_r53r_ipv4(v)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetip-ipv6-format",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule TargetIps[].Ipv6 must be a valid IPv6 address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetip-ipv6-format\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\tsprintf(\"TargetIps contains Ipv6 '%s', which is not a valid IPv6 address\", [v]),\n\t\"Use a colon-separated IPv6 address of 7 to 39 characters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\tsome t in _pf_r53r_arr(p, \"TargetIps\")\n\tv := _pf_r53r_str(t, \"Ipv6\")\n\tnot _pf_r53r_ipv6(v)\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetip-protocol-enum",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule target protocol must be Do53, DoH or DoH-FIPS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetip-protocol-enum\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\tsprintf(\"TargetIps declares Protocol '%s'; Route 53 Resolver only accepts Do53, DoH and DoH-FIPS\", [v]),\n\t\"Use Do53, DoH or DoH-FIPS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\tsome t in _pf_r53r_arr(p, \"TargetIps\")\n\tv := _pf_r53r_str(t, \"Protocol\")\n\tnot v in {\"Do53\", \"DoH\", \"DoH-FIPS\"}\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetip-protocol-matches-endpoint",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule target protocol must be enabled on the outbound endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule",
+      "AWS::Route53Resolver::ResolverEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetip-protocol-matches-endpoint\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\tsprintf(\"TargetIps asks for protocol %s but endpoint %s does not declare it\", [v, e]),\n\t\"Add the protocol to the endpoint's Protocols, or use one the endpoint already has\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\te := _pf_r53r_endpoint_of(p)\n\tsome t in _pf_r53r_arr(p, \"TargetIps\")\n\tv := _pf_r53r_str(t, \"Protocol\")\n\tv in {\"Do53\", \"DoH\", \"DoH-FIPS\"}\n\tnot v in _pf_r53r_protos(_pf_r53r_props(e))\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetip-sni-doh-only",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "ServerNameIndication on a Resolver rule target requires Protocol DoH",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetip-sni-doh-only\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\t\"TargetIps sets ServerNameIndication without Protocol DoH; SNI only applies to DoH targets\",\n\t\"Set Protocol to DoH, or drop ServerNameIndication\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_TargetAddress.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\tsome t in _pf_r53r_arr(p, \"TargetIps\")\n\t_pf_r53r_has(t, \"ServerNameIndication\")\n\tobject.get(t, \"Protocol\", \"\") != \"DoH\"\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetips-address-family-exclusive",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "Resolver rule target IPs cannot mix IPv4 and IPv6",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetips-address-family-exclusive\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\t\"TargetIps mixes IPv4 (Ip) and IPv6 (Ipv6) addresses; a Resolver rule takes one address family\",\n\t\"Use either Ip or Ipv6 for every target, not both\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\ttips := _pf_r53r_arr(p, \"TargetIps\")\n\tcount([1 | some t in tips; _pf_r53r_has(t, \"Ip\")]) > 0\n\tcount([1 | some t in tips; _pf_r53r_has(t, \"Ipv6\")]) > 0\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-rule-targetips-max-six",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "A Resolver rule cannot have more than 6 target IPs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-rule-targetips-max-six\", \"ERROR\", name,\n\t\"Properties.TargetIps\",\n\tsprintf(\"the rule declares %d target IPs; Route 53 Resolver allows at most 6\", [n]),\n\t\"Keep at most 6 entries in TargetIps\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n\tp := _pf_r53r_props(name)\n\tn := count(_pf_r53r_arr(p, \"TargetIps\"))\n\tn > 6\n}\n"
+  },
+  {
+    "id": "pf-route53resolver-ruleassociation-duplicate-rule-vpc",
+    "service": "route53resolver",
+    "severity": "ERROR",
+    "title": "The same Resolver rule cannot be associated with the same VPC twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53Resolver::ResolverRuleAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-ruleassociation-duplicate-rule-vpc\", \"ERROR\", name,\n\t\"Properties.ResolverRuleId\",\n\t\"another ResolverRuleAssociation in this template already associates the same rule with the same VPC\",\n\t\"Keep one association per rule and VPC\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_AssociateResolverRule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverRuleAssociation\")\n\tp := _pf_r53r_props(name)\n\tk := sprintf(\"%s|%s\", [_pf_r53r_key(p, \"ResolverRuleId\"), _pf_r53r_key(p, \"VPCId\")])\n\tdup := [1 |\n\t\tsome o in resources_of_type(\"AWS::Route53Resolver::ResolverRuleAssociation\")\n\t\tq := _pf_r53r_props(o)\n\t\tsprintf(\"%s|%s\", [_pf_r53r_key(q, \"ResolverRuleId\"), _pf_r53r_key(q, \"VPCId\")]) == k\n\t]\n\tcount(dup) > 1\n}\n"
+  },
+  {
     "id": "pf-s3-accelerate-dotted-name",
     "service": "s3",
     "severity": "ERROR",
@@ -19952,6 +20715,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/route53",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 のレコード系ルールの共有ヘルパー。診断は出さない。\n#\n# レコードセットは 2 つの形で現れる: AWS::Route53::RecordSet リソースそのものと、\n# AWS::Route53::RecordSetGroup の Properties.RecordSets の各要素。どちらも\n# 「プロパティのオブジェクト」に正規化して、以下のヘルパーはすべてその rs を受け取る。\n# 生のオブジェクトを見るので Ref/GetAtt はマーカー（{\"__kind\",\"__ref\"}）のままで、\n# is_string ガードがユーザーのリテラルだけを通す。\n\n_pf_r53lib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_r53lib_get(rs, k) := v if {\n\tv := object.get(rs, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_r53lib_has(rs, k) if {\n\t_pf_r53lib_get(rs, k)\n}\n\n_pf_r53lib_str(rs, k) := v if {\n\tv := _pf_r53lib_get(rs, k)\n\tis_string(v)\n}\n\n_pf_r53lib_num(rs, k) := to_number(_pf_r53lib_get(rs, k))\n\n# 末尾ドットを落として小文字化した DNS 名。Route 53 は両者を同じ名前として扱う。\n_pf_r53lib_norm(n) := trim_suffix(lower(n), \".\")\n\n_pf_r53lib_name(rs) := _pf_r53lib_norm(_pf_r53lib_str(rs, \"Name\"))\n\n_pf_r53lib_type(rs) := _pf_r53lib_str(rs, \"Type\")\n\n# Name と Type が両方リテラルのときだけ定義される、レコードセットのグループキー。\n_pf_r53lib_key(rs) := sprintf(\"%s|%s\", [_pf_r53lib_name(rs), _pf_r53lib_type(rs)])\n\n_pf_r53lib_policy_props := {\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"GeoProximityLocation\", \"CidrRoutingConfig\", \"MultiValueAnswer\"}\n\n# 指定されているルーティングポリシー用プロパティの集合。空集合なら simple。\n_pf_r53lib_kinds(rs) := {p |\n\tsome p in _pf_r53lib_policy_props\n\t_pf_r53lib_has(rs, p)\n}\n\n_pf_r53lib_rrs(rs) := a if {\n\ta := _pf_r53lib_get(rs, \"ResourceRecords\")\n\tis_array(a)\n}\n\n# リテラル文字列の値だけ。intrinsic 経由の値はマーカーなので落ちる。\n_pf_r53lib_vals(rs) := [v |\n\tsome v in _pf_r53lib_rrs(rs)\n\tis_string(v)\n]\n\n# 空白区切りのフィールド（連続空白は潰す）。\n_pf_r53lib_fields(v) := [f |\n\tsome f in split(v, \" \")\n\tf != \"\"\n]\n\n_pf_r53lib_quoted(f) if {\n\tstartswith(f, \"\\\"\")\n\tendswith(f, \"\\\"\")\n\tcount(f) >= 2\n}\n\n_pf_r53lib_alias(rs) := a if {\n\ta := _pf_r53lib_get(rs, \"AliasTarget\")\n\tis_object(a)\n}\n\n_pf_r53lib_alias_dns(rs) := _pf_r53lib_norm(d) if {\n\td := object.get(_pf_r53lib_alias(rs), \"DNSName\", null)\n\tis_string(d)\n}\n\n_pf_r53lib_alias_zoneid(rs) := z if {\n\tz := object.get(_pf_r53lib_alias(rs), \"HostedZoneId\", null)\n\tis_string(z)\n}\n\n# Ref / GetAtt マーカーが指す論理 ID。\n_pf_r53lib_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n# alias 先が同一テンプレート内の HostedZone（＝このスタックで新規に作られるゾーン）\n# のとき、その論理 ID。\n_pf_r53lib_alias_ownzone(rs) := z if {\n\tz := _pf_r53lib_ref(object.get(_pf_r53lib_alias(rs), \"HostedZoneId\", null))\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n_pf_r53lib_zone_name(logical) := _pf_r53lib_norm(n) if {\n\tn := resolve(logical, \"Properties.Name\")\n\tis_string(n)\n}\n\n# private hosted zone（VPCs が 1 件以上）\n_pf_r53lib_private_zone(logical) if {\n\tcount(flatten_list(logical, \"Properties.VPCs\")) > 0\n}\n\n# レコードが属するゾーンの論理 ID（HostedZoneId が同一テンプレートのゾーンを指すとき）。\n_pf_r53lib_own_zone(rs) := z if {\n\tz := _pf_r53lib_ref(_pf_r53lib_get(rs, \"HostedZoneId\"))\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n# name が suffix ゾーンの内側にあるか（apex を含む）。\n_pf_r53lib_within(name, zone) if {\n\tname == zone\n}\n\n_pf_r53lib_within(name, zone) if {\n\tendswith(name, concat(\"\", [\".\", zone]))\n}\n\n# テンプレートが作るレコードセットの \"name|type\" キーと name の集合。\n# 同一ゾーン内 alias の参照先が本当にテンプレートにあるかを見るのに使う。\n# ネストしたコンプリヘンションは 1 本に書けない（エンジンの方言）ので段で分ける。\n\n_pf_r53lib_gkeys(g) := {_pf_r53lib_key(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n}\n\n_pf_r53lib_gnames(g) := {_pf_r53lib_name(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n}\n\n_pf_r53lib_skeys := {_pf_r53lib_key(_pf_r53lib_props(r)) |\n\tsome r in resources_of_type(\"AWS::Route53::RecordSet\")\n}\n\n_pf_r53lib_snames := {_pf_r53lib_name(_pf_r53lib_props(r)) |\n\tsome r in resources_of_type(\"AWS::Route53::RecordSet\")\n}\n\n_pf_r53lib_gkeys_all := union({_pf_r53lib_gkeys(g) |\n\tsome g in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n})\n\n_pf_r53lib_gnames_all := union({_pf_r53lib_gnames(g) |\n\tsome g in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n})\n\n_pf_r53lib_keys := union({_pf_r53lib_skeys, _pf_r53lib_gkeys_all})\n\n_pf_r53lib_names := union({_pf_r53lib_snames, _pf_r53lib_gnames_all})\n"
+  },
+  {
+    "name": "_lib/route53resolver",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 Resolver / Route 53 Profiles で共有するヘルパー。診断は出さない。\n# 生のプロパティを見るので Ref/GetAtt はマーカー（{\"__kind\",\"__ref\"}）のままで、\n# is_string ガードがユーザーのリテラルだけを通す。\n\n_pf_r53r_props(name) := p if {\n\tp := object.get(input.resources[name], \"properties\", {})\n\tis_object(p)\n}\n\n_pf_r53r_get(o, k) := v if {\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_r53r_has(o, k) if {\n\t_pf_r53r_get(o, k)\n}\n\n_pf_r53r_str(o, k) := v if {\n\tv := _pf_r53r_get(o, k)\n\tis_string(v)\n}\n\n_pf_r53r_num(o, k) := v if {\n\tv := _pf_r53r_get(o, k)\n\tis_number(v)\n}\n\n_pf_r53r_arr(o, k) := v if {\n\tv := _pf_r53r_get(o, k)\n\tis_array(v)\n}\n\n# Ref / GetAtt のマーカーが指す論理 ID。\n_pf_r53r_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n_pf_r53r_refk(o, k) := r if {\n\tr := _pf_r53r_ref(_pf_r53r_get(o, k))\n}\n\n# 同一テンプレート内の <type> を指しているときだけ論理 ID を返す。\n_pf_r53r_target(o, k, type) := r if {\n\tr := _pf_r53r_refk(o, k)\n\tr in resources_of_type(type)\n}\n\n# 参照でもリテラルでも「同じものを指しているか」を比べられる鍵。\n_pf_r53r_key(o, k) := sprintf(\"ref:%s\", [_pf_r53r_refk(o, k)])\n\n_pf_r53r_key(o, k) := sprintf(\"lit:%s\", [_pf_r53r_str(o, k)])\n\n_pf_r53r_ipv4(s) if {\n\tregex.match(`^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$`, s)\n}\n\n_pf_r53r_ipv6(s) if {\n\tcontains(s, \":\")\n\tregex.match(`^[0-9A-Fa-f:.]+$`, s)\n\tcount(s) >= 2\n\tcount(s) <= 39\n}\n\n# --- ResolverEndpoint ----------------------------------------------------\n\n_pf_r53r_ips(p) := v if {\n\tv := _pf_r53r_arr(p, \"IpAddresses\")\n}\n\n# 実効プロトコル。省略時の既定は Do53 の 1 つだけ。\n_pf_r53r_protos(p) := s if {\n\ts := {x | some x in _pf_r53r_arr(p, \"Protocols\"); is_string(x)}\n\tcount(s) > 0\n}\n\n_pf_r53r_protos(p) := {\"Do53\"} if {\n\tnot _pf_r53r_has(p, \"Protocols\")\n}\n\n# IpAddresses[] が参照する、同一テンプレート内のサブネットの論理 ID。\n_pf_r53r_subnets(p) := [s |\n\tsome ip in _pf_r53r_ips(p)\n\ts := _pf_r53r_target(ip, \"SubnetId\", \"AWS::EC2::Subnet\")\n]\n\n# ResolverRule が参照する、同一テンプレート内の ResolverEndpoint の論理 ID。\n_pf_r53r_endpoint_of(p) := e if {\n\te := _pf_r53r_target(p, \"ResolverEndpointId\", \"AWS::Route53Resolver::ResolverEndpoint\")\n}\n\n# --- FirewallRuleGroup ---------------------------------------------------\n\n_pf_r53r_frules(name) := rs if {\n\trs := _pf_r53r_arr(_pf_r53r_props(name), \"FirewallRules\")\n}\n\n# ルールがマッチ対象をどれで指定しているか（3 つは相互排他）。\n_pf_r53r_match_keys := {\"FirewallDomainListId\", \"DnsThreatProtection\", \"FirewallRuleType\"}\n\n_pf_r53r_match_used(r) := {k | some k in _pf_r53r_match_keys; _pf_r53r_has(r, k)}\n\n_pf_r53r_qtypes := {\"A\", \"AAAA\", \"CAA\", \"CNAME\", \"DS\", \"MX\", \"NAPTR\", \"NS\", \"PTR\", \"SOA\", \"SPF\", \"SRV\", \"TXT\"}\n\n# --- ARN の形（リテラルのときだけ見る。リージョン/アカウントは判定に使わない） ----\n\n_pf_r53r_arn_service(s) := svc if {\n\tstartswith(s, \"arn:\")\n\tparts := split(s, \":\")\n\tcount(parts) >= 6\n\tsvc := parts[2]\n}\n\n_pf_r53r_arn_kind(s) := kind if {\n\tsvc := _pf_r53r_arn_service(s)\n\tparts := split(s, \":\")\n\ttail := concat(\":\", array.slice(parts, 5, count(parts)))\n\tkind := sprintf(\"%s:%s\", [svc, split(tail, \"/\")[0]])\n}\n\n# DNS Firewall / Profiles の優先度。予約帯は 100 以下と 9900 以上（両端とも予約）。\n_pf_r53r_outside_101_9899(v) if {\n\tv <= 100\n}\n\n_pf_r53r_outside_101_9899(v) if {\n\tv >= 9900\n}\n\n# ResourceProperties（JSON 文字列）の priority。キーの大文字小文字は API が両方受ける。\n_pf_r53r_rp_priority(s) := v if {\n\to := json.unmarshal(s)\n\tsome k in [\"priority\", \"Priority\"]\n\tv := object.get(o, k, null)\n\tis_number(v)\n}\n\n# 同一テンプレート内のリソースが Profile から見てどの種類か。\n_pf_r53r_res_kind(t) := \"firewall-rule-group\" if {\n\tt in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n}\n\n_pf_r53r_res_kind(t) := \"resolver-rule\" if {\n\tt in resources_of_type(\"AWS::Route53Resolver::ResolverRule\")\n}\n\n_pf_r53r_res_kind(t) := \"hostedzone\" if {\n\tt in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n_pf_r53r_res_kind(t) := \"vpc-endpoint\" if {\n\tt in resources_of_type(\"AWS::EC2::VPCEndpoint\")\n}\n\n_pf_r53r_res_kind(t) := \"resolver-query-log-config\" if {\n\tt in resources_of_type(\"AWS::Route53Resolver::ResolverQueryLoggingConfig\")\n}\n\n_pf_r53r_pra_kind(p) := k if {\n\tk := _pf_r53r_res_kind(_pf_r53r_refk(p, \"ResourceArn\"))\n}\n\n_pf_r53r_pra_kind(p) := k if {\n\tak := _pf_r53r_arn_kind(_pf_r53r_str(p, \"ResourceArn\"))\n\tk := split(ak, \":\")[1]\n}\n\n# query logging 関連付けの送信先タイプ。同一テンプレート内の config を辿る。\n_pf_r53r_qlca_dest(p) := svc if {\n\tc := _pf_r53r_target(p, \"ResolverQueryLogConfigId\", \"AWS::Route53Resolver::ResolverQueryLoggingConfig\")\n\tq := _pf_r53r_props(c)\n\tsvc := _pf_r53r_arn_service(_pf_r53r_str(q, \"DestinationArn\"))\n}\n\n_pf_r53r_qlca_dest(p) := svc if {\n\tc := _pf_r53r_target(p, \"ResolverQueryLogConfigId\", \"AWS::Route53Resolver::ResolverQueryLoggingConfig\")\n\tq := _pf_r53r_props(c)\n\tt := _pf_r53r_refk(q, \"DestinationArn\")\n\tsvc := _pf_r53r_dest_svc(t)\n}\n\n_pf_r53r_qlca_dest(p) := \"unknown\" if {\n\tnot _pf_r53r_target(p, \"ResolverQueryLogConfigId\", \"AWS::Route53Resolver::ResolverQueryLoggingConfig\")\n}\n\n_pf_r53r_dest_svc(t) := \"logs\" if {\n\tt in resources_of_type(\"AWS::Logs::LogGroup\")\n}\n\n_pf_r53r_dest_svc(t) := \"s3\" if {\n\tt in resources_of_type(\"AWS::S3::Bucket\")\n}\n\n_pf_r53r_dest_svc(t) := \"firehose\" if {\n\tt in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n}\n"
   },
   {
     "name": "_lib/route53zone",

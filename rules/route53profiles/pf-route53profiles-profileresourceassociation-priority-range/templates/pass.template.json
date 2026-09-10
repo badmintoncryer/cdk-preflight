@@ -7,7 +7,7 @@
           "Fn::Join": [
             "",
             [
-              "pr-",
+              "cdkpf-pr-",
               {
                 "Fn::Select": [
                   2,
@@ -33,7 +33,7 @@
           "Fn::Join": [
             "",
             [
-              "dl-",
+              "cdkpf-dl-",
               {
                 "Fn::Select": [
                   2,
@@ -62,7 +62,7 @@
           "Fn::Join": [
             "",
             [
-              "rg-",
+              "cdkpf-rg-",
               {
                 "Fn::Select": [
                   2,
@@ -97,7 +97,7 @@
           "Fn::Join": [
             "",
             [
-              "ra-",
+              "cdkpf-ra-",
               {
                 "Fn::Select": [
                   2,

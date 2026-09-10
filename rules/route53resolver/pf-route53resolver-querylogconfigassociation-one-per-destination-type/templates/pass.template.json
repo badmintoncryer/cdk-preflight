@@ -40,7 +40,7 @@
           "Fn::Join": [
             "",
             [
-              "ql-",
+              "cdkpf-ql-",
               {
                 "Fn::Select": [
                   2,

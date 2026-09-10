@@ -7,7 +7,7 @@
           "Fn::Join": [
             "",
             [
-              "pr-",
+              "cdkpf-pr-",
               {
                 "Fn::Select": [
                   2,
@@ -33,7 +33,7 @@
           "Fn::Join": [
             "",
             [
-              "dl-",
+              "cdkpf-dl-",
               {
                 "Fn::Select": [
                   2,
@@ -62,7 +62,7 @@
           "Fn::Join": [
             "",
             [
-              "rg0-",
+              "cdkpf-rg0-",
               {
                 "Fn::Select": [
                   2,
@@ -97,7 +97,7 @@
           "Fn::Join": [
             "",
             [
-              "ra0-",
+              "cdkpf-ra0-",
               {
                 "Fn::Select": [
                   2,
@@ -133,7 +133,7 @@
           "Fn::Join": [
             "",
             [
-              "rg1-",
+              "cdkpf-rg1-",
               {
                 "Fn::Select": [
                   2,
@@ -168,7 +168,7 @@
           "Fn::Join": [
             "",
             [
-              "ra1-",
+              "cdkpf-ra1-",
               {
                 "Fn::Select": [
                   2,
@@ -204,7 +204,7 @@
           "Fn::Join": [
             "",
             [
-              "rg2-",
+              "cdkpf-rg2-",
               {
                 "Fn::Select": [
                   2,
@@ -239,7 +239,7 @@
           "Fn::Join": [
             "",
             [
-              "ra2-",
+              "cdkpf-ra2-",
               {
                 "Fn::Select": [
                   2,
@@ -275,7 +275,7 @@
           "Fn::Join": [
             "",
             [
-              "rg3-",
+              "cdkpf-rg3-",
               {
                 "Fn::Select": [
                   2,
@@ -310,7 +310,7 @@
           "Fn::Join": [
             "",
             [
-              "ra3-",
+              "cdkpf-ra3-",
               {
                 "Fn::Select": [
                   2,
@@ -346,7 +346,7 @@
           "Fn::Join": [
             "",
             [
-              "rg4-",
+              "cdkpf-rg4-",
               {
                 "Fn::Select": [
                   2,
@@ -381,7 +381,7 @@
           "Fn::Join": [
             "",
             [
-              "ra4-",
+              "cdkpf-ra4-",
               {
                 "Fn::Select": [
                   2,
@@ -417,7 +417,7 @@
           "Fn::Join": [
             "",
             [
-              "rg5-",
+              "cdkpf-rg5-",
               {
                 "Fn::Select": [
                   2,
@@ -452,7 +452,7 @@
           "Fn::Join": [
             "",
             [
-              "ra5-",
+              "cdkpf-ra5-",
               {
                 "Fn::Select": [
                   2,
