@@ -1,0 +1,57 @@
+{
+  "Resources": {
+    "HC": {
+      "Type": "AWS::Route53::HealthCheck",
+      "Properties": {
+        "HealthCheckConfig": {
+          "Type": "HTTPS",
+          "FullyQualifiedDomainName": "example.com",
+          "Port": 443,
+          "RequestInterval": 30,
+          "FailureThreshold": 3
+        }
+      }
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com.",
+        "VPCs": [
+          {
+            "VPCId": {
+              "Ref": "Vpc"
+            },
+            "VPCRegion": {
+              "Ref": "AWS::Region"
+            }
+          }
+        ]
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "A",
+        "TTL": "60",
+        "ResourceRecords": [
+          "192.0.2.1"
+        ],
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "HealthCheckId": {
+          "Ref": "HC"
+        },
+        "SetIdentifier": "s1",
+        "Weight": 10
+      }
+    }
+  }
+}

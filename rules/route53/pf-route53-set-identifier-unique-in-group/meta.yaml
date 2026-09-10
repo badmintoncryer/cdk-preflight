@@ -1,0 +1,12 @@
+id: pf-route53-set-identifier-unique-in-group
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "SetIdentifier must be unique among record sets sharing a name and type"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [The request contains an invalid set of changes for a resource record set 'A www.cdkpf-example.com.'] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

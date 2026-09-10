@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 ap-northeast-1: Weight without SetIdentifier -> \"Invalid request: Missing field 'SetIdentifier'\" (same for Failover PRIMARY); SetIdentifier without any policy -> \"Expected exactly one of [Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig], but found none\". Both ROLLBACK_COMPLETE, Status Code 400."
+  evidence: "bench 2026-09-02 ap-northeast-1: Weight without SetIdentifier -> \"Invalid request: Missing field 'SetIdentifier'\" (same for Failover PRIMARY); SetIdentifier without any policy -> \"Expected exactly one of [Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig], but found none\". Both ROLLBACK_COMPLETE, Status Code 400. bench 2026-09-10 us-east-1: GeoProximityLocation without SetIdentifier -> \"Invalid request: Missing field 'SetIdentifier' in Change with [Action=CREATE, Name=www.cdkpf-ext-gprox.com., Type=A, SetIdentifier=null]\" (ROLLBACK_COMPLETE); it is a routing policy like the rest, so it now counts on both sides of the rule."
 addedOn: 2026-09-02

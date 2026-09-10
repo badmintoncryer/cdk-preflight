@@ -1,0 +1,21 @@
+package cdk_preflight
+
+import rego.v1
+
+_pf_r53_rsg32k_one(rs) := sum([count(v) |
+	some v in _pf_r53lib_vals(rs)
+])
+
+_pf_r53_rsg32k_n(g) := sum([_pf_r53_rsg32k_one(it.value) |
+	some it in flatten_list(g, "Properties.RecordSets")
+])
+
+violation contains make_diag_full("pf-route53-recordsetgroup-max-32000-chars", "ERROR", name,
+	"Properties.RecordSets",
+	sprintf("This record set group carries %d characters of record data; one ChangeResourceRecordSets request accepts at most 32000", [n]),
+	"Split the record sets across several AWS::Route53::RecordSetGroup resources",
+	"https://docs.aws.amazon.com/general/latest/gr/r53.html") if {
+	some name in resources_of_type("AWS::Route53::RecordSetGroup")
+	n := _pf_r53_rsg32k_n(name)
+	n > 32000
+}

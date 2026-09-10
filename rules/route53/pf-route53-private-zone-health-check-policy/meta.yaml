@@ -1,0 +1,12 @@
+id: pf-route53-private-zone-health-check-policy
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "A simple record in a private hosted zone cannot carry a health check"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached. No changes made., DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached. No changes made.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

@@ -1,0 +1,12 @@
+id: pf-route53-failover-alias-evaluate-target-health
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "A PRIMARY failover alias must set EvaluateTargetHealth to true"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='A', set-identifier='s1'] but it was not found, RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s1 cannot be a primary without EvaluateTargetHealth set to true or an associated health check as a secondary would never be returned.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

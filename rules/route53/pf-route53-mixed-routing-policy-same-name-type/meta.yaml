@@ -1,0 +1,12 @@
+id: pf-route53-mixed-routing-policy-same-name-type
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "Record sets sharing a name and type must use the same routing policy"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s2, and Region Name=us-east-1 cannot be created because a non-latency RRSet with the same name and type already exists.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

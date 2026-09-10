@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": "b.cdkpf-example.com",
+          "HostedZoneId": {
+            "Ref": "Zone"
+          },
+          "EvaluateTargetHealth": false
+        },
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}

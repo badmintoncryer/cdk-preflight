@@ -1,0 +1,12 @@
+id: pf-route53-geolocation-subdivision-code-value
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "GeoLocation.SubdivisionCode must be a US state or territory code"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [Cannot find location: 'country = US subdivision = ZZ'. No changes made., Cannot find location: 'country = US subdivision = ZZ'. No changes made.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

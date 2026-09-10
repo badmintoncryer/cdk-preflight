@@ -1,0 +1,40 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Group": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "RecordSets": [
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s1",
+            "Region": "us-east-1"
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s2",
+            "Region": "us-east-1"
+          }
+        ]
+      }
+    }
+  }
+}

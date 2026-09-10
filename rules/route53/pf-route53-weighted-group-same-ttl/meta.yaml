@@ -1,0 +1,12 @@
+id: pf-route53-weighted-group-same-ttl
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "Weighted record sets sharing a name and type must have the same TTL"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s2 cannot be created as weighted sets must contain the same TTL.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

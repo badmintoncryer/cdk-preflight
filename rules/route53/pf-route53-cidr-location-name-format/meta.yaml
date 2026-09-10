@@ -1,0 +1,12 @@
+id: pf-route53-cidr-location-name-format
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*]"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 496; cvc-pattern-valid: Value 'bad location!' is not facet-valid with respect to pattern '[0-9A-Za-z_\\-\\*]+' for type 'CidrLocationNameDefaultAllowed'. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

@@ -1,0 +1,12 @@
+id: pf-route53-cidr-same-collection-in-group
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "IP-based record sets sharing a name and type must use one CIDR collection"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: the committed fail template keeps literal collection ids (the rule compares strings), so the constraint was measured with a copy that creates two real AWS::Route53::CidrCollection resources and points one record set at each -> \"RRSet with DNS name www.cdkpf-cidr2.com., type A, SetIdentifier s1, and routing to CidrCollectionId=e2d044aa-... CidrLocationId=loc2 cannot be created because a CIDR RRSets with a different collection id (76d044aa-...) already exist\" (ROLLBACK_COMPLETE)."
+addedOn: 2026-09-10

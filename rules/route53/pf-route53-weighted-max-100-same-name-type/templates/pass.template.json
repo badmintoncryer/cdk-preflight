@@ -1,0 +1,1020 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Group": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "RecordSets": [
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s0",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s1",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s2",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s3",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s4",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s5",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s6",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s7",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s8",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s9",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s10",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s11",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s12",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s13",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s14",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s15",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s16",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s17",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s18",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s19",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s20",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s21",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s22",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s23",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s24",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s25",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s26",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s27",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s28",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s29",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s30",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s31",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s32",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s33",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s34",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s35",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s36",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s37",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s38",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s39",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s40",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s41",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s42",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s43",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s44",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s45",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s46",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s47",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s48",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s49",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s50",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s51",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s52",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s53",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s54",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s55",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s56",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s57",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s58",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s59",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s60",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s61",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s62",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s63",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s64",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s65",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s66",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s67",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s68",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s69",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s70",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s71",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s72",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s73",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s74",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s75",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s76",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s77",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s78",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s79",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s80",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s81",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s82",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s83",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s84",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s85",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s86",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s87",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s88",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s89",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s90",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s91",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s92",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s93",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s94",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s95",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s96",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s97",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s98",
+            "Weight": 10
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s99",
+            "Weight": 10
+          }
+        ]
+      }
+    }
+  }
+}

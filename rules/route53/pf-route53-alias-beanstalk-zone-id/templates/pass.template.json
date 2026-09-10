@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": "myenv.us-east-1.elasticbeanstalk.com.",
+          "HostedZoneId": "Z117KPS5GTRQ2G",
+          "EvaluateTargetHealth": false
+        },
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}

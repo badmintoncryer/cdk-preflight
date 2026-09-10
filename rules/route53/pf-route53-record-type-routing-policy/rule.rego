@@ -15,9 +15,9 @@ _pf_r53_typol_has_policy(name) if {
 	resolve(name, "Properties.MultiValueAnswer") == true
 }
 
-# Only combinations that failed on a real deploy are flagged. SOA/DS with a
-# routing policy are also documented as unsupported but were not measured, so
-# they are deliberately left out (see the discovery issue).
+# Only combinations that failed on a real deploy are flagged. DS with a routing
+# policy is documented as unsupported but the API accepted it (2026-09-08), so
+# it is deliberately left out.
 violation contains make_diag_full("pf-route53-record-type-routing-policy", "ERROR", name,
 	"Properties.Type",
 	"An NS record cannot use a routing policy; the service rejects it with \"this type of RRSet is not supported\"",
@@ -25,6 +25,16 @@ violation contains make_diag_full("pf-route53-record-type-routing-policy", "ERRO
 	_pf_r53_typol_url) if {
 	some name in resources_of_type("AWS::Route53::RecordSet")
 	resolve(name, "Properties.Type") == "NS"
+	_pf_r53_typol_has_policy(name)
+}
+
+violation contains make_diag_full("pf-route53-record-type-routing-policy", "ERROR", name,
+	"Properties.Type",
+	"An SOA record cannot use a routing policy; the service rejects it with \"this type of RRSet is not supported\"",
+	"Use a simple record set for the SOA record",
+	_pf_r53_typol_url) if {
+	some name in resources_of_type("AWS::Route53::RecordSet")
+	resolve(name, "Properties.Type") == "SOA"
 	_pf_r53_typol_has_policy(name)
 }
 

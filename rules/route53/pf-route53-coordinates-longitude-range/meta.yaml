@@ -1,0 +1,12 @@
+id: pf-route53-coordinates-longitude-range
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "Coordinates.Longitude must be -180 to 180"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 457; cvc-pattern-valid: Value '200' is not facet-valid with respect to pattern '[-+]?(180|(1[0-7][0-9]|[0-9]{1,2})(\\.[0-9]{0,2})?)' for type 'Longitude'. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

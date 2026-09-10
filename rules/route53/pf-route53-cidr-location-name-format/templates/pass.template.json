@@ -1,0 +1,56 @@
+{
+  "Resources": {
+    "Coll": {
+      "Type": "AWS::Route53::CidrCollection",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-coll"
+        },
+        "Locations": [
+          {
+            "LocationName": "loc1",
+            "CidrList": [
+              "192.0.2.0/24"
+            ]
+          },
+          {
+            "LocationName": "loc2",
+            "CidrList": [
+              "198.51.100.0/24"
+            ]
+          }
+        ]
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "A",
+        "TTL": "60",
+        "ResourceRecords": [
+          "192.0.2.1"
+        ],
+        "SetIdentifier": "s1",
+        "CidrRoutingConfig": {
+          "CollectionId": {
+            "Fn::GetAtt": [
+              "Coll",
+              "Id"
+            ]
+          },
+          "LocationName": "loc1"
+        },
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}
