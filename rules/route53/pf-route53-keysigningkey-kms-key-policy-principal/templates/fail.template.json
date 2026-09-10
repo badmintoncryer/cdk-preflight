@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "KeySpec": "ECC_NIST_P256",
+        "KeyUsage": "SIGN_VERIFY",
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Root",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "Ksk": {
+      "Type": "AWS::Route53::KeySigningKey",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "KeyManagementServiceArn": {
+          "Fn::GetAtt": [
+            "Key",
+            "Arn"
+          ]
+        },
+        "Name": "ksk1",
+        "Status": "ACTIVE"
+      }
+    }
+  }
+}

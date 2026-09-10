@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "HC": {
+      "Type": "AWS::Route53::HealthCheck",
+      "Properties": {
+        "HealthCheckConfig": {
+          "Type": "RECOVERY_CONTROL",
+          "RoutingControlArn": "arn:aws:route53-recovery-control::123456789012:controlpanel/abcd/routingcontrol/efgh",
+          "FailureThreshold": 3
+        }
+      }
+    }
+  }
+}

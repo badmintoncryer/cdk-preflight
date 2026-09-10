@@ -1,0 +1,12 @@
+id: pf-route53-healthcheck-calculated-child-calculated
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HealthCheck]
+severity: ERROR
+title: "A CALCULATED health check cannot have another CALCULATED health check as a child"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Invalid parameter : Child health check IDs do not exist or are deleted: 31c4364b-dc8a-4148-b389-91bc4bab8d6e\" - the id is a live CALCULATED health check, so Route 53 refuses to see another calculated check as a child at all (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

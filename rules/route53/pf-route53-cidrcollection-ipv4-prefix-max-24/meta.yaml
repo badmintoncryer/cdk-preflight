@@ -1,0 +1,12 @@
+id: pf-route53-cidrcollection-ipv4-prefix-max-24
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::CidrCollection]
+severity: ERROR
+title: "An IPv4 CIDR block in a collection cannot be longer than /24"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> IPv4 cidr block 192.0.2.0/25 has network prefix length greater than account limit of 24 (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "Alarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "${AWS::StackName}-alarm"
+        },
+        "Namespace": "cdkpf",
+        "MetricName": "probe",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "EvaluationPeriods": 1,
+        "Period": 60,
+        "Threshold": 1,
+        "TreatMissingData": "notBreaching",
+        "ExtendedStatistic": "p99"
+      }
+    },
+    "HC": {
+      "Type": "AWS::Route53::HealthCheck",
+      "Properties": {
+        "HealthCheckConfig": {
+          "Type": "CLOUDWATCH_METRIC",
+          "AlarmIdentifier": {
+            "Name": {
+              "Ref": "Alarm"
+            },
+            "Region": "us-east-1"
+          },
+          "InsufficientDataHealthStatus": "Healthy"
+        }
+      },
+      "DependsOn": "Alarm"
+    }
+  }
+}

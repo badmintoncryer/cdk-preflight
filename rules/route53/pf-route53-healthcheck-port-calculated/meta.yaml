@@ -1,0 +1,12 @@
+id: pf-route53-healthcheck-port-calculated
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HealthCheck]
+severity: ERROR
+title: "Port cannot be set on a CALCULATED health check"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Invalid parameter : Calculated health checks must not have a port specified.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

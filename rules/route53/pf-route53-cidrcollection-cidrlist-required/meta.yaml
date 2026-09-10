@@ -1,0 +1,12 @@
+id: pf-route53-cidrcollection-cidrlist-required
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::CidrCollection]
+severity: ERROR
+title: "Every location in a CIDR collection needs at least one CIDR block"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-cidrcollection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 202; cvc-complex-type.2.4.b: The content of element 'CidrList' is not complete. One of '{\"https://route53.amazonaws.com/doc/2013-04-01/\":member, \"https://route53.amazonaws.com/doc/2013-04-01/\":Cidr}' is expected. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

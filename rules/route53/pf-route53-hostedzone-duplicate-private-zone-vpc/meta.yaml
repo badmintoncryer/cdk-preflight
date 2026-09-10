@@ -1,0 +1,12 @@
+id: pf-route53-hostedzone-duplicate-private-zone-vpc
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HostedZone]
+severity: ERROR
+title: "Two private hosted zones for the same domain cannot share a VPC"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Error occurred: ConflictingDomainExistsException - The VPC vpc-070f6a65fe7c4d1a5 in region us-east-1 has already been associated with the hosted zone Z0888062NRR9QBO3XK7 with the same domain name. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

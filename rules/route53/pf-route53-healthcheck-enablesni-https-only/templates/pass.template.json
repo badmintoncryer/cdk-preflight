@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "HC": {
+      "Type": "AWS::Route53::HealthCheck",
+      "Properties": {
+        "HealthCheckConfig": {
+          "Type": "HTTPS",
+          "FullyQualifiedDomainName": "example.com",
+          "Port": 443,
+          "RequestInterval": 30,
+          "FailureThreshold": 3,
+          "EnableSNI": true
+        }
+      }
+    }
+  }
+}

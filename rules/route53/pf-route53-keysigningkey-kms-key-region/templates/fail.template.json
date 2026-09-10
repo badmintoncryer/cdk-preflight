@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Ksk": {
+      "Type": "AWS::Route53::KeySigningKey",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "Name": "ksk1",
+        "Status": "ACTIVE",
+        "KeyManagementServiceArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:kms:eu-west-1:${AWS::AccountId}:key/00000000-1111-2222-3333-444444444444"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "Coll": {
+      "Type": "AWS::Route53::CidrCollection",
+      "Properties": {
+        "Name": {
+          "Fn::Select": [
+            2,
+            {
+              "Fn::Split": [
+                "/",
+                {
+                  "Ref": "AWS::StackId"
+                }
+              ]
+            }
+          ]
+        },
+        "Locations": [
+          {
+            "LocationName": "loc1",
+            "CidrList": [
+              "192.0.2.0/24"
+            ]
+          },
+          {
+            "LocationName": "loc2",
+            "CidrList": [
+              "198.51.100.0/24"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

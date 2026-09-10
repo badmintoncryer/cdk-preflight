@@ -1,0 +1,12 @@
+id: pf-route53-keysigningkey-kms-key-region
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::KeySigningKey]
+severity: ERROR
+title: "The DNSSEC signing key must live in us-east-1"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but Route 53 answers the same generic \"could not be used by Route 53 DNSSEC. Check to make sure that the customer managed key has not been deleted...\" for a key that simply does not exist, so the stack failure alone does not name the region. Controlled probe (apiprobe_b6.py): a REAL ECC_NIST_P256 / SIGN_VERIFY key created in eu-west-1 with the documented DNSSEC key policy is still refused - InvalidKMSArn on CreateKeySigningKey - while the same shape in us-east-1 is accepted (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

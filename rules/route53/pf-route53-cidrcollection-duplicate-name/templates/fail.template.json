@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Coll": {
+      "Type": "AWS::Route53::CidrCollection",
+      "Properties": {
+        "Name": "cdkpf-dup-coll",
+        "Locations": [
+          {
+            "LocationName": "loc1",
+            "CidrList": [
+              "192.0.2.0/24"
+            ]
+          }
+        ]
+      }
+    },
+    "Coll2": {
+      "Type": "AWS::Route53::CidrCollection",
+      "Properties": {
+        "Name": "cdkpf-dup-coll",
+        "Locations": [
+          {
+            "LocationName": "loc2",
+            "CidrList": [
+              "198.51.100.0/24"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

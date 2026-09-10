@@ -1,0 +1,12 @@
+id: pf-route53-dnssec-dependson-ksk
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::DNSSEC]
+severity: ERROR
+title: "Enabling DNSSEC needs an explicit DependsOn on the key signing key"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Hosted zone with ID 'Z09399071ECA3J1TBRQLE' does not have a Key Signing Key in ACTIVE status. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

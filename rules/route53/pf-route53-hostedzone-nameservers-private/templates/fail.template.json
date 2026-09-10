@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com.",
+        "VPCs": [
+          {
+            "VPCId": {
+              "Ref": "Vpc"
+            },
+            "VPCRegion": {
+              "Ref": "AWS::Region"
+            }
+          }
+        ]
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "Name": "ns.cdkpf-example.com.",
+        "Type": "NS",
+        "TTL": "300",
+        "ResourceRecords": {
+          "Fn::GetAtt": [
+            "Zone",
+            "NameServers"
+          ]
+        }
+      }
+    }
+  }
+}

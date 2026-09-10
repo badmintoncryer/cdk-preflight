@@ -1,0 +1,12 @@
+id: pf-route53-healthcheck-type-enum
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HealthCheck]
+severity: ERROR
+title: "HealthCheckConfig.Type must be one of the eight health check types"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 178; cvc-pattern-valid: Value 'HTTP2' is not facet-valid with respect to pattern '[Hh][Tt][Tt][Pp]|[Hh][Tt][Tt][Pp][Ss]|[Hh][Tt][Tt][Pp]_[Ss][Tt][Rr]_[Mm][Aa][Tt][Cc][Hh]|[Hh][Tt][Tt][Pp][Ss]_[Ss][Tt][Rr]_[Mm][Aa][Tt][Cc][Hh]|[T\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

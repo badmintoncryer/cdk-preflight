@@ -1,0 +1,12 @@
+id: pf-route53-keysigningkey-max-2-per-zone
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::KeySigningKey]
+severity: ERROR
+title: "A hosted zone can hold at most two key signing keys"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but CloudFormation only reports the knock-on state (\"Key Signing Key: ksk1, has status INTERNAL_FAILURE\"); creating a third key signing key straight against CreateKeySigningKey answers TooManyKeySigningKeys: \"The Hosted Zone with Id ... has reached the limit of allowed Key Signing keys per Hosted Zone\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

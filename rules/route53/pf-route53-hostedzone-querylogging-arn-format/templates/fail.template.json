@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com.",
+        "QueryLoggingConfig": {
+          "CloudWatchLogsLogGroupArn": "/aws/route53/cdkpf-example.com"
+        }
+      }
+    }
+  }
+}

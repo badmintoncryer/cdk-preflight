@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Child": {
+      "Type": "AWS::Route53::HealthCheck",
+      "Properties": {
+        "HealthCheckConfig": {
+          "Type": "HTTP",
+          "FullyQualifiedDomainName": "example.com",
+          "Port": 80,
+          "RequestInterval": 30,
+          "FailureThreshold": 3
+        }
+      }
+    },
+    "HC": {
+      "Type": "AWS::Route53::HealthCheck",
+      "Properties": {
+        "HealthCheckConfig": {
+          "Type": "CALCULATED",
+          "HealthThreshold": 1,
+          "ChildHealthChecks": [
+            {
+              "Ref": "Child"
+            }
+          ],
+          "Port": 80
+        }
+      }
+    }
+  }
+}
