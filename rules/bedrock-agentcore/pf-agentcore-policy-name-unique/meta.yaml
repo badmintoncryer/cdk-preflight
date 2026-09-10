@@ -1,0 +1,12 @@
+id: pf-agentcore-policy-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Policy]
+severity: ERROR
+title: "Policy names must be unique within one policy engine"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreatePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: two policies named cdkpf_poldup3 on the same policy engine -> ROLLBACK_COMPLETE, \"Policy with the same name already exists (Bedrock AgentCore Control CreatePolicy, 409 ConflictException)\". PolicyEngineId and Name are both createOnly but the primaryIdentifier is the read-only PolicyArn, so E3019 does not fire. Two earlier fixtures died on unrelated Cedar checks (wildcard resource scope, then an ARN that did not exist) before the name collision was reached."
+addedOn: 2026-09-10

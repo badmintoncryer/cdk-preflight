@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-target-http-unsupported
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayTarget]
+severity: ERROR
+title: "TargetConfiguration.Http cannot be used: CloudFormation gateways are always MCP"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: TargetConfiguration.Http.AgentcoreRuntime on a gateway created through CloudFormation -> ROLLBACK_COMPLETE, \"HTTP target configuration is not supported for gateways with MCP protocol type. Provide an MCP-compatible target configuration and retry the request. (BedrockAgentCoreControl, 400)\". Both the cross-region and the same-region control template fail identically, so the block is the Http shape itself, not the ARN. AWS::BedrockAgentCore::Gateway.ProtocolType is an enum of exactly one value, MCP, so no CloudFormation gateway can accept an Http target."
+addedOn: 2026-09-10

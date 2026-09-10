@@ -1,0 +1,39 @@
+{
+ "Resources": {
+  "LG": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "RetentionInDays": 1
+   }
+  },
+  "O": {
+   "Type": "AWS::BedrockAgentCore::OnlineEvaluationConfig",
+   "Properties": {
+    "OnlineEvaluationConfigName": "cdkpf_oerfv2",
+    "EvaluationExecutionRoleArn": "arn:aws:iam::999999999999:role/cdkpf-nosuch-role",
+    "DataSourceConfig": {
+     "CloudWatchLogs": {
+      "LogGroupNames": [
+       {
+        "Ref": "LG"
+       }
+      ],
+      "ServiceNames": [
+       "svc"
+      ]
+     }
+    },
+    "Rule": {
+     "SamplingConfig": {
+      "SamplingPercentage": 10
+     }
+    },
+    "Evaluators": [
+     {
+      "EvaluatorId": "Builtin.Helpfulness"
+     }
+    ]
+   }
+  }
+ }
+}

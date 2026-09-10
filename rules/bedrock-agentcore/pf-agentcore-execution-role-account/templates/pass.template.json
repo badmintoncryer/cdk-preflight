@@ -1,0 +1,79 @@
+{
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "p",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "logs:*",
+          "bedrock:InvokeModel"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "LG": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "RetentionInDays": 1
+   }
+  },
+  "O": {
+   "Type": "AWS::BedrockAgentCore::OnlineEvaluationConfig",
+   "Properties": {
+    "OnlineEvaluationConfigName": "cdkpf_oercv2",
+    "EvaluationExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "DataSourceConfig": {
+     "CloudWatchLogs": {
+      "LogGroupNames": [
+       {
+        "Ref": "LG"
+       }
+      ],
+      "ServiceNames": [
+       "svc"
+      ]
+     }
+    },
+    "Rule": {
+     "SamplingConfig": {
+      "SamplingPercentage": 10
+     }
+    },
+    "Evaluators": [
+     {
+      "EvaluatorId": "Builtin.Helpfulness"
+     }
+    ]
+   }
+  }
+ }
+}

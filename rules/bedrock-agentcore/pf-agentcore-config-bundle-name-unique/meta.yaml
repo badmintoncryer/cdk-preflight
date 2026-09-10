@@ -1,0 +1,12 @@
+id: pf-agentcore-config-bundle-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::ConfigurationBundle]
+severity: ERROR
+title: "BundleName must be unique within the account"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateConfigurationBundle.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: two configuration bundles named cdkpf_cbdup in one stack -> ROLLBACK_COMPLETE, \"A configuration bundle with this name already exists\" (Bedrock AgentCore Control CreateConfigurationBundle, 409 ConflictException). E3019 does not fire because the primaryIdentifier is the read-only BundleArn."
+addedOn: 2026-09-10
