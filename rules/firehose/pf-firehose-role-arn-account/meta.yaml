@@ -1,0 +1,11 @@
+id: pf-firehose-role-arn-account
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A delivery role must live in the deploy account
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_ExtendedS3DestinationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: a destination RoleARN in another account -> AccessDeniedException \"User: <caller> is not authorized to access this resource\". A missing role in the deploy account gives a different message (\"Firehose is unable to assume role ...\"), so the account mismatch is its own failure mode. The rule needs the deploy region, so it is silent in warn mode and in region-agnostic apps."
+addedOn: 2026-09-10

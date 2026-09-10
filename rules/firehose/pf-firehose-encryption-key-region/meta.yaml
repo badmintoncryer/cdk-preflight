@@ -1,0 +1,11 @@
+id: pf-firehose-encryption-key-region
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: The stream CMK must be in the deploy region
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_DeliveryStreamEncryptionConfigurationInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: KeyARN in eu-west-1 for a us-east-1 stream -> InvalidArgumentException \"Cross-region keys are not allowed for SSE. Please provide CMKs in the same region as firehose\". The rule needs the deploy region, so it is silent in warn mode and in region-agnostic apps."
+addedOn: 2026-09-10

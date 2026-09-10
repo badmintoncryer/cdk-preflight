@@ -1,0 +1,11 @@
+id: pf-firehose-prefix-namespace
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An S3 prefix expression takes one of four namespaces
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: Prefix \"a/!{bogus:yyyy}/\" -> InvalidArgumentException \"Namespace to the left of colon (bogus) is an invalid keyword!\"."
+addedOn: 2026-09-10

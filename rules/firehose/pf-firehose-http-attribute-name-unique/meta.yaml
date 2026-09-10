@@ -1,0 +1,11 @@
+id: pf-firehose-http-attribute-name-unique
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: HTTP common attribute names must be unique
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_HttpEndpointCommonAttribute.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: two common attributes named \"a\" -> InvalidArgumentException \"Http Endpoint Common Attributes have duplicate name a.\""
+addedOn: 2026-09-10

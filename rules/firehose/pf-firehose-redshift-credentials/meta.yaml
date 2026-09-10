@@ -1,0 +1,11 @@
+id: pf-firehose-redshift-credentials
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A Redshift destination needs a password or a secret
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_RedshiftDestinationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: RedshiftDestinationConfiguration without Username / Password and without SecretsManagerConfiguration -> InvalidArgumentException \"Redshift Database Password is required for Redshift Destination\"."
+addedOn: 2026-09-10

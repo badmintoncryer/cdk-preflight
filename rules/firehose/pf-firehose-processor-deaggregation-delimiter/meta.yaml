@@ -1,0 +1,11 @@
+id: pf-firehose-processor-deaggregation-delimiter
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: Delimited de-aggregation needs a Delimiter
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-multirecord-deaggergation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: RecordDeAggregation with SubRecordType DELIMITED and no Delimiter -> InvalidArgumentException \"Delimiter should be present for DELIMITED\"."
+addedOn: 2026-09-10

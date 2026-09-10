@@ -1,0 +1,11 @@
+id: pf-firehose-encryption-owned-key-arn
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An AWS owned CMK takes no KeyARN
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_DeliveryStreamEncryptionConfigurationInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: KeyType AWS_OWNED_CMK with a KeyARN -> InvalidArgumentException \"KeyARN cannot be specified when KeyType is AWS_OWNED_CMK\"."
+addedOn: 2026-09-10

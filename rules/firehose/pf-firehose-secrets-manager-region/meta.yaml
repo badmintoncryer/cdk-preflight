@@ -1,0 +1,11 @@
+id: pf-firehose-secrets-manager-region
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: The destination secret must be in the deploy region
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_SecretsManagerConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: SecretARN in eu-west-1 for a us-east-1 stream -> InvalidArgumentException \"Cross-region secrets are not allowed. Please provide a secret in the same region as firehose\". The rule needs the deploy region, so it is silent in warn mode and in region-agnostic apps."
+addedOn: 2026-09-10

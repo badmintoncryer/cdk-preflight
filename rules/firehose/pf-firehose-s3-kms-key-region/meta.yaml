@@ -1,0 +1,11 @@
+id: pf-firehose-s3-kms-key-region
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: The S3 encryption key must be in the deploy region
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_KMSEncryptionConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: AWSKMSKeyARN in eu-west-1 with a us-east-1 bucket -> InvalidArgumentException \"KMS Key ... does not exist in the same region as the S3 bucket. KMS Key region: eu-west-1. S3 Bucket Region: us-east-1\". The rule needs the deploy region, so it is silent in warn mode and in region-agnostic apps."
+addedOn: 2026-09-10

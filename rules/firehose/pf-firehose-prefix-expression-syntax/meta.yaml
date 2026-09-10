@@ -1,0 +1,11 @@
+id: pf-firehose-prefix-expression-syntax
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A "!{" in an S3 prefix must open a complete expression
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: Prefix \"my!{prefix/\" -> InvalidArgumentException \"The supplied prefix(es) do not satisfy the following constraint: Invalid expression usage: my!{prefix/.Must be of the form !{<namespace>:<value>}\". The same prefix without the \"!{\" is accepted."
+addedOn: 2026-09-10

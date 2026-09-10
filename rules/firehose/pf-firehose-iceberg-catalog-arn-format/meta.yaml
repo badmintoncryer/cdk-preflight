@@ -1,0 +1,11 @@
+id: pf-firehose-iceberg-catalog-arn-format
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An Iceberg catalog ARN must be a Glue catalog ARN
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_CatalogConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: CatalogArn \"arn:aws:glue:us-east-1:<account>:database/db\" -> ValidationException \"Value at 'icebergDestinationConfiguration.catalogConfiguration.catalogARN' failed to satisfy constraint: Member must satisfy regular expression pattern: arn:.*:glue:.*:\\\\d{12}:catalog(?:(/[a-z0-9_-]+){1,2})?\". Note CloudFormation spells the property CatalogArn while the API spells it CatalogARN."
+addedOn: 2026-09-10

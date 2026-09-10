@@ -1,0 +1,11 @@
+id: pf-firehose-database-source-config
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A database-sourced stream must deliver to Iceberg
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: DeliveryStreamType DatabaseAsSource with an ExtendedS3 destination -> InvalidArgumentException \"IcebergDestinationConfiguration must be specified for Database as Source.\""
+addedOn: 2026-09-10

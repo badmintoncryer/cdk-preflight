@@ -1,0 +1,11 @@
+id: pf-firehose-processor-metadata-params
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A MetadataExtraction processor needs a query and JQ-1.6
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-partitioning-keys.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: a MetadataExtraction processor without JsonParsingEngine, and one with JsonParsingEngine \"JQ-1.7\", both -> InvalidArgumentException \"MetaDataExtraction JSON Parsing Engine has to be one of JQ-1.6\"."
+addedOn: 2026-09-10

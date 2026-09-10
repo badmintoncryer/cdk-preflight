@@ -11940,6 +11940,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateSchema parses Content and, for OpenApi3, validates it against the\n# OpenAPI 3.0 meta-schema. Measured 2026-09-07, schemas:CreateSchema,\n# us-east-1: 'not json' gives \"Content is not valid JSON\", openapi \"2.0\"\n# gives \"'openapi' does not match pattern '^3\\.0\\.\\d(-.+)?$'\", and a\n# $schema key gives \"additionalProperties '$schema' not allowed\" — the last\n# is what pasting a JSON Schema into an OpenApi3 schema produces.\n_pf_schcontent_url := \"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-schema-create.html\"\n\n_pf_schcontent_raw(name) := c if {\n\tc := resolve(name, \"Properties.Content\")\n\tis_string(c)\n}\n\n_pf_schcontent_openapi(name) := obj if {\n\tresolve(name, \"Properties.Type\") == \"OpenApi3\"\n\traw := _pf_schcontent_raw(name)\n\tjson.is_valid(raw)\n\tobj := json.unmarshal(raw)\n\tis_object(obj)\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-schema-content\", \"ERROR\", name,\n\t\"Properties.Content\",\n\t\"Content is not valid JSON; CreateSchema fails with \\\"Content is not valid JSON\\\"\",\n\t\"Serialise the schema document to JSON\",\n\t_pf_schcontent_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Schema\")\n\traw := _pf_schcontent_raw(name)\n\tnot json.is_valid(raw)\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-schema-content\", \"ERROR\", name,\n\t\"Properties.Content\",\n\tsprintf(\"Type is OpenApi3 but the document declares openapi '%s'; CreateSchema fails with \\\"'openapi' does not match pattern '^3\\\\\\\\.0\\\\\\\\.\\\\\\\\d(-.+)?$'\\\"\", [v]),\n\t\"Declare a 3.0.x version, e.g. \\\"openapi\\\": \\\"3.0.0\\\"\",\n\t_pf_schcontent_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Schema\")\n\tobj := _pf_schcontent_openapi(name)\n\tv := object.get(obj, \"openapi\", null)\n\tis_string(v)\n\tnot regex.match(`^3\\.0\\.[0-9](-.+)?$`, v)\n}\n\nviolation contains make_diag_full(\"pf-eventschemas-schema-content\", \"ERROR\", name,\n\t\"Properties.Content\",\n\t\"An OpenApi3 document may not carry a $schema key; CreateSchema fails with \\\"additionalProperties '$schema' not allowed\\\"\",\n\t\"Drop $schema, or set Type to JSONSchemaDraft4\",\n\t_pf_schcontent_url) if {\n\tsome name in resources_of_type(\"AWS::EventSchemas::Schema\")\n\tobj := _pf_schcontent_openapi(name)\n\tobject.get(obj, \"$schema\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-firehose-aoss-collection-endpoint",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An OpenSearch Serverless destination needs a collection endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-aoss-collection-endpoint\", \"ERROR\", name,\n\t\"Properties.AmazonOpenSearchServerlessDestinationConfiguration.CollectionEndpoint\",\n\t\"CollectionEndpoint is not set; the stream create fails with \\\"Must specify collection endpoint for delivery to OpenSearch serverless.\\\"\",\n\t\"Set CollectionEndpoint to the collection's https endpoint\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_AmazonOpenSearchServerlessDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.AmazonOpenSearchServerlessDestinationConfiguration\"\n\tobject.get(c, \"CollectionEndpoint\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-bucket-arn-format",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A destination BucketARN must be an S3 bucket ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-bucket-arn-format\", \"ERROR\", name,\n\tsprintf(\"%s.BucketARN\", [path]),\n\tsprintf(\"BucketARN '%s' is not an S3 bucket ARN; the stream create fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: arn:.*:s3:::[\\\\w\\\\.\\\\-]{1,255}\\\"\", [arn]),\n\t\"Write the ARN as arn:aws:s3:::bucket-name (no region, no account)\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_ExtendedS3DestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tarn := object.get(c, \"BucketARN\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:\")\n\tnot regex.match(`^arn:[^:]*:s3:::[A-Za-z0-9._-]{1,255}$`, arn)\n}\n"
+  },
+  {
+    "id": "pf-firehose-cloudwatch-log-processing-decompression",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "CloudWatch log processing needs a Decompression processor",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-cloudwatch-log-processing-decompression\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d\", [path, i]),\n\t\"a CloudWatchLogProcessing processor has no Decompression processor beside it; the stream create fails with \\\"CloudWatchLogProcessingProcessor can only be enabled with DecompressionProcessor\\\"\",\n\t\"Add a Decompression processor to the same processing configuration\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_Processor.html\") if {\n\tsome [name, path, i, t, _] in _pf_fhlib_procs\n\tt == \"CloudWatchLogProcessing\"\n\tcount([j | some [nm, p, j, tt, _] in _pf_fhlib_procs; nm == name; p == path; tt == \"Decompression\"]) == 0\n}\n"
+  },
+  {
+    "id": "pf-firehose-cloudwatch-log-processing-value",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "DataMessageExtraction takes True or False",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhcwv_ok(pr) if {\n\tsome v in _pf_fhlib_params(pr, \"DataMessageExtraction\")\n\tlower(v) in {\"true\", \"false\"}\n}\n\n_pf_fhcwv_ok(pr) if {\n\tsome v in _pf_fhlib_params(pr, \"DataMessageExtraction\")\n\tnot is_string(v)\n}\n\nviolation contains make_diag_full(\"pf-firehose-cloudwatch-log-processing-value\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\t\"a CloudWatchLogProcessing processor needs DataMessageExtraction set to True or False; the stream create fails with \\\"Invalid parameter value for DataMessageExtraction. Allowed values are True and False.\\\"\",\n\t\"Add a DataMessageExtraction parameter whose value is True or False\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_ProcessorParameter.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"CloudWatchLogProcessing\"\n\tnot _pf_fhcwv_ok(pr)\n}\n"
+  },
+  {
+    "id": "pf-firehose-cloudwatch-logging-names",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Enabled CloudWatch logging needs a log group name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-cloudwatch-logging-names\", \"ERROR\", name,\n\tsprintf(\"%s.CloudWatchLoggingOptions.LogGroupName\", [path]),\n\t\"CloudWatch logging is enabled but LogGroupName is not set; the stream create fails with \\\"CloudWatch Log Group Name is required if CloudWatch Logging is enabled\\\"\",\n\t\"Set LogGroupName and LogStreamName, or disable CloudWatch logging\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_CloudWatchLoggingOptions.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\to := object.get(c, \"CloudWatchLoggingOptions\", null)\n\tis_object(o)\n\tcoerce_to_bool(object.get(o, \"Enabled\", false)) == true\n\tobject.get(o, \"LogGroupName\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-custom-time-zone",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "CustomTimeZone must be a time zone Firehose supports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The supported list is the published one plus UTC. It is an allow list of\n# older IANA names: Asia/Kolkata and Europe/Kyiv are rejected while\n# Asia/Calcutta and Europe/Kiev are accepted (measured 2026-09-10).\n_pf_fhctz_zones := {\n\t\"Africa/Abidjan\",\n\t\"Africa/Accra\",\n\t\"Africa/Addis_Ababa\",\n\t\"Africa/Algiers\",\n\t\"Africa/Asmera\",\n\t\"Africa/Bangui\",\n\t\"Africa/Banjul\",\n\t\"Africa/Bissau\",\n\t\"Africa/Blantyre\",\n\t\"Africa/Bujumbura\",\n\t\"Africa/Cairo\",\n\t\"Africa/Casablanca\",\n\t\"Africa/Conakry\",\n\t\"Africa/Dakar\",\n\t\"Africa/Dar_es_Salaam\",\n\t\"Africa/Djibouti\",\n\t\"Africa/Douala\",\n\t\"Africa/Freetown\",\n\t\"Africa/Gaborone\",\n\t\"Africa/Harare\",\n\t\"Africa/Johannesburg\",\n\t\"Africa/Kampala\",\n\t\"Africa/Khartoum\",\n\t\"Africa/Kigali\",\n\t\"Africa/Kinshasa\",\n\t\"Africa/Lagos\",\n\t\"Africa/Libreville\",\n\t\"Africa/Lome\",\n\t\"Africa/Luanda\",\n\t\"Africa/Lubumbashi\",\n\t\"Africa/Lusaka\",\n\t\"Africa/Malabo\",\n\t\"Africa/Maputo\",\n\t\"Africa/Maseru\",\n\t\"Africa/Mbabane\",\n\t\"Africa/Mogadishu\",\n\t\"Africa/Monrovia\",\n\t\"Africa/Nairobi\",\n\t\"Africa/Ndjamena\",\n\t\"Africa/Niamey\",\n\t\"Africa/Nouakchott\",\n\t\"Africa/Ouagadougou\",\n\t\"Africa/Porto-Novo\",\n\t\"Africa/Sao_Tome\",\n\t\"Africa/Timbuktu\",\n\t\"Africa/Tripoli\",\n\t\"Africa/Tunis\",\n\t\"Africa/Windhoek\",\n\t\"America/Adak\",\n\t\"America/Anchorage\",\n\t\"America/Anguilla\",\n\t\"America/Antigua\",\n\t\"America/Aruba\",\n\t\"America/Asuncion\",\n\t\"America/Barbados\",\n\t\"America/Belize\",\n\t\"America/Bogota\",\n\t\"America/Buenos_Aires\",\n\t\"America/Caracas\",\n\t\"America/Cayenne\",\n\t\"America/Cayman\",\n\t\"America/Chicago\",\n\t\"America/Costa_Rica\",\n\t\"America/Cuiaba\",\n\t\"America/Curacao\",\n\t\"America/Dawson_Creek\",\n\t\"America/Denver\",\n\t\"America/Dominica\",\n\t\"America/Edmonton\",\n\t\"America/El_Salvador\",\n\t\"America/Fortaleza\",\n\t\"America/Godthab\",\n\t\"America/Grand_Turk\",\n\t\"America/Grenada\",\n\t\"America/Guadeloupe\",\n\t\"America/Guatemala\",\n\t\"America/Guayaquil\",\n\t\"America/Guyana\",\n\t\"America/Halifax\",\n\t\"America/Havana\",\n\t\"America/Indianapolis\",\n\t\"America/Jamaica\",\n\t\"America/La_Paz\",\n\t\"America/Lima\",\n\t\"America/Los_Angeles\",\n\t\"America/Managua\",\n\t\"America/Manaus\",\n\t\"America/Martinique\",\n\t\"America/Mazatlan\",\n\t\"America/Mexico_City\",\n\t\"America/Miquelon\",\n\t\"America/Montevideo\",\n\t\"America/Montreal\",\n\t\"America/Montserrat\",\n\t\"America/Nassau\",\n\t\"America/New_York\",\n\t\"America/Noronha\",\n\t\"America/Panama\",\n\t\"America/Paramaribo\",\n\t\"America/Phoenix\",\n\t\"America/Port-au-Prince\",\n\t\"America/Port_of_Spain\",\n\t\"America/Porto_Acre\",\n\t\"America/Puerto_Rico\",\n\t\"America/Regina\",\n\t\"America/Rio_Branco\",\n\t\"America/Santiago\",\n\t\"America/Santo_Domingo\",\n\t\"America/Sao_Paulo\",\n\t\"America/Scoresbysund\",\n\t\"America/St_Johns\",\n\t\"America/St_Kitts\",\n\t\"America/St_Lucia\",\n\t\"America/St_Thomas\",\n\t\"America/St_Vincent\",\n\t\"America/Tegucigalpa\",\n\t\"America/Thule\",\n\t\"America/Tijuana\",\n\t\"America/Tortola\",\n\t\"America/Vancouver\",\n\t\"America/Winnipeg\",\n\t\"Antarctica/Casey\",\n\t\"Antarctica/DumontDUrville\",\n\t\"Antarctica/Mawson\",\n\t\"Antarctica/McMurdo\",\n\t\"Antarctica/Palmer\",\n\t\"Asia/Aden\",\n\t\"Asia/Almaty\",\n\t\"Asia/Amman\",\n\t\"Asia/Anadyr\",\n\t\"Asia/Aqtau\",\n\t\"Asia/Aqtobe\",\n\t\"Asia/Ashgabat\",\n\t\"Asia/Ashkhabad\",\n\t\"Asia/Baghdad\",\n\t\"Asia/Bahrain\",\n\t\"Asia/Baku\",\n\t\"Asia/Bangkok\",\n\t\"Asia/Beirut\",\n\t\"Asia/Bishkek\",\n\t\"Asia/Brunei\",\n\t\"Asia/Calcutta\",\n\t\"Asia/Colombo\",\n\t\"Asia/Dacca\",\n\t\"Asia/Damascus\",\n\t\"Asia/Dhaka\",\n\t\"Asia/Dubai\",\n\t\"Asia/Dushanbe\",\n\t\"Asia/Hong_Kong\",\n\t\"Asia/Irkutsk\",\n\t\"Asia/Jakarta\",\n\t\"Asia/Jayapura\",\n\t\"Asia/Jerusalem\",\n\t\"Asia/Kabul\",\n\t\"Asia/Kamchatka\",\n\t\"Asia/Karachi\",\n\t\"Asia/Katmandu\",\n\t\"Asia/Krasnoyarsk\",\n\t\"Asia/Kuala_Lumpur\",\n\t\"Asia/Kuwait\",\n\t\"Asia/Macao\",\n\t\"Asia/Magadan\",\n\t\"Asia/Manila\",\n\t\"Asia/Muscat\",\n\t\"Asia/Nicosia\",\n\t\"Asia/Novosibirsk\",\n\t\"Asia/Phnom_Penh\",\n\t\"Asia/Pyongyang\",\n\t\"Asia/Qatar\",\n\t\"Asia/Rangoon\",\n\t\"Asia/Riyadh\",\n\t\"Asia/Saigon\",\n\t\"Asia/Seoul\",\n\t\"Asia/Shanghai\",\n\t\"Asia/Singapore\",\n\t\"Asia/Taipei\",\n\t\"Asia/Tashkent\",\n\t\"Asia/Tbilisi\",\n\t\"Asia/Tehran\",\n\t\"Asia/Thimbu\",\n\t\"Asia/Thimphu\",\n\t\"Asia/Tokyo\",\n\t\"Asia/Ujung_Pandang\",\n\t\"Asia/Ulaanbaatar\",\n\t\"Asia/Ulan_Bator\",\n\t\"Asia/Vientiane\",\n\t\"Asia/Vladivostok\",\n\t\"Asia/Yakutsk\",\n\t\"Asia/Yekaterinburg\",\n\t\"Asia/Yerevan\",\n\t\"Atlantic/Azores\",\n\t\"Atlantic/Bermuda\",\n\t\"Atlantic/Canary\",\n\t\"Atlantic/Cape_Verde\",\n\t\"Atlantic/Faeroe\",\n\t\"Atlantic/Jan_Mayen\",\n\t\"Atlantic/Reykjavik\",\n\t\"Atlantic/South_Georgia\",\n\t\"Atlantic/St_Helena\",\n\t\"Atlantic/Stanley\",\n\t\"Australia/Adelaide\",\n\t\"Australia/Brisbane\",\n\t\"Australia/Broken_Hill\",\n\t\"Australia/Darwin\",\n\t\"Australia/Hobart\",\n\t\"Australia/Lord_Howe\",\n\t\"Australia/Perth\",\n\t\"Australia/Sydney\",\n\t\"Europe/Amsterdam\",\n\t\"Europe/Andorra\",\n\t\"Europe/Athens\",\n\t\"Europe/Belgrade\",\n\t\"Europe/Berlin\",\n\t\"Europe/Brussels\",\n\t\"Europe/Bucharest\",\n\t\"Europe/Budapest\",\n\t\"Europe/Chisinau\",\n\t\"Europe/Copenhagen\",\n\t\"Europe/Dublin\",\n\t\"Europe/Gibraltar\",\n\t\"Europe/Helsinki\",\n\t\"Europe/Istanbul\",\n\t\"Europe/Kaliningrad\",\n\t\"Europe/Kiev\",\n\t\"Europe/Lisbon\",\n\t\"Europe/London\",\n\t\"Europe/Luxembourg\",\n\t\"Europe/Madrid\",\n\t\"Europe/Malta\",\n\t\"Europe/Minsk\",\n\t\"Europe/Monaco\",\n\t\"Europe/Moscow\",\n\t\"Europe/Oslo\",\n\t\"Europe/Paris\",\n\t\"Europe/Prague\",\n\t\"Europe/Riga\",\n\t\"Europe/Rome\",\n\t\"Europe/Samara\",\n\t\"Europe/Simferopol\",\n\t\"Europe/Sofia\",\n\t\"Europe/Stockholm\",\n\t\"Europe/Tallinn\",\n\t\"Europe/Tirane\",\n\t\"Europe/Vaduz\",\n\t\"Europe/Vienna\",\n\t\"Europe/Vilnius\",\n\t\"Europe/Warsaw\",\n\t\"Europe/Zurich\",\n\t\"Indian/Antananarivo\",\n\t\"Indian/Chagos\",\n\t\"Indian/Christmas\",\n\t\"Indian/Cocos\",\n\t\"Indian/Comoro\",\n\t\"Indian/Kerguelen\",\n\t\"Indian/Mahe\",\n\t\"Indian/Maldives\",\n\t\"Indian/Mauritius\",\n\t\"Indian/Mayotte\",\n\t\"Indian/Reunion\",\n\t\"Pacific/Apia\",\n\t\"Pacific/Auckland\",\n\t\"Pacific/Chatham\",\n\t\"Pacific/Easter\",\n\t\"Pacific/Efate\",\n\t\"Pacific/Enderbury\",\n\t\"Pacific/Fakaofo\",\n\t\"Pacific/Fiji\",\n\t\"Pacific/Funafuti\",\n\t\"Pacific/Galapagos\",\n\t\"Pacific/Gambier\",\n\t\"Pacific/Guadalcanal\",\n\t\"Pacific/Guam\",\n\t\"Pacific/Honolulu\",\n\t\"Pacific/Kiritimati\",\n\t\"Pacific/Kosrae\",\n\t\"Pacific/Majuro\",\n\t\"Pacific/Marquesas\",\n\t\"Pacific/Nauru\",\n\t\"Pacific/Niue\",\n\t\"Pacific/Norfolk\",\n\t\"Pacific/Noumea\",\n\t\"Pacific/Pago_Pago\",\n\t\"Pacific/Palau\",\n\t\"Pacific/Pitcairn\",\n\t\"Pacific/Ponape\",\n\t\"Pacific/Port_Moresby\",\n\t\"Pacific/Rarotonga\",\n\t\"Pacific/Saipan\",\n\t\"Pacific/Tahiti\",\n\t\"Pacific/Tarawa\",\n\t\"Pacific/Tongatapu\",\n\t\"Pacific/Truk\",\n\t\"Pacific/Wake\",\n\t\"Pacific/Wallis\",\n\t\"UTC\",\n}\n\nviolation contains make_diag_full(\"pf-firehose-custom-time-zone\", \"ERROR\", name,\n\tsprintf(\"%s.CustomTimeZone\", [path]),\n\tsprintf(\"CustomTimeZone '%s' is not supported; the stream create fails with \\\"Provided custom time zone is not supported. Custom time zones are limited to UTC and non-3-letter IANA time zones.\\\"\", [z]),\n\t\"Use UTC or one of the supported IANA names (Asia/Calcutta, not Asia/Kolkata)\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-object-name.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tz := object.get(c, \"CustomTimeZone\", null)\n\t_pf_fhlib_lit(z)\n\tnot z in _pf_fhctz_zones\n}\n"
+  },
+  {
+    "id": "pf-firehose-database-source-config",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A database-sourced stream must deliver to Iceberg",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-database-source-config\", \"ERROR\", name,\n\t\"Properties.IcebergDestinationConfiguration\",\n\t\"DeliveryStreamType is DatabaseAsSource but the destination is not Iceberg; the stream create fails with \\\"IcebergDestinationConfiguration must be specified for Database as Source.\\\"\",\n\t\"Deliver change data capture streams to an Apache Iceberg destination\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tp := _pf_fhlib_props(name)\n\tobject.get(p, \"DeliveryStreamType\", null) == \"DatabaseAsSource\"\n\tobject.get(p, \"IcebergDestinationConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-deserializer-one",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "The deserializer must be exactly one SerDe",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pf_firehose_deserializer_one_n(c) := n if {\n\tfc := object.get(object.get(c, \"DataFormatConversionConfiguration\", {}), \"InputFormatConfiguration\", null)\n\tis_object(fc)\n\ts := object.get(fc, \"Deserializer\", null)\n\tis_object(s)\n\tn := count([k | some k in {\"OpenXJsonSerDe\", \"HiveJsonSerDe\"}; object.get(s, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-firehose-deserializer-one\", \"ERROR\", name,\n\tsprintf(\"%s.DataFormatConversionConfiguration.InputFormatConfiguration.Deserializer\", [path]),\n\tsprintf(\"%d deserializers are set; the stream create fails with \\\"More than one deserializer specified. Only one may be chosen.\\\"\", [n]),\n\t\"Set exactly one of OpenXJsonSerDe / HiveJsonSerDe\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_InputFormatConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tn := _pf_pf_firehose_deserializer_one_n(c)\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-firehose-deserializer-required",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "InputFormatConfiguration must carry a deserializer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pf_firehose_deserializer_required_n(c) := n if {\n\tfc := object.get(object.get(c, \"DataFormatConversionConfiguration\", {}), \"InputFormatConfiguration\", null)\n\tis_object(fc)\n\ts := object.get(fc, \"Deserializer\", null)\n\tis_object(s)\n\tn := count([k | some k in {\"OpenXJsonSerDe\", \"HiveJsonSerDe\"}; object.get(s, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-firehose-deserializer-required\", \"ERROR\", name,\n\tsprintf(\"%s.DataFormatConversionConfiguration.InputFormatConfiguration.Deserializer\", [path]),\n\t\"no deserializer is set; the stream create fails with \\\"Deserializer must not be null\\\"\",\n\t\"Set exactly one of OpenXJsonSerDe / HiveJsonSerDe\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_InputFormatConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tn := _pf_pf_firehose_deserializer_required_n(c)\n\tn == 0\n}\n"
+  },
+  {
+    "id": "pf-firehose-dfcc-compression",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Format conversion needs an uncompressed S3 destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-dfcc-compression\", \"ERROR\", name,\n\tsprintf(\"%s.CompressionFormat\", [path]),\n\tsprintf(\"CompressionFormat is '%s' while data format conversion is enabled; the stream create fails with \\\"The S3 destination's compression format must be set to UNCOMPRESSED when data format conversion is enabled\\\"\", [f]),\n\t\"Drop CompressionFormat (or set UNCOMPRESSED) and compress inside the ParquetSerDe / OrcSerDe instead\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/record-format-conversion.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tdfcc := object.get(c, \"DataFormatConversionConfiguration\", null)\n\tis_object(dfcc)\n\tcoerce_to_bool(object.get(dfcc, \"Enabled\", false)) == true\n\tf := object.get(c, \"CompressionFormat\", null)\n\t_pf_fhlib_lit(f)\n\tf != \"UNCOMPRESSED\"\n}\n"
+  },
+  {
     "id": "pf-firehose-dfcc-required-configs",
     "service": "firehose",
     "severity": "ERROR",
@@ -11973,6 +12083,160 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Partitioned delivery has nowhere to put the keys unless the prefix\n# interpolates them via !{partitionKeyFrom...} namespaces.\nviolation contains make_diag_full(\"pf-firehose-dynamic-partitioning-prefix\", \"ERROR\", name,\n\t\"Properties.ExtendedS3DestinationConfiguration.Prefix\",\n\tsprintf(\"Prefix '%s' has no partition namespace; the stream create fails with \\\"S3 Prefix should contain Dynamic Partitioning namespaces when Dynamic Partitioning is enabled\\\"\", [p]),\n\t\"Interpolate at least one !{partitionKeyFromQuery:...} or !{partitionKeyFromLambda:...} into the prefix\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tcoerce_to_bool(resolve(name, \"Properties.ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration.Enabled\")) == true\n\tp := resolve(name, \"Properties.ExtendedS3DestinationConfiguration.Prefix\")\n\tis_string(p)\n\tnot contains(p, \"!{partitionKey\")\n}\n"
   },
   {
+    "id": "pf-firehose-dynamic-partitioning-query-key",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Every MetadataExtraction key must appear in the S3 prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both sides are opaque strings: the jq object constructor on one side and\n# the !{partitionKeyFromQuery:...} namespaces on the other. Only a simple\n# top level constructor is parsed; anything else is left alone.\n_pf_fhdpk_keys(q) := ks if {\n\tregex.match(`^\\{[^{}]*\\}$`, q)\n\tks := {k |\n\t\tsome m in regex.find_n(`[{,]\\s*\"?[A-Za-z0-9_-]+\"?\\s*:`, q, -1)\n\t\tk := trim(trim_right(trim_left(m, \"{,\"), \":\"), \" \\\"\")\n\t}\n}\n\n_pf_fhdpq_prefix_keys(c) := ks if {\n\tp := object.get(c, \"Prefix\", \"\")\n\tis_string(p)\n\tks := {v |\n\t\tsome e in _pf_fhlib_exprs(p)\n\t\t_pf_fhlib_ns(e) == \"partitionKeyFromQuery\"\n\t\tv := _pf_fhlib_val(e)\n\t}\n}\n\n_pf_fhdpq_bad contains [name, path, k] if {\n\tsome [name, path, _, t, pr] in _pf_fhlib_procs\n\tt == \"MetadataExtraction\"\n\tsome [nm, p, c] in _pf_fhlib_dests\n\tnm == name\n\tp == path\n\tsome q in _pf_fhlib_params(pr, \"MetadataExtractionQuery\")\n\t_pf_fhlib_lit(q)\n\tsome k in _pf_fhdpk_keys(q)\n\tnot k in _pf_fhdpq_prefix_keys(c)\n}\n\nviolation contains make_diag_full(\"pf-firehose-dynamic-partitioning-query-key\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration\", [path]),\n\tsprintf(\"the MetadataExtraction query produces key '%s' but the prefix never interpolates !{partitionKeyFromQuery:%s}; the stream create fails with \\\"MetaDataExtraction JQ Query can't contain keys that are not present in the S3 Prefix expression\\\"\", [k, k]),\n\t\"Interpolate every extracted key into Prefix, or drop it from the query\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-partitioning-keys.html\") if {\n\tsome [name, path, k] in _pf_fhdpq_bad\n}\n"
+  },
+  {
+    "id": "pf-firehose-encryption-key-arn",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A customer managed CMK needs a KeyARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-encryption-key-arn\", \"ERROR\", name,\n\t\"Properties.DeliveryStreamEncryptionConfigurationInput.KeyARN\",\n\t\"KeyType is CUSTOMER_MANAGED_CMK but KeyARN is not set; the stream create fails with \\\"KeyARN has to be specified when KeyType is CUSTOMER_MANAGED_CMK\\\"\",\n\t\"Set KeyARN, or switch KeyType to AWS_OWNED_CMK\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_DeliveryStreamEncryptionConfigurationInput.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\te := object.get(_pf_fhlib_props(name), \"DeliveryStreamEncryptionConfigurationInput\", null)\n\tis_object(e)\n\tobject.get(e, \"KeyType\", null) == \"CUSTOMER_MANAGED_CMK\"\n\tobject.get(e, \"KeyARN\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-encryption-key-region",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "The stream CMK must be in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-encryption-key-region\", \"ERROR\", name,\n\t\"Properties.DeliveryStreamEncryptionConfigurationInput.KeyARN\",\n\tsprintf(\"the CMK is in %s but the stack deploys to %s; the stream create fails with \\\"Cross-region keys are not allowed for SSE. Please provide CMKs in the same region as firehose\\\"\", [r, data.cdk_preflight.deploy_region]),\n\t\"Use a CMK in the same region as the Firehose stream\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_DeliveryStreamEncryptionConfigurationInput.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\te := object.get(_pf_fhlib_props(name), \"DeliveryStreamEncryptionConfigurationInput\", null)\n\tis_object(e)\n\tarn := object.get(e, \"KeyARN\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tcount(r) > 0\n\tr != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-firehose-encryption-kinesis-source",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Server-side encryption is not available with a Kinesis source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-encryption-kinesis-source\", \"ERROR\", name,\n\t\"Properties.DeliveryStreamEncryptionConfigurationInput\",\n\tsprintf(\"a %s stream cannot enable server-side encryption; the stream create fails with \\\"Server side encryption from firehose is only allowed for direct put delivery streams and database as a source delivery streams\\\"\", [t]),\n\t\"Encrypt the source Kinesis stream instead, or drop DeliveryStreamEncryptionConfigurationInput\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_DeliveryStreamEncryptionConfigurationInput.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tp := _pf_fhlib_props(name)\n\tobject.get(p, \"DeliveryStreamEncryptionConfigurationInput\", \"__pf_absent\") != \"__pf_absent\"\n\tt := object.get(p, \"DeliveryStreamType\", null)\n\tt in {\"KinesisStreamAsSource\", \"MSKAsSource\"}\n}\n"
+  },
+  {
+    "id": "pf-firehose-encryption-owned-key-arn",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An AWS owned CMK takes no KeyARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-encryption-owned-key-arn\", \"ERROR\", name,\n\t\"Properties.DeliveryStreamEncryptionConfigurationInput.KeyARN\",\n\t\"KeyType is AWS_OWNED_CMK but a KeyARN is set; the stream create fails with \\\"KeyARN cannot be specified when KeyType is AWS_OWNED_CMK\\\"\",\n\t\"Drop KeyARN, or switch KeyType to CUSTOMER_MANAGED_CMK\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_DeliveryStreamEncryptionConfigurationInput.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\te := object.get(_pf_fhlib_props(name), \"DeliveryStreamEncryptionConfigurationInput\", null)\n\tis_object(e)\n\tobject.get(e, \"KeyType\", null) == \"AWS_OWNED_CMK\"\n\tobject.get(e, \"KeyARN\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-error-output-prefix-error-type",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An ErrorOutputPrefix with expressions needs !{firehose:error-output-type}",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-error-output-prefix-error-type\", \"ERROR\", name,\n\tsprintf(\"%s.ErrorOutputPrefix\", [path]),\n\tsprintf(\"ErrorOutputPrefix '%s' uses expressions but never interpolates !{firehose:error-output-type}; the stream create fails with \\\"ErrorOutputPrefix must contain at least one occurrence of !{firehose:error-output-type}\\\"\", [e]),\n\t\"Add !{firehose:error-output-type} to the ErrorOutputPrefix\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\te := object.get(c, \"ErrorOutputPrefix\", null)\n\t_pf_fhlib_lit(e)\n\tcount(_pf_fhlib_exprs(e)) > 0\n\tnot contains(e, \"!{firehose:error-output-type}\")\n}\n"
+  },
+  {
+    "id": "pf-firehose-error-output-prefix-partition-namespace",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Partition namespaces cannot appear in an ErrorOutputPrefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-error-output-prefix-partition-namespace\", \"ERROR\", name,\n\tsprintf(\"%s.ErrorOutputPrefix\", [path]),\n\tsprintf(\"ErrorOutputPrefix interpolates '%s'; the stream create fails with \\\"Dynamic Partitioning Namespaces can't be part of an error prefix expression\\\"\", [e]),\n\t\"Keep partitionKeyFromQuery / partitionKeyFromLambda in Prefix only\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tv := object.get(c, \"ErrorOutputPrefix\", null)\n\t_pf_fhlib_lit(v)\n\tsome e in _pf_fhlib_exprs(v)\n\tstartswith(_pf_fhlib_ns(e), \"partitionKeyFrom\")\n}\n"
+  },
+  {
+    "id": "pf-firehose-error-output-prefix-required",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A prefix with expressions needs an ErrorOutputPrefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fherop_set(c) if {\n\te := object.get(c, \"ErrorOutputPrefix\", \"\")\n\tis_string(e)\n\tcount(e) > 0\n}\n\n# An intrinsic is unknowable here, so treat it as set and stay quiet.\n_pf_fherop_set(c) if is_object(object.get(c, \"ErrorOutputPrefix\", \"\"))\n\nviolation contains make_diag_full(\"pf-firehose-error-output-prefix-required\", \"ERROR\", name,\n\tsprintf(\"%s.ErrorOutputPrefix\", [path]),\n\tsprintf(\"Prefix '%s' contains expressions but ErrorOutputPrefix is not set; the stream create fails with \\\"ErrorOutputPrefix cannot be null or empty when Prefix contains expressions\\\"\", [p]),\n\t\"Add an ErrorOutputPrefix containing !{firehose:error-output-type}\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tp := object.get(c, \"Prefix\", null)\n\t_pf_fhlib_lit(p)\n\tcount(_pf_fhlib_exprs(p)) > 0\n\tnot _pf_fherop_set(c)\n}\n"
+  },
+  {
+    "id": "pf-firehose-hive-timestamp-formats",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "HiveJsonSerDe timestamp formats must be Joda patterns",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhhtf_bad contains [name, path, f] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tifc := object.get(object.get(c, \"DataFormatConversionConfiguration\", {}), \"InputFormatConfiguration\", null)\n\tis_object(ifc)\n\thive := object.get(object.get(ifc, \"Deserializer\", {}), \"HiveJsonSerDe\", null)\n\tis_object(hive)\n\tfs := object.get(hive, \"TimestampFormats\", null)\n\tis_array(fs)\n\tsome f in fs\n\t_pf_fhlib_lit(f)\n\tunquoted := regex.replace(f, `'[^']*'`, \"\")\n\tsome i in numbers.range(0, count(unquoted) - 1)\n\tsubstring(unquoted, i, 1) in _pf_fhlib_ts_bad\n}\n\nviolation contains make_diag_full(\"pf-firehose-hive-timestamp-formats\", \"ERROR\", name,\n\tsprintf(\"%s.DataFormatConversionConfiguration.InputFormatConfiguration.Deserializer.HiveJsonSerDe.TimestampFormats\", [path]),\n\tsprintf(\"'%s' is not a Joda time pattern; the stream create fails with \\\"One or more SerDe options are invalid for org.apache.hcatalog.data.JsonSerDe: [Key: timestamp.formats Value: %s]\\\"\", [f, f]),\n\t\"Use a Joda pattern such as yyyy-MM-dd'T'HH:mm:ss (C I J P R T U V b f i j l o p r t are not pattern letters)\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_HiveJsonSerDe.html\") if {\n\tsome [name, path, f] in _pf_fhhtf_bad\n}\n"
+  },
+  {
+    "id": "pf-firehose-http-attribute-name-unique",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "HTTP common attribute names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-http-attribute-name-unique\", \"ERROR\", name,\n\t\"Properties.HttpEndpointDestinationConfiguration.RequestConfiguration.CommonAttributes\",\n\tsprintf(\"%d common attributes are declared but only %d distinct names; the stream create fails with \\\"Http Endpoint Common Attributes have duplicate name ...\\\"\", [n, u]),\n\t\"Give every common attribute a distinct AttributeName\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_HttpEndpointCommonAttribute.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.HttpEndpointDestinationConfiguration\"\n\tattrs := object.get(object.get(c, \"RequestConfiguration\", {}), \"CommonAttributes\", null)\n\tis_array(attrs)\n\tnames := [x | some a in attrs; is_object(a); x := object.get(a, \"AttributeName\", null); is_string(x)]\n\tn := count(names)\n\tu := count({x | some x in names})\n\tu < n\n}\n"
+  },
+  {
+    "id": "pf-firehose-http-buffer-size",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "HTTP endpoint buffering is capped at 64 MB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-http-buffer-size\", \"ERROR\", name,\n\t\"Properties.HttpEndpointDestinationConfiguration.BufferingHints.SizeInMBs\",\n\tsprintf(\"SizeInMBs is %v; the stream create fails with \\\"failed to satisfy constraint: Member must have value less than or equal to 64\\\"\", [v]),\n\t\"Set SizeInMBs between 1 and 64 for an HTTP endpoint destination\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_HttpEndpointBufferingHints.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.HttpEndpointDestinationConfiguration\"\n\traw := object.get(object.get(c, \"BufferingHints\", {}), \"SizeInMBs\", null)\n\traw != null\n\tv := to_number(raw)\n\t_pf_fhhbs_out(v)\n}\n\n_pf_fhhbs_out(v) if v < 1\n\n_pf_fhhbs_out(v) if v > 64\n"
+  },
+  {
+    "id": "pf-firehose-iceberg-backup-mode",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Iceberg S3 backup only supports FailedDataOnly",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-iceberg-backup-mode\", \"ERROR\", name,\n\t\"Properties.IcebergDestinationConfiguration.s3BackupMode\",\n\tsprintf(\"s3BackupMode is '%s'; the stream create fails with \\\"S3BackupMode.%s is not supported for Iceberg as destination.\\\"\", [m, m]),\n\t\"Use FailedDataOnly for an Iceberg destination\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_IcebergDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.IcebergDestinationConfiguration\"\n\tm := object.get(c, \"s3BackupMode\", null)\n\t_pf_fhlib_lit(m)\n\tm != \"FailedDataOnly\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-iceberg-catalog-arn-format",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An Iceberg catalog ARN must be a Glue catalog ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-iceberg-catalog-arn-format\", \"ERROR\", name,\n\t\"Properties.IcebergDestinationConfiguration.CatalogConfiguration.CatalogArn\",\n\tsprintf(\"CatalogArn '%s' is not a Glue catalog ARN; the stream create fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: arn:.*:glue:.*:\\\\d{12}:catalog\\\"\", [arn]),\n\t\"Write the ARN as arn:aws:glue:<region>:<account>:catalog\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_CatalogConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.IcebergDestinationConfiguration\"\n\tarn := object.get(object.get(c, \"CatalogConfiguration\", {}), \"CatalogArn\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:\")\n\tnot regex.match(`^arn:[^:]*:glue:[^:]*:[0-9]{12}:catalog(/[a-z0-9_-]+){0,2}$`, arn)\n}\n"
+  },
+  {
+    "id": "pf-firehose-iceberg-default-table-config",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An Iceberg destination without routing needs a default table",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhidt_routed(name, path) if {\n\tsome [nm, p, _, t, _] in _pf_fhlib_procs\n\tnm == name\n\tp == path\n\tt in {\"Lambda\", \"MetadataExtraction\"}\n}\n\nviolation contains make_diag_full(\"pf-firehose-iceberg-default-table-config\", \"ERROR\", name,\n\t\"Properties.IcebergDestinationConfiguration.DestinationTableConfigurationList\",\n\t\"the Iceberg destination has no destination table configuration and no Lambda or MetadataExtraction processor to route records; the stream create fails with \\\"A single default destination table configuration must be provided when both Lambda and MetadataExtraction processors are not provided\\\"\",\n\t\"Add one DestinationTableConfigurationList entry, or route records with a Lambda / MetadataExtraction processor\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/apache-iceberg-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.IcebergDestinationConfiguration\"\n\tcount(object.get(c, \"DestinationTableConfigurationList\", [])) == 0\n\tnot _pf_fhidt_routed(name, path)\n}\n"
+  },
+  {
     "id": "pf-firehose-kinesis-source-config",
     "service": "firehose",
     "severity": "ERROR",
@@ -11982,6 +12246,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::KinesisFirehose::DeliveryStream"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only this direction is a deploy failure - DirectPut with a (silently\n# ignored) source configuration deploys fine (bench f06). Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_fhksc_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"KinesisStreamSourceConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-firehose-kinesis-source-config\", \"ERROR\", name,\n\t\"Properties.KinesisStreamSourceConfiguration\",\n\t\"DeliveryStreamType is KinesisStreamAsSource but no source configuration is set; the stream create fails with \\\"KinesisSourceStreamConfig is mandatory for KinesisStreamAsSource stream type.\\\"\",\n\t\"Add KinesisStreamSourceConfiguration with the stream ARN and role\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tresolve(name, \"Properties.DeliveryStreamType\") == \"KinesisStreamAsSource\"\n\t_pf_fhksc_missing(name)\n}\n"
+  },
+  {
+    "id": "pf-firehose-metadata-extraction-dp-only",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A MetadataExtraction processor needs dynamic partitioning",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-metadata-extraction-dp-only\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d\", [path, i]),\n\t\"a MetadataExtraction processor is configured without dynamic partitioning; the stream create fails with \\\"class com.amazonaws.services.firehose.internal.model.MetadataExtractionProcessor can only be present when Dynamic Partitioning is enabled.\\\"\",\n\t\"Enable DynamicPartitioningConfiguration, or drop the processor\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-partitioning-keys.html\") if {\n\tsome [name, path, i, t, _] in _pf_fhlib_procs\n\tt == \"MetadataExtraction\"\n\tnot _pf_fhlib_dp_enabled(name, path)\n}\n"
+  },
+  {
+    "id": "pf-firehose-msk-source-config",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An MSK-sourced stream needs MSKSourceConfiguration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-msk-source-config\", \"ERROR\", name,\n\t\"Properties.MSKSourceConfiguration\",\n\t\"DeliveryStreamType is MSKAsSource but MSKSourceConfiguration is not set; the stream create fails with \\\"MSKSourceConfig is mandatory for MSK as Source stream type.\\\"\",\n\t\"Add MSKSourceConfiguration (cluster ARN, topic, authentication)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tp := _pf_fhlib_props(name)\n\tobject.get(p, \"DeliveryStreamType\", null) == \"MSKAsSource\"\n\tobject.get(p, \"MSKSourceConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-firehose-one-destination",
@@ -11995,6 +12281,259 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both directions deploy-verified: none set, and two set. Key presence is\n# read from the preprocessed document (see AGENTS.md).\n_pf_fhod_dests := {\n\t\"S3DestinationConfiguration\",\n\t\"ExtendedS3DestinationConfiguration\",\n\t\"RedshiftDestinationConfiguration\",\n\t\"ElasticsearchDestinationConfiguration\",\n\t\"AmazonopensearchserviceDestinationConfiguration\",\n\t\"AmazonOpenSearchServerlessDestinationConfiguration\",\n\t\"SplunkDestinationConfiguration\",\n\t\"HttpEndpointDestinationConfiguration\",\n\t\"SnowflakeDestinationConfiguration\",\n\t\"IcebergDestinationConfiguration\",\n}\n\nviolation contains make_diag_full(\"pf-firehose-one-destination\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"%d destination configurations are set; the stream create fails with \\\"Exactly one destination configuration is supported for a Firehose\\\"\", [n]),\n\t\"Set exactly one *DestinationConfiguration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisfirehose-deliverystream.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tn := count([k | some k in _pf_fhod_dests; object.get(props, k, \"__pf_absent\") != \"__pf_absent\"])\n\tn != 1\n}\n"
   },
   {
+    "id": "pf-firehose-opensearch-endpoint-exclusive",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An OpenSearch destination takes a domain ARN or an endpoint, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pf_firehose_opensearch_endpoint_exclusive_n(c) := n if {\n\tn := count([k | some k in {\"DomainARN\", \"ClusterEndpoint\"}; object.get(c, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-firehose-opensearch-endpoint-exclusive\", \"ERROR\", name,\n\tsprintf(\"%s.DomainARN\", [path]),\n\t\"both DomainARN and ClusterEndpoint are set; the stream create fails with \\\"Cannot provide both Elasticsearch cluster endpoint and domain ARN. Provide either the cluster endpoint or domain arn.\\\"\",\n\t\"Set exactly one of DomainARN or ClusterEndpoint\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_AmazonopensearchserviceDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath in {\"Properties.AmazonopensearchserviceDestinationConfiguration\", \"Properties.ElasticsearchDestinationConfiguration\"}\n\t_pf_pf_firehose_opensearch_endpoint_exclusive_n(c) == 2\n}\n"
+  },
+  {
+    "id": "pf-firehose-opensearch-endpoint-required",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An OpenSearch destination needs a domain ARN or an endpoint",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pf_firehose_opensearch_endpoint_required_n(c) := n if {\n\tn := count([k | some k in {\"DomainARN\", \"ClusterEndpoint\"}; object.get(c, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-firehose-opensearch-endpoint-required\", \"ERROR\", name,\n\tsprintf(\"%s.DomainARN\", [path]),\n\t\"neither DomainARN nor ClusterEndpoint is set; the stream create fails with \\\"Provide either the Elasticsearch cluster endpoint or domain arn.\\\"\",\n\t\"Set exactly one of DomainARN or ClusterEndpoint\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_AmazonopensearchserviceDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath in {\"Properties.AmazonopensearchserviceDestinationConfiguration\", \"Properties.ElasticsearchDestinationConfiguration\"}\n\t_pf_pf_firehose_opensearch_endpoint_required_n(c) == 0\n}\n"
+  },
+  {
+    "id": "pf-firehose-opensearch-type-name",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An OpenSearch 7+ destination takes no type name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhotn_modern(v) if startswith(v, \"OpenSearch_\")\n\n_pf_fhotn_modern(v) if regex.match(`^Elasticsearch_[789]`, v)\n\nviolation contains make_diag_full(\"pf-firehose-opensearch-type-name\", \"ERROR\", name,\n\tsprintf(\"%s.TypeName\", [path]),\n\tsprintf(\"TypeName '%s' is set while the destination domain runs %s; the stream create fails with \\\"Types are deprecated in Elasticsearch version 7+ and all OpenSearch versions. TypeName must be empty.\\\"\", [tn, ver]),\n\t\"Drop TypeName - types no longer exist on Elasticsearch 7+ and OpenSearch domains\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_AmazonopensearchserviceDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath in {\"Properties.AmazonopensearchserviceDestinationConfiguration\", \"Properties.ElasticsearchDestinationConfiguration\"}\n\ttn := object.get(c, \"TypeName\", null)\n\t_pf_fhlib_lit(tn)\n\tcount(tn) > 0\n\ttarget := resolve(name, sprintf(\"%s.DomainARN\", [path]))\n\ttarget in resources_of_type(\"AWS::OpenSearchService::Domain\")\n\tver := resolve(target, \"Properties.EngineVersion\")\n\t_pf_fhotn_modern(ver)\n}\n"
+  },
+  {
+    "id": "pf-firehose-prefix-expression-syntax",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A \"!{\" in an S3 prefix must open a complete expression",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The prefix DSL lives inside an opaque string, so no schema layer sees it.\nviolation contains make_diag_full(\"pf-firehose-prefix-expression-syntax\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"%s '%s' contains a '!{' that does not open a !{namespace:value} expression; the stream create fails with \\\"Invalid expression usage\\\"\", [key, v]),\n\t\"Close the expression as !{namespace:value}, or remove the stray !{\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\t_pf_fhlib_stray(v)\n}\n"
+  },
+  {
+    "id": "pf-firehose-prefix-expression-value",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An S3 prefix expression value must be one the namespace accepts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhpev_bad contains [name, path, key, e] if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tsome e in _pf_fhlib_exprs(v)\n\t_pf_fhlib_ns(e) == \"firehose\"\n\tnot _pf_fhlib_val(e) in {\"error-output-type\", \"random-string\"}\n}\n\n_pf_fhpev_bad contains [name, path, key, e] if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tsome e in _pf_fhlib_exprs(v)\n\t_pf_fhlib_ns(e) == \"timestamp\"\n\tunquoted := regex.replace(_pf_fhlib_val(e), `'[^']*'`, \"\")\n\tsome i in numbers.range(0, count(unquoted) - 1)\n\tsubstring(unquoted, i, 1) in _pf_fhlib_ts_bad\n}\n\nviolation contains make_diag_full(\"pf-firehose-prefix-expression-value\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"'%s' is not a value the namespace accepts; the stream create fails with \\\"Invalid conversion character used in the value of the expression in %s\\\"\", [e, key]),\n\t\"firehose takes error-output-type or random-string; timestamp takes a Joda pattern (C I J P R T U V b f i j l o p r t are not pattern letters)\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, key, e] in _pf_fhpev_bad\n}\n"
+  },
+  {
+    "id": "pf-firehose-prefix-length",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An evaluated S3 prefix cannot exceed 512 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Expressions expand at delivery time, so only a lower bound is knowable:\n# every literal character survives and every expression yields at least one.\n_pf_fhpl_min(s) := n if {\n\tstripped := regex.replace(s, `!\\{[^{}]*\\}`, \"\")\n\tn := count(stripped) + count(_pf_fhlib_exprs(s))\n}\n\nviolation contains make_diag_full(\"pf-firehose-prefix-length\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"%s evaluates to at least %d characters; the stream create fails with \\\"Length of evaluated prefix cannot be greater than 512\\\"\", [key, n]),\n\t\"Shorten the prefix to 512 characters or fewer once evaluated\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tn := _pf_fhpl_min(v)\n\tn > 512\n}\n"
+  },
+  {
+    "id": "pf-firehose-prefix-namespace",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An S3 prefix expression takes one of four namespaces",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-prefix-namespace\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"'%s' names the namespace '%s'; the stream create fails with \\\"Namespace to the left of colon (%s) is an invalid keyword!\\\"\", [e, ns, ns]),\n\t\"Use timestamp, firehose, partitionKeyFromQuery or partitionKeyFromLambda\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tsome e in _pf_fhlib_exprs(v)\n\tns := _pf_fhlib_ns(e)\n\tnot ns in _pf_fhlib_namespaces\n}\n"
+  },
+  {
+    "id": "pf-firehose-prefix-no-error-output-type",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Prefix cannot interpolate the error output type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-prefix-no-error-output-type\", \"ERROR\", name,\n\tsprintf(\"%s.Prefix\", [path]),\n\tsprintf(\"Prefix '%s' interpolates !{firehose:error-output-type}, which only ErrorOutputPrefix may use; the stream create fails with \\\"Prefix must not contain any occurrence of !{firehose:error-output-type}\\\"\", [p]),\n\t\"Move !{firehose:error-output-type} to ErrorOutputPrefix\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tp := object.get(c, \"Prefix\", null)\n\t_pf_fhlib_lit(p)\n\tcontains(p, \"!{firehose:error-output-type}\")\n}\n"
+  },
+  {
+    "id": "pf-firehose-processor-buffer-both",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Lambda buffering takes both hints or neither",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhpbb_bad contains [name, path, i, \"BufferIntervalInSeconds\"] if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\t_pf_fhlib_has_param(pr, \"BufferSizeInMBs\")\n\tnot _pf_fhlib_has_param(pr, \"BufferIntervalInSeconds\")\n}\n\n_pf_fhpbb_bad contains [name, path, i, \"BufferSizeInMBs\"] if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\t_pf_fhlib_has_param(pr, \"BufferIntervalInSeconds\")\n\tnot _pf_fhlib_has_param(pr, \"BufferSizeInMBs\")\n}\n\nviolation contains make_diag_full(\"pf-firehose-processor-buffer-both\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\tsprintf(\"one Lambda buffering hint is set without %s; the stream create fails with \\\"Both BufferSizeInMBs and BufferIntervalInSeconds are required to configure buffering for lambda processor.\\\"\", [k]),\n\t\"Set BufferSizeInMBs and BufferIntervalInSeconds together, or neither\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/data-transformation.html\") if {\n\tsome [name, path, i, k] in _pf_fhpbb_bad\n}\n"
+  },
+  {
+    "id": "pf-firehose-processor-buffer-interval-range",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Lambda processor buffers for 0 to 900 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-buffer-interval-range\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\tsprintf(\"BufferIntervalInSeconds is %v; the stream create fails with \\\"BufferIntervalInSeconds for lambda processor must be between 0 and 900.\\\"\", [v]),\n\t\"Set BufferIntervalInSeconds between 0 and 900\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/data-transformation.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\tsome raw in _pf_fhlib_params(pr, \"BufferIntervalInSeconds\")\n\tv := to_number(raw)\n\t_pf_pf_firehose_processor_buffer_interval_range_out(v)\n}\n\n_pf_pf_firehose_processor_buffer_interval_range_out(v) if v < 0\n\n_pf_pf_firehose_processor_buffer_interval_range_out(v) if v > 900\n"
+  },
+  {
+    "id": "pf-firehose-processor-buffer-size-range",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Lambda processor buffers between 0.2 and 3 MB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-buffer-size-range\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\tsprintf(\"BufferSizeInMBs is %v; the stream create fails with \\\"BufferSizeInMBs for lambda processor must be between 0.2 and 3.\\\"\", [v]),\n\t\"Set BufferSizeInMBs between 0.2 and 3\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/data-transformation.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\tsome raw in _pf_fhlib_params(pr, \"BufferSizeInMBs\")\n\tv := to_number(raw)\n\t_pf_pf_firehose_processor_buffer_size_range_out(v)\n}\n\n_pf_pf_firehose_processor_buffer_size_range_out(v) if v < 0.2\n\n_pf_pf_firehose_processor_buffer_size_range_out(v) if v > 3\n"
+  },
+  {
+    "id": "pf-firehose-processor-count",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A processing configuration takes one to five processors",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhpc_count(c) := n if {\n\tpc := object.get(c, \"ProcessingConfiguration\", null)\n\tis_object(pc)\n\tcoerce_to_bool(object.get(pc, \"Enabled\", false)) == true\n\tps := object.get(pc, \"Processors\", [])\n\tis_array(ps)\n\tn := count(ps)\n}\n\nviolation contains make_diag_full(\"pf-firehose-processor-count\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors\", [path]),\n\tsprintf(\"processing is enabled with %d processors; the stream create fails with \\\"A maximum of 5 and a minimum of 1 processor needs to be supplied when processing is enabled.\\\"\", [n]),\n\t\"Supply between one and five processors, or disable processing\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_ProcessingConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tn := _pf_fhpc_count(c)\n\t_pf_fhpc_out(n)\n}\n\n_pf_fhpc_out(n) if n < 1\n\n_pf_fhpc_out(n) if n > 5\n"
+  },
+  {
+    "id": "pf-firehose-processor-deaggregation-delimiter",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Delimited de-aggregation needs a Delimiter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-deaggregation-delimiter\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\t\"SubRecordType is DELIMITED but no Delimiter parameter is set; the stream create fails with \\\"Delimiter should be present for DELIMITED\\\"\",\n\t\"Add a base64-encoded Delimiter parameter\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-multirecord-deaggergation.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"RecordDeAggregation\"\n\tsome v in _pf_fhlib_params(pr, \"SubRecordType\")\n\tv == \"DELIMITED\"\n\tnot _pf_fhlib_has_param(pr, \"Delimiter\")\n}\n"
+  },
+  {
+    "id": "pf-firehose-processor-duplicate-type",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A destination takes at most one Lambda processor",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-duplicate-type\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors\", [path]),\n\tsprintf(\"%d Lambda processors are configured; the stream create fails with \\\"Cannot have more than 1 Lambda processor.\\\"\", [n]),\n\t\"Keep a single Lambda processor\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_ProcessingConfiguration.html\") if {\n\tsome [name, path, _, t, _] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\tn := count([j | some [nm, p, j, tt, _] in _pf_fhlib_procs; nm == name; p == path; tt == \"Lambda\"])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-firehose-processor-lambda-arn",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Lambda processor needs a LambdaArn parameter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-lambda-arn\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\t\"a Lambda processor has no LambdaArn parameter; the stream create fails with \\\"LambdaArn is required when Lambda processor is used.\\\"\",\n\t\"Add a ProcessorParameter with ParameterName LambdaArn\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_Processor.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\tnot _pf_fhlib_has_param(pr, \"LambdaArn\")\n}\n"
+  },
+  {
+    "id": "pf-firehose-processor-metadata-params",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A MetadataExtraction processor needs a query and JQ-1.6",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhmp_bad contains [name, path, i, \"JsonParsingEngine\"] if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"MetadataExtraction\"\n\tnot _pf_fhmp_jq(pr)\n}\n\n_pf_fhmp_bad contains [name, path, i, \"MetadataExtractionQuery\"] if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"MetadataExtraction\"\n\tnot _pf_fhlib_has_param(pr, \"MetadataExtractionQuery\")\n}\n\n_pf_fhmp_jq(pr) if {\n\tsome v in _pf_fhlib_params(pr, \"JsonParsingEngine\")\n\tv == \"JQ-1.6\"\n}\n\n# An intrinsic parameter value is unknowable, so stay quiet.\n_pf_fhmp_jq(pr) if {\n\tsome v in _pf_fhlib_params(pr, \"JsonParsingEngine\")\n\tnot is_string(v)\n}\n\nviolation contains make_diag_full(\"pf-firehose-processor-metadata-params\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\tsprintf(\"a MetadataExtraction processor needs %s; the stream create fails with \\\"MetaDataExtraction JSON Parsing Engine has to be one of JQ-1.6\\\"\", [k]),\n\t\"Give the processor MetadataExtractionQuery and JsonParsingEngine: JQ-1.6\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-partitioning-keys.html\") if {\n\tsome [name, path, i, k] in _pf_fhmp_bad\n}\n"
+  },
+  {
+    "id": "pf-firehose-processor-retries-range",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Lambda processor retries at most 300 times",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-retries-range\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\tsprintf(\"NumberOfRetries is %v; the stream create fails with \\\"Number of retries for lambda must be between 0 and 300.\\\"\", [v]),\n\t\"Set NumberOfRetries between 0 and 300\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_ProcessorParameter.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"Lambda\"\n\tsome raw in _pf_fhlib_params(pr, \"NumberOfRetries\")\n\tv := to_number(raw)\n\t_pf_fhprr_out(v)\n}\n\n_pf_fhprr_out(v) if v < 0\n\n_pf_fhprr_out(v) if v > 300\n"
+  },
+  {
+    "id": "pf-firehose-processor-subrecord-type",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "SubRecordType is JSON or DELIMITED",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-processor-subrecord-type\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d.Parameters\", [path, i]),\n\tsprintf(\"SubRecordType is '%s'; the stream create fails with \\\"SubRecordType has to be one of JSON, DELIMITED\\\"\", [v]),\n\t\"Use JSON or DELIMITED\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_Processor.html\") if {\n\tsome [name, path, i, t, pr] in _pf_fhlib_procs\n\tt == \"RecordDeAggregation\"\n\tsome v in _pf_fhlib_params(pr, \"SubRecordType\")\n\t_pf_fhlib_lit(v)\n\tnot v in {\"JSON\", \"DELIMITED\"}\n}\n"
+  },
+  {
+    "id": "pf-firehose-record-deaggregation-dp-only",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A RecordDeAggregation processor needs dynamic partitioning",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-record-deaggregation-dp-only\", \"ERROR\", name,\n\tsprintf(\"%s.ProcessingConfiguration.Processors.%d\", [path, i]),\n\t\"a RecordDeAggregation processor is configured without dynamic partitioning; the stream create fails with \\\"class com.amazonaws.services.firehose.internal.model.RecordDeAggregationProcessor can only be present when Dynamic Partitioning is enabled.\\\"\",\n\t\"Enable DynamicPartitioningConfiguration, or drop the processor\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-multirecord-deaggergation.html\") if {\n\tsome [name, path, i, t, _] in _pf_fhlib_procs\n\tt == \"RecordDeAggregation\"\n\tnot _pf_fhlib_dp_enabled(name, path)\n}\n"
+  },
+  {
+    "id": "pf-firehose-redshift-credentials",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Redshift destination needs a password or a secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One shared helper: every destination that takes inline credentials also\n# accepts a Secrets Manager configuration instead.\n_pf_fhcred_secret(c) if {\n\ts := object.get(c, \"SecretsManagerConfiguration\", null)\n\tis_object(s)\n\tcoerce_to_bool(object.get(s, \"Enabled\", false)) == true\n}\n\nviolation contains make_diag_full(\"pf-firehose-redshift-credentials\", \"ERROR\", name,\n\t\"Properties.RedshiftDestinationConfiguration.Password\",\n\t\"Password is not set and no Secrets Manager configuration is enabled; the stream create fails with \\\"Redshift Database Password is required for Redshift Destination\\\"\",\n\t\"Set Username and Password, or enable SecretsManagerConfiguration with a SecretARN\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_RedshiftDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.RedshiftDestinationConfiguration\"\n\tobject.get(c, \"Password\", \"__pf_absent\") == \"__pf_absent\"\n\tnot _pf_fhcred_secret(c)\n}\n"
+  },
+  {
+    "id": "pf-firehose-redshift-prefix-no-expression",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Redshift destination takes no prefix expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fhrspx_bad contains [name, key] if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tstartswith(path, \"Properties.RedshiftDestinationConfiguration\")\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tcount(_pf_fhlib_exprs(v)) > 0\n}\n\nviolation contains make_diag_full(\"pf-firehose-redshift-prefix-no-expression\", \"ERROR\", name,\n\tsprintf(\"Properties.RedshiftDestinationConfiguration.S3Configuration.%s\", [key]),\n\tsprintf(\"%s uses prefix expressions, which a Redshift destination does not support; the stream create fails with \\\"Prefix Expressions or ErrorOutputPrefix is currently not supported for this destination\\\"\", [key]),\n\t\"Use a literal prefix for the intermediate S3 location\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, key] in _pf_fhrspx_bad\n}\n"
+  },
+  {
+    "id": "pf-firehose-redshift-s3-compression",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Redshift intermediate bucket takes UNCOMPRESSED or GZIP",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-redshift-s3-compression\", \"ERROR\", name,\n\t\"Properties.RedshiftDestinationConfiguration.S3Configuration.CompressionFormat\",\n\tsprintf(\"CompressionFormat is '%s', which the Redshift COPY command cannot read; the stream create fails with \\\"Only the following compression formats are allowed when using Redshift: [UNCOMPRESSED, GZIP]\\\"\", [f]),\n\t\"Use UNCOMPRESSED or GZIP for the intermediate bucket\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_RedshiftDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.RedshiftDestinationConfiguration\"\n\tf := object.get(object.get(c, \"S3Configuration\", {}), \"CompressionFormat\", null)\n\t_pf_fhlib_lit(f)\n\tnot f in {\"UNCOMPRESSED\", \"GZIP\"}\n}\n"
+  },
+  {
+    "id": "pf-firehose-role-arn-account",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A delivery role must live in the deploy account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-role-arn-account\", \"ERROR\", name,\n\tsprintf(\"%s.RoleARN\", [path]),\n\tsprintf(\"the delivery role lives in account %s but the stack deploys to %s; the stream create fails with an AccessDeniedException on the pass role\", [acct, data.cdk_preflight.deploy_account]),\n\t\"Use a role in the deploy account\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_ExtendedS3DestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tarn := object.get(c, \"RoleARN\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:aws\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 4\n\tacct := parts[4]\n\tregex.match(`^[0-9]{12}$`, acct)\n\tacct != data.cdk_preflight.deploy_account\n}\n"
+  },
+  {
     "id": "pf-firehose-s3-backup-config",
     "service": "firehose",
     "severity": "ERROR",
@@ -12004,6 +12543,149 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::KinesisFirehose::DeliveryStream"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Backup mode points deliveries at a second bucket that must be\n# configured. Scoped to the benched ExtendedS3 destination. Absence is\n# proven against the preprocessed document (see AGENTS.md).\n_pf_fhsbc_outer(name) := c if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tc := object.get(props, \"ExtendedS3DestinationConfiguration\", {})\n\tis_object(c)\n}\n\nviolation contains make_diag_full(\"pf-firehose-s3-backup-config\", \"ERROR\", name,\n\t\"Properties.ExtendedS3DestinationConfiguration.S3BackupConfiguration\",\n\t\"S3BackupMode is Enabled but S3BackupConfiguration is not set; the stream create fails with \\\"S3 backup destination configuration is required when enabling S3 backup.\\\"\",\n\t\"Add S3BackupConfiguration (bucket and role), or drop S3BackupMode\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-extendeds3destinationconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tresolve(name, \"Properties.ExtendedS3DestinationConfiguration.S3BackupMode\") == \"Enabled\"\n\tx := _pf_fhsbc_outer(name)\n\tobject.get(x, \"S3BackupConfiguration\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-s3-encryption-exclusive",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "S3 encryption takes exactly one configuration",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-s3-encryption-exclusive\", \"ERROR\", name,\n\tsprintf(\"%s.EncryptionConfiguration\", [path]),\n\tsprintf(\"%d of NoEncryptionConfig / KMSEncryptionConfig are set; the stream create fails with \\\"Exactly one of NoEncryptionConfig or KMSEncryptionConfig must be specified\\\"\", [n]),\n\t\"Set exactly one of NoEncryptionConfig or KMSEncryptionConfig, or drop EncryptionConfiguration\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_EncryptionConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\te := object.get(c, \"EncryptionConfiguration\", null)\n\tis_object(e)\n\tn := count([k | some k in {\"NoEncryptionConfig\", \"KMSEncryptionConfig\"}; object.get(e, k, \"__pf_absent\") != \"__pf_absent\"])\n\tn != 1\n}\n"
+  },
+  {
+    "id": "pf-firehose-s3-kms-key-region",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "The S3 encryption key must be in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-s3-kms-key-region\", \"ERROR\", name,\n\tsprintf(\"%s.EncryptionConfiguration.KMSEncryptionConfig.AWSKMSKeyARN\", [path]),\n\tsprintf(\"the KMS key is in %s but the stack deploys to %s; the stream create fails with \\\"KMS Key %s does not exist in the same region as the S3 bucket\\\"\", [r, data.cdk_preflight.deploy_region, arn]),\n\t\"Use a key in the same region as the destination bucket\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_KMSEncryptionConfig.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tkms := object.get(object.get(c, \"EncryptionConfiguration\", {}), \"KMSEncryptionConfig\", null)\n\tis_object(kms)\n\tarn := object.get(kms, \"AWSKMSKeyARN\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tcount(r) > 0\n\tr != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-firehose-schema-config-role-account",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "The schema configuration role must be in the deploy account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only this pack knows the deploy account, so only here can a literal ARN\n# be compared against it (see AGENTS.md, deploy_account injection).\nviolation contains make_diag_full(\"pf-firehose-schema-config-role-account\", \"ERROR\", name,\n\tsprintf(\"%s.DataFormatConversionConfiguration.SchemaConfiguration.RoleARN\", [path]),\n\tsprintf(\"the schema configuration role lives in account %s but the stack deploys to %s; the stream create fails with \\\"Cross-account pass role is not allowed.\\\"\", [acct, data.cdk_preflight.deploy_account]),\n\t\"Use a role in the deploy account for the Glue schema lookup\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_SchemaConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tsc := object.get(object.get(c, \"DataFormatConversionConfiguration\", {}), \"SchemaConfiguration\", null)\n\tis_object(sc)\n\tarn := object.get(sc, \"RoleARN\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 4\n\tacct := parts[4]\n\tregex.match(`^[0-9]{12}$`, acct)\n\tacct != data.cdk_preflight.deploy_account\n}\n"
+  },
+  {
+    "id": "pf-firehose-secrets-manager-region",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "The destination secret must be in the deploy region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-secrets-manager-region\", \"ERROR\", name,\n\tsprintf(\"%s.SecretsManagerConfiguration.SecretARN\", [path]),\n\tsprintf(\"the secret is in %s but the stack deploys to %s; the stream create fails with \\\"Cross-region secrets are not allowed. Please provide a secret in the same region as firehose\\\"\", [r, data.cdk_preflight.deploy_region]),\n\t\"Replicate the secret into the Firehose region and point SecretARN at that copy\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_SecretsManagerConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\ts := object.get(c, \"SecretsManagerConfiguration\", null)\n\tis_object(s)\n\tarn := object.get(s, \"SecretARN\", null)\n\t_pf_fhlib_lit(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tr := parts[3]\n\tcount(r) > 0\n\tr != data.cdk_preflight.deploy_region\n}\n"
+  },
+  {
+    "id": "pf-firehose-secrets-manager-secret-arn",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An enabled Secrets Manager configuration needs a SecretARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-secrets-manager-secret-arn\", \"ERROR\", name,\n\tsprintf(\"%s.SecretsManagerConfiguration.SecretARN\", [path]),\n\t\"the Secrets Manager configuration is enabled but carries no SecretARN; the stream create fails with \\\"Invalid secret ARN: null\\\"\",\n\t\"Set SecretARN, or disable the Secrets Manager configuration\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_SecretsManagerConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\ts := object.get(c, \"SecretsManagerConfiguration\", null)\n\tis_object(s)\n\tcoerce_to_bool(object.get(s, \"Enabled\", false)) == true\n\tobject.get(s, \"SecretARN\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-serializer-one",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "The serializer must be exactly one SerDe",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pf_firehose_serializer_one_n(c) := n if {\n\tfc := object.get(object.get(c, \"DataFormatConversionConfiguration\", {}), \"OutputFormatConfiguration\", null)\n\tis_object(fc)\n\ts := object.get(fc, \"Serializer\", null)\n\tis_object(s)\n\tn := count([k | some k in {\"ParquetSerDe\", \"OrcSerDe\"}; object.get(s, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-firehose-serializer-one\", \"ERROR\", name,\n\tsprintf(\"%s.DataFormatConversionConfiguration.OutputFormatConfiguration.Serializer\", [path]),\n\tsprintf(\"%d serializers are set; the stream create fails with \\\"More than one serializer specified. Only one may be chosen.\\\"\", [n]),\n\t\"Set exactly one of ParquetSerDe / OrcSerDe\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_OutputFormatConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tn := _pf_pf_firehose_serializer_one_n(c)\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-firehose-serializer-required",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "OutputFormatConfiguration must carry a serializer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_pf_firehose_serializer_required_n(c) := n if {\n\tfc := object.get(object.get(c, \"DataFormatConversionConfiguration\", {}), \"OutputFormatConfiguration\", null)\n\tis_object(fc)\n\ts := object.get(fc, \"Serializer\", null)\n\tis_object(s)\n\tn := count([k | some k in {\"ParquetSerDe\", \"OrcSerDe\"}; object.get(s, k, \"__pf_absent\") != \"__pf_absent\"])\n}\n\nviolation contains make_diag_full(\"pf-firehose-serializer-required\", \"ERROR\", name,\n\tsprintf(\"%s.DataFormatConversionConfiguration.OutputFormatConfiguration.Serializer\", [path]),\n\t\"no serializer is set; the stream create fails with \\\"Serializer must not be null\\\"\",\n\t\"Set exactly one of ParquetSerDe / OrcSerDe\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_OutputFormatConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tn := _pf_pf_firehose_serializer_required_n(c)\n\tn == 0\n}\n"
+  },
+  {
+    "id": "pf-firehose-snowflake-credentials",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Snowflake destination needs a private key or a secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-snowflake-credentials\", \"ERROR\", name,\n\t\"Properties.SnowflakeDestinationConfiguration.PrivateKey\",\n\t\"PrivateKey is not set and no Secrets Manager configuration is enabled; the stream create fails with \\\"PrivateKey must be provided.\\\"\",\n\t\"Set PrivateKey, or enable SecretsManagerConfiguration with a SecretARN\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SnowflakeDestinationConfiguration\"\n\tobject.get(c, \"PrivateKey\", \"__pf_absent\") == \"__pf_absent\"\n\tnot _pf_fhcred_secret(c)\n}\n"
+  },
+  {
+    "id": "pf-firehose-snowflake-json-mapping-columns",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "JSON mapping takes no Snowflake column names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-snowflake-json-mapping-columns\", \"ERROR\", name,\n\tsprintf(\"Properties.SnowflakeDestinationConfiguration.%s\", [k]),\n\tsprintf(\"%s is set while DataLoadingOption is JSON_MAPPING; the stream create fails with \\\"Can't configure %s when Data Loading Option is not VARIANT_CONTENT_MAPPING or VARIANT_CONTENT_AND_METADATA_MAPPING\\\"\", [k, k]),\n\t\"Drop the column names, or switch to a VARIANT_* data loading option\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_SnowflakeDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SnowflakeDestinationConfiguration\"\n\tobject.get(c, \"DataLoadingOption\", null) == \"JSON_MAPPING\"\n\tsome k in {\"ContentColumnName\", \"MetaDataColumnName\"}\n\tobject.get(c, k, \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-snowflake-role-config",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "An enabled Snowflake role configuration needs a role",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-snowflake-role-config\", \"ERROR\", name,\n\t\"Properties.SnowflakeDestinationConfiguration.SnowflakeRoleConfiguration.SnowflakeRole\",\n\t\"the Snowflake role configuration is enabled but SnowflakeRole is not set; the stream create fails with \\\"Must provide SnowflakeRole when SnowflakeRoleConfiguration is enabled.\\\"\",\n\t\"Set SnowflakeRole, or disable SnowflakeRoleConfiguration\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_SnowflakeRoleConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SnowflakeDestinationConfiguration\"\n\trc := object.get(c, \"SnowflakeRoleConfiguration\", null)\n\tis_object(rc)\n\tcoerce_to_bool(object.get(rc, \"Enabled\", false)) == true\n\tobject.get(rc, \"SnowflakeRole\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-snowflake-user",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Snowflake destination needs a user or a secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-snowflake-user\", \"ERROR\", name,\n\t\"Properties.SnowflakeDestinationConfiguration.User\",\n\t\"User is not set and no Secrets Manager configuration is enabled; the stream create fails with \\\"User must be provided.\\\"\",\n\t\"Set User, or enable SecretsManagerConfiguration with a SecretARN\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SnowflakeDestinationConfiguration\"\n\tobject.get(c, \"User\", \"__pf_absent\") == \"__pf_absent\"\n\tnot _pf_fhcred_secret(c)\n}\n"
+  },
+  {
+    "id": "pf-firehose-snowflake-variant-columns",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "Variant content and metadata mapping needs both column names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-snowflake-variant-columns\", \"ERROR\", name,\n\tsprintf(\"Properties.SnowflakeDestinationConfiguration.%s\", [k]),\n\tsprintf(\"DataLoadingOption is VARIANT_CONTENT_AND_METADATA_MAPPING but %s is not set; the stream create fails with \\\"Must provide ContentColumnName and MetadataColumnName when Data Loading Option is VARIANT_CONTENT_AND_METADATA_MAPPING.\\\"\", [k]),\n\t\"Set both ContentColumnName and MetaDataColumnName\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_SnowflakeDestinationConfiguration.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SnowflakeDestinationConfiguration\"\n\tobject.get(c, \"DataLoadingOption\", null) == \"VARIANT_CONTENT_AND_METADATA_MAPPING\"\n\tsome k in {\"ContentColumnName\", \"MetaDataColumnName\"}\n\tobject.get(c, k, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-firehose-splunk-hec-endpoint-https",
+    "service": "firehose",
+    "severity": "ERROR",
+    "title": "A Splunk HEC endpoint must be an HTTPS URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::KinesisFirehose::DeliveryStream"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-splunk-hec-endpoint-https\", \"ERROR\", name,\n\t\"Properties.SplunkDestinationConfiguration.HECEndpoint\",\n\tsprintf(\"HECEndpoint '%s' is not an HTTPS URL; the stream create fails with \\\"Invalid HECEndpoint. Supported endpoint format is https://<domain>:<port>.\\\"\", [u]),\n\t\"Write the endpoint as https://<domain>:<port>\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SplunkDestinationConfiguration\"\n\tu := object.get(c, \"HECEndpoint\", null)\n\t_pf_fhlib_lit(u)\n\tnot startswith(u, \"https://\")\n}\n"
   },
   {
     "id": "pf-iam-identity-policy-no-principal",
@@ -18315,6 +18997,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/events",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the EventBridge event-pattern rules\n# (rules/events/pf-events-pattern-*). Loaded ahead of every rule\n# (BUNDLED_LIBS); never emits diagnostics.\n#\n# An event pattern is a tree of objects whose leaves are arrays. Array\n# elements are either scalars (exact match) or *matcher objects* such as\n# {\"prefix\": \"a\"}. The engine's Rego has no walk builtin and forbids\n# recursion, so the tree is unrolled to a fixed depth: three levels of nested\n# objects covers {\"detail\": {\"a\": {\"b\": [...]}}}, which is as deep as real\n# patterns go. Each comprehension may hold only one `some ... in`, so every\n# level goes through its own helper.\n#\n# \"$or\" is not a matcher: its array holds whole pattern objects, so those\n# elements are collected as nodes rather than as matchers. Getting that wrong\n# would report every key inside a valid $or as an unknown operator.\n\n_pf_evlib_obj_values(n) := {v |\n\tsome k, v in n\n\tis_object(v)\n}\n\n_pf_evlib_or_branches(n) := {e |\n\tsome e in object.get(n, \"$or\", [])\n\tis_object(e)\n}\n\n_pf_evlib_level(n) := union({_pf_evlib_obj_values(n), _pf_evlib_or_branches(n)})\n\n_pf_evlib_l1(p) := _pf_evlib_level(p)\n\n_pf_evlib_l2(p) := union({_pf_evlib_level(n) | some n in _pf_evlib_l1(p)})\n\n_pf_evlib_l3(p) := union({_pf_evlib_level(n) | some n in _pf_evlib_l2(p)})\n\n# Every object node of the pattern, the pattern itself included.\n_pf_evlib_nodes(p) := union({{p}, _pf_evlib_l1(p), _pf_evlib_l2(p), _pf_evlib_l3(p)})\n\n_pf_evlib_arrays_of(n) := {v |\n\tsome k, v in n\n\tis_array(v)\n\tk != \"$or\"\n}\n\n# Every matcher array in the pattern ($or arrays excluded).\n_pf_evlib_arrays(p) := union({_pf_evlib_arrays_of(n) | some n in _pf_evlib_nodes(p)})\n\n_pf_evlib_objs_of(a) := {e |\n\tsome e in a\n\tis_object(e)\n}\n\n# Every matcher object, e.g. {\"prefix\": \"a\"} or {\"numeric\": [\">\", 0]}.\n_pf_evlib_matchers(p) := union({_pf_evlib_objs_of(a) | some a in _pf_evlib_arrays(p)})\n\n# The pattern as a plain object, or undefined when it is absent or carries\n# unresolved intrinsics (marker keys start with \"__\").\n_pf_evlib_pattern(name, path) := p if {\n\tp := resolve(name, path)\n\tis_object(p)\n\tevery k, _ in p {\n\t\tnot startswith(k, \"__\")\n\t}\n}\n"
+  },
+  {
+    "name": "_lib/firehose",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared traversal for AWS::KinesisFirehose::DeliveryStream. Every rule in\n# rules/firehose reads the delivery stream through these helpers: the\n# destination blocks are ten sibling keys with near-identical inner shapes,\n# and the interesting constraints live in the S3 prefix DSL and in the\n# processor list, neither of which any schema layer can express.\n#\n# Rego has no recursion, so nesting is expanded explicitly. The prefix\n# carriers are two levels deep (destination, then S3Configuration /\n# S3BackupConfiguration) and that is the whole tree - no deeper case exists\n# in the resource schema.\n\n_pf_fhlib_dest_keys := {\n\t\"S3DestinationConfiguration\",\n\t\"ExtendedS3DestinationConfiguration\",\n\t\"RedshiftDestinationConfiguration\",\n\t\"ElasticsearchDestinationConfiguration\",\n\t\"AmazonopensearchserviceDestinationConfiguration\",\n\t\"AmazonOpenSearchServerlessDestinationConfiguration\",\n\t\"SplunkDestinationConfiguration\",\n\t\"HttpEndpointDestinationConfiguration\",\n\t\"SnowflakeDestinationConfiguration\",\n\t\"IcebergDestinationConfiguration\",\n}\n\n_pf_fhlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# [logical id, property path, destination configuration]\n_pf_fhlib_dests contains [name, path, c] if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tp := _pf_fhlib_props(name)\n\tsome k in _pf_fhlib_dest_keys\n\tc := object.get(p, k, null)\n\tis_object(c)\n\tpath := sprintf(\"Properties.%s\", [k])\n}\n\n# Blocks that carry a Prefix / ErrorOutputPrefix pair: the destination\n# itself and its nested S3 configurations.\n_pf_fhlib_prefixed contains [name, path, c] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n}\n\n_pf_fhlib_prefixed contains [name, sub, s] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tsome k in {\"S3Configuration\", \"S3BackupConfiguration\"}\n\ts := object.get(c, k, null)\n\tis_object(s)\n\tsub := sprintf(\"%s.%s\", [path, k])\n}\n\n# [logical id, destination path, index, type, raw processor object]\n_pf_fhlib_procs contains [name, path, i, t, pr] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpc := object.get(c, \"ProcessingConfiguration\", null)\n\tis_object(pc)\n\tps := object.get(pc, \"Processors\", null)\n\tis_array(ps)\n\tsome i, pr in ps\n\tis_object(pr)\n\tt := object.get(pr, \"Type\", null)\n}\n\n# All values given for one processor parameter name (empty when absent).\n_pf_fhlib_params(pr, k) := vs if {\n\tps := object.get(pr, \"Parameters\", [])\n\tis_array(ps)\n\tvs := [v |\n\t\tsome p in ps\n\t\tis_object(p)\n\t\tobject.get(p, \"ParameterName\", null) == k\n\t\tv := object.get(p, \"ParameterValue\", null)\n\t]\n}\n\n_pf_fhlib_has_param(pr, k) if count(_pf_fhlib_params(pr, k)) > 0\n\n# ---- the !{namespace:value} prefix DSL ----------------------------------\n\n_pf_fhlib_exprs(s) := regex.find_n(`!\\{[^{}]*\\}`, s, -1)\n\n_pf_fhlib_ns(e) := ns if {\n\ti := indexof(e, \":\")\n\ti > 2\n\tns := substring(e, 2, i - 2)\n}\n\n_pf_fhlib_val(e) := v if {\n\ti := indexof(e, \":\")\n\ti > 2\n\tv := substring(e, i + 1, (count(e) - i) - 2)\n}\n\n# A \"!{\" that is not part of a well formed expression.\n_pf_fhlib_stray(s) if {\n\trest := regex.replace(s, `!\\{[a-zA-Z]+:[^{}]*\\}`, \"\")\n\tcontains(rest, \"!{\")\n}\n\n_pf_fhlib_namespaces := {\"timestamp\", \"firehose\", \"partitionKeyFromQuery\", \"partitionKeyFromLambda\"}\n\n# Joda pattern letters the service rejects with \"Invalid conversion\n# character\" (measured 2026-09-10 over all 52 ASCII letters).\n_pf_fhlib_ts_bad := {\"C\", \"I\", \"J\", \"P\", \"R\", \"T\", \"U\", \"V\", \"b\", \"f\", \"i\", \"j\", \"l\", \"o\", \"p\", \"r\", \"t\"}\n\n_pf_fhlib_dp_enabled(name, path) if {\n\tsome [nm, p, c] in _pf_fhlib_dests\n\tnm == name\n\tp == path\n\tdp := object.get(c, \"DynamicPartitioningConfiguration\", null)\n\tis_object(dp)\n\tcoerce_to_bool(object.get(dp, \"Enabled\", false)) == true\n}\n\n# A user-written literal, not an intrinsic (those arrive as marker objects).\n_pf_fhlib_lit(v) if {\n\tis_string(v)\n\tnot startswith(v, \"__pf\")\n}\n"
   },
   {
     "name": "_lib/iam",

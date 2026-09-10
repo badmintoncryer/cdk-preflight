@@ -1,0 +1,11 @@
+id: pf-firehose-processor-subrecord-type
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: SubRecordType is JSON or DELIMITED
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_Processor.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: SubRecordType \"CSV\" -> InvalidArgumentException \"SubRecordType has to be one of JSON, DELIMITED\"."
+addedOn: 2026-09-10

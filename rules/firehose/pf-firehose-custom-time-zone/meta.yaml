@@ -1,0 +1,11 @@
+id: pf-firehose-custom-time-zone
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: CustomTimeZone must be a time zone Firehose supports
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-object-name.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: CustomTimeZone \"Mars/Phobos\" -> InvalidArgumentException \"Provided custom time zone is not supported. Custom time zones are limited to UTC and non-3-letter IANA time zones.\" \"EST\" is rejected too; \"UTC\", \"Asia/Tokyo\" and \"Asia/Calcutta\" are accepted while the modern aliases \"Asia/Kolkata\" and \"Europe/Kyiv\" are not."
+addedOn: 2026-09-10

@@ -1,0 +1,11 @@
+id: pf-firehose-metadata-extraction-dp-only
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A MetadataExtraction processor needs dynamic partitioning
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning-partitioning-keys.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: a MetadataExtraction processor without DynamicPartitioningConfiguration -> InvalidArgumentException \"class com.amazonaws.services.firehose.internal.model.MetadataExtractionProcessor can only be present when Dynamic Partitioning is enabled.\""
+addedOn: 2026-09-10

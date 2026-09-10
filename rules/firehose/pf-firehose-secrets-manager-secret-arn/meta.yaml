@@ -1,0 +1,11 @@
+id: pf-firehose-secrets-manager-secret-arn
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An enabled Secrets Manager configuration needs a SecretARN
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_SecretsManagerConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: SecretsManagerConfiguration.Enabled true with no SecretARN -> InvalidArgumentException \"Invalid secret ARN: null\"."
+addedOn: 2026-09-10

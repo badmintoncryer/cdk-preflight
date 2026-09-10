@@ -1,0 +1,51 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "EncryptionConfiguration": {
+            "NoEncryptionConfig": "NoEncryption",
+            "KMSEncryptionConfig": {
+              "AWSKMSKeyARN": "arn:aws:kms:us-east-1:214794239830:key/11111111-2222-3333-4444-555555555555"
+            }
+          }
+        }
+      }
+    }
+  }
+}

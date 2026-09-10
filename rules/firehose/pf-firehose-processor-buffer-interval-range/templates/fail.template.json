@@ -1,0 +1,67 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "ProcessingConfiguration": {
+            "Enabled": true,
+            "Processors": [
+              {
+                "Type": "Lambda",
+                "Parameters": [
+                  {
+                    "ParameterName": "LambdaArn",
+                    "ParameterValue": "arn:aws:lambda:us-east-1:214794239830:function:cdkpf-noop"
+                  },
+                  {
+                    "ParameterName": "BufferSizeInMBs",
+                    "ParameterValue": "1"
+                  },
+                  {
+                    "ParameterName": "BufferIntervalInSeconds",
+                    "ParameterValue": "1000"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

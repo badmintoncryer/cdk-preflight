@@ -1,0 +1,11 @@
+id: pf-firehose-prefix-length
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An evaluated S3 prefix cannot exceed 512 characters
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: a 601 character Prefix -> InvalidArgumentException \"Length of evaluated prefix cannot be greater than 512\". The rule counts the literal characters plus one per expression, which is a lower bound on the evaluated length."
+addedOn: 2026-09-10

@@ -1,0 +1,11 @@
+id: pf-firehose-deserializer-one
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: The deserializer must be exactly one SerDe
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_InputFormatConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: Deserializer with both OpenXJsonSerDe and HiveJsonSerDe -> InvalidArgumentException \"More than one deserializer specified. Only one may be chosen.\""
+addedOn: 2026-09-10

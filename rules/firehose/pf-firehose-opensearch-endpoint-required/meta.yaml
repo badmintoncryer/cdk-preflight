@@ -1,0 +1,11 @@
+id: pf-firehose-opensearch-endpoint-required
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An OpenSearch destination needs a domain ARN or an endpoint
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_AmazonopensearchserviceDestinationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: neither DomainARN nor ClusterEndpoint -> InvalidArgumentException \"Provide either the Elasticsearch cluster endpoint or domain arn. Must specify cluster endpoint for cross account Elasticsearch cluster.\""
+addedOn: 2026-09-10

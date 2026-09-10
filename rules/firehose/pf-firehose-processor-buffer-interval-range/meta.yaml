@@ -1,0 +1,11 @@
+id: pf-firehose-processor-buffer-interval-range
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A Lambda processor buffers for 0 to 900 seconds
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/data-transformation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-10 us-east-1 CreateDeliveryStream: BufferIntervalInSeconds 1000 -> InvalidArgumentException \"BufferIntervalInSeconds for lambda processor must be between 0 and 900.\""
+addedOn: 2026-09-10
