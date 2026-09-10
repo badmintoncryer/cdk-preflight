@@ -94,9 +94,20 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     const ours = new Set(this.rules.map((r) => r.id));
     const violations: PolicyViolation[] = [];
 
+    // 全テンプレートの和集合で刈り込む。テンプレートごとに刈るとエンジンを何度も
+    // 作り直すことになり、そちらのコストの方が高くつく（regoEngineCached のコメント参照）。
+    const rules = prune(this.rules, templateResourceTypes(context.stackTemplates.map((st) => st.templatePath)));
+
+    // 1 本も残らない = このアプリのリソースに関係するルールが無い。エンジンを組む必要も無い
+    // （libs だけを載せたエンジンは violation ルールを持たず、評価時に落ちる）。
+    // strict のときは組み込みエンジンの findings を拾う仕事が残るので通常どおり進む。
+    if (rules.length === 0 && !this.strict) {
+      return { success: true, violations: [] };
+    }
+
     let eng: any;
     try {
-      eng = regoEngineCached(engine, this.rules, region, account);
+      eng = regoEngineCached(engine, rules, region, account);
     } catch (e) {
       // ルールパックがコンパイルできない = どのテンプレートも検査できないので、
       // 全スタックぶん violation を立てる（1 枚ずつの catch には到達しない）。
@@ -111,6 +122,10 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
             accountId: context.accountId,
             region: context.region,
           },
+          // 組み込みルールは CDK 組み込みの CloudFormationValidatePlugin が同じテンプレートに
+          // 対して既に走らせている。strict でなければ結果も使わず捨てているので、丸ごと切る
+          // （実測 70 リソース 1 枚で初回 3.27s -> 0.22s）。strict のときだけ必要になる。
+          disableBuiltinRules: !this.strict,
         });
       } catch (e) {
         // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
@@ -344,10 +359,16 @@ function loadEngineCached(): any | undefined {
   return cachedEngineModule === false ? undefined : cachedEngineModule;
 }
 
-const regoEngineCache = new Map<string, any>();
+// エンジン（WASM）は 1 プロセスに 1 つだけ生かす。作り直す前に free() しないとインスタンスが
+// 積み上がり、2 個目以降の構築が超線形に遅くなる（実測: free 無しで 3.8s -> 11.2s -> 22.1s、
+// 構築前に free すると 3.5s -> 0.4s）。ルールセットが変わる（Stage ごとに exclude が違う、
+// テストで複数アプリを合成する）たびに作り直すので、キャッシュは 1 スロットで足りる。
+let cachedRegoEngine: { key: string; engine: any } | undefined;
 function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: string, account?: string): any {
   const key = `${region ?? ''}|${account ?? ''}|${rules.map((r) => r.id).join(',')}`;
-  if (!regoEngineCache.has(key)) {
+  if (cachedRegoEngine?.key !== key) {
+    cachedRegoEngine?.engine?.free?.();
+    cachedRegoEngine = undefined;
     const customRules = [
       ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
       ...rules.map((r) => ({ name: r.id, content: r.rego })),
@@ -355,9 +376,56 @@ function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: 
     if (region !== undefined) {
       customRules.push(deployEnvironmentModule(region, account));
     }
-    regoEngineCache.set(key, new engineModule.RegoEngine({ customRules }));
+    cachedRegoEngine = { key, engine: new engineModule.RegoEngine({ customRules }) };
   }
-  return regoEngineCache.get(key);
+  return cachedRegoEngine.engine;
+}
+
+/**
+ * テンプレート群に出てくるリソースタイプ。刈り込みに使えないテンプレートが 1 枚でもあれば
+ * undefined を返し、刈り込みそのものを諦める（何が載っているか分からないまま落とすと、
+ * ルールが黙って発火しなくなる = enforce にとって最悪の壊れ方になるため）。
+ * （テストからも利用するため export している）
+ */
+export function templateResourceTypes(templatePaths: string[]): Set<string> | undefined {
+  const types = new Set<string>();
+  for (const templatePath of templatePaths) {
+    let template: any;
+    try {
+      template = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+    } catch {
+      return undefined;
+    }
+    // Transform（SAM 等）はマクロ展開で別のリソースに化けるので、生のテンプレートから
+    // 読めるリソースタイプは当てにならない。
+    if (template?.Transform !== undefined) return undefined;
+    for (const resource of Object.values(template?.Resources ?? {}) as any[]) {
+      // Fn::ForEach などで Type が静的に読めないエントリがあれば諦める。
+      if (typeof resource?.Type !== 'string') return undefined;
+      types.add(resource.Type);
+    }
+  }
+  return types;
+}
+
+/**
+ * テンプレートに出てくるリソースタイプに関係するルールだけを選ぶ。
+ *
+ * エンジンのコンパイル時間はルール数でほぼ決まるので（実測 1844 ルールで約 4.6s、
+ * 典型的なアプリに残る 100 ルール前後なら 0.8s 前後）、これが固定費の主な削りどころ。
+ * 安全性は meta.resourceTypes の宣言に乗っている: ルールが見るリソースタイプが
+ * 宣言から漏れていると刈られて発火しなくなるため、test/rules.test.ts が全ルールについて
+ * 「自分の fail テンプレートで刈り残ること」を検査している。
+ * （テストからも利用するため export している）
+ */
+export function prune(rules: BundledRuleData[], types: Set<string> | undefined): BundledRuleData[] {
+  if (types === undefined) return rules;
+  // 刈る根拠が無いルールは残す: "*"（全リソース型に効くタグ系ルール）と、
+  // resourceTypes が空のもの（バンドル済みルールは非空が保証されているので、該当するのは
+  // 手で組み立てたルール = テストや将来のテンプレート層ルールだけ）。
+  return rules.filter((r) => r.resourceTypes.length === 0
+    || r.resourceTypes.includes('*')
+    || r.resourceTypes.some((t) => types.has(t)));
 }
 
 /**

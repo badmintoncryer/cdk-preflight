@@ -11,7 +11,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { deployEnvironmentModule, loadEngine } from '../src/private/enforce';
+import { deployEnvironmentModule, loadEngine, prune, templateResourceTypes } from '../src/private/enforce';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 interface Diagnostic {
@@ -96,6 +96,14 @@ describe.each(BUNDLED_RULES.map((r) => [r.id, r] as const))('%s', (_id, rule) =>
     const ds = diagnose(fixturePath(rule, 'pass'), region);
     // 当該ルールはもちろん、他の pf- ルールの誤爆も無いこと
     expect(ds.filter((d) => d.source === 'CUSTOM')).toHaveLength(0);
+  });
+
+  // enforce プラグインは meta.resourceTypes を使ってルールを刈り込む（固定費の削減）。
+  // 宣言から漏れたリソースタイプがあるとそのルールは黙って載らなくなる = 見逃しになるので、
+  // 「自分の fail テンプレートに対して刈り残る」ことを全ルールで機械的に確認する。
+  test('survives resource-type pruning of its own fail template', () => {
+    const types = templateResourceTypes([fixturePath(rule, 'fail')]);
+    expect(prune(BUNDLED_RULES, types).map((r) => r.id)).toContain(rule.id);
   });
 
   test('does not duplicate a built-in blocker (fail template)', () => {
