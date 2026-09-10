@@ -205,6 +205,10 @@ if (require.main === module) {
   fs.writeFileSync(path.join(root, 'src', 'rules.generated.ts'), renderGenerated(rules, collectLibs(root)));
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'rules.md'), renderDocs(rules));
+  const readme = path.join(root, 'README.md');
+  fs.writeFileSync(readme, fs.readFileSync(readme, 'utf8')
+    .replace(/badge\/rules-\d+-/, `badge/rules-${rules.length}-`)
+    .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`));
   // eslint-disable-next-line no-console
   console.log(`bundled ${rules.length} rules -> src/rules.generated.ts, docs/rules.md`);
 }
