@@ -450,8 +450,13 @@ describe('resource-type pruning', () => {
 
   test('keeps a rule that declares the "*" wildcard', () => {
     const anyResource: BundledRuleData = {
-      id: 'a', service: 'tags', severity: 'ERROR', title: 't', upstream: 'none',
-      resourceTypes: ['*'], rego: '',
+      id: 'a',
+      service: 'tags',
+      severity: 'ERROR',
+      title: 't',
+      upstream: 'none',
+      resourceTypes: ['*'],
+      rego: '',
     };
     expect(prune([anyResource], new Set(['AWS::SQS::Queue'])).map((r) => r.id)).toEqual(['a']);
   });
