@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-9af165d013f649db:rslvr-fdl-2e59d52ccc094f8c, FirewallRuleGroupId=rslvr-frg-9af165d013f649db, FirewallDomainListId=rslvr-fdl-2e59d52ccc094f8c, Priority=101, Action=ALERT, Name=rule-for-rslvr-fdl-2e59d52ccc094f8c, DnsThreatProtection=DGA, ConfidenceThreshold=LOW) (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

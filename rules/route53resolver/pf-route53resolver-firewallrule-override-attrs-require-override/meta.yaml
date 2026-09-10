@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-458ec40ee31f4471:rslvr-fdl-1f439843bba646fc, FirewallRuleGroupId=rslvr-frg-458ec40ee31f4471, FirewallDomainListId=rslvr-fdl-1f439843bba646fc, Priority=101, Action=BLOCK, BlockResponse=NXDOMAIN, BlockOverrideDomain=cdkpf-example.com., Name=rule-for-rslvr-fdl-1f439843bba646fc) (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

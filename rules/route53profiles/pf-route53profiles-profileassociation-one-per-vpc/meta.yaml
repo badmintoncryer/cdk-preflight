@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> VPC [vpc-0189a223fc09f3817] exceeded its maximum profile association limit. (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

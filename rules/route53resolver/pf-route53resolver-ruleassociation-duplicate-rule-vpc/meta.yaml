@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-00704] Resolver rule \"rslvr-rr-26d2cc1b567b4751a\" is already associated with VPC \"vpc-0e640740604c300e5\". (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10

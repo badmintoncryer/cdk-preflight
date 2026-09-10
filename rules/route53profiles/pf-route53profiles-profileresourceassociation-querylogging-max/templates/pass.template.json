@@ -26,14 +26,14 @@
         }
       }
     },
-    "Lg": {
+    "Lg0": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
         "LogGroupName": {
           "Fn::Join": [
             "",
             [
-              "/cdkpf/",
+              "/cdkpf/0/",
               {
                 "Fn::Select": [
                   2,
@@ -79,7 +79,7 @@
         },
         "DestinationArn": {
           "Fn::GetAtt": [
-            "Lg",
+            "Lg0",
             "Arn"
           ]
         }
@@ -120,6 +120,33 @@
         }
       }
     },
+    "Lg1": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/cdkpf/1/",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "RetentionInDays": 1
+      }
+    },
     "Ql1": {
       "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfig",
       "Properties": {
@@ -146,7 +173,7 @@
         },
         "DestinationArn": {
           "Fn::GetAtt": [
-            "Lg",
+            "Lg1",
             "Arn"
           ]
         }

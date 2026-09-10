@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench PENDING"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: AssociateFirewallRuleGroupRequest(CreatorRequestId=abf0250c-e5f9-b6a1-b189-3694ad9f8a3c, FirewallRuleGroupId=rslvr-frg-a33daaa5c0e543bf, VpcId=vpc-04026cb5ea8fd7fb0, Priority=100, Name=fa0-76239810-ad27-11f1-9353-123140f8a6ab, Tags=[Tag(Key=aws:cloudformation:logical-id, Value=Assoc0), Tag(Key=aws:cloudformation:stack-id, Value=arn:aws:cloudformation:us-east-1:214794239830:stack/cdkpf-pf-route53resolver-firewallrulegroupassociation-priority-range-fail/76239810-ad27-11f1-9353-123140f8a6ab), Tag(Key=aws:cloudformation:stack-name, Value=cdkpf-pf-route53resolver-firewallrulegroupassociation-priority-range-fail)]) (ROLLBACK_COMPLETE)"
 addedOn: 2026-09-10
