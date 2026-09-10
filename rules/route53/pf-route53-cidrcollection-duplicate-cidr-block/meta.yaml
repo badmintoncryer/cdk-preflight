@@ -1,0 +1,12 @@
+id: pf-route53-cidrcollection-duplicate-cidr-block
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::CidrCollection]
+severity: ERROR
+title: "The same CIDR block cannot appear twice in one collection"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED with an empty Route 53 400 (the CloudFormation handler relays no text); the same two locations put straight to ChangeCidrCollection answer CidrBlockInUseException (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

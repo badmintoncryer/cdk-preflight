@@ -1,0 +1,144 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "KeySpec": "ECC_NIST_P256",
+        "KeyUsage": "SIGN_VERIFY",
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Root",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            },
+            {
+              "Sid": "Dnssec",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "dnssec-route53.amazonaws.com"
+              },
+              "Action": [
+                "kms:DescribeKey",
+                "kms:GetPublicKey",
+                "kms:Sign"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "DnssecGrant",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "dnssec-route53.amazonaws.com"
+              },
+              "Action": "kms:CreateGrant",
+              "Resource": "*",
+              "Condition": {
+                "Bool": {
+                  "kms:GrantIsForAWSResource": "true"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Key2": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "KeySpec": "ECC_NIST_P256",
+        "KeyUsage": "SIGN_VERIFY",
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Root",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            },
+            {
+              "Sid": "Dnssec",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "dnssec-route53.amazonaws.com"
+              },
+              "Action": [
+                "kms:DescribeKey",
+                "kms:GetPublicKey",
+                "kms:Sign"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "DnssecGrant",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "dnssec-route53.amazonaws.com"
+              },
+              "Action": "kms:CreateGrant",
+              "Resource": "*",
+              "Condition": {
+                "Bool": {
+                  "kms:GrantIsForAWSResource": "true"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Ksk": {
+      "Type": "AWS::Route53::KeySigningKey",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "KeyManagementServiceArn": {
+          "Fn::GetAtt": [
+            "Key",
+            "Arn"
+          ]
+        },
+        "Name": "ksk1",
+        "Status": "ACTIVE"
+      }
+    },
+    "Ksk2": {
+      "Type": "AWS::Route53::KeySigningKey",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "KeyManagementServiceArn": {
+          "Fn::GetAtt": [
+            "Key2",
+            "Arn"
+          ]
+        },
+        "Name": "ksk2",
+        "Status": "ACTIVE"
+      }
+    }
+  }
+}

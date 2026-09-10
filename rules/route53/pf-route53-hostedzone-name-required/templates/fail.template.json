@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "HostedZoneConfig": {
+          "Comment": "no name"
+        }
+      }
+    }
+  }
+}

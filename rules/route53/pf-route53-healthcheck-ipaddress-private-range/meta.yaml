@@ -1,0 +1,12 @@
+id: pf-route53-healthcheck-ipaddress-private-range
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HealthCheck]
+severity: ERROR
+title: "A health check cannot target a private, documentation or otherwise non-routable address"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, the CloudFormation handler only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same config put straight to CreateHealthCheck answers InvalidInput: IPv4 address 10.0.0.10 is forbidden. The documentation ranges are forbidden too (203.0.113.10 answers the same), which is why the pass template checks a FullyQualifiedDomainName instead (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

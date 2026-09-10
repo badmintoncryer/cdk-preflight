@@ -1,0 +1,12 @@
+id: pf-route53-healthcheck-measurelatency-recovery-control
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HealthCheck]
+severity: WARN
+title: "MeasureLatency cannot be set on a RECOVERY_CONTROL health check"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: doc-only
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED (\"Invalid request provided: AWS::Route53::HealthCheck\"), but a RECOVERY_CONTROL health check whose RoutingControlArn does not resolve fails the same way on its own (CreateHealthCheck answers ServiceUnavailable for the bare config too), so the message does not name MeasureLatency. Reaching the constraint needs a real Application Recovery Controller routing control, and an ARC cluster is billed by the hour, hence doc-only."
+addedOn: 2026-09-10

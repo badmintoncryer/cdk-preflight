@@ -1442,12 +1442,25 @@
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | ERROR | none |
 | `pf-route53-caa-tag-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A CAA tag must be issue, issuewild or iodef | ERROR | none |
 | `pf-route53-cidr-collection-id-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.CollectionId must be a UUID | ERROR | pending-engine |
-| `pf-route53-cidr-location-name-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*] | ERROR | none |
+| `pf-route53-cidr-location-name-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup<br>AWS::Route53::CidrCollection | CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*] | ERROR | none |
 | `pf-route53-cidr-private-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | IP-based routing is not available in a private hosted zone | ERROR | none |
 | `pf-route53-cidr-same-collection-in-group` | AWS::Route53::RecordSetGroup | IP-based record sets sharing a name and type must use one CIDR collection | ERROR | none |
+| `pf-route53-cidrcollection-blocks-max-1000` | AWS::Route53::CidrCollection | A CIDR collection holds at most 1000 CIDR blocks across all locations | ERROR | none |
+| `pf-route53-cidrcollection-cidr-item-blank` | AWS::Route53::CidrCollection | A CIDR block entry cannot be blank | ERROR | none |
+| `pf-route53-cidrcollection-cidr-item-length` | AWS::Route53::CidrCollection | A CIDR block entry must be 1 to 50 characters | ERROR | none |
+| `pf-route53-cidrcollection-cidrlist-required` | AWS::Route53::CidrCollection | Every location in a CIDR collection needs at least one CIDR block | ERROR | none |
+| `pf-route53-cidrcollection-duplicate-cidr-block` | AWS::Route53::CidrCollection | The same CIDR block cannot appear twice in one collection | ERROR | none |
+| `pf-route53-cidrcollection-duplicate-name` | AWS::Route53::CidrCollection | Two CIDR collections cannot share a name | ERROR | none |
+| `pf-route53-cidrcollection-ipv4-prefix-max-24` | AWS::Route53::CidrCollection | An IPv4 CIDR block in a collection cannot be longer than /24 | ERROR | none |
+| `pf-route53-cidrcollection-ipv6-prefix-max-48` | AWS::Route53::CidrCollection | An IPv6 CIDR block in a collection cannot be longer than /48 | ERROR | none |
+| `pf-route53-cidrcollection-locationname-wildcard` | AWS::Route53::CidrCollection | The default location * cannot be created as a location of a collection | ERROR | none |
+| `pf-route53-cidrcollection-zero-prefix-default-location` | AWS::Route53::CidrCollection | A zero-length CIDR block belongs to the default location only | ERROR | none |
 | `pf-route53-cname-name-collision` | AWS::Route53::RecordSetGroup | A CNAME cannot share its name with a record set of another type | ERROR | none |
 | `pf-route53-coordinates-latitude-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Coordinates.Latitude must be -90 to 90 | ERROR | none |
 | `pf-route53-coordinates-longitude-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Coordinates.Longitude must be -180 to 180 | ERROR | none |
+| `pf-route53-dnssec-dependson-ksk` | AWS::Route53::DNSSEC | Enabling DNSSEC needs an explicit DependsOn on the key signing key | ERROR | none |
+| `pf-route53-dnssec-requires-active-ksk` | AWS::Route53::DNSSEC | DNSSEC signing needs a key signing key in ACTIVE status | ERROR | none |
+| `pf-route53-dnssec-requires-ksk` | AWS::Route53::DNSSEC | DNSSEC cannot be enabled on a hosted zone without a key signing key | ERROR | none |
 | `pf-route53-ds-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A DS record value needs exactly 4 space-separated fields | ERROR | none |
 | `pf-route53-failover-alias-evaluate-target-health` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A PRIMARY failover alias must set EvaluateTargetHealth to true | ERROR | none |
 | `pf-route53-failover-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Failover must be PRIMARY or SECONDARY | ERROR | pending-engine |
@@ -1464,8 +1477,60 @@
 | `pf-route53-geoproximity-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates | ERROR | pending-engine |
 | `pf-route53-geoproximity-localzonegroup-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.LocalZoneGroup must be a Local Zone group name | ERROR | none |
 | `pf-route53-geoproximity-max-30-same-name-type` | AWS::Route53::RecordSetGroup | A geoproximity group may hold at most 30 record sets per name and type | ERROR | none |
+| `pf-route53-healthcheck-alarm-extended-statistic` | AWS::Route53::HealthCheck<br>AWS::CloudWatch::Alarm | A CloudWatch alarm health check cannot watch an alarm on an extended statistic | ERROR | none |
+| `pf-route53-healthcheck-alarm-high-resolution` | AWS::Route53::HealthCheck<br>AWS::CloudWatch::Alarm | A CloudWatch alarm health check cannot watch a high-resolution alarm | ERROR | none |
+| `pf-route53-healthcheck-alarm-metric-math` | AWS::Route53::HealthCheck<br>AWS::CloudWatch::Alarm | A CloudWatch alarm health check cannot watch a metric math alarm | ERROR | none |
+| `pf-route53-healthcheck-alarmidentifier-cloudwatch-only` | AWS::Route53::HealthCheck | AlarmIdentifier is only valid on a CLOUDWATCH_METRIC health check | ERROR | none |
+| `pf-route53-healthcheck-alarmidentifier-region-format` | AWS::Route53::HealthCheck | AlarmIdentifier.Region must be a region name, not an availability zone | ERROR | none |
+| `pf-route53-healthcheck-alarmidentifier-required-cloudwatch` | AWS::Route53::HealthCheck | A CLOUDWATCH_METRIC health check needs an AlarmIdentifier | ERROR | none |
+| `pf-route53-healthcheck-calculated-child-calculated` | AWS::Route53::HealthCheck | A CALCULATED health check cannot have another CALCULATED health check as a child | ERROR | none |
+| `pf-route53-healthcheck-childhealthchecks-only-calculated` | AWS::Route53::HealthCheck | ChildHealthChecks is only valid on a CALCULATED health check | ERROR | none |
+| `pf-route53-healthcheck-childhealthchecks-quota-255` | AWS::Route53::HealthCheck | A CALCULATED health check can aggregate at most 255 child health checks | WARN | none |
+| `pf-route53-healthcheck-enablesni-https-only` | AWS::Route53::HealthCheck | EnableSNI is only valid on an HTTPS health check | ERROR | none |
+| `pf-route53-healthcheck-endpoint-required` | AWS::Route53::HealthCheck | An endpoint health check needs IPAddress or FullyQualifiedDomainName | ERROR | none |
+| `pf-route53-healthcheck-failurethreshold-recovery-control` | AWS::Route53::HealthCheck | FailureThreshold cannot be set on a RECOVERY_CONTROL health check | WARN | none |
+| `pf-route53-healthcheck-healththreshold-only-calculated` | AWS::Route53::HealthCheck | HealthThreshold is only valid on a CALCULATED health check | ERROR | none |
+| `pf-route53-healthcheck-insufficientdata-cloudwatch-only` | AWS::Route53::HealthCheck | InsufficientDataHealthStatus is only valid on a CLOUDWATCH_METRIC health check | ERROR | none |
+| `pf-route53-healthcheck-insufficientdata-enum` | AWS::Route53::HealthCheck | InsufficientDataHealthStatus must be Healthy, LastKnownStatus or Unhealthy | ERROR | none |
+| `pf-route53-healthcheck-ipaddress-calculated` | AWS::Route53::HealthCheck | IPAddress cannot be set on a CALCULATED health check | ERROR | none |
+| `pf-route53-healthcheck-ipaddress-cloudwatch-metric` | AWS::Route53::HealthCheck | IPAddress cannot be set on a CLOUDWATCH_METRIC health check | ERROR | none |
+| `pf-route53-healthcheck-ipaddress-private-range` | AWS::Route53::HealthCheck | A health check cannot target a private, documentation or otherwise non-routable address | ERROR | none |
+| `pf-route53-healthcheck-measurelatency-recovery-control` | AWS::Route53::HealthCheck | MeasureLatency cannot be set on a RECOVERY_CONTROL health check | WARN | none |
+| `pf-route53-healthcheck-port-calculated` | AWS::Route53::HealthCheck | Port cannot be set on a CALCULATED health check | ERROR | none |
+| `pf-route53-healthcheck-port-cloudwatch-metric` | AWS::Route53::HealthCheck | Port cannot be set on a CLOUDWATCH_METRIC health check | ERROR | none |
+| `pf-route53-healthcheck-regions-endpoint-types-only` | AWS::Route53::HealthCheck | Regions is only valid on an endpoint health check | ERROR | none |
+| `pf-route53-healthcheck-regions-enum` | AWS::Route53::HealthCheck | Health checkers can only be placed in the eight regions Route 53 offers | ERROR | none |
+| `pf-route53-healthcheck-requestinterval-discrete` | AWS::Route53::HealthCheck | RequestInterval must be exactly 10 or 30 seconds | ERROR | none |
+| `pf-route53-healthcheck-requestinterval-recovery-control` | AWS::Route53::HealthCheck | RequestInterval cannot be set on a RECOVERY_CONTROL health check | WARN | none |
+| `pf-route53-healthcheck-resourcepath-http-only` | AWS::Route53::HealthCheck | ResourcePath is only valid on an HTTP or HTTPS health check | ERROR | none |
+| `pf-route53-healthcheck-routingcontrolarn-required` | AWS::Route53::HealthCheck | A RECOVERY_CONTROL health check needs a RoutingControlArn | ERROR | none |
+| `pf-route53-healthcheck-searchstring-required-strmatch` | AWS::Route53::HealthCheck | A string-matching health check needs a SearchString | ERROR | none |
+| `pf-route53-healthcheck-searchstring-strmatch-only` | AWS::Route53::HealthCheck | SearchString is only valid on a string-matching health check | ERROR | none |
+| `pf-route53-healthcheck-type-enum` | AWS::Route53::HealthCheck | HealthCheckConfig.Type must be one of the eight health check types | ERROR | none |
+| `pf-route53-hostedzone-duplicate-private-zone-vpc` | AWS::Route53::HostedZone | Two private hosted zones for the same domain cannot share a VPC | ERROR | none |
+| `pf-route53-hostedzone-name-charset` | AWS::Route53::HostedZone | A hosted zone name can only hold printable ASCII without spaces | ERROR | none |
+| `pf-route53-hostedzone-name-label-63` | AWS::Route53::HostedZone | Every label of a hosted zone name must be 63 bytes or fewer | ERROR | none |
+| `pf-route53-hostedzone-name-punycode` | AWS::Route53::HostedZone | An internationalized hosted zone name must be given in Punycode | ERROR | none |
+| `pf-route53-hostedzone-name-required` | AWS::Route53::HostedZone | A hosted zone needs a Name even though CloudFormation marks it optional | ERROR | none |
+| `pf-route53-hostedzone-name-tld` | AWS::Route53::HostedZone | A hosted zone cannot be created for a bare top-level domain | ERROR | none |
+| `pf-route53-hostedzone-name-total-255` | AWS::Route53::HostedZone | A hosted zone name must be 255 bytes or fewer | ERROR | none |
+| `pf-route53-hostedzone-name-wildcard-label` | AWS::Route53::HostedZone | A hosted zone name cannot start with a wildcard label | ERROR | none |
+| `pf-route53-hostedzone-nameservers-private` | AWS::Route53::HostedZone<br>AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Fn::GetAtt NameServers is not available on a private hosted zone | ERROR | none |
+| `pf-route53-hostedzone-querylogging-arn-format` | AWS::Route53::HostedZone | The query logging log group must be given as a CloudWatch Logs log-group ARN | ERROR | none |
+| `pf-route53-hostedzone-querylogging-loggroup-region` | AWS::Route53::HostedZone | The query logging log group must live in us-east-1 | ERROR | none |
+| `pf-route53-hostedzone-querylogging-private-zone` | AWS::Route53::HostedZone | Query logging can only be turned on for a public hosted zone | ERROR | none |
+| `pf-route53-hostedzone-vpc-region-format` | AWS::Route53::HostedZone | VPCRegion must be a region name, not an availability zone | ERROR | none |
 | `pf-route53-https-field-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An HTTPS record value needs a priority and a target name | ERROR | none |
 | `pf-route53-https-svcpriority-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The HTTPS SvcPriority must be 0-32767 | ERROR | none |
+| `pf-route53-keysigningkey-kms-key-enabled` | AWS::Route53::KeySigningKey<br>AWS::KMS::Key | The KMS key behind a key signing key must be enabled | ERROR | none |
+| `pf-route53-keysigningkey-kms-key-policy-actions` | AWS::Route53::KeySigningKey<br>AWS::KMS::Key | The KMS key policy must let Route 53 DNSSEC describe, read and sign | ERROR | none |
+| `pf-route53-keysigningkey-kms-key-policy-principal` | AWS::Route53::KeySigningKey<br>AWS::KMS::Key | The KMS key policy must name the Route 53 DNSSEC service principal | ERROR | none |
+| `pf-route53-keysigningkey-kms-key-region` | AWS::Route53::KeySigningKey | The DNSSEC signing key must live in us-east-1 | ERROR | none |
+| `pf-route53-keysigningkey-kms-keyspec` | AWS::Route53::KeySigningKey<br>AWS::KMS::Key | The DNSSEC signing key must be an ECC_NIST_P256 key used for SIGN_VERIFY | ERROR | none |
+| `pf-route53-keysigningkey-kmsarn-unique-per-zone` | AWS::Route53::KeySigningKey | Two key signing keys in one hosted zone cannot share a KMS key | ERROR | none |
+| `pf-route53-keysigningkey-max-2-per-zone` | AWS::Route53::KeySigningKey | A hosted zone can hold at most two key signing keys | ERROR | none |
+| `pf-route53-keysigningkey-name-unique-per-zone` | AWS::Route53::KeySigningKey | Two key signing keys in one hosted zone cannot share a name | ERROR | none |
+| `pf-route53-keysigningkey-status-enum` | AWS::Route53::KeySigningKey | A key signing key is either ACTIVE or INACTIVE | ERROR | pending-engine |
 | `pf-route53-latency-one-record-per-region` | AWS::Route53::RecordSetGroup | A latency group may hold only one record set per Region | ERROR | none |
 | `pf-route53-latency-region-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The latency Region must be an existing AWS Region | ERROR | none |
 | `pf-route53-mixed-routing-policy-same-name-type` | AWS::Route53::RecordSetGroup | Record sets sharing a name and type must use the same routing policy | ERROR | none |
@@ -1478,7 +1543,7 @@
 | `pf-route53-naptr-regexp-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR regexp field must be quoted | ERROR | none |
 | `pf-route53-naptr-regexp-replacement-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A NAPTR value carries either a regexp or a replacement, never both | ERROR | none |
 | `pf-route53-naptr-service-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR service field must be quoted | ERROR | none |
-| `pf-route53-private-zone-health-check-policy` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A simple record in a private hosted zone cannot carry a health check | ERROR | none |
+| `pf-route53-private-zone-health-check-policy` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record with no routing policy cannot reference a health check | ERROR | none |
 | `pf-route53-record-comment-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Comment is limited to 256 characters | ERROR | pending-engine |
 | `pf-route53-record-name-charset` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name cannot contain a space | ERROR | none |
 | `pf-route53-record-name-label-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Each label of a record name is limited to 63 bytes | ERROR | none |

@@ -16065,9 +16065,10 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "upstream": "none",
     "resourceTypes": [
       "AWS::Route53::RecordSet",
-      "AWS::Route53::RecordSetGroup"
+      "AWS::Route53::RecordSetGroup",
+      "AWS::Route53::CidrCollection"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\t\"Properties.CidrRoutingConfig.LocationName\",\n\tsprintf(\"LocationName '%s' must be 1-16 characters of [0-9A-Za-z_-] (or the default location '*')\", [v]),\n\t\"Rename the CIDR location to match that pattern\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"LocationName\", null)\n\tis_string(v)\n\tnot regex.match(\"^[0-9A-Za-z_*-]{1,16}$\", v)\n}\n\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].CidrRoutingConfig.LocationName\", [_pf_it.index]),\n\tsprintf(\"LocationName '%s' must be 1-16 characters of [0-9A-Za-z_-] (or the default location '*')\", [v]),\n\t\"Rename the CIDR location to match that pattern\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"LocationName\", null)\n\tis_string(v)\n\tnot regex.match(\"^[0-9A-Za-z_*-]{1,16}$\", v)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_cln_msg := \"LocationName %s must be 1-16 characters of [0-9A-Za-z_-]\"\n\n_pf_r53_cln_fix := \"Rename the CIDR location to match that pattern\"\n\n_pf_r53_cln_url := \"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\"\n\n_pf_r53_cln_bad(v) if {\n\tnot regex.match(\"^[0-9A-Za-z_*-]{1,16}$\", v)\n}\n\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\t\"Properties.CidrRoutingConfig.LocationName\",\n\tsprintf(\"LocationName %s must be 1-16 characters of [0-9A-Za-z_-] (or the default location '*')\", [v]),\n\t_pf_r53_cln_fix, _pf_r53_cln_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"LocationName\", null)\n\tis_string(v)\n\t_pf_r53_cln_bad(v)\n}\n\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].CidrRoutingConfig.LocationName\", [_pf_it.index]),\n\tsprintf(\"LocationName %s must be 1-16 characters of [0-9A-Za-z_-] (or the default location '*')\", [v]),\n\t_pf_r53_cln_fix, _pf_r53_cln_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"LocationName\", null)\n\tis_string(v)\n\t_pf_r53_cln_bad(v)\n}\n\n# コレクション側のロケーション名も同じパターン。ただし '*' は予約名なので\n# ここでは通し、pf-route53-cidrcollection-locationname-wildcard が受け持つ。\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\tsprintf(\"Properties.Locations[%d].LocationName\", [_pf_it.index]),\n\tsprintf(_pf_r53_cln_msg, [v]),\n\t_pf_r53_cln_fix, _pf_r53_cln_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome _pf_it in flatten_list(name, \"Properties.Locations\")\n\tis_object(_pf_it.value)\n\tv := object.get(_pf_it.value, \"LocationName\", null)\n\tis_string(v)\n\tv != \"*\"\n\t_pf_r53_cln_bad(v)\n}\n"
   },
   {
     "id": "pf-route53-cidr-private-zone",
@@ -16091,6 +16092,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Route53::RecordSetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidr-same-collection-in-group\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"The IP-based record sets for '%s' reference two different CIDR collections (%s and %s)\", [k, ca, cb]),\n\t\"Point every record set in the group at the same CidrRoutingConfig.CollectionId\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tca := object.get(_pf_r53lib_get(a.value, \"CidrRoutingConfig\"), \"CollectionId\", null)\n\tcb := object.get(_pf_r53lib_get(b.value, \"CidrRoutingConfig\"), \"CollectionId\", null)\n\tis_string(ca)\n\tis_string(cb)\n\tca != cb\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-blocks-max-1000",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CIDR collection holds at most 1000 CIDR blocks across all locations",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-blocks-max-1000\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"the collection lists %d CIDR blocks; a CIDR collection stops at 1000 across all locations\", [n]),\n\t\"Split the blocks across more than one CIDR collection\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tn := count(_pf_r53z_cidrs(name))\n\tn > 1000\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-cidr-item-blank",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CIDR block entry cannot be blank",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-cidr-item-blank\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\t\"a CidrList entry is empty or only whitespace\",\n\t\"Remove the empty entry, or write the CIDR block\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome c in _pf_r53z_cidrs(name)\n\ttrim_space(c[2]) == \"\"\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-cidr-item-length",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CIDR block entry must be 1 to 50 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-cidr-item-length\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"CIDR block entry %s is %d characters; the API takes 1 to 50\", [c[2], count(c[2])]),\n\t\"Write the CIDR block in its normal form\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome c in _pf_r53z_cidrs(name)\n\tcount(c[2]) > 50\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-cidrlist-required",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Every location in a CIDR collection needs at least one CIDR block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-cidrlist-required\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"location %s has no CIDR blocks\", [ln]),\n\t\"Give the location its CIDR blocks, or drop the location\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-cidrcollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome l in flatten_list(name, \"Properties.Locations\")\n\tis_object(l.value)\n\tln := object.get(l.value, \"LocationName\", \"\")\n\tcount(object.get(l.value, \"CidrList\", [])) == 0\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-duplicate-cidr-block",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The same CIDR block cannot appear twice in one collection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-duplicate-cidr-block\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"CIDR block %s appears more than once in the collection; Route 53 answers CidrBlockInUseException\", [a[2]]),\n\t\"Keep each CIDR block in a single location\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome a in _pf_r53z_cidrs(name)\n\tcount([b | some b in _pf_r53z_cidrs(name); b[2] == a[2]]) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-duplicate-name",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Two CIDR collections cannot share a name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-duplicate-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"CIDR collection %s carries the same name as %s; collection names are unique per account\", [name, other]),\n\t\"Give each collection its own name\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome other in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tname < other\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tn == _pf_r53z_str(_pf_r53z_props(other), \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-ipv4-prefix-max-24",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An IPv4 CIDR block in a collection cannot be longer than /24",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-ipv4-prefix-max-24\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"CIDR block %s is longer than /24; IP-based routing works on /1 to /24\", [c[2]]),\n\t\"Widen the block to /24 or shorter\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome c in _pf_r53z_cidrs(name)\n\tnot _pf_r53z_is_v6(c[2])\n\t_pf_r53z_prefix(c[2]) > 24\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-ipv6-prefix-max-48",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An IPv6 CIDR block in a collection cannot be longer than /48",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-ipv6-prefix-max-48\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"CIDR block %s is longer than /48; IP-based routing works on /1 to /48 for IPv6\", [c[2]]),\n\t\"Widen the block to /48 or shorter\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome c in _pf_r53z_cidrs(name)\n\t_pf_r53z_is_v6(c[2])\n\t_pf_r53z_prefix(c[2]) > 48\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-locationname-wildcard",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The default location * cannot be created as a location of a collection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-locationname-wildcard\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\t\"a location is named *, which Route 53 reserves for the default location every collection already has\",\n\t\"Name the location something else; records fall back to * on their own\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome l in flatten_list(name, \"Properties.Locations\")\n\tis_object(l.value)\n\tobject.get(l.value, \"LocationName\", \"\") == \"*\"\n}\n"
+  },
+  {
+    "id": "pf-route53-cidrcollection-zero-prefix-default-location",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A zero-length CIDR block belongs to the default location only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::CidrCollection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-zero-prefix-default-location\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"CIDR block %s has a zero-length prefix; only the reserved default location * can hold it, and that location cannot be created\", [c[2]]),\n\t\"Use a concrete prefix, and let unmatched queries fall back to the default location\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tsome c in _pf_r53z_cidrs(name)\n\t_pf_r53z_prefix(c[2]) == 0\n}\n"
   },
   {
     "id": "pf-route53-cname-name-collision",
@@ -16126,6 +16237,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Route53::RecordSetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-coordinates-longitude-range\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation.Coordinates.Longitude\",\n\tsprintf(\"Longitude must be between -180 and 180, got %v\", [n]),\n\t\"Use a longitude in -180..180\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tc := object.get(g, \"Coordinates\", null)\n\tis_object(c)\n\tn := to_number(object.get(c, \"Longitude\", null))\n\tabs(n) > 180\n}\n\nviolation contains make_diag_full(\"pf-route53-coordinates-longitude-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation.Coordinates.Longitude\", [_pf_it.index]),\n\tsprintf(\"Longitude must be between -180 and 180, got %v\", [n]),\n\t\"Use a longitude in -180..180\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tc := object.get(g, \"Coordinates\", null)\n\tis_object(c)\n\tn := to_number(object.get(c, \"Longitude\", null))\n\tabs(n) > 180\n}\n"
+  },
+  {
+    "id": "pf-route53-dnssec-dependson-ksk",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Enabling DNSSEC needs an explicit DependsOn on the key signing key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::DNSSEC"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-dnssec-dependson-ksk\", \"ERROR\", name,\n\t\"DependsOn\",\n\tsprintf(\"AWS::Route53::DNSSEC does not reference key signing key %s, so CloudFormation may create it first and fail with DNSSECNotFound\", [k]),\n\t\"Add DependsOn for the key signing key\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::DNSSEC\")\n\tz := _pf_r53z_zone_of(name)\n\tdeps := object.get(input.resources[name], \"dependsOn\", [])\n\tsome k in _pf_r53z_ksks_of(z)\n\tnot k in deps\n}\n"
+  },
+  {
+    "id": "pf-route53-dnssec-requires-active-ksk",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "DNSSEC signing needs a key signing key in ACTIVE status",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::DNSSEC"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-dnssec-requires-active-ksk\", \"ERROR\", name,\n\t\"Properties.HostedZoneId\",\n\tsprintf(\"every key signing key on hosted zone %s is INACTIVE; enabling DNSSEC fails with KeySigningKeyWithActiveStatusNotFound\", [z]),\n\t\"Set one key signing key to ACTIVE\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::DNSSEC\")\n\tz := _pf_r53z_zone_of(name)\n\tksks := _pf_r53z_ksks_of(z)\n\tcount(ksks) > 0\n\tcount([k | some k in ksks; object.get(_pf_r53z_props(k), \"Status\", \"\") == \"ACTIVE\"]) == 0\n}\n"
+  },
+  {
+    "id": "pf-route53-dnssec-requires-ksk",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "DNSSEC cannot be enabled on a hosted zone without a key signing key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::DNSSEC"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-dnssec-requires-ksk\", \"ERROR\", name,\n\t\"Properties.HostedZoneId\",\n\tsprintf(\"hosted zone %s is created in this template with no key signing key; enabling DNSSEC fails with DNSSECNotFound\", [z]),\n\t\"Add an AWS::Route53::KeySigningKey for the zone and DependsOn it\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::DNSSEC\")\n\tz := _pf_r53z_zone_of(name)\n\tcount(_pf_r53z_ksks_of(z)) == 0\n}\n"
   },
   {
     "id": "pf-route53-ds-field-count",
@@ -16317,6 +16461,484 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_gpmax_n(g, k) := count([1 |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n\t_pf_r53lib_key(it.value) == k\n\t\"GeoProximityLocation\" in _pf_r53lib_kinds(it.value)\n])\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-max-30-same-name-type\", \"ERROR\", name,\n\t\"Properties.RecordSets\",\n\tsprintf(\"'%s' has %d geoproximity record sets; Route 53 allows at most 30 per name and type\", [k, n]),\n\t\"Keep at most 30 geoproximity record sets for one name and type\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\t\"GeoProximityLocation\" in _pf_r53lib_kinds(a.value)\n\tk := _pf_r53lib_key(a.value)\n\tn := _pf_r53_gpmax_n(name, k)\n\tn > 30\n}\n"
   },
   {
+    "id": "pf-route53-healthcheck-alarm-extended-statistic",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CloudWatch alarm health check cannot watch an alarm on an extended statistic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck",
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-alarm-extended-statistic\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.AlarmIdentifier\",\n\tsprintf(\"the CloudWatch alarm health check watches %s, which uses ExtendedStatistic; Route 53 only supports Average, Minimum, Maximum, Sum and SampleCount\", [al]),\n\t\"Use one of Average, Minimum, Maximum, Sum or SampleCount for the watched alarm\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating-values.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CLOUDWATCH_METRIC\"\n\tal := _pf_r53z_alarm_of(cfg)\n\t_pf_r53z_has(_pf_r53z_props(al), \"ExtendedStatistic\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-alarm-high-resolution",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CloudWatch alarm health check cannot watch a high-resolution alarm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck",
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-alarm-high-resolution\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.AlarmIdentifier\",\n\tsprintf(\"the CloudWatch alarm health check watches %s, whose Period is %v seconds; Route 53 can only monitor standard-resolution alarms (Period 60 or more)\", [al, p]),\n\t\"Raise the watched alarm's Period to 60 seconds or more\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating-values.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CLOUDWATCH_METRIC\"\n\tal := _pf_r53z_alarm_of(cfg)\n\tp := to_number(object.get(_pf_r53z_props(al), \"Period\", \"x\"))\n\tp < 60\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-alarm-metric-math",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CloudWatch alarm health check cannot watch a metric math alarm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck",
+      "AWS::CloudWatch::Alarm"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-alarm-metric-math\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.AlarmIdentifier\",\n\tsprintf(\"the CloudWatch alarm health check watches %s, which is a metric math alarm; Route 53 can only monitor an alarm on a single metric\", [al]),\n\t\"Point the health check at an alarm on one metric\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating-values.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CLOUDWATCH_METRIC\"\n\tal := _pf_r53z_alarm_of(cfg)\n\tsome m in flatten_list(al, \"Properties.Metrics\")\n\tis_object(m.value)\n\tis_string(object.get(m.value, \"Expression\", null))\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-alarmidentifier-cloudwatch-only",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "AlarmIdentifier is only valid on a CLOUDWATCH_METRIC health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-alarmidentifier-cloudwatch-only\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.AlarmIdentifier\",\n\tsprintf(\"AlarmIdentifier is set on a %s health check; it belongs to CLOUDWATCH_METRIC only\", [t]),\n\t\"Drop AlarmIdentifier, or set Type to CLOUDWATCH_METRIC\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"AlarmIdentifier\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tt != \"CLOUDWATCH_METRIC\"\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-alarmidentifier-region-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "AlarmIdentifier.Region must be a region name, not an availability zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-alarmidentifier-region-format\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.AlarmIdentifier.Region\",\n\tsprintf(\"AlarmIdentifier.Region %s is not a region name; Route 53 takes the region the CloudWatch alarm lives in\", [rg]),\n\t\"Use the alarm's region, for example us-east-1\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tai := _pf_r53z_get(cfg, \"AlarmIdentifier\")\n\tis_object(ai)\n\trg := object.get(ai, \"Region\", null)\n\tis_string(rg)\n\tnot _pf_r53z_region_shape(rg)\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-alarmidentifier-required-cloudwatch",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CLOUDWATCH_METRIC health check needs an AlarmIdentifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-alarmidentifier-required-cloudwatch\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig\",\n\t\"a CLOUDWATCH_METRIC health check has no AlarmIdentifier, so Route 53 has no alarm to watch\",\n\t\"Add AlarmIdentifier with the alarm's Name and Region\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CLOUDWATCH_METRIC\"\n\tnot _pf_r53z_has(cfg, \"AlarmIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-calculated-child-calculated",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CALCULATED health check cannot have another CALCULATED health check as a child",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-calculated-child-calculated\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.ChildHealthChecks\",\n\tsprintf(\"child health check %s is itself CALCULATED; Route 53 does not nest calculated health checks\", [ch]),\n\t\"Point ChildHealthChecks at endpoint or CloudWatch alarm health checks\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CALCULATED\"\n\tsome ch in _pf_r53z_children(cfg)\n\t_pf_r53z_str(_pf_r53z_hcc(ch), \"Type\") == \"CALCULATED\"\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-childhealthchecks-only-calculated",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "ChildHealthChecks is only valid on a CALCULATED health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-childhealthchecks-only-calculated\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.ChildHealthChecks\",\n\tsprintf(\"ChildHealthChecks is set on a %s health check; only CALCULATED aggregates other health checks\", [t]),\n\t\"Drop ChildHealthChecks, or set Type to CALCULATED\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"ChildHealthChecks\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tt != \"CALCULATED\"\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-childhealthchecks-quota-255",
+    "service": "route53",
+    "severity": "WARN",
+    "title": "A CALCULATED health check can aggregate at most 255 child health checks",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-childhealthchecks-quota-255\", \"WARN\", name,\n\t\"Properties.HealthCheckConfig.ChildHealthChecks\",\n\tsprintf(\"%d child health checks exceed the 255 a calculated health check can monitor\", [n]),\n\t\"Split the children across a tree of calculated health checks\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CALCULATED\"\n\tn := count(object.get(cfg, \"ChildHealthChecks\", []))\n\tn > 255\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-enablesni-https-only",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "EnableSNI is only valid on an HTTPS health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-enablesni-https-only\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.EnableSNI\",\n\tsprintf(\"EnableSNI is set on a %s health check; SNI only applies to HTTPS and HTTPS_STR_MATCH\", [t]),\n\t\"Drop EnableSNI, or switch the health check to HTTPS\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"EnableSNI\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tnot t in _pf_r53z_https_types\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-endpoint-required",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An endpoint health check needs IPAddress or FullyQualifiedDomainName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-endpoint-required\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig\",\n\tsprintf(\"a %s health check has neither IPAddress nor FullyQualifiedDomainName, so there is no endpoint to check\", [t]),\n\t\"Add FullyQualifiedDomainName (or IPAddress) to the health check config\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tt in _pf_r53z_endpoint_types\n\tnot _pf_r53z_has(cfg, \"IPAddress\")\n\tnot _pf_r53z_has(cfg, \"FullyQualifiedDomainName\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-failurethreshold-recovery-control",
+    "service": "route53",
+    "severity": "WARN",
+    "title": "FailureThreshold cannot be set on a RECOVERY_CONTROL health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-failurethreshold-recovery-control\", \"WARN\", name,\n\t\"Properties.HealthCheckConfig.FailureThreshold\",\n\t\"FailureThreshold is set on a RECOVERY_CONTROL health check; the routing control decides the state, so Route 53 rejects the property\",\n\t\"Drop FailureThreshold from the recovery control health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"RECOVERY_CONTROL\"\n\t_pf_r53z_has(cfg, \"FailureThreshold\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-healththreshold-only-calculated",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "HealthThreshold is only valid on a CALCULATED health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-healththreshold-only-calculated\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.HealthThreshold\",\n\tsprintf(\"HealthThreshold is set on a %s health check; it only counts healthy children of a CALCULATED check\", [t]),\n\t\"Drop HealthThreshold, or set Type to CALCULATED\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"HealthThreshold\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tt != \"CALCULATED\"\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-insufficientdata-cloudwatch-only",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "InsufficientDataHealthStatus is only valid on a CLOUDWATCH_METRIC health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-insufficientdata-cloudwatch-only\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.InsufficientDataHealthStatus\",\n\tsprintf(\"InsufficientDataHealthStatus is set on a %s health check; it only describes what to do while a CloudWatch alarm has no data\", [t]),\n\t\"Drop InsufficientDataHealthStatus, or set Type to CLOUDWATCH_METRIC\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"InsufficientDataHealthStatus\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tt != \"CLOUDWATCH_METRIC\"\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-insufficientdata-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "InsufficientDataHealthStatus must be Healthy, LastKnownStatus or Unhealthy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-insufficientdata-enum\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.InsufficientDataHealthStatus\",\n\tsprintf(\"InsufficientDataHealthStatus %s is not one of Healthy, LastKnownStatus, Unhealthy\", [v]),\n\t\"Use one of Healthy, LastKnownStatus or Unhealthy\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tv := _pf_r53z_str(cfg, \"InsufficientDataHealthStatus\")\n\tnot v in {\"Healthy\", \"LastKnownStatus\", \"Unhealthy\"}\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-ipaddress-calculated",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "IPAddress cannot be set on a CALCULATED health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-ipaddress-calculated\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.IPAddress\",\n\t\"IPAddress is set on a CALCULATED health check, which aggregates children instead of checking an endpoint\",\n\t\"Drop IPAddress from the calculated health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CALCULATED\"\n\t_pf_r53z_has(cfg, \"IPAddress\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-ipaddress-cloudwatch-metric",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "IPAddress cannot be set on a CLOUDWATCH_METRIC health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-ipaddress-cloudwatch-metric\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.IPAddress\",\n\t\"IPAddress is set on a CLOUDWATCH_METRIC health check, which watches an alarm instead of an endpoint\",\n\t\"Drop IPAddress from the CloudWatch alarm health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CLOUDWATCH_METRIC\"\n\t_pf_r53z_has(cfg, \"IPAddress\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-ipaddress-private-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A health check cannot target a private, documentation or otherwise non-routable address",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-ipaddress-private-range\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.IPAddress\",\n\tsprintf(\"IPAddress %s is in a private, loopback, link-local, shared, documentation or multicast range; Route 53 rejects it as a forbidden address\", [v]),\n\t\"Use a public IP address, or check the endpoint by FullyQualifiedDomainName\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tv := _pf_r53z_str(cfg, \"IPAddress\")\n\tregex.match(`^(0\\.|10\\.|127\\.|169\\.254\\.|192\\.168\\.|192\\.0\\.0\\.|192\\.0\\.2\\.|192\\.88\\.99\\.|198\\.51\\.100\\.|203\\.0\\.113\\.|198\\.1[89]\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|100\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\.|(22[4-9]|23[0-9]|24[0-9]|25[0-5])\\.|::1$|[fF][cCdD]|[fF][eE][89abAB])`, v)\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-measurelatency-recovery-control",
+    "service": "route53",
+    "severity": "WARN",
+    "title": "MeasureLatency cannot be set on a RECOVERY_CONTROL health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-measurelatency-recovery-control\", \"WARN\", name,\n\t\"Properties.HealthCheckConfig.MeasureLatency\",\n\t\"MeasureLatency is set on a RECOVERY_CONTROL health check, which never contacts an endpoint\",\n\t\"Drop MeasureLatency from the recovery control health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"RECOVERY_CONTROL\"\n\t_pf_r53z_has(cfg, \"MeasureLatency\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-port-calculated",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Port cannot be set on a CALCULATED health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-port-calculated\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.Port\",\n\t\"Port is set on a CALCULATED health check, which aggregates children instead of checking an endpoint\",\n\t\"Drop Port from the calculated health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CALCULATED\"\n\t_pf_r53z_has(cfg, \"Port\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-port-cloudwatch-metric",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Port cannot be set on a CLOUDWATCH_METRIC health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-port-cloudwatch-metric\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.Port\",\n\t\"Port is set on a CLOUDWATCH_METRIC health check, which watches an alarm instead of an endpoint\",\n\t\"Drop Port from the CloudWatch alarm health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"CLOUDWATCH_METRIC\"\n\t_pf_r53z_has(cfg, \"Port\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-regions-endpoint-types-only",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Regions is only valid on an endpoint health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-regions-endpoint-types-only\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.Regions\",\n\tsprintf(\"Regions is set on a %s health check; only endpoint checks place health checkers in regions\", [t]),\n\t\"Drop Regions, or use an endpoint health check type\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"Regions\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tnot t in _pf_r53z_endpoint_types\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-regions-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Health checkers can only be placed in the eight regions Route 53 offers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-regions-enum\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.Regions\",\n\tsprintf(\"region %s cannot host Route 53 health checkers; pick from us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1\", [v]),\n\t\"Use only the eight regions Route 53 places health checkers in\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tsome v in object.get(cfg, \"Regions\", [])\n\tis_string(v)\n\tnot v in _pf_r53z_checker_regions\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-requestinterval-discrete",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "RequestInterval must be exactly 10 or 30 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-requestinterval-discrete\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.RequestInterval\",\n\tsprintf(\"RequestInterval %v is not one of the two intervals Route 53 offers (10 or 30 seconds)\", [v]),\n\t\"Set RequestInterval to 10 (fast) or 30 (standard)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tv := to_number(_pf_r53z_get(cfg, \"RequestInterval\"))\n\tnot v in {10, 30}\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-requestinterval-recovery-control",
+    "service": "route53",
+    "severity": "WARN",
+    "title": "RequestInterval cannot be set on a RECOVERY_CONTROL health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-requestinterval-recovery-control\", \"WARN\", name,\n\t\"Properties.HealthCheckConfig.RequestInterval\",\n\t\"RequestInterval is set on a RECOVERY_CONTROL health check, which never contacts an endpoint\",\n\t\"Drop RequestInterval from the recovery control health check\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"RECOVERY_CONTROL\"\n\t_pf_r53z_has(cfg, \"RequestInterval\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-resourcepath-http-only",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "ResourcePath is only valid on an HTTP or HTTPS health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-resourcepath-http-only\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.ResourcePath\",\n\tsprintf(\"ResourcePath is set on a %s health check; only HTTP and HTTPS checks request a path\", [t]),\n\t\"Drop ResourcePath, or use an HTTP/HTTPS health check type\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"ResourcePath\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tnot t in _pf_r53z_http_types\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-routingcontrolarn-required",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A RECOVERY_CONTROL health check needs a RoutingControlArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-routingcontrolarn-required\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig\",\n\t\"a RECOVERY_CONTROL health check has no RoutingControlArn, so Route 53 has no routing control to read\",\n\t\"Add RoutingControlArn pointing at the Application Recovery Controller routing control\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_str(cfg, \"Type\") == \"RECOVERY_CONTROL\"\n\tnot _pf_r53z_has(cfg, \"RoutingControlArn\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-searchstring-required-strmatch",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A string-matching health check needs a SearchString",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-searchstring-required-strmatch\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig\",\n\tsprintf(\"a %s health check has no SearchString, so there is nothing to look for in the response body\", [t]),\n\t\"Add SearchString, or drop _STR_MATCH from the health check type\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tt in _pf_r53z_strmatch_types\n\tnot _pf_r53z_has(cfg, \"SearchString\")\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-searchstring-strmatch-only",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "SearchString is only valid on a string-matching health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-searchstring-strmatch-only\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.SearchString\",\n\tsprintf(\"SearchString is set on a %s health check; only HTTP_STR_MATCH and HTTPS_STR_MATCH read the response body\", [t]),\n\t\"Drop SearchString, or switch the type to HTTP_STR_MATCH / HTTPS_STR_MATCH\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\t_pf_r53z_has(cfg, \"SearchString\")\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tnot t in _pf_r53z_strmatch_types\n}\n"
+  },
+  {
+    "id": "pf-route53-healthcheck-type-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "HealthCheckConfig.Type must be one of the eight health check types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HealthCheck"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-healthcheck-type-enum\", \"ERROR\", name,\n\t\"Properties.HealthCheckConfig.Type\",\n\tsprintf(\"health check type %s is not one of CALCULATED, CLOUDWATCH_METRIC, HTTP, HTTPS, HTTP_STR_MATCH, HTTPS_STR_MATCH, TCP, RECOVERY_CONTROL\", [t]),\n\t\"Use one of the eight documented health check types\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HealthCheck\")\n\tcfg := _pf_r53z_hcc(name)\n\tt := _pf_r53z_str(cfg, \"Type\")\n\tnot t in _pf_r53z_hc_types\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-duplicate-private-zone-vpc",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Two private hosted zones for the same domain cannot share a VPC",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-duplicate-private-zone-vpc\", \"ERROR\", name,\n\t\"Properties.VPCs\",\n\tsprintf(\"hosted zone %s carries the same domain name and VPC as %s; Route 53 answers ConflictingDomainExists\", [name, other]),\n\t\"Associate the second private zone with a different VPC, or drop it\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tsome other in resources_of_type(\"AWS::Route53::HostedZone\")\n\tname < other\n\t_pf_r53z_zname(name) == _pf_r53z_zname(other)\n\tcount(_pf_r53z_vpcidset(name) & _pf_r53z_vpcidset(other)) > 0\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-charset",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A hosted zone name can only hold printable ASCII without spaces",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-charset\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"hosted zone name %s contains a space or control character; Route 53 wants printable ASCII, with 3-digit octal escapes for anything else\", [n]),\n\t\"Remove the space, or write the character as a 3-digit octal escape such as \\\\\\\\040\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tregex.match(`[\\x00-\\x20\\x7f]`, n)\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-label-63",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Every label of a hosted zone name must be 63 bytes or fewer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-label-63\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"label %s of the hosted zone name is %d characters; a DNS label stops at 63\", [l, count(l)]),\n\t\"Shorten the label to 63 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tsome l in split(trim_suffix(n, \".\"), \".\")\n\tcount(l) > 63\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-punycode",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An internationalized hosted zone name must be given in Punycode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-punycode\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"hosted zone name %s contains non-ASCII characters; Route 53 stores names in Punycode\", [n]),\n\t\"Convert the name to Punycode (xn--...) before putting it in the template\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tregex.match(`[^\\x00-\\x7f]`, n)\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-required",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A hosted zone needs a Name even though CloudFormation marks it optional",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-required\", \"ERROR\", name,\n\t\"Properties\",\n\t\"the hosted zone has no Name; CreateHostedZone requires one even though the CloudFormation schema does not\",\n\t\"Give the hosted zone its domain name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-hostedzone.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tnot _pf_r53z_has(_pf_r53z_props(name), \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-tld",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A hosted zone cannot be created for a bare top-level domain",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-tld\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"hosted zone name %s is a single label; Route 53 does not host top-level domains\", [n]),\n\t\"Use a domain you control, such as example.com\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tcount(split(trim_suffix(n, \".\"), \".\")) == 1\n\tn != \"\"\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-total-255",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A hosted zone name must be 255 bytes or fewer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-total-255\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"the hosted zone name is %d characters; a DNS name stops at 255 (the CloudFormation reference says 1024)\", [count(n)]),\n\t\"Shorten the domain name to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tcount(n) > 255\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-name-wildcard-label",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A hosted zone name cannot start with a wildcard label",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-wildcard-label\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"hosted zone name %s starts with a wildcard label; a wildcard belongs in a record name, not in the zone name\", [n]),\n\t\"Create the zone for the concrete domain and use * in the record name\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tstartswith(n, \"*\")\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-nameservers-private",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Fn::GetAtt NameServers is not available on a private hosted zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone",
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-nameservers-private\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"the record reads NameServers off %s, which is a private hosted zone; only public zones expose delegation name servers\", [z]),\n\t\"Drop the NS record, or read NameServers off a public hosted zone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trr := object.get(_pf_r53z_props(name), \"ResourceRecords\", null)\n\tz := _pf_r53z_getatt(rr, \"NameServers\")\n\t_pf_r53lib_private_zone(z)\n}\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-nameservers-private\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"the record reads NameServers off %s, which is a private hosted zone; only public zones expose delegation name servers\", [z]),\n\t\"Drop the NS record, or read NameServers off a public hosted zone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\tis_object(_pf_it.value)\n\trr := object.get(_pf_it.value, \"ResourceRecords\", null)\n\tz := _pf_r53z_getatt(rr, \"NameServers\")\n\t_pf_r53lib_private_zone(z)\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-querylogging-arn-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The query logging log group must be given as a CloudWatch Logs log-group ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-querylogging-arn-format\", \"ERROR\", name,\n\t\"Properties.QueryLoggingConfig.CloudWatchLogsLogGroupArn\",\n\tsprintf(\"%s is not a CloudWatch Logs log group ARN (arn:<partition>:logs:<region>:<account>:log-group:<name>)\", [a]),\n\t\"Use Fn::GetAtt on the log group's Arn, or spell the full log-group ARN\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/query-logs.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\ta := _pf_r53z_qlog_arn(name)\n\tnot regex.match(`^arn:[a-z0-9-]+:logs:[a-z0-9-]+:[0-9]{12}:log-group:`, a)\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-querylogging-loggroup-region",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The query logging log group must live in us-east-1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-querylogging-loggroup-region\", \"ERROR\", name,\n\t\"Properties.QueryLoggingConfig.CloudWatchLogsLogGroupArn\",\n\tsprintf(\"the query logging log group is in %s; Route 53 only writes query logs to a log group in us-east-1\", [rg]),\n\t\"Create the log group in us-east-1 and point the hosted zone at it\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/query-logs.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\ta := _pf_r53z_qlog_arn(name)\n\tstartswith(a, \"arn:\")\n\tparts := split(a, \":\")\n\tcount(parts) > 4\n\trg := parts[3]\n\trg != \"\"\n\trg != \"us-east-1\"\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-querylogging-private-zone",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Query logging can only be turned on for a public hosted zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-querylogging-private-zone\", \"ERROR\", name,\n\t\"Properties.QueryLoggingConfig\",\n\t\"the hosted zone is private (it has VPCs) and also asks for query logging, which Route 53 offers on public zones only\",\n\t\"Drop QueryLoggingConfig, or make the zone public\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/query-logs.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tp := _pf_r53z_props(name)\n\t_pf_r53z_has(p, \"QueryLoggingConfig\")\n\tv := object.get(p, \"VPCs\", [])\n\tcount(v) > 0\n}\n"
+  },
+  {
+    "id": "pf-route53-hostedzone-vpc-region-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "VPCRegion must be a region name, not an availability zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::HostedZone"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-vpc-region-format\", \"ERROR\", name,\n\t\"Properties.VPCs\",\n\tsprintf(\"VPCRegion %s is not a region name; give the region the VPC lives in\", [rg]),\n\t\"Use the VPC's region, for example us-east-1\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-hostedzone.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tsome v in _pf_r53z_vpcs(name)\n\tis_object(v)\n\trg := object.get(v, \"VPCRegion\", null)\n\tis_string(rg)\n\tnot _pf_r53z_region_shape(rg)\n}\n"
+  },
+  {
     "id": "pf-route53-https-field-format",
     "service": "route53",
     "severity": "ERROR",
@@ -16339,6 +16961,109 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Route53::RecordSetGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-https-svcpriority-range\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The HTTPS SvcPriority must be between 0 and 32767, got %v\", [n]),\n\t\"Use a priority in 0-32767 (0 selects AliasMode)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 2\n\tn := to_number(f[0])\n\tn > 32767\n}\n\nviolation contains make_diag_full(\"pf-route53-https-svcpriority-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The HTTPS SvcPriority must be between 0 and 32767, got %v\", [n]),\n\t\"Use a priority in 0-32767 (0 selects AliasMode)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 2\n\tn := to_number(f[0])\n\tn > 32767\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-kms-key-enabled",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The KMS key behind a key signing key must be enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey",
+      "AWS::KMS::Key"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-kms-key-enabled\", \"ERROR\", name,\n\t\"Properties.KeyManagementServiceArn\",\n\tsprintf(\"the key signing key points at %s, which is created disabled; Route 53 cannot sign with it\", [k]),\n\t\"Enable the KMS key\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tk := _pf_r53z_key_of(name)\n\tobject.get(_pf_r53z_props(k), \"Enabled\", true) == false\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-kms-key-policy-actions",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The KMS key policy must let Route 53 DNSSEC describe, read and sign",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey",
+      "AWS::KMS::Key"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-kms-key-policy-actions\", \"ERROR\", name,\n\t\"Properties.KeyManagementServiceArn\",\n\tsprintf(\"the key policy of %s does not allow dnssec-route53.amazonaws.com to %v\", [k, _pf_r53z_missing_actions(k)]),\n\t\"Allow kms:DescribeKey, kms:GetPublicKey and kms:Sign for dnssec-route53.amazonaws.com\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tk := _pf_r53z_key_of(name)\n\t_pf_r53z_key_grants(k)\n\tcount(_pf_r53z_missing_actions(k)) > 0\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-kms-key-policy-principal",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The KMS key policy must name the Route 53 DNSSEC service principal",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey",
+      "AWS::KMS::Key"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-kms-key-policy-principal\", \"ERROR\", name,\n\t\"Properties.KeyManagementServiceArn\",\n\tsprintf(\"the key policy of %s has no Allow statement for dnssec-route53.amazonaws.com\", [k]),\n\t\"Add a statement allowing the dnssec-route53.amazonaws.com service principal to use the key\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tk := _pf_r53z_key_of(name)\n\tnot _pf_r53z_key_grants(k)\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-kms-key-region",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The DNSSEC signing key must live in us-east-1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-kms-key-region\", \"ERROR\", name,\n\t\"Properties.KeyManagementServiceArn\",\n\tsprintf(\"the signing key is in %s; Route 53 DNSSEC only reads customer managed keys from us-east-1\", [rg]),\n\t\"Create the signing key in us-east-1\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\ta := resolve(name, \"Properties.KeyManagementServiceArn\")\n\tis_string(a)\n\tstartswith(a, \"arn:\")\n\tparts := split(a, \":\")\n\tcount(parts) > 4\n\trg := parts[3]\n\trg != \"\"\n\trg != \"us-east-1\"\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-kms-keyspec",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The DNSSEC signing key must be an ECC_NIST_P256 key used for SIGN_VERIFY",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey",
+      "AWS::KMS::Key"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-kms-keyspec\", \"ERROR\", name,\n\t\"Properties.KeyManagementServiceArn\",\n\tsprintf(\"the key signing key points at %s, which is %s / %s; Route 53 DNSSEC needs ECC_NIST_P256 with KeyUsage SIGN_VERIFY\", [k, ks, ku]),\n\t\"Create the KMS key with KeySpec ECC_NIST_P256 and KeyUsage SIGN_VERIFY\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tk := _pf_r53z_key_of(name)\n\tp := _pf_r53z_props(k)\n\tks := object.get(p, \"KeySpec\", \"SYMMETRIC_DEFAULT\")\n\tis_string(ks)\n\tku := object.get(p, \"KeyUsage\", \"ENCRYPT_DECRYPT\")\n\tis_string(ku)\n\tnot _pf_r53z_dnssec_keyspec(ks, ku)\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-kmsarn-unique-per-zone",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Two key signing keys in one hosted zone cannot share a KMS key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-kmsarn-unique-per-zone\", \"ERROR\", name,\n\t\"Properties.KeyManagementServiceArn\",\n\tsprintf(\"key signing keys %s and %s use the same KMS key in the same hosted zone\", [name, other]),\n\t\"Create a second KMS key for the second key signing key\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tsome other in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tname < other\n\t_pf_r53z_zone_of(name) == _pf_r53z_zone_of(other)\n\tresolve(name, \"Properties.KeyManagementServiceArn\") == resolve(other, \"Properties.KeyManagementServiceArn\")\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-max-2-per-zone",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A hosted zone can hold at most two key signing keys",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-max-2-per-zone\", \"ERROR\", name,\n\t\"Properties.HostedZoneId\",\n\tsprintf(\"%d key signing keys are attached to hosted zone %s; Route 53 answers TooManyKeySigningKeys above two\", [count(_pf_r53z_ksks_of(z)), z]),\n\t\"Keep at most two key signing keys per hosted zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tz := _pf_r53z_zone_of(name)\n\tcount(_pf_r53z_ksks_of(z)) > 2\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-name-unique-per-zone",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Two key signing keys in one hosted zone cannot share a name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-name-unique-per-zone\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"key signing keys %s and %s carry the same Name in the same hosted zone\", [name, other]),\n\t\"Give each key signing key its own name\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tsome other in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\tname < other\n\t_pf_r53z_zone_of(name) == _pf_r53z_zone_of(other)\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tn == _pf_r53z_str(_pf_r53z_props(other), \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-route53-keysigningkey-status-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A key signing key is either ACTIVE or INACTIVE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::KeySigningKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-keysigningkey-status-enum\", \"ERROR\", name,\n\t\"Properties.Status\",\n\tsprintf(\"key signing key status %s is neither ACTIVE nor INACTIVE\", [s]),\n\t\"Use ACTIVE or INACTIVE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\ts := _pf_r53z_str(_pf_r53z_props(name), \"Status\")\n\tnot s in {\"ACTIVE\", \"INACTIVE\"}\n}\n"
   },
   {
     "id": "pf-route53-latency-one-record-per-region",
@@ -16485,13 +17210,13 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-route53-private-zone-health-check-policy",
     "service": "route53",
     "severity": "ERROR",
-    "title": "A simple record in a private hosted zone cannot carry a health check",
+    "title": "A record with no routing policy cannot reference a health check",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Route53::RecordSet",
       "AWS::Route53::RecordSetGroup"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-private-zone-health-check-policy\", \"ERROR\", name,\n\t\"Properties.HealthCheckId\",\n\t\"In a private hosted zone only failover, multivalue, weighted, latency, geolocation and geoproximity records may reference a health check\",\n\t\"Give the record a routing policy, or drop HealthCheckId\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tz := _pf_r53lib_own_zone(rs)\n\t_pf_r53lib_private_zone(z)\n\t_pf_r53lib_has(rs, \"HealthCheckId\")\n\tcount(_pf_r53lib_kinds(rs)) == 0\n}\n\nviolation contains make_diag_full(\"pf-route53-private-zone-health-check-policy\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].HealthCheckId\", [_pf_it.index]),\n\t\"In a private hosted zone only failover, multivalue, weighted, latency, geolocation and geoproximity records may reference a health check\",\n\t\"Give the record a routing policy, or drop HealthCheckId\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tz := _pf_r53lib_own_zone(rs)\n\t_pf_r53lib_private_zone(z)\n\t_pf_r53lib_has(rs, \"HealthCheckId\")\n\tcount(_pf_r53lib_kinds(rs)) == 0\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_pzhc_msg := \"A record with no routing policy cannot reference a health check; Route 53 answers \\\"DNS name must have alternate ResourceRecordSet responses configured via a routing policy\\\"\"\n\n_pf_r53_pzhc_fix := \"Give the record a routing policy, or drop HealthCheckId\"\n\n_pf_r53_pzhc_url := \"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\"\n\n# 2026-09-08 の調査時は private zone の記述から起こしたルールだったが、実機は\n# public zone でも同じ理由で弾く（simple routing にはヘルスチェックを付けられない）。\n# ゾーンの種別を問わずに鳴らす。\nviolation contains make_diag_full(\"pf-route53-private-zone-health-check-policy\", \"ERROR\", name,\n\t\"Properties.HealthCheckId\",\n\t_pf_r53_pzhc_msg, _pf_r53_pzhc_fix, _pf_r53_pzhc_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_has(rs, \"HealthCheckId\")\n\tcount(_pf_r53lib_kinds(rs)) == 0\n}\n\nviolation contains make_diag_full(\"pf-route53-private-zone-health-check-policy\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].HealthCheckId\", [_pf_it.index]),\n\t_pf_r53_pzhc_msg, _pf_r53_pzhc_fix, _pf_r53_pzhc_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_has(rs, \"HealthCheckId\")\n\tcount(_pf_r53lib_kinds(rs)) == 0\n}\n"
   },
   {
     "id": "pf-route53-record-comment-length",
@@ -19227,6 +19952,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/route53",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 のレコード系ルールの共有ヘルパー。診断は出さない。\n#\n# レコードセットは 2 つの形で現れる: AWS::Route53::RecordSet リソースそのものと、\n# AWS::Route53::RecordSetGroup の Properties.RecordSets の各要素。どちらも\n# 「プロパティのオブジェクト」に正規化して、以下のヘルパーはすべてその rs を受け取る。\n# 生のオブジェクトを見るので Ref/GetAtt はマーカー（{\"__kind\",\"__ref\"}）のままで、\n# is_string ガードがユーザーのリテラルだけを通す。\n\n_pf_r53lib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_r53lib_get(rs, k) := v if {\n\tv := object.get(rs, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_r53lib_has(rs, k) if {\n\t_pf_r53lib_get(rs, k)\n}\n\n_pf_r53lib_str(rs, k) := v if {\n\tv := _pf_r53lib_get(rs, k)\n\tis_string(v)\n}\n\n_pf_r53lib_num(rs, k) := to_number(_pf_r53lib_get(rs, k))\n\n# 末尾ドットを落として小文字化した DNS 名。Route 53 は両者を同じ名前として扱う。\n_pf_r53lib_norm(n) := trim_suffix(lower(n), \".\")\n\n_pf_r53lib_name(rs) := _pf_r53lib_norm(_pf_r53lib_str(rs, \"Name\"))\n\n_pf_r53lib_type(rs) := _pf_r53lib_str(rs, \"Type\")\n\n# Name と Type が両方リテラルのときだけ定義される、レコードセットのグループキー。\n_pf_r53lib_key(rs) := sprintf(\"%s|%s\", [_pf_r53lib_name(rs), _pf_r53lib_type(rs)])\n\n_pf_r53lib_policy_props := {\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"GeoProximityLocation\", \"CidrRoutingConfig\", \"MultiValueAnswer\"}\n\n# 指定されているルーティングポリシー用プロパティの集合。空集合なら simple。\n_pf_r53lib_kinds(rs) := {p |\n\tsome p in _pf_r53lib_policy_props\n\t_pf_r53lib_has(rs, p)\n}\n\n_pf_r53lib_rrs(rs) := a if {\n\ta := _pf_r53lib_get(rs, \"ResourceRecords\")\n\tis_array(a)\n}\n\n# リテラル文字列の値だけ。intrinsic 経由の値はマーカーなので落ちる。\n_pf_r53lib_vals(rs) := [v |\n\tsome v in _pf_r53lib_rrs(rs)\n\tis_string(v)\n]\n\n# 空白区切りのフィールド（連続空白は潰す）。\n_pf_r53lib_fields(v) := [f |\n\tsome f in split(v, \" \")\n\tf != \"\"\n]\n\n_pf_r53lib_quoted(f) if {\n\tstartswith(f, \"\\\"\")\n\tendswith(f, \"\\\"\")\n\tcount(f) >= 2\n}\n\n_pf_r53lib_alias(rs) := a if {\n\ta := _pf_r53lib_get(rs, \"AliasTarget\")\n\tis_object(a)\n}\n\n_pf_r53lib_alias_dns(rs) := _pf_r53lib_norm(d) if {\n\td := object.get(_pf_r53lib_alias(rs), \"DNSName\", null)\n\tis_string(d)\n}\n\n_pf_r53lib_alias_zoneid(rs) := z if {\n\tz := object.get(_pf_r53lib_alias(rs), \"HostedZoneId\", null)\n\tis_string(z)\n}\n\n# Ref / GetAtt マーカーが指す論理 ID。\n_pf_r53lib_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n# alias 先が同一テンプレート内の HostedZone（＝このスタックで新規に作られるゾーン）\n# のとき、その論理 ID。\n_pf_r53lib_alias_ownzone(rs) := z if {\n\tz := _pf_r53lib_ref(object.get(_pf_r53lib_alias(rs), \"HostedZoneId\", null))\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n_pf_r53lib_zone_name(logical) := _pf_r53lib_norm(n) if {\n\tn := resolve(logical, \"Properties.Name\")\n\tis_string(n)\n}\n\n# private hosted zone（VPCs が 1 件以上）\n_pf_r53lib_private_zone(logical) if {\n\tcount(flatten_list(logical, \"Properties.VPCs\")) > 0\n}\n\n# レコードが属するゾーンの論理 ID（HostedZoneId が同一テンプレートのゾーンを指すとき）。\n_pf_r53lib_own_zone(rs) := z if {\n\tz := _pf_r53lib_ref(_pf_r53lib_get(rs, \"HostedZoneId\"))\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n# name が suffix ゾーンの内側にあるか（apex を含む）。\n_pf_r53lib_within(name, zone) if {\n\tname == zone\n}\n\n_pf_r53lib_within(name, zone) if {\n\tendswith(name, concat(\"\", [\".\", zone]))\n}\n\n# テンプレートが作るレコードセットの \"name|type\" キーと name の集合。\n# 同一ゾーン内 alias の参照先が本当にテンプレートにあるかを見るのに使う。\n# ネストしたコンプリヘンションは 1 本に書けない（エンジンの方言）ので段で分ける。\n\n_pf_r53lib_gkeys(g) := {_pf_r53lib_key(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n}\n\n_pf_r53lib_gnames(g) := {_pf_r53lib_name(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n}\n\n_pf_r53lib_skeys := {_pf_r53lib_key(_pf_r53lib_props(r)) |\n\tsome r in resources_of_type(\"AWS::Route53::RecordSet\")\n}\n\n_pf_r53lib_snames := {_pf_r53lib_name(_pf_r53lib_props(r)) |\n\tsome r in resources_of_type(\"AWS::Route53::RecordSet\")\n}\n\n_pf_r53lib_gkeys_all := union({_pf_r53lib_gkeys(g) |\n\tsome g in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n})\n\n_pf_r53lib_gnames_all := union({_pf_r53lib_gnames(g) |\n\tsome g in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n})\n\n_pf_r53lib_keys := union({_pf_r53lib_skeys, _pf_r53lib_gkeys_all})\n\n_pf_r53lib_names := union({_pf_r53lib_snames, _pf_r53lib_gnames_all})\n"
+  },
+  {
+    "name": "_lib/route53zone",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 のゾーン側リソース（HostedZone / HealthCheck / CidrCollection /\n# KeySigningKey / DNSSEC）で共有するヘルパー。診断は出さない。\n# 生のプロパティを見るので Ref/GetAtt はマーカー（{\"__kind\",\"__ref\"}）のままで、\n# is_string ガードがユーザーのリテラルだけを通す。\n\n_pf_r53z_props(name) := p if {\n\tp := object.get(input.resources[name], \"properties\", {})\n\tis_object(p)\n}\n\n_pf_r53z_get(o, k) := v if {\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_r53z_has(o, k) if {\n\t_pf_r53z_get(o, k)\n}\n\n_pf_r53z_str(o, k) := v if {\n\tv := _pf_r53z_get(o, k)\n\tis_string(v)\n}\n\n# Fn::GetAtt <logical>.<attr> のマーカーが指す論理 ID。\n_pf_r53z_getatt(v, attr) := r if {\n\tis_object(v)\n\tobject.get(v, \"__kind\", \"\") == sprintf(\"getatt:%s\", [attr])\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n# リージョン名の形（列挙は AWS が増やすたびに誤検知になるので形だけ見る）。\n_pf_r53z_region_shape(r) if {\n\tregex.match(`^[a-z]{2}(-gov|-isob?)?-[a-z]+-[0-9]$`, r)\n}\n\n# --- HealthCheck ---------------------------------------------------------\n\n_pf_r53z_hcc(name) := c if {\n\tc := object.get(_pf_r53z_props(name), \"HealthCheckConfig\", null)\n\tis_object(c)\n}\n\n_pf_r53z_hc_types := {\"CALCULATED\", \"CLOUDWATCH_METRIC\", \"HTTP\", \"HTTPS\", \"HTTP_STR_MATCH\", \"HTTPS_STR_MATCH\", \"TCP\", \"RECOVERY_CONTROL\"}\n\n# エンドポイントを実際に叩く型。IPAddress/FullyQualifiedDomainName を持てるのはこれだけ。\n_pf_r53z_endpoint_types := {\"HTTP\", \"HTTPS\", \"HTTP_STR_MATCH\", \"HTTPS_STR_MATCH\", \"TCP\"}\n\n_pf_r53z_http_types := {\"HTTP\", \"HTTPS\", \"HTTP_STR_MATCH\", \"HTTPS_STR_MATCH\"}\n\n_pf_r53z_strmatch_types := {\"HTTP_STR_MATCH\", \"HTTPS_STR_MATCH\"}\n\n_pf_r53z_https_types := {\"HTTPS\", \"HTTPS_STR_MATCH\"}\n\n# ヘルスチェッカーを配置できるリージョン（8 個で固定、API の閉じた列挙）。\n_pf_r53z_checker_regions := {\"us-east-1\", \"us-west-1\", \"us-west-2\", \"eu-west-1\", \"ap-southeast-1\", \"ap-southeast-2\", \"ap-northeast-1\", \"sa-east-1\"}\n\n# CALCULATED の子として指定された、同一テンプレート内のヘルスチェックの論理 ID。\n_pf_r53z_children(cfg) := [id |\n\tsome v in object.get(cfg, \"ChildHealthChecks\", [])\n\tid := object.get(v, \"__ref\", null)\n\tis_string(id)\n\tid in resources_of_type(\"AWS::Route53::HealthCheck\")\n]\n\n# CLOUDWATCH_METRIC ヘルスチェックが監視する、同一テンプレート内のアラームの論理 ID。\n# AlarmIdentifier.Name は Ref（マーカー）でもリテラルの AlarmName でも受ける。\n_pf_r53z_alarm_of(cfg) := alarm if {\n\tai := object.get(cfg, \"AlarmIdentifier\", null)\n\tis_object(ai)\n\tn := object.get(ai, \"Name\", null)\n\tsome alarm in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\t_pf_r53z_alarm_named(alarm, n)\n}\n\n_pf_r53z_alarm_named(alarm, n) if {\n\tobject.get(n, \"__ref\", null) == alarm\n}\n\n_pf_r53z_alarm_named(alarm, n) if {\n\tis_string(n)\n\tn == object.get(_pf_r53z_props(alarm), \"AlarmName\", null)\n}\n\n# --- HostedZone ----------------------------------------------------------\n\n_pf_r53z_zname(name) := trim_suffix(lower(n), \".\") if {\n\tn := object.get(_pf_r53z_props(name), \"Name\", null)\n\tis_string(n)\n}\n\n_pf_r53z_vpcs(name) := v if {\n\tv := object.get(_pf_r53z_props(name), \"VPCs\", null)\n\tis_array(v)\n}\n\n# private zone に紐づく VPC の識別子（Ref でもリテラルの vpc-xxxx でも同じキーにする）。\n_pf_r53z_vpcidset(name) := {id |\n\tsome v in _pf_r53z_vpcs(name)\n\tis_object(v)\n\tid := _pf_r53z_vpcid(v)\n}\n\n_pf_r53z_vpcid(v) := id if {\n\tx := object.get(v, \"VPCId\", null)\n\tid := object.get(x, \"__ref\", null)\n\tis_string(id)\n}\n\n_pf_r53z_vpcid(v) := id if {\n\tid := object.get(v, \"VPCId\", null)\n\tis_string(id)\n}\n\n_pf_r53z_qlog_arn(name) := a if {\n\tq := object.get(_pf_r53z_props(name), \"QueryLoggingConfig\", null)\n\tis_object(q)\n\ta := object.get(q, \"CloudWatchLogsLogGroupArn\", null)\n\tis_string(a)\n}\n\n# --- CidrCollection ------------------------------------------------------\n\n# [ロケーションの添字, CidrList 内の添字, CIDR 文字列] の一覧。\n_pf_r53z_cidrs(name) := [[loc.index, i, c] |\n\tsome loc in flatten_list(name, \"Properties.Locations\")\n\tis_object(loc.value)\n\tsome i, c in object.get(loc.value, \"CidrList\", [])\n\tis_string(c)\n]\n\n_pf_r53z_prefix(c) := to_number(p) if {\n\tparts := split(c, \"/\")\n\tcount(parts) == 2\n\tp := parts[1]\n}\n\n_pf_r53z_is_v6(c) if {\n\tcontains(c, \":\")\n}\n\n# --- KeySigningKey / DNSSEC ---------------------------------------------\n\n# KSK / DNSSEC が紐づく、同一テンプレート内のホストゾーンの論理 ID。\n_pf_r53z_zone_of(name) := z if {\n\tz := resolve(name, \"Properties.HostedZoneId\")\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n# KSK が参照する、同一テンプレート内の KMS キーの論理 ID。\n_pf_r53z_key_of(name) := k if {\n\tk := resolve(name, \"Properties.KeyManagementServiceArn\")\n\tk in resources_of_type(\"AWS::KMS::Key\")\n}\n\n_pf_r53z_stmts(k) := s if {\n\tpol := object.get(_pf_r53z_props(k), \"KeyPolicy\", null)\n\tis_object(pol)\n\ts := object.get(pol, \"Statement\", [])\n\tis_array(s)\n}\n\n_pf_r53z_svc(st) := p if {\n\tpr := object.get(st, \"Principal\", null)\n\tis_object(pr)\n\tp := object.get(pr, \"Service\", null)\n}\n\n_pf_r53z_svc_is(st, svc) if {\n\t_pf_r53z_svc(st) == svc\n}\n\n_pf_r53z_svc_is(st, svc) if {\n\tl := _pf_r53z_svc(st)\n\tis_array(l)\n\tsvc in l\n}\n\n_pf_r53z_alist(st) := [a] if {\n\ta := object.get(st, \"Action\", null)\n\tis_string(a)\n}\n\n_pf_r53z_alist(st) := a if {\n\ta := object.get(st, \"Action\", null)\n\tis_array(a)\n}\n\n_pf_r53z_dnssec_principal := \"dnssec-route53.amazonaws.com\"\n\n# キーポリシーが DNSSEC のサービスプリンシパルに Allow を与えているか。\n_pf_r53z_key_grants(k) if {\n\tsome st in _pf_r53z_stmts(k)\n\tobject.get(st, \"Effect\", \"\") == \"Allow\"\n\t_pf_r53z_svc_is(st, _pf_r53z_dnssec_principal)\n}\n\n_pf_r53z_signing_actions(k) := {a |\n\tsome st in _pf_r53z_stmts(k)\n\tobject.get(st, \"Effect\", \"\") == \"Allow\"\n\t_pf_r53z_svc_is(st, _pf_r53z_dnssec_principal)\n\tsome a in _pf_r53z_alist(st)\n}\n\n_pf_r53z_allows(acts, a) if {\n\ta in acts\n}\n\n_pf_r53z_allows(acts, _) if {\n\t\"kms:*\" in acts\n}\n\n_pf_r53z_missing_actions(k) := {a |\n\tsome a in {\"kms:DescribeKey\", \"kms:GetPublicKey\", \"kms:Sign\"}\n\tnot _pf_r53z_allows(_pf_r53z_signing_actions(k), a)\n}\n\n# 同じゾーンに付いている KSK の論理 ID。\n_pf_r53z_ksks_of(z) := [k |\n\tsome k in resources_of_type(\"AWS::Route53::KeySigningKey\")\n\t_pf_r53z_zone_of(k) == z\n]\n\n_pf_r53z_dnssec_keyspec(ks, ku) if {\n\tks == \"ECC_NIST_P256\"\n\tku == \"SIGN_VERIFY\"\n}\n"
   },
   {
     "name": "_lib/s3",

@@ -3,10 +3,10 @@ service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
 severity: ERROR
-title: "A simple record in a private hosted zone cannot carry a health check"
+title: "A record with no routing policy cannot reference a health check"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached. No changes made., DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached. No changes made.] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached. No changes made., DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached. No changes made.] (ROLLBACK_COMPLETE) Extended 2026-09-10 to every zone: the same put in a public hosted zone answers the same \"DNS name must have alternate ResourceRecordSet responses configured via a routing policy (e.g., Weight, Region, etc.) if a health check is attached\" (stack cdkpf-extb-hcsimple, ROLLBACK_COMPLETE), so the constraint is not private-zone specific."
 addedOn: 2026-09-10

@@ -1,0 +1,58 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Lg": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/aws/route53/${AWS::StackName}"
+        },
+        "RetentionInDays": 1
+      }
+    },
+    "LgPolicy": {
+      "Type": "AWS::Logs::ResourcePolicy",
+      "Properties": {
+        "PolicyName": {
+          "Fn::Sub": "${AWS::StackName}-r53"
+        },
+        "PolicyDocument": {
+          "Fn::Sub": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"r53\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":[\"route53.amazonaws.com\"]},\"Action\":[\"logs:CreateLogStream\",\"logs:PutLogEvents\"],\"Resource\":\"arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/route53/*\"}]}"
+        }
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com.",
+        "QueryLoggingConfig": {
+          "CloudWatchLogsLogGroupArn": {
+            "Fn::GetAtt": [
+              "Lg",
+              "Arn"
+            ]
+          }
+        },
+        "VPCs": [
+          {
+            "VPCId": {
+              "Ref": "Vpc"
+            },
+            "VPCRegion": {
+              "Ref": "AWS::Region"
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "Lg",
+        "LgPolicy"
+      ]
+    }
+  }
+}

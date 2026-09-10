@@ -1,0 +1,12 @@
+id: pf-route53-keysigningkey-kmsarn-unique-per-zone
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::KeySigningKey]
+severity: ERROR
+title: "Two key signing keys in one hosted zone cannot share a KMS key"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but CloudFormation only reports the knock-on state (\"This request cannot be completed, because the Key Signing Key: ksk1, has status INTERNAL_FAILURE\"); creating the second key signing key straight against CreateKeySigningKey with the same KMS ARN answers KeySigningKeyAlreadyExists: \"Key Signing Key with the same Name and/or KMS ARN already exist. Please make sure the Key Signing Key name and KMS ARN parameters of this request are not being used by another Key Signing Key in this Hosted Zone\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

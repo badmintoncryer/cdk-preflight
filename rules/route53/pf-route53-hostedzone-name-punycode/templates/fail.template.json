@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "\u65e5\u672c\u8a9e.cdkpf-example.com."
+      }
+    }
+  }
+}

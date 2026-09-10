@@ -1,0 +1,12 @@
+id: pf-route53-healthcheck-enablesni-https-only
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::HealthCheck]
+severity: ERROR
+title: "EnableSNI is only valid on an HTTPS health check"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Invalid parameter : Health checks with HTTP type must not enable SNI support.\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

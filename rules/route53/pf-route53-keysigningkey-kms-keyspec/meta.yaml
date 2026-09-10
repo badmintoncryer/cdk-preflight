@@ -1,0 +1,12 @@
+id: pf-route53-keysigningkey-kms-keyspec
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::KeySigningKey, AWS::KMS::Key]
+severity: ERROR
+title: "The DNSSEC signing key must be an ECC_NIST_P256 key used for SIGN_VERIFY"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> The customer managed key with ARN 'arn:aws:kms:us-east-1:214794239830:key/0c6364ec-b5c0-48da-9d8c-d89462ed1325' could not be used by Route 53 DNSSEC. Check to make sure that the customer managed key has not been deleted. Otherwise, review its configurations and key policy, to make sure it is in compliance with Route 53 DNSSEC requirements. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10
