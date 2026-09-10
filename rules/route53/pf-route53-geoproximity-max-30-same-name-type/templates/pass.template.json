@@ -1,0 +1,470 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Group": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "RecordSets": [
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s0",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-40",
+                "Longitude": "-15"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s1",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-39",
+                "Longitude": "-14"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s2",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-38",
+                "Longitude": "-13"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s3",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-37",
+                "Longitude": "-12"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s4",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-36",
+                "Longitude": "-11"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s5",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-35",
+                "Longitude": "-10"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s6",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-34",
+                "Longitude": "-9"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s7",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-33",
+                "Longitude": "-8"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s8",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-32",
+                "Longitude": "-7"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s9",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-31",
+                "Longitude": "-6"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s10",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-30",
+                "Longitude": "-5"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s11",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-29",
+                "Longitude": "-4"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s12",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-28",
+                "Longitude": "-3"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s13",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-27",
+                "Longitude": "-2"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s14",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-26",
+                "Longitude": "-1"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s15",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-25",
+                "Longitude": "0"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s16",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-24",
+                "Longitude": "1"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s17",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-23",
+                "Longitude": "2"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s18",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-22",
+                "Longitude": "3"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s19",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-21",
+                "Longitude": "4"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s20",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-20",
+                "Longitude": "5"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s21",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-19",
+                "Longitude": "6"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s22",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-18",
+                "Longitude": "7"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s23",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-17",
+                "Longitude": "8"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s24",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-16",
+                "Longitude": "9"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s25",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-15",
+                "Longitude": "10"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s26",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-14",
+                "Longitude": "11"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s27",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-13",
+                "Longitude": "12"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s28",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-12",
+                "Longitude": "13"
+              }
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s29",
+            "GeoProximityLocation": {
+              "Coordinates": {
+                "Latitude": "-11",
+                "Longitude": "14"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

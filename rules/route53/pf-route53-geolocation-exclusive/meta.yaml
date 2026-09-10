@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE before provisioning; describe-events VALIDATION_ERROR ValidationName=PROPERTY_VALIDATION, \"#/GeoLocation: #: 2 subschemas matched instead of one\". The registry schema oneOf is enforced server-side but not evaluated by the bundled engine (silent, 1.7.0-beta) -> upstream: pending-engine."
+  evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE before provisioning; describe-events VALIDATION_ERROR ValidationName=PROPERTY_VALIDATION, \"#/GeoLocation: #: 2 subschemas matched instead of one\". The registry schema oneOf is enforced server-side but not evaluated by the bundled engine (silent, 1.7.0-beta) -> upstream: pending-engine. bench 2026-09-10 us-east-1: ContinentCode NA + SubdivisionCode WA passes the registry schema but Route 53 rejects it -> \"Cannot find location: ' continent = NA subdivision = WA'. No changes made.\" (ROLLBACK_COMPLETE)."
 addedOn: 2026-09-02

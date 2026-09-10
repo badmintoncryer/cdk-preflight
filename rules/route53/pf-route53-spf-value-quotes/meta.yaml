@@ -1,0 +1,12 @@
+id: pf-route53-spf-value-quotes
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "An SPF record value must be enclosed in quotation marks"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='SPF'] but it was not found, Invalid Resource Record: 'FATAL problem: InvalidCharacterString (Value should be enclosed in quotation marks) encountered with 'v=spf1 ip4:192.0.2.0/24 -all''] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "A",
+        "TTL": "60",
+        "ResourceRecords": [
+          "192.0.2.1"
+        ],
+        "SetIdentifier": "s1",
+        "GeoProximityLocation": {
+          "LocalZoneGroup": "not-a-zone-group"
+        },
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Group": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "RecordSets": [
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s1",
+            "CidrRoutingConfig": {
+              "CollectionId": "12345678-1234-1234-1234-1234567890ab",
+              "LocationName": "loc1"
+            }
+          },
+          {
+            "Name": "www.cdkpf-example.com",
+            "Type": "A",
+            "TTL": "60",
+            "ResourceRecords": [
+              "192.0.2.1"
+            ],
+            "SetIdentifier": "s2",
+            "CidrRoutingConfig": {
+              "CollectionId": "87654321-4321-4321-4321-ba0987654321",
+              "LocationName": "loc2"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

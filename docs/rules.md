@@ -1431,16 +1431,91 @@
 | `pf-rds-subnet-group-name-reserved` | AWS::RDS::DBSubnetGroup | DBSubnetGroupName: default is reserved | ERROR | none |
 | `pf-rds-timezone-engine` | AWS::RDS::DBInstance | Timezone is only accepted by Db2 and SQL Server engines | ERROR | none |
 | `pf-rds-window-overlap` | AWS::RDS::DBInstance | The backup window and the maintenance window must not overlap | ERROR | none |
+| `pf-route53-alias-apex-to-cname` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A zone-apex alias cannot target a CNAME record set | ERROR | none |
+| `pf-route53-alias-beanstalk-zone-id` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An Elastic Beanstalk alias must use the hosted zone id of the environment's region | ERROR | none |
 | `pf-route53-alias-cloudfront-zone-id` | AWS::Route53::RecordSet | A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2 | ERROR | none |
+| `pf-route53-alias-globalaccelerator-zone-id` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An alias to a Global Accelerator must use hosted zone Z2BJ6XQ5FK7U4H | ERROR | none |
+| `pf-route53-alias-s3-website-zone-id` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An S3 website alias must use the hosted zone id of that endpoint's region | ERROR | none |
+| `pf-route53-alias-samezone-record-type` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An alias to a record in the same zone cannot be of type NS or SOA | ERROR | none |
+| `pf-route53-alias-samezone-target-missing` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An alias into a hosted zone created here must target a record the template also creates | ERROR | none |
+| `pf-route53-alias-target-outside-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An alias into a hosted zone of this template must target a name inside that zone | ERROR | none |
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | ERROR | none |
+| `pf-route53-caa-tag-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A CAA tag must be issue, issuewild or iodef | ERROR | none |
+| `pf-route53-cidr-collection-id-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.CollectionId must be a UUID | ERROR | pending-engine |
+| `pf-route53-cidr-location-name-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*] | ERROR | none |
+| `pf-route53-cidr-private-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | IP-based routing is not available in a private hosted zone | ERROR | none |
+| `pf-route53-cidr-same-collection-in-group` | AWS::Route53::RecordSetGroup | IP-based record sets sharing a name and type must use one CIDR collection | ERROR | none |
+| `pf-route53-cname-name-collision` | AWS::Route53::RecordSetGroup | A CNAME cannot share its name with a record set of another type | ERROR | none |
+| `pf-route53-coordinates-latitude-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Coordinates.Latitude must be -90 to 90 | ERROR | none |
+| `pf-route53-coordinates-longitude-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Coordinates.Longitude must be -180 to 180 | ERROR | none |
+| `pf-route53-ds-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A DS record value needs exactly 4 space-separated fields | ERROR | none |
+| `pf-route53-failover-alias-evaluate-target-health` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A PRIMARY failover alias must set EvaluateTargetHealth to true | ERROR | none |
+| `pf-route53-failover-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Failover must be PRIMARY or SECONDARY | ERROR | pending-engine |
+| `pf-route53-failover-requires-health-check` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A non-alias PRIMARY failover record needs a health check | ERROR | none |
+| `pf-route53-geolocation-continent-code-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.ContinentCode must be one of the seven two-letter continent codes | ERROR | none |
+| `pf-route53-geolocation-country-code-iso` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.CountryCode must be an ISO 3166-1 alpha-2 country code | ERROR | none |
+| `pf-route53-geolocation-duplicate-location` | AWS::Route53::RecordSetGroup | Two geolocation record sets cannot claim the same location | ERROR | none |
 | `pf-route53-geolocation-exclusive` | AWS::Route53::RecordSet | GeoLocation cannot specify both ContinentCode and CountryCode | ERROR | pending-engine |
+| `pf-route53-geolocation-subdivision-code-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode must be a US state or territory code | ERROR | none |
+| `pf-route53-geolocation-subdivision-requires-us` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode is only valid with CountryCode US | ERROR | none |
+| `pf-route53-geolocation-unsupported-country` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Four ISO country codes have no Route 53 geolocation coverage | ERROR | none |
+| `pf-route53-geoproximity-awsregion-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.AWSRegion must be an existing AWS Region | ERROR | none |
+| `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | pending-engine |
+| `pf-route53-geoproximity-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates | ERROR | pending-engine |
+| `pf-route53-geoproximity-localzonegroup-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.LocalZoneGroup must be a Local Zone group name | ERROR | none |
+| `pf-route53-geoproximity-max-30-same-name-type` | AWS::Route53::RecordSetGroup | A geoproximity group may hold at most 30 record sets per name and type | ERROR | none |
+| `pf-route53-https-field-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An HTTPS record value needs a priority and a target name | ERROR | none |
+| `pf-route53-https-svcpriority-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The HTTPS SvcPriority must be 0-32767 | ERROR | none |
+| `pf-route53-latency-one-record-per-region` | AWS::Route53::RecordSetGroup | A latency group may hold only one record set per Region | ERROR | none |
+| `pf-route53-latency-region-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The latency Region must be an existing AWS Region | ERROR | none |
+| `pf-route53-mixed-routing-policy-same-name-type` | AWS::Route53::RecordSetGroup | Record sets sharing a name and type must use the same routing policy | ERROR | none |
 | `pf-route53-multivalue-alias` | AWS::Route53::RecordSet | MultiValueAnswer cannot be combined with AliasTarget | ERROR | none |
+| `pf-route53-naptr-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A NAPTR record value needs exactly 6 space-separated fields | ERROR | none |
+| `pf-route53-naptr-flags-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR flags field must be quoted | ERROR | none |
+| `pf-route53-naptr-order-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR order must be 0-65535 | ERROR | none |
+| `pf-route53-naptr-preference-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR preference must be 0-65535 | ERROR | none |
+| `pf-route53-naptr-regexp-charset` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | NAPTR values may only contain printable ASCII | ERROR | none |
+| `pf-route53-naptr-regexp-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR regexp field must be quoted | ERROR | none |
+| `pf-route53-naptr-regexp-replacement-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A NAPTR value carries either a regexp or a replacement, never both | ERROR | none |
+| `pf-route53-naptr-service-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR service field must be quoted | ERROR | none |
+| `pf-route53-private-zone-health-check-policy` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A simple record in a private hosted zone cannot carry a health check | ERROR | none |
+| `pf-route53-record-comment-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Comment is limited to 256 characters | ERROR | pending-engine |
+| `pf-route53-record-name-charset` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name cannot contain a space | ERROR | none |
+| `pf-route53-record-name-label-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Each label of a record name is limited to 63 bytes | ERROR | none |
+| `pf-route53-record-name-punycode` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name must be ASCII (IDNs go in as Punycode) | ERROR | none |
+| `pf-route53-record-name-total-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name is limited to 255 bytes | ERROR | none |
+| `pf-route53-record-name-wildcard-ns` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An NS record set cannot use a wildcard name | ERROR | none |
+| `pf-route53-record-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Type must be one of the 17 record types Route 53 supports | ERROR | none |
 | `pf-route53-record-type-routing-policy` | AWS::Route53::RecordSet | NS records take no routing policy; CNAME cannot be multivalue | ERROR | none |
 | `pf-route53-record-value-source` | AWS::Route53::RecordSet | A record set needs AliasTarget or the full TTL+ResourceRecords pair | ERROR | none |
+| `pf-route53-recordsetgroup-max-1000-elements` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 1000 ResourceRecords values in total | ERROR | none |
+| `pf-route53-recordsetgroup-max-32000-chars` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 32000 characters of record data | ERROR | none |
+| `pf-route53-resourcerecord-value-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A single ResourceRecords value is limited to 4000 characters | ERROR | pending-engine |
+| `pf-route53-resourcerecords-max-400` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record set may hold at most 400 ResourceRecords values | ERROR | none |
 | `pf-route53-routing-policy-exclusive` | AWS::Route53::RecordSet | A record set can use only one routing policy | ERROR | none |
+| `pf-route53-set-identifier-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SetIdentifier must be 1-128 characters | ERROR | pending-engine |
 | `pf-route53-set-identifier-pairing` | AWS::Route53::RecordSet | SetIdentifier and a routing policy must appear together | ERROR | none |
+| `pf-route53-set-identifier-unique-in-group` | AWS::Route53::RecordSetGroup | SetIdentifier must be unique among record sets sharing a name and type | ERROR | none |
+| `pf-route53-simple-and-policy-same-name-type` | AWS::Route53::RecordSetGroup | A simple record set cannot coexist with a routing-policy record set of the same name and type | ERROR | none |
+| `pf-route53-soa-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SOA record value needs exactly 7 space-separated fields | ERROR | none |
+| `pf-route53-spf-value-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SPF record value must be enclosed in quotation marks | ERROR | none |
+| `pf-route53-srv-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SRV record value needs exactly 4 space-separated fields | ERROR | none |
+| `pf-route53-sshfp-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SSHFP record value needs exactly 3 space-separated fields | ERROR | none |
+| `pf-route53-sshfp-fingerprint-hex` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The SSHFP fingerprint must be hexadecimal | ERROR | none |
+| `pf-route53-sshfp-hash-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The SSHFP fingerprint type must be 1 or 2 | ERROR | none |
+| `pf-route53-svcb-svcpriority-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The SVCB SvcPriority must be 0-32767 | ERROR | none |
+| `pf-route53-svcparams-key-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SvcParams keys are limited to the eight defined names | ERROR | none |
+| `pf-route53-svcparams-key-value-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SvcParams that take a value must be written as key=value | ERROR | none |
+| `pf-route53-svcparams-no-default-alpn-requires-alpn` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | no-default-alpn may only be used together with alpn | ERROR | none |
+| `pf-route53-tlsa-certificate-usage-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The TLSA certificate usage must be 0-3 | ERROR | none |
+| `pf-route53-tlsa-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A TLSA record value needs exactly 4 space-separated fields | ERROR | none |
+| `pf-route53-tlsa-matching-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The TLSA matching type must be 0, 1 or 2 | ERROR | none |
+| `pf-route53-tlsa-selector-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The TLSA selector must be 0 or 1 | ERROR | none |
 | `pf-route53-ttl-range` | AWS::Route53::RecordSet | TTL must fit in 32 bits (0..2147483647 seconds) | ERROR | pending-engine |
+| `pf-route53-txt-octal-escape` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | TXT values may only contain printable ASCII | ERROR | none |
 | `pf-route53-weight-range` | AWS::Route53::RecordSet | Weight must be between 0 and 255 | ERROR | pending-engine |
+| `pf-route53-weighted-group-same-ttl` | AWS::Route53::RecordSetGroup | Weighted record sets sharing a name and type must have the same TTL | ERROR | none |
+| `pf-route53-weighted-max-100-same-name-type` | AWS::Route53::RecordSetGroup | A weighted group may hold at most 100 record sets per name and type | ERROR | none |
 | `pf-route53-zonename-trailing-dot` | AWS::Route53::RecordSet | HostedZoneName must end with a trailing dot | ERROR | none |
 | `pf-s3-accelerate-dotted-name` | AWS::S3::Bucket | Transfer Acceleration rejects bucket names with periods | ERROR | none |
 | `pf-s3-acl-public-blocked` | AWS::S3::Bucket | A public canned ACL cannot be applied while Block Public Access is on | ERROR | none |

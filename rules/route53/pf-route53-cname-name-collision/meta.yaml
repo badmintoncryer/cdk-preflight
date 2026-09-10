@@ -1,0 +1,12 @@
+id: pf-route53-cname-name-collision
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "A CNAME cannot share its name with a record set of another type"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet of type A with DNS name x.cdkpf-example.com. is not permitted because a conflicting RRSet of type CNAME with the same DNS name already exists in zone cdkpf-example.com.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

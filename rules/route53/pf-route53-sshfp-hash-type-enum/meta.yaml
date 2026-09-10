@@ -1,0 +1,12 @@
+id: pf-route53-sshfp-hash-type-enum
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "The SSHFP fingerprint type must be 1 or 2"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='SSHFP'] but it was not found, Invalid Resource Record: 'FATAL problem: SSHFPInvalidValue (Invalid value for field \"Fingerprint Type\") encountered with 'Fingerprint Type value not supported: 3''] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

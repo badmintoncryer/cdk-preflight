@@ -4,7 +4,10 @@ import rego.v1
 
 _pf_r53_sidp_url := "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html"
 
-_pf_r53_sidp_props := ["Weight", "Region", "Failover", "GeoLocation", "CidrRoutingConfig"]
+# GeoProximityLocation became a CloudFormation property after this rule was
+# written; without it here a geoproximity record set reads as "SetIdentifier
+# with no routing policy" and the rule false-positives (measured 2026-09-10).
+_pf_r53_sidp_props := ["Weight", "Region", "Failover", "GeoLocation", "GeoProximityLocation", "CidrRoutingConfig"]
 
 _pf_r53_sidp_has_policy(name) if {
 	some p in _pf_r53_sidp_props
@@ -27,7 +30,7 @@ violation contains make_diag_full("pf-route53-set-identifier-pairing", "ERROR", 
 
 violation contains make_diag_full("pf-route53-set-identifier-pairing", "ERROR", name,
 	"Properties.SetIdentifier",
-	"SetIdentifier is specified but no routing policy is; the service expects exactly one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, or CidrRoutingConfig and finds none",
+	"SetIdentifier is specified but no routing policy is; the service expects exactly one of Weight, Region, Failover, GeoLocation, GeoProximityLocation, MultiValueAnswer, or CidrRoutingConfig and finds none",
 	"Remove SetIdentifier from this simple record set, or add the routing policy it was meant for",
 	_pf_r53_sidp_url) if {
 	some name in resources_of_type("AWS::Route53::RecordSet")

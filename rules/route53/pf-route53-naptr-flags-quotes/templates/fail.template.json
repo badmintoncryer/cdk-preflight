@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "NAPTR",
+        "TTL": "60",
+        "ResourceRecords": [
+          "100 50 U \"E2U+sip\" \"!^.*$!sip:info@example.com!\" ."
+        ],
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}

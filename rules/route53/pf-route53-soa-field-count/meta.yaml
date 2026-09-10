@@ -1,0 +1,12 @@
+id: pf-route53-soa-field-count
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "An SOA record value needs exactly 7 space-separated fields"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [Invalid Resource Record: 'FATAL problem: SOARRDATANotSevenFields (SOA record doesn't have 7 fields) encountered with 'ns-2048.awsdns-64.net. hostmaster.example.com. 1 7200 900 1209600'', A HostedZone must contain exactly one SOA record.] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

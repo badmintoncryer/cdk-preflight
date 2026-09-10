@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "TLSA",
+        "TTL": "60",
+        "ResourceRecords": [
+          "3 2 1 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        ],
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}

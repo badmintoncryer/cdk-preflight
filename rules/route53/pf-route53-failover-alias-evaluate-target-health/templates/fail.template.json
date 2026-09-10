@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "cdkpf-example.com."
+      }
+    },
+    "Rec": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "www.cdkpf-example.com",
+        "Type": "A",
+        "SetIdentifier": "s1",
+        "Failover": "PRIMARY",
+        "AliasTarget": {
+          "DNSName": "my-lb-1234567890.us-east-1.elb.amazonaws.com.",
+          "HostedZoneId": "Z35SXDOTRQ7X7K",
+          "EvaluateTargetHealth": false
+        },
+        "HostedZoneId": {
+          "Ref": "Zone"
+        }
+      }
+    }
+  }
+}

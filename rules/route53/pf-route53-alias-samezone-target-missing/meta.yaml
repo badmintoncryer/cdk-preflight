@@ -1,0 +1,12 @@
+id: pf-route53-alias-samezone-target-missing
+service: route53
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
+severity: ERROR
+title: "An alias into a hosted zone created here must target a record the template also creates"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='A'] but it was not found, Tried to create an alias that targets b.cdkpf-example.com., type A in zone Z080035512CJOT9DQA8SR, but that target was not found] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

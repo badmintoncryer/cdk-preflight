@@ -15927,6 +15927,30 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"HH:MM\" -> minutes of day; undefined for anything else. Digits go\n# through a lookup table because to_number rejects leading zeros\n# (to_number(\"03\") is undefined in the engine's Rego build).\n_pf_rdswo_digit := {\"0\": 0, \"1\": 1, \"2\": 2, \"3\": 3, \"4\": 4, \"5\": 5, \"6\": 6, \"7\": 7, \"8\": 8, \"9\": 9}\n\n_pf_rdswo_min(t) := m if {\n\tis_string(t)\n\tregex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]$`, t)\n\th := (_pf_rdswo_digit[substring(t, 0, 1)] * 10) + _pf_rdswo_digit[substring(t, 1, 1)]\n\tmi := (_pf_rdswo_digit[substring(t, 3, 1)] * 10) + _pf_rdswo_digit[substring(t, 4, 1)]\n\tm := (h * 60) + mi\n}\n\n# The backup window recurs daily, so a same-day maintenance window\n# overlaps whenever the time-of-day intervals intersect.\nviolation contains make_diag_full(\"pf-rds-window-overlap\", \"ERROR\", name,\n\t\"Properties.PreferredBackupWindow\",\n\tsprintf(\"Backup window %s overlaps maintenance window %s; RDS rejects the pair (\\\"The backup window and maintenance window must not overlap.\\\")\", [bw, mw]),\n\t\"Separate the two windows in time\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tbw := resolve(name, \"Properties.PreferredBackupWindow\")\n\tis_string(bw)\n\tbp := split(bw, \"-\")\n\tcount(bp) == 2\n\tbs := _pf_rdswo_min(bp[0])\n\tbe := _pf_rdswo_min(bp[1])\n\tbs < be\n\tmw := resolve(name, \"Properties.PreferredMaintenanceWindow\")\n\tis_string(mw)\n\tmp := split(lower(mw), \"-\")\n\tcount(mp) == 2\n\tm1 := split(mp[0], \":\")\n\tm2 := split(mp[1], \":\")\n\tcount(m1) == 3\n\tcount(m2) == 3\n\tm1[0] == m2[0]\n\tms := _pf_rdswo_min(sprintf(\"%s:%s\", [m1[1], m1[2]]))\n\tme := _pf_rdswo_min(sprintf(\"%s:%s\", [m2[1], m2[2]]))\n\tms < me\n\tbs < me\n\tms < be\n}\n"
   },
   {
+    "id": "pf-route53-alias-apex-to-cname",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A zone-apex alias cannot target a CNAME record set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-alias-apex-to-cname\", \"ERROR\", name,\n\t\"Properties.AliasTarget.DNSName\",\n\tsprintf(\"The apex alias targets '%s', which this template creates as a CNAME; an alias at the apex cannot resolve through a CNAME\", [dns]),\n\t\"Point the apex alias at an A/AAAA record (or at the AWS resource directly) instead of at a CNAME\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tz := _pf_r53lib_alias_ownzone(rs)\n\tzn := _pf_r53lib_zone_name(z)\n\t_pf_r53lib_name(rs) == zn\n\tdns := _pf_r53lib_alias_dns(rs)\n\tsprintf(\"%s|CNAME\", [dns]) in _pf_r53lib_keys\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-apex-to-cname\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.DNSName\", [_pf_it.index]),\n\tsprintf(\"The apex alias targets '%s', which this template creates as a CNAME; an alias at the apex cannot resolve through a CNAME\", [dns]),\n\t\"Point the apex alias at an A/AAAA record (or at the AWS resource directly) instead of at a CNAME\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tz := _pf_r53lib_alias_ownzone(rs)\n\tzn := _pf_r53lib_zone_name(z)\n\t_pf_r53lib_name(rs) == zn\n\tdns := _pf_r53lib_alias_dns(rs)\n\tsprintf(\"%s|CNAME\", [dns]) in _pf_r53lib_keys\n}\n"
+  },
+  {
+    "id": "pf-route53-alias-beanstalk-zone-id",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An Elastic Beanstalk alias must use the hosted zone id of the environment's region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リージョン -> Elastic Beanstalk エンドポイントの hosted zone ID\n# （aws-cdk-lib の region-info から生成、2026-09-10 時点）\n_pf_r53_ebz_table := {\n\t\"af-south-1\": \"Z1EI3BVKMKK4AM\",\n\t\"ap-east-1\": \"ZPWYUBWRU171A\",\n\t\"ap-northeast-1\": \"Z1R25G3KIG2GBW\",\n\t\"ap-northeast-2\": \"Z3JE5OI70TWKCP\",\n\t\"ap-northeast-3\": \"ZNE5GEY1TIAGY\",\n\t\"ap-south-1\": \"Z18NTBI3Y7N9TZ\",\n\t\"ap-south-2\": \"Z10223522IBWPBF2C2FJS\",\n\t\"ap-southeast-1\": \"Z16FZ9L249IFLT\",\n\t\"ap-southeast-2\": \"Z2PCDNR3VC2G1N\",\n\t\"ap-southeast-3\": \"Z05913172VM7EAZB40TA8\",\n\t\"ap-southeast-4\": \"Z0666869LC74UHAO5YE4\",\n\t\"ap-southeast-5\": \"Z01812971H0QCYWSL7WOH\",\n\t\"ap-southeast-6\": \"Z01144401H1NECCLJDD4D\",\n\t\"ap-southeast-7\": \"Z1R25G3KIG2GBW\",\n\t\"ca-central-1\": \"ZJFCZL7SSZB5I\",\n\t\"ca-west-1\": \"Z1021028356Y0CYS11DQI\",\n\t\"eu-central-1\": \"Z1FRNW7UH4DEZJ\",\n\t\"eu-central-2\": \"Z00227012FSHBMZNNSJJI\",\n\t\"eu-north-1\": \"Z23GO28BZ5AETM\",\n\t\"eu-south-1\": \"Z10VDYYOA2JFKM\",\n\t\"eu-south-2\": \"Z23GO28BZ5AETM\",\n\t\"eu-west-1\": \"Z2NYPWQ7DFZAZH\",\n\t\"eu-west-2\": \"Z1GKAAAUGATPF1\",\n\t\"eu-west-3\": \"Z5WN6GAYWG5OB\",\n\t\"il-central-1\": \"Z02941091PERNCB1MI5H7\",\n\t\"me-south-1\": \"Z2BBTEKR2I36N2\",\n\t\"sa-east-1\": \"Z10X7K2B4QSOFV\",\n\t\"us-east-1\": \"Z117KPS5GTRQ2G\",\n\t\"us-east-2\": \"Z14LCN19Q5QHIC\",\n\t\"us-gov-east-1\": \"Z35TSARG0EJ4VU\",\n\t\"us-gov-west-1\": \"Z4KAURWC4UUUG\",\n\t\"us-west-1\": \"Z1LQECGX5PH1X\",\n\t\"us-west-2\": \"Z38NKT9BP95V3O\",\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-beanstalk-zone-id\", \"ERROR\", name,\n\t\"Properties.AliasTarget.HostedZoneId\",\n\tsprintf(\"The alias targets an Elastic Beanstalk environment in %s, whose hosted zone id is %s, but AliasTarget.HostedZoneId is '%s'\", [reg, want, zid]),\n\t\"Use the hosted zone id listed for that region's Elastic Beanstalk endpoint\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tdns := _pf_r53lib_alias_dns(rs)\n\tendswith(dns, \".elasticbeanstalk.com\")\n\tparts := split(trim_suffix(dns, \".elasticbeanstalk.com\"), \".\")\n\treg := parts[count(parts) - 1]\n\twant := _pf_r53_ebz_table[reg]\n\tzid := _pf_r53lib_alias_zoneid(rs)\n\tzid != want\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-beanstalk-zone-id\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.HostedZoneId\", [_pf_it.index]),\n\tsprintf(\"The alias targets an Elastic Beanstalk environment in %s, whose hosted zone id is %s, but AliasTarget.HostedZoneId is '%s'\", [reg, want, zid]),\n\t\"Use the hosted zone id listed for that region's Elastic Beanstalk endpoint\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tdns := _pf_r53lib_alias_dns(rs)\n\tendswith(dns, \".elasticbeanstalk.com\")\n\tparts := split(trim_suffix(dns, \".elasticbeanstalk.com\"), \".\")\n\treg := parts[count(parts) - 1]\n\twant := _pf_r53_ebz_table[reg]\n\tzid := _pf_r53lib_alias_zoneid(rs)\n\tzid != want\n}\n"
+  },
+  {
     "id": "pf-route53-alias-cloudfront-zone-id",
     "service": "route53",
     "severity": "ERROR",
@@ -15936,6 +15960,66 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Route53::RecordSet"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every CloudFront distribution is aliased through the single global hosted\n# zone Z2FDTNDATAQYW2. Any other AliasTarget.HostedZoneId (an ALB's regional\n# zone id is the classic paste error) fails at deploy time with \"the alias\n# target name does not lie within the target zone\".\nviolation contains make_diag_full(\"pf-route53-alias-cloudfront-zone-id\", \"ERROR\", name,\n\t\"Properties.AliasTarget.HostedZoneId\",\n\tsprintf(\"The alias targets a CloudFront domain, so AliasTarget.HostedZoneId must be Z2FDTNDATAQYW2, not '%s'\", [zid]),\n\t\"Set AliasTarget.HostedZoneId to Z2FDTNDATAQYW2 (in the CDK, route53_targets.CloudFrontTarget does this)\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/cf_region.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tdns := resolve(name, \"Properties.AliasTarget.DNSName\")\n\tis_string(dns)\n\tendswith(trim_suffix(lower(dns), \".\"), \".cloudfront.net\")\n\tzid := resolve(name, \"Properties.AliasTarget.HostedZoneId\")\n\tis_string(zid)\n\tzid != \"Z2FDTNDATAQYW2\"\n}\n"
+  },
+  {
+    "id": "pf-route53-alias-globalaccelerator-zone-id",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An alias to a Global Accelerator must use hosted zone Z2BJ6XQ5FK7U4H",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-alias-globalaccelerator-zone-id\", \"ERROR\", name,\n\t\"Properties.AliasTarget.HostedZoneId\",\n\tsprintf(\"The alias targets a Global Accelerator, so AliasTarget.HostedZoneId must be Z2BJ6XQ5FK7U4H, not '%s'\", [zid]),\n\t\"Set AliasTarget.HostedZoneId to Z2BJ6XQ5FK7U4H (in the CDK, route53_targets.GlobalAcceleratorTarget does this)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tdns := _pf_r53lib_alias_dns(rs)\n\tendswith(dns, \".awsglobalaccelerator.com\")\n\tzid := _pf_r53lib_alias_zoneid(rs)\n\tzid != \"Z2BJ6XQ5FK7U4H\"\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-globalaccelerator-zone-id\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.HostedZoneId\", [_pf_it.index]),\n\tsprintf(\"The alias targets a Global Accelerator, so AliasTarget.HostedZoneId must be Z2BJ6XQ5FK7U4H, not '%s'\", [zid]),\n\t\"Set AliasTarget.HostedZoneId to Z2BJ6XQ5FK7U4H (in the CDK, route53_targets.GlobalAcceleratorTarget does this)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tdns := _pf_r53lib_alias_dns(rs)\n\tendswith(dns, \".awsglobalaccelerator.com\")\n\tzid := _pf_r53lib_alias_zoneid(rs)\n\tzid != \"Z2BJ6XQ5FK7U4H\"\n}\n"
+  },
+  {
+    "id": "pf-route53-alias-s3-website-zone-id",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An S3 website alias must use the hosted zone id of that endpoint's region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# S3 website エンドポイント -> そのリージョンの hosted zone ID\n# （aws-cdk-lib の region-info から生成、2026-09-10 時点）\n_pf_r53_s3wz_table := {\n\t\"s3-website-ap-northeast-1.amazonaws.com\": \"Z2M4EHUR26P7ZW\",\n\t\"s3-website-ap-southeast-1.amazonaws.com\": \"Z3O0J2DXBE1FTB\",\n\t\"s3-website-ap-southeast-2.amazonaws.com\": \"Z1WCIGYICN2BYD\",\n\t\"s3-website-eu-west-1.amazonaws.com\": \"Z1BKCTXD74EZPE\",\n\t\"s3-website-sa-east-1.amazonaws.com\": \"Z7KQH4QJS55SO\",\n\t\"s3-website-us-east-1.amazonaws.com\": \"Z3AQBSTGFYJSTF\",\n\t\"s3-website-us-gov-west-1.amazonaws.com\": \"Z31GFT0UA1I2HV\",\n\t\"s3-website-us-west-1.amazonaws.com\": \"Z2F56UZL2M1ACD\",\n\t\"s3-website-us-west-2.amazonaws.com\": \"Z3BJ6K6RIION7M\",\n\t\"s3-website.af-south-1.amazonaws.com\": \"Z11KHD8FBVPUYU\",\n\t\"s3-website.ap-east-1.amazonaws.com\": \"ZNB98KWMFR0R6\",\n\t\"s3-website.ap-east-2.amazonaws.com\": \"Z064739330DAH7WJVOO93\",\n\t\"s3-website.ap-northeast-2.amazonaws.com\": \"Z3W03O7B5YMIYP\",\n\t\"s3-website.ap-northeast-3.amazonaws.com\": \"Z2YQB5RD63NC85\",\n\t\"s3-website.ap-south-1.amazonaws.com\": \"Z11RGJOFQNVJUP\",\n\t\"s3-website.ap-south-2.amazonaws.com\": \"Z02976202B4EZMXIPMXF7\",\n\t\"s3-website.ap-southeast-3.amazonaws.com\": \"Z01846753K324LI26A3VV\",\n\t\"s3-website.ap-southeast-4.amazonaws.com\": \"Z0312387243XT5FE14WFO\",\n\t\"s3-website.ap-southeast-5.amazonaws.com\": \"Z08660063OXLMA7F1FJHU\",\n\t\"s3-website.ap-southeast-7.amazonaws.com\": \"Z0031014GXUMRZG6I14G\",\n\t\"s3-website.ca-central-1.amazonaws.com\": \"Z1QDHH18159H29\",\n\t\"s3-website.ca-west-1.amazonaws.com\": \"Z03565811Z33SLEZTHOUL\",\n\t\"s3-website.cn-north-1.amazonaws.com.cn\": \"Z5CN8UMXT92WN\",\n\t\"s3-website.cn-northwest-1.amazonaws.com.cn\": \"Z282HJ1KT0DH03\",\n\t\"s3-website.eu-central-1.amazonaws.com\": \"Z21DNDUVLTQW6Q\",\n\t\"s3-website.eu-central-2.amazonaws.com\": \"Z030506016YDQGETNASS\",\n\t\"s3-website.eu-north-1.amazonaws.com\": \"Z3BAZG2TWCNX0D\",\n\t\"s3-website.eu-south-1.amazonaws.com\": \"Z3IXVV8C73GIO3\",\n\t\"s3-website.eu-south-2.amazonaws.com\": \"Z0081959F7139GRJC19J\",\n\t\"s3-website.eu-west-2.amazonaws.com\": \"Z3GKZC51ZF0DB4\",\n\t\"s3-website.eu-west-3.amazonaws.com\": \"Z3R1K369G5AVDG\",\n\t\"s3-website.il-central-1.amazonaws.com\": \"Z09640613K4A3MN55U7GU\",\n\t\"s3-website.me-central-1.amazonaws.com\": \"Z06143092I8HRXZRUZROF\",\n\t\"s3-website.me-south-1.amazonaws.com\": \"Z1MPMWCPA7YB62\",\n\t\"s3-website.us-east-2.amazonaws.com\": \"Z2O1EMRO9K5GLX\",\n\t\"s3-website.us-gov-east-1.amazonaws.com\": \"Z2NIFVYYW2VKV1\",\n\t\"s3-website.us-isof-east-1.csp.hci.ic.gov\": \"Z03373031FTGQH4MNG6ST\",\n\t\"s3-website.us-isof-south-1.csp.hci.ic.gov\": \"Z03376072I8GXC2DXUFXI\",\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-s3-website-zone-id\", \"ERROR\", name,\n\t\"Properties.AliasTarget.HostedZoneId\",\n\tsprintf(\"The alias targets the S3 website endpoint '%s', whose hosted zone id is %s, but AliasTarget.HostedZoneId is '%s'\", [dns, want, zid]),\n\t\"Use the hosted zone id listed for that region's S3 website endpoint (in the CDK, route53_targets.BucketWebsiteTarget does this)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tdns := _pf_r53lib_alias_dns(rs)\n\twant := _pf_r53_s3wz_table[dns]\n\tzid := _pf_r53lib_alias_zoneid(rs)\n\tzid != want\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-s3-website-zone-id\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.HostedZoneId\", [_pf_it.index]),\n\tsprintf(\"The alias targets the S3 website endpoint '%s', whose hosted zone id is %s, but AliasTarget.HostedZoneId is '%s'\", [dns, want, zid]),\n\t\"Use the hosted zone id listed for that region's S3 website endpoint (in the CDK, route53_targets.BucketWebsiteTarget does this)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tdns := _pf_r53lib_alias_dns(rs)\n\twant := _pf_r53_s3wz_table[dns]\n\tzid := _pf_r53lib_alias_zoneid(rs)\n\tzid != want\n}\n"
+  },
+  {
+    "id": "pf-route53-alias-samezone-record-type",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An alias to a record in the same zone cannot be of type NS or SOA",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-alias-samezone-record-type\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"A %s record set cannot carry an AliasTarget: \\\"aliases of that type are not supported\\\"\", [t]),\n\t\"Use a supported type (A, AAAA, CNAME, MX, TXT, ...) for the alias, or replace the alias with a plain record set\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_alias_ownzone(rs)\n\tt := _pf_r53lib_type(rs)\n\tt in {\"NS\", \"SOA\"}\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-samezone-record-type\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Type\", [_pf_it.index]),\n\tsprintf(\"A %s record set cannot carry an AliasTarget: \\\"aliases of that type are not supported\\\"\", [t]),\n\t\"Use a supported type (A, AAAA, CNAME, MX, TXT, ...) for the alias, or replace the alias with a plain record set\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_alias_ownzone(rs)\n\tt := _pf_r53lib_type(rs)\n\tt in {\"NS\", \"SOA\"}\n}\n"
+  },
+  {
+    "id": "pf-route53-alias-samezone-target-missing",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An alias into a hosted zone created here must target a record the template also creates",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-alias-samezone-target-missing\", \"ERROR\", name,\n\t\"Properties.AliasTarget.DNSName\",\n\tsprintf(\"The alias targets '%s' in the hosted zone '%s' that this template creates, but no record set with that name is created; the new zone holds only its own NS and SOA records\", [dns, zn]),\n\t\"Add the target record set to the template (and order it before the alias), or point the alias at a zone that already holds the target\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tz := _pf_r53lib_alias_ownzone(rs)\n\tzn := _pf_r53lib_zone_name(z)\n\tdns := _pf_r53lib_alias_dns(rs)\n\t_pf_r53lib_within(dns, zn)\n\tdns != zn\n\tnot dns in _pf_r53lib_names\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-samezone-target-missing\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.DNSName\", [_pf_it.index]),\n\tsprintf(\"The alias targets '%s' in the hosted zone '%s' that this template creates, but no record set with that name is created; the new zone holds only its own NS and SOA records\", [dns, zn]),\n\t\"Add the target record set to the template (and order it before the alias), or point the alias at a zone that already holds the target\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tz := _pf_r53lib_alias_ownzone(rs)\n\tzn := _pf_r53lib_zone_name(z)\n\tdns := _pf_r53lib_alias_dns(rs)\n\t_pf_r53lib_within(dns, zn)\n\tdns != zn\n\tnot dns in _pf_r53lib_names\n}\n"
+  },
+  {
+    "id": "pf-route53-alias-target-outside-zone",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An alias into a hosted zone of this template must target a name inside that zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-alias-target-outside-zone\", \"ERROR\", name,\n\t\"Properties.AliasTarget.DNSName\",\n\tsprintf(\"AliasTarget.HostedZoneId points at the hosted zone '%s' created here, but the target name '%s' does not lie within it\", [zn, dns]),\n\t\"Target a name inside the zone, or set AliasTarget.HostedZoneId to the zone that actually hosts the target\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tz := _pf_r53lib_alias_ownzone(rs)\n\tzn := _pf_r53lib_zone_name(z)\n\tdns := _pf_r53lib_alias_dns(rs)\n\tnot _pf_r53lib_within(dns, zn)\n}\n\nviolation contains make_diag_full(\"pf-route53-alias-target-outside-zone\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.DNSName\", [_pf_it.index]),\n\tsprintf(\"AliasTarget.HostedZoneId points at the hosted zone '%s' created here, but the target name '%s' does not lie within it\", [zn, dns]),\n\t\"Target a name inside the zone, or set AliasTarget.HostedZoneId to the zone that actually hosts the target\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tz := _pf_r53lib_alias_ownzone(rs)\n\tzn := _pf_r53lib_zone_name(z)\n\tdns := _pf_r53lib_alias_dns(rs)\n\tnot _pf_r53lib_within(dns, zn)\n}\n"
   },
   {
     "id": "pf-route53-apex-cname",
@@ -15950,6 +16034,183 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_apex_norm(n) := trim_suffix(lower(n), \".\")\n\n# The engine's E3023 catches an apex CNAME only when the record carries a\n# literal HostedZoneName. CDK L2 always links records with\n# HostedZoneId: {\"Ref\": <zone>}, which E3023 does not see (measured 2026-09-02,\n# engine 1.7.0-beta). resolve() turns such a Ref into the target's logical ID,\n# so when that ID names a HostedZone in the same template we can read its\n# literal Name and do the apex comparison ourselves.\nviolation contains make_diag_full(\"pf-route53-apex-cname\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"A CNAME record is not permitted at the zone apex ('%s'); the deployment fails with \\\"RRSet of type CNAME ... is not permitted at apex\\\"\", [recName]),\n\t\"Use an alias A/AAAA record for the apex (AliasTarget), or move the CNAME to a subdomain\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"CNAME\"\n\tzref := resolve(name, \"Properties.HostedZoneId\")\n\tis_string(zref)\n\tzref in resources_of_type(\"AWS::Route53::HostedZone\")\n\tzoneName := resolve(zref, \"Properties.Name\")\n\tis_string(zoneName)\n\trecName := resolve(name, \"Properties.Name\")\n\tis_string(recName)\n\t_pf_r53_apex_norm(recName) == _pf_r53_apex_norm(zoneName)\n}\n"
   },
   {
+    "id": "pf-route53-caa-tag-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CAA tag must be issue, issuewild or iodef",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-caa-tag-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The CAA tag '%s' is not one of issue / issuewild / iodef; Route 53 rejects it with \\\"Only issue/issuewild/iodef is allowed\\\"\", [f[1]]),\n\t\"Use issue, issuewild or iodef (a private tag needs flags 128, which Route 53 does not accept either)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"CAA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tnot f[1] in {\"issue\", \"issuewild\", \"iodef\"}\n}\n\nviolation contains make_diag_full(\"pf-route53-caa-tag-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The CAA tag '%s' is not one of issue / issuewild / iodef; Route 53 rejects it with \\\"Only issue/issuewild/iodef is allowed\\\"\", [f[1]]),\n\t\"Use issue, issuewild or iodef (a private tag needs flags 128, which Route 53 does not accept either)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"CAA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tnot f[1] in {\"issue\", \"issuewild\", \"iodef\"}\n}\n"
+  },
+  {
+    "id": "pf-route53-cidr-collection-id-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "CidrRoutingConfig.CollectionId must be a UUID",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidr-collection-id-format\", \"ERROR\", name,\n\t\"Properties.CidrRoutingConfig.CollectionId\",\n\tsprintf(\"CollectionId '%s' is not a UUID\", [v]),\n\t\"Use the collection's id (Fn::GetAtt on AWS::Route53::CidrCollection returns it)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"CollectionId\", null)\n\tis_string(v)\n\tnot regex.match(\"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$\", v)\n}\n\nviolation contains make_diag_full(\"pf-route53-cidr-collection-id-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].CidrRoutingConfig.CollectionId\", [_pf_it.index]),\n\tsprintf(\"CollectionId '%s' is not a UUID\", [v]),\n\t\"Use the collection's id (Fn::GetAtt on AWS::Route53::CidrCollection returns it)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"CollectionId\", null)\n\tis_string(v)\n\tnot regex.match(\"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$\", v)\n}\n"
+  },
+  {
+    "id": "pf-route53-cidr-location-name-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*]",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\t\"Properties.CidrRoutingConfig.LocationName\",\n\tsprintf(\"LocationName '%s' must be 1-16 characters of [0-9A-Za-z_-] (or the default location '*')\", [v]),\n\t\"Rename the CIDR location to match that pattern\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"LocationName\", null)\n\tis_string(v)\n\tnot regex.match(\"^[0-9A-Za-z_*-]{1,16}$\", v)\n}\n\nviolation contains make_diag_full(\"pf-route53-cidr-location-name-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].CidrRoutingConfig.LocationName\", [_pf_it.index]),\n\tsprintf(\"LocationName '%s' must be 1-16 characters of [0-9A-Za-z_-] (or the default location '*')\", [v]),\n\t\"Rename the CIDR location to match that pattern\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tc := _pf_r53lib_get(rs, \"CidrRoutingConfig\")\n\tis_object(c)\n\tv := object.get(c, \"LocationName\", null)\n\tis_string(v)\n\tnot regex.match(\"^[0-9A-Za-z_*-]{1,16}$\", v)\n}\n"
+  },
+  {
+    "id": "pf-route53-cidr-private-zone",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "IP-based routing is not available in a private hosted zone",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidr-private-zone\", \"ERROR\", name,\n\t\"Properties.CidrRoutingConfig\",\n\t\"A record in a private hosted zone cannot use IP-based routing; the CIDR routing policy is public-zone only\",\n\t\"Use a different routing policy in the private zone, or move the record to a public zone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tz := _pf_r53lib_own_zone(rs)\n\t_pf_r53lib_private_zone(z)\n\t_pf_r53lib_has(rs, \"CidrRoutingConfig\")\n}\n\nviolation contains make_diag_full(\"pf-route53-cidr-private-zone\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].CidrRoutingConfig\", [_pf_it.index]),\n\t\"A record in a private hosted zone cannot use IP-based routing; the CIDR routing policy is public-zone only\",\n\t\"Use a different routing policy in the private zone, or move the record to a public zone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tz := _pf_r53lib_own_zone(rs)\n\t_pf_r53lib_private_zone(z)\n\t_pf_r53lib_has(rs, \"CidrRoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-route53-cidr-same-collection-in-group",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "IP-based record sets sharing a name and type must use one CIDR collection",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidr-same-collection-in-group\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"The IP-based record sets for '%s' reference two different CIDR collections (%s and %s)\", [k, ca, cb]),\n\t\"Point every record set in the group at the same CidrRoutingConfig.CollectionId\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tca := object.get(_pf_r53lib_get(a.value, \"CidrRoutingConfig\"), \"CollectionId\", null)\n\tcb := object.get(_pf_r53lib_get(b.value, \"CidrRoutingConfig\"), \"CollectionId\", null)\n\tis_string(ca)\n\tis_string(cb)\n\tca != cb\n}\n"
+  },
+  {
+    "id": "pf-route53-cname-name-collision",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A CNAME cannot share its name with a record set of another type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cname-name-collision\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"The template creates both a CNAME and a %s record set named '%s'; a CNAME must be the only record at its name\", [tb, n]),\n\t\"Rename one of the two, or drop the CNAME and use the other type alone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index != b.index\n\tn := _pf_r53lib_name(a.value)\n\tn == _pf_r53lib_name(b.value)\n\t_pf_r53lib_type(a.value) == \"CNAME\"\n\ttb := _pf_r53lib_type(b.value)\n\ttb != \"CNAME\"\n}\n"
+  },
+  {
+    "id": "pf-route53-coordinates-latitude-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Coordinates.Latitude must be -90 to 90",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-coordinates-latitude-range\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation.Coordinates.Latitude\",\n\tsprintf(\"Latitude must be between -90 and 90, got %v\", [n]),\n\t\"Use a latitude in -90..90\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tc := object.get(g, \"Coordinates\", null)\n\tis_object(c)\n\tn := to_number(object.get(c, \"Latitude\", null))\n\tabs(n) > 90\n}\n\nviolation contains make_diag_full(\"pf-route53-coordinates-latitude-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation.Coordinates.Latitude\", [_pf_it.index]),\n\tsprintf(\"Latitude must be between -90 and 90, got %v\", [n]),\n\t\"Use a latitude in -90..90\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tc := object.get(g, \"Coordinates\", null)\n\tis_object(c)\n\tn := to_number(object.get(c, \"Latitude\", null))\n\tabs(n) > 90\n}\n"
+  },
+  {
+    "id": "pf-route53-coordinates-longitude-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Coordinates.Longitude must be -180 to 180",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-coordinates-longitude-range\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation.Coordinates.Longitude\",\n\tsprintf(\"Longitude must be between -180 and 180, got %v\", [n]),\n\t\"Use a longitude in -180..180\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tc := object.get(g, \"Coordinates\", null)\n\tis_object(c)\n\tn := to_number(object.get(c, \"Longitude\", null))\n\tabs(n) > 180\n}\n\nviolation contains make_diag_full(\"pf-route53-coordinates-longitude-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation.Coordinates.Longitude\", [_pf_it.index]),\n\tsprintf(\"Longitude must be between -180 and 180, got %v\", [n]),\n\t\"Use a longitude in -180..180\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tc := object.get(g, \"Coordinates\", null)\n\tis_object(c)\n\tn := to_number(object.get(c, \"Longitude\", null))\n\tabs(n) > 180\n}\n"
+  },
+  {
+    "id": "pf-route53-ds-field-count",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A DS record value needs exactly 4 space-separated fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-ds-field-count\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"A DS value must have 4 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <key tag> <algorithm> <digest type> <digest>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"DS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 4\n}\n\nviolation contains make_diag_full(\"pf-route53-ds-field-count\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"A DS value must have 4 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <key tag> <algorithm> <digest type> <digest>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"DS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 4\n}\n"
+  },
+  {
+    "id": "pf-route53-failover-alias-evaluate-target-health",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A PRIMARY failover alias must set EvaluateTargetHealth to true",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-failover-alias-evaluate-target-health\", \"ERROR\", name,\n\t\"Properties.AliasTarget.EvaluateTargetHealth\",\n\t\"A primary failover alias must evaluate the target's health, otherwise Route 53 has no way to fail over\",\n\t\"Set AliasTarget.EvaluateTargetHealth to true (or attach a HealthCheckId to a non-alias record)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_str(rs, \"Failover\") == \"PRIMARY\"\n\ta := _pf_r53lib_alias(rs)\n\tnot _pf_r53lib_has(rs, \"HealthCheckId\")\n\tobject.get(a, \"EvaluateTargetHealth\", false) != true\n}\n\nviolation contains make_diag_full(\"pf-route53-failover-alias-evaluate-target-health\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].AliasTarget.EvaluateTargetHealth\", [_pf_it.index]),\n\t\"A primary failover alias must evaluate the target's health, otherwise Route 53 has no way to fail over\",\n\t\"Set AliasTarget.EvaluateTargetHealth to true (or attach a HealthCheckId to a non-alias record)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_str(rs, \"Failover\") == \"PRIMARY\"\n\ta := _pf_r53lib_alias(rs)\n\tnot _pf_r53lib_has(rs, \"HealthCheckId\")\n\tobject.get(a, \"EvaluateTargetHealth\", false) != true\n}\n"
+  },
+  {
+    "id": "pf-route53-failover-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Failover must be PRIMARY or SECONDARY",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-failover-enum\", \"ERROR\", name,\n\t\"Properties.Failover\",\n\tsprintf(\"Failover must be PRIMARY or SECONDARY, got '%s'\", [fo]),\n\t\"Use PRIMARY or SECONDARY\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tfo := _pf_r53lib_str(rs, \"Failover\")\n\tnot fo in {\"PRIMARY\", \"SECONDARY\"}\n}\n\nviolation contains make_diag_full(\"pf-route53-failover-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Failover\", [_pf_it.index]),\n\tsprintf(\"Failover must be PRIMARY or SECONDARY, got '%s'\", [fo]),\n\t\"Use PRIMARY or SECONDARY\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tfo := _pf_r53lib_str(rs, \"Failover\")\n\tnot fo in {\"PRIMARY\", \"SECONDARY\"}\n}\n"
+  },
+  {
+    "id": "pf-route53-failover-requires-health-check",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A non-alias PRIMARY failover record needs a health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-failover-requires-health-check\", \"ERROR\", name,\n\t\"Properties.HealthCheckId\",\n\t\"A non-alias primary failover record set must reference a health check; Route 53 rejects it with \\\"A non-alias primary ResourceRecordSet must have an associated health check\\\"\",\n\t\"Add HealthCheckId, or make the primary record an alias with EvaluateTargetHealth: true\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_str(rs, \"Failover\") == \"PRIMARY\"\n\tnot _pf_r53lib_has(rs, \"AliasTarget\")\n\tnot _pf_r53lib_has(rs, \"HealthCheckId\")\n}\n\nviolation contains make_diag_full(\"pf-route53-failover-requires-health-check\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].HealthCheckId\", [_pf_it.index]),\n\t\"A non-alias primary failover record set must reference a health check; Route 53 rejects it with \\\"A non-alias primary ResourceRecordSet must have an associated health check\\\"\",\n\t\"Add HealthCheckId, or make the primary record an alias with EvaluateTargetHealth: true\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_str(rs, \"Failover\") == \"PRIMARY\"\n\tnot _pf_r53lib_has(rs, \"AliasTarget\")\n\tnot _pf_r53lib_has(rs, \"HealthCheckId\")\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-continent-code-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoLocation.ContinentCode must be one of the seven two-letter continent codes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geolocation-continent-code-enum\", \"ERROR\", name,\n\t\"Properties.GeoLocation.ContinentCode\",\n\tsprintf(\"'%s' is not a continent code; Route 53 rejects the record with \\\"Cannot find location\\\"\", [c]),\n\t\"Use AF, AN, AS, EU, OC, NA or SA\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\tc := object.get(g, \"ContinentCode\", null)\n\tis_string(c)\n\tnot c in {\"AF\", \"AN\", \"AS\", \"EU\", \"OC\", \"NA\", \"SA\"}\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-continent-code-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoLocation.ContinentCode\", [_pf_it.index]),\n\tsprintf(\"'%s' is not a continent code; Route 53 rejects the record with \\\"Cannot find location\\\"\", [c]),\n\t\"Use AF, AN, AS, EU, OC, NA or SA\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\tc := object.get(g, \"ContinentCode\", null)\n\tis_string(c)\n\tnot c in {\"AF\", \"AN\", \"AS\", \"EU\", \"OC\", \"NA\", \"SA\"}\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-country-code-iso",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoLocation.CountryCode must be an ISO 3166-1 alpha-2 country code",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ISO 3166-1 alpha-2（CLDR の特殊コードは除外し、迷ったら許可側に倒してある）\n_pf_r53_countries := {\n\t\"AC\", \"AD\", \"AE\", \"AF\", \"AG\", \"AI\", \"AL\", \"AM\", \"AN\", \"AO\",\n\t\"AQ\", \"AR\", \"AS\", \"AT\", \"AU\", \"AW\", \"AX\", \"AZ\", \"BA\", \"BB\",\n\t\"BD\", \"BE\", \"BF\", \"BG\", \"BH\", \"BI\", \"BJ\", \"BL\", \"BM\", \"BN\",\n\t\"BO\", \"BQ\", \"BR\", \"BS\", \"BT\", \"BU\", \"BV\", \"BW\", \"BY\", \"BZ\",\n\t\"CA\", \"CC\", \"CD\", \"CF\", \"CG\", \"CH\", \"CI\", \"CK\", \"CL\", \"CM\",\n\t\"CN\", \"CO\", \"CP\", \"CQ\", \"CR\", \"CS\", \"CU\", \"CV\", \"CW\", \"CX\",\n\t\"CY\", \"CZ\", \"DD\", \"DE\", \"DG\", \"DJ\", \"DK\", \"DM\", \"DO\", \"DY\",\n\t\"DZ\", \"EA\", \"EC\", \"EE\", \"EG\", \"EH\", \"ER\", \"ES\", \"ET\", \"FI\",\n\t\"FJ\", \"FK\", \"FM\", \"FO\", \"FR\", \"FX\", \"GA\", \"GB\", \"GD\", \"GE\",\n\t\"GF\", \"GG\", \"GH\", \"GI\", \"GL\", \"GM\", \"GN\", \"GP\", \"GQ\", \"GR\",\n\t\"GS\", \"GT\", \"GU\", \"GW\", \"GY\", \"HK\", \"HM\", \"HN\", \"HR\", \"HT\",\n\t\"HU\", \"HV\", \"IC\", \"ID\", \"IE\", \"IL\", \"IM\", \"IN\", \"IO\", \"IQ\",\n\t\"IR\", \"IS\", \"IT\", \"JE\", \"JM\", \"JO\", \"JP\", \"KE\", \"KG\", \"KH\",\n\t\"KI\", \"KM\", \"KN\", \"KP\", \"KR\", \"KW\", \"KY\", \"KZ\", \"LA\", \"LB\",\n\t\"LC\", \"LI\", \"LK\", \"LR\", \"LS\", \"LT\", \"LU\", \"LV\", \"LY\", \"MA\",\n\t\"MC\", \"MD\", \"ME\", \"MF\", \"MG\", \"MH\", \"MK\", \"ML\", \"MM\", \"MN\",\n\t\"MO\", \"MP\", \"MQ\", \"MR\", \"MS\", \"MT\", \"MU\", \"MV\", \"MW\", \"MX\",\n\t\"MY\", \"MZ\", \"NA\", \"NC\", \"NE\", \"NF\", \"NG\", \"NH\", \"NI\", \"NL\",\n\t\"NO\", \"NP\", \"NR\", \"NU\", \"NZ\", \"OM\", \"PA\", \"PE\", \"PF\", \"PG\",\n\t\"PH\", \"PK\", \"PL\", \"PM\", \"PN\", \"PR\", \"PS\", \"PT\", \"PW\", \"PY\",\n\t\"QA\", \"RE\", \"RH\", \"RO\", \"RS\", \"RU\", \"RW\", \"SA\", \"SB\", \"SC\",\n\t\"SD\", \"SE\", \"SG\", \"SH\", \"SI\", \"SJ\", \"SK\", \"SL\", \"SM\", \"SN\",\n\t\"SO\", \"SR\", \"SS\", \"ST\", \"SU\", \"SV\", \"SX\", \"SY\", \"SZ\", \"TA\",\n\t\"TC\", \"TD\", \"TF\", \"TG\", \"TH\", \"TJ\", \"TK\", \"TL\", \"TM\", \"TN\",\n\t\"TO\", \"TP\", \"TR\", \"TT\", \"TV\", \"TW\", \"TZ\", \"UA\", \"UG\", \"UK\",\n\t\"UM\", \"US\", \"UY\", \"UZ\", \"VA\", \"VC\", \"VD\", \"VE\", \"VG\", \"VI\",\n\t\"VN\", \"VU\", \"WF\", \"WS\", \"XK\", \"YD\", \"YE\", \"YT\", \"YU\", \"ZA\",\n\t\"ZM\", \"ZR\", \"ZW\",\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-country-code-iso\", \"ERROR\", name,\n\t\"Properties.GeoLocation.CountryCode\",\n\tsprintf(\"'%s' is not an ISO 3166-1 alpha-2 country code; Route 53 rejects the record with \\\"Cannot find location\\\"\", [c]),\n\t\"Use a real two-letter country code, or '*' for the default location\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc != \"*\"\n\tnot c in _pf_r53_countries\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-country-code-iso\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoLocation.CountryCode\", [_pf_it.index]),\n\tsprintf(\"'%s' is not an ISO 3166-1 alpha-2 country code; Route 53 rejects the record with \\\"Cannot find location\\\"\", [c]),\n\t\"Use a real two-letter country code, or '*' for the default location\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc != \"*\"\n\tnot c in _pf_r53_countries\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-duplicate-location",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Two geolocation record sets cannot claim the same location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geolocation-duplicate-location\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"Two geolocation record sets for '%s' both cover %v; Route 53 keeps one record set per location\", [k, g]),\n\t\"Give each geolocation record set a different location, or merge them\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tg := _pf_r53lib_get(a.value, \"GeoLocation\")\n\tis_object(g)\n\tg == _pf_r53lib_get(b.value, \"GeoLocation\")\n}\n"
+  },
+  {
     "id": "pf-route53-geolocation-exclusive",
     "service": "route53",
     "severity": "ERROR",
@@ -15958,7 +16219,160 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Route53::RecordSet"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The registry schema expresses this as a oneOf, which the server-side\n# pre-deploy validation enforces (\"2 subschemas matched instead of one\") but\n# the bundled engine does not evaluate — hence upstream: pending-engine.\nviolation contains make_diag_full(\"pf-route53-geolocation-exclusive\", \"ERROR\", name,\n\t\"Properties.GeoLocation\",\n\t\"GeoLocation cannot specify both ContinentCode and CountryCode; CloudFormation rejects the record set before provisioning\",\n\t\"Keep either the ContinentCode or the CountryCode (add SubdivisionCode only next to CountryCode US)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53-recordset-geolocation.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tgeo := resolve(name, \"Properties.GeoLocation\")\n\tis_object(geo)\n\tis_string(object.get(geo, \"ContinentCode\", null))\n\tis_string(object.get(geo, \"CountryCode\", null))\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_geox_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53-recordset-geolocation.html\"\n\n_pf_r53_geox_has(geo, k) if {\n\tis_string(object.get(geo, k, null))\n}\n\n# The registry schema expresses this as a oneOf, which the server-side\n# pre-deploy validation enforces (\"2 subschemas matched instead of one\") but\n# the bundled engine does not evaluate — hence upstream: pending-engine.\nviolation contains make_diag_full(\"pf-route53-geolocation-exclusive\", \"ERROR\", name,\n\t\"Properties.GeoLocation\",\n\t\"GeoLocation cannot specify both ContinentCode and CountryCode; CloudFormation rejects the record set before provisioning\",\n\t\"Keep either the ContinentCode or the CountryCode (add SubdivisionCode only next to CountryCode US)\",\n\t_pf_r53_geox_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tgeo := resolve(name, \"Properties.GeoLocation\")\n\tis_object(geo)\n\t_pf_r53_geox_has(geo, \"ContinentCode\")\n\t_pf_r53_geox_has(geo, \"CountryCode\")\n}\n\n# SubdivisionCode only ever qualifies a CountryCode, so pairing it with a\n# ContinentCode is the same mistake seen from the other side: Route 53 answers\n# \"Cannot find location: ' continent = NA subdivision = CA'\" (2026-09-08).\nviolation contains make_diag_full(\"pf-route53-geolocation-exclusive\", \"ERROR\", name,\n\t\"Properties.GeoLocation\",\n\t\"GeoLocation cannot specify both ContinentCode and SubdivisionCode; a subdivision only qualifies CountryCode US\",\n\t\"Route on the continent alone, or replace ContinentCode with CountryCode: US next to the SubdivisionCode\",\n\t_pf_r53_geox_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tgeo := resolve(name, \"Properties.GeoLocation\")\n\tis_object(geo)\n\t_pf_r53_geox_has(geo, \"ContinentCode\")\n\t_pf_r53_geox_has(geo, \"SubdivisionCode\")\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-subdivision-code-value",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoLocation.SubdivisionCode must be a US state or territory code",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_ussub := {\n\t\"AK\", \"AL\", \"AR\", \"AS\", \"AZ\", \"CA\", \"CO\", \"CT\", \"DC\", \"DE\",\n\t\"FL\", \"GA\", \"GU\", \"HI\", \"IA\", \"ID\", \"IL\", \"IN\", \"KS\", \"KY\",\n\t\"LA\", \"MA\", \"MD\", \"ME\", \"MI\", \"MN\", \"MO\", \"MP\", \"MS\", \"MT\",\n\t\"NC\", \"ND\", \"NE\", \"NH\", \"NJ\", \"NM\", \"NV\", \"NY\", \"OH\", \"OK\",\n\t\"OR\", \"PA\", \"PR\", \"RI\", \"SC\", \"SD\", \"TN\", \"TX\", \"UM\", \"UT\",\n\t\"VA\", \"VI\", \"VT\", \"WA\", \"WI\", \"WV\", \"WY\",\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-subdivision-code-value\", \"ERROR\", name,\n\t\"Properties.GeoLocation.SubdivisionCode\",\n\tsprintf(\"'%s' is not a US state or territory code; Route 53 rejects the record with \\\"Cannot find location\\\"\", [s]),\n\t\"Use the two-letter postal code of a US state, DC or a US territory\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\ts := object.get(g, \"SubdivisionCode\", null)\n\tis_string(s)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc == \"US\"\n\tnot s in _pf_r53_ussub\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-subdivision-code-value\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoLocation.SubdivisionCode\", [_pf_it.index]),\n\tsprintf(\"'%s' is not a US state or territory code; Route 53 rejects the record with \\\"Cannot find location\\\"\", [s]),\n\t\"Use the two-letter postal code of a US state, DC or a US territory\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\ts := object.get(g, \"SubdivisionCode\", null)\n\tis_string(s)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc == \"US\"\n\tnot s in _pf_r53_ussub\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-subdivision-requires-us",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoLocation.SubdivisionCode is only valid with CountryCode US",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geolocation-subdivision-requires-us\", \"ERROR\", name,\n\t\"Properties.GeoLocation.SubdivisionCode\",\n\tsprintf(\"SubdivisionCode '%s' is combined with CountryCode '%s'; Route 53 only knows subdivisions for the United States\", [s, c]),\n\t\"Set CountryCode to US, or drop SubdivisionCode and route on the country alone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\ts := object.get(g, \"SubdivisionCode\", null)\n\tis_string(s)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc != \"US\"\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-subdivision-requires-us\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoLocation.SubdivisionCode\", [_pf_it.index]),\n\tsprintf(\"SubdivisionCode '%s' is combined with CountryCode '%s'; Route 53 only knows subdivisions for the United States\", [s, c]),\n\t\"Set CountryCode to US, or drop SubdivisionCode and route on the country alone\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\ts := object.get(g, \"SubdivisionCode\", null)\n\tis_string(s)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc != \"US\"\n}\n"
+  },
+  {
+    "id": "pf-route53-geolocation-unsupported-country",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Four ISO country codes have no Route 53 geolocation coverage",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geolocation-unsupported-country\", \"ERROR\", name,\n\t\"Properties.GeoLocation.CountryCode\",\n\tsprintf(\"Route 53 has no geolocation data for '%s' (Bouvet Island, Christmas Island, Western Sahara and Heard & McDonald Islands are rejected with \\\"Cannot find location\\\")\", [c]),\n\t\"Cover these visitors with a continent-level or default ('*') record instead\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc in {\"BV\", \"CX\", \"EH\", \"HM\"}\n}\n\nviolation contains make_diag_full(\"pf-route53-geolocation-unsupported-country\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoLocation.CountryCode\", [_pf_it.index]),\n\tsprintf(\"Route 53 has no geolocation data for '%s' (Bouvet Island, Christmas Island, Western Sahara and Heard & McDonald Islands are rejected with \\\"Cannot find location\\\")\", [c]),\n\t\"Cover these visitors with a continent-level or default ('*') record instead\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoLocation\")\n\tis_object(g)\n\tc := object.get(g, \"CountryCode\", null)\n\tis_string(c)\n\tc in {\"BV\", \"CX\", \"EH\", \"HM\"}\n}\n"
+  },
+  {
+    "id": "pf-route53-geoproximity-awsregion-value",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoProximityLocation.AWSRegion must be an existing AWS Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 実在する AWS リージョン（aws-cdk-lib の region-info、2026-09-10 時点）。\n# 新設リージョンが aws-cdk-lib に入るまでの間だけ取りこぼす。\n_pf_r53_regions := {\n\t\"af-south-1\", \"ap-east-1\", \"ap-east-2\", \"ap-northeast-1\", \"ap-northeast-2\", \"ap-northeast-3\", \"ap-south-1\", \"ap-south-2\", \"ap-southeast-1\", \"ap-southeast-2\",\n\t\"ap-southeast-3\", \"ap-southeast-4\", \"ap-southeast-5\", \"ap-southeast-6\", \"ap-southeast-7\", \"ca-central-1\", \"ca-west-1\", \"cn-north-1\", \"cn-northwest-1\", \"eu-central-1\",\n\t\"eu-central-2\", \"eu-isoe-west-1\", \"eu-north-1\", \"eu-south-1\", \"eu-south-2\", \"eu-west-1\", \"eu-west-2\", \"eu-west-3\", \"eusc-de-east-1\", \"il-central-1\",\n\t\"me-central-1\", \"me-south-1\", \"mx-central-1\", \"sa-east-1\", \"us-east-1\", \"us-east-2\", \"us-gov-east-1\", \"us-gov-west-1\", \"us-iso-east-1\", \"us-iso-west-1\",\n\t\"us-isob-east-1\", \"us-isob-west-1\", \"us-isof-east-1\", \"us-isof-south-1\", \"us-west-1\", \"us-west-2\",\n}\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-awsregion-value\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation.AWSRegion\",\n\tsprintf(\"'%s' is not an AWS Region; Route 53 rejects the record with \\\"Cannot find GeoProximityLocation with AWSRegion\\\"\", [r]),\n\t\"Use an existing Region name\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tr := object.get(g, \"AWSRegion\", null)\n\tis_string(r)\n\tnot r in _pf_r53_regions\n}\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-awsregion-value\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation.AWSRegion\", [_pf_it.index]),\n\tsprintf(\"'%s' is not an AWS Region; Route 53 rejects the record with \\\"Cannot find GeoProximityLocation with AWSRegion\\\"\", [r]),\n\t\"Use an existing Region name\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tr := object.get(g, \"AWSRegion\", null)\n\tis_string(r)\n\tnot r in _pf_r53_regions\n}\n"
+  },
+  {
+    "id": "pf-route53-geoproximity-bias-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoProximityLocation.Bias must be -99 to 99",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-bias-range\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation.Bias\",\n\tsprintf(\"Bias must be between -99 and 99, got %v\", [n]),\n\t\"Use a bias in -99..99\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tn := to_number(object.get(g, \"Bias\", null))\n\tabs(n) > 99\n}\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-bias-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation.Bias\", [_pf_it.index]),\n\tsprintf(\"Bias must be between -99 and 99, got %v\", [n]),\n\t\"Use a bias in -99..99\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tn := to_number(object.get(g, \"Bias\", null))\n\tabs(n) > 99\n}\n"
+  },
+  {
+    "id": "pf-route53-geoproximity-exclusive",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-exclusive\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation\",\n\tsprintf(\"GeoProximityLocation specifies %d of AWSRegion / LocalZoneGroup / Coordinates; Route 53 expects exactly one\", [count(set)]),\n\t\"Keep one of AWSRegion, LocalZoneGroup or Coordinates\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tset := {k | some k in {\"AWSRegion\", \"LocalZoneGroup\", \"Coordinates\"}; object.get(g, k, \"__pf_absent\") != \"__pf_absent\"}\n\tcount(set) > 1\n}\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation\", [_pf_it.index]),\n\tsprintf(\"GeoProximityLocation specifies %d of AWSRegion / LocalZoneGroup / Coordinates; Route 53 expects exactly one\", [count(set)]),\n\t\"Keep one of AWSRegion, LocalZoneGroup or Coordinates\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tset := {k | some k in {\"AWSRegion\", \"LocalZoneGroup\", \"Coordinates\"}; object.get(g, k, \"__pf_absent\") != \"__pf_absent\"}\n\tcount(set) > 1\n}\n"
+  },
+  {
+    "id": "pf-route53-geoproximity-localzonegroup-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "GeoProximityLocation.LocalZoneGroup must be a Local Zone group name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-localzonegroup-format\", \"ERROR\", name,\n\t\"Properties.GeoProximityLocation.LocalZoneGroup\",\n\tsprintf(\"'%s' is not a Local Zone group name; Route 53 rejects it with \\\"Cannot find GeoProximityLocation with LocalZoneGroup\\\"\", [lz]),\n\t\"Use the Local Zone code without its trailing letter, for example us-west-2-den-1\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tlz := object.get(g, \"LocalZoneGroup\", null)\n\tis_string(lz)\n\tnot regex.match(\"^[a-z]{2}-[a-z]+-[0-9]+-[a-z]+-[0-9]+$\", lz)\n}\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-localzonegroup-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].GeoProximityLocation.LocalZoneGroup\", [_pf_it.index]),\n\tsprintf(\"'%s' is not a Local Zone group name; Route 53 rejects it with \\\"Cannot find GeoProximityLocation with LocalZoneGroup\\\"\", [lz]),\n\t\"Use the Local Zone code without its trailing letter, for example us-west-2-den-1\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geoproximity.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tg := _pf_r53lib_get(rs, \"GeoProximityLocation\")\n\tis_object(g)\n\tlz := object.get(g, \"LocalZoneGroup\", null)\n\tis_string(lz)\n\tnot regex.match(\"^[a-z]{2}-[a-z]+-[0-9]+-[a-z]+-[0-9]+$\", lz)\n}\n"
+  },
+  {
+    "id": "pf-route53-geoproximity-max-30-same-name-type",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A geoproximity group may hold at most 30 record sets per name and type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_gpmax_n(g, k) := count([1 |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n\t_pf_r53lib_key(it.value) == k\n\t\"GeoProximityLocation\" in _pf_r53lib_kinds(it.value)\n])\n\nviolation contains make_diag_full(\"pf-route53-geoproximity-max-30-same-name-type\", \"ERROR\", name,\n\t\"Properties.RecordSets\",\n\tsprintf(\"'%s' has %d geoproximity record sets; Route 53 allows at most 30 per name and type\", [k, n]),\n\t\"Keep at most 30 geoproximity record sets for one name and type\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\t\"GeoProximityLocation\" in _pf_r53lib_kinds(a.value)\n\tk := _pf_r53lib_key(a.value)\n\tn := _pf_r53_gpmax_n(name, k)\n\tn > 30\n}\n"
+  },
+  {
+    "id": "pf-route53-https-field-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An HTTPS record value needs a priority and a target name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-https-field-format\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"An HTTPS value must start with <SvcPriority> <TargetName>, got '%s'\", [v]),\n\t\"Use: <SvcPriority> <TargetName> [<SvcParams>]\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) < 2\n}\n\nviolation contains make_diag_full(\"pf-route53-https-field-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"An HTTPS value must start with <SvcPriority> <TargetName>, got '%s'\", [v]),\n\t\"Use: <SvcPriority> <TargetName> [<SvcParams>]\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) < 2\n}\n"
+  },
+  {
+    "id": "pf-route53-https-svcpriority-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The HTTPS SvcPriority must be 0-32767",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-https-svcpriority-range\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The HTTPS SvcPriority must be between 0 and 32767, got %v\", [n]),\n\t\"Use a priority in 0-32767 (0 selects AliasMode)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 2\n\tn := to_number(f[0])\n\tn > 32767\n}\n\nviolation contains make_diag_full(\"pf-route53-https-svcpriority-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The HTTPS SvcPriority must be between 0 and 32767, got %v\", [n]),\n\t\"Use a priority in 0-32767 (0 selects AliasMode)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 2\n\tn := to_number(f[0])\n\tn > 32767\n}\n"
+  },
+  {
+    "id": "pf-route53-latency-one-record-per-region",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A latency group may hold only one record set per Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-latency-one-record-per-region\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"Two latency record sets for '%s' both target the Region %s; Route 53 allows one per Region\", [k, r]),\n\t\"Keep one record set per Region, or switch to weighted routing\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tr := _pf_r53lib_str(a.value, \"Region\")\n\tr == _pf_r53lib_str(b.value, \"Region\")\n}\n"
+  },
+  {
+    "id": "pf-route53-latency-region-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The latency Region must be an existing AWS Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 実在する AWS リージョン（aws-cdk-lib の region-info、2026-09-10 時点）。\n# 新設リージョンが aws-cdk-lib に入るまでの間だけ取りこぼす。\n_pf_r53_regions := {\n\t\"af-south-1\", \"ap-east-1\", \"ap-east-2\", \"ap-northeast-1\", \"ap-northeast-2\", \"ap-northeast-3\", \"ap-south-1\", \"ap-south-2\", \"ap-southeast-1\", \"ap-southeast-2\",\n\t\"ap-southeast-3\", \"ap-southeast-4\", \"ap-southeast-5\", \"ap-southeast-6\", \"ap-southeast-7\", \"ca-central-1\", \"ca-west-1\", \"cn-north-1\", \"cn-northwest-1\", \"eu-central-1\",\n\t\"eu-central-2\", \"eu-isoe-west-1\", \"eu-north-1\", \"eu-south-1\", \"eu-south-2\", \"eu-west-1\", \"eu-west-2\", \"eu-west-3\", \"eusc-de-east-1\", \"il-central-1\",\n\t\"me-central-1\", \"me-south-1\", \"mx-central-1\", \"sa-east-1\", \"us-east-1\", \"us-east-2\", \"us-gov-east-1\", \"us-gov-west-1\", \"us-iso-east-1\", \"us-iso-west-1\",\n\t\"us-isob-east-1\", \"us-isob-west-1\", \"us-isof-east-1\", \"us-isof-south-1\", \"us-west-1\", \"us-west-2\",\n}\n\nviolation contains make_diag_full(\"pf-route53-latency-region-enum\", \"ERROR\", name,\n\t\"Properties.Region\",\n\tsprintf(\"'%s' is not an AWS Region; Route 53 rejects the record with \\\"Cannot find region\\\"\", [r]),\n\t\"Use the Region name the resource actually runs in (for example us-east-1)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tr := _pf_r53lib_str(rs, \"Region\")\n\tnot r in _pf_r53_regions\n}\n\nviolation contains make_diag_full(\"pf-route53-latency-region-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Region\", [_pf_it.index]),\n\tsprintf(\"'%s' is not an AWS Region; Route 53 rejects the record with \\\"Cannot find region\\\"\", [r]),\n\t\"Use the Region name the resource actually runs in (for example us-east-1)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tr := _pf_r53lib_str(rs, \"Region\")\n\tnot r in _pf_r53_regions\n}\n"
+  },
+  {
+    "id": "pf-route53-mixed-routing-policy-same-name-type",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Record sets sharing a name and type must use the same routing policy",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-mixed-routing-policy-same-name-type\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"'%s' is served by two different routing policies (%v and %v); every record set sharing a name and type must use one policy\", [k, ka, kb]),\n\t\"Pick one routing policy for the whole group\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tka := _pf_r53lib_kinds(a.value)\n\tkb := _pf_r53lib_kinds(b.value)\n\tcount(ka) > 0\n\tcount(kb) > 0\n\tka != kb\n}\n"
   },
   {
     "id": "pf-route53-multivalue-alias",
@@ -15972,6 +16386,198 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-multivalue-alias\", \"ERROR\", name,\n\t\"Properties.MultiValueAnswer\",\n\t\"MultiValueAnswer cannot be combined with AliasTarget; the service rejects it with \\\"Multivalue answer rrset should not be an alias rrset\\\"\",\n\t\"Use plain multivalue records with ResourceRecords, or drop MultiValueAnswer and keep the alias\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n\tis_object(resolve(name, \"Properties.AliasTarget\"))\n}\n"
   },
   {
+    "id": "pf-route53-naptr-field-count",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A NAPTR record value needs exactly 6 space-separated fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-field-count\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"A NAPTR value must have 6 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <order> <preference> \\\"<flags>\\\" \\\"<service>\\\" \\\"<regexp>\\\" <replacement>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 6\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-field-count\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"A NAPTR value must have 6 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <order> <preference> \\\"<flags>\\\" \\\"<service>\\\" \\\"<regexp>\\\" <replacement>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 6\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-flags-quotes",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The NAPTR flags field must be quoted",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-flags-quotes\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR flags field %s must be enclosed in double quotes\", [f[2]]),\n\t\"Write the flags as \\\"U\\\", \\\"S\\\", \\\"A\\\" or \\\"P\\\" (with the quotes)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tnot _pf_r53lib_quoted(f[2])\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-flags-quotes\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR flags field %s must be enclosed in double quotes\", [f[2]]),\n\t\"Write the flags as \\\"U\\\", \\\"S\\\", \\\"A\\\" or \\\"P\\\" (with the quotes)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tnot _pf_r53lib_quoted(f[2])\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-order-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The NAPTR order must be 0-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-order-range\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR order must be between 0 and 65535, got %v\", [n]),\n\t\"Use an order in 0-65535\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tn := to_number(f[0])\n\tn > 65535\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-order-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR order must be between 0 and 65535, got %v\", [n]),\n\t\"Use an order in 0-65535\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tn := to_number(f[0])\n\tn > 65535\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-preference-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The NAPTR preference must be 0-65535",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-preference-range\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR preference must be between 0 and 65535, got %v\", [n]),\n\t\"Use a preference in 0-65535\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tn := to_number(f[1])\n\tn > 65535\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-preference-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR preference must be between 0 and 65535, got %v\", [n]),\n\t\"Use a preference in 0-65535\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tn := to_number(f[1])\n\tn > 65535\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-regexp-charset",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "NAPTR values may only contain printable ASCII",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-regexp-charset\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR value '%s' contains a character outside printable ASCII; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [v]),\n\t\"Write such characters as a three-digit octal escape\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tregex.match(\"[^ -~]\", v)\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-regexp-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR value '%s' contains a character outside printable ASCII; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [v]),\n\t\"Write such characters as a three-digit octal escape\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tregex.match(\"[^ -~]\", v)\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-regexp-quotes",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The NAPTR regexp field must be quoted",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-regexp-quotes\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR regexp field %s must be enclosed in double quotes\", [f[4]]),\n\t\"Wrap the regular expression in double quotes\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tnot _pf_r53lib_quoted(f[4])\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-regexp-quotes\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR regexp field %s must be enclosed in double quotes\", [f[4]]),\n\t\"Wrap the regular expression in double quotes\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tnot _pf_r53lib_quoted(f[4])\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-regexp-replacement-exclusive",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A NAPTR value carries either a regexp or a replacement, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-regexp-replacement-exclusive\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR value has both a regexp (%s) and a replacement (%s); Route 53 accepts only one of the two, so the replacement must be \\\".\\\" whenever a regexp is present\", [f[4], f[5]]),\n\t\"Keep the regexp and set the replacement to \\\".\\\", or empty the regexp (\\\"\\\") and keep the replacement\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\t_pf_r53lib_quoted(f[4])\n\tcount(f[4]) > 2\n\tf[5] != \".\"\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-regexp-replacement-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR value has both a regexp (%s) and a replacement (%s); Route 53 accepts only one of the two, so the replacement must be \\\".\\\" whenever a regexp is present\", [f[4], f[5]]),\n\t\"Keep the regexp and set the replacement to \\\".\\\", or empty the regexp (\\\"\\\") and keep the replacement\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\t_pf_r53lib_quoted(f[4])\n\tcount(f[4]) > 2\n\tf[5] != \".\"\n}\n"
+  },
+  {
+    "id": "pf-route53-naptr-service-quotes",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The NAPTR service field must be quoted",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-naptr-service-quotes\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The NAPTR service field %s must be enclosed in double quotes\", [f[3]]),\n\t\"Write the service as \\\"E2U+sip\\\" (with the quotes)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tnot _pf_r53lib_quoted(f[3])\n}\n\nviolation contains make_diag_full(\"pf-route53-naptr-service-quotes\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The NAPTR service field %s must be enclosed in double quotes\", [f[3]]),\n\t\"Write the service as \\\"E2U+sip\\\" (with the quotes)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"NAPTR\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 6\n\tnot _pf_r53lib_quoted(f[3])\n}\n"
+  },
+  {
+    "id": "pf-route53-private-zone-health-check-policy",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A simple record in a private hosted zone cannot carry a health check",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-private-zone-health-check-policy\", \"ERROR\", name,\n\t\"Properties.HealthCheckId\",\n\t\"In a private hosted zone only failover, multivalue, weighted, latency, geolocation and geoproximity records may reference a health check\",\n\t\"Give the record a routing policy, or drop HealthCheckId\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tz := _pf_r53lib_own_zone(rs)\n\t_pf_r53lib_private_zone(z)\n\t_pf_r53lib_has(rs, \"HealthCheckId\")\n\tcount(_pf_r53lib_kinds(rs)) == 0\n}\n\nviolation contains make_diag_full(\"pf-route53-private-zone-health-check-policy\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].HealthCheckId\", [_pf_it.index]),\n\t\"In a private hosted zone only failover, multivalue, weighted, latency, geolocation and geoproximity records may reference a health check\",\n\t\"Give the record a routing policy, or drop HealthCheckId\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tz := _pf_r53lib_own_zone(rs)\n\t_pf_r53lib_private_zone(z)\n\t_pf_r53lib_has(rs, \"HealthCheckId\")\n\tcount(_pf_r53lib_kinds(rs)) == 0\n}\n"
+  },
+  {
+    "id": "pf-route53-record-comment-length",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Comment is limited to 256 characters",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-comment-length\", \"ERROR\", name,\n\t\"Properties.Comment\",\n\tsprintf(\"Comment is %d characters; CloudFormation rejects anything over 256\", [count(c)]),\n\t\"Shorten the comment to 256 characters or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tc := _pf_r53lib_str(rs, \"Comment\")\n\tcount(c) > 256\n}\n\nviolation contains make_diag_full(\"pf-route53-record-comment-length\", \"ERROR\", name,\n\t\"Properties.Comment\",\n\tsprintf(\"Comment is %d characters; CloudFormation rejects anything over 256\", [count(c)]),\n\t\"Shorten the comment to 256 characters or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\trs := _pf_r53lib_props(name)\n\tc := _pf_r53lib_str(rs, \"Comment\")\n\tcount(c) > 256\n}\n"
+  },
+  {
+    "id": "pf-route53-record-name-charset",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A record name cannot contain a space",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-name-charset\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The record name '%s' contains a space; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [n]),\n\t\"Remove the space (write it as the escape code \\\\\\\\040 if it really belongs in the name)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcontains(n, \" \")\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\tsprintf(\"The record name '%s' contains a space; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [n]),\n\t\"Remove the space (write it as the escape code \\\\\\\\040 if it really belongs in the name)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcontains(n, \" \")\n}\n"
+  },
+  {
+    "id": "pf-route53-record-name-label-length",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Each label of a record name is limited to 63 bytes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-name-label-length\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The label '%s' is %d characters; a DNS label may not exceed 63\", [l, count(l)]),\n\t\"Shorten the label to 63 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tsome l in split(n, \".\")\n\tcount(l) > 63\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-label-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\tsprintf(\"The label '%s' is %d characters; a DNS label may not exceed 63\", [l, count(l)]),\n\t\"Shorten the label to 63 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tsome l in split(n, \".\")\n\tcount(l) > 63\n}\n"
+  },
+  {
+    "id": "pf-route53-record-name-punycode",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A record name must be ASCII (IDNs go in as Punycode)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-name-punycode\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The record name '%s' contains a non-ASCII character; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [n]),\n\t\"Convert the internationalized name to Punycode (xn--...) before putting it in the template\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tregex.match(\"[^ -~]\", n)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-punycode\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\tsprintf(\"The record name '%s' contains a non-ASCII character; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [n]),\n\t\"Convert the internationalized name to Punycode (xn--...) before putting it in the template\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tregex.match(\"[^ -~]\", n)\n}\n"
+  },
+  {
+    "id": "pf-route53-record-name-total-length",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A record name is limited to 255 bytes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-name-total-length\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The record name is %d characters; a DNS name may not exceed 255\", [count(n)]),\n\t\"Shorten the name to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcount(n) > 255\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-total-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\tsprintf(\"The record name is %d characters; a DNS name may not exceed 255\", [count(n)]),\n\t\"Shorten the name to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcount(n) > 255\n}\n"
+  },
+  {
+    "id": "pf-route53-record-name-wildcard-ns",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An NS record set cannot use a wildcard name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-name-wildcard-ns\", \"ERROR\", name,\n\t\"Properties.Name\",\n\t\"Route 53 refuses wildcard NS record sets: \\\"Changing wildcard NS record sets are not supported\\\"\",\n\t\"Delegate each subdomain with its own NS record set instead of a wildcard\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tstartswith(n, \"*.\")\n\t_pf_r53lib_type(rs) == \"NS\"\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-wildcard-ns\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\t\"Route 53 refuses wildcard NS record sets: \\\"Changing wildcard NS record sets are not supported\\\"\",\n\t\"Delegate each subdomain with its own NS record set instead of a wildcard\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tstartswith(n, \"*.\")\n\t_pf_r53lib_type(rs) == \"NS\"\n}\n"
+  },
+  {
+    "id": "pf-route53-record-type-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Type must be one of the 17 record types Route 53 supports",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_rtypes := {\"A\", \"AAAA\", \"CAA\", \"CNAME\", \"DS\", \"HTTPS\", \"MX\", \"NAPTR\", \"NS\", \"PTR\", \"SOA\", \"SPF\", \"SRV\", \"SSHFP\", \"SVCB\", \"TLSA\", \"TXT\"}\n\nviolation contains make_diag_full(\"pf-route53-record-type-enum\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"'%s' is not a record type Route 53 supports\", [t]),\n\t\"Use one of SOA, A, TXT, NS, CNAME, MX, NAPTR, PTR, SRV, SPF, AAAA, CAA, DS, TLSA, SSHFP, SVCB, HTTPS\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tt := _pf_r53lib_type(rs)\n\tnot t in _pf_r53_rtypes\n}\n\nviolation contains make_diag_full(\"pf-route53-record-type-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Type\", [_pf_it.index]),\n\tsprintf(\"'%s' is not a record type Route 53 supports\", [t]),\n\t\"Use one of SOA, A, TXT, NS, CNAME, MX, NAPTR, PTR, SRV, SPF, AAAA, CAA, DS, TLSA, SSHFP, SVCB, HTTPS\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tt := _pf_r53lib_type(rs)\n\tnot t in _pf_r53_rtypes\n}\n"
+  },
+  {
     "id": "pf-route53-record-type-routing-policy",
     "service": "route53",
     "severity": "ERROR",
@@ -15980,7 +16586,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Route53::RecordSet"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_typol_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_typol_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_typol_has_policy(name) if {\n\tsome p in _pf_r53_typol_props\n\tresolve(name, sprintf(\"Properties.%s\", [p])) != null\n}\n\n_pf_r53_typol_has_policy(name) if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\n# Only combinations that failed on a real deploy are flagged. SOA/DS with a\n# routing policy are also documented as unsupported but were not measured, so\n# they are deliberately left out (see the discovery issue).\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"An NS record cannot use a routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Use a simple record set for NS records (no Weight/Region/Failover/GeoLocation/MultiValueAnswer/CidrRoutingConfig)\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"NS\"\n\t_pf_r53_typol_has_policy(name)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"A CNAME record cannot use the multivalue answer routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Point the multivalue records at A/AAAA (or another supported type), or drop MultiValueAnswer\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"CNAME\"\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_typol_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_typol_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_typol_has_policy(name) if {\n\tsome p in _pf_r53_typol_props\n\tresolve(name, sprintf(\"Properties.%s\", [p])) != null\n}\n\n_pf_r53_typol_has_policy(name) if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\n# Only combinations that failed on a real deploy are flagged. DS with a routing\n# policy is documented as unsupported but the API accepted it (2026-09-08), so\n# it is deliberately left out.\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"An NS record cannot use a routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Use a simple record set for NS records (no Weight/Region/Failover/GeoLocation/MultiValueAnswer/CidrRoutingConfig)\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"NS\"\n\t_pf_r53_typol_has_policy(name)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"An SOA record cannot use a routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Use a simple record set for the SOA record\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"SOA\"\n\t_pf_r53_typol_has_policy(name)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-type-routing-policy\", \"ERROR\", name,\n\t\"Properties.Type\",\n\t\"A CNAME record cannot use the multivalue answer routing policy; the service rejects it with \\\"this type of RRSet is not supported\\\"\",\n\t\"Point the multivalue records at A/AAAA (or another supported type), or drop MultiValueAnswer\",\n\t_pf_r53_typol_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tresolve(name, \"Properties.Type\") == \"CNAME\"\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n"
   },
   {
     "id": "pf-route53-record-value-source",
@@ -15994,6 +16600,52 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_valsrc_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n# The service expects \"exactly one of [AliasTarget, all of [TTL, and\n# ResourceRecords]]\" (TrafficPolicyInstanceId has no CloudFormation property).\n# The TTL+AliasTarget combination is already the engine's E3029, so this rule\n# covers the remaining shapes: alias plus records, and an incomplete non-alias\n# group (records without TTL, TTL without records, or neither).\n_pf_r53_valsrc_has_alias(name) if is_object(resolve(name, \"Properties.AliasTarget\"))\n\n_pf_r53_valsrc_has_rr(name) if {\n\tsome _ in flatten_list(name, \"Properties.ResourceRecords\")\n}\n\n_pf_r53_valsrc_has_ttl(name) if resolve(name, \"Properties.TTL\") != null\n\nviolation contains make_diag_full(\"pf-route53-record-value-source\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\t\"AliasTarget and ResourceRecords are mutually exclusive; the service expects exactly one of AliasTarget or TTL-plus-ResourceRecords\",\n\t\"Keep the AliasTarget and drop ResourceRecords, or make it a plain record with TTL and ResourceRecords\",\n\t_pf_r53_valsrc_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\t_pf_r53_valsrc_has_alias(name)\n\t_pf_r53_valsrc_has_rr(name)\n}\n\nviolation contains make_diag_full(\"pf-route53-record-value-source\", \"ERROR\", name,\n\t\"Properties\",\n\t\"A non-alias record set needs both TTL and ResourceRecords; the service rejects an incomplete pair with \\\"Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords]] ... found none\\\"\",\n\t\"Specify TTL and ResourceRecords together, or use AliasTarget instead\",\n\t_pf_r53_valsrc_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tnot _pf_r53_valsrc_has_alias(name)\n\tnot _pf_r53_valsrc_complete(name)\n}\n\n_pf_r53_valsrc_complete(name) if {\n\t_pf_r53_valsrc_has_rr(name)\n\t_pf_r53_valsrc_has_ttl(name)\n}\n"
   },
   {
+    "id": "pf-route53-recordsetgroup-max-1000-elements",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "One RecordSetGroup may carry at most 1000 ResourceRecords values in total",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_rsg1k_n(g) := sum([count(_pf_r53lib_vals(it.value)) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n])\n\nviolation contains make_diag_full(\"pf-route53-recordsetgroup-max-1000-elements\", \"ERROR\", name,\n\t\"Properties.RecordSets\",\n\tsprintf(\"This record set group carries %d ResourceRecords values; one ChangeResourceRecordSets request accepts at most 1000\", [n]),\n\t\"Split the record sets across several AWS::Route53::RecordSetGroup resources\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tn := _pf_r53_rsg1k_n(name)\n\tn > 1000\n}\n"
+  },
+  {
+    "id": "pf-route53-recordsetgroup-max-32000-chars",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "One RecordSetGroup may carry at most 32000 characters of record data",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_rsg32k_one(rs) := sum([count(v) |\n\tsome v in _pf_r53lib_vals(rs)\n])\n\n_pf_r53_rsg32k_n(g) := sum([_pf_r53_rsg32k_one(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n])\n\nviolation contains make_diag_full(\"pf-route53-recordsetgroup-max-32000-chars\", \"ERROR\", name,\n\t\"Properties.RecordSets\",\n\tsprintf(\"This record set group carries %d characters of record data; one ChangeResourceRecordSets request accepts at most 32000\", [n]),\n\t\"Split the record sets across several AWS::Route53::RecordSetGroup resources\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tn := _pf_r53_rsg32k_n(name)\n\tn > 32000\n}\n"
+  },
+  {
+    "id": "pf-route53-resourcerecord-value-length",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A single ResourceRecords value is limited to 4000 characters",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-resourcerecord-value-length\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"A ResourceRecords value is %d characters; the limit is 4000\", [count(v)]),\n\t\"Split the value across several ResourceRecords entries\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tsome v in _pf_r53lib_vals(rs)\n\tcount(v) > 4000\n}\n\nviolation contains make_diag_full(\"pf-route53-resourcerecord-value-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"A ResourceRecords value is %d characters; the limit is 4000\", [count(v)]),\n\t\"Split the value across several ResourceRecords entries\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tsome v in _pf_r53lib_vals(rs)\n\tcount(v) > 4000\n}\n"
+  },
+  {
+    "id": "pf-route53-resourcerecords-max-400",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A record set may hold at most 400 ResourceRecords values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-resourcerecords-max-400\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The record set has %d values; Route 53 allows at most 400 per RRSet\", [count(_pf_r53lib_rrs(rs))]),\n\t\"Split the values across several record sets\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tcount(_pf_r53lib_rrs(rs)) > 400\n}\n\nviolation contains make_diag_full(\"pf-route53-resourcerecords-max-400\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The record set has %d values; Route 53 allows at most 400 per RRSet\", [count(_pf_r53lib_rrs(rs))]),\n\t\"Split the values across several record sets\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tcount(_pf_r53lib_rrs(rs)) > 400\n}\n"
+  },
+  {
     "id": "pf-route53-routing-policy-exclusive",
     "service": "route53",
     "severity": "ERROR",
@@ -16005,6 +16657,18 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service enforces \"Expected exactly one of [Weight, Region, Failover,\n# GeoLocation, MultiValueAnswer, GeoProximityLocation, or CidrRoutingConfig]\".\n# GeoProximityLocation is not a CloudFormation property, so five remain here.\n# MultiValueAnswer: false is treated as absent — only true selects the policy.\n_pf_r53_polx_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_polx_present(name, prop) if {\n\tprop != \"MultiValueAnswer\"\n\tresolve(name, sprintf(\"Properties.%s\", [prop])) != null\n}\n\n_pf_r53_polx_present(name, \"MultiValueAnswer\") if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\n_pf_r53_polx_policies(name) := ps if {\n\tps := [p | some p in array.concat(_pf_r53_polx_props, [\"MultiValueAnswer\"]); _pf_r53_polx_present(name, p)]\n}\n\nviolation contains make_diag_full(\"pf-route53-routing-policy-exclusive\", \"ERROR\", name,\n\t\"Properties\",\n\tsprintf(\"A record set can use only one routing policy, but %v are all specified\", [ps]),\n\t\"Keep exactly one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, or CidrRoutingConfig and split the rest into separate record sets\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tps := _pf_r53_polx_policies(name)\n\tcount(ps) > 1\n}\n"
   },
   {
+    "id": "pf-route53-set-identifier-length",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "SetIdentifier must be 1-128 characters",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-length\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\tsprintf(\"SetIdentifier is %d characters; the Route 53 API requires 1-128 even though the CloudFormation reference says Minimum: 0\", [count(sid)]),\n\t\"Give the record set a SetIdentifier of 1-128 characters, unique within its Name and Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tsid := _pf_r53lib_str(rs, \"SetIdentifier\")\n\tcount(sid) > 128\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].SetIdentifier\", [_pf_it.index]),\n\tsprintf(\"SetIdentifier is %d characters; the Route 53 API requires 1-128 even though the CloudFormation reference says Minimum: 0\", [count(sid)]),\n\t\"Give the record set a SetIdentifier of 1-128 characters, unique within its Name and Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tsid := _pf_r53lib_str(rs, \"SetIdentifier\")\n\tcount(sid) > 128\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-length\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"SetIdentifier is empty; the Route 53 API requires 1-128 characters even though the CloudFormation reference says Minimum: 0\",\n\t\"Give the record set a SetIdentifier of 1-128 characters, unique within its Name and Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tsid := _pf_r53lib_str(rs, \"SetIdentifier\")\n\tsid == \"\"\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].SetIdentifier\", [_pf_it.index]),\n\t\"SetIdentifier is empty; the Route 53 API requires 1-128 characters even though the CloudFormation reference says Minimum: 0\",\n\t\"Give the record set a SetIdentifier of 1-128 characters, unique within its Name and Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tsid := _pf_r53lib_str(rs, \"SetIdentifier\")\n\tsid == \"\"\n}\n"
+  },
+  {
     "id": "pf-route53-set-identifier-pairing",
     "service": "route53",
     "severity": "ERROR",
@@ -16013,7 +16677,197 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Route53::RecordSet"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_sidp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_sidp_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_sidp_has_policy(name) if {\n\tsome p in _pf_r53_sidp_props\n\tresolve(name, sprintf(\"Properties.%s\", [p])) != null\n}\n\n_pf_r53_sidp_has_policy(name) if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-pairing\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"A routing policy is configured but SetIdentifier is missing; the ChangeResourceRecordSets call fails with \\\"Missing field 'SetIdentifier'\\\"\",\n\t\"Add a SetIdentifier that is unique among the record sets sharing this Name and Type\",\n\t_pf_r53_sidp_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\t_pf_r53_sidp_has_policy(name)\n\tnot is_string(resolve(name, \"Properties.SetIdentifier\"))\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-pairing\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"SetIdentifier is specified but no routing policy is; the service expects exactly one of Weight, Region, Failover, GeoLocation, MultiValueAnswer, or CidrRoutingConfig and finds none\",\n\t\"Remove SetIdentifier from this simple record set, or add the routing policy it was meant for\",\n\t_pf_r53_sidp_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tis_string(resolve(name, \"Properties.SetIdentifier\"))\n\tnot _pf_r53_sidp_has_policy(name)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_sidp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n# GeoProximityLocation became a CloudFormation property after this rule was\n# written; without it here a geoproximity record set reads as \"SetIdentifier\n# with no routing policy\" and the rule false-positives (measured 2026-09-10).\n_pf_r53_sidp_props := [\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"GeoProximityLocation\", \"CidrRoutingConfig\"]\n\n_pf_r53_sidp_has_policy(name) if {\n\tsome p in _pf_r53_sidp_props\n\tresolve(name, sprintf(\"Properties.%s\", [p])) != null\n}\n\n_pf_r53_sidp_has_policy(name) if {\n\tresolve(name, \"Properties.MultiValueAnswer\") == true\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-pairing\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"A routing policy is configured but SetIdentifier is missing; the ChangeResourceRecordSets call fails with \\\"Missing field 'SetIdentifier'\\\"\",\n\t\"Add a SetIdentifier that is unique among the record sets sharing this Name and Type\",\n\t_pf_r53_sidp_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\t_pf_r53_sidp_has_policy(name)\n\tnot is_string(resolve(name, \"Properties.SetIdentifier\"))\n}\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-pairing\", \"ERROR\", name,\n\t\"Properties.SetIdentifier\",\n\t\"SetIdentifier is specified but no routing policy is; the service expects exactly one of Weight, Region, Failover, GeoLocation, GeoProximityLocation, MultiValueAnswer, or CidrRoutingConfig and finds none\",\n\t\"Remove SetIdentifier from this simple record set, or add the routing policy it was meant for\",\n\t_pf_r53_sidp_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tis_string(resolve(name, \"Properties.SetIdentifier\"))\n\tnot _pf_r53_sidp_has_policy(name)\n}\n"
+  },
+  {
+    "id": "pf-route53-set-identifier-unique-in-group",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "SetIdentifier must be unique among record sets sharing a name and type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-set-identifier-unique-in-group\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"Two record sets for '%s' share the SetIdentifier '%s'; it is the key that tells them apart\", [k, sid]),\n\t\"Give each record set in the group its own SetIdentifier\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tsid := _pf_r53lib_str(a.value, \"SetIdentifier\")\n\tsid == _pf_r53lib_str(b.value, \"SetIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-route53-simple-and-policy-same-name-type",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A simple record set cannot coexist with a routing-policy record set of the same name and type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-simple-and-policy-same-name-type\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"'%s' has both a simple record set and one with a routing policy; Route 53 keeps the two shapes apart\", [k]),\n\t\"Give every record set for this name and type a routing policy, or keep only the simple one\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index != b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\tcount(_pf_r53lib_kinds(a.value)) == 0\n\tcount(_pf_r53lib_kinds(b.value)) > 0\n}\n"
+  },
+  {
+    "id": "pf-route53-soa-field-count",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An SOA record value needs exactly 7 space-separated fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-soa-field-count\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"An SOA value must have 7 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <primary name server> <hostmaster> <serial> <refresh> <retry> <expire> <minimum>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SOA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 7\n}\n\nviolation contains make_diag_full(\"pf-route53-soa-field-count\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"An SOA value must have 7 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <primary name server> <hostmaster> <serial> <refresh> <retry> <expire> <minimum>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SOA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 7\n}\n"
+  },
+  {
+    "id": "pf-route53-spf-value-quotes",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An SPF record value must be enclosed in quotation marks",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-spf-value-quotes\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"An SPF value must be enclosed in double quotes: '%s'\", [v]),\n\t\"Wrap the value in double quotes, and prefer a TXT record (SPF records are deprecated)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SPF\"\n\tsome v in _pf_r53lib_vals(rs)\n\tnot _pf_r53lib_quoted(v)\n}\n\nviolation contains make_diag_full(\"pf-route53-spf-value-quotes\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"An SPF value must be enclosed in double quotes: '%s'\", [v]),\n\t\"Wrap the value in double quotes, and prefer a TXT record (SPF records are deprecated)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SPF\"\n\tsome v in _pf_r53lib_vals(rs)\n\tnot _pf_r53lib_quoted(v)\n}\n"
+  },
+  {
+    "id": "pf-route53-srv-field-count",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An SRV record value needs exactly 4 space-separated fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-srv-field-count\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"An SRV value must have 4 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <priority> <weight> <port> <target domain name>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SRV\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 4\n}\n\nviolation contains make_diag_full(\"pf-route53-srv-field-count\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"An SRV value must have 4 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <priority> <weight> <port> <target domain name>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SRV\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 4\n}\n"
+  },
+  {
+    "id": "pf-route53-sshfp-field-count",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "An SSHFP record value needs exactly 3 space-separated fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-sshfp-field-count\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"An SSHFP value must have 3 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <key algorithm> <fingerprint type> <fingerprint>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SSHFP\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 3\n}\n\nviolation contains make_diag_full(\"pf-route53-sshfp-field-count\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"An SSHFP value must have 3 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <key algorithm> <fingerprint type> <fingerprint>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SSHFP\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 3\n}\n"
+  },
+  {
+    "id": "pf-route53-sshfp-fingerprint-hex",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The SSHFP fingerprint must be hexadecimal",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-sshfp-fingerprint-hex\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The SSHFP fingerprint '%s' is not hexadecimal\", [f[2]]),\n\t\"Write the fingerprint as hex digits (ssh-keygen -r prints it in this form)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SSHFP\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 3\n\tnot regex.match(\"^[0-9a-fA-F]+$\", f[2])\n}\n\nviolation contains make_diag_full(\"pf-route53-sshfp-fingerprint-hex\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The SSHFP fingerprint '%s' is not hexadecimal\", [f[2]]),\n\t\"Write the fingerprint as hex digits (ssh-keygen -r prints it in this form)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SSHFP\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 3\n\tnot regex.match(\"^[0-9a-fA-F]+$\", f[2])\n}\n"
+  },
+  {
+    "id": "pf-route53-sshfp-hash-type-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The SSHFP fingerprint type must be 1 or 2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-sshfp-hash-type-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The SSHFP fingerprint type must be 1 (SHA-1) or 2 (SHA-256), got %v\", [n]),\n\t\"Use 1 for SHA-1 or 2 for SHA-256\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SSHFP\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 3\n\tn := to_number(f[1])\n\tnot n in {1, 2}\n}\n\nviolation contains make_diag_full(\"pf-route53-sshfp-hash-type-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The SSHFP fingerprint type must be 1 (SHA-1) or 2 (SHA-256), got %v\", [n]),\n\t\"Use 1 for SHA-1 or 2 for SHA-256\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SSHFP\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 3\n\tn := to_number(f[1])\n\tnot n in {1, 2}\n}\n"
+  },
+  {
+    "id": "pf-route53-svcb-svcpriority-range",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The SVCB SvcPriority must be 0-32767",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-svcb-svcpriority-range\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The SVCB SvcPriority must be between 0 and 32767, got %v\", [n]),\n\t\"Use a priority in 0-32767 (0 selects AliasMode)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 2\n\tn := to_number(f[0])\n\tn > 32767\n}\n\nviolation contains make_diag_full(\"pf-route53-svcb-svcpriority-range\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The SVCB SvcPriority must be between 0 and 32767, got %v\", [n]),\n\t\"Use a priority in 0-32767 (0 selects AliasMode)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 2\n\tn := to_number(f[0])\n\tn > 32767\n}\n"
+  },
+  {
+    "id": "pf-route53-svcparams-key-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "SvcParams keys are limited to the eight defined names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_svcb_keys := {\"alpn\", \"dohpath\", \"ech\", \"ipv4hint\", \"ipv6hint\", \"no-default-alpn\", \"ohttp\", \"port\"}\n\n_pf_r53_svcb_valued := {\"alpn\", \"dohpath\", \"ech\", \"ipv4hint\", \"ipv6hint\", \"port\"}\n\n_pf_r53_svcb_keyset(f) := {k |\n\tsome i in numbers.range(2, count(f) - 1)\n\tk := split(f[i], \"=\")[0]\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)\", [k]),\n\t\"Use one of the eight defined keys\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tnot k in _pf_r53_svcb_keys\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)\", [k]),\n\t\"Use one of the eight defined keys\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tnot k in _pf_r53_svcb_keys\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)\", [k]),\n\t\"Use one of the eight defined keys\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tnot k in _pf_r53_svcb_keys\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)\", [k]),\n\t\"Use one of the eight defined keys\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tnot k in _pf_r53_svcb_keys\n}\n"
+  },
+  {
+    "id": "pf-route53-svcparams-key-value-format",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "SvcParams that take a value must be written as key=value",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_svcb_keys := {\"alpn\", \"dohpath\", \"ech\", \"ipv4hint\", \"ipv6hint\", \"no-default-alpn\", \"ohttp\", \"port\"}\n\n_pf_r53_svcb_valued := {\"alpn\", \"dohpath\", \"ech\", \"ipv4hint\", \"ipv6hint\", \"port\"}\n\n_pf_r53_svcb_keyset(f) := {k |\n\tsome i in numbers.range(2, count(f) - 1)\n\tk := split(f[i], \"=\")[0]\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-value-format\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The SvcParam '%s' needs a value: write it as %s=<value>\", [p, k]),\n\t\"Write the parameter as key=value (comma-separate multiple values)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tk in _pf_r53_svcb_valued\n\tnot contains(p, \"=\")\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-value-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The SvcParam '%s' needs a value: write it as %s=<value>\", [p, k]),\n\t\"Write the parameter as key=value (comma-separate multiple values)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tk in _pf_r53_svcb_valued\n\tnot contains(p, \"=\")\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-value-format\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The SvcParam '%s' needs a value: write it as %s=<value>\", [p, k]),\n\t\"Write the parameter as key=value (comma-separate multiple values)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tk in _pf_r53_svcb_valued\n\tnot contains(p, \"=\")\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-key-value-format\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The SvcParam '%s' needs a value: write it as %s=<value>\", [p, k]),\n\t\"Write the parameter as key=value (comma-separate multiple values)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tsome i in numbers.range(2, count(f) - 1)\n\tp := f[i]\n\tk := split(p, \"=\")[0]\n\tk in _pf_r53_svcb_valued\n\tnot contains(p, \"=\")\n}\n"
+  },
+  {
+    "id": "pf-route53-svcparams-no-default-alpn-requires-alpn",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "no-default-alpn may only be used together with alpn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_svcb_keys := {\"alpn\", \"dohpath\", \"ech\", \"ipv4hint\", \"ipv6hint\", \"no-default-alpn\", \"ohttp\", \"port\"}\n\n_pf_r53_svcb_valued := {\"alpn\", \"dohpath\", \"ech\", \"ipv4hint\", \"ipv6hint\", \"port\"}\n\n_pf_r53_svcb_keyset(f) := {k |\n\tsome i in numbers.range(2, count(f) - 1)\n\tk := split(f[i], \"=\")[0]\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-no-default-alpn-requires-alpn\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\t\"The SvcParams set no-default-alpn without an alpn parameter; Route 53 rejects the pair as inconsistent\",\n\t\"Add an alpn parameter (for example alpn=h2), or drop no-default-alpn\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tkeys := _pf_r53_svcb_keyset(f)\n\t\"no-default-alpn\" in keys\n\tnot \"alpn\" in keys\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-no-default-alpn-requires-alpn\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\t\"The SvcParams set no-default-alpn without an alpn parameter; Route 53 rejects the pair as inconsistent\",\n\t\"Add an alpn parameter (for example alpn=h2), or drop no-default-alpn\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"HTTPS\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tkeys := _pf_r53_svcb_keyset(f)\n\t\"no-default-alpn\" in keys\n\tnot \"alpn\" in keys\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-no-default-alpn-requires-alpn\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\t\"The SvcParams set no-default-alpn without an alpn parameter; Route 53 rejects the pair as inconsistent\",\n\t\"Add an alpn parameter (for example alpn=h2), or drop no-default-alpn\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tkeys := _pf_r53_svcb_keyset(f)\n\t\"no-default-alpn\" in keys\n\tnot \"alpn\" in keys\n}\n\nviolation contains make_diag_full(\"pf-route53-svcparams-no-default-alpn-requires-alpn\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\t\"The SvcParams set no-default-alpn without an alpn parameter; Route 53 rejects the pair as inconsistent\",\n\t\"Add an alpn parameter (for example alpn=h2), or drop no-default-alpn\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"SVCB\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) >= 3\n\tkeys := _pf_r53_svcb_keyset(f)\n\t\"no-default-alpn\" in keys\n\tnot \"alpn\" in keys\n}\n"
+  },
+  {
+    "id": "pf-route53-tlsa-certificate-usage-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The TLSA certificate usage must be 0-3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-tlsa-certificate-usage-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The TLSA certificate usage must be 0, 1, 2 or 3, got %v\", [n]),\n\t\"Use 0 (PKIX-TA), 1 (PKIX-EE), 2 (DANE-TA) or 3 (DANE-EE)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 4\n\tn := to_number(f[0])\n\tnot n in {0, 1, 2, 3}\n}\n\nviolation contains make_diag_full(\"pf-route53-tlsa-certificate-usage-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The TLSA certificate usage must be 0, 1, 2 or 3, got %v\", [n]),\n\t\"Use 0 (PKIX-TA), 1 (PKIX-EE), 2 (DANE-TA) or 3 (DANE-EE)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 4\n\tn := to_number(f[0])\n\tnot n in {0, 1, 2, 3}\n}\n"
+  },
+  {
+    "id": "pf-route53-tlsa-field-count",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A TLSA record value needs exactly 4 space-separated fields",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-tlsa-field-count\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"A TLSA value must have 4 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <certificate usage> <selector> <matching type> <certificate association data>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 4\n}\n\nviolation contains make_diag_full(\"pf-route53-tlsa-field-count\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"A TLSA value must have 4 space-separated fields, got %d in '%s'\", [count(f), v]),\n\t\"Use: <certificate usage> <selector> <matching type> <certificate association data>\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) != 4\n}\n"
+  },
+  {
+    "id": "pf-route53-tlsa-matching-type-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The TLSA matching type must be 0, 1 or 2",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-tlsa-matching-type-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The TLSA matching type must be 0 (exact), 1 (SHA-256) or 2 (SHA-512), got %v\", [n]),\n\t\"Use 0, 1 or 2\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 4\n\tn := to_number(f[2])\n\tnot n in {0, 1, 2}\n}\n\nviolation contains make_diag_full(\"pf-route53-tlsa-matching-type-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The TLSA matching type must be 0 (exact), 1 (SHA-256) or 2 (SHA-512), got %v\", [n]),\n\t\"Use 0, 1 or 2\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 4\n\tn := to_number(f[2])\n\tnot n in {0, 1, 2}\n}\n"
+  },
+  {
+    "id": "pf-route53-tlsa-selector-enum",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "The TLSA selector must be 0 or 1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-tlsa-selector-enum\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The TLSA selector must be 0 (full certificate) or 1 (SubjectPublicKeyInfo), got %v\", [n]),\n\t\"Use 0 or 1\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 4\n\tn := to_number(f[1])\n\tnot n in {0, 1}\n}\n\nviolation contains make_diag_full(\"pf-route53-tlsa-selector-enum\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The TLSA selector must be 0 (full certificate) or 1 (SubjectPublicKeyInfo), got %v\", [n]),\n\t\"Use 0 or 1\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"TLSA\"\n\tsome v in _pf_r53lib_vals(rs)\n\tf := _pf_r53lib_fields(v)\n\tcount(f) == 4\n\tn := to_number(f[1])\n\tnot n in {0, 1}\n}\n"
   },
   {
     "id": "pf-route53-ttl-range",
@@ -16027,6 +16881,18 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound is enforced: the service rejected 9999999999 with\n# \"Member must have value less than or equal to 2147483647\". Negative TTLs are\n# untested, so they are deliberately not flagged.\nviolation contains make_diag_full(\"pf-route53-ttl-range\", \"ERROR\", name,\n\t\"Properties.TTL\",\n\tsprintf(\"TTL must be at most 2147483647 seconds, got %v\", [n]),\n\t\"Set TTL to a 32-bit value; anything above a day rarely helps caching anyway\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tt := resolve(name, \"Properties.TTL\")\n\tn := to_number(t)\n\tn > 2147483647\n}\n"
   },
   {
+    "id": "pf-route53-txt-octal-escape",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "TXT values may only contain printable ASCII",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSet",
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-txt-octal-escape\", \"ERROR\", name,\n\t\"Properties.ResourceRecords\",\n\tsprintf(\"The TXT value '%s' contains a character outside printable ASCII; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [v]),\n\t\"Write such characters as a three-digit octal escape (\\\\\\\\303\\\\\\\\244 for \\u00e4)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\t_pf_r53lib_type(rs) == \"TXT\"\n\tsome v in _pf_r53lib_vals(rs)\n\tregex.match(\"[^ -~]\", v)\n}\n\nviolation contains make_diag_full(\"pf-route53-txt-octal-escape\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].ResourceRecords\", [_pf_it.index]),\n\tsprintf(\"The TXT value '%s' contains a character outside printable ASCII; Route 53 rejects it with \\\"Value contains unsupported characters\\\"\", [v]),\n\t\"Write such characters as a three-digit octal escape (\\\\\\\\303\\\\\\\\244 for \\u00e4)\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\t_pf_r53lib_type(rs) == \"TXT\"\n\tsome v in _pf_r53lib_vals(rs)\n\tregex.match(\"[^ -~]\", v)\n}\n"
+  },
+  {
     "id": "pf-route53-weight-range",
     "service": "route53",
     "severity": "ERROR",
@@ -16038,6 +16904,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only the measured bound is enforced: the service rejected 300 with \"Member\n# must have value less than or equal to 255\". Negative weights are untested,\n# so they are deliberately not flagged.\nviolation contains make_diag_full(\"pf-route53-weight-range\", \"ERROR\", name,\n\t\"Properties.Weight\",\n\tsprintf(\"Weight must be at most 255, got %v\", [n]),\n\t\"Set Weight to a value in [0, 255]; weights are relative, so scale the group down proportionally\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tw := resolve(name, \"Properties.Weight\")\n\tn := to_number(w)\n\tn > 255\n}\n"
   },
   {
+    "id": "pf-route53-weighted-group-same-ttl",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "Weighted record sets sharing a name and type must have the same TTL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-weighted-group-same-ttl\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d]\", [b.index]),\n\tsprintf(\"The weighted record sets for '%s' have different TTLs (%v and %v); Route 53 requires one TTL across the group\", [k, ta, tb]),\n\t\"Give every weighted record set in the group the same TTL\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\tsome b in flatten_list(name, \"Properties.RecordSets\")\n\ta.index < b.index\n\tk := _pf_r53lib_key(a.value)\n\tk == _pf_r53lib_key(b.value)\n\t\"Weight\" in _pf_r53lib_kinds(a.value)\n\t\"Weight\" in _pf_r53lib_kinds(b.value)\n\tta := _pf_r53lib_get(a.value, \"TTL\")\n\ttb := _pf_r53lib_get(b.value, \"TTL\")\n\tto_number(ta) != to_number(tb)\n}\n"
+  },
+  {
+    "id": "pf-route53-weighted-max-100-same-name-type",
+    "service": "route53",
+    "severity": "ERROR",
+    "title": "A weighted group may hold at most 100 record sets per name and type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Route53::RecordSetGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_wmax_n(g, k) := count([1 |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n\t_pf_r53lib_key(it.value) == k\n\t\"Weight\" in _pf_r53lib_kinds(it.value)\n])\n\nviolation contains make_diag_full(\"pf-route53-weighted-max-100-same-name-type\", \"ERROR\", name,\n\t\"Properties.RecordSets\",\n\tsprintf(\"'%s' has %d weighted record sets; Route 53 allows at most 100 per name and type\", [k, n]),\n\t\"Keep at most 100 weighted record sets for one name and type\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome a in flatten_list(name, \"Properties.RecordSets\")\n\t\"Weight\" in _pf_r53lib_kinds(a.value)\n\tk := _pf_r53lib_key(a.value)\n\tn := _pf_r53_wmax_n(name, k)\n\tn > 100\n}\n"
+  },
+  {
     "id": "pf-route53-zonename-trailing-dot",
     "service": "route53",
     "severity": "ERROR",
@@ -16046,7 +16934,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Route53::RecordSet"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation looks the zone up by the literal HostedZoneName and does not\n# normalize the trailing dot: the same stack deployed clean with\n# \"zone.example.\" and failed with NotFound for \"zone.example\" (2026-09-02).\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\tsprintf(\"HostedZoneName '%s' is missing the trailing dot, so CloudFormation fails the lookup with \\\"No hosted zone with name ... found\\\"\", [zn]),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\tis_string(zn)\n\tzn != \"\"\n\tnot endswith(zn, \".\")\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_r53_zdot_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html\"\n\n_pf_r53_zdot_msg(zn) := sprintf(\"HostedZoneName '%s' is missing the trailing dot, so CloudFormation fails the lookup with \\\"No hosted zone with name ... found\\\"\", [zn])\n\n_pf_r53_zdot_bad(zn) if {\n\tis_string(zn)\n\tzn != \"\"\n\tnot endswith(zn, \".\")\n}\n\n# CloudFormation looks the zone up by the literal HostedZoneName and does not\n# normalize the trailing dot: the same stack deployed clean with\n# \"zone.example.\" and failed with NotFound for \"zone.example\" (2026-09-02).\n# RecordSetGroup carries the same property and the same lookup.\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\t_pf_r53_zdot_msg(zn),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t_pf_r53_zdot_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\t_pf_r53_zdot_bad(zn)\n}\n\nviolation contains make_diag_full(\"pf-route53-zonename-trailing-dot\", \"ERROR\", name,\n\t\"Properties.HostedZoneName\",\n\t_pf_r53_zdot_msg(zn),\n\tsprintf(\"Use '%s.' (with the trailing dot)\", [zn]),\n\t_pf_r53_zdot_url) if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tzn := resolve(name, \"Properties.HostedZoneName\")\n\t_pf_r53_zdot_bad(zn)\n}\n"
   },
   {
     "id": "pf-s3-accelerate-dotted-name",
@@ -18335,6 +19223,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/rds",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RDS ルールの共有ヘルパー。不在の証明は input.resources 側でしかできない\n# （resolve() はキー不在と未解決トークンの両方で undefined になる、AGENTS.md 参照）ので、\n# 「プロパティが書かれているか」は必ず _pf_rds_has を通す。エンジン名の比較は\n# リテラルに限る（Ref はエンジン名ではなく論理 ID に解決されるため）。\n# 診断は出さない（BUNDLED_LIBS）。\n\n_pf_rds_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_rds_get(name, k) := v if {\n\tv := object.get(_pf_rds_props(name), k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_rds_has(name, k) if {\n\t_pf_rds_get(name, k)\n}\n\n# ユーザーが書いたリテラルのエンジン名（小文字）。Ref/GetAtt は論理 ID に解決されるので弾く。\n_pf_rds_engine(name) := lower(e) if {\n\te := resolve(name, \"Properties.Engine\")\n\tis_string(e)\n\tnot input.resources[e]\n}\n\n# エンジン系列。互いに前方一致しない接頭辞なので、一致するのは高々 1 つ。\n_pf_rds_fam_prefix := {\"aurora-mysql\", \"aurora-postgresql\", \"mariadb\", \"mysql\", \"postgres\", \"oracle-\", \"sqlserver-\", \"db2-\"}\n\n_pf_rds_famof(s) := f if {\n\tis_string(s)\n\tsome f in _pf_rds_fam_prefix\n\tstartswith(lower(s), f)\n}\n\n_pf_rds_family(name) := _pf_rds_famof(_pf_rds_engine(name))\n\n_pf_rds_engine_in(name, families) if {\n\tsome f in families\n\t_pf_rds_family(name) == f\n}\n\n# 文書に true と書かれている場合だけ真（未解決トークンは対象外）。\n_pf_rds_true(name, k) if _pf_rds_get(name, k) == true\n\n_pf_rds_true(name, k) if _pf_rds_get(name, k) == \"true\"\n\n_pf_rds_false(name, k) if _pf_rds_get(name, k) == false\n\n_pf_rds_false(name, k) if _pf_rds_get(name, k) == \"false\"\n"
+  },
+  {
+    "name": "_lib/route53",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 のレコード系ルールの共有ヘルパー。診断は出さない。\n#\n# レコードセットは 2 つの形で現れる: AWS::Route53::RecordSet リソースそのものと、\n# AWS::Route53::RecordSetGroup の Properties.RecordSets の各要素。どちらも\n# 「プロパティのオブジェクト」に正規化して、以下のヘルパーはすべてその rs を受け取る。\n# 生のオブジェクトを見るので Ref/GetAtt はマーカー（{\"__kind\",\"__ref\"}）のままで、\n# is_string ガードがユーザーのリテラルだけを通す。\n\n_pf_r53lib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_r53lib_get(rs, k) := v if {\n\tv := object.get(rs, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_r53lib_has(rs, k) if {\n\t_pf_r53lib_get(rs, k)\n}\n\n_pf_r53lib_str(rs, k) := v if {\n\tv := _pf_r53lib_get(rs, k)\n\tis_string(v)\n}\n\n_pf_r53lib_num(rs, k) := to_number(_pf_r53lib_get(rs, k))\n\n# 末尾ドットを落として小文字化した DNS 名。Route 53 は両者を同じ名前として扱う。\n_pf_r53lib_norm(n) := trim_suffix(lower(n), \".\")\n\n_pf_r53lib_name(rs) := _pf_r53lib_norm(_pf_r53lib_str(rs, \"Name\"))\n\n_pf_r53lib_type(rs) := _pf_r53lib_str(rs, \"Type\")\n\n# Name と Type が両方リテラルのときだけ定義される、レコードセットのグループキー。\n_pf_r53lib_key(rs) := sprintf(\"%s|%s\", [_pf_r53lib_name(rs), _pf_r53lib_type(rs)])\n\n_pf_r53lib_policy_props := {\"Weight\", \"Region\", \"Failover\", \"GeoLocation\", \"GeoProximityLocation\", \"CidrRoutingConfig\", \"MultiValueAnswer\"}\n\n# 指定されているルーティングポリシー用プロパティの集合。空集合なら simple。\n_pf_r53lib_kinds(rs) := {p |\n\tsome p in _pf_r53lib_policy_props\n\t_pf_r53lib_has(rs, p)\n}\n\n_pf_r53lib_rrs(rs) := a if {\n\ta := _pf_r53lib_get(rs, \"ResourceRecords\")\n\tis_array(a)\n}\n\n# リテラル文字列の値だけ。intrinsic 経由の値はマーカーなので落ちる。\n_pf_r53lib_vals(rs) := [v |\n\tsome v in _pf_r53lib_rrs(rs)\n\tis_string(v)\n]\n\n# 空白区切りのフィールド（連続空白は潰す）。\n_pf_r53lib_fields(v) := [f |\n\tsome f in split(v, \" \")\n\tf != \"\"\n]\n\n_pf_r53lib_quoted(f) if {\n\tstartswith(f, \"\\\"\")\n\tendswith(f, \"\\\"\")\n\tcount(f) >= 2\n}\n\n_pf_r53lib_alias(rs) := a if {\n\ta := _pf_r53lib_get(rs, \"AliasTarget\")\n\tis_object(a)\n}\n\n_pf_r53lib_alias_dns(rs) := _pf_r53lib_norm(d) if {\n\td := object.get(_pf_r53lib_alias(rs), \"DNSName\", null)\n\tis_string(d)\n}\n\n_pf_r53lib_alias_zoneid(rs) := z if {\n\tz := object.get(_pf_r53lib_alias(rs), \"HostedZoneId\", null)\n\tis_string(z)\n}\n\n# Ref / GetAtt マーカーが指す論理 ID。\n_pf_r53lib_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", null)\n\tis_string(r)\n}\n\n# alias 先が同一テンプレート内の HostedZone（＝このスタックで新規に作られるゾーン）\n# のとき、その論理 ID。\n_pf_r53lib_alias_ownzone(rs) := z if {\n\tz := _pf_r53lib_ref(object.get(_pf_r53lib_alias(rs), \"HostedZoneId\", null))\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n_pf_r53lib_zone_name(logical) := _pf_r53lib_norm(n) if {\n\tn := resolve(logical, \"Properties.Name\")\n\tis_string(n)\n}\n\n# private hosted zone（VPCs が 1 件以上）\n_pf_r53lib_private_zone(logical) if {\n\tcount(flatten_list(logical, \"Properties.VPCs\")) > 0\n}\n\n# レコードが属するゾーンの論理 ID（HostedZoneId が同一テンプレートのゾーンを指すとき）。\n_pf_r53lib_own_zone(rs) := z if {\n\tz := _pf_r53lib_ref(_pf_r53lib_get(rs, \"HostedZoneId\"))\n\tz in resources_of_type(\"AWS::Route53::HostedZone\")\n}\n\n# name が suffix ゾーンの内側にあるか（apex を含む）。\n_pf_r53lib_within(name, zone) if {\n\tname == zone\n}\n\n_pf_r53lib_within(name, zone) if {\n\tendswith(name, concat(\"\", [\".\", zone]))\n}\n\n# テンプレートが作るレコードセットの \"name|type\" キーと name の集合。\n# 同一ゾーン内 alias の参照先が本当にテンプレートにあるかを見るのに使う。\n# ネストしたコンプリヘンションは 1 本に書けない（エンジンの方言）ので段で分ける。\n\n_pf_r53lib_gkeys(g) := {_pf_r53lib_key(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n}\n\n_pf_r53lib_gnames(g) := {_pf_r53lib_name(it.value) |\n\tsome it in flatten_list(g, \"Properties.RecordSets\")\n}\n\n_pf_r53lib_skeys := {_pf_r53lib_key(_pf_r53lib_props(r)) |\n\tsome r in resources_of_type(\"AWS::Route53::RecordSet\")\n}\n\n_pf_r53lib_snames := {_pf_r53lib_name(_pf_r53lib_props(r)) |\n\tsome r in resources_of_type(\"AWS::Route53::RecordSet\")\n}\n\n_pf_r53lib_gkeys_all := union({_pf_r53lib_gkeys(g) |\n\tsome g in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n})\n\n_pf_r53lib_gnames_all := union({_pf_r53lib_gnames(g) |\n\tsome g in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n})\n\n_pf_r53lib_keys := union({_pf_r53lib_skeys, _pf_r53lib_gkeys_all})\n\n_pf_r53lib_names := union({_pf_r53lib_snames, _pf_r53lib_gnames_all})\n"
   },
   {
     "name": "_lib/s3",
