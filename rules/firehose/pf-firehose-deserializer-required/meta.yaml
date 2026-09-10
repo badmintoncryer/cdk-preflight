@@ -1,0 +1,11 @@
+id: pf-firehose-deserializer-required
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: InputFormatConfiguration must carry a deserializer
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_InputFormatConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: Deserializer must not be null -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: InputFormatConfiguration with an empty Deserializer -> InvalidArgumentException \"Deserializer must not be null\"."
+addedOn: 2026-09-10

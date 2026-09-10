@@ -1,0 +1,11 @@
+id: pf-firehose-http-buffer-size
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: HTTP endpoint buffering is capped at 64 MB
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_HttpEndpointBufferingHints.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: 1 validation error detected: Value at 'httpEndpointDestinationConfiguration.bufferingHints.sizeInMBs' failed to satisfy constraint: Member must have value less than or equal to 64 -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: HttpEndpointDestinationConfiguration.BufferingHints.SizeInMBs 128 -> ValidationException \"Value at 'httpEndpointDestinationConfiguration.bufferingHints.sizeInMBs' failed to satisfy constraint: Member must have value less than or equal to 64\". The bundled schema carries no range for this property although it does for the other destinations."
+addedOn: 2026-09-10

@@ -1,0 +1,109 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Db": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": "cdkpf_pf_firehose_schema_config_role_account"
+        }
+      }
+    },
+    "Tbl": {
+      "Type": "AWS::Glue::Table",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseName": {
+          "Ref": "Db"
+        },
+        "TableInput": {
+          "Name": "t",
+          "TableType": "EXTERNAL_TABLE",
+          "StorageDescriptor": {
+            "Columns": [
+              {
+                "Name": "a",
+                "Type": "string"
+              }
+            ],
+            "Location": "s3://cdkpf/t/"
+          }
+        }
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "DataFormatConversionConfiguration": {
+            "Enabled": true,
+            "SchemaConfiguration": {
+              "RoleARN": {
+                "Fn::GetAtt": [
+                  "R",
+                  "Arn"
+                ]
+              },
+              "DatabaseName": {
+                "Ref": "Db"
+              },
+              "TableName": "t",
+              "Region": "us-east-1"
+            },
+            "InputFormatConfiguration": {
+              "Deserializer": {
+                "OpenXJsonSerDe": {}
+              }
+            },
+            "OutputFormatConfiguration": {
+              "Serializer": {
+                "ParquetSerDe": {}
+              }
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        "Tbl"
+      ]
+    }
+  }
+}

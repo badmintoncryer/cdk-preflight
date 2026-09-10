@@ -1,0 +1,117 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "DynamicPartitioningConfiguration": {
+            "Enabled": true
+          },
+          "Prefix": "p/!{partitionKeyFromQuery:a}/",
+          "ErrorOutputPrefix": "err/!{firehose:error-output-type}/",
+          "BufferingHints": {
+            "SizeInMBs": 64,
+            "IntervalInSeconds": 60
+          },
+          "ProcessingConfiguration": {
+            "Enabled": true,
+            "Processors": [
+              {
+                "Type": "MetadataExtraction",
+                "Parameters": [
+                  {
+                    "ParameterName": "MetadataExtractionQuery",
+                    "ParameterValue": "{a:.a}"
+                  },
+                  {
+                    "ParameterName": "JsonParsingEngine",
+                    "ParameterValue": "JQ-1.6"
+                  }
+                ]
+              },
+              {
+                "Type": "Lambda",
+                "Parameters": [
+                  {
+                    "ParameterName": "LambdaArn",
+                    "ParameterValue": "arn:aws:lambda:us-east-1:214794239830:function:cdkpf-noop"
+                  }
+                ]
+              },
+              {
+                "Type": "AppendDelimiterToRecord",
+                "Parameters": [
+                  {
+                    "ParameterName": "Delimiter",
+                    "ParameterValue": "Cg=="
+                  }
+                ]
+              },
+              {
+                "Type": "Decompression",
+                "Parameters": [
+                  {
+                    "ParameterName": "CompressionFormat",
+                    "ParameterValue": "GZIP"
+                  }
+                ]
+              },
+              {
+                "Type": "CloudWatchLogProcessing",
+                "Parameters": [
+                  {
+                    "ParameterName": "DataMessageExtraction",
+                    "ParameterValue": "true"
+                  }
+                ]
+              },
+              {
+                "Type": "RecordDeAggregation",
+                "Parameters": [
+                  {
+                    "ParameterName": "SubRecordType",
+                    "ParameterValue": "JSON"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1080,12 +1080,74 @@
 | `pf-eventschemas-registry-name-reserved` | AWS::EventSchemas::Registry | A registry name may not use the reserved aws. prefix | ERROR | none |
 | `pf-eventschemas-registry-policy` | AWS::EventSchemas::RegistryPolicy | A registry policy must declare a Version | ERROR | none |
 | `pf-eventschemas-schema-content` | AWS::EventSchemas::Schema | Schema Content must be valid JSON, and valid OpenAPI 3.0 when Type is OpenApi3 | ERROR | none |
+| `pf-firehose-aoss-collection-endpoint` | AWS::KinesisFirehose::DeliveryStream | An OpenSearch Serverless destination needs a collection endpoint | ERROR | none |
+| `pf-firehose-bucket-arn-format` | AWS::KinesisFirehose::DeliveryStream | A destination BucketARN must be an S3 bucket ARN | ERROR | none |
+| `pf-firehose-cloudwatch-log-processing-decompression` | AWS::KinesisFirehose::DeliveryStream | CloudWatch log processing needs a Decompression processor | ERROR | none |
+| `pf-firehose-cloudwatch-log-processing-value` | AWS::KinesisFirehose::DeliveryStream | DataMessageExtraction takes True or False | ERROR | none |
+| `pf-firehose-cloudwatch-logging-names` | AWS::KinesisFirehose::DeliveryStream | Enabled CloudWatch logging needs a log group name | ERROR | none |
+| `pf-firehose-custom-time-zone` | AWS::KinesisFirehose::DeliveryStream | CustomTimeZone must be a time zone Firehose supports | ERROR | none |
+| `pf-firehose-database-source-config` | AWS::KinesisFirehose::DeliveryStream | A database-sourced stream must deliver to Iceberg | ERROR | none |
+| `pf-firehose-deserializer-one` | AWS::KinesisFirehose::DeliveryStream | The deserializer must be exactly one SerDe | ERROR | none |
+| `pf-firehose-deserializer-required` | AWS::KinesisFirehose::DeliveryStream | InputFormatConfiguration must carry a deserializer | ERROR | none |
+| `pf-firehose-dfcc-compression` | AWS::KinesisFirehose::DeliveryStream | Format conversion needs an uncompressed S3 destination | ERROR | none |
 | `pf-firehose-dfcc-required-configs` | AWS::KinesisFirehose::DeliveryStream | Enabled format conversion needs input, output, and schema configs | ERROR | none |
 | `pf-firehose-dynamic-partitioning-buffer` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs a 64 MB buffer floor | ERROR | none |
 | `pf-firehose-dynamic-partitioning-prefix` | AWS::KinesisFirehose::DeliveryStream | Dynamic partitioning needs partition namespaces in the prefix | ERROR | none |
+| `pf-firehose-dynamic-partitioning-query-key` | AWS::KinesisFirehose::DeliveryStream | Every MetadataExtraction key must appear in the S3 prefix | ERROR | none |
+| `pf-firehose-encryption-key-arn` | AWS::KinesisFirehose::DeliveryStream | A customer managed CMK needs a KeyARN | ERROR | none |
+| `pf-firehose-encryption-key-region` | AWS::KinesisFirehose::DeliveryStream | The stream CMK must be in the deploy region | ERROR | none |
+| `pf-firehose-encryption-kinesis-source` | AWS::KinesisFirehose::DeliveryStream | Server-side encryption is not available with a Kinesis source | ERROR | none |
+| `pf-firehose-encryption-owned-key-arn` | AWS::KinesisFirehose::DeliveryStream | An AWS owned CMK takes no KeyARN | ERROR | none |
+| `pf-firehose-error-output-prefix-error-type` | AWS::KinesisFirehose::DeliveryStream | An ErrorOutputPrefix with expressions needs !{firehose:error-output-type} | ERROR | none |
+| `pf-firehose-error-output-prefix-partition-namespace` | AWS::KinesisFirehose::DeliveryStream | Partition namespaces cannot appear in an ErrorOutputPrefix | ERROR | none |
+| `pf-firehose-error-output-prefix-required` | AWS::KinesisFirehose::DeliveryStream | A prefix with expressions needs an ErrorOutputPrefix | ERROR | none |
+| `pf-firehose-hive-timestamp-formats` | AWS::KinesisFirehose::DeliveryStream | HiveJsonSerDe timestamp formats must be Joda patterns | ERROR | none |
+| `pf-firehose-http-attribute-name-unique` | AWS::KinesisFirehose::DeliveryStream | HTTP common attribute names must be unique | ERROR | none |
+| `pf-firehose-http-buffer-size` | AWS::KinesisFirehose::DeliveryStream | HTTP endpoint buffering is capped at 64 MB | ERROR | none |
+| `pf-firehose-iceberg-backup-mode` | AWS::KinesisFirehose::DeliveryStream | Iceberg S3 backup only supports FailedDataOnly | ERROR | none |
+| `pf-firehose-iceberg-catalog-arn-format` | AWS::KinesisFirehose::DeliveryStream | An Iceberg catalog ARN must be a Glue catalog ARN | ERROR | none |
+| `pf-firehose-iceberg-default-table-config` | AWS::KinesisFirehose::DeliveryStream | An Iceberg destination without routing needs a default table | ERROR | none |
 | `pf-firehose-kinesis-source-config` | AWS::KinesisFirehose::DeliveryStream | KinesisStreamAsSource streams need KinesisStreamSourceConfiguration | ERROR | none |
+| `pf-firehose-metadata-extraction-dp-only` | AWS::KinesisFirehose::DeliveryStream | A MetadataExtraction processor needs dynamic partitioning | ERROR | none |
+| `pf-firehose-msk-source-config` | AWS::KinesisFirehose::DeliveryStream | An MSK-sourced stream needs MSKSourceConfiguration | ERROR | none |
 | `pf-firehose-one-destination` | AWS::KinesisFirehose::DeliveryStream | A delivery stream takes exactly one destination configuration | ERROR | none |
+| `pf-firehose-opensearch-endpoint-exclusive` | AWS::KinesisFirehose::DeliveryStream | An OpenSearch destination takes a domain ARN or an endpoint, not both | ERROR | none |
+| `pf-firehose-opensearch-endpoint-required` | AWS::KinesisFirehose::DeliveryStream | An OpenSearch destination needs a domain ARN or an endpoint | ERROR | none |
+| `pf-firehose-opensearch-type-name` | AWS::KinesisFirehose::DeliveryStream | An OpenSearch 7+ destination takes no type name | ERROR | none |
+| `pf-firehose-prefix-expression-syntax` | AWS::KinesisFirehose::DeliveryStream | A "!{" in an S3 prefix must open a complete expression | ERROR | none |
+| `pf-firehose-prefix-expression-value` | AWS::KinesisFirehose::DeliveryStream | An S3 prefix expression value must be one the namespace accepts | ERROR | none |
+| `pf-firehose-prefix-length` | AWS::KinesisFirehose::DeliveryStream | An evaluated S3 prefix cannot exceed 512 characters | ERROR | none |
+| `pf-firehose-prefix-namespace` | AWS::KinesisFirehose::DeliveryStream | An S3 prefix expression takes one of four namespaces | ERROR | none |
+| `pf-firehose-prefix-no-error-output-type` | AWS::KinesisFirehose::DeliveryStream | Prefix cannot interpolate the error output type | ERROR | none |
+| `pf-firehose-processor-buffer-both` | AWS::KinesisFirehose::DeliveryStream | Lambda buffering takes both hints or neither | ERROR | none |
+| `pf-firehose-processor-buffer-interval-range` | AWS::KinesisFirehose::DeliveryStream | A Lambda processor buffers for 0 to 900 seconds | ERROR | none |
+| `pf-firehose-processor-buffer-size-range` | AWS::KinesisFirehose::DeliveryStream | A Lambda processor buffers between 0.2 and 3 MB | ERROR | none |
+| `pf-firehose-processor-count` | AWS::KinesisFirehose::DeliveryStream | A processing configuration takes one to five processors | ERROR | none |
+| `pf-firehose-processor-deaggregation-delimiter` | AWS::KinesisFirehose::DeliveryStream | Delimited de-aggregation needs a Delimiter | ERROR | none |
+| `pf-firehose-processor-duplicate-type` | AWS::KinesisFirehose::DeliveryStream | A destination takes at most one Lambda processor | ERROR | none |
+| `pf-firehose-processor-lambda-arn` | AWS::KinesisFirehose::DeliveryStream | A Lambda processor needs a LambdaArn parameter | ERROR | none |
+| `pf-firehose-processor-metadata-params` | AWS::KinesisFirehose::DeliveryStream | A MetadataExtraction processor needs a query and JQ-1.6 | ERROR | none |
+| `pf-firehose-processor-retries-range` | AWS::KinesisFirehose::DeliveryStream | A Lambda processor retries at most 300 times | ERROR | none |
+| `pf-firehose-processor-subrecord-type` | AWS::KinesisFirehose::DeliveryStream | SubRecordType is JSON or DELIMITED | ERROR | none |
+| `pf-firehose-record-deaggregation-dp-only` | AWS::KinesisFirehose::DeliveryStream | A RecordDeAggregation processor needs dynamic partitioning | ERROR | none |
+| `pf-firehose-redshift-credentials` | AWS::KinesisFirehose::DeliveryStream | A Redshift destination needs a password or a secret | ERROR | none |
+| `pf-firehose-redshift-prefix-no-expression` | AWS::KinesisFirehose::DeliveryStream | A Redshift destination takes no prefix expressions | ERROR | none |
+| `pf-firehose-redshift-s3-compression` | AWS::KinesisFirehose::DeliveryStream | A Redshift intermediate bucket takes UNCOMPRESSED or GZIP | ERROR | none |
+| `pf-firehose-role-arn-account` | AWS::KinesisFirehose::DeliveryStream | A delivery role must live in the deploy account | ERROR | none |
 | `pf-firehose-s3-backup-config` | AWS::KinesisFirehose::DeliveryStream | Enabling S3 backup needs S3BackupConfiguration | ERROR | none |
+| `pf-firehose-s3-encryption-exclusive` | AWS::KinesisFirehose::DeliveryStream | S3 encryption takes exactly one configuration | ERROR | none |
+| `pf-firehose-s3-kms-key-region` | AWS::KinesisFirehose::DeliveryStream | The S3 encryption key must be in the deploy region | ERROR | none |
+| `pf-firehose-schema-config-role-account` | AWS::KinesisFirehose::DeliveryStream | The schema configuration role must be in the deploy account | ERROR | none |
+| `pf-firehose-secrets-manager-region` | AWS::KinesisFirehose::DeliveryStream | The destination secret must be in the deploy region | ERROR | none |
+| `pf-firehose-secrets-manager-secret-arn` | AWS::KinesisFirehose::DeliveryStream | An enabled Secrets Manager configuration needs a SecretARN | ERROR | none |
+| `pf-firehose-serializer-one` | AWS::KinesisFirehose::DeliveryStream | The serializer must be exactly one SerDe | ERROR | none |
+| `pf-firehose-serializer-required` | AWS::KinesisFirehose::DeliveryStream | OutputFormatConfiguration must carry a serializer | ERROR | none |
+| `pf-firehose-snowflake-credentials` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a private key or a secret | ERROR | none |
+| `pf-firehose-snowflake-json-mapping-columns` | AWS::KinesisFirehose::DeliveryStream | JSON mapping takes no Snowflake column names | ERROR | none |
+| `pf-firehose-snowflake-role-config` | AWS::KinesisFirehose::DeliveryStream | An enabled Snowflake role configuration needs a role | ERROR | none |
+| `pf-firehose-snowflake-user` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a user or a secret | ERROR | none |
+| `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
+| `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
 | `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | none |

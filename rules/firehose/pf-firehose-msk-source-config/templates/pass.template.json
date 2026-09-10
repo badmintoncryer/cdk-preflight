@@ -1,0 +1,58 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "MSKAsSource",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          }
+        },
+        "MSKSourceConfiguration": {
+          "MSKClusterARN": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf/1",
+          "TopicName": "t",
+          "AuthenticationConfiguration": {
+            "Connectivity": "PRIVATE",
+            "RoleARN": {
+              "Fn::GetAtt": [
+                "R",
+                "Arn"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

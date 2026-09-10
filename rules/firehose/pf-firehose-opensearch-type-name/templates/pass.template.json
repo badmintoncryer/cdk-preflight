@@ -1,0 +1,93 @@
+{
+  "Resources": {
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "p",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:*",
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Dom": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "EngineVersion": "OpenSearch_2.11",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10
+        }
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "AmazonopensearchserviceDestinationConfiguration": {
+          "IndexName": "idx",
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "S3Configuration": {
+            "RoleARN": {
+              "Fn::GetAtt": [
+                "R",
+                "Arn"
+              ]
+            },
+            "BucketARN": {
+              "Fn::GetAtt": [
+                "B",
+                "Arn"
+              ]
+            }
+          },
+          "DomainARN": {
+            "Fn::GetAtt": [
+              "Dom",
+              "Arn"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

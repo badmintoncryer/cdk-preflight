@@ -1,0 +1,11 @@
+id: pf-firehose-error-output-prefix-partition-namespace
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: Partition namespaces cannot appear in an ErrorOutputPrefix
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: Dynamic Partitioning Namespaces can't be part of an error prefix expression -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: ErrorOutputPrefix \"e/!{partitionKeyFromQuery:a}/!{firehose:error-output-type}/\" -> InvalidArgumentException \"Dynamic Partitioning Namespaces can't be part of an error prefix expression\"."
+addedOn: 2026-09-10

@@ -1,0 +1,11 @@
+id: pf-firehose-aoss-collection-endpoint
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An OpenSearch Serverless destination needs a collection endpoint
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_AmazonOpenSearchServerlessDestinationConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: Must specify collection endpoint for delivery to OpenSearch serverless. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: AmazonOpenSearchServerlessDestinationConfiguration without CollectionEndpoint -> InvalidArgumentException \"Must specify collection endpoint for delivery to OpenSearch serverless.\""
+addedOn: 2026-09-10

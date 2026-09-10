@@ -1,0 +1,11 @@
+id: pf-firehose-prefix-expression-value
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: An S3 prefix expression value must be one the namespace accepts
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: The supplied prefix(es) do not satisfy the following constraint: Invalid conversion character used in the value of the expression in Prefix -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: Prefix \"a/!{firehose:bogus}/\" and \"a/!{timestamp:yyyy/bbb}/\" both -> InvalidArgumentException \"Invalid conversion character used in the value of the expression in Prefix\". All 52 ASCII letters were probed as timestamp patterns: C I J P R T U V b f i j l o p r t are rejected, the rest are accepted, and quoted literals (\"yyyy'T'HH\") are accepted."
+addedOn: 2026-09-10

@@ -1,0 +1,11 @@
+id: pf-firehose-hive-timestamp-formats
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: HiveJsonSerDe timestamp formats must be Joda patterns
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_HiveJsonSerDe.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: Invalid deserializer option(s): One or more SerDe options are invalid for org.apache.hcatalog.data.JsonSerDe: [Key: timestamp.formats Value: bbbb] -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: TimestampFormats [\"bbbb\"] -> InvalidArgumentException \"Invalid deserializer option(s): One or more SerDe options are invalid for org.apache.hcatalog.data.JsonSerDe: [Key: timestamp.formats Value: bbbb]\". The rejected pattern letters are the same set the S3 prefix timestamp namespace rejects."
+addedOn: 2026-09-10

@@ -1,0 +1,11 @@
+id: pf-firehose-splunk-hec-endpoint-https
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: A Splunk HEC endpoint must be an HTTPS URL
+constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: Invalid HECEndpoint. Supported endpoint format is https://<domain>:<port>. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: HECEndpoint \"http://splunk.example.com:8088\" -> InvalidArgumentException \"Invalid HECEndpoint. Supported endpoint format is https://<domain>:<port>.\" The bundled schema's pattern for this property is \".*\", so nothing else checks it."
+addedOn: 2026-09-10

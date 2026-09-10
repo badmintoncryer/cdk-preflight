@@ -1,0 +1,11 @@
+id: pf-firehose-schema-config-role-account
+service: firehose
+resourceTypes: [AWS::KinesisFirehose::DeliveryStream]
+severity: ERROR
+title: The schema configuration role must be in the deploy account
+constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_SchemaConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 ap-northeast-1: Cross-account pass role is not allowed. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: SchemaConfiguration.RoleARN in another account -> AccessDeniedException \"Cross-account pass role is not allowed.\" The rule is silent in warn mode and in region/account-agnostic apps, where deploy_account is not injected."
+addedOn: 2026-09-10
