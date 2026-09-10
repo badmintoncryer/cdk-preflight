@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-targetip-ip-format
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A Resolver rule TargetIps[].Ip must be a valid IPv4 address"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

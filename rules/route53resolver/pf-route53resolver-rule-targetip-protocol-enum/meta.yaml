@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-targetip-protocol-enum
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A Resolver rule target protocol must be Do53, DoH or DoH-FIPS"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

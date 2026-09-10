@@ -1,0 +1,68 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Profile": {
+      "Type": "AWS::Route53Profiles::Profile",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "pr-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "AssocOne": {
+      "Type": "AWS::Route53Profiles::ProfileAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "pa1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

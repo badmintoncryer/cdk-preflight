@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-system-requires-domainname
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A SYSTEM Resolver rule must set DomainName"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-outbound-queries.html#resolver-forwarding-outbound-queries-rule-values
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

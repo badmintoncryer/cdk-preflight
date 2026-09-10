@@ -1,0 +1,12 @@
+id: pf-route53resolver-querylogconfig-destination-arn-service
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverQueryLoggingConfig]
+severity: ERROR
+title: "A Resolver query logging destination must be S3, CloudWatch Logs or Firehose"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverQueryLogConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrule-match-source-required
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A DNS Firewall rule must declare what it matches"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

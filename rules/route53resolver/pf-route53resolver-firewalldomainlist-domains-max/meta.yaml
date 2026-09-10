@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewalldomainlist-domains-max
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallDomainList]
+severity: ERROR
+title: "A DNS Firewall domain list cannot take more than 1000 domains in one request"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_UpdateFirewallDomains.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

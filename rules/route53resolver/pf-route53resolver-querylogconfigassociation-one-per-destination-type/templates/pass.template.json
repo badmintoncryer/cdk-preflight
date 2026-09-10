@@ -1,0 +1,80 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Lg": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/cdkpf/",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "RetentionInDays": 1
+      }
+    },
+    "Qlc": {
+      "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfig",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ql-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "DestinationArn": {
+          "Fn::GetAtt": [
+            "Lg",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "QlcAssoc": {
+      "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation",
+      "Properties": {
+        "ResolverQueryLogConfigId": {
+          "Ref": "Qlc"
+        },
+        "ResourceId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

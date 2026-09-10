@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-ruletype-enum
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A Resolver rule RuleType must be FORWARD, SYSTEM, RECURSIVE or DELEGATE"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverrule.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

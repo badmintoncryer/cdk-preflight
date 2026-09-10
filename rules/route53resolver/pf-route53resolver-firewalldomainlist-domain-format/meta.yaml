@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewalldomainlist-domain-format
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallDomainList]
+severity: ERROR
+title: "DNS Firewall domain list entries must be plain ASCII domains with the wildcard first"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dns-firewall-user-managed-domain-lists.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

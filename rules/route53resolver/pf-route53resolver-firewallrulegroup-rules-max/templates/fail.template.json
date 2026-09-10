@@ -1,0 +1,869 @@
+{
+  "Resources": {
+    "Dl": {
+      "Type": "AWS::Route53Resolver::FirewallDomainList",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "dl-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Domains": [
+          "cdkpf-example.com"
+        ]
+      }
+    },
+    "Rg": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "rg-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE1"
+          },
+          {
+            "Priority": 102,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE2"
+          },
+          {
+            "Priority": 103,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE3"
+          },
+          {
+            "Priority": 104,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE4"
+          },
+          {
+            "Priority": 105,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE5"
+          },
+          {
+            "Priority": 106,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE6"
+          },
+          {
+            "Priority": 107,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE7"
+          },
+          {
+            "Priority": 108,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE8"
+          },
+          {
+            "Priority": 109,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE9"
+          },
+          {
+            "Priority": 110,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE10"
+          },
+          {
+            "Priority": 111,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE11"
+          },
+          {
+            "Priority": 112,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE12"
+          },
+          {
+            "Priority": 113,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE13"
+          },
+          {
+            "Priority": 114,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE14"
+          },
+          {
+            "Priority": 115,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE15"
+          },
+          {
+            "Priority": 116,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE16"
+          },
+          {
+            "Priority": 117,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE17"
+          },
+          {
+            "Priority": 118,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE18"
+          },
+          {
+            "Priority": 119,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE19"
+          },
+          {
+            "Priority": 120,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE20"
+          },
+          {
+            "Priority": 121,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE21"
+          },
+          {
+            "Priority": 122,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE22"
+          },
+          {
+            "Priority": 123,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE23"
+          },
+          {
+            "Priority": 124,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE24"
+          },
+          {
+            "Priority": 125,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE25"
+          },
+          {
+            "Priority": 126,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE26"
+          },
+          {
+            "Priority": 127,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE27"
+          },
+          {
+            "Priority": 128,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE28"
+          },
+          {
+            "Priority": 129,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE29"
+          },
+          {
+            "Priority": 130,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE30"
+          },
+          {
+            "Priority": 131,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE31"
+          },
+          {
+            "Priority": 132,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE32"
+          },
+          {
+            "Priority": 133,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE33"
+          },
+          {
+            "Priority": 134,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE34"
+          },
+          {
+            "Priority": 135,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE35"
+          },
+          {
+            "Priority": 136,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE36"
+          },
+          {
+            "Priority": 137,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE37"
+          },
+          {
+            "Priority": 138,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE38"
+          },
+          {
+            "Priority": 139,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE39"
+          },
+          {
+            "Priority": 140,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE40"
+          },
+          {
+            "Priority": 141,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE41"
+          },
+          {
+            "Priority": 142,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE42"
+          },
+          {
+            "Priority": 143,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE43"
+          },
+          {
+            "Priority": 144,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE44"
+          },
+          {
+            "Priority": 145,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE45"
+          },
+          {
+            "Priority": 146,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE46"
+          },
+          {
+            "Priority": 147,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE47"
+          },
+          {
+            "Priority": 148,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE48"
+          },
+          {
+            "Priority": 149,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE49"
+          },
+          {
+            "Priority": 150,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE50"
+          },
+          {
+            "Priority": 151,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE51"
+          },
+          {
+            "Priority": 152,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE52"
+          },
+          {
+            "Priority": 153,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE53"
+          },
+          {
+            "Priority": 154,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE54"
+          },
+          {
+            "Priority": 155,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE55"
+          },
+          {
+            "Priority": 156,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE56"
+          },
+          {
+            "Priority": 157,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE57"
+          },
+          {
+            "Priority": 158,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE58"
+          },
+          {
+            "Priority": 159,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE59"
+          },
+          {
+            "Priority": 160,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE60"
+          },
+          {
+            "Priority": 161,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE61"
+          },
+          {
+            "Priority": 162,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE62"
+          },
+          {
+            "Priority": 163,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE63"
+          },
+          {
+            "Priority": 164,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE64"
+          },
+          {
+            "Priority": 165,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE65"
+          },
+          {
+            "Priority": 166,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE66"
+          },
+          {
+            "Priority": 167,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE67"
+          },
+          {
+            "Priority": 168,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE68"
+          },
+          {
+            "Priority": 169,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE69"
+          },
+          {
+            "Priority": 170,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE70"
+          },
+          {
+            "Priority": 171,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE71"
+          },
+          {
+            "Priority": 172,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE72"
+          },
+          {
+            "Priority": 173,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE73"
+          },
+          {
+            "Priority": 174,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE74"
+          },
+          {
+            "Priority": 175,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE75"
+          },
+          {
+            "Priority": 176,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE76"
+          },
+          {
+            "Priority": 177,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE77"
+          },
+          {
+            "Priority": 178,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE78"
+          },
+          {
+            "Priority": 179,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE79"
+          },
+          {
+            "Priority": 180,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE80"
+          },
+          {
+            "Priority": 181,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE81"
+          },
+          {
+            "Priority": 182,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE82"
+          },
+          {
+            "Priority": 183,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE83"
+          },
+          {
+            "Priority": 184,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE84"
+          },
+          {
+            "Priority": 185,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE85"
+          },
+          {
+            "Priority": 186,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE86"
+          },
+          {
+            "Priority": 187,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE87"
+          },
+          {
+            "Priority": 188,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE88"
+          },
+          {
+            "Priority": 189,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE89"
+          },
+          {
+            "Priority": 190,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE90"
+          },
+          {
+            "Priority": 191,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE91"
+          },
+          {
+            "Priority": 192,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE92"
+          },
+          {
+            "Priority": 193,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE93"
+          },
+          {
+            "Priority": 194,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE94"
+          },
+          {
+            "Priority": 195,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE95"
+          },
+          {
+            "Priority": 196,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE96"
+          },
+          {
+            "Priority": 197,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE97"
+          },
+          {
+            "Priority": 198,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE98"
+          },
+          {
+            "Priority": 199,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE99"
+          },
+          {
+            "Priority": 200,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE100"
+          },
+          {
+            "Priority": 201,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "TYPE101"
+          }
+        ]
+      }
+    }
+  }
+}

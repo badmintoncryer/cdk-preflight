@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrulegroup-rules-max
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A DNS Firewall rule group cannot hold more than 100 rules"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

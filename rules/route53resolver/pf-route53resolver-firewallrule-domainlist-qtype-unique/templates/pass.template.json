@@ -1,0 +1,76 @@
+{
+  "Resources": {
+    "Dl": {
+      "Type": "AWS::Route53Resolver::FirewallDomainList",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "dl-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Domains": [
+          "cdkpf-example.com"
+        ]
+      }
+    },
+    "Rg": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "rg-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          },
+          {
+            "Priority": 102,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            },
+            "Qtype": "AAAA"
+          }
+        ]
+      }
+    }
+  }
+}

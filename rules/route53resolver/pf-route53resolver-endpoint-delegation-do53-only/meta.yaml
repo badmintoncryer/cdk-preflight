@@ -1,0 +1,12 @@
+id: pf-route53resolver-endpoint-delegation-do53-only
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverEndpoint]
+severity: ERROR
+title: "An inbound delegation Resolver endpoint only supports Do53"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

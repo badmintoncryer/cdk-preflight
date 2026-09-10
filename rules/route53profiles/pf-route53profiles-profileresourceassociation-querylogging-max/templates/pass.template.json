@@ -1,0 +1,191 @@
+{
+  "Resources": {
+    "Profile": {
+      "Type": "AWS::Route53Profiles::Profile",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "pr-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "Lg": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/cdkpf/",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "RetentionInDays": 1
+      }
+    },
+    "Ql0": {
+      "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfig",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ql0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "DestinationArn": {
+          "Fn::GetAtt": [
+            "Lg",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Ra0": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ra0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Ql0",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Ql1": {
+      "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfig",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ql1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "DestinationArn": {
+          "Fn::GetAtt": [
+            "Lg",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Ra1": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ra1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Ql1",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

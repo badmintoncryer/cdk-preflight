@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Qlc": {
+      "Type": "AWS::Route53Resolver::ResolverQueryLoggingConfig",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ql-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "DestinationArn": "arn:aws:sns:us-east-1:123456789012:cdkpf-probe"
+      }
+    }
+  }
+}

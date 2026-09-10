@@ -1,0 +1,12 @@
+id: pf-route53resolver-endpoint-subnet-address-family
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverEndpoint, AWS::EC2::Subnet]
+severity: ERROR
+title: "An IPv6 Resolver endpoint needs subnets that have an IPv6 CIDR"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries.html#resolver-forwarding-inbound-queries-values
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

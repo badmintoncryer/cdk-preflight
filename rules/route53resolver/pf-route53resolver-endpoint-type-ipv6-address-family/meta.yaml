@@ -1,0 +1,12 @@
+id: pf-route53resolver-endpoint-type-ipv6-address-family
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverEndpoint]
+severity: ERROR
+title: "An IPV6 Resolver endpoint cannot carry IPv4 addresses"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

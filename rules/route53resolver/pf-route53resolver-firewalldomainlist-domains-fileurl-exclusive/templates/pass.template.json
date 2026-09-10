@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Dl": {
+      "Type": "AWS::Route53Resolver::FirewallDomainList",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "dl-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Domains": [
+          "cdkpf-example.com"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "DnssecOne": {
+      "Type": "AWS::Route53Resolver::ResolverDNSSECConfig",
+      "Properties": {
+        "ResourceId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

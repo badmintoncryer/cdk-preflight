@@ -1,0 +1,61 @@
+{
+  "Resources": {
+    "Profile": {
+      "Type": "AWS::Route53Profiles::Profile",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "pr-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ResAssoc": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "ra-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": "arn:aws:sns:us-east-1:123456789012:cdkpf-probe",
+        "ResourceProperties": "{\"priority\": 101}"
+      }
+    }
+  }
+}

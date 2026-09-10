@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrule-block-requires-blockresponse
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A BLOCK DNS Firewall rule must set BlockResponse"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10

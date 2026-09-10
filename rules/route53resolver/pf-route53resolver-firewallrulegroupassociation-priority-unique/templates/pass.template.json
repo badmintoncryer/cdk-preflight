@@ -1,0 +1,181 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Dl": {
+      "Type": "AWS::Route53Resolver::FirewallDomainList",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "dl-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Domains": [
+          "cdkpf-example.com"
+        ]
+      }
+    },
+    "Rg0": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "rg0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Rg1": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "rg1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Assoc0": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroupAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "fa0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Priority": 101,
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "FirewallRuleGroupId": {
+          "Fn::GetAtt": [
+            "Rg0",
+            "Id"
+          ]
+        }
+      }
+    },
+    "Assoc1": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroupAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "fa1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Priority": 102,
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "FirewallRuleGroupId": {
+          "Fn::GetAtt": [
+            "Rg1",
+            "Id"
+          ]
+        }
+      }
+    }
+  }
+}

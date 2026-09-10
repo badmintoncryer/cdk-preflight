@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewalldomainlist-domains-fileurl-exclusive
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallDomainList]
+severity: ERROR
+title: "A DNS Firewall domain list cannot set both Domains and DomainFileUrl"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dns-firewall-user-managed-domain-lists.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench PENDING"
+addedOn: 2026-09-10
