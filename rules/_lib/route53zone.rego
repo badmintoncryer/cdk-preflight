@@ -36,7 +36,7 @@ _pf_r53z_getatt(v, attr) := r if {
 
 # リージョン名の形（列挙は AWS が増やすたびに誤検知になるので形だけ見る）。
 _pf_r53z_region_shape(r) if {
-	regex.match(`^[a-z]{2}(-gov|-isob?)?-[a-z]+-[0-9]$`, r)
+	regex.match(`^[a-z]+(-[a-z]+)+-[0-9]$`, r)
 }
 
 # --- HealthCheck ---------------------------------------------------------
