@@ -5,7 +5,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
   authorAddress: 'malaysia.cryer@gmail.com',
   cdkVersion: '2.267.0',
   defaultReleaseBranch: 'main',
-  jsiiVersion: '~5.8.0',
+  jsiiVersion: '~6.0.0',
   name: 'cdk-preflight',
   projenrcTs: true,
   repositoryUrl: 'https://github.com/badmintoncryer/cdk-preflight.git',
