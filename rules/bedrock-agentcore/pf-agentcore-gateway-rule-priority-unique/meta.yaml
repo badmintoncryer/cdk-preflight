@@ -1,0 +1,12 @@
+id: pf-agentcore-gateway-rule-priority-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::GatewayRule]
+severity: ERROR
+title: "Gateway rules on one gateway must not share a Priority"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: two GatewayRules on the same gateway with Priority 5 -> ROLLBACK_COMPLETE, \"Priority 5 conflicts with an existing rule (BedrockAgentCoreControl, 400, HandlerErrorCode: AlreadyExists)\". The schema only carries the 1..1000000 range."
+addedOn: 2026-09-10

@@ -1,0 +1,12 @@
+id: pf-agentcore-harness-endpoint-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::HarnessEndpoint]
+severity: ERROR
+title: "Endpoint names must be unique within one harness"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateHarnessEndpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: two endpoints named prod on the same harness -> ROLLBACK_COMPLETE, \"Failed to tag harness endpoint: A resource with the same resourceName but a different internalId already exists (Bedrock AgentCore Control CreateHarnessEndpoint, 400 ValidationException, HandlerErrorCode: AlreadyExists)\". HarnessId and EndpointName are createOnly but the primaryIdentifier is the read-only Arn, so E3019 does not fire."
+addedOn: 2026-09-10

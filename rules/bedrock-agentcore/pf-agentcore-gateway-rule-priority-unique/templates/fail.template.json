@@ -1,0 +1,116 @@
+{
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    }
+   }
+  },
+  "G": {
+   "Type": "AWS::BedrockAgentCore::Gateway",
+   "Properties": {
+    "Name": "cdkpf-grprio",
+    "ProtocolType": "MCP",
+    "AuthorizerType": "AWS_IAM",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "B": {
+   "Type": "AWS::BedrockAgentCore::ConfigurationBundle",
+   "Properties": {
+    "BundleName": "cdkpf_bprio",
+    "Components": {
+     "harness": {
+      "Configuration": {
+       "model": {
+        "bedrockModelConfig": {
+         "modelId": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "R1": {
+   "Type": "AWS::BedrockAgentCore::GatewayRule",
+   "Properties": {
+    "GatewayIdentifier": {
+     "Fn::GetAtt": [
+      "G",
+      "GatewayIdentifier"
+     ]
+    },
+    "Priority": 5,
+    "Actions": [
+     {
+      "ConfigurationBundle": {
+       "StaticOverride": {
+        "BundleArn": {
+         "Fn::GetAtt": [
+          "B",
+          "BundleArn"
+         ]
+        },
+        "BundleVersion": {
+         "Fn::GetAtt": [
+          "B",
+          "VersionId"
+         ]
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "R2": {
+   "Type": "AWS::BedrockAgentCore::GatewayRule",
+   "Properties": {
+    "GatewayIdentifier": {
+     "Fn::GetAtt": [
+      "G",
+      "GatewayIdentifier"
+     ]
+    },
+    "Priority": 5,
+    "Actions": [
+     {
+      "ConfigurationBundle": {
+       "StaticOverride": {
+        "BundleArn": {
+         "Fn::GetAtt": [
+          "B",
+          "BundleArn"
+         ]
+        },
+        "BundleVersion": {
+         "Fn::GetAtt": [
+          "B",
+          "VersionId"
+         ]
+        }
+       }
+      }
+     }
+    ]
+   }
+  }
+ }
+}

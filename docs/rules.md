@@ -311,6 +311,9 @@
 | `pf-agentcore-gateway-interceptor-point-unique` | AWS::BedrockAgentCore::Gateway | Gateway interceptors may bind each interception point (REQUEST / RESPONSE) only once | ERROR | none |
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::PaymentManager | Gateways and payment managers with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | ERROR | none |
 | `pf-agentcore-gateway-mcp-supported-versions` | AWS::BedrockAgentCore::Gateway | Gateway MCP SupportedVersions must be MCP protocol versions the service supports | ERROR | none |
+| `pf-agentcore-gateway-rule-priority-unique` | AWS::BedrockAgentCore::GatewayRule | Gateway rules on one gateway must not share a Priority | ERROR | none |
+| `pf-agentcore-gateway-rule-single-bundle-action` | AWS::BedrockAgentCore::GatewayRule | A gateway rule carries at most one ConfigurationBundle action | ERROR | none |
+| `pf-agentcore-gateway-rule-traffic-split-sum` | AWS::BedrockAgentCore::GatewayRule | TrafficSplit weights must sum to exactly 100 | ERROR | none |
 | `pf-agentcore-gateway-target-credential-provider-required` | AWS::BedrockAgentCore::GatewayTarget | Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block | ERROR | none |
 | `pf-agentcore-gateway-target-http-unsupported` | AWS::BedrockAgentCore::GatewayTarget | TargetConfiguration.Http cannot be used: CloudFormation gateways are always MCP | ERROR | none |
 | `pf-agentcore-gateway-target-iam-credential-provider` | AWS::BedrockAgentCore::GatewayTarget | OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service) | ERROR | none |
@@ -319,6 +322,8 @@
 | `pf-agentcore-gateway-target-lambda-tool-name-unique` | AWS::BedrockAgentCore::GatewayTarget | Tool names in a Lambda gateway target's inline ToolSchema must be unique | ERROR | none |
 | `pf-agentcore-gateway-target-lambda-tool-schema-empty` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets need at least one tool in ToolSchema.InlinePayload | ERROR | none |
 | `pf-agentcore-gateway-target-openapi-schema` | AWS::BedrockAgentCore::GatewayTarget | Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation | ERROR | none |
+| `pf-agentcore-harness-endpoint-name-default` | AWS::BedrockAgentCore::HarnessEndpoint | A HarnessEndpoint cannot be named DEFAULT (the name is reserved) | ERROR | none |
+| `pf-agentcore-harness-endpoint-name-unique` | AWS::BedrockAgentCore::HarnessEndpoint | Endpoint names must be unique within one harness | ERROR | none |
 | `pf-agentcore-jwt-authorizer-claims` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::Harness | A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims | ERROR | none |
 | `pf-agentcore-kms-key-region` | AWS::BedrockAgentCore::Dataset<br>AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::ConfigurationBundle | A KmsKeyArn must name a key in the deploy region | ERROR | none |
 | `pf-agentcore-memory-custom-strategy-execution-role` | AWS::BedrockAgentCore::Memory | Memories with a custom strategy require MemoryExecutionRoleArn | ERROR | none |

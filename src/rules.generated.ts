@@ -3403,6 +3403,39 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema types SupportedVersions as free strings; CreateGateway rejects\n# anything outside the service's MCP protocol version list. Snapshot of that\n# list as observed 2026-09-05 (the error message enumerates it) — extend when\n# the service adds a version.\n_pf_gwmcpver_supported := {\"2025-03-26\", \"2025-06-18\", \"2025-11-25\", \"2026-07-28\"}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-mcp-supported-versions\", \"ERROR\", name,\n\tsprintf(\"Properties.ProtocolConfiguration.Mcp.SupportedVersions.%d\", [v.index]),\n\tsprintf(\"MCP protocol version '%s' is not supported by AgentCore Gateway; CreateGateway fails with \\\"Unsupported MCP Version(s) are provided in request\\\"\", [v.value]),\n\tsprintf(\"Use one of %s\", [concat(\", \", sort(_pf_gwmcpver_supported))]),\n\t\"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-using.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::Gateway\")\n\tsome v in flatten_list(name, \"Properties.ProtocolConfiguration.Mcp.SupportedVersions\")\n\tis_string(v.value)\n\tnot v.value in _pf_gwmcpver_supported\n}\n"
   },
   {
+    "id": "pf-agentcore-gateway-rule-priority-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Gateway rules on one gateway must not share a Priority",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Priority orders the rules on a gateway and must be unique per gateway:\n# CreateGatewayRule rejects a collision with \"Priority N conflicts with an\n# existing rule\" (measured 2026-09-10). The schema only carries the range.\nviolation contains make_diag_full(\"pf-agentcore-gateway-rule-priority-unique\", \"ERROR\", name,\n\t\"Properties.Priority\",\n\tsprintf(\"Priority %v is already taken by resource '%s' on the same gateway; CreateGatewayRule fails with \\\"Priority %v conflicts with an existing rule\\\"\", [prio, other, prio]),\n\t\"Give each rule on a gateway its own priority\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayRule\")\n\tprio := resolve(name, \"Properties.Priority\")\n\tgw := resolve(name, \"Properties.GatewayIdentifier\")\n\tsome other in resources_of_type(\"AWS::BedrockAgentCore::GatewayRule\")\n\tother < name\n\tresolve(other, \"Properties.Priority\") == prio\n\tresolve(other, \"Properties.GatewayIdentifier\") == gw\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-rule-single-bundle-action",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A gateway rule carries at most one ConfigurationBundle action",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Actions holds at most two entries and they must be of different kinds: two\n# ConfigurationBundle actions fail with \"At most one configurationBundle\n# action is allowed per rule\" (measured 2026-09-10). The schema caps the list\n# at two but does not constrain the mix.\n_pf_acacts_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-rule-single-bundle-action\", \"ERROR\", name,\n\t\"Properties.Actions\",\n\t\"The rule carries two ConfigurationBundle actions; CreateGatewayRule fails with \\\"At most one configurationBundle action is allowed per rule\\\"\",\n\t\"Keep one ConfigurationBundle action per rule (the second action, if any, must be a RouteToTarget)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayRule\")\n\tacts := object.get(_pf_acacts_props(name), \"Actions\", [])\n\tbundles := [a | some a in acts; is_object(a); object.get(a, \"ConfigurationBundle\", null) != null]\n\tcount(bundles) > 1\n}\n"
+  },
+  {
+    "id": "pf-agentcore-gateway-rule-traffic-split-sum",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "TrafficSplit weights must sum to exactly 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::GatewayRule"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A weighted split routes a fraction of traffic each way, so the weights have\n# to add up to 100: CreateGatewayRule fails with \"Traffic split weights must\n# sum to exactly 100, but sum is N\" (measured 2026-09-10). The schema pins\n# each weight to 1..99 and the list to exactly two entries but cannot express\n# the sum.\n_pf_acsplit_lists(name) := [[path, ts] |\n\tsome i, act in object.get(_pf_acsplit_props(name), \"Actions\", [])\n\tsome kind in [\"WeightedOverride\", \"WeightedRoute\"]\n\tblock := object.get(object.get(act, \"ConfigurationBundle\", object.get(act, \"RouteToTarget\", {})), kind, null)\n\tis_object(block)\n\tts := object.get(block, \"TrafficSplit\", null)\n\tis_array(ts)\n\tpath := sprintf(\"Properties.Actions[%d].%s.TrafficSplit\", [i, kind])\n]\n\n_pf_acsplit_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-rule-traffic-split-sum\", \"ERROR\", name,\n\tentry[0],\n\tsprintf(\"The traffic split weights add up to %v, not 100; CreateGatewayRule fails with \\\"Traffic split weights must sum to exactly 100, but sum is %v\\\"\", [total, total]),\n\t\"Make the weights add up to exactly 100 (for example 30 and 70)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayRule\")\n\tsome entry in _pf_acsplit_lists(name)\n\tweights := [w | some e in entry[1]; is_object(e); w := to_number(object.get(e, \"Weight\", null))]\n\tcount(weights) == count(entry[1])\n\ttotal := sum(weights)\n\ttotal != 100\n}\n"
+  },
+  {
     "id": "pf-agentcore-gateway-target-credential-provider-required",
     "service": "bedrock-agentcore",
     "severity": "ERROR",
@@ -3489,6 +3522,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::BedrockAgentCore::GatewayTarget"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The InlinePayload is an opaque string to the schema. The service parses it\n# after CreateGatewayTarget returns, so a bad document surfaces as a target in\n# status FAILED and a NotStabilized rollback. Three checks measured to fail:\n# no top-level `openapi` (Swagger 2.0), no `servers`, an operation without\n# `operationId`. Non-JSON payloads are left alone (YAML is not measured).\n_pf_gwtoapi_doc(name) := doc if {\n\ts := resolve(name, \"Properties.TargetConfiguration.Mcp.OpenApiSchema.InlinePayload\")\n\tis_string(s)\n\tdoc := json.unmarshal(s)\n\tis_object(doc)\n}\n\n_pf_gwtoapi_url := \"https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-openapi.html\"\n_pf_gwtoapi_path := \"Properties.TargetConfiguration.Mcp.OpenApiSchema.InlinePayload\"\n_pf_gwtoapi_methods := {\"get\", \"put\", \"post\", \"delete\", \"options\", \"head\", \"patch\", \"trace\"}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-openapi-schema\", \"ERROR\", name, _pf_gwtoapi_path,\n\t\"The inline OpenAPI document has no top-level `openapi` field (Swagger 2.0 is not accepted); the target fails to stabilize with \\\"Invalid OpenAPI schema: attribute openapi is missing\\\"\",\n\t\"Convert the document to OpenAPI 3.x (`openapi: 3.0.x`)\", _pf_gwtoapi_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tdoc := _pf_gwtoapi_doc(name)\n\tnot is_string(object.get(doc, \"openapi\", null))\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-openapi-schema\", \"ERROR\", name, _pf_gwtoapi_path,\n\t\"The inline OpenAPI document has no `servers` entry; the target fails to stabilize with \\\"Server URL must not be empty\\\"\",\n\t\"Add a `servers` list with the HTTPS base URL of the API\", _pf_gwtoapi_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tdoc := _pf_gwtoapi_doc(name)\n\tis_string(object.get(doc, \"openapi\", null))\n\tservers := object.get(doc, \"servers\", [])\n\tcount(servers) == 0\n}\n\nviolation contains make_diag_full(\"pf-agentcore-gateway-target-openapi-schema\", \"ERROR\", name, _pf_gwtoapi_path,\n\tsprintf(\"Operation %s %s has no operationId; the target fails to stabilize with \\\"Operation %s -> %s must have an operationId\\\"\", [upper(method), path, path, upper(method)]),\n\t\"Give every operation a unique operationId (it becomes the tool name)\", _pf_gwtoapi_url) if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::GatewayTarget\")\n\tdoc := _pf_gwtoapi_doc(name)\n\tis_string(object.get(doc, \"openapi\", null))\n\tpaths := object.get(doc, \"paths\", {})\n\tsome path, item in paths\n\tis_object(item)\n\tsome method, op in item\n\tmethod in _pf_gwtoapi_methods\n\tis_object(op)\n\tnot is_string(object.get(op, \"operationId\", null))\n}\n"
+  },
+  {
+    "id": "pf-agentcore-harness-endpoint-name-default",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "A HarnessEndpoint cannot be named DEFAULT (the name is reserved)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::HarnessEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DEFAULT is reserved for the endpoint a harness owns implicitly, so an\n# explicit HarnessEndpoint with that name is rejected (measured 2026-09-10).\n# The schema pattern accepts DEFAULT. Sibling of\n# pf-agentcore-runtime-endpoint-name-default on the Runtime side.\nviolation contains make_diag_full(\"pf-agentcore-harness-endpoint-name-default\", \"ERROR\", name,\n\t\"Properties.EndpointName\",\n\t\"EndpointName 'DEFAULT' is reserved; CreateHarnessEndpoint fails with \\\"Endpoint name 'DEFAULT' is reserved. Use a different name.\\\"\",\n\t\"Give the endpoint another name (for example prod)\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateHarnessEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::HarnessEndpoint\")\n\tresolve(name, \"Properties.EndpointName\") == \"DEFAULT\"\n}\n"
+  },
+  {
+    "id": "pf-agentcore-harness-endpoint-name-unique",
+    "service": "bedrock-agentcore",
+    "severity": "ERROR",
+    "title": "Endpoint names must be unique within one harness",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::BedrockAgentCore::HarnessEndpoint"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Two endpoints with the same name on one harness collide (measured\n# 2026-09-10). E3019 reads primaryIdentifier, which here is the read-only\n# Arn, so the HarnessId + EndpointName pair is invisible to the engine.\nviolation contains make_diag_full(\"pf-agentcore-harness-endpoint-name-unique\", \"ERROR\", name,\n\t\"Properties.EndpointName\",\n\tsprintf(\"EndpointName '%s' is already used by resource '%s' on the same harness; CreateHarnessEndpoint fails with \\\"A resource with the same resourceName but a different internalId already exists\\\"\", [ep, other]),\n\t\"Give each endpoint on a harness its own name\",\n\t\"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateHarnessEndpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::BedrockAgentCore::HarnessEndpoint\")\n\tep := resolve(name, \"Properties.EndpointName\")\n\tis_string(ep)\n\th := resolve(name, \"Properties.HarnessId\")\n\tsome other in resources_of_type(\"AWS::BedrockAgentCore::HarnessEndpoint\")\n\tother < name\n\tresolve(other, \"Properties.EndpointName\") == ep\n\tresolve(other, \"Properties.HarnessId\") == h\n}\n"
   },
   {
     "id": "pf-agentcore-jwt-authorizer-claims",

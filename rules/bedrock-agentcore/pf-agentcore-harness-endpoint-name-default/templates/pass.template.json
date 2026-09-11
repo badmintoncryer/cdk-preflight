@@ -1,0 +1,50 @@
+{
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    }
+   }
+  },
+  "H": {
+   "Type": "AWS::BedrockAgentCore::Harness",
+   "Properties": {
+    "HarnessName": "cdkpf_hdef",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Model": {
+     "BedrockModelConfig": {
+      "ModelId": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+     }
+    }
+   }
+  },
+  "E1": {
+   "Type": "AWS::BedrockAgentCore::HarnessEndpoint",
+   "Properties": {
+    "HarnessId": {
+     "Fn::GetAtt": [
+      "H",
+      "HarnessId"
+     ]
+    },
+    "EndpointName": "prod"
+   }
+  }
+ }
+}
