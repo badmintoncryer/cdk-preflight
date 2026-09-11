@@ -13,6 +13,8 @@ import {
   fallbackFormat,
   installEnforceGate,
   loadFormatter,
+  prune,
+  templateResourceTypes,
 } from '../src/private/enforce';
 import { BUNDLED_RULES, type BundledRuleData } from '../src/rules.generated';
 
@@ -419,5 +421,70 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
     const rules = readReport(app).map((v) => v.ruleName);
     expect(new Set(rules)).toEqual(new Set([ENGINE_ERROR_RULE, 'pf-ec2-sg-port-range']));
     expect(rules.filter((r) => r === ENGINE_ERROR_RULE)).toHaveLength(1);
+  });
+});
+
+describe('resource-type pruning', () => {
+  function writeTemplate(template: unknown): string {
+    const file = path.join(tmpOut(), 'x.template.json');
+    fs.writeFileSync(file, JSON.stringify(template));
+    return file;
+  }
+
+  test('collects the types of every template', () => {
+    const a = writeTemplate({ Resources: { Q: { Type: 'AWS::SQS::Queue' } } });
+    const b = writeTemplate({ Resources: { T: { Type: 'AWS::SNS::Topic' } } });
+    expect(templateResourceTypes([a, b])).toEqual(new Set(['AWS::SQS::Queue', 'AWS::SNS::Topic']));
+  });
+
+  test('keeps only the rules that name a type in the templates', () => {
+    const rules: BundledRuleData[] = [
+      { id: 'a', service: 's', severity: 'ERROR', title: 't', upstream: 'none', resourceTypes: ['AWS::SQS::Queue'], rego: '' },
+      { id: 'b', service: 's', severity: 'ERROR', title: 't', upstream: 'none', resourceTypes: ['AWS::SNS::Topic'], rego: '' },
+      // 複数タイプのルールは 1 つでも出てくれば残す（相手側が import されている構成のため）
+      { id: 'c', service: 's', severity: 'ERROR', title: 't', upstream: 'none', resourceTypes: ['AWS::SNS::Topic', 'AWS::SQS::Queue'], rego: '' },
+    ];
+    const types = new Set(['AWS::SQS::Queue']);
+    expect(prune(rules, types).map((r) => r.id)).toEqual(['a', 'c']);
+  });
+
+  test('keeps a rule that declares the "*" wildcard', () => {
+    const anyResource: BundledRuleData = {
+      id: 'a',
+      service: 'tags',
+      severity: 'ERROR',
+      title: 't',
+      upstream: 'none',
+      resourceTypes: ['*'],
+      rego: '',
+    };
+    expect(prune([anyResource], new Set(['AWS::SQS::Queue'])).map((r) => r.id)).toEqual(['a']);
+  });
+
+  // 以下は「刈り込みを諦める」ケース。判断材料が無いまま刈るとルールが黙って
+  // 発火しなくなるので、全ルールを載せる側に倒す。
+  test('gives up on a template it cannot read', () => {
+    expect(templateResourceTypes([path.join(tmpOut(), 'missing.json')])).toBeUndefined();
+  });
+
+  test('gives up on a transformed template', () => {
+    const file = writeTemplate({ Transform: 'AWS::Serverless-2016-10-31', Resources: {} });
+    expect(templateResourceTypes([file])).toBeUndefined();
+  });
+
+  test('gives up when a resource type is not a static string', () => {
+    const file = writeTemplate({ Resources: { 'Fn::ForEach::X': ['x', ['a'], {}] } });
+    expect(templateResourceTypes([file])).toBeUndefined();
+  });
+
+  test('pruning off means every rule stays', () => {
+    expect(prune(BUNDLED_RULES, undefined)).toHaveLength(BUNDLED_RULES.length);
+  });
+
+  test('a violation is still reported after pruning (end to end)', () => {
+    const app = makeApp();
+    Preflight.apply(app);
+    addBadSecurityGroup(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range/);
   });
 });
