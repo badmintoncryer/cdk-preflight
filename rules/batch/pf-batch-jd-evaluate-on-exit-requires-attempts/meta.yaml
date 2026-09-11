@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Retr
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : RetryAttempts must be provided with retry strategy., RequestId: 496dbf13-4"
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"RetryAttempts must be provided with retry strategy.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
 addedOn: 2026-09-12

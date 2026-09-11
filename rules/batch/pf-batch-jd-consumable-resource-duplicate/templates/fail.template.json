@@ -20,15 +20,36 @@
         "ConsumableResourceProperties": {
           "ConsumableResourceList": [
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/a",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "CrDup",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             },
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/a",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "CrDup",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 2
             }
           ]
         }
+      },
+      "DependsOn": [
+        "CrDup"
+      ]
+    },
+    "CrDup": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crdup-a",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
       }
     }
   }

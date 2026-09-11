@@ -16,7 +16,7 @@
               "Value": "512"
             }
           ],
-          "ExecutionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRole"
+          "ExecutionRoleArn": "arn:aws:iam::214794239830:role/cdkpf-ecs-probe"
         },
         "PlatformCapabilities": [
           "FARGATE"

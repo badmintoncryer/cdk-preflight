@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Devi
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Invalid permission: EXECUTE for device /dev/null, RequestId: 18f40268-a5d1"
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Invalid permission: EXECUTE for device /dev/null\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
 addedOn: 2026-09-12

@@ -2,6 +2,8 @@ package cdk_preflight
 
 import rego.v1
 
+# A Ref/GetAtt resolves to the logical id, so two references to the same
+# in-template resource still compare equal — which is the duplicate we want.
 violation contains make_diag_full("pf-batch-jd-consumable-resource-duplicate", "ERROR", name,
 	"Properties.ConsumableResourceProperties.ConsumableResourceList",
 	sprintf("consumable resource %v is declared %v times (\"Cannot have duplicate consumableResource in consumableResourceProperties\")", [r, n]),
@@ -11,7 +13,6 @@ violation contains make_diag_full("pf-batch-jd-consumable-resource-duplicate", "
 	entries := flatten_list(name, "Properties.ConsumableResourceProperties.ConsumableResourceList")
 	some e in entries
 	r := _pf_batch_oget(e.value, "ConsumableResource")
-	_pf_batch_lit(r)
 	n := count([1 | some x in entries; object.get(x.value, "ConsumableResource", null) == r])
 	n > 1
 }

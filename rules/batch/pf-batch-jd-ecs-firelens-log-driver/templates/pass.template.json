@@ -9,13 +9,8 @@
             {
               "Containers": [
                 {
-                  "Name": "main",
+                  "Name": "log-router",
                   "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
-                  "Essential": true,
-                  "User": "1000",
-                  "FirelensConfiguration": {
-                    "Type": "fluentbit"
-                  },
                   "ResourceRequirements": [
                     {
                       "Type": "VCPU",
@@ -25,7 +20,28 @@
                       "Type": "MEMORY",
                       "Value": "2048"
                     }
-                  ]
+                  ],
+                  "Essential": true,
+                  "FirelensConfiguration": {
+                    "Type": "fluentbit"
+                  }
+                },
+                {
+                  "Name": "app",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ],
+                  "LogConfiguration": {
+                    "LogDriver": "awsfirelens"
+                  }
                 }
               ]
             }

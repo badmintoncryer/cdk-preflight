@@ -223,7 +223,7 @@
 | `pf-batch-jd-ecs-depends-on-single-container` | AWS::Batch::JobDefinition | Container dependencies need more than one container | ERROR | none |
 | `pf-batch-jd-ecs-essential-required` | AWS::Batch::JobDefinition | An ECS task element needs one essential container | ERROR | none |
 | `pf-batch-jd-ecs-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate task properties require an execution role | ERROR | none |
-| `pf-batch-jd-ecs-firelens-requires-root` | AWS::Batch::JobDefinition | A Firelens task needs a container running as root | ERROR | none |
+| `pf-batch-jd-ecs-firelens-log-driver` | AWS::Batch::JobDefinition | A Firelens task needs a container using the awsfirelens log driver | ERROR | none |
 | `pf-batch-jd-ecs-ipc-mode-value` | AWS::Batch::JobDefinition | EcsTaskProperties.IpcMode must be host, task or none | ERROR | none |
 | `pf-batch-jd-ecs-pid-mode-value` | AWS::Batch::JobDefinition | EcsTaskProperties.PidMode must be host or task | ERROR | none |
 | `pf-batch-jd-ecs-task-containers-max` | AWS::Batch::JobDefinition | An ECS task element supports at most 10 containers | ERROR | none |
@@ -279,8 +279,6 @@
 | `pf-batch-jd-scheduling-priority-range` | AWS::Batch::JobDefinition | SchedulingPriority must be between 0 and 9999 | ERROR | none |
 | `pf-batch-jd-secret-options-requires-execution-role` | AWS::Batch::JobDefinition | LogConfiguration.SecretOptions requires an execution role | ERROR | none |
 | `pf-batch-jd-secrets-requires-execution-role` | AWS::Batch::JobDefinition | Injecting secrets requires an execution role | ERROR | none |
-| `pf-batch-jd-secrets-value-from-format` | AWS::Batch::JobDefinition | Secret.ValueFrom must point at Secrets Manager or Parameter Store | ERROR | none |
-| `pf-batch-jd-secrets-value-from-region` | AWS::Batch::JobDefinition | A secret must live in the deployment Region | ERROR | none |
 | `pf-batch-jd-tmpfs-size-min` | AWS::Batch::JobDefinition | Tmpfs.Size must be a positive number of MiB | ERROR | none |
 | `pf-batch-jd-volume-config-exclusive` | AWS::Batch::JobDefinition | A volume takes exactly one configuration type | ERROR | none |
 | `pf-batch-managed-compute-resources` | AWS::Batch::ComputeEnvironment | MANAGED compute environments require ComputeResources | ERROR | none |

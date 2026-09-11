@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Runt
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : runtimePlatform is not applicable for EC2., RequestId: caf258b5-4a56-4717-"
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"cpuArchitecture for Fargate LINUX tasks can be only one from [X86_64, ARM64].\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
 addedOn: 2026-09-12

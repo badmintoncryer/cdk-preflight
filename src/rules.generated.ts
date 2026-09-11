@@ -2313,7 +2313,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-consumable-resource-duplicate\", \"ERROR\", name,\n\t\"Properties.ConsumableResourceProperties.ConsumableResourceList\",\n\tsprintf(\"consumable resource %v is declared %v times (\\\"Cannot have duplicate consumableResource in consumableResourceProperties\\\")\", [r, n]),\n\t\"Declare each consumable resource once\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ConsumableResourceProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tentries := flatten_list(name, \"Properties.ConsumableResourceProperties.ConsumableResourceList\")\n\tsome e in entries\n\tr := _pf_batch_oget(e.value, \"ConsumableResource\")\n\t_pf_batch_lit(r)\n\tn := count([1 | some x in entries; object.get(x.value, \"ConsumableResource\", null) == r])\n\tn > 1\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Ref/GetAtt resolves to the logical id, so two references to the same\n# in-template resource still compare equal — which is the duplicate we want.\nviolation contains make_diag_full(\"pf-batch-jd-consumable-resource-duplicate\", \"ERROR\", name,\n\t\"Properties.ConsumableResourceProperties.ConsumableResourceList\",\n\tsprintf(\"consumable resource %v is declared %v times (\\\"Cannot have duplicate consumableResource in consumableResourceProperties\\\")\", [r, n]),\n\t\"Declare each consumable resource once\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ConsumableResourceProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tentries := flatten_list(name, \"Properties.ConsumableResourceProperties.ConsumableResourceList\")\n\tsome e in entries\n\tr := _pf_batch_oget(e.value, \"ConsumableResource\")\n\tn := count([1 | some x in entries; object.get(x.value, \"ConsumableResource\", null) == r])\n\tn > 1\n}\n"
   },
   {
     "id": "pf-batch-jd-consumable-resource-list-max",
@@ -2335,7 +2335,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-container-type-requires-props\", \"ERROR\", name,\n\t\"Properties.ContainerProperties\",\n\t\"a container job definition sets none of ContainerProperties, EcsProperties or EksProperties (\\\"ECS ContainerProperties, ecsProperties, or eksProperties is required when creating a job definition\\\")\",\n\t\"Add ContainerProperties, EcsProperties or EksProperties\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_get(name, \"Type\") == \"container\"\n\tnot _pf_batch_has(name, \"ContainerProperties\")\n\tnot _pf_batch_has(name, \"EcsProperties\")\n\tnot _pf_batch_has(name, \"EksProperties\")\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-container-type-requires-props\", \"ERROR\", name,\n\t\"Properties.ContainerProperties\",\n\t\"a container job definition sets none of ContainerProperties, EcsProperties or EksProperties; the create fails with \\\"ECS Container Image must be provided.\\\"\",\n\t\"Add ContainerProperties, EcsProperties or EksProperties\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_get(name, \"Type\") == \"container\"\n\tnot _pf_batch_has(name, \"ContainerProperties\")\n\tnot _pf_batch_has(name, \"EcsProperties\")\n\tnot _pf_batch_has(name, \"EksProperties\")\n}\n"
   },
   {
     "id": "pf-batch-jd-device-permissions-value",
@@ -2379,7 +2379,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-ecs-depends-on-container-exists\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\tsprintf(\"a container depends on %v, which is not declared in the task element (\\\"Container dependency is not valid\\\")\", [dep]),\n\t\"Point DependsOn at a container of the same task\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_TaskContainerDependency.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome c in object.get(t.value, \"Containers\", [])\n\tsome d in object.get(c, \"DependsOn\", [])\n\tdep := object.get(d, \"ContainerName\", null)\n\t_pf_batch_lit(dep)\n\tnot dep in _pf_batch_ecs_names(t)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-ecs-depends-on-container-exists\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\tsprintf(\"a container depends on %v, which is not declared in the task element (\\\"containerName %v must reference a defined container.\\\")\", [dep, dep]),\n\t\"Point DependsOn at a container of the same task\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_TaskContainerDependency.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome c in object.get(t.value, \"Containers\", [])\n\tsome d in object.get(c, \"DependsOn\", [])\n\tdep := object.get(d, \"ContainerName\", null)\n\t_pf_batch_lit(dep)\n\tnot dep in _pf_batch_ecs_names(t)\n}\n"
   },
   {
     "id": "pf-batch-jd-ecs-depends-on-essential-complete",
@@ -2390,7 +2390,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-ecs-depends-on-essential-complete\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\tsprintf(\"a container waits for essential container %v with condition %v (\\\"The container target of a dependency can not have condition %v if the target is essential\\\")\", [dep, cond, cond]),\n\t\"Depend on a non-essential container, or use condition START\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_TaskContainerDependency.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome c in object.get(t.value, \"Containers\", [])\n\tsome d in object.get(c, \"DependsOn\", [])\n\tcond := object.get(d, \"Condition\", null)\n\tcond in {\"COMPLETE\", \"SUCCESS\"}\n\tdep := object.get(d, \"ContainerName\", null)\n\t_pf_batch_lit(dep)\n\tsome target in object.get(t.value, \"Containers\", [])\n\tobject.get(target, \"Name\", null) == dep\n\tobject.get(target, \"Essential\", true) == true\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-ecs-depends-on-essential-complete\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\tsprintf(\"a container waits for essential container %v with condition %v (\\\"The container target of a dependency can not have condition %v if the target container %v is essential.\\\")\", [dep, cond, cond, dep]),\n\t\"Depend on a non-essential container, or use condition START\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_TaskContainerDependency.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome c in object.get(t.value, \"Containers\", [])\n\tsome d in object.get(c, \"DependsOn\", [])\n\tcond := object.get(d, \"Condition\", null)\n\tcond in {\"COMPLETE\", \"SUCCESS\"}\n\tdep := object.get(d, \"ContainerName\", null)\n\t_pf_batch_lit(dep)\n\tsome target in object.get(t.value, \"Containers\", [])\n\tobject.get(target, \"Name\", null) == dep\n\tobject.get(target, \"Essential\", true) == true\n}\n"
   },
   {
     "id": "pf-batch-jd-ecs-depends-on-single-container",
@@ -2426,15 +2426,15 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-ecs-fargate-execution-role\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\t\"a Fargate task element has no ExecutionRoleArn (\\\"executionRoleArn is required for Fargate jobs.\\\")\",\n\t\"Set EcsProperties.TaskProperties[].ExecutionRoleArn\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsTaskProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_fargate(name)\n\tsome t in _pf_batch_ecs_tasks(name)\n\tnot _pf_batch_ohas(t.value, \"ExecutionRoleArn\")\n}\n"
   },
   {
-    "id": "pf-batch-jd-ecs-firelens-requires-root",
+    "id": "pf-batch-jd-ecs-firelens-log-driver",
     "service": "batch",
     "severity": "ERROR",
-    "title": "A Firelens task needs a container running as root",
+    "title": "A Firelens task needs a container using the awsfirelens log driver",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-ecs-firelens-requires-root\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\t\"the task element configures Firelens but no container runs as root (\\\"When a firelensConfiguration object is specified, at least one container has to run as root\\\")\",\n\t\"Drop User, or set it to root (0) on one container\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-job-definition-single-node-multi-container.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome t in _pf_batch_ecs_tasks(name)\n\tcs := object.get(t.value, \"Containers\", [])\n\tsome c in cs\n\t_pf_batch_ohas(c, \"FirelensConfiguration\")\n\tcount([1 | some x in cs; object.get(x, \"User\", \"root\") in {\"root\", \"0\"}]) == 0\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Re-aimed 2026-09-12: the documented \"one container has to run as root\" is\n# not what RegisterJobDefinition checks — it asks for the awsfirelens driver.\nviolation contains make_diag_full(\"pf-batch-jd-ecs-firelens-log-driver\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\t\"the task element configures Firelens but no container uses the awsfirelens log driver (\\\"When a firelensConfiguration object is specified, at least one container has to be configured with the awsfirelens log driver\\\")\",\n\t\"Send one container's logs through LogConfiguration.LogDriver: awsfirelens\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/multi-container-jobs.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome t in _pf_batch_ecs_tasks(name)\n\tcs := object.get(t.value, \"Containers\", [])\n\tsome c in cs\n\t_pf_batch_ohas(c, \"FirelensConfiguration\")\n\tcount([1 | some x in cs; object.get(object.get(x, \"LogConfiguration\", {}), \"LogDriver\", \"\") == \"awsfirelens\"]) == 0\n}\n"
   },
   {
     "id": "pf-batch-jd-ecs-ipc-mode-value",
@@ -2489,7 +2489,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-efs-access-point-root-directory\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Volumes\",\n\tsprintf(\"volume %v sets RootDirectory %v together with an access point (\\\"When using an EFS access point, the root directory must either be set to \\\\\\\"/\\\\\\\" or omitted\\\")\", [object.get(v.value, \"Name\", v.index), rd]),\n\t\"Drop RootDirectory, or set it to /\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EFSVolumeConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in _pf_batch_volumes(name)\n\te := _pf_batch_efs(v)\n\t_pf_batch_ohas(_pf_batch_oget(e, \"AuthorizationConfig\"), \"AccessPointId\")\n\trd := _pf_batch_oget(e, \"RootDirectory\")\n\t_pf_batch_lit(rd)\n\tnot rd in {\"/\", \"\"}\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-efs-access-point-root-directory\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Volumes\",\n\tsprintf(\"volume %v sets RootDirectory %v together with an access point (\\\"When using an EFS access point, the root directory must either be set to \\\\\\\"/\\\\\\\" or be omitted.\\\")\", [object.get(v.value, \"Name\", v.index), rd]),\n\t\"Drop RootDirectory, or set it to /\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EFSVolumeConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in _pf_batch_volumes(name)\n\te := _pf_batch_efs(v)\n\t_pf_batch_ohas(_pf_batch_oget(e, \"AuthorizationConfig\"), \"AccessPointId\")\n\trd := _pf_batch_oget(e, \"RootDirectory\")\n\t_pf_batch_lit(rd)\n\tnot rd in {\"/\", \"\"}\n}\n"
   },
   {
     "id": "pf-batch-jd-efs-access-point-transit-encryption",
@@ -2555,7 +2555,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-evaluate-on-exit-condition-required\", \"ERROR\", name,\n\t\"Properties.RetryStrategy.EvaluateOnExit\",\n\t\"an EvaluateOnExit entry sets none of OnExitCode, OnReason or OnStatusReason (\\\"EvaluateOnExit should contain at least one of onExitCode, onReason or onStatusReason\\\")\",\n\t\"Add OnExitCode, OnReason or OnStatusReason to the entry\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EvaluateOnExit.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome e in flatten_list(name, \"Properties.RetryStrategy.EvaluateOnExit\")\n\tis_object(e.value)\n\tnot _pf_batch_anykey(e.value, {\"OnExitCode\", \"OnReason\", \"OnStatusReason\"})\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-evaluate-on-exit-condition-required\", \"ERROR\", name,\n\t\"Properties.RetryStrategy.EvaluateOnExit\",\n\t\"an EvaluateOnExit entry sets none of OnExitCode, OnReason or OnStatusReason (\\\"EvaluateOnExit should contain at least one of onExitCode, onReason or onStatusReason.\\\")\",\n\t\"Add OnExitCode, OnReason or OnStatusReason to the entry\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EvaluateOnExit.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome e in flatten_list(name, \"Properties.RetryStrategy.EvaluateOnExit\")\n\tis_object(e.value)\n\tnot _pf_batch_anykey(e.value, {\"OnExitCode\", \"OnReason\", \"OnStatusReason\"})\n}\n"
   },
   {
     "id": "pf-batch-jd-evaluate-on-exit-exitcode-format",
@@ -2742,7 +2742,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-linux-max-swap-negative\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.LinuxParameters.MaxSwap\",\n\tsprintf(\"MaxSwap is %v; the swap limit must be 0 or more\", [n]),\n\t\"Use 0 (swap disabled) or a positive limit\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_LinuxParameters.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := to_number(resolve(name, \"Properties.ContainerProperties.LinuxParameters.MaxSwap\"))\n\tn < 0\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-linux-max-swap-negative\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.LinuxParameters.MaxSwap\",\n\tsprintf(\"MaxSwap is %v (\\\"Invalid swap memory size: %v, must be non-negative.\\\")\", [n, n]),\n\t\"Use 0 (swap disabled) or a positive limit\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_LinuxParameters.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := to_number(resolve(name, \"Properties.ContainerProperties.LinuxParameters.MaxSwap\"))\n\tn < 0\n}\n"
   },
   {
     "id": "pf-batch-jd-linux-swappiness-range",
@@ -2797,7 +2797,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-mi-os-family-linux\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\tsprintf(\"RuntimePlatform asks for %v on MANAGED_INSTANCES (\\\"runtimePlatform for MANAGED_INSTANCES only supports LINUX operating system family.\\\")\", [f]),\n\t\"Use OperatingSystemFamily: LINUX\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/ecs-managed-instances-job-definitions.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_mi(name)\n\tsome t in _pf_batch_ecs_tasks(name)\n\tf := _pf_batch_oget(_pf_batch_oget(t.value, \"RuntimePlatform\"), \"OperatingSystemFamily\")\n\t_pf_batch_lit(f)\n\tf != \"LINUX\"\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-mi-os-family-linux\", \"ERROR\", name,\n\t\"Properties.EcsProperties.TaskProperties\",\n\tsprintf(\"RuntimePlatform asks for %v on MANAGED_INSTANCES (\\\"runtimePlatform for MANAGED_INSTANCES only supports LINUX operatingSystemFamily, provided %v.\\\")\", [f, f]),\n\t\"Use OperatingSystemFamily: LINUX\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/ecs-managed-instances-job-definitions.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_mi(name)\n\tsome t in _pf_batch_ecs_tasks(name)\n\tf := _pf_batch_oget(_pf_batch_oget(t.value, \"RuntimePlatform\"), \"OperatingSystemFamily\")\n\t_pf_batch_lit(f)\n\tf != \"LINUX\"\n}\n"
   },
   {
     "id": "pf-batch-jd-mi-requires-ecs-properties",
@@ -2907,7 +2907,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-resource-requirements-gpu-integer\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.ResourceRequirements\",\n\tsprintf(\"GPU is %v (\\\"Value %v for type GPU in resourceRequirement is not valid. Please provide a whole number.\\\")\", [v, v]),\n\t\"Request a whole number of GPUs\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ResourceRequirement.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tv := _pf_batch_rr(_pf_batch_cp(name), \"GPU\")\n\t_pf_batch_lit(v)\n\tnot regex.match(`^[0-9]+$`, v)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-resource-requirements-gpu-integer\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.ResourceRequirements\",\n\tsprintf(\"GPU is %v (\\\"Value %v for type GPU in resourceRequirement is not valid. Please provide a numeric value.\\\")\", [v, v]),\n\t\"Request a whole number of GPUs\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ResourceRequirement.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tv := _pf_batch_rr(_pf_batch_cp(name), \"GPU\")\n\t_pf_batch_lit(v)\n\tnot regex.match(`^[0-9]+$`, v)\n}\n"
   },
   {
     "id": "pf-batch-jd-resource-requirements-gpu-not-fargate",
@@ -2951,7 +2951,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-runtime-platform-cpu-arch-value\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.RuntimePlatform.CpuArchitecture\",\n\tsprintf(\"CpuArchitecture %v is not a supported architecture\", [a]),\n\t\"Use X86_64 or ARM64\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\ta := _pf_batch_oget(_pf_batch_cpget(name, \"RuntimePlatform\"), \"CpuArchitecture\")\n\t_pf_batch_lit(a)\n\tnot a in {\"X86_64\", \"ARM64\"}\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-runtime-platform-cpu-arch-value\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.RuntimePlatform.CpuArchitecture\",\n\tsprintf(\"CpuArchitecture %v is not supported (\\\"cpuArchitecture for Fargate LINUX tasks can be only one from [X86_64, ARM64].\\\")\", [a]),\n\t\"Use X86_64 or ARM64\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\ta := _pf_batch_oget(_pf_batch_cpget(name, \"RuntimePlatform\"), \"CpuArchitecture\")\n\t_pf_batch_lit(a)\n\tnot a in {\"X86_64\", \"ARM64\"}\n}\n"
   },
   {
     "id": "pf-batch-jd-runtime-platform-ec2-only",
@@ -2973,7 +2973,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matched by prefix rather than an allow list: AWS keeps adding Windows Server\n# families, and a stale list would turn into a false positive.\nviolation contains make_diag_full(\"pf-batch-jd-runtime-platform-os-family-value\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.RuntimePlatform.OperatingSystemFamily\",\n\tsprintf(\"OperatingSystemFamily %v is not a supported family\", [f]),\n\t\"Use LINUX or one of the WINDOWS_SERVER_* families\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tf := _pf_batch_oget(_pf_batch_cpget(name, \"RuntimePlatform\"), \"OperatingSystemFamily\")\n\t_pf_batch_lit(f)\n\tf != \"LINUX\"\n\tnot startswith(f, \"WINDOWS_SERVER_\")\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matched by prefix rather than an allow list: AWS keeps adding Windows Server\n# families, and a stale list would turn into a false positive.\nviolation contains make_diag_full(\"pf-batch-jd-runtime-platform-os-family-value\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.RuntimePlatform.OperatingSystemFamily\",\n\tsprintf(\"OperatingSystemFamily %v is not supported (\\\"RuntimePlatform supports only one from [WINDOWS_SERVER_2019_CORE, WINDOWS_SERVER_2019_FULL, WINDOWS_SERVER_2022_CORE, WINDOWS_SERVER_2022_FULL, LINUX] operating systems, provided %v\\\")\", [f, f]),\n\t\"Use LINUX or one of the WINDOWS_SERVER_* families\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tf := _pf_batch_oget(_pf_batch_cpget(name, \"RuntimePlatform\"), \"OperatingSystemFamily\")\n\t_pf_batch_lit(f)\n\tf != \"LINUX\"\n\tnot startswith(f, \"WINDOWS_SERVER_\")\n}\n"
   },
   {
     "id": "pf-batch-jd-runtime-platform-windows-vcpu-min",
@@ -3042,28 +3042,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-secrets-requires-execution-role\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.ExecutionRoleArn\",\n\t\"ContainerProperties.Secrets is set without ExecutionRoleArn (\\\"executionRoleArn cannot be empty when using secrets or secretOptions\\\")\",\n\t\"Set ContainerProperties.ExecutionRoleArn\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/specifying-sensitive-data-secrets.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tcp := _pf_batch_cp(name)\n\t_pf_batch_ohas(cp, \"Secrets\")\n\tnot _pf_batch_ohas(cp, \"ExecutionRoleArn\")\n}\n"
   },
   {
-    "id": "pf-batch-jd-secrets-value-from-format",
-    "service": "batch",
-    "severity": "ERROR",
-    "title": "Secret.ValueFrom must point at Secrets Manager or Parameter Store",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Batch::JobDefinition"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An ARN is checked for its service segment only: Parameter Store also accepts\n# a bare parameter name, so a non-ARN value cannot be judged here.\nviolation contains make_diag_full(\"pf-batch-jd-secrets-value-from-format\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Secrets\",\n\tsprintf(\"secret %v reads from %v, which is neither a Secrets Manager secret nor an SSM parameter\", [object.get(s.value, \"Name\", s.index), v]),\n\t\"Use a secretsmanager or ssm ARN (or a Parameter Store parameter name)\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_Secret.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome s in flatten_list(name, \"Properties.ContainerProperties.Secrets\")\n\tv := _pf_batch_oget(s.value, \"ValueFrom\")\n\t_pf_batch_lit(v)\n\tstartswith(v, \"arn:\")\n\tsvc := split(v, \":\")[2]\n\tnot svc in {\"secretsmanager\", \"ssm\"}\n}\n"
-  },
-  {
-    "id": "pf-batch-jd-secrets-value-from-region",
-    "service": "batch",
-    "severity": "ERROR",
-    "title": "A secret must live in the deployment Region",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Batch::JobDefinition"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-secrets-value-from-region\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Secrets\",\n\tsprintf(\"secret %v is in %v but the stack deploys to %v\", [object.get(s.value, \"Name\", s.index), region, data.cdk_preflight.deploy_region]),\n\t\"Reference a secret in the deployment Region\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_Secret.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome s in flatten_list(name, \"Properties.ContainerProperties.Secrets\")\n\tv := _pf_batch_oget(s.value, \"ValueFrom\")\n\t_pf_batch_lit(v)\n\tparts := split(v, \":\")\n\tparts[0] == \"arn\"\n\tparts[2] in {\"secretsmanager\", \"ssm\"}\n\tregion := parts[3]\n\tregion != \"\"\n\tregion != data.cdk_preflight.deploy_region\n}\n"
-  },
-  {
     "id": "pf-batch-jd-tmpfs-size-min",
     "service": "batch",
     "severity": "ERROR",
@@ -3083,7 +3061,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Batch::JobDefinition"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-volume-config-exclusive\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Volumes\",\n\tsprintf(\"volume %v carries %v configuration blocks (\\\"When the volume parameter is specified, only one volume configuration type is supported\\\")\", [object.get(v.value, \"Name\", v.index), n]),\n\t\"Keep one of Host, EfsVolumeConfiguration or S3FilesVolumeConfiguration\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_Volume.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in _pf_batch_volumes(name)\n\tn := count([k | some k in [\"Host\", \"EfsVolumeConfiguration\", \"S3FilesVolumeConfiguration\"]; _pf_batch_ohas(v.value, k)])\n\tn > 1\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-volume-config-exclusive\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Volumes\",\n\tsprintf(\"volume %v carries %v configuration blocks (\\\"When the volume parameter is specified, only one volume configuration type should be used.\\\")\", [object.get(v.value, \"Name\", v.index), n]),\n\t\"Keep one of Host, EfsVolumeConfiguration or S3FilesVolumeConfiguration\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_Volume.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in _pf_batch_volumes(name)\n\tn := count([k | some k in [\"Host\", \"EfsVolumeConfiguration\", \"S3FilesVolumeConfiguration\"]; _pf_batch_ohas(v.value, k)])\n\tn > 1\n}\n"
   },
   {
     "id": "pf-batch-managed-compute-resources",

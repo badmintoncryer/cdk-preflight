@@ -4,7 +4,7 @@ import rego.v1
 
 violation contains make_diag_full("pf-batch-jd-ecs-depends-on-essential-complete", "ERROR", name,
 	"Properties.EcsProperties.TaskProperties",
-	sprintf("a container waits for essential container %v with condition %v (\"The container target of a dependency can not have condition %v if the target is essential\")", [dep, cond, cond]),
+	sprintf("a container waits for essential container %v with condition %v (\"The container target of a dependency can not have condition %v if the target container %v is essential.\")", [dep, cond, cond, dep]),
 	"Depend on a non-essential container, or use condition START",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_TaskContainerDependency.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")

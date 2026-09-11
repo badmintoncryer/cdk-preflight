@@ -11,7 +11,6 @@
                 {
                   "Name": "main",
                   "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
-                  "Essential": true,
                   "ResourceRequirements": [
                     {
                       "Type": "VCPU",
@@ -21,7 +20,11 @@
                       "Type": "MEMORY",
                       "Value": "2048"
                     }
-                  ]
+                  ],
+                  "Essential": true,
+                  "FirelensConfiguration": {
+                    "Type": "fluentbit"
+                  }
                 }
               ]
             }

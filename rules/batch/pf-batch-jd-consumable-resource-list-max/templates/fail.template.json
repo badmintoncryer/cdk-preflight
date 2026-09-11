@@ -20,31 +20,117 @@
         "ConsumableResourceProperties": {
           "ConsumableResourceList": [
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/a",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr1",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             },
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/b",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr2",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             },
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/c",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr3",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             },
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/d",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr4",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             },
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/e",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr5",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             },
             {
-              "ConsumableResource": "arn:aws:batch:us-east-1:123456789012:consumable-resource/f",
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr6",
+                  "ConsumableResourceArn"
+                ]
+              },
               "Quantity": 1
             }
           ]
         }
+      },
+      "DependsOn": [
+        "Cr1",
+        "Cr2",
+        "Cr3",
+        "Cr4",
+        "Cr5",
+        "Cr6"
+      ]
+    },
+    "Cr1": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-1",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr2": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-2",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr3": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-3",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr4": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-4",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr5": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-5",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr6": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-6",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
       }
     }
   }
