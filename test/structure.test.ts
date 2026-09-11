@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { collectLibs, collectRules, docOnlyProblem, evidenceProblem, renderDocs, renderGenerated, severityProblem } from '../scripts/bundle-rules';
+import { collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, severityProblem, topLevelNames } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -37,6 +37,53 @@ test('every bundled rule declares the package cdk_preflight and rego.v1', () => 
     expect(r.rego).toContain('package cdk_preflight');
     expect(r.rego).toContain('import rego.v1');
   }
+});
+
+/**
+ * enforce は service 単位にモジュールを結合するとき package / import 行を落とすので、
+ * それ以外のヘッダを書いたルールは黙って import 無しで結合されてしまう。
+ */
+test('a rule may not carry any header other than package cdk_preflight + import rego.v1', () => {
+  expect(headerProblem('package cdk_preflight\n\nimport rego.v1\n')).toBeUndefined();
+  expect(headerProblem('package other\n\nimport rego.v1\n')).toMatch(/package cdk_preflight/);
+  expect(headerProblem('package cdk_preflight\n')).toMatch(/import rego.v1/);
+  expect(headerProblem('package cdk_preflight\n\nimport rego.v1\nimport data.foo\n')).toMatch(/no other import/);
+  // 実データ側: collectRules / collectLibs が全モジュールを通している
+  for (const m of [...BUNDLED_RULES, ...BUNDLED_LIBS]) expect(headerProblem(m.rego)).toBeUndefined();
+});
+
+test('top-level names are collected, and `violation` is not one of them', () => {
+  const rego = [
+    'package cdk_preflight',
+    '',
+    'import rego.v1',
+    '',
+    'default _pf_x_flag := false',
+    '_pf_x_set := {"a"}',
+    '_pf_x_fn(v) := v if is_string(v)',
+    '_pf_x_pred if { true }',
+    'violation contains 1 if { true }',
+    '\t_pf_x_indented := 1',
+  ].join('\n');
+  expect([...topLevelNames(rego)].sort()).toEqual(['_pf_x_flag', '_pf_x_fn', '_pf_x_pred', '_pf_x_set']);
+});
+
+/**
+ * 全ルールが同じ package なので、別モジュールに書いた同名ヘルパーは増分定義として
+ * 黙って合流する（結合の有無に関わらず）。共有したい定義は rules/_lib/ に置く。
+ */
+test('no two rules define the same top-level name', () => {
+  expect(nameCollisions([
+    { name: 'pf-a', rego: '_pf_shared := 1\n' },
+    { name: 'pf-b', rego: '_pf_shared := 2\n' },
+  ])).toEqual([expect.stringContaining('_pf_shared is defined by pf-a and pf-b')]);
+  // 同じモジュール内の増分定義（同名を複数回書く書き方）は正常
+  expect(nameCollisions([{ name: 'pf-a', rego: '_pf_j(v) := v if is_object(v)\n_pf_j(v) := {} if is_string(v)\n' }])).toEqual([]);
+
+  expect(nameCollisions([
+    ...collectRules(root).map((r) => ({ name: r.id, rego: r.rego })),
+    ...collectLibs(root).map((l) => ({ name: l.name, rego: l.rego })),
+  ])).toEqual([]);
 });
 
 test('shared lib modules are helper-only and use the _pf_ prefix convention', () => {

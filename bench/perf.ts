@@ -2,6 +2,9 @@
  * enforce プラグインの固定費（ルールのコンパイル + 評価）を測る。
  *   npx ts-node bench/perf.ts [テンプレート枚数=3] [1 枚あたりのリソース束=10]
  *
+ * NOPRUNE=1 を付けるとテンプレートに Transform を足して刈り込みを無効にする
+ * （SAM / cloudformation-include と同じ状態＝全ルールをコンパイルする最悪ケース）。
+ *
  * 1 プロセス 1 回のプラグイン呼び出し = 実際の synth 1 回ぶんに相当する。
  * 数値は WASM エンジンの状態に引きずられるので、比較は必ず別プロセスで取ること。
  */
@@ -79,7 +82,8 @@ function writeTemplate(index: number): string {
     };
   }
   const file = path.join(outDir, `Perf${index}.template.json`);
-  fs.writeFileSync(file, JSON.stringify({ Resources: resources }));
+  const transform = process.env.NOPRUNE === '1' ? { Transform: 'AWS::Serverless-2016-10-31' } : {};
+  fs.writeFileSync(file, JSON.stringify({ ...transform, Resources: resources }));
   return file;
 }
 
@@ -101,6 +105,7 @@ const elapsed = Date.now() - t;
 // eslint-disable-next-line no-console
 console.log(
   `rules=${BUNDLED_RULES.length} templates=${templates} resources/template=${bundles * 7} `
+  + `prune=${process.env.NOPRUNE === '1' ? 'off' : 'on'} `
   + `validate=${elapsed}ms violations=${report.violations.length}`,
 );
 

@@ -371,7 +371,7 @@ function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: 
     cachedRegoEngine = undefined;
     const customRules = [
       ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
-      ...rules.map((r) => ({ name: r.id, content: r.rego })),
+      ...mergeRuleModules(rules),
     ];
     if (region !== undefined) {
       customRules.push(deployEnvironmentModule(region, account));
@@ -379,6 +379,33 @@ function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: 
     cachedRegoEngine = { key, engine: new engineModule.RegoEngine({ customRules }) };
   }
   return cachedRegoEngine.engine;
+}
+
+/** 全ルールに共通の rego ヘッダ。bundle-rules が package 名と import を 1 種類に強制している。 */
+const REGO_HEADER = 'package cdk_preflight\n\nimport rego.v1\n';
+
+/**
+ * ルールを service ごとに 1 モジュールへまとめる。
+ *
+ * コンパイル時間はルール本体の量よりモジュール数で効いてくる（実測 1844 ルールを
+ * 1 ルール 1 モジュールで載せると約 6.2s、service 単位の 39 モジュールに畳むと約 1.0s）。
+ * ルールはもともと全部 `package cdk_preflight` なので、Rego から見れば結合しても
+ * しなくても同じ 1 パッケージ——モジュール境界に意味論は無い。したがって畳めるのだが、
+ * 裏を返せば「別ルールが同じ名前のヘルパーを定義すると黙って 1 つの規則に合流する」
+ * という危険も結合前から存在する。bundle-rules がルール間のトップレベル名衝突を
+ * 弾いているのはそのため（共有したい定義は rules/_lib/ に置く）。
+ * （テストからも利用するため export している）
+ */
+export function mergeRuleModules(rules: BundledRuleData[]): { name: string; content: string }[] {
+  const byService = new Map<string, string[]>();
+  for (const r of rules) {
+    const body = r.rego.replace(/^(?:package|import)\s.*\n/gm, '');
+    byService.set(r.service, [...byService.get(r.service) ?? [], body]);
+  }
+  return [...byService].map(([service, bodies]) => ({
+    name: `_pf_service_${service}`,
+    content: REGO_HEADER + bodies.join('\n'),
+  }));
 }
 
 /**

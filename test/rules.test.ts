@@ -11,7 +11,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { deployEnvironmentModule, loadEngine, prune, templateResourceTypes } from '../src/private/enforce';
+import { deployEnvironmentModule, loadEngine, mergeRuleModules, prune, templateResourceTypes } from '../src/private/enforce';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 interface Diagnostic {
@@ -33,9 +33,11 @@ const engineCache = new Map<string, any>();
 function engineInstance(region?: string): any {
   const key = region ?? '';
   if (!engineCache.has(key)) {
+    // 本番と同じく service 単位に結合して載せる。これで全ルールのフィクスチャ検査が
+    // そのまま「結合しても挙動が変わらない」ことの検査になる。
     const customRules = [
       ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
-      ...BUNDLED_RULES.map((r) => ({ name: r.id, content: r.rego })),
+      ...mergeRuleModules(BUNDLED_RULES),
     ];
     if (region) customRules.push(deployEnvironmentModule(region, '123456789012'));
     engineCache.set(key, new engine.RegoEngine({ customRules }));
