@@ -52,10 +52,7 @@ jobs:
           if ! git diff --ignore-space-at-eol --exit-code; then
             git add -A
             git commit -m "chore: self mutation"
-            git push "https://x-access-token:$SELF_MUTATION_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:main
           fi
-        env:
-          SELF_MUTATION_TOKEN: ${{ secrets.PROJEN_GITHUB_TOKEN || github.token }}
       - name: release
         id: release
         run: npx projen release
@@ -86,6 +83,8 @@ jobs:
           name: build-artifact
           path: dist
           overwrite: true
+      - name: Push self mutation
+        run: git push origin HEAD:${{ github.ref_name }} || echo "push rejected (main moved) - the next release redoes it"
   release_github:
     name: Publish to GitHub Releases
     needs:

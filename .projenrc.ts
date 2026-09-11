@@ -212,27 +212,37 @@ monthlyVerify.addJob('report', {
 // release の `git diff --exit-code` は、ルール追加 PR が並行マージされると必ず落ちる。
 // 各ブランチは自分の base で README のルール数バッジを再生成するので、2 本続けて
 // マージされた main では README だけが古い数字で残る（例: #167 と #169 → 1849 vs 1918）。
-// release 本体の前に bundle-rules を回して差分を main へ押し戻す。押し戻した時点で
-// 後続の publish は projen 既定のガード（latest_commit == github.sha）で skip され、
-// この push が次の release を引いて publish まで通る。
-// PROJEN_GITHUB_TOKEN 未設定だと GITHUB_TOKEN の push は release を再トリガーしないため、
-// main は直るが release は手動 re-run が要る。
-const selfMutation: github.workflows.JobStep = {
+//
+// そこで release 本体の前に bundle-rules を回してローカル commit だけ作り、push は
+// ジョブの最後まで遅らせる。release ステップ時点で tree は綺麗なので diff チェックを
+// 通り、リモートの main は未変更なので projen 既定のガード
+// （latest_commit == github.sha）も通って publish がそのまま走る。
+// push が GITHUB_TOKEN で release を再トリガーしないことが、ここでは逆に好都合
+// （二重 release にならない）。PAT は不要。
+const selfMutationCommit: github.workflows.JobStep = {
   name: 'Self mutation',
   run: [
     'npx projen bundle-rules',
     'if ! git diff --ignore-space-at-eol --exit-code; then',
     '  git add -A',
     '  git commit -m "chore: self mutation"',
-    '  git push "https://x-access-token:$SELF_MUTATION_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:main',
     'fi',
   ].join('\n'),
-  env: { SELF_MUTATION_TOKEN: '${{ secrets.PROJEN_GITHUB_TOKEN || github.token }}' },
 };
-// steps[4] = projen 生成の `release` ステップ。その直前に差し込む。
-// projen 更新でステップ構成が変わったら添字を見直すこと。
+// ponytail: タグは projen 生成のまま $GITHUB_SHA（= self mutation の 1 つ手前）を指す。
+// ずれるのは README のバッジ 1 行だけなので放置。気になったら release_github の
+// --target も差し替える。
+const selfMutationPush: github.workflows.JobStep = {
+  name: 'Push self mutation',
+  // ジョブ中に人間が main を進めると push が弾かれる。バッジ再生成は冪等なので
+  // 次の release が同じ差分を作り直す。publish 済みのランを赤くする方が損。
+  run: 'git push origin HEAD:${{ github.ref_name }} || echo "push rejected (main moved) - the next release redoes it"',
+};
+// steps[4] = projen 生成の `release` ステップ。その直前に commit を差し込み、
+// push は steps の末尾に足す。projen 更新でステップ構成が変わったら添字を見直すこと。
 project.github!.tryFindWorkflow('release')!.file!.patch(
-  JsonPatch.add('/jobs/release/steps/4', selfMutation),
+  JsonPatch.add('/jobs/release/steps/4', selfMutationCommit),
+  JsonPatch.add('/jobs/release/steps/-', selfMutationPush),
 );
 
 project.synth();
