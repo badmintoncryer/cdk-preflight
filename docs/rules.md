@@ -212,10 +212,78 @@
 | `pf-batch-fargate-cpu-memory` | AWS::Batch::JobDefinition | Fargate job definitions must use a supported vCPU/memory combination | ERROR | none |
 | `pf-batch-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate job definitions require ExecutionRoleArn | ERROR | none |
 | `pf-batch-fargate-multinode` | AWS::Batch::JobDefinition | Multi-node parallel jobs are not supported on Fargate | ERROR | none |
+| `pf-batch-jd-consumable-resource-duplicate` | AWS::Batch::JobDefinition | A job must not declare the same consumable resource twice | ERROR | none |
+| `pf-batch-jd-consumable-resource-list-max` | AWS::Batch::JobDefinition | A job may declare at most 5 consumable resources | ERROR | none |
+| `pf-batch-jd-container-type-requires-props` | AWS::Batch::JobDefinition | A container job definition must carry one of the container property blocks | ERROR | none |
+| `pf-batch-jd-device-permissions-value` | AWS::Batch::JobDefinition | Device.Permissions must be READ, WRITE or MKNOD | ERROR | none |
+| `pf-batch-jd-ecs-container-name-unique` | AWS::Batch::JobDefinition | Container names must be unique within a task element | ERROR | none |
+| `pf-batch-jd-ecs-depends-on-condition-value` | AWS::Batch::JobDefinition | DependsOn.Condition must be START, COMPLETE or SUCCESS | ERROR | none |
+| `pf-batch-jd-ecs-depends-on-container-exists` | AWS::Batch::JobDefinition | DependsOn must name a container in the same task element | ERROR | none |
+| `pf-batch-jd-ecs-depends-on-essential-complete` | AWS::Batch::JobDefinition | COMPLETE and SUCCESS dependencies cannot target an essential container | ERROR | none |
+| `pf-batch-jd-ecs-depends-on-single-container` | AWS::Batch::JobDefinition | Container dependencies need more than one container | ERROR | none |
+| `pf-batch-jd-ecs-essential-required` | AWS::Batch::JobDefinition | An ECS task element needs one essential container | ERROR | none |
+| `pf-batch-jd-ecs-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate task properties require an execution role | ERROR | none |
+| `pf-batch-jd-ecs-firelens-log-driver` | AWS::Batch::JobDefinition | A Firelens task needs a container using the awsfirelens log driver | ERROR | none |
+| `pf-batch-jd-ecs-ipc-mode-value` | AWS::Batch::JobDefinition | EcsTaskProperties.IpcMode must be host, task or none | ERROR | none |
+| `pf-batch-jd-ecs-pid-mode-value` | AWS::Batch::JobDefinition | EcsTaskProperties.PidMode must be host or task | ERROR | none |
+| `pf-batch-jd-ecs-task-containers-max` | AWS::Batch::JobDefinition | An ECS task element supports at most 10 containers | ERROR | none |
+| `pf-batch-jd-ecs-task-containers-required` | AWS::Batch::JobDefinition | An ECS task element must define at least one container | ERROR | none |
+| `pf-batch-jd-efs-access-point-root-directory` | AWS::Batch::JobDefinition | An EFS access point forces the root directory to / | ERROR | none |
+| `pf-batch-jd-efs-access-point-transit-encryption` | AWS::Batch::JobDefinition | An EFS access point requires transit encryption | ERROR | none |
+| `pf-batch-jd-efs-file-system-id-format` | AWS::Batch::JobDefinition | EFS FileSystemId must be an fs- identifier | ERROR | none |
+| `pf-batch-jd-efs-iam-transit-encryption` | AWS::Batch::JobDefinition | EFS IAM authorization requires transit encryption | ERROR | none |
+| `pf-batch-jd-efs-transit-encryption-port-range` | AWS::Batch::JobDefinition | EFS TransitEncryptionPort must be a valid port number | ERROR | none |
+| `pf-batch-jd-env-name-required` | AWS::Batch::JobDefinition | Every Environment entry needs a Name | ERROR | none |
+| `pf-batch-jd-evaluate-on-exit-condition-required` | AWS::Batch::JobDefinition | Each EvaluateOnExit entry needs at least one condition | ERROR | none |
+| `pf-batch-jd-evaluate-on-exit-exitcode-format` | AWS::Batch::JobDefinition | EvaluateOnExit.OnExitCode accepts only digits and * | ERROR | none |
+| `pf-batch-jd-evaluate-on-exit-pattern-length` | AWS::Batch::JobDefinition | EvaluateOnExit conditions are limited to 512 characters | ERROR | none |
+| `pf-batch-jd-evaluate-on-exit-requires-attempts` | AWS::Batch::JobDefinition | RetryStrategy.EvaluateOnExit requires Attempts | ERROR | none |
+| `pf-batch-jd-fargate-efs-platform-version` | AWS::Batch::JobDefinition | EFS volumes on Fargate require platform version 1.4.0 or later | ERROR | none |
+| `pf-batch-jd-fargate-ephemeral-storage-range` | AWS::Batch::JobDefinition | Fargate ephemeral storage must be between 21 and 200 GiB | ERROR | none |
+| `pf-batch-jd-fargate-linux-devices` | AWS::Batch::JobDefinition | LinuxParameters.Devices is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-log-driver` | AWS::Batch::JobDefinition | Fargate jobs support only the awslogs, splunk and awsfirelens log drivers | ERROR | none |
+| `pf-batch-jd-fargate-max-swap` | AWS::Batch::JobDefinition | LinuxParameters.MaxSwap is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-platform-config-on-ec2` | AWS::Batch::JobDefinition | FargatePlatformConfiguration is not applicable to EC2 jobs | ERROR | none |
+| `pf-batch-jd-fargate-privileged` | AWS::Batch::JobDefinition | Privileged is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-shared-memory-size` | AWS::Batch::JobDefinition | LinuxParameters.SharedMemorySize is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-swappiness` | AWS::Batch::JobDefinition | LinuxParameters.Swappiness is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-tmpfs` | AWS::Batch::JobDefinition | LinuxParameters.Tmpfs is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-ulimits` | AWS::Batch::JobDefinition | Ulimits are not supported on Fargate | ERROR | none |
+| `pf-batch-jd-fargate-volume-host-source-path` | AWS::Batch::JobDefinition | Volume Host.SourcePath is not supported on Fargate | ERROR | none |
+| `pf-batch-jd-legacy-and-resource-requirements` | AWS::Batch::JobDefinition | The legacy Vcpus/Memory fields cannot be combined with ResourceRequirements | ERROR | none |
+| `pf-batch-jd-linux-max-swap-negative` | AWS::Batch::JobDefinition | LinuxParameters.MaxSwap must not be negative | ERROR | none |
+| `pf-batch-jd-linux-swappiness-range` | AWS::Batch::JobDefinition | LinuxParameters.Swappiness must be between 0 and 100 | ERROR | none |
+| `pf-batch-jd-log-awslogs-unknown-option` | AWS::Batch::JobDefinition | The awslogs driver takes only the documented options | ERROR | none |
+| `pf-batch-jd-max-swap-requires-swappiness` | AWS::Batch::JobDefinition | LinuxParameters.MaxSwap requires Swappiness | ERROR | none |
+| `pf-batch-jd-memory-minimum` | AWS::Batch::JobDefinition | ContainerProperties.Memory must be at least 4 MiB | ERROR | none |
+| `pf-batch-jd-mi-os-family-linux` | AWS::Batch::JobDefinition | ECS Managed Instances jobs only support the LINUX operating system family | ERROR | none |
+| `pf-batch-jd-mi-requires-ecs-properties` | AWS::Batch::JobDefinition | MANAGED_INSTANCES job definitions must use EcsProperties | ERROR | none |
+| `pf-batch-jd-multinode-requires-node-properties` | AWS::Batch::JobDefinition | A multinode job definition requires NodeProperties | ERROR | none |
 | `pf-batch-jd-name` | AWS::Batch::JobDefinition | Job definition names allow only letters, numbers, hyphen and underscore | ERROR | none |
+| `pf-batch-jd-platform-capabilities-single` | AWS::Batch::JobDefinition | PlatformCapabilities takes exactly one value | ERROR | none |
+| `pf-batch-jd-platform-capability-value` | AWS::Batch::JobDefinition | PlatformCapabilities accepts only EC2, FARGATE and MANAGED_INSTANCES | ERROR | none |
+| `pf-batch-jd-props-container-and-ecs` | AWS::Batch::JobDefinition | ContainerProperties and EcsProperties are mutually exclusive | ERROR | none |
+| `pf-batch-jd-props-container-and-eks` | AWS::Batch::JobDefinition | ContainerProperties and EksProperties are mutually exclusive | ERROR | none |
+| `pf-batch-jd-props-ecs-and-eks` | AWS::Batch::JobDefinition | EcsProperties and EksProperties are mutually exclusive | ERROR | none |
+| `pf-batch-jd-resource-requirements-duplicate-type` | AWS::Batch::JobDefinition | ResourceRequirements must not repeat a type | ERROR | none |
+| `pf-batch-jd-resource-requirements-gpu-integer` | AWS::Batch::JobDefinition | A GPU resource requirement must be a whole number | ERROR | none |
+| `pf-batch-jd-resource-requirements-gpu-not-fargate` | AWS::Batch::JobDefinition | GPU resource requirements are not supported on Fargate | ERROR | none |
+| `pf-batch-jd-resource-requirements-required` | AWS::Batch::JobDefinition | A container job definition must request VCPU | ERROR | none |
+| `pf-batch-jd-resource-requirements-vcpu-min` | AWS::Batch::JobDefinition | An EC2 job must request at least one vCPU | ERROR | none |
+| `pf-batch-jd-runtime-platform-cpu-arch-value` | AWS::Batch::JobDefinition | RuntimePlatform.CpuArchitecture must be X86_64 or ARM64 | ERROR | none |
+| `pf-batch-jd-runtime-platform-ec2-only` | AWS::Batch::JobDefinition | RuntimePlatform is not applicable to EC2 jobs | ERROR | none |
+| `pf-batch-jd-runtime-platform-os-family-value` | AWS::Batch::JobDefinition | RuntimePlatform.OperatingSystemFamily must be LINUX or a Windows Server family | ERROR | none |
+| `pf-batch-jd-runtime-platform-windows-vcpu-min` | AWS::Batch::JobDefinition | Windows containers need at least one vCPU | ERROR | none |
+| `pf-batch-jd-runtime-platform-windows-x86` | AWS::Batch::JobDefinition | Windows containers require the X86_64 architecture | ERROR | none |
+| `pf-batch-jd-s3files-requires-job-role` | AWS::Batch::JobDefinition | S3 Files volumes require a job role | ERROR | none |
+| `pf-batch-jd-scheduling-priority-range` | AWS::Batch::JobDefinition | SchedulingPriority must be between 0 and 9999 | ERROR | none |
+| `pf-batch-jd-secret-options-requires-execution-role` | AWS::Batch::JobDefinition | LogConfiguration.SecretOptions requires an execution role | ERROR | none |
+| `pf-batch-jd-secrets-requires-execution-role` | AWS::Batch::JobDefinition | Injecting secrets requires an execution role | ERROR | none |
+| `pf-batch-jd-tmpfs-size-min` | AWS::Batch::JobDefinition | Tmpfs.Size must be a positive number of MiB | ERROR | none |
+| `pf-batch-jd-volume-config-exclusive` | AWS::Batch::JobDefinition | A volume takes exactly one configuration type | ERROR | none |
 | `pf-batch-managed-compute-resources` | AWS::Batch::ComputeEnvironment | MANAGED compute environments require ComputeResources | ERROR | none |
 | `pf-batch-queue-order-required` | AWS::Batch::JobQueue | ComputeEnvironmentOrder may not be empty | ERROR | none |
-| `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts may not exceed 10 | ERROR | none |
+| `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts must be between 1 and 10 | ERROR | none |
 | `pf-batch-timeout-minimum` | AWS::Batch::JobDefinition | Timeout.AttemptDurationSeconds must be at least 60 | ERROR | none |
 | `pf-batch-unmanaged-fargate` | AWS::Batch::ComputeEnvironment | UNMANAGED compute environments cannot be Fargate | ERROR | none |
 | `pf-bedrock-automated-reasoning-policy-names-unique` | AWS::Bedrock::AutomatedReasoningPolicy | Names and ids inside a policy definition must be unique | ERROR | none |

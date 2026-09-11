@@ -1,0 +1,11 @@
+id: pf-batch-jd-runtime-platform-windows-x86
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Windows containers require the X86_64 architecture
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Windows supported only by X86_64 cpuArchitecture\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

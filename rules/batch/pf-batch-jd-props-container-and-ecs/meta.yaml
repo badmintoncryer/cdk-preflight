@@ -1,0 +1,11 @@
+id: pf-batch-jd-props-container-and-ecs
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: ContainerProperties and EcsProperties are mutually exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-batch-jobdefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Cannot use both ECS containerProperties and ecsProperties\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

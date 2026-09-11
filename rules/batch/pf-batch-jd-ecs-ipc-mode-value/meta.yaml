@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-ipc-mode-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: EcsTaskProperties.IpcMode must be host, task or none
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsTaskProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"ipcMode private is not valid. Valid values are: [host, task, none]\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

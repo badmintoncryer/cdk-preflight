@@ -1,0 +1,183 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "EcsProperties": {
+          "TaskProperties": [
+            {
+              "Containers": [
+                {
+                  "Name": "c0",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": true,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c1",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c2",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c3",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c4",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c5",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c6",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c7",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c8",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c9",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                },
+                {
+                  "Name": "c10",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": false,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

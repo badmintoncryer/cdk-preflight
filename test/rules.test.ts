@@ -1810,7 +1810,8 @@ describe('batch rules', () => {
   });
 
   test('fargate combo and exec-role rules stay silent for EC2-platform job definitions', () => {
-    const t = fargateJd('0.25', '8192');
+    // A whole vCPU, because EC2 jobs carry their own floor (pf-batch-jd-resource-requirements-vcpu-min).
+    const t = fargateJd('1', '2048');
     (t.Resources.J.Properties as any).PlatformCapabilities = ['EC2'];
     delete (t.Resources.J.Properties.ContainerProperties as any).ExecutionRoleArn;
     expect(ids(diagnoseTemplate(t))).toHaveLength(0);
@@ -1832,13 +1833,14 @@ describe('batch rules', () => {
     expect(ids(diagnoseTemplate(q({ ComputeEnvironmentOrder: [{ Order: 1, ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/x' }] })))).toHaveLength(0);
   });
 
-  test('retry attempts: only the benched upper edge fires; 0 stays silent (unbenched)', () => {
+  test('retry attempts: both edges fire; 1..10 stays silent', () => {
     const jdT = (attempts: number) => ({
       Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', RetryStrategy: { Attempts: attempts }, ContainerProperties: { Image: IMG, ResourceRequirements: [{ Type: 'VCPU', Value: '1' }, { Type: 'MEMORY', Value: '2048' }] } } } },
     });
     expect(ids(diagnoseTemplate(jdT(11)))).toContain('pf-batch-retry-attempts');
     expect(ids(diagnoseTemplate(jdT(10)))).toHaveLength(0);
-    expect(ids(diagnoseTemplate(jdT(0)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(jdT(1)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(jdT(0)))).toContain('pf-batch-retry-attempts');
   });
 });
 

@@ -1,0 +1,11 @@
+id: pf-batch-jd-efs-iam-transit-encryption
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: EFS IAM authorization requires transit encryption
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EFSAuthorizationConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"EFS IAM authorization requires TransitEncryption to be enabled.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

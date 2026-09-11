@@ -1,0 +1,11 @@
+id: pf-batch-jd-efs-access-point-root-directory
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: An EFS access point forces the root directory to /
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EFSVolumeConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"When using an EFS access point, the root directory must either be set to \"/\" or be omitted.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

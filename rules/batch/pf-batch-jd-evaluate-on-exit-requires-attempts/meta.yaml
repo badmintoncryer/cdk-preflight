@@ -1,0 +1,11 @@
+id: pf-batch-jd-evaluate-on-exit-requires-attempts
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: RetryStrategy.EvaluateOnExit requires Attempts
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RetryStrategy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"RetryAttempts must be provided with retry strategy.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

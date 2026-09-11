@@ -1,0 +1,11 @@
+id: pf-batch-jd-legacy-and-resource-requirements
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: The legacy Vcpus/Memory fields cannot be combined with ResourceRequirements
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ContainerProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Cannot use both ECS containerProperties vcpus and resourceRequirement VCPU.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

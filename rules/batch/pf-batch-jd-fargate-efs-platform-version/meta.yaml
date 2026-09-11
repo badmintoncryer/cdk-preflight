@@ -1,0 +1,11 @@
+id: pf-batch-jd-fargate-efs-platform-version
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: EFS volumes on Fargate require platform version 1.4.0 or later
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Volume.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"EFS is supported for Fargate platform versions 1.4.0 or later, provided 1.3.0.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "PlatformCapabilities": [
+          "FARGATE"
+        ],
+        "ContainerProperties": {
+          "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+          "ExecutionRoleArn": "arn:aws:iam::214794239830:role/cdkpf-ecs-probe",
+          "ResourceRequirements": [
+            {
+              "Type": "VCPU",
+              "Value": "0.25"
+            },
+            {
+              "Type": "MEMORY",
+              "Value": "512"
+            },
+            {
+              "Type": "GPU",
+              "Value": "1"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

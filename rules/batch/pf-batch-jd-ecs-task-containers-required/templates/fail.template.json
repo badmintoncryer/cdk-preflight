@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "EcsProperties": {
+          "TaskProperties": [
+            {
+              "Containers": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

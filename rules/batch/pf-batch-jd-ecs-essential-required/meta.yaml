@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-essential-required
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: An ECS task element needs one essential container
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/multi-container-jobs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"At least one container must be set as essential\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

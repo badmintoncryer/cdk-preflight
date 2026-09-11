@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-1918-blue" alt="1918 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-1986-blue" alt="1986 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.

@@ -1,0 +1,11 @@
+id: pf-batch-jd-fargate-ulimits
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Ulimits are not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/fargate-job-definitions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"ulimits is not applicable for Fargate.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

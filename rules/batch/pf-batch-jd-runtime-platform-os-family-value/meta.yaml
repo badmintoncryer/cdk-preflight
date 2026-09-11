@@ -1,0 +1,11 @@
+id: pf-batch-jd-runtime-platform-os-family-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: RuntimePlatform.OperatingSystemFamily must be LINUX or a Windows Server family
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"RuntimePlatform supports only one from [WINDOWS_SERVER_2019_CORE, WINDOWS_SERVER_2019_FULL, WINDOWS_SERVER_2022_CORE, WINDOWS_SERVER_2022_FULL, LINUX] operating systems, provided LINUX_ARM\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

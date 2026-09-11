@@ -1,0 +1,11 @@
+id: pf-batch-jd-env-name-required
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Every Environment entry needs a Name
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ContainerProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Environment variable name is required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

@@ -1,0 +1,11 @@
+id: pf-batch-jd-mi-os-family-linux
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: ECS Managed Instances jobs only support the LINUX operating system family
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/ecs-managed-instances-job-definitions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"runtimePlatform for MANAGED_INSTANCES only supports LINUX operatingSystemFamily, provided WINDOWS_SERVER_2019_CORE.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

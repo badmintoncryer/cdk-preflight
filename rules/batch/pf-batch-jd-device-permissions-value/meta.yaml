@@ -1,0 +1,11 @@
+id: pf-batch-jd-device-permissions-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Device.Permissions must be READ, WRITE or MKNOD
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Device.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Invalid permission: EXECUTE for device /dev/null\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

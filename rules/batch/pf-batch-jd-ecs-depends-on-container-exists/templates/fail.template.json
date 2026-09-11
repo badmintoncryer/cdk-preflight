@@ -1,0 +1,53 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "EcsProperties": {
+          "TaskProperties": [
+            {
+              "Containers": [
+                {
+                  "Name": "main",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ],
+                  "Essential": true,
+                  "DependsOn": [
+                    {
+                      "ContainerName": "ghost",
+                      "Condition": "START"
+                    }
+                  ]
+                },
+                {
+                  "Name": "side",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

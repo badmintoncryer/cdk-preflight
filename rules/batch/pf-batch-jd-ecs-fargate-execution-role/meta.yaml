@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-fargate-execution-role
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Fargate task properties require an execution role
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsTaskProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"executionRoleArn is required for Fargate jobs.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12
