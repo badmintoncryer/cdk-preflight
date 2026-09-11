@@ -12,6 +12,10 @@ case "$1 $2" in
   "cloudformation list-stacks") echo "" ;;
   "resourcegroupstaggingapi get-resources") cat "$CDKPF_STUB_ORPHANS" ;;
   "kms describe-key") echo "${CDKPF_STUB_KEYSTATE:-Enabled}" ;;
+  "route53resolver list-firewall-rule-groups") echo "${CDKPF_STUB_FRG:-}" ;;
+  "route53resolver list-firewall-rule-group-associations") echo "${CDKPF_STUB_FRGA:-}" ;;
+  "route53resolver list-firewall-rules") printf '%b\n' "${CDKPF_STUB_FR:-}" ;;
+  "route53resolver list-firewall-domain-lists") echo "${CDKPF_STUB_FDL:-}" ;;
   *)
     if [ -n "${CDKPF_STUB_FAIL:-}" ] && grep -q -- "$CDKPF_STUB_FAIL" <<<"$*"; then
       echo "${CDKPF_STUB_ERR:-An error occurred: stub refused $2}" >&2; exit 254
@@ -73,5 +77,23 @@ export CDKPF_STUB_FAIL=delete-user-pool CDKPF_STUB_ERR='An error occurred (Resou
 out=$(run "$tmp/failing")
 unset CDKPF_STUB_FAIL CDKPF_STUB_ERR
 grep -q LEFTOVER <<<"$out" && fail "an already-deleted resource was reported as leftover" "$out"
+
+# CloudFormation が消し残す DNS Firewall の残骸を、参照される順に消す
+export CDKPF_STUB_FRG=rg-1 CDKPF_STUB_FRGA=ra-1 CDKPF_STUB_FR='dl-1\tA\ndl-2\tNone' CDKPF_STUB_FDL=dl-1
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable firewall orphan was reported as leftover" "$out"
+[ "$(grep -c 'reclaimed orphaned firewall' <<<"$out")" -eq 4 ] || fail "expected 4 firewall reclaim lines (group + list x 2 regions)" "$out"
+called 'disassociate-firewall-rule-group --firewall-rule-group-association-id ra-1' || fail "association not removed"
+# qtype 付きのルールは --qtype まで渡さないと消えない。qtype 無しの行に --qtype を付けても落ちる
+called 'delete-firewall-rule --firewall-rule-group-id rg-1 --firewall-domain-list-id dl-1 --qtype A' || fail "qtype not passed through"
+called 'delete-firewall-rule --firewall-rule-group-id rg-1 --firewall-domain-list-id dl-2 --region' || fail "qtype-less rule not deleted plainly"
+[ "$(grep -n 'delete-firewall-rule --' "$CDKPF_STUB_CALLS" | head -1 | cut -d: -f1)" \
+  -lt "$(grep -n 'delete-firewall-rule-group --' "$CDKPF_STUB_CALLS" | head -1 | cut -d: -f1)" ] ||
+  fail "rules must be deleted before the group ([RSLVR-02103])" "$out"
+
+export CDKPF_STUB_FAIL=delete-firewall-domain-list
+out=$(run "$tmp/none")
+unset CDKPF_STUB_FAIL CDKPF_STUB_FRG CDKPF_STUB_FRGA CDKPF_STUB_FR CDKPF_STUB_FDL
+[ "$(grep -c '^LEFTOVER: orphaned firewall domain list' <<<"$out")" -eq 2 ] || fail "a failed firewall deletion was not reported" "$out"
 
 echo "sweep.test.sh: OK"

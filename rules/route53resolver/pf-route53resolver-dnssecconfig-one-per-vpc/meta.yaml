@@ -1,0 +1,12 @@
+id: pf-route53resolver-dnssecconfig-one-per-vpc
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverDNSSECConfig]
+severity: ERROR
+title: "A VPC can only have one Resolver DNSSEC validation config"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_UpdateResolverDnssecConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> the DNSSEC config with ResourceId vpc-03b6c2d3abb3f8aa9 already exists (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

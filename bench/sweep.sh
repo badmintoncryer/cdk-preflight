@@ -47,6 +47,57 @@ reclaim_err() {
   echo "${msg:-remove by hand}"
 }
 
+# CloudFormation はスタックを消しても DNS Firewall のルールグループとドメインリストを残す
+# （2026-09-11 us-east-1 で実測: cdkpf-* スタックが 0 の状態でルールグループ 13 / ドメインリスト 3 が生存）。
+# スタック名にもタグにも引っかからないので上の 2 つでは拾えない。フィクスチャ側が付ける
+# cdkpf- 接頭辞で拾い、rule → group → domain list の順に消す（逆順だと参照で消せない）。
+sweep_dns_firewall() {
+  local region=$1 id a dlid qtype
+  aws route53resolver list-firewall-rule-groups --region "$region" \
+    --query "FirewallRuleGroups[?starts_with(Name,'cdkpf-')].Id" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r id; do
+    [ -z "$id" ] || [ "$id" = "None" ] && continue
+    aws route53resolver list-firewall-rule-group-associations --region "$region" \
+      --firewall-rule-group-id "$id" --query 'FirewallRuleGroupAssociations[].Id' --output text 2>/dev/null |
+      tr '\t' '\n' | while read -r a; do
+      [ -z "$a" ] || [ "$a" = "None" ] && continue
+      aws route53resolver disassociate-firewall-rule-group --firewall-rule-group-association-id "$a" \
+        --region "$region" >/dev/null 2>&1
+    done
+    # ルールが 1 本でも残っていると [RSLVR-02103] でグループを消せない。qtype 付きのルールは
+    # --qtype まで一致させないと消えない（ドメインリスト ID だけでは ValidationException）
+    aws route53resolver list-firewall-rules --firewall-rule-group-id "$id" --region "$region" \
+      --query 'FirewallRules[].[FirewallDomainListId,Qtype]' --output text 2>/dev/null |
+      while IFS=$'\t' read -r dlid qtype; do
+      [ -z "$dlid" ] || [ "$dlid" = "None" ] && continue
+      if [ -n "$qtype" ] && [ "$qtype" != "None" ]; then
+        aws route53resolver delete-firewall-rule --firewall-rule-group-id "$id" \
+          --firewall-domain-list-id "$dlid" --qtype "$qtype" --region "$region" >/dev/null 2>&1
+      else
+        aws route53resolver delete-firewall-rule --firewall-rule-group-id "$id" \
+          --firewall-domain-list-id "$dlid" --region "$region" >/dev/null 2>&1
+      fi
+    done
+    if aws route53resolver delete-firewall-rule-group --firewall-rule-group-id "$id" \
+         --region "$region" 2>"$RECLAIM_ERR" >/dev/null; then
+      echo "sweep: reclaimed orphaned firewall rule group $id ($region)"
+    else
+      echo "LEFTOVER: orphaned firewall rule group $id ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+  aws route53resolver list-firewall-domain-lists --region "$region" \
+    --query "FirewallDomainLists[?starts_with(Name,'cdkpf-')].Id" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r id; do
+    [ -z "$id" ] || [ "$id" = "None" ] && continue
+    if aws route53resolver delete-firewall-domain-list --firewall-domain-list-id "$id" \
+         --region "$region" 2>"$RECLAIM_ERR" >/dev/null; then
+      echo "sweep: reclaimed orphaned firewall domain list $id ($region)"
+    else
+      echo "LEFTOVER: orphaned firewall domain list $id ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+}
+
 for region in ap-northeast-1 us-east-1; do
   aws cloudformation list-stacks --region "$region" \
     --query "StackSummaries[?starts_with(StackName,'cdkpf-') && StackStatus!='DELETE_COMPLETE'].StackName" \
@@ -82,5 +133,7 @@ for region in ap-northeast-1 us-east-1; do
       echo "LEFTOVER: orphaned resource $arn ($region) — could not delete: $(reclaim_err)"
     fi
   done
+
+  sweep_dns_firewall "$region"
 done
 echo "sweep done"

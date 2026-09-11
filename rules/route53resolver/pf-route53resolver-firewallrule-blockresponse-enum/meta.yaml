@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrule-blockresponse-enum
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A DNS Firewall rule BlockResponse must be NODATA, NXDOMAIN or OVERRIDE"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CloudFormation stops it before provisioning (stack CREATE_FAILED, \"Validation failed with 1 error(s)\"), so the message names no property; the bundled engine only warns about the value (cfn-lint W3030), hence upstream: pending-engine"
+addedOn: 2026-09-10

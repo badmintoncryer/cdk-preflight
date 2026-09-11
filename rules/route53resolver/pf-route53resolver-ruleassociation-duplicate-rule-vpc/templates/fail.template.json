@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Rule": {
+      "Type": "AWS::Route53Resolver::ResolverRule",
+      "Properties": {
+        "RuleType": "SYSTEM",
+        "DomainName": "cdkpf-example.com."
+      }
+    },
+    "AssocOne": {
+      "Type": "AWS::Route53Resolver::ResolverRuleAssociation",
+      "Properties": {
+        "ResolverRuleId": {
+          "Ref": "Rule"
+        },
+        "VPCId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "AssocTwo": {
+      "Type": "AWS::Route53Resolver::ResolverRuleAssociation",
+      "Properties": {
+        "ResolverRuleId": {
+          "Ref": "Rule"
+        },
+        "VPCId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

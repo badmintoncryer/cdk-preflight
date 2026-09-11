@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-targetips-address-family-exclusive
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "Resolver rule target IPs cannot mix IPv4 and IPv6"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00719] Resolver rule target IP addresses can only have one type of Ip Address. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-endpointid-must-be-outbound
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule, AWS::Route53Resolver::ResolverEndpoint]
+severity: ERROR
+title: "A Resolver rule must point at an outbound Resolver endpoint"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00700] Resolver rules can only be associated to OUTBOUND resolver endpoints. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

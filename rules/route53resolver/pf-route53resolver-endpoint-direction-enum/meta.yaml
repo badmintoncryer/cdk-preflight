@@ -1,0 +1,12 @@
+id: pf-route53resolver-endpoint-direction-enum
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverEndpoint]
+severity: ERROR
+title: "A Resolver endpoint Direction must be INBOUND, OUTBOUND or INBOUND_DELEGATION"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> 1 validation error detected: Value 'BOTH' at 'direction' failed to satisfy constraint: Member must satisfy enum value set: [INBOUND_DELEGATION, OUTBOUND, INBOUND] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

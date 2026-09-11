@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrule-domainlist-qtype-unique
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A rule group cannot have two rules with the same domain list and Qtype"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-bf22a809d3344208:rslvr-fdl-c2bdbf660fe9470b, FirewallRuleGroupId=rslvr-frg-bf22a809d3344208, FirewallDomainListId=rslvr-fdl-c2bdbf660fe9470b, Priority=101, Action=ALERT, Name=rule-for-rslvr-fdl-c2bdbf660fe9470b) (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

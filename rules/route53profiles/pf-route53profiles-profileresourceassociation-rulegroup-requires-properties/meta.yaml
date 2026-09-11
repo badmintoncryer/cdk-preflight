@@ -1,0 +1,12 @@
+id: pf-route53profiles-profileresourceassociation-rulegroup-requires-properties
+service: route53profiles
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Profiles::ProfileResourceAssociation]
+severity: ERROR
+title: "Associating a DNS Firewall rule group with a Profile requires ResourceProperties"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateResourceToProfile.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-05012] Resource properties are required. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

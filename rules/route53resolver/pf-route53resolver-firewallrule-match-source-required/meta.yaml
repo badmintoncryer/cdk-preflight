@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrule-match-source-required
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A DNS Firewall rule must declare what it matches"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: FirewallRule must specify one of: FirewallRuleType, DnsThreatProtection with ConfidenceThreshold, or FirewallDomainListId. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

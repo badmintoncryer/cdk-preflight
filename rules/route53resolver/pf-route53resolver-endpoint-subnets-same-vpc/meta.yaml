@@ -1,0 +1,12 @@
+id: pf-route53resolver-endpoint-subnets-same-vpc
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverEndpoint, AWS::EC2::Subnet]
+severity: ERROR
+title: "All subnets of a Resolver endpoint must belong to the same VPC"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00402] The subnets provided are not in the same VPC. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

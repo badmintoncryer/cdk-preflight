@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrulegroup-rules-max
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "A DNS Firewall rule group cannot hold more than 100 rules"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Limit exceeded for resource of type 'AWS::Route53Resolver::FirewallRuleGroup'. Reason: software.amazon.awssdk.services.route53resolver.model.LimitExceededException: [RSLVR-02201] This account reached the limit for the number of rules that can be created inside a DNS Firewall rule group. Trace Id: \"1-6aa2c3a1-5b99bb335561f45f015261a8 (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

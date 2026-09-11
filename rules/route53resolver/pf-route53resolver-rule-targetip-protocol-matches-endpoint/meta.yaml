@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-targetip-protocol-matches-endpoint
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule, AWS::Route53Resolver::ResolverEndpoint]
+severity: ERROR
+title: "A Resolver rule target protocol must be enabled on the outbound endpoint"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00722] Protocol \"doh\" not enabled on Endpoint. Add protocol to endpoint before creating a rule with that protocol. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-recursive-not-creatable
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A RECURSIVE Resolver rule cannot be created by a customer"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-00718] Cannot create a rule with type RECURSIVE (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

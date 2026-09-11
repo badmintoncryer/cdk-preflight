@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::Route53Resolver::ResolverRule",
+      "Properties": {
+        "RuleType": "SYSTEM",
+        "DomainName": "cdkpf-example.com."
+      }
+    }
+  }
+}

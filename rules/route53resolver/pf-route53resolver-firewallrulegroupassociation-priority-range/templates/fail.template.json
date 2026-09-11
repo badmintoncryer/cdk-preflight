@@ -1,0 +1,110 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Dl": {
+      "Type": "AWS::Route53Resolver::FirewallDomainList",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-dl-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Domains": [
+          "cdkpf-example.com"
+        ]
+      }
+    },
+    "Rg0": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Assoc0": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroupAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-fa0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Priority": 100,
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "FirewallRuleGroupId": {
+          "Fn::GetAtt": [
+            "Rg0",
+            "Id"
+          ]
+        }
+      }
+    }
+  }
+}

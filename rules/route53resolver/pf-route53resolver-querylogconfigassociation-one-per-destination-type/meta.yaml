@@ -1,0 +1,12 @@
+id: pf-route53resolver-querylogconfigassociation-one-per-destination-type
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverQueryLoggingConfigAssociation]
+severity: ERROR
+title: "A VPC can only have one Resolver query log association per destination type"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-query-logging-configurations-managing.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: {ResolverQueryLogConfigId: rqlc-41363e80f9ab4ec4,ResourceId: vpc-02bd642ea6b10c1d4} (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

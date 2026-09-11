@@ -1,0 +1,12 @@
+id: pf-route53resolver-endpoint-protocols-enum
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverEndpoint]
+severity: ERROR
+title: "A Resolver endpoint protocol must be Do53, DoH or DoH-FIPS"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverEndpoint.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> 1 validation error detected: Value '[null]' at 'protocols' failed to satisfy constraint: Member must satisfy constraint: [Member must satisfy enum value set: [Do53, DoH-FIPS, DoH]] (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

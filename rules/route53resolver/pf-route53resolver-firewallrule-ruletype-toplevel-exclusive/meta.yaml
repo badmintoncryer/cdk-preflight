@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrule-ruletype-toplevel-exclusive
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
+severity: ERROR
+title: "FirewallRuleType cannot be combined with FirewallDomainListId or DnsThreatProtection"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-beab791bfc1e4674:content-VIOLENCE_AND_HATE_SPEECH, FirewallRuleGroupId=rslvr-frg-beab791bfc1e4674, FirewallDomainListId=rslvr-fdl-a752c062462644b8, Priority=101, Action=ALERT, Name=rule-for-content-VIOLENCE_AND_HATE_SPEECH, FirewallRuleType=FirewallRuleType(FirewallAdvancedContentCategory=FirewallAdvancedContentCategoryConfig(Category=VIOLENCE_AND_HATE_SPEECH))) (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

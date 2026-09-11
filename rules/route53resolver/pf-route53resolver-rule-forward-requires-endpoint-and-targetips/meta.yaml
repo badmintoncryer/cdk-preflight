@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-forward-requires-endpoint-and-targetips
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A FORWARD Resolver rule needs both ResolverEndpointId and TargetIps"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateResolverRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00706] Resolver endpoint ID and target IP are required for FORWARD type resolver rule. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

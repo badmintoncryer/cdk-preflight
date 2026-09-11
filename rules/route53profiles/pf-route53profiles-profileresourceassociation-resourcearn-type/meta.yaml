@@ -1,0 +1,12 @@
+id: pf-route53profiles-profileresourceassociation-resourcearn-type
+service: route53profiles
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Profiles::ProfileResourceAssociation]
+severity: ERROR
+title: "A Profile can only take a private hosted zone, DNS Firewall rule group, Resolver rule or interface VPC endpoint"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateResourceToProfile.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-05022] The ARN in your request isn't valid:\"arn:aws:sns:us-east-1:123456789012:cdkpf-probe\". Provide a valid ARN. (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

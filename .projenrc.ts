@@ -83,6 +83,20 @@ const services = fs
   .filter((e) => e.isDirectory() && !e.name.startsWith('_')) // rules/_lib holds shared helpers, not rules
   .map((e) => e.name)
   .sort();
+// 1 ジョブに収まらないサービスはジョブを増やす方向にだけ割る（ジョブ内は逐次のままなので
+// 同時 VPC 数は maxParallel を超えない）。認証は role-duration-seconds 4h、ジョブは
+// timeoutMinutes 300 なので、1 シャード 3h 以内を目安にする。
+// route53resolver: 実測 2026-09-11 us-east-1（fail-only）— エンドポイントが立ち切る 10 本が
+// 337 秒/本、エンドポイント自身が違反で即拒否される 19 本が 225 秒/本、残り 33 本が 50 秒/本。
+// 62 本を逐次で回すと 2.6h で、INCONCLUSIVE のリトライが重なると 4h に触れる。3 分割で 1 本 55 分前後。
+const shards: Record<string, number> = { route53resolver: 3 };
+services.forEach((s) => {
+  // verify-all.sh は "<service>.<i>of<n>" を '.' で切って解釈する
+  if (s.includes('.')) throw new Error(`service directory name must not contain a dot: ${s}`);
+});
+const shardedServices = services.flatMap((s) =>
+  shards[s] ? Array.from({ length: shards[s] }, (_, i) => `${s}.${i + 1}of${shards[s]}`) : [s],
+);
 const monthlyVerify = new github.GithubWorkflow(project.github!, 'monthly-verify', {
   limitConcurrency: true,
   concurrencyOptions: { group: 'monthly-verify', cancelInProgress: false },
@@ -125,9 +139,12 @@ monthlyVerify.addJob('plan', {
       name: 'Compute service matrix',
       run: [
         'if [ -n "${{ inputs.service }}" ]; then',
-        '  echo \'services=["${{ inputs.service }}"]\' >> "$GITHUB_OUTPUT"',
+        // サービス名だけを渡されたらそのサービスのシャードに展開する（知らない名前はそのまま通す）
+        '  python3 -c \'import json,sys; a=json.loads(sys.argv[1]); s=sys.argv[2];' +
+          ' print("services="+json.dumps([x for x in a if x==s or x.startswith(s+".")] or [s]))\'' +
+          ` '${JSON.stringify(shardedServices)}' "\${{ inputs.service }}" >> "$GITHUB_OUTPUT"`,
         'else',
-        `  echo 'services=${JSON.stringify(services)}' >> "$GITHUB_OUTPUT"`,
+        `  echo 'services=${JSON.stringify(shardedServices)}' >> "$GITHUB_OUTPUT"`,
         'fi',
       ].join('\n'),
     },

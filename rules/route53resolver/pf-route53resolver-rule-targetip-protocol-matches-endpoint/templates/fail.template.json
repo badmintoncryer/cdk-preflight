@@ -1,0 +1,95 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight resolver endpoint fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Endpoint": {
+      "Type": "AWS::Route53Resolver::ResolverEndpoint",
+      "Properties": {
+        "Direction": "OUTBOUND",
+        "SecurityGroupIds": [
+          {
+            "Ref": "Sg"
+          }
+        ],
+        "IpAddresses": [
+          {
+            "SubnetId": {
+              "Ref": "SubnetA"
+            }
+          },
+          {
+            "SubnetId": {
+              "Ref": "SubnetB"
+            }
+          }
+        ]
+      }
+    },
+    "Rule": {
+      "Type": "AWS::Route53Resolver::ResolverRule",
+      "Properties": {
+        "RuleType": "FORWARD",
+        "DomainName": "cdkpf-example.com.",
+        "ResolverEndpointId": {
+          "Fn::GetAtt": [
+            "Endpoint",
+            "ResolverEndpointId"
+          ]
+        },
+        "TargetIps": [
+          {
+            "Ip": "10.0.0.53",
+            "Protocol": "DoH"
+          }
+        ]
+      }
+    }
+  }
+}

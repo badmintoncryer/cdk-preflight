@@ -1,0 +1,485 @@
+{
+  "Resources": {
+    "Profile": {
+      "Type": "AWS::Route53Profiles::Profile",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-pr-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "Dl": {
+      "Type": "AWS::Route53Resolver::FirewallDomainList",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-dl-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Domains": [
+          "cdkpf-example.com"
+        ]
+      }
+    },
+    "Rg0": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Ra0": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra0-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg0",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 101}"
+      }
+    },
+    "Rg1": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Ra1": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra1-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg1",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 102}"
+      }
+    },
+    "Rg2": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg2-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Ra2": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra2-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg2",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 103}"
+      }
+    },
+    "Rg3": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg3-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Ra3": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra3-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg3",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 104}"
+      }
+    },
+    "Rg4": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg4-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Ra4": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra4-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg4",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 105}"
+      }
+    },
+    "Rg5": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg5-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "Ra5": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra5-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg5",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 106}"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-route53resolver-rule-targetip-ipv6-format
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::ResolverRule]
+severity: ERROR
+title: "A Resolver rule TargetIps[].Ipv6 must be a valid IPv6 address"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-resolverrule-targetaddress.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00311] Invalid IPV6 address: \"not-an-address\". (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

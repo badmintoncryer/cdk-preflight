@@ -1,0 +1,12 @@
+id: pf-route53resolver-firewallrulegroupassociation-priority-unique
+service: route53resolver
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Resolver::FirewallRuleGroupAssociation]
+severity: ERROR
+title: "Two DNS Firewall rule groups on the same VPC cannot share a priority"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-firewallrulegroupassociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: AssociateFirewallRuleGroupRequest(CreatorRequestId=bd64ee4d-95f8-eeda-8c70-caac49d18c3f, FirewallRuleGroupId=rslvr-frg-a8ecd4e6736437f, VpcId=vpc-004ffb9afb27918c5, Priority=101, Name=fa0-bd264e10-ad27-11f1-88bb-12ea0458e141, Tags=[Tag(Key=aws:cloudformation:logical-id, Value=Assoc0), Tag(Key=aws:cloudformation:stack-id, Value=arn:aws:cloudformation:us-east-1:214794239830:stack/cdkpf-pf-route53resolver-firewallrulegroupassociation-priority-unique-fail/bd264e10-ad27-11f1-88bb-12ea0458e141), Tag(Key=aws:cloudformation:stack-name, Value=cdkpf-pf-route53resolver-firewallrulegroupassociation-priority-unique-fail)]) (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10

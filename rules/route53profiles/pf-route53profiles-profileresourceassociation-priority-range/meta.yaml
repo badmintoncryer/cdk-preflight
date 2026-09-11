@@ -1,0 +1,12 @@
+id: pf-route53profiles-profileresourceassociation-priority-range
+service: route53profiles
+benchRegion: us-east-1
+resourceTypes: [AWS::Route53Profiles::ProfileResourceAssociation]
+severity: ERROR
+title: "A ProfileResourceAssociation priority must be between 101 and 9899"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_AssociateResourceToProfile.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-02017] The priority value you provided is reserved. Provide a number between \"100\" and \"9900\". (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-10
