@@ -140,8 +140,8 @@ monthlyVerify.addJob('plan', {
       run: [
         'if [ -n "${{ inputs.service }}" ]; then',
         // サービス名だけを渡されたらそのサービスのシャードに展開する（知らない名前はそのまま通す）
-        `  python3 -c 'import json,sys; a=json.loads(sys.argv[1]); s=sys.argv[2];` +
-          ` print("services="+json.dumps([x for x in a if x==s or x.startswith(s+".")] or [s]))'` +
+        '  python3 -c \'import json,sys; a=json.loads(sys.argv[1]); s=sys.argv[2];' +
+          ' print("services="+json.dumps([x for x in a if x==s or x.startswith(s+".")] or [s]))\'' +
           ` '${JSON.stringify(shardedServices)}' "\${{ inputs.service }}" >> "$GITHUB_OUTPUT"`,
         'else',
         `  echo 'services=${JSON.stringify(shardedServices)}' >> "$GITHUB_OUTPUT"`,
