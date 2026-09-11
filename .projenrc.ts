@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { awscdk, github } from 'projen';
+import { awscdk, github, JsonPatch } from 'projen';
 const project = new awscdk.AwsCdkConstructLibrary({
   author: 'Kazuho CryerShinozuka',
   authorAddress: 'malaysia.cryer@gmail.com',
@@ -208,5 +208,31 @@ monthlyVerify.addJob('report', {
     { name: 'Report', run: 'bash bench/report.sh' },
   ],
 });
+
+// release の `git diff --exit-code` は、ルール追加 PR が並行マージされると必ず落ちる。
+// 各ブランチは自分の base で README のルール数バッジを再生成するので、2 本続けて
+// マージされた main では README だけが古い数字で残る（例: #167 と #169 → 1849 vs 1918）。
+// release 本体の前に bundle-rules を回して差分を main へ押し戻す。押し戻した時点で
+// 後続の publish は projen 既定のガード（latest_commit == github.sha）で skip され、
+// この push が次の release を引いて publish まで通る。
+// PROJEN_GITHUB_TOKEN 未設定だと GITHUB_TOKEN の push は release を再トリガーしないため、
+// main は直るが release は手動 re-run が要る。
+const selfMutation: github.workflows.JobStep = {
+  name: 'Self mutation',
+  run: [
+    'npx projen bundle-rules',
+    'if ! git diff --ignore-space-at-eol --exit-code; then',
+    '  git add -A',
+    '  git commit -m "chore: self mutation"',
+    '  git push "https://x-access-token:$SELF_MUTATION_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:main',
+    'fi',
+  ].join('\n'),
+  env: { SELF_MUTATION_TOKEN: '${{ secrets.PROJEN_GITHUB_TOKEN || github.token }}' },
+};
+// steps[4] = projen 生成の `release` ステップ。その直前に差し込む。
+// projen 更新でステップ構成が変わったら添字を見直すこと。
+project.github!.tryFindWorkflow('release')!.file!.patch(
+  JsonPatch.add('/jobs/release/steps/4', selfMutation),
+);
 
 project.synth();

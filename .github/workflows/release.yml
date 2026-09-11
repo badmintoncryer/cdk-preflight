@@ -46,6 +46,16 @@ jobs:
       - name: Install dependencies
         id: install_dependencies
         run: yarn install --check-files --frozen-lockfile
+      - name: Self mutation
+        run: |-
+          npx projen bundle-rules
+          if ! git diff --ignore-space-at-eol --exit-code; then
+            git add -A
+            git commit -m "chore: self mutation"
+            git push "https://x-access-token:$SELF_MUTATION_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:main
+          fi
+        env:
+          SELF_MUTATION_TOKEN: ${{ secrets.PROJEN_GITHUB_TOKEN || github.token }}
       - name: release
         id: release
         run: npx projen release
