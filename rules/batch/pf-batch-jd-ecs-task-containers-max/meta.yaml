@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-task-containers-max
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: An ECS task element supports at most 10 containers
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Number of containers must be between 1 and 10, RequestId: e7ce5327-5e8d-46"
+addedOn: 2026-09-12

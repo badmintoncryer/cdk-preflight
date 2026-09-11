@@ -1,0 +1,11 @@
+id: pf-batch-jd-log-awslogs-unknown-option
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: The awslogs driver takes only the documented options
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/using_awslogs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Log driver awslogs disallows options: awslogs-not-a-real-option, RequestId"
+addedOn: 2026-09-12

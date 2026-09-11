@@ -1,0 +1,11 @@
+id: pf-batch-jd-runtime-platform-os-family-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: RuntimePlatform.OperatingSystemFamily must be LINUX or a Windows Server family
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : runtimePlatform is not applicable for EC2., RequestId: 9a0b2c7b-9b5a-4328-"
+addedOn: 2026-09-12

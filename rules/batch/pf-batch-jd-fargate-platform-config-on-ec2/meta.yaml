@@ -1,0 +1,11 @@
+id: pf-batch-jd-fargate-platform-config-on-ec2
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: FargatePlatformConfiguration is not applicable to EC2 jobs
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_FargatePlatformConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : fargatePlatformConfiguration not applicable for EC2., RequestId: 664fb880-"
+addedOn: 2026-09-12

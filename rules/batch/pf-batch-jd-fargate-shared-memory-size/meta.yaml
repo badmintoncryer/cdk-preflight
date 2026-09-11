@@ -1,0 +1,11 @@
+id: pf-batch-jd-fargate-shared-memory-size
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: LinuxParameters.SharedMemorySize is not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_LinuxParameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : linuxParameter.sharedMemorySize is not allowed for Fargate., RequestId: 97"
+addedOn: 2026-09-12

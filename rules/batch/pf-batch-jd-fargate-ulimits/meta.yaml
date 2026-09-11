@@ -1,0 +1,11 @@
+id: pf-batch-jd-fargate-ulimits
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Ulimits are not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/fargate-job-definitions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : ulimits is not applicable for Fargate., RequestId: c54d3d4e-9074-4700-bd79"
+addedOn: 2026-09-12

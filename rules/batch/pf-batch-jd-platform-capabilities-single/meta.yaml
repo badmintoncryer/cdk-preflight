@@ -1,0 +1,11 @@
+id: pf-batch-jd-platform-capabilities-single
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: PlatformCapabilities takes exactly one value
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Exactly 1 capability must be provided., RequestId: a1c8ff89-a2fa-4e04-b1b9"
+addedOn: 2026-09-12

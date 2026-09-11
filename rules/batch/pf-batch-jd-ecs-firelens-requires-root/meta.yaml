@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-firelens-requires-root
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: A Firelens task needs a container running as root
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/create-job-definition-single-node-multi-container.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : When a firelensConfiguration object is specified, at least one container h"
+addedOn: 2026-09-12

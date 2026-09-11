@@ -1,0 +1,11 @@
+id: pf-batch-jd-props-ecs-and-eks
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: EcsProperties and EksProperties are mutually exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-batch-jobdefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Cannot use both ecsProperties and eksProperties, RequestId: ac431a39-f98f-"
+addedOn: 2026-09-12

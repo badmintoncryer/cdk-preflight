@@ -1,0 +1,11 @@
+id: pf-batch-jd-resource-requirements-vcpu-min
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: An EC2 job must request at least one vCPU
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ResourceRequirement.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : vCPU must be at least 1, got 0., RequestId: fbb89daa-a396-4033-8d73-47615c"
+addedOn: 2026-09-12

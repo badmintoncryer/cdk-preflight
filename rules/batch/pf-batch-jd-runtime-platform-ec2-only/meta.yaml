@@ -1,0 +1,11 @@
+id: pf-batch-jd-runtime-platform-ec2-only
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: RuntimePlatform is not applicable to EC2 jobs
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : runtimePlatform is not applicable for EC2."
+addedOn: 2026-09-12

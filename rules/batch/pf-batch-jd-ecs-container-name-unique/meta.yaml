@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-container-name-unique
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Container names must be unique within a task element
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_TaskContainerProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Container names must be unique, RequestId: c6e94c07-0f16-4187-8657-14223ca"
+addedOn: 2026-09-12

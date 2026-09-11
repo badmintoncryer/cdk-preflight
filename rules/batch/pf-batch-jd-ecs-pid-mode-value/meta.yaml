@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-pid-mode-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: EcsTaskProperties.PidMode must be host or task
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsTaskProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) RegisterJobDefinition: Capability none is not valid. Valid capabilities: [host, task]"
+addedOn: 2026-09-12

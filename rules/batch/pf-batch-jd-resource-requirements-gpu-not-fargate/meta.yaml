@@ -1,0 +1,11 @@
+id: pf-batch-jd-resource-requirements-gpu-not-fargate
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: GPU resource requirements are not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/fargate-job-definitions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : GPU is not applicable for Fargate., RequestId: 1d4be0c6-8431-43b4-b05f-456"
+addedOn: 2026-09-12

@@ -1,0 +1,40 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "EcsProperties": {
+          "TaskProperties": [
+            {
+              "RuntimePlatform": {
+                "OperatingSystemFamily": "WINDOWS_SERVER_2019_CORE",
+                "CpuArchitecture": "X86_64"
+              },
+              "Containers": [
+                {
+                  "Name": "main",
+                  "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                  "Essential": true,
+                  "ResourceRequirements": [
+                    {
+                      "Type": "VCPU",
+                      "Value": "1"
+                    },
+                    {
+                      "Type": "MEMORY",
+                      "Value": "2048"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "PlatformCapabilities": [
+          "MANAGED_INSTANCES"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+id: pf-batch-jd-secrets-requires-execution-role
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Injecting secrets requires an execution role
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/specifying-sensitive-data-secrets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : executionRoleArn cannot be empty when using secrets or secretOptions, Requ"
+addedOn: 2026-09-12

@@ -1,0 +1,11 @@
+id: pf-batch-jd-resource-requirements-duplicate-type
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: ResourceRequirements must not repeat a type
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ResourceRequirement.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Cannot provide duplicates in resourceRequirements., RequestId: 8c2f391b-fd"
+addedOn: 2026-09-12

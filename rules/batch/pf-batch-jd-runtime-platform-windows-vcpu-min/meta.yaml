@@ -1,0 +1,11 @@
+id: pf-batch-jd-runtime-platform-windows-vcpu-min
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Windows containers need at least one vCPU
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/create-compute-environment-fargate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : vCPU must be at least 1 for Windows Job definition, got 0.25., RequestId:"
+addedOn: 2026-09-12

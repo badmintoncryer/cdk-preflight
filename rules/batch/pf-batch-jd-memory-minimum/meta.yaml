@@ -1,0 +1,11 @@
+id: pf-batch-jd-memory-minimum
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: ContainerProperties.Memory must be at least 4 MiB
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ContainerProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Memory must be at least 4 Mib, got 2 Mib., RequestId: a8a0f0cd-3f50-49c9-b"
+addedOn: 2026-09-12

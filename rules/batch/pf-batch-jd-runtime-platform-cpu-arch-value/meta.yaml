@@ -1,0 +1,11 @@
+id: pf-batch-jd-runtime-platform-cpu-arch-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: RuntimePlatform.CpuArchitecture must be X86_64 or ARM64
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_RuntimePlatform.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : runtimePlatform is not applicable for EC2., RequestId: caf258b5-4a56-4717-"
+addedOn: 2026-09-12

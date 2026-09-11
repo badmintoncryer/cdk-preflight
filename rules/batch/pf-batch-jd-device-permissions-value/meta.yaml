@@ -1,0 +1,11 @@
+id: pf-batch-jd-device-permissions-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Device.Permissions must be READ, WRITE or MKNOD
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Device.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Invalid permission: EXECUTE for device /dev/null, RequestId: 18f40268-a5d1"
+addedOn: 2026-09-12

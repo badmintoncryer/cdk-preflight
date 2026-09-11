@@ -1,0 +1,11 @@
+id: pf-batch-jd-fargate-volume-host-source-path
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Volume Host.SourcePath is not supported on Fargate
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/fargate-job-definitions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : host.sourcePath should not be set for volumes in Fargate., RequestId: 2c10"
+addedOn: 2026-09-12

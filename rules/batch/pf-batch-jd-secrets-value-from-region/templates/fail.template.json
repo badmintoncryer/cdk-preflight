@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "ContainerProperties": {
+          "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+          "ResourceRequirements": [
+            {
+              "Type": "VCPU",
+              "Value": "1"
+            },
+            {
+              "Type": "MEMORY",
+              "Value": "2048"
+            }
+          ],
+          "ExecutionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRole",
+          "Secrets": [
+            {
+              "Name": "TOKEN",
+              "ValueFrom": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:pf-secret-AbCdEf"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

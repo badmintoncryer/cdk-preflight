@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-task-containers-required
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: An ECS task element must define at least one container
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsTaskProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Number of containers must be between 1 and 10, RequestId: 42ccded6-cde4-43"
+addedOn: 2026-09-12

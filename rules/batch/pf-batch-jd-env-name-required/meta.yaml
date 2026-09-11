@@ -1,0 +1,11 @@
+id: pf-batch-jd-env-name-required
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Every Environment entry needs a Name
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ContainerProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : Environment variable name is required., RequestId: 2d28b755-af42-4cf2-a617"
+addedOn: 2026-09-12

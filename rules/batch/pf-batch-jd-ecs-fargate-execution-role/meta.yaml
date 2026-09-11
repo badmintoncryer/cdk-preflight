@@ -1,0 +1,11 @@
+id: pf-batch-jd-ecs-fargate-execution-role
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+severity: ERROR
+title: Fargate task properties require an execution role
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsTaskProperties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-10 us-east-1 RegisterJobDefinition: (ClientException) when calling the RegisterJobDefinition operation: Error executing request, Exception : executionRoleArn is required for Fargate jobs., RequestId: 99024cc4-bab1-4"
+addedOn: 2026-09-12
