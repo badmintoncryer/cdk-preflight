@@ -42,6 +42,28 @@ const project = new awscdk.AwsCdkConstructLibrary({
       },
     },
   },
+  // projen 既定の upgrade-main は peter-evans/create-pull-request に PAT
+  // (PROJEN_GITHUB_TOKEN) が要り、未設定なので毎回 "Input 'token' not supplied" で
+  // 落ちていた。PAT を持たない方針にしたので依存更新は Dependabot に寄せる。
+  depsUpgrade: false,
+  dependabot: true,
+  dependabotOptions: {
+    // versioningStrategy は projen 既定の LOCKFILE_ONLY のまま。package.json は
+    // projen が .projenrc.ts から生成するので、直接書き換えられると build が落ちる。
+    scheduleInterval: github.DependabotScheduleInterval.WEEKLY,
+    labels: ['dependencies'],
+    // PR 1 本にまとめる。ルール追加 PR と違って中身を個別に見る価値が薄い。
+    groups: { all: { patterns: ['*'] } },
+  },
+});
+
+// projen の Dependabot コンポーネントは npm しか出さないので、Actions も見てもらう。
+project.tryFindObjectFile('.github/dependabot.yml')!.addOverride('updates.1', {
+  'package-ecosystem': 'github-actions',
+  'directory': '/',
+  'schedule': { interval: 'weekly' },
+  'labels': ['dependencies'],
+  'groups': { all: { patterns: ['*'] } },
 });
 
 // rules/**/rule.rego + meta.yaml を src/rules.generated.ts に束ねる（コミット対象・鮮度は structure テストで担保）
