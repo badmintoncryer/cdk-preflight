@@ -2,15 +2,6 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_r53_svcb_keys := {"alpn", "dohpath", "ech", "ipv4hint", "ipv6hint", "no-default-alpn", "ohttp", "port"}
-
-_pf_r53_svcb_valued := {"alpn", "dohpath", "ech", "ipv4hint", "ipv6hint", "port"}
-
-_pf_r53_svcb_keyset(f) := {k |
-	some i in numbers.range(2, count(f) - 1)
-	k := split(f[i], "=")[0]
-}
-
 violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name,
 	"Properties.ResourceRecords",
 	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),

@@ -87,6 +87,53 @@ export function docOnlyProblem(repro: { method: string }, severity: string): str
   return `meta.repro.method=doc-only requires severity WARN (got ${severity}); a constraint no deploy has been observed to reject must not fail synth`;
 }
 
+/**
+ * enforce プラグインはルールを service ごとに 1 モジュールへ結合して読み込むので
+ * （src/private/enforce.ts#mergeRuleModules）、結合時に落とせるヘッダ——
+ * `package cdk_preflight` と `import rego.v1`——以外のものが混じっていてはいけない。
+ * 別の import を書いたルールが黙って import 無しで結合されるのを防ぐ。
+ */
+export function headerProblem(rego: string): string | undefined {
+  const packages = [...rego.matchAll(/^package\s+(\S+)/gm)].map((m) => m[1]);
+  if (packages.length !== 1 || packages[0] !== 'cdk_preflight') {
+    return `must declare exactly one "package cdk_preflight" (got ${packages.join(', ') || 'none'})`;
+  }
+  const imports = [...rego.matchAll(/^import\s+(\S+)/gm)].map((m) => m[1]);
+  if (imports.length !== 1 || imports[0] !== 'rego.v1') {
+    return `must declare exactly one "import rego.v1" and no other import (got ${imports.join(', ') || 'none'})`;
+  }
+  return undefined;
+}
+
+/** モジュールがトップレベルで定義している名前（`violation` は全ルールが積む集合なので除く）。 */
+export function topLevelNames(rego: string): Set<string> {
+  const names = new Set<string>();
+  for (const m of rego.matchAll(/^(?:default\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(|:=|=[^=]|if\b|contains\b)/gm)) {
+    if (m[1] !== 'violation') names.add(m[1]);
+  }
+  return names;
+}
+
+/**
+ * ルール間のトップレベル名の衝突。
+ *
+ * ルールはすべて `package cdk_preflight` なので、別々のモジュールに書いても名前空間は
+ * 1 つ——同名のヘルパーは「増分定義」として黙って合流する（同じ名前の完全規則が
+ * 違う値を返せば、テンプレート次第で全ルールが評価エラーで死ぬ）。結合するかどうかに
+ * 関わらず危険なので、ここで機械的に弾く。共有したい定義は rules/_lib/ へ置けばよい。
+ */
+export function nameCollisions(modules: { name: string; rego: string }[]): string[] {
+  const owners = new Map<string, string[]>();
+  for (const m of modules) {
+    for (const n of topLevelNames(m.rego)) {
+      owners.set(n, [...owners.get(n) ?? [], m.name]);
+    }
+  }
+  return [...owners.entries()]
+    .filter(([, os]) => os.length > 1)
+    .map(([n, os]) => `${n} is defined by ${os.join(' and ')}; move it to rules/_lib/ instead`);
+}
+
 export function collectRules(root: string): BundledRule[] {
   const rulesDir = path.join(root, 'rules');
   const out: BundledRule[] = [];
@@ -121,7 +168,8 @@ export function collectRules(root: string): BundledRule[] {
         throw new Error(`${id}: meta.resourceTypes must be a non-empty list`);
       }
       if (!rego.includes(`"${id}"`)) throw new Error(`${id}: rule.rego must emit its own rule id`);
-      if (!rego.includes('import rego.v1')) throw new Error(`${id}: rule.rego must use "import rego.v1"`);
+      const hdrProblem = headerProblem(rego);
+      if (hdrProblem) throw new Error(`${id}: rule.rego ${hdrProblem}`);
       const sevProblem = severityProblem(id, meta.severity, rego);
       if (sevProblem) throw new Error(`${id}: ${sevProblem}`);
       const docProblem = docOnlyProblem(meta.repro, meta.severity);
@@ -148,7 +196,8 @@ export function collectLibs(root: string): BundledLib[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir).filter((f) => f.endsWith('.rego')).sort().map((f) => {
     const rego = fs.readFileSync(path.join(dir, f), 'utf8');
-    if (!rego.includes('import rego.v1')) throw new Error(`_lib/${f}: must use "import rego.v1"`);
+    const hdrProblem = headerProblem(rego);
+    if (hdrProblem) throw new Error(`_lib/${f}: ${hdrProblem}`);
     if (rego.includes('violation contains')) throw new Error(`_lib/${f}: helper modules must not emit diagnostics`);
     return { name: `_lib/${f.replace(/\.rego$/, '')}`, rego };
   });
@@ -202,7 +251,13 @@ export function renderDocs(rules: BundledRule[]): string {
 if (require.main === module) {
   const root = path.join(__dirname, '..');
   const rules = collectRules(root);
-  fs.writeFileSync(path.join(root, 'src', 'rules.generated.ts'), renderGenerated(rules, collectLibs(root)));
+  const libs = collectLibs(root);
+  const collisions = nameCollisions([
+    ...rules.map((r) => ({ name: r.id, rego: r.rego })),
+    ...libs.map((l) => ({ name: l.name, rego: l.rego })),
+  ]);
+  if (collisions.length > 0) throw new Error(`rego name collisions:\n  ${collisions.join('\n  ')}`);
+  fs.writeFileSync(path.join(root, 'src', 'rules.generated.ts'), renderGenerated(rules, libs));
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'rules.md'), renderDocs(rules));
   const readme = path.join(root, 'README.md');

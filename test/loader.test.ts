@@ -13,6 +13,7 @@ import {
   fallbackFormat,
   installEnforceGate,
   loadFormatter,
+  mergeRuleModules,
   prune,
   templateResourceTypes,
 } from '../src/private/enforce';
@@ -486,5 +487,36 @@ describe('resource-type pruning', () => {
     Preflight.apply(app);
     addBadSecurityGroup(new Stack(app, 'S'));
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range/);
+  });
+});
+
+describe('service-level rule modules', () => {
+  const rule = (id: string, service: string, rego: string): BundledRuleData => ({
+    id, service, severity: 'ERROR', title: id, upstream: 'none', resourceTypes: [], rego,
+  });
+  const body = (id: string) => `package cdk_preflight\n\nimport rego.v1\n\n_pf_${id} := 1\n`;
+
+  test('one module per service, with a single header', () => {
+    const modules = mergeRuleModules([
+      rule('a', 'sqs', body('a')),
+      rule('b', 'sqs', body('b')),
+      rule('c', 'logs', body('c')),
+    ]);
+    expect(modules.map((m) => m.name)).toEqual(['_pf_service_sqs', '_pf_service_logs']);
+    const merged = modules[0].content;
+    expect(merged.match(/^package /gm)).toHaveLength(1);
+    expect(merged.match(/^import /gm)).toHaveLength(1);
+    expect(merged).toContain('_pf_a := 1');
+    expect(merged).toContain('_pf_b := 1');
+  });
+
+  test('only the header is stripped: an indented import-like line survives', () => {
+    const [m] = mergeRuleModules([rule('a', 'sqs', 'package cdk_preflight\n\nimport rego.v1\n\n_pf_a := "\timport x"\n')]);
+    expect(m.content).toContain('_pf_a := "\timport x"');
+  });
+
+  test('every bundled rule body survives the merge', () => {
+    const merged = mergeRuleModules(BUNDLED_RULES).map((m) => m.content).join('\n');
+    for (const r of BUNDLED_RULES) expect(merged).toContain(`"${r.id}"`);
   });
 });
