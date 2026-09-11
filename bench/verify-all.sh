@@ -1,14 +1,23 @@
 #!/bin/bash
 # 月次オーケストレータ: 1 サービスの全ルールを fail-only で実機検証し、
-# 結果を bench/out/<service>.jsonl に 1 ルール 1 行で集計する。
-# 使い方: bash bench/verify-all.sh <service>
+# 結果を bench/out/<spec>.jsonl に 1 ルール 1 行で集計する。
+# 使い方: bash bench/verify-all.sh <service>[.<i>of<n>]
 # exit: 0=全 OK / 2=BROKEN あり（制約ドリフト疑い） / 4=INCONCLUSIVE のみ
+#
+# シャード指定は 1 サービスが認証の有効期限（role-duration-seconds 4h）や
+# timeout-minutes に収まらないときに使う。**ジョブ内は逐次のまま**で、分割は
+# ジョブを増やす方向にだけ効く（同時 VPC 数を max-parallel より増やさないため）。
 set -u
 cd "$(dirname "$0")/.."
-SVC="${1:?usage: verify-all.sh <service>}"
+SPEC="${1:?usage: verify-all.sh <service>[.<i>of<n>]}"
+SVC="${SPEC%%.*}"
+SHARD=1 SHARDS=1
+case "$SPEC" in
+  *.*of*) SHARD="${SPEC##*.}"; SHARDS="${SHARD##*of}"; SHARD="${SHARD%%of*}" ;;
+esac
 [ -d "rules/$SVC" ] || { echo "service not found: $SVC"; exit 1; }
 mkdir -p bench/out
-OUT="bench/out/$SVC.jsonl"
+OUT="bench/out/$SPEC.jsonl"
 : > "$OUT"
 
 emit() { # rule status region detail
@@ -17,8 +26,13 @@ emit() { # rule status region detail
 }
 
 overall=0
+i=0
 for d in rules/"$SVC"/*/; do
   rule=$(basename "$d")
+  # シャードは名前順のラウンドロビンで割る。連番ブロックで割ると、名前が近い
+  # （= だいたい重さも近い）ルールが同じシャードに固まって偏る
+  i=$((i + 1))
+  [ "$((i % SHARDS))" -eq "$((SHARD % SHARDS))" ] || continue
   method=$(grep -E '^\s*method:' "$d/meta.yaml" | awk '{print $2}')
   case "$method" in
     real-deploy|research-case) ;;
@@ -43,6 +57,6 @@ for d in rules/"$SVC"/*/; do
   esac
 done
 
-echo "=== $SVC summary ==="
+echo "=== $SPEC summary ==="
 cat "$OUT"
 exit "$overall"
