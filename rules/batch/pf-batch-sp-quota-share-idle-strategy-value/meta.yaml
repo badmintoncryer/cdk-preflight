@@ -1,0 +1,12 @@
+id: pf-batch-sp-quota-share-idle-strategy-value
+service: batch
+resourceTypes: [AWS::Batch::SchedulingPolicy]
+benchRegion: us-east-1
+severity: ERROR
+title: QuotaSharePolicy.IdleResourceAssignmentStrategy must be FIFO
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-batch-schedulingpolicy-quotasharepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: IdleResourceAssignmentStrategy LIFO -> rollback on CloudFormation early validation (\"Validation failed with 1 error(s). Call DescribeEvents ...\"), while the same template with FIFO reaches CREATE_COMPLETE, so the value is the only difference. The service names the constraint on the API: CreateSchedulingPolicy 2026-09-10 \"Idle resource assignment strategy must be one of [FIFO].\" The bundled engine does not know the enum (checked clean)."
+addedOn: 2026-09-12

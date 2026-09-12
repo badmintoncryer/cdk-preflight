@@ -208,6 +208,8 @@
 | `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | ERROR | none |
 | `pf-batch-ce-name` | AWS::Batch::ComputeEnvironment | Compute environment names allow only letters, numbers, hyphen and underscore | ERROR | none |
 | `pf-batch-ce-vcpus-order` | AWS::Batch::ComputeEnvironment | MaxvCpus must be at least MinvCpus | ERROR | none |
+| `pf-batch-cr-name` | AWS::Batch::ConsumableResource | Consumable resource names allow only letters, numbers, hyphen and underscore | ERROR | none |
+| `pf-batch-cr-total-quantity-negative` | AWS::Batch::ConsumableResource | TotalQuantity may not be negative | ERROR | none |
 | `pf-batch-fargate-ce-fields` | AWS::Batch::ComputeEnvironment | Fargate compute environments cannot take AllocationStrategy or InstanceTypes | ERROR | none |
 | `pf-batch-fargate-cpu-memory` | AWS::Batch::JobDefinition | Fargate job definitions must use a supported vCPU/memory combination | ERROR | none |
 | `pf-batch-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate job definitions require ExecutionRoleArn | ERROR | none |
@@ -281,9 +283,39 @@
 | `pf-batch-jd-secrets-requires-execution-role` | AWS::Batch::JobDefinition | Injecting secrets requires an execution role | ERROR | none |
 | `pf-batch-jd-tmpfs-size-min` | AWS::Batch::JobDefinition | Tmpfs.Size must be a positive number of MiB | ERROR | none |
 | `pf-batch-jd-volume-config-exclusive` | AWS::Batch::JobDefinition | A volume takes exactly one configuration type | ERROR | none |
+| `pf-batch-jq-ce-arn-region` | AWS::Batch::JobQueue | Attached compute environments must live in the deployment region | ERROR | none |
+| `pf-batch-jq-ce-order-duplicate-ce` | AWS::Batch::JobQueue | The same compute environment may not be attached twice | ERROR | none |
+| `pf-batch-jq-ce-order-duplicate-order` | AWS::Batch::JobQueue | ComputeEnvironmentOrder entries need distinct Order values | ERROR | none |
+| `pf-batch-jq-ce-order-max` | AWS::Batch::JobQueue | A job queue may reference at most 3 compute environments | ERROR | none |
+| `pf-batch-jq-jstla-action-cancel-for-ecs` | AWS::Batch::JobQueue | Container job queues may only CANCEL timed-out jobs | ERROR | none |
+| `pf-batch-jq-jstla-action-terminate-for-sagemaker` | AWS::Batch::JobQueue | SageMaker job queues may only TERMINATE timed-out jobs | ERROR | none |
+| `pf-batch-jq-jstla-duplicate` | AWS::Batch::JobQueue | JobStateTimeLimitActions may not repeat the same state and reason | ERROR | none |
+| `pf-batch-jq-name` | AWS::Batch::JobQueue | Job queue names allow only letters, numbers, hyphen and underscore | ERROR | none |
+| `pf-batch-jq-quota-share-policy-requires-sagemaker` | AWS::Batch::JobQueue | A quota scheduling policy only attaches to a SageMaker job queue | ERROR | none |
+| `pf-batch-jq-sagemaker-requires-service-env` | AWS::Batch::JobQueue | A SAGEMAKER_TRAINING job queue needs ServiceEnvironmentOrder | ERROR | none |
+| `pf-batch-jq-scheduling-policy-arn-region` | AWS::Batch::JobQueue | SchedulingPolicyArn must live in the deployment region | ERROR | none |
+| `pf-batch-jq-scheduling-policy-arn-type` | AWS::Batch::JobQueue | SchedulingPolicyArn must be a scheduling-policy ARN | ERROR | none |
+| `pf-batch-jq-service-env-arn-region` | AWS::Batch::JobQueue | Attached service environments must live in the deployment region | ERROR | none |
+| `pf-batch-jq-service-env-order-single` | AWS::Batch::JobQueue | A job queue supports only one service environment | ERROR | none |
+| `pf-batch-jq-service-env-requires-sagemaker-type` | AWS::Batch::JobQueue | ServiceEnvironmentOrder requires JobQueueType SAGEMAKER_TRAINING | ERROR | none |
+| `pf-batch-jq-type-matches-ce-type` | AWS::Batch::JobQueue | JobQueueType must match the orchestration type of its compute environments | ERROR | none |
 | `pf-batch-managed-compute-resources` | AWS::Batch::ComputeEnvironment | MANAGED compute environments require ComputeResources | ERROR | none |
 | `pf-batch-queue-order-required` | AWS::Batch::JobQueue | ComputeEnvironmentOrder may not be empty | ERROR | none |
 | `pf-batch-retry-attempts` | AWS::Batch::JobDefinition | RetryStrategy.Attempts must be between 1 and 10 | ERROR | none |
+| `pf-batch-se-capacity-limits-empty` | AWS::Batch::ServiceEnvironment | A service environment needs at least one capacity limit | ERROR | none |
+| `pf-batch-se-capacity-limits-max` | AWS::Batch::ServiceEnvironment | A service environment supports at most 5 capacity limits | ERROR | none |
+| `pf-batch-se-capacity-unit-mix` | AWS::Batch::ServiceEnvironment | CapacityLimits may not mix NUM_INSTANCES with instance types | ERROR | none |
+| `pf-batch-se-capacity-unit-value` | AWS::Batch::ServiceEnvironment | CapacityUnit must be NUM_INSTANCES or a SageMaker instance type | ERROR | none |
+| `pf-batch-se-max-capacity-min` | AWS::Batch::ServiceEnvironment | MaxCapacity must be at least 1 | ERROR | none |
+| `pf-batch-se-name` | AWS::Batch::ServiceEnvironment | Service environment names allow only letters, numbers, hyphen and underscore | ERROR | none |
+| `pf-batch-sp-fairshare-quotashare-exclusive` | AWS::Batch::SchedulingPolicy | FairsharePolicy and QuotaSharePolicy are mutually exclusive | ERROR | none |
+| `pf-batch-sp-name` | AWS::Batch::SchedulingPolicy | Scheduling policy names allow only letters, numbers, hyphen and underscore | ERROR | none |
+| `pf-batch-sp-quota-share-idle-strategy-value` | AWS::Batch::SchedulingPolicy | QuotaSharePolicy.IdleResourceAssignmentStrategy must be FIFO | ERROR | none |
+| `pf-batch-sp-share-distribution-max` | AWS::Batch::SchedulingPolicy | A fair-share policy supports at most 500 share identifiers | ERROR | none |
+| `pf-batch-sp-share-identifier-duplicate` | AWS::Batch::SchedulingPolicy | ShareDistribution entries need unique share identifiers | ERROR | none |
+| `pf-batch-sp-share-identifier-overlap` | AWS::Batch::SchedulingPolicy | A share identifier prefix may not cover another share identifier | ERROR | none |
+| `pf-batch-sp-share-identifier-pattern` | AWS::Batch::SchedulingPolicy | Share identifiers allow letters, numbers, hyphen, underscore and a trailing wildcard | ERROR | none |
+| `pf-batch-sp-weight-factor-range` | AWS::Batch::SchedulingPolicy | WeightFactor must be between 0.0001 and 999.9999 | ERROR | none |
 | `pf-batch-timeout-minimum` | AWS::Batch::JobDefinition | Timeout.AttemptDurationSeconds must be at least 60 | ERROR | none |
 | `pf-batch-unmanaged-fargate` | AWS::Batch::ComputeEnvironment | UNMANAGED compute environments cannot be Fargate | ERROR | none |
 | `pf-bedrock-automated-reasoning-policy-names-unique` | AWS::Bedrock::AutomatedReasoningPolicy | Names and ids inside a policy definition must be unique | ERROR | none |

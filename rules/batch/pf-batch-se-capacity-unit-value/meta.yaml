@@ -1,0 +1,12 @@
+id: pf-batch-se-capacity-unit-value
+service: batch
+resourceTypes: [AWS::Batch::ServiceEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: CapacityUnit must be NUM_INSTANCES or a SageMaker instance type
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CapacityLimit.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: CapacityUnit VCPU -> \"VCPU is unknown capacity unit in [ml.r7i.16xlarge, ml.m4.4xlarge, ...]\" \u2014 the service echoes its whole SageMaker instance type list (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

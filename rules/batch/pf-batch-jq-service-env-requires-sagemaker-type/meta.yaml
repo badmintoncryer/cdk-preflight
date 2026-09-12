@@ -1,0 +1,12 @@
+id: pf-batch-jq-service-env-requires-sagemaker-type
+service: batch
+resourceTypes: [AWS::Batch::JobQueue]
+benchRegion: us-east-1
+severity: ERROR
+title: ServiceEnvironmentOrder requires JobQueueType SAGEMAKER_TRAINING
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/create-sagemaker-job-queue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"CreateJobQueue requires either setting computeEnvironmentOrder or setting serviceEnvironmentOrder along with a supported jobQueueType. The jobQueueType provided is ECS, which is incompatible with the provided serviceEnvironmentOrder.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

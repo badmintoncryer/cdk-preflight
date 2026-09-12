@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::SchedulingPolicy",
+      "Properties": {
+        "QuotaSharePolicy": {
+          "IdleResourceAssignmentStrategy": "FIFO"
+        }
+      }
+    }
+  }
+}

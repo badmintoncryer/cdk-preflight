@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "JobQueueType": "SAGEMAKER_TRAINING",
+        "ServiceEnvironmentOrder": [
+          {
+            "Order": 1,
+            "ServiceEnvironment": {
+              "Ref": "Se"
+            }
+          }
+        ],
+        "JobStateTimeLimitActions": [
+          {
+            "Action": "CANCEL",
+            "MaxTimeSeconds": 600,
+            "Reason": "MISCONFIGURATION:COMPUTE_ENVIRONMENT_MAX_RESOURCE",
+            "State": "RUNNABLE"
+          }
+        ]
+      },
+      "DependsOn": [
+        "Se"
+      ]
+    },
+    "Se": {
+      "Type": "AWS::Batch::ServiceEnvironment",
+      "Properties": {
+        "ServiceEnvironmentType": "SAGEMAKER_TRAINING",
+        "CapacityLimits": [
+          {
+            "CapacityUnit": "NUM_INSTANCES",
+            "MaxCapacity": 1
+          }
+        ]
+      }
+    }
+  }
+}

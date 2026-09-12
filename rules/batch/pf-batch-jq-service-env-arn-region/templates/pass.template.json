@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "JobQueueType": "SAGEMAKER_TRAINING",
+        "ServiceEnvironmentOrder": [
+          {
+            "Order": 1,
+            "ServiceEnvironment": {
+              "Ref": "Se"
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "Se"
+      ]
+    },
+    "Se": {
+      "Type": "AWS::Batch::ServiceEnvironment",
+      "Properties": {
+        "ServiceEnvironmentType": "SAGEMAKER_TRAINING",
+        "CapacityLimits": [
+          {
+            "CapacityUnit": "NUM_INSTANCES",
+            "MaxCapacity": 1
+          }
+        ]
+      }
+    }
+  }
+}

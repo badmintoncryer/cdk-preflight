@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::SchedulingPolicy",
+      "Properties": {
+        "FairsharePolicy": {
+          "ShareDistribution": [
+            {
+              "ShareIdentifier": "UserA*",
+              "WeightFactor": 1
+            },
+            {
+              "ShareIdentifier": "UserA1",
+              "WeightFactor": 2
+            }
+          ]
+        }
+      }
+    }
+  }
+}

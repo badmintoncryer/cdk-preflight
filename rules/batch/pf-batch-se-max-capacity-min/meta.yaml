@@ -1,0 +1,12 @@
+id: pf-batch-se-max-capacity-min
+service: batch
+resourceTypes: [AWS::Batch::ServiceEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: MaxCapacity must be at least 1
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CapacityLimit.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Max capacity must be more than 0.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

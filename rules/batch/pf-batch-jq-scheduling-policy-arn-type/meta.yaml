@@ -1,0 +1,12 @@
+id: pf-batch-jq-scheduling-policy-arn-type
+service: batch
+resourceTypes: [AWS::Batch::JobQueue]
+benchRegion: us-east-1
+severity: ERROR
+title: SchedulingPolicyArn must be a scheduling-policy ARN
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Only scheduling policy Arn can be allowed.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

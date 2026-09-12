@@ -1,0 +1,55 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "ComputeEnvironmentOrder": [
+          {
+            "Order": 1,
+            "ComputeEnvironment": {
+              "Ref": "Ce"
+            }
+          }
+        ],
+        "SchedulingPolicyArn": "arn:aws:batch:us-east-1:214794239830:compute-environment/pf-a"
+      },
+      "DependsOn": [
+        "BatchRole",
+        "Ce"
+      ]
+    },
+    "BatchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "batch.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        ]
+      }
+    },
+    "Ce": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "UNMANAGED",
+        "ServiceRole": {
+          "Fn::GetAtt": [
+            "BatchRole",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}
