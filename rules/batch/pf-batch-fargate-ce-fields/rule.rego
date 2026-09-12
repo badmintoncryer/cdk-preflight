@@ -17,6 +17,12 @@ violation contains make_diag_full("pf-batch-fargate-ce-fields", "ERROR", name,
 	cr in {"FARGATE", "FARGATE_SPOT"}
 	cres := input.resources[name].properties.ComputeResources
 	is_object(cres)
-	some field in {"AllocationStrategy", "InstanceTypes"}
+	# Every compute resource field Batch answers with "<field> is not applicable
+	# for Fargate."; one service check, so one rule.
+	some field in {
+		"AllocationStrategy", "BidPercentage", "DesiredvCpus", "Ec2KeyPair",
+		"ImageId", "InstanceRole", "InstanceTypes", "LaunchTemplate",
+		"MinvCpus", "PlacementGroup", "SpotIamFleetRole", "Tags",
+	}
 	object.get(cres, field, "__pf_absent") != "__pf_absent"
 }

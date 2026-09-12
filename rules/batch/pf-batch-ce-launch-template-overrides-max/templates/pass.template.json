@@ -1,0 +1,198 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "EC2",
+          "MaxvCpus": 4,
+          "MinvCpus": 0,
+          "InstanceTypes": [
+            "c5",
+            "c6i",
+            "m5",
+            "m6i",
+            "r5",
+            "r6i",
+            "c5a",
+            "m5a",
+            "r5a",
+            "c5n"
+          ],
+          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ],
+          "LaunchTemplate": {
+            "LaunchTemplateId": {
+              "Fn::GetAtt": [
+                "Lt",
+                "LaunchTemplateId"
+              ]
+            },
+            "Overrides": [
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "c5"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "c6i"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "m5"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "m6i"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "r5"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "r6i"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "c5a"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "m5a"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "r5a"
+                ]
+              },
+              {
+                "LaunchTemplateId": {
+                  "Fn::GetAtt": [
+                    "Lt",
+                    "LaunchTemplateId"
+                  ]
+                },
+                "TargetInstanceTypes": [
+                  "c5n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "Lt",
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Lt": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "Monitoring": {
+            "Enabled": false
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-batch-ce-ordered-strategy-instance-bundles
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: The ordered allocation strategies reject instance type bundles
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/allocation-strategies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Instance type bundles (e.g. optimal, default_x86_64) are not allowed for BEST_FIT_PROGRESSIVE_ORDERED allocation strategy. Specify instance families or types directly.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

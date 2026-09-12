@@ -1,0 +1,12 @@
+id: pf-batch-jd-eks-cpu-value
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+benchRegion: us-east-1
+severity: ERROR
+title: EKS cpu values must be whole numbers or multiples of 0.25
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Value 0.3 for type cpu in resources is not valid. Provide a valid number as input.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

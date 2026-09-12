@@ -1823,8 +1823,33 @@ describe('batch rules', () => {
   });
 
   test('unmanaged rule is scoped to Fargate resource types; UNMANAGED + EC2 resources stay silent', () => {
-    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' }, { Type: 'UNMANAGED' })))).toHaveLength(0);
+    // An UNMANAGED environment has to carry its own ServiceRole, so the silent case spells one out.
+    const svc = { Type: 'UNMANAGED', ServiceRole: 'arn:aws:iam::111122223333:role/AWSBatchServiceRole' };
+    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' }, svc)))).toHaveLength(0);
     expect(ids(diagnoseTemplate(ceT({ Type: 'FARGATE_SPOT' }, { Type: 'UNMANAGED' })))).toContain('pf-batch-unmanaged-fargate');
+  });
+
+  // Branches the shipped fixtures cannot reach: each rule's fixture pair sits on one
+  // of these cases, so the others are pinned here.
+  test('compute environment branches the fixtures do not reach', () => {
+    const eks = { EksConfiguration: { EksClusterArn: 'arn:aws:eks:us-east-1:111122223333:cluster/c', KubernetesNamespace: 'batch' } };
+    const ec2 = { Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' };
+    // ECS_* image types on an EKS environment (the fixture carries the EKS_* on ECS case).
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, MinvCpus: 0, AllocationStrategy: 'BEST_FIT_PROGRESSIVE', Ec2Configuration: [{ ImageType: 'ECS_AL2023' }] }, eks))))
+      .toContain('pf-batch-ce-ec2-config-image-type');
+    // BEST_FIT spelled out, not defaulted.
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, Type: 'SPOT', AllocationStrategy: 'BEST_FIT' })))).toContain('pf-batch-ce-spot-fleet-role');
+    // InstanceTypes absent, not empty.
+    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceRole: 'r' })))).toContain('pf-batch-ce-instance-types-required');
+    // Security groups: Fargate has no launch template to fall back on; EC2 does.
+    expect(ids(diagnoseTemplate(ceT({ Type: 'FARGATE', SecurityGroupIds: [] })))).toContain('pf-batch-ce-security-groups-required');
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, SecurityGroupIds: [], LaunchTemplate: { LaunchTemplateName: 'lt' } }))))
+      .not.toContain('pf-batch-ce-security-groups-required');
+    // The service-linked role by bare name, not by ARN path.
+    expect(ids(diagnoseTemplate(ceT(ec2, { Type: 'UNMANAGED', ServiceRole: 'AWSServiceRoleForBatch' })))).toContain('pf-batch-ce-unmanaged-service-linked-role');
+    // a1 is Graviton without a generation-plus-g family name.
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, InstanceTypes: ['a1.large', 'c5.large'] })))).toContain('pf-batch-ce-instance-types-architecture');
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, InstanceTypes: ['c6gd.large', 'im4gn.large'] })))).not.toContain('pf-batch-ce-instance-types-architecture');
   });
 
   test('queue order: absent list is schema territory and stays silent here; empty list fires', () => {
@@ -1875,6 +1900,40 @@ describe('batch rules', () => {
     const same = 'MISCONFIGURATION:COMPUTE_ENVIRONMENT_MAX_RESOURCE';
     expect(ids(diagnoseTemplate(q([act(same), act(same)])))).toContain('pf-batch-jq-jstla-duplicate');
     expect(ids(diagnoseTemplate(q([act(same), act('MISCONFIGURATION:JOB_RESOURCE_REQUIREMENT')])))).toHaveLength(0);
+  });
+
+  // TargetNodes は "n" / "n:" / ":m" / "n:m" の 4 形。開き端が NumNodes-1 まで伸びることを
+  // 押さえないと、全ノードを覆う書き方がカバレッジ側の誤検知になる。
+  test('node ranges: open-ended target nodes reach NumNodes-1', () => {
+    const c = { Image: IMG, ResourceRequirements: [{ Type: 'VCPU', Value: '1' }, { Type: 'MEMORY', Value: '2048' }] };
+    const mnp = (numNodes: number, targets: string[]) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'multinode', NodeProperties: { MainNode: 0, NumNodes: numNodes, NodeRangeProperties: targets.map((t) => ({ TargetNodes: t, Container: c })) } } } },
+    });
+    expect(ids(diagnoseTemplate(mnp(4, ['0:'])))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(mnp(4, ['0', '1:'])))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(mnp(4, ['0:1'])))).toContain('pf-batch-jd-node-target-nodes-coverage');
+    expect(ids(diagnoseTemplate(mnp(2, ['0:5'])))).toContain('pf-batch-jd-node-target-nodes-in-range');
+  });
+
+  // 候補 2 本（milliCPU と 0.25 刻みでない小数）をサービス側の 1 つの検査にまとめてある。
+  test('eks cpu: milliCPU and non-quarter fractions fire, 0.25 steps stay silent', () => {
+    const eks = (cpu: string) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', EksProperties: { PodProperties: { Containers: [{ Name: 'main', Image: IMG, Resources: { Limits: { cpu, memory: '2048Mi' } } }] } } } } },
+    });
+    expect(ids(diagnoseTemplate(eks('100m')))).toContain('pf-batch-jd-eks-cpu-value');
+    expect(ids(diagnoseTemplate(eks('0.3')))).toContain('pf-batch-jd-eks-cpu-value');
+    expect(ids(diagnoseTemplate(eks('0.25')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(eks('2')))).toHaveLength(0);
+  });
+
+  // 予約プレフィックスの検査と名前パターンの検査は別物で、サービスも別の文で弾く。
+  test('eks pod labels: reserved prefix and key name pattern are separate checks', () => {
+    const lbl = (k: string) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', EksProperties: { PodProperties: { Metadata: { Labels: { [k]: 'pf' } }, Containers: [{ Name: 'main', Image: IMG, Resources: { Limits: { cpu: '1', memory: '2048Mi' } } }] } } } } },
+    });
+    expect(ids(diagnoseTemplate(lbl('kubernetes.io/team')))).toEqual(['pf-batch-jd-eks-label-key-reserved-prefix']);
+    expect(ids(diagnoseTemplate(lbl('-team')))).toEqual(['pf-batch-jd-eks-label-key-format']);
+    expect(ids(diagnoseTemplate(lbl('team.example.com/name')))).toHaveLength(0);
   });
 });
 

@@ -1,0 +1,128 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "FARGATE",
+          "MaxvCpus": 4,
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sgx00"
+            },
+            {
+              "Ref": "Sgx01"
+            },
+            {
+              "Ref": "Sgx02"
+            },
+            {
+              "Ref": "Sgx03"
+            },
+            {
+              "Ref": "Sgx04"
+            },
+            {
+              "Ref": "Sgx05"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "Sg",
+        "Sgx00",
+        "Sgx01",
+        "Sgx02",
+        "Sgx03",
+        "Sgx04",
+        "Sgx05",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sgx00": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sgx01": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sgx02": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sgx03": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sgx04": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sgx05": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

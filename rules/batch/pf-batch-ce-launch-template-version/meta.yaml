@@ -1,0 +1,12 @@
+id: pf-batch-ce-launch-template-version
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: LaunchTemplate.Version must be a version number, $Default or $Latest
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_LaunchTemplateSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"LaunchTemplateVersion must be either empty or a number or $Default or $Latest.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

@@ -1,0 +1,258 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "FARGATE",
+          "MaxvCpus": 4,
+          "Subnets": [
+            {
+              "Ref": "Sub00"
+            },
+            {
+              "Ref": "Sub01"
+            },
+            {
+              "Ref": "Sub02"
+            },
+            {
+              "Ref": "Sub03"
+            },
+            {
+              "Ref": "Sub04"
+            },
+            {
+              "Ref": "Sub05"
+            },
+            {
+              "Ref": "Sub06"
+            },
+            {
+              "Ref": "Sub07"
+            },
+            {
+              "Ref": "Sub08"
+            },
+            {
+              "Ref": "Sub09"
+            },
+            {
+              "Ref": "Sub10"
+            },
+            {
+              "Ref": "Sub11"
+            },
+            {
+              "Ref": "Sub12"
+            },
+            {
+              "Ref": "Sub13"
+            },
+            {
+              "Ref": "Sub14"
+            },
+            {
+              "Ref": "Sub15"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "Sg",
+        "Sub00",
+        "Sub01",
+        "Sub02",
+        "Sub03",
+        "Sub04",
+        "Sub05",
+        "Sub06",
+        "Sub07",
+        "Sub08",
+        "Sub09",
+        "Sub10",
+        "Sub11",
+        "Sub12",
+        "Sub13",
+        "Sub14",
+        "Sub15",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Sub00": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.100.0/24"
+      }
+    },
+    "Sub01": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.101.0/24"
+      }
+    },
+    "Sub02": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.102.0/24"
+      }
+    },
+    "Sub03": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.103.0/24"
+      }
+    },
+    "Sub04": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.104.0/24"
+      }
+    },
+    "Sub05": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.105.0/24"
+      }
+    },
+    "Sub06": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.106.0/24"
+      }
+    },
+    "Sub07": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.107.0/24"
+      }
+    },
+    "Sub08": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.108.0/24"
+      }
+    },
+    "Sub09": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.109.0/24"
+      }
+    },
+    "Sub10": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.110.0/24"
+      }
+    },
+    "Sub11": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.111.0/24"
+      }
+    },
+    "Sub12": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.112.0/24"
+      }
+    },
+    "Sub13": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.113.0/24"
+      }
+    },
+    "Sub14": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.114.0/24"
+      }
+    },
+    "Sub15": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.115.0/24"
+      }
+    }
+  }
+}

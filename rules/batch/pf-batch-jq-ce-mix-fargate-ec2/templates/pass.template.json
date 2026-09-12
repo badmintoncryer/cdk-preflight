@@ -1,0 +1,131 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "ComputeEnvironmentOrder": [
+          {
+            "Order": 1,
+            "ComputeEnvironment": {
+              "Ref": "CeEc2"
+            }
+          },
+          {
+            "Order": 2,
+            "ComputeEnvironment": {
+              "Ref": "CeEc2b"
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "CeEc2",
+        "CeEc2b",
+        "CeFargate",
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "CeEc2": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "EC2",
+          "MaxvCpus": 4,
+          "MinvCpus": 0,
+          "InstanceTypes": [
+            "optimal"
+          ],
+          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ]
+        }
+      }
+    },
+    "CeFargate": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "FARGATE",
+          "MaxvCpus": 4,
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ]
+        }
+      }
+    },
+    "CeEc2b": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "EC2",
+          "MaxvCpus": 4,
+          "MinvCpus": 0,
+          "InstanceTypes": [
+            "optimal"
+          ],
+          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    }
+  }
+}

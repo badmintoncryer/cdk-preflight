@@ -1,0 +1,112 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "multinode",
+        "NodeProperties": {
+          "MainNode": 0,
+          "NumNodes": 6,
+          "NodeRangeProperties": [
+            {
+              "TargetNodes": "0:0",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            },
+            {
+              "TargetNodes": "1:1",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            },
+            {
+              "TargetNodes": "2:2",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            },
+            {
+              "TargetNodes": "3:3",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            },
+            {
+              "TargetNodes": "4:4",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            },
+            {
+              "TargetNodes": "5:5",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-batch-jd-eks-gpu-integer
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+benchRegion: us-east-1
+severity: ERROR
+title: nvidia.com/gpu must be a whole number
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Value 0.5 for type nvidia.com/gpu in resources is not valid. Provide a valid number as input.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12
