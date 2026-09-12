@@ -95,6 +95,34 @@ project.gitignore.addPatterns('/bench/out/');
 // テストに混ぜ、削除分岐が壊れたら CI で落ちるようにする（実 API は叩かない）。
 project.testTask.exec('bash bench/sweep.test.sh');
 
+// 公開される tarball の smoke test。テストは全部 src/ を import しているので、
+// パッケージング側の壊れ（exports の漏れ、lib/rules.generated の解決失敗）は
+// ここでしか出ない。ローカルでは `CI=true npx projen package:js && npx projen smoke`。
+project.addTask('smoke', {
+  description: 'Install the packed tarball into a scratch CDK app and check that enforce still fires',
+  exec: 'bash scripts/smoke.sh dist/js/*.jsii.tgz',
+});
+// build の成果物（dist/js/*.tgz）を使い回す。checkout は dist を消さないよう .repo に出す。
+project.buildWorkflow!.addPostBuildJob('package-smoke', {
+  runsOn: ['ubuntu-latest'],
+  permissions: { contents: github.workflows.JobPermission.READ },
+  steps: [
+    {
+      name: 'Setup Node.js',
+      uses: 'actions/setup-node@v7.0.0',
+      with: { 'node-version': '24' },
+    },
+    github.WorkflowSteps.checkout({
+      with: {
+        path: '.repo',
+        ref: '${{ github.event.pull_request.head.sha }}',
+        repository: '${{ github.event.pull_request.head.repo.full_name }}',
+      },
+    }),
+    { name: 'Smoke test the packed tarball', run: 'bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz' },
+  ],
+});
+
 // ルール不要化（エンジンが追いついた）の検知。AWS 不要・完全ローカル。
 project.addTask('redundancy-scan', {
   description: 'List rules the bundled engine now blocks by itself (retirement candidates)',
