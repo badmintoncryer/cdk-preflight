@@ -26,10 +26,20 @@
             {
               "Ref": "Sg"
             }
-          ]
+          ],
+          "LaunchTemplate": {
+            "LaunchTemplateId": {
+              "Fn::GetAtt": [
+                "Lt",
+                "LaunchTemplateId"
+              ]
+            },
+            "UserdataType": "EKS_BOOTSTRAP_SH"
+          }
         }
       },
       "DependsOn": [
+        "Lt",
         "Sg",
         "Subnet",
         "Vpc"
@@ -56,6 +66,17 @@
         "GroupDescription": "cdk-preflight fixture",
         "VpcId": {
           "Ref": "Vpc"
+        }
+      }
+    },
+    "Lt": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "Monitoring": {
+            "Enabled": false
+          },
+          "ImageId": "ami-0123456789abcdef0"
         }
       }
     }
