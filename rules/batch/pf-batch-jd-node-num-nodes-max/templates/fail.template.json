@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "multinode",
+        "NodeProperties": {
+          "MainNode": 0,
+          "NumNodes": 1001,
+          "NodeRangeProperties": [
+            {
+              "TargetNodes": "0:1000",
+              "Container": {
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "ResourceRequirements": [
+                  {
+                    "Type": "VCPU",
+                    "Value": "1"
+                  },
+                  {
+                    "Type": "MEMORY",
+                    "Value": "2048"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

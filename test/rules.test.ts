@@ -1876,6 +1876,40 @@ describe('batch rules', () => {
     expect(ids(diagnoseTemplate(q([act(same), act(same)])))).toContain('pf-batch-jq-jstla-duplicate');
     expect(ids(diagnoseTemplate(q([act(same), act('MISCONFIGURATION:JOB_RESOURCE_REQUIREMENT')])))).toHaveLength(0);
   });
+
+  // TargetNodes は "n" / "n:" / ":m" / "n:m" の 4 形。開き端が NumNodes-1 まで伸びることを
+  // 押さえないと、全ノードを覆う書き方がカバレッジ側の誤検知になる。
+  test('node ranges: open-ended target nodes reach NumNodes-1', () => {
+    const c = { Image: IMG, ResourceRequirements: [{ Type: 'VCPU', Value: '1' }, { Type: 'MEMORY', Value: '2048' }] };
+    const mnp = (numNodes: number, targets: string[]) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'multinode', NodeProperties: { MainNode: 0, NumNodes: numNodes, NodeRangeProperties: targets.map((t) => ({ TargetNodes: t, Container: c })) } } } },
+    });
+    expect(ids(diagnoseTemplate(mnp(4, ['0:'])))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(mnp(4, ['0', '1:'])))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(mnp(4, ['0:1'])))).toContain('pf-batch-jd-node-target-nodes-coverage');
+    expect(ids(diagnoseTemplate(mnp(2, ['0:5'])))).toContain('pf-batch-jd-node-target-nodes-in-range');
+  });
+
+  // 候補 2 本（milliCPU と 0.25 刻みでない小数）をサービス側の 1 つの検査にまとめてある。
+  test('eks cpu: milliCPU and non-quarter fractions fire, 0.25 steps stay silent', () => {
+    const eks = (cpu: string) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', EksProperties: { PodProperties: { Containers: [{ Name: 'main', Image: IMG, Resources: { Limits: { cpu, memory: '2048Mi' } } }] } } } } },
+    });
+    expect(ids(diagnoseTemplate(eks('100m')))).toContain('pf-batch-jd-eks-cpu-value');
+    expect(ids(diagnoseTemplate(eks('0.3')))).toContain('pf-batch-jd-eks-cpu-value');
+    expect(ids(diagnoseTemplate(eks('0.25')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(eks('2')))).toHaveLength(0);
+  });
+
+  // 予約プレフィックスの検査と名前パターンの検査は別物で、サービスも別の文で弾く。
+  test('eks pod labels: reserved prefix and key name pattern are separate checks', () => {
+    const lbl = (k: string) => ({
+      Resources: { J: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', EksProperties: { PodProperties: { Metadata: { Labels: { [k]: 'pf' } }, Containers: [{ Name: 'main', Image: IMG, Resources: { Limits: { cpu: '1', memory: '2048Mi' } } }] } } } } },
+    });
+    expect(ids(diagnoseTemplate(lbl('kubernetes.io/team')))).toEqual(['pf-batch-jd-eks-label-key-reserved-prefix']);
+    expect(ids(diagnoseTemplate(lbl('-team')))).toEqual(['pf-batch-jd-eks-label-key-format']);
+    expect(ids(diagnoseTemplate(lbl('team.example.com/name')))).toHaveLength(0);
+  });
 });
 
 describe('elbv2 rules', () => {
