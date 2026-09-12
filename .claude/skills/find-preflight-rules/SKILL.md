@@ -84,6 +84,7 @@ EOL ランタイム、廃止インスタンスタイプ、リージョン非対�
    ```
    出力は 1 件 1 行（`BLOCK <file> <ruleId>/<severity>` か `clean <file>`）。
    `ERROR` / `FATAL`（`source` が `SCHEMA` か `CFN_LINT`）が出たら**その候補は捨てる**。`WARN` クラスだけ、あるいは `INFO` だけならグレーゾーンなので、上流に severity の issue を出す候補として記録し、つなぎで実装するなら `upstream: pending-engine` を付ける
+   - **探りのテンプレートも境界値で打つ**。重複ガードの判定は値ごとなので、限界から遠い値で探ると「エンジンが持っている定数がサービスより緩い」ケースを取り違える：スキーマの下限が 10 でサービスの下限が 20 なら、5 文字の探りは `BLOCK` されて候補ごと捨ててしまうが、19 文字の探りは `clean` で戻り、10〜19 という本物の隙間が候補として残る。実装フェーズでそのまま fail テンプレートになる値でもある（pass 側と合わせた規定は `add-preflight-rule` の手順 3）
    - **CLI のサービスモデルが API より古いことがある**（2026-09-05、`aws wafv2` は `Monetize` と `PreParseTextTransformations` を知らず ParamValidation で落ちた）。CLI が拒否するフィールドだけスタックを立てる。名前が scope / region 単位で一意なサービス（WAFv2）は、並列 bench のフィクスチャ名にルール ID を混ぜる
    - **`--cli-input-json` の blob は base64**（`SearchString` を平文で書くとクライアント側で "Invalid base64" になり、サーバに届かないまま全滅する）
    - **サービス API を直接叩けるものは先に叩く**（2026-09-05、KMS / Secrets Manager / SSM で実測）。CFN ハンドラが CreateKey / CreateAlias / ReplicateKey / GetRandomPassword / RotateSecret / PutParameter / CreateDocument / CreateMaintenanceWindow / CreateAssociation をそのまま呼ぶサービスでは、API の拒否＝スタックイベントの文面で、失敗した呼び出しは何も作らないのでタダ。ハンドラ独自の検査（`SecretString` と `GenerateSecretString` の排他、`HostedRotationLambda` の transform 要否など）だけスタックを立てる
