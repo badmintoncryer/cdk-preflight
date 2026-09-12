@@ -520,3 +520,31 @@ describe('service-level rule modules', () => {
     for (const r of BUNDLED_RULES) expect(merged).toContain(`"${r.id}"`);
   });
 });
+
+describe('fixed cost', () => {
+  // 素直な CDK アプリ 1 スタックが吐くリソースタイプ。ルールパックの固定費はほぼ全部が
+  // Rego のコンパイルで、コンパイル対象の本数にそのまま比例する（実測: 7 タイプに
+  // 刈り込んだ 133 本で 1.3-1.6s、刈り込まず全 1918 本を載せると 12-15s）。
+  const ORDINARY_APP_TYPES = new Set([
+    'AWS::SQS::Queue',
+    'AWS::IAM::Role',
+    'AWS::IAM::Policy',
+    'AWS::Lambda::Function',
+    'AWS::Logs::LogGroup',
+    'AWS::Logs::MetricFilter',
+    'AWS::CloudWatch::Alarm',
+  ]);
+
+  // ルールは増え続ける前提のパックなので、壁時計ではなく「何本コンパイルするか」で縛る。
+  // 刈り込みが壊れて全ルールが載るようになったら、ここが真っ先に落ちる。
+  // 上限に当たったら、まず刈り込みが効いているかを疑うこと。上の 7 タイプにルールが
+  // 正当に増えて当たったのなら、実測し直したうえで引き上げる。
+  const MAX_SHARE = 0.15;
+
+  test('an ordinary app compiles only a small share of the pack', () => {
+    const kept = prune(BUNDLED_RULES, ORDINARY_APP_TYPES);
+    // 0 本だとこのテストが素通りしてしまうので、刈り込みすぎの側も見る
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.length / BUNDLED_RULES.length).toBeLessThan(MAX_SHARE);
+  });
+});
