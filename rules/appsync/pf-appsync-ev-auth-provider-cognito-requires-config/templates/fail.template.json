@@ -1,0 +1,32 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::Api",
+   "Properties": {
+    "Name": "ev-api",
+    "EventConfig": {
+     "AuthProviders": [
+      {
+       "AuthType": "AMAZON_COGNITO_USER_POOLS"
+      }
+     ],
+     "ConnectionAuthModes": [
+      {
+       "AuthType": "AMAZON_COGNITO_USER_POOLS"
+      }
+     ],
+     "DefaultPublishAuthModes": [
+      {
+       "AuthType": "AMAZON_COGNITO_USER_POOLS"
+      }
+     ],
+     "DefaultSubscribeAuthModes": [
+      {
+       "AuthType": "AMAZON_COGNITO_USER_POOLS"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,32 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::Api",
+   "Properties": {
+    "Name": "ev-api",
+    "EventConfig": {
+     "AuthProviders": [
+      {
+       "AuthType": "OPENID_CONNECT"
+      }
+     ],
+     "ConnectionAuthModes": [
+      {
+       "AuthType": "OPENID_CONNECT"
+      }
+     ],
+     "DefaultPublishAuthModes": [
+      {
+       "AuthType": "OPENID_CONNECT"
+      }
+     ],
+     "DefaultSubscribeAuthModes": [
+      {
+       "AuthType": "OPENID_CONNECT"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,12 @@
+id: pf-appsync-schema-undefined-type-reference
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: Every field type must be declared in the schema
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: Found 1 problem(s) with the schema: The field type 'NoSuchType' is not present when resolving type 'Query'."
+addedOn: 2026-09-12

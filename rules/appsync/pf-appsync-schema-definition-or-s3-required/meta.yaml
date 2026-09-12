@@ -1,0 +1,12 @@
+id: pf-appsync-schema-definition-or-s3-required
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: A schema needs Definition or DefinitionS3Location
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlschema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

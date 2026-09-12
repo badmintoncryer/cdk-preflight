@@ -1,0 +1,12 @@
+id: pf-appsync-ev-auth-provider-oidc-requires-config
+service: appsync
+resourceTypes: [AWS::AppSync::Api]
+benchRegion: us-east-1
+severity: ERROR
+title: An OPENID_CONNECT auth provider needs OpenIDConnectConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

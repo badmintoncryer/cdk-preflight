@@ -1,0 +1,12 @@
+id: pf-appsync-schema-object-as-argument
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: An argument type must be an input type
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: Found 1 problem(s) with the schema: The type 'O' is not an input type, but was used as an input type."
+addedOn: 2026-09-12

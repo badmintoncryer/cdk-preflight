@@ -1,0 +1,12 @@
+id: pf-appsync-schema-interface-not-implemented
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: A type must declare every field of the interfaces it implements
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: Found 1 problem(s) with the schema: The object type 'T' does not have a field 'id' required via interface 'N'."
+addedOn: 2026-09-12

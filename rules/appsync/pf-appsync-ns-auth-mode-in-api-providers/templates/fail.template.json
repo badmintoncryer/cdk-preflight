@@ -1,0 +1,62 @@
+{
+ "Resources": {
+  "EvApi": {
+   "Type": "AWS::AppSync::Api",
+   "Properties": {
+    "Name": "ev-api",
+    "EventConfig": {
+     "AuthProviders": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ],
+     "ConnectionAuthModes": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ],
+     "DefaultPublishAuthModes": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ],
+     "DefaultSubscribeAuthModes": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ]
+    }
+   }
+  },
+  "EvDs": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "EvApi",
+      "ApiId"
+     ]
+    },
+    "Name": "ds1",
+    "Type": "NONE"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::ChannelNamespace",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "EvApi",
+      "ApiId"
+     ]
+    },
+    "Name": "ns1",
+    "PublishAuthModes": [
+     {
+      "AuthType": "AWS_IAM"
+     }
+    ]
+   }
+  }
+ }
+}

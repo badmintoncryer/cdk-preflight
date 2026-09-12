@@ -1,0 +1,32 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::Api",
+   "Properties": {
+    "Name": "ev-api",
+    "EventConfig": {
+     "AuthProviders": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ],
+     "ConnectionAuthModes": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ],
+     "DefaultPublishAuthModes": [
+      {
+       "AuthType": "API_KEY"
+      }
+     ],
+     "DefaultSubscribeAuthModes": [
+      {
+       "AuthType": "AWS_IAM"
+      }
+     ]
+    }
+   }
+  }
+ }
+}
