@@ -1,0 +1,12 @@
+id: pf-batch-ce-launch-template-override-targets
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: Every launch template override must name its TargetInstanceTypes
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_LaunchTemplateSpecificationOverride.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"LaunchTemplate.overrides.targetInstanceTypes[] is required for every override and cannot be empty.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

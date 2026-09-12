@@ -1,0 +1,12 @@
+id: pf-batch-ce-launch-template-userdata-type
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: UserdataType needs a launch template that carries an ImageId
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_LaunchTemplateSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"The userdataType attribute is only allowed when the launch template has an imageId. Launch template lt-0e5a5dcf8982b87bd version 1 does not have an imageId.\" (ROLLBACK_COMPLETE); pass template not deployed: an EKS compute environment needs a live (billable) cluster, so this rule is gated with --fail-only."
+addedOn: 2026-09-12

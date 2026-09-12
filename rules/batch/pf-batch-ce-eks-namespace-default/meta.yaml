@@ -1,0 +1,12 @@
+id: pf-batch-ce-eks-namespace-default
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: The Kubernetes namespace of an EKS compute environment cannot be default
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"kubernetesNamespace cannot be the default Kubernetes\" (ROLLBACK_COMPLETE); pass template not deployed: an EKS compute environment needs a live (billable) cluster, so this rule is gated with --fail-only."
+addedOn: 2026-09-12

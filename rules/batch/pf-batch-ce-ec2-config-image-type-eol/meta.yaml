@@ -1,0 +1,12 @@
+id: pf-batch-ce-ec2-config-image-type-eol
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: Amazon Linux 2 image types are end of life and rejected at create time
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/compute_resource_AMIs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Amazon Linux 2 is end-of-life. Please see https://docs.aws.amazon.com/batch/latest/userguide/compute_resource_AMIs.html.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

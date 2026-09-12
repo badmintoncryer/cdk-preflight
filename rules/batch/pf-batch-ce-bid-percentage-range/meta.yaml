@@ -1,0 +1,12 @@
+id: pf-batch-ce-bid-percentage-range
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: BidPercentage must be between 0 and 100
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ComputeResource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Bid percentage must be between 0 to 100.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

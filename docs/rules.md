@@ -206,11 +206,46 @@
 | `pf-asg-wp-weighted-mixed-instances-incompatible` | AWS::AutoScaling::WarmPool<br>AWS::AutoScaling::AutoScalingGroup | A weighted mixed instances policy takes no warm pool | ERROR | none |
 | `pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation` | AWS::AutoScaling::AutoScalingGroup | Zonal shift needs cross-zone load balancing on its target groups | ERROR | none |
 | `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | ERROR | none |
+| `pf-batch-ce-allocation-strategy-compute-type` | AWS::Batch::ComputeEnvironment | The allocation strategy must match the compute resource type | ERROR | none |
+| `pf-batch-ce-bid-percentage-range` | AWS::Batch::ComputeEnvironment | BidPercentage must be between 0 and 100 | ERROR | none |
+| `pf-batch-ce-desired-vcpus-range` | AWS::Batch::ComputeEnvironment | DesiredvCpus must sit between MinvCpus and MaxvCpus | ERROR | none |
+| `pf-batch-ce-ec2-config-image-type` | AWS::Batch::ComputeEnvironment | Ec2Configuration.ImageType must be one of the image types the environment kind accepts | ERROR | none |
+| `pf-batch-ce-ec2-config-image-type-eol` | AWS::Batch::ComputeEnvironment | Amazon Linux 2 image types are end of life and rejected at create time | ERROR | none |
+| `pf-batch-ce-eks-allocation-strategy` | AWS::Batch::ComputeEnvironment | An EKS compute environment must name an allocation strategy | ERROR | none |
+| `pf-batch-ce-eks-cluster-arn-format` | AWS::Batch::ComputeEnvironment | EksClusterArn must be an EKS cluster ARN | ERROR | none |
+| `pf-batch-ce-eks-cluster-arn-region` | AWS::Batch::ComputeEnvironment | The EKS cluster must live in the region of the compute environment | ERROR | none |
+| `pf-batch-ce-eks-compute-type` | AWS::Batch::ComputeEnvironment | An EKS compute environment runs on EC2 or SPOT, never Fargate | ERROR | none |
+| `pf-batch-ce-eks-min-vcpus` | AWS::Batch::ComputeEnvironment | An EKS compute environment must set MinvCpus | ERROR | none |
+| `pf-batch-ce-eks-namespace-default` | AWS::Batch::ComputeEnvironment | The Kubernetes namespace of an EKS compute environment cannot be default | ERROR | none |
+| `pf-batch-ce-eks-namespace-format` | AWS::Batch::ComputeEnvironment | The Kubernetes namespace must be a DNS-1123 label | ERROR | none |
+| `pf-batch-ce-eks-namespace-kube-prefix` | AWS::Batch::ComputeEnvironment | The Kubernetes namespace of an EKS compute environment cannot be a kube- system namespace | ERROR | none |
+| `pf-batch-ce-eks-namespace-length` | AWS::Batch::ComputeEnvironment | The Kubernetes namespace must be at most 63 characters | ERROR | none |
+| `pf-batch-ce-fargate-security-groups-max` | AWS::Batch::ComputeEnvironment | Fargate compute resources allow at most 5 security groups | ERROR | none |
+| `pf-batch-ce-fargate-subnets-max` | AWS::Batch::ComputeEnvironment | Fargate compute resources allow at most 16 subnets | ERROR | none |
+| `pf-batch-ce-instance-role-required` | AWS::Batch::ComputeEnvironment | EC2 and SPOT compute resources require an InstanceRole | ERROR | none |
+| `pf-batch-ce-instance-types-architecture` | AWS::Batch::ComputeEnvironment | All instance types in a compute environment must share one CPU architecture | ERROR | none |
+| `pf-batch-ce-instance-types-required` | AWS::Batch::ComputeEnvironment | EC2 and SPOT compute resources require a non-empty InstanceTypes list | ERROR | none |
+| `pf-batch-ce-launch-template-id-or-name` | AWS::Batch::ComputeEnvironment | A launch template specification names exactly one of LaunchTemplateId and LaunchTemplateName | ERROR | none |
+| `pf-batch-ce-launch-template-override-id-or-name` | AWS::Batch::ComputeEnvironment | A launch template override cannot set both LaunchTemplateId and LaunchTemplateName | ERROR | none |
+| `pf-batch-ce-launch-template-override-target-overlap` | AWS::Batch::ComputeEnvironment | Launch template overrides must not target the same instance type twice | ERROR | none |
+| `pf-batch-ce-launch-template-override-target-subset` | AWS::Batch::ComputeEnvironment | Override TargetInstanceTypes must be a subset of the compute environment InstanceTypes | ERROR | none |
+| `pf-batch-ce-launch-template-override-targets` | AWS::Batch::ComputeEnvironment | Every launch template override must name its TargetInstanceTypes | ERROR | none |
+| `pf-batch-ce-launch-template-overrides-max` | AWS::Batch::ComputeEnvironment | A launch template specification allows at most 10 overrides | ERROR | none |
+| `pf-batch-ce-launch-template-userdata-type` | AWS::Batch::ComputeEnvironment | UserdataType needs a launch template that carries an ImageId | ERROR | none |
+| `pf-batch-ce-launch-template-version` | AWS::Batch::ComputeEnvironment | LaunchTemplate.Version must be a version number, $Default or $Latest | ERROR | none |
+| `pf-batch-ce-min-vcpus-negative` | AWS::Batch::ComputeEnvironment | MinvCpus must not be negative | ERROR | none |
 | `pf-batch-ce-name` | AWS::Batch::ComputeEnvironment | Compute environment names allow only letters, numbers, hyphen and underscore | ERROR | none |
+| `pf-batch-ce-ordered-strategy-instance-bundles` | AWS::Batch::ComputeEnvironment | The ordered allocation strategies reject instance type bundles | ERROR | none |
+| `pf-batch-ce-security-groups-required` | AWS::Batch::ComputeEnvironment | Compute resources require SecurityGroupIds unless a launch template supplies them | ERROR | none |
+| `pf-batch-ce-spot-fleet-role` | AWS::Batch::ComputeEnvironment | SPOT compute resources on the BEST_FIT strategy require SpotIamFleetRole | ERROR | none |
+| `pf-batch-ce-state-enabled` | AWS::Batch::ComputeEnvironment | A compute environment must be created in the ENABLED state | ERROR | none |
+| `pf-batch-ce-unmanaged-service-linked-role` | AWS::Batch::ComputeEnvironment | The Batch service-linked role cannot serve an UNMANAGED compute environment | ERROR | none |
+| `pf-batch-ce-unmanaged-service-role` | AWS::Batch::ComputeEnvironment | An UNMANAGED compute environment must name a ServiceRole | ERROR | none |
+| `pf-batch-ce-unmanaged-vcpus` | AWS::Batch::ComputeEnvironment | UnmanagedvCpus is only accepted on an UNMANAGED compute environment | ERROR | none |
 | `pf-batch-ce-vcpus-order` | AWS::Batch::ComputeEnvironment | MaxvCpus must be at least MinvCpus | ERROR | none |
 | `pf-batch-cr-name` | AWS::Batch::ConsumableResource | Consumable resource names allow only letters, numbers, hyphen and underscore | ERROR | none |
 | `pf-batch-cr-total-quantity-negative` | AWS::Batch::ConsumableResource | TotalQuantity may not be negative | ERROR | none |
-| `pf-batch-fargate-ce-fields` | AWS::Batch::ComputeEnvironment | Fargate compute environments cannot take AllocationStrategy or InstanceTypes | ERROR | none |
+| `pf-batch-fargate-ce-fields` | AWS::Batch::ComputeEnvironment | Fargate compute environments reject the EC2-only compute resource fields | ERROR | none |
 | `pf-batch-fargate-cpu-memory` | AWS::Batch::JobDefinition | Fargate job definitions must use a supported vCPU/memory combination | ERROR | none |
 | `pf-batch-fargate-execution-role` | AWS::Batch::JobDefinition | Fargate job definitions require ExecutionRoleArn | ERROR | none |
 | `pf-batch-fargate-multinode` | AWS::Batch::JobDefinition | Multi-node parallel jobs are not supported on Fargate | ERROR | none |
@@ -319,6 +354,7 @@
 | `pf-batch-jd-tmpfs-size-min` | AWS::Batch::JobDefinition | Tmpfs.Size must be a positive number of MiB | ERROR | none |
 | `pf-batch-jd-volume-config-exclusive` | AWS::Batch::JobDefinition | A volume takes exactly one configuration type | ERROR | none |
 | `pf-batch-jq-ce-arn-region` | AWS::Batch::JobQueue | Attached compute environments must live in the deployment region | ERROR | none |
+| `pf-batch-jq-ce-mix-fargate-ec2` | AWS::Batch::JobQueue | A job queue cannot mix Fargate and EC2 compute environments | ERROR | none |
 | `pf-batch-jq-ce-order-duplicate-ce` | AWS::Batch::JobQueue | The same compute environment may not be attached twice | ERROR | none |
 | `pf-batch-jq-ce-order-duplicate-order` | AWS::Batch::JobQueue | ComputeEnvironmentOrder entries need distinct Order values | ERROR | none |
 | `pf-batch-jq-ce-order-max` | AWS::Batch::JobQueue | A job queue may reference at most 3 compute environments | ERROR | none |

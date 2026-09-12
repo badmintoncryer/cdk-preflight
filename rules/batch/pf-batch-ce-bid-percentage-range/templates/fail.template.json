@@ -1,0 +1,93 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "SPOT",
+          "MaxvCpus": 4,
+          "MinvCpus": 0,
+          "InstanceTypes": [
+            "optimal"
+          ],
+          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ],
+          "SpotIamFleetRole": "arn:aws:iam::214794239830:role/cdkpf-batch-spotfleet",
+          "BidPercentage": 101
+        }
+      },
+      "DependsOn": [
+        "Main2",
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Main2": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "SPOT",
+          "MaxvCpus": 4,
+          "MinvCpus": 0,
+          "InstanceTypes": [
+            "optimal"
+          ],
+          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ],
+          "SpotIamFleetRole": "arn:aws:iam::214794239830:role/cdkpf-batch-spotfleet",
+          "BidPercentage": -1
+        }
+      },
+      "DependsOn": [
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    }
+  }
+}

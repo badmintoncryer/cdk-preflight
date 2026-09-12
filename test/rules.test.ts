@@ -1823,8 +1823,33 @@ describe('batch rules', () => {
   });
 
   test('unmanaged rule is scoped to Fargate resource types; UNMANAGED + EC2 resources stay silent', () => {
-    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' }, { Type: 'UNMANAGED' })))).toHaveLength(0);
+    // An UNMANAGED environment has to carry its own ServiceRole, so the silent case spells one out.
+    const svc = { Type: 'UNMANAGED', ServiceRole: 'arn:aws:iam::111122223333:role/AWSBatchServiceRole' };
+    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' }, svc)))).toHaveLength(0);
     expect(ids(diagnoseTemplate(ceT({ Type: 'FARGATE_SPOT' }, { Type: 'UNMANAGED' })))).toContain('pf-batch-unmanaged-fargate');
+  });
+
+  // Branches the shipped fixtures cannot reach: each rule's fixture pair sits on one
+  // of these cases, so the others are pinned here.
+  test('compute environment branches the fixtures do not reach', () => {
+    const eks = { EksConfiguration: { EksClusterArn: 'arn:aws:eks:us-east-1:111122223333:cluster/c', KubernetesNamespace: 'batch' } };
+    const ec2 = { Type: 'EC2', InstanceTypes: ['optimal'], InstanceRole: 'r' };
+    // ECS_* image types on an EKS environment (the fixture carries the EKS_* on ECS case).
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, MinvCpus: 0, AllocationStrategy: 'BEST_FIT_PROGRESSIVE', Ec2Configuration: [{ ImageType: 'ECS_AL2023' }] }, eks))))
+      .toContain('pf-batch-ce-ec2-config-image-type');
+    // BEST_FIT spelled out, not defaulted.
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, Type: 'SPOT', AllocationStrategy: 'BEST_FIT' })))).toContain('pf-batch-ce-spot-fleet-role');
+    // InstanceTypes absent, not empty.
+    expect(ids(diagnoseTemplate(ceT({ Type: 'EC2', InstanceRole: 'r' })))).toContain('pf-batch-ce-instance-types-required');
+    // Security groups: Fargate has no launch template to fall back on; EC2 does.
+    expect(ids(diagnoseTemplate(ceT({ Type: 'FARGATE', SecurityGroupIds: [] })))).toContain('pf-batch-ce-security-groups-required');
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, SecurityGroupIds: [], LaunchTemplate: { LaunchTemplateName: 'lt' } }))))
+      .not.toContain('pf-batch-ce-security-groups-required');
+    // The service-linked role by bare name, not by ARN path.
+    expect(ids(diagnoseTemplate(ceT(ec2, { Type: 'UNMANAGED', ServiceRole: 'AWSServiceRoleForBatch' })))).toContain('pf-batch-ce-unmanaged-service-linked-role');
+    // a1 is Graviton without a generation-plus-g family name.
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, InstanceTypes: ['a1.large', 'c5.large'] })))).toContain('pf-batch-ce-instance-types-architecture');
+    expect(ids(diagnoseTemplate(ceT({ ...ec2, InstanceTypes: ['c6gd.large', 'im4gn.large'] })))).not.toContain('pf-batch-ce-instance-types-architecture');
   });
 
   test('queue order: absent list is schema territory and stays silent here; empty list fires', () => {

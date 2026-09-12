@@ -1,0 +1,12 @@
+id: pf-batch-ce-desired-vcpus-range
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: DesiredvCpus must sit between MinvCpus and MaxvCpus
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ComputeResource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"desiredvCpus should be between minvCpus and maxvCpus.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

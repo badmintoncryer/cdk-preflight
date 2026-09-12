@@ -1,0 +1,12 @@
+id: pf-batch-ce-allocation-strategy-compute-type
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: The allocation strategy must match the compute resource type
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/allocation-strategies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Allocation strategy BEST_FIT_PROGRESSIVE_ORDERED requires compute resource type EC2.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

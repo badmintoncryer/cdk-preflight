@@ -347,3 +347,137 @@ _pf_batch_range_payloads(r) := ks if {
 		_pf_batch_ohas(r, k)
 	]
 }
+
+# ---- compute environment ---------------------------------------------------
+
+_pf_batch_cr(name) := cr if {
+	cr := _pf_batch_get(name, "ComputeResources")
+	is_object(cr)
+}
+
+_pf_batch_crget(name, k) := v if {
+	v := _pf_batch_oget(_pf_batch_cr(name), k)
+}
+
+_pf_batch_crhas(name, k) if {
+	_pf_batch_crget(name, k)
+}
+
+# A number the template spells out, or the documented default when the key is
+# absent. A Ref leaves it undefined so nothing fires on an unresolvable value.
+_pf_batch_crnum(name, k, _) := n if {
+	n := _pf_batch_crget(name, k)
+	is_number(n)
+}
+
+_pf_batch_crnum(name, k, d) := d if {
+	not _pf_batch_crhas(name, k)
+}
+
+_pf_batch_crtype(name) := t if {
+	t := _pf_batch_crget(name, "Type")
+	_pf_batch_lit(t)
+}
+
+_pf_batch_ce_fargate(name) if {
+	_pf_batch_crtype(name) in {"FARGATE", "FARGATE_SPOT"}
+}
+
+_pf_batch_ce_ec2(name) if {
+	_pf_batch_crtype(name) in {"EC2", "SPOT"}
+}
+
+# The capacity family a job queue sees; UNMANAGED environments have none.
+_pf_batch_ce_kind(name) := "Fargate" if {
+	_pf_batch_ce_fargate(name)
+}
+
+_pf_batch_ce_kind(name) := "EC2" if {
+	_pf_batch_ce_ec2(name)
+}
+
+_pf_batch_ce_eks(name) if {
+	_pf_batch_has(name, "EksConfiguration")
+}
+
+_pf_batch_ce_subnets(name) := vs if {
+	vs := flatten_list(name, "Properties.ComputeResources.Subnets")
+}
+
+_pf_batch_ce_sgs(name) := vs if {
+	vs := flatten_list(name, "Properties.ComputeResources.SecurityGroupIds")
+}
+
+# Instance types the template spells out; "optimal" carries no architecture.
+_pf_batch_ce_itypes(name) := vs if {
+	vs := [e.value |
+		some e in flatten_list(name, "Properties.ComputeResources.InstanceTypes")
+		_pf_batch_lit(e.value)
+	]
+}
+
+_pf_batch_lt(name) := lt if {
+	lt := _pf_batch_crget(name, "LaunchTemplate")
+	is_object(lt)
+}
+
+_pf_batch_lt_overrides(name) := os if {
+	os := flatten_list(name, "Properties.ComputeResources.LaunchTemplate.Overrides")
+}
+
+_pf_batch_targets(o) := ts if {
+	ts := [t | some t in object.get(o, "TargetInstanceTypes", []); _pf_batch_lit(t)]
+}
+
+_pf_batch_ec2cfgs(name) := cs if {
+	cs := flatten_list(name, "Properties.ComputeResources.Ec2Configuration")
+}
+
+# The Batch service-linked role, by ARN path or by bare name.
+_pf_batch_slr(v) if {
+	contains(v, "aws-service-role/batch.amazonaws.com")
+}
+
+_pf_batch_slr(v) if {
+	endswith(v, "AWSServiceRoleForBatch")
+}
+
+# Graviton families: a generation digit followed by "g" (c6g, im4gn, x2gd), plus a1.
+_pf_batch_arm(v) if {
+	regex.match(`^[a-z]+[0-9]+g[a-z]*$`, split(v, ".")[0])
+}
+
+_pf_batch_arm(v) if {
+	split(v, ".")[0] == "a1"
+}
+
+# The ComputeResources.Type an allocation strategy is restricted to.
+_pf_batch_alloc_type(s) := "SPOT" if {
+	startswith(s, "SPOT_")
+}
+
+_pf_batch_alloc_type(s) := "EC2" if {
+	s == "BEST_FIT_PROGRESSIVE_ORDERED"
+}
+
+# ImageType values Batch accepts, which differ between EKS and ECS environments.
+_pf_batch_image_types(name) := {"EKS_AL2", "EKS_AL2_NVIDIA", "EKS_AL2023", "EKS_AL2023_NVIDIA"} if {
+	_pf_batch_ce_eks(name)
+}
+
+_pf_batch_image_types(name) := {"ECS_AL2", "ECS_AL2_NVIDIA", "ECS_AL2023", "ECS_AL2023_NVIDIA"} if {
+	not _pf_batch_ce_eks(name)
+}
+
+# Amazon Linux 2 images: EKS support ended 2025-11-26, ECS creation 2026-06-30.
+_pf_batch_image_eol := {"ECS_AL2", "ECS_AL2_NVIDIA", "EKS_AL2", "EKS_AL2_NVIDIA"}
+
+# BEST_FIT is the allocation strategy Batch applies when none is named; it is
+# the one that needs a Spot fleet role.
+_pf_batch_ce_bestfit(name) if {
+	not _pf_batch_crhas(name, "AllocationStrategy")
+}
+
+_pf_batch_ce_bestfit(name) if {
+	_pf_batch_crget(name, "AllocationStrategy") == "BEST_FIT"
+}
