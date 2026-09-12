@@ -20,6 +20,18 @@
     "Type": "NONE"
    }
   },
+  "Schema": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
+   }
+  },
   "Cache": {
    "Type": "AWS::AppSync::ApiCache",
    "Properties": {
@@ -54,7 +66,11 @@
     "CachingConfig": {
      "Ttl": 3601
     }
-   }
+   },
+   "DependsOn": [
+    "Schema",
+    "Ds"
+   ]
   }
  }
 }

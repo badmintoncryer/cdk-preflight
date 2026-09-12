@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-r
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-function: Invalid function: resolve"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"The code contains one or more errors. (Service: AppSync, Status Code: 400, Request ID: 223b462f-a192-4ab3-a5a0-c15cf04bbb85) (SDK Attempt Count: 1)\" (RequestToken: 8f86105d-6d08-5c5c-2084-ff48146f41e4, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

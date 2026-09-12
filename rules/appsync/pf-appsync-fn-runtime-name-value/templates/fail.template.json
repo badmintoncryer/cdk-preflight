@@ -36,7 +36,10 @@
      "Name": "APPSYNC_VTL",
      "RuntimeVersion": "1.0.0"
     }
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

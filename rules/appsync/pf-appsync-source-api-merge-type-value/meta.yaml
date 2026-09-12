@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: CREATE_FAILED \"Validation failed with 1 error(s)\"; the change set names the check as [AWS::EarlyValidation::PropertyValidation] \u2014 CloudFormation rejects MergeType: AUTOMERGE before the resource is created, but does not print the property. Valid values are AUTO_MERGE and MANUAL_MERGE."
 addedOn: 2026-09-12

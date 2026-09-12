@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-data-source --type NONE --lambda-config: BadRequestException Configs were given for data source of type None, no config is expected."
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Configs were given for data source of type None, no config is expected. (Service: AppSync, Status Code: 400, Request ID: 7fc0dc0a-71d6-466e-a938-679f3e4fa692) (SDK Attempt Count: 1)\" (RequestToken: 7dffd426-9dd8-b843-8573-74d837cc35df, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: Failed to parse schema document - ensure it's a valid SDL-formatted document."
+  evidence: "real-deploy 2026-09-12 us-east-1: Schema Creation Status is FAILED with details: Failed to parse schema document - ensure it's a valid SDL-formatted document."
 addedOn: 2026-09-12

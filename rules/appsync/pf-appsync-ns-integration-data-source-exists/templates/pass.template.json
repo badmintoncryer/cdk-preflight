@@ -38,7 +38,10 @@
      ]
     },
     "Name": "ds1",
-    "Type": "NONE"
+    "Type": "HTTP",
+    "HttpConfig": {
+     "Endpoint": "https://example.com"
+    }
    }
   },
   "Target": {
@@ -51,7 +54,10 @@
      ]
     },
     "Name": "ns1"
-   }
+   },
+   "DependsOn": [
+    "EvDs"
+   ]
   }
  }
 }

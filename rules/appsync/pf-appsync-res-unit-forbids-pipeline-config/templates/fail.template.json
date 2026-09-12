@@ -20,6 +20,18 @@
     "Type": "NONE"
    }
   },
+  "Schema": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
+   }
+  },
   "Target": {
    "Type": "AWS::AppSync::Resolver",
    "Properties": {
@@ -43,7 +55,11 @@
       "f1"
      ]
     }
-   }
+   },
+   "DependsOn": [
+    "Schema",
+    "Ds"
+   ]
   }
  }
 }

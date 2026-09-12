@@ -13,7 +13,24 @@
     "Name": "merged",
     "AuthenticationType": "API_KEY",
     "ApiType": "MERGED",
-    "MergedApiExecutionRoleArn": "arn:aws:iam::123456789012:role/appsync"
+    "MergedApiExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "Schema": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
    }
   },
   "Target": {
@@ -29,6 +46,27 @@
      "Fn::GetAtt": [
       "Api",
       "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "Role",
+    "Schema"
+   ]
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
      ]
     }
    }

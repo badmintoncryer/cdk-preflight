@@ -38,7 +38,10 @@
      ]
     },
     "Name": "ds1",
-    "Type": "NONE"
+    "Type": "HTTP",
+    "HttpConfig": {
+     "Endpoint": "https://example.com"
+    }
    }
   },
   "Target": {
@@ -56,7 +59,10 @@
       "AuthType": "AWS_IAM"
      }
     ]
-   }
+   },
+   "DependsOn": [
+    "EvDs"
+   ]
   }
  }
 }

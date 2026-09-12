@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"onPublish: Handlers with DIRECT behavior must use a Lambda data source. (Service: AppSync, Status Code: 400, Request ID: 2fbbe630-48e4-429a-bb1e-9267dfdbf96a) (SDK Attempt Count: 1)\" (RequestToken: 64f1d1d7-96e9-11b6-7ac5-ad6aebe0eca1, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

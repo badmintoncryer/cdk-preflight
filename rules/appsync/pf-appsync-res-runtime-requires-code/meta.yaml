@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Request and Response mapping templates can not be supplied with provided resolver runtime.\" (RequestToken: 6ad5c0aa-9583-94e2-9fa5-e80338eac535, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

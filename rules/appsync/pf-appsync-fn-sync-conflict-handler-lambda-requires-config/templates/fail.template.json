@@ -40,7 +40,10 @@
      "ConflictDetection": "VERSION",
      "ConflictHandler": "LAMBDA"
     }
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

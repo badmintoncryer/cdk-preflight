@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid request provided: The FunctionVersion can not be null to create a function.\" (RequestToken: 271e49f8-6cd4-4d45-33c3-5f13554160e2, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

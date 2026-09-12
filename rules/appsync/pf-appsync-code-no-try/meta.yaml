@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-r
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-function: code.js(1,30): error @aws-appsync/no-try: Try statements are not supported."
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"The code contains one or more errors. (Service: AppSync, Status Code: 400, Request ID: dfd015b4-9c2e-44de-8db2-47325c364004) (SDK Attempt Count: 1)\" (RequestToken: 9d03b18a-f5f2-ccd0-578e-6149d0418d34, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

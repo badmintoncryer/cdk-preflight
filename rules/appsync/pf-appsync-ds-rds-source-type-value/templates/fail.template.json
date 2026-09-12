@@ -18,14 +18,39 @@
     },
     "Name": "ds1",
     "Type": "RELATIONAL_DATABASE",
-    "ServiceRoleArn": "arn:aws:iam::123456789012:role/appsync",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
     "RelationalDatabaseConfig": {
      "RelationalDatabaseSourceType": "RDS_MYSQL",
      "RdsHttpEndpointConfig": {
       "AwsRegion": "us-east-1",
-      "AwsSecretStoreArn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:s",
+      "AwsSecretStoreArn": "arn:aws:secretsmanager:us-east-1:214794239830:secret:s",
       "DbClusterIdentifier": "c"
      }
+    }
+   },
+   "DependsOn": [
+    "Role"
+   ]
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ]
     }
    }
   }

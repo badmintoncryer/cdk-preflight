@@ -20,6 +20,18 @@
     "Type": "NONE"
    }
   },
+  "Schema": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
+   }
+  },
   "Target": {
    "Type": "AWS::AppSync::Resolver",
    "Properties": {
@@ -33,7 +45,11 @@
     "FieldName": "hi",
     "DataSourceName": "ds1",
     "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n"
-   }
+   },
+   "DependsOn": [
+    "Schema",
+    "Ds"
+   ]
   }
  }
 }

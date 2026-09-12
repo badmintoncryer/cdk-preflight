@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-r
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-function: code.js(1,30): error @aws-appsync/no-classes: Class declarations are not supported."
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"The code contains one or more errors. (Service: AppSync, Status Code: 400, Request ID: 2bd400d8-00a6-4576-8102-0a75dd32fe2e) (SDK Attempt Count: 1)\" (RequestToken: de1337c2-3f47-2bd9-a89e-20f6478f529a, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

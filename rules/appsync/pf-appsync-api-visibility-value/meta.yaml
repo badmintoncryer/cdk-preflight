@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_Cr
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid Visibility value specified (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: 88971023-3efa-4769-8b00-3840939224f7; Proxy: null)\" (RequestToken: fd09980c-e248-4c13-9ca5-bc8e27127ea1)"
 addedOn: 2026-09-12

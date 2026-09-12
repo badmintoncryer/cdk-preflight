@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"The AuthorizationType is invalid. Please refer to the documentation for more details. (Service: AppSync, Status Code: 400, Request ID: d27cc857-6fd4-424f-a246-2907c48692c6) (SDK Attempt Count: 1)\" (RequestToken: e42bb2d6-dafc-d1da-756b-0b1c8b1631d1, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

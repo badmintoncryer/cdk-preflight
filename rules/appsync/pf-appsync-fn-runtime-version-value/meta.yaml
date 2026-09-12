@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Runtime version invalid. (Service: AppSync, Status Code: 400, Request ID: f5ee4312-cc34-42d4-bff4-c3ba3fbbd6ba) (SDK Attempt Count: 1)\" (RequestToken: ecf53207-2f90-f697-7f4b-6a42d45dda20, HandlerErrorCode: GeneralServiceException)"
 addedOn: 2026-09-12

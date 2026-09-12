@@ -37,7 +37,10 @@
      "RuntimeVersion": "1.0.0"
     },
     "MaxBatchSize": 10
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

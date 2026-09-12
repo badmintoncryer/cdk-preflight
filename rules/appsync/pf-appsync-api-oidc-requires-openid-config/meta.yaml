@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"OpenID Connect Config missing (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: a89ce15b-44b3-4de3-9854-9f4ae59af205; Proxy: null)\" (RequestToken: ee711a9f-ea95-474f-97c1-b4d1651dea7d)"
 addedOn: 2026-09-12

@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/ApiCachingBehavior} does not match pattern {(FULL_REQUEST_CACHING|PER_RESOLVER_CACHING|OPERATION_LEVEL_CACHING)}]"
 addedOn: 2026-09-12

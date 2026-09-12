@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"PipelineConfig can't be null. (Service: AppSync, Status Code: 400, Request ID: 1a512a06-fd76-47e3-861c-2a65ad4637a6) (SDK Attempt Count: 1)\" (RequestToken: 3dde130f-f875-d34d-c174-a8cbd338e3d5, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

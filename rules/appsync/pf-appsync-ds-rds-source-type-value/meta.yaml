@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid relational database source type (Service: AppSync, Status Code: 400, Request ID: e1bc676e-e9bf-4b6d-a2b1-1bbb53913736) (SDK Attempt Count: 1)\" (RequestToken: 39826480-2acb-9514-b7c3-0660949e512d, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

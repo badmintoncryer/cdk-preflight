@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_Pu
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/EnvironmentVariables/AB} does not match pattern {.{0,512}}]"
 addedOn: 2026-09-12

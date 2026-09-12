@@ -37,7 +37,10 @@
      "RuntimeVersion": "1.0.0"
     },
     "CodeS3Location": "s3://b/k.js"
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

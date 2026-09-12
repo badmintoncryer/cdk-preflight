@@ -32,7 +32,10 @@
     "Name": "fn1",
     "DataSourceName": "ds1",
     "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n"
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

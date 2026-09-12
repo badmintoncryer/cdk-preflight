@@ -40,7 +40,10 @@
      "ConflictDetection": "NONE",
      "ConflictHandler": "AUTOMERGE"
     }
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

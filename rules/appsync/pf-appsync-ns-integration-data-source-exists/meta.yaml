@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"DataSource not found. (Service: AppSync, Status Code: 400, Request ID: 34d95b0e-9669-4b66-ac81-c3dac408abfe) (SDK Attempt Count: 1)\" (RequestToken: 02f196cf-26bc-1ccb-b585-63fe5c00f135, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

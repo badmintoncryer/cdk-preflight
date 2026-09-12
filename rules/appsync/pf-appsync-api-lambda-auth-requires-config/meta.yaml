@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Lambda Authorizer Config missing (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: ab6bc0ef-0a4b-4b27-8ce0-c54a132c0388; Proxy: null)\" (RequestToken: 790b2e97-920a-445c-b23f-d40f4700d363)"
 addedOn: 2026-09-12

@@ -3,8 +3,8 @@
   "Target": {
    "Type": "AWS::AppSync::DomainName",
    "Properties": {
-    "DomainName": "api.example.com",
-    "CertificateArn": "arn:aws:acm:ap-northeast-1:123456789012:certificate/abc"
+    "DomainName": "cdkpf.appnao.com",
+    "CertificateArn": "arn:aws:acm:ap-northeast-1:214794239830:certificate/bf4e2b12-571b-41d7-b670-48bae1ee8418"
    }
   }
  }

@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Event API configuration default subscribe auth type contains an invalid auth type. (Service: AppSync, Status Code: 400, Request ID: c932184c-7d99-497d-8b40-6c5ef405a70f) (SDK Attempt Count: 1)\" (RequestToken: 86ace689-1202-4075-4eaa-6abe3d4044a1, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

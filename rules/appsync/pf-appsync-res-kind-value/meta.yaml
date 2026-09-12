@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Unsupported resolver type.\" (RequestToken: cabd080c-1a2a-7776-7b8e-6e158fd0f87e, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

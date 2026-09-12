@@ -37,7 +37,10 @@
     },
     "RequestMappingTemplate": "{\"version\":\"2018-05-29\",\"payload\":{}}",
     "ResponseMappingTemplate": "$util.toJson($ctx.result)"
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

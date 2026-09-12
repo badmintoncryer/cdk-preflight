@@ -36,7 +36,10 @@
      "Name": "APPSYNC_JS",
      "RuntimeVersion": "2.0.0"
     }
-   }
+   },
+   "DependsOn": [
+    "Ds"
+   ]
   }
  }
 }

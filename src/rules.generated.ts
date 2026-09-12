@@ -1103,6 +1103,1217 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# WebSocket APIs route by evaluating this expression against each message,\n# so the create call rejects its absence. Absence is proven against the\n# preprocessed document (see AGENTS.md).\n_pf_agv2wrs_missing(name) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, \"RouteSelectionExpression\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-apigwv2-websocket-route-selection\", \"ERROR\", name,\n\t\"Properties.RouteSelectionExpression\",\n\t\"WebSocket API has no RouteSelectionExpression; the API create fails with \\\"Invalid routeSelectionExpression\\\"\",\n\t\"Set RouteSelectionExpression, e.g. $request.body.action\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tresolve(name, \"Properties.ProtocolType\") == \"WEBSOCKET\"\n\t_pf_agv2wrs_missing(name)\n}\n"
   },
   {
+    "id": "pf-appsync-api-additional-auth-duplicate-primary",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An additional authentication provider may not repeat another mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# API_KEY and AWS_LAMBDA have their own rules; excluded here so one\n# template never trips two.\n_pf_apiadditionalauthduplicateprimary_types(n) := array.concat(\n\t[object.get(input.resources[n].properties, \"AuthenticationType\", \"\")],\n\t[p.value.AuthenticationType | some p in flatten_list(n, \"Properties.AdditionalAuthenticationProviders\")],\n)\n\nviolation contains make_diag_full(\"pf-appsync-api-additional-auth-duplicate-primary\", \"ERROR\", name,\n\t\"Properties.AdditionalAuthenticationProviders\",\n\tsprintf(\"authentication mode '%s' appears more than once across AuthenticationType and AdditionalAuthenticationProviders; the API create rejects duplicate authentication providers\", [t]),\n\t\"List each authentication mode once\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-appsync-graphqlapi-additionalauthenticationprovider.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\ttypes := _pf_apiadditionalauthduplicateprimary_types(name)\n\tsome i, t in types\n\tnot t in {\"API_KEY\", \"AWS_LAMBDA\", \"\"}\n\tsome j, u in types\n\tj > i\n\tu == t\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-cognito-requires-userpool-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "AMAZON_COGNITO_USER_POOLS authentication needs UserPoolConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apicognitorequiresuserpoolconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-api-cognito-requires-userpool-config\", \"ERROR\", name,\n\t\"Properties.UserPoolConfig\",\n\t\"AuthenticationType is AMAZON_COGNITO_USER_POOLS but UserPoolConfig is not set; the API create fails because AppSync has no Cognito user pool to validate tokens against\",\n\t\"Set Properties.UserPoolConfig, or pick a different AuthenticationType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tresolve(name, \"Properties.AuthenticationType\") == \"AMAZON_COGNITO_USER_POOLS\"\n\t_pf_apicognitorequiresuserpoolconfig_absent(name, \"UserPoolConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-enhanced-metrics-values",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DataSourceLevelMetricsBehavior takes one of two values",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-api-enhanced-metrics-values\", \"ERROR\", name,\n\t\"Properties.EnhancedMetricsConfig.DataSourceLevelMetricsBehavior\",\n\tsprintf(\"DataSourceLevelMetricsBehavior '%s' is not FULL_REQUEST_DATA_SOURCE_METRICS or PER_DATA_SOURCE_METRICS; the API create rejects the value\", [v]),\n\t\"Use FULL_REQUEST_DATA_SOURCE_METRICS or PER_DATA_SOURCE_METRICS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-appsync-graphqlapi-enhancedmetricsconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tv := resolve(name, \"Properties.EnhancedMetricsConfig.DataSourceLevelMetricsBehavior\")\n\tis_string(v)\n\tnot v in {\"FULL_REQUEST_DATA_SOURCE_METRICS\", \"PER_DATA_SOURCE_METRICS\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-env-var-count-max",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An API carries at most 50 environment variables",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-api-env-var-count-max\", \"ERROR\", name,\n\t\"Properties.EnvironmentVariables\",\n\tsprintf(\"%d environment variables are set; the API create fails because an API is limited to 50\", [count(ev)]),\n\t\"Keep 50 or fewer environment variables\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_PutGraphqlApiEnvironmentVariables.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tev := resolve(name, \"Properties.EnvironmentVariables\")\n\tis_object(ev)\n\tcount(ev) > 50\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-env-var-key-max-length",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Environment variable keys are at most 64 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-api-env-var-key-max-length\", \"ERROR\", name,\n\t\"Properties.EnvironmentVariables\",\n\tsprintf(\"environment variable key is %d characters; the API create fails because a key must be 2-64 characters\", [count(k)]),\n\t\"Use an environment variable key of 2 to 64 characters\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_PutGraphqlApiEnvironmentVariables.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tev := resolve(name, \"Properties.EnvironmentVariables\")\n\tis_object(ev)\n\tsome k, _ in ev\n\tcount(k) > 64\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-env-var-key-min-length",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Environment variable keys are at least 2 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-api-env-var-key-min-length\", \"ERROR\", name,\n\t\"Properties.EnvironmentVariables\",\n\tsprintf(\"environment variable key '%s' is %d character(s); the API create fails because a key must be 2-64 characters\", [k, count(k)]),\n\t\"Use an environment variable key of 2 to 64 characters\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_PutGraphqlApiEnvironmentVariables.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tev := resolve(name, \"Properties.EnvironmentVariables\")\n\tis_object(ev)\n\tsome k, _ in ev\n\tcount(k) < 2\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-env-var-value-max-length",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Environment variable values are at most 512 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-api-env-var-value-max-length\", \"ERROR\", name,\n\t\"Properties.EnvironmentVariables\",\n\tsprintf(\"environment variable '%s' has a %d character value; the API create fails because a value is limited to 512 characters\", [k, count(v)]),\n\t\"Shorten the value to 512 characters or fewer\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_PutGraphqlApiEnvironmentVariables.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tev := resolve(name, \"Properties.EnvironmentVariables\")\n\tis_object(ev)\n\tsome k, v in ev\n\tis_string(v)\n\tcount(v) > 512\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-introspection-config-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "IntrospectionConfig takes one of ENABLED / DISABLED",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-api-introspection-config-value\", \"ERROR\", name,\n\t\"Properties.IntrospectionConfig\",\n\tsprintf(\"IntrospectionConfig '%s' is not one of ENABLED, DISABLED; the API create rejects the value\", [v]),\n\t\"Use one of ENABLED, DISABLED\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateGraphqlApi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tv := resolve(name, \"Properties.IntrospectionConfig\")\n\tis_string(v)\n\tnot v in {\"ENABLED\", \"DISABLED\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-key-expires-max",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An API key expires at most 365 days out",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ApiKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Clock-free subset of the 365-day cap: a value past the year 5138 is over the\n# cap whatever the deploy date, and is usually epoch milliseconds.\nviolation contains make_diag_full(\"pf-appsync-api-key-expires-max\", \"ERROR\", name,\n\t\"Properties.Expires\",\n\tsprintf(\"Expires is %v, which is centuries away; the API key create fails because the expiry must be at most 365 days after creation\", [e]),\n\t\"Set Expires to a Unix epoch time in seconds at most 365 days from the deploy\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiKey.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ApiKey\")\n\te := to_number(resolve(name, \"Properties.Expires\"))\n\te > 100000000000\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-key-expires-past",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An API key expiry is an absolute Unix timestamp in seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ApiKey"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine has no clock (time.now_ns is not available), so only values that\n# cannot be in the future under any deploy date are judged - typically a\n# duration or a millisecond value passed where epoch seconds are expected.\nviolation contains make_diag_full(\"pf-appsync-api-key-expires-past\", \"ERROR\", name,\n\t\"Properties.Expires\",\n\tsprintf(\"Expires is %v, which is before 2001-09-09; the API key create fails because the expiry has to be a future Unix timestamp in seconds\", [e]),\n\t\"Set Expires to a Unix epoch time in seconds between 1 and 365 days from the deploy\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiKey.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ApiKey\")\n\te := to_number(resolve(name, \"Properties.Expires\"))\n\te < 1000000000\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-lambda-auth-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "AWS_LAMBDA authentication needs LambdaAuthorizerConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apilambdaauthrequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-api-lambda-auth-requires-config\", \"ERROR\", name,\n\t\"Properties.LambdaAuthorizerConfig\",\n\t\"AuthenticationType is AWS_LAMBDA but LambdaAuthorizerConfig is not set; the API create fails because AppSync has no Lambda authorizer to validate tokens against\",\n\t\"Set Properties.LambdaAuthorizerConfig, or pick a different AuthenticationType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tresolve(name, \"Properties.AuthenticationType\") == \"AWS_LAMBDA\"\n\t_pf_apilambdaauthrequiresconfig_absent(name, \"LambdaAuthorizerConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-merged-requires-execution-role",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A MERGED API needs MergedApiExecutionRoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apimergedrequiresexecutionrole_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-api-merged-requires-execution-role\", \"ERROR\", name,\n\t\"Properties.MergedApiExecutionRoleArn\",\n\t\"ApiType is MERGED but MergedApiExecutionRoleArn is not set; the API create fails because a merged API needs a role to read its source APIs\",\n\t\"Set MergedApiExecutionRoleArn to a role AppSync can assume\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tresolve(name, \"Properties.ApiType\") == \"MERGED\"\n\t_pf_apimergedrequiresexecutionrole_absent(name, \"MergedApiExecutionRoleArn\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-oidc-issuer-scheme",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The OIDC issuer is an https URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-api-oidc-issuer-scheme\", \"ERROR\", name,\n\t\"Properties.OpenIDConnectConfig.Issuer\",\n\tsprintf(\"OpenIDConnectConfig.Issuer '%s' is not an https URL; the API create fails because AppSync fetches the OIDC discovery document over https\", [iss]),\n\t\"Use the issuer's https:// URL\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_OpenIDConnectConfig.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tiss := resolve(name, \"Properties.OpenIDConnectConfig.Issuer\")\n\tis_string(iss)\n\tnot startswith(iss, \"https://\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-oidc-requires-openid-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "OPENID_CONNECT authentication needs OpenIDConnectConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apioidcrequiresopenidconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-api-oidc-requires-openid-config\", \"ERROR\", name,\n\t\"Properties.OpenIDConnectConfig\",\n\t\"AuthenticationType is OPENID_CONNECT but OpenIDConnectConfig is not set; the API create fails because AppSync has no OIDC provider to validate tokens against\",\n\t\"Set Properties.OpenIDConnectConfig, or pick a different AuthenticationType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tresolve(name, \"Properties.AuthenticationType\") == \"OPENID_CONNECT\"\n\t_pf_apioidcrequiresopenidconfig_absent(name, \"OpenIDConnectConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-single-lambda-authorizer",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An API can have only one Lambda authorizer",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_apisinglelambdaauthorizer_types(n) := array.concat(\n\t[object.get(input.resources[n].properties, \"AuthenticationType\", \"\")],\n\t[p.value.AuthenticationType | some p in flatten_list(n, \"Properties.AdditionalAuthenticationProviders\")],\n)\n\nviolation contains make_diag_full(\"pf-appsync-api-single-lambda-authorizer\", \"ERROR\", name,\n\t\"Properties.AdditionalAuthenticationProviders\",\n\tsprintf(\"AWS_LAMBDA appears %d times across AuthenticationType and AdditionalAuthenticationProviders; the API create fails because an API can have at most one Lambda authorizer\", [count(lambdas)]),\n\t\"Keep a single AWS_LAMBDA authentication provider\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/security-authz.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tlambdas := [t | some t in _pf_apisinglelambdaauthorizer_types(name); t == \"AWS_LAMBDA\"]\n\tcount(lambdas) > 1\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-type-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "ApiType takes one of GRAPHQL / MERGED",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-api-type-value\", \"ERROR\", name,\n\t\"Properties.ApiType\",\n\tsprintf(\"ApiType '%s' is not one of GRAPHQL, MERGED; the API create rejects the value\", [v]),\n\t\"Use one of GRAPHQL, MERGED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tv := resolve(name, \"Properties.ApiType\")\n\tis_string(v)\n\tnot v in {\"GRAPHQL\", \"MERGED\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-userpool-default-action-with-additional",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DefaultAction must be ALLOW when additional providers are configured",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-api-userpool-default-action-with-additional\", \"ERROR\", name,\n\t\"Properties.UserPoolConfig.DefaultAction\",\n\t\"UserPoolConfig.DefaultAction is DENY while AdditionalAuthenticationProviders is set; the API create fails because the default action has to be ALLOW once more than one authentication mode is configured\",\n\t\"Set UserPoolConfig.DefaultAction: ALLOW, or drop AdditionalAuthenticationProviders\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-appsync-graphqlapi-userpoolconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tresolve(name, \"Properties.UserPoolConfig.DefaultAction\") == \"DENY\"\n\tcount(flatten_list(name, \"Properties.AdditionalAuthenticationProviders\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-appsync-api-visibility-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Visibility takes one of GLOBAL / PRIVATE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLApi"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-api-visibility-value\", \"ERROR\", name,\n\t\"Properties.Visibility\",\n\tsprintf(\"Visibility '%s' is not one of GLOBAL, PRIVATE; the API create rejects the value\", [v]),\n\t\"Use one of GLOBAL, PRIVATE\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateGraphqlApi.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tv := resolve(name, \"Properties.Visibility\")\n\tis_string(v)\n\tnot v in {\"GLOBAL\", \"PRIVATE\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-cache-behavior-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "ApiCachingBehavior takes one of FULL_REQUEST_CACHING / PER_RESOLVER_CACHING / OPERATION_LEVEL_CACHING",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ApiCache"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-cache-behavior-value\", \"ERROR\", name,\n\t\"Properties.ApiCachingBehavior\",\n\tsprintf(\"ApiCachingBehavior '%s' is not one of FULL_REQUEST_CACHING, PER_RESOLVER_CACHING, OPERATION_LEVEL_CACHING; the cache create rejects the value\", [v]),\n\t\"Use one of FULL_REQUEST_CACHING, PER_RESOLVER_CACHING, OPERATION_LEVEL_CACHING\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-apicache.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ApiCache\")\n\tv := resolve(name, \"Properties.ApiCachingBehavior\")\n\tis_string(v)\n\tnot v in {\"FULL_REQUEST_CACHING\", \"PER_RESOLVER_CACHING\", \"OPERATION_LEVEL_CACHING\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-cache-health-metrics-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "HealthMetricsConfig takes one of ENABLED / DISABLED",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ApiCache"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-cache-health-metrics-value\", \"ERROR\", name,\n\t\"Properties.HealthMetricsConfig\",\n\tsprintf(\"HealthMetricsConfig '%s' is not one of ENABLED, DISABLED; the cache create rejects the value\", [v]),\n\t\"Use one of ENABLED, DISABLED\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ApiCache\")\n\tv := resolve(name, \"Properties.HealthMetricsConfig\")\n\tis_string(v)\n\tnot v in {\"ENABLED\", \"DISABLED\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-cache-ttl-range",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "ApiCache TTL is between 1 and 3600 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ApiCache"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cachettlrange_bad(t) if t < 1\n\n_pf_cachettlrange_bad(t) if t > 3600\n\nviolation contains make_diag_full(\"pf-appsync-cache-ttl-range\", \"ERROR\", name,\n\t\"Properties.Ttl\",\n\tsprintf(\"Ttl is %v; the cache create fails because the TTL has to be between 1 and 3600 seconds\", [t]),\n\t\"Use a TTL between 1 and 3600 seconds\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ApiCache\")\n\tt := to_number(resolve(name, \"Properties.Ttl\"))\n\t_pf_cachettlrange_bad(t)\n}\n"
+  },
+  {
+    "id": "pf-appsync-cache-type-deprecated-instance",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The T2 and R4 cache instance types are retired",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ApiCache"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-cache-type-deprecated-instance\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"cache type '%s' belongs to a retired generation; the cache create fails because AppSync no longer provisions T2 or R4 cache instances\", [t]),\n\t\"Use a current generation type (SMALL, MEDIUM, LARGE, XLARGE, LARGE_2X, LARGE_4X, LARGE_8X, LARGE_12X)\",\n\t\"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ApiCache\")\n\tt := resolve(name, \"Properties.Type\")\n\tis_string(t)\n\tregex.match(`^(T2_|R4_)`, t)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-async",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support async functions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-async\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses async functions; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Write the handler synchronously\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\basync\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-class",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support class declarations",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-class\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses class declarations; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Use plain objects and functions\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\bclass\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-continue",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support continue statements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-continue\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses continue statements; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Restructure the loop body with an if\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\bcontinue\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-generator",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support generator functions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-generator\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler declares a generator function; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Build and return the list directly instead of yielding it\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`function\\s*\\*`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-increment-operator",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support ++ and --",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-increment-operator\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses ++ or --; the create call fails because the AppSync JavaScript runtime rejects those operators at parse time\",\n\t\"Use i = i + 1 instead\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`(\\+\\+|--)`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-instanceof",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support the instanceof operator",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-instanceof\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses the instanceof operator; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Test the shape of the value instead\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\binstanceof\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-promise",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support Promise",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-promise\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses Promise; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Use the synchronous ctx/util helpers instead of a Promise\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\bPromise\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-regex-literal",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support regular expression literals",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only an unambiguous literal position is judged (after =, ( or ,), so a\n# division is never read as the start of a regex.\nviolation contains make_diag_full(\"pf-appsync-code-no-regex-literal\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler contains a regular expression literal; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Use util.matches(pattern, value) instead of a /\\u2026/ literal\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`[=(,]\\s*/[^/*\\s][^/\\n]*/[gimsuy]*`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-this",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support this expressions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-this\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses this expressions; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Reference the value directly instead of through this\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\bthis\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-try",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support try statements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-try\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses try statements; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Check for the error condition instead of catching it\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\btry\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-no-while",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "APPSYNC_JS does not support while loops",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-code-no-while\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler uses while loops; the create call fails because the AppSync JavaScript runtime rejects them at parse time\",\n\t\"Use a for loop over a bounded list\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\tregex.match(`\\bwhile\\b`, code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-code-request-response-exports-required",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An APPSYNC_JS handler exports request and response",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration",
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_coderequestresponseexportsrequired_exported(code, what) if {\n\tpat := sprintf(`export\\s+(?:function\\s+%s\\b|(?:const|let|var)\\s+%s\\s*=|\\{[^}]*\\b%s\\b)`, [what, what, what])\n\tcount(regex.find_n(pat, code, -1)) > 0\n}\n\n_pf_coderequestresponseexportsrequired_missing(code) if not _pf_coderequestresponseexportsrequired_exported(code, \"request\")\n\n_pf_coderequestresponseexportsrequired_missing(code) if not _pf_coderequestresponseexportsrequired_exported(code, \"response\")\n\nviolation contains make_diag_full(\"pf-appsync-code-request-response-exports-required\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"the APPSYNC_JS handler does not export both request and response; the create call fails with \\\"Unable to find valid export for response\\\"\",\n\t\"Export a request(ctx) and a response(ctx) function from the handler\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html\") if {\n\tsome _t in {\"AWS::AppSync::FunctionConfiguration\", \"AWS::AppSync::Resolver\"}\n\tsome name in resources_of_type(_t)\n\tcode := resolve(name, \"Properties.Code\")\n\tis_string(code)\n\t_pf_coderequestresponseexportsrequired_missing(code)\n}\n"
+  },
+  {
+    "id": "pf-appsync-domain-cert-region",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The custom domain certificate lives in us-east-1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DomainName"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-domain-cert-region\", \"ERROR\", name,\n\t\"Properties.CertificateArn\",\n\tsprintf(\"the certificate is in region '%s'; the domain name create fails because an AppSync custom domain requires an ACM certificate in us-east-1\", [parts[3]]),\n\t\"Request or import the certificate in us-east-1 and use that ARN\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DomainName\")\n\tarn := resolve(name, \"Properties.CertificateArn\")\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) > 3\n\tparts[2] == \"acm\"\n\tparts[3] != \"us-east-1\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-config-matches-type",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Only the configuration block matching Type may be set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dsconfigmatchestype_cfg := {\n\t\"AMAZON_DYNAMODB\": \"DynamoDBConfig\",\n\t\"AWS_LAMBDA\": \"LambdaConfig\",\n\t\"HTTP\": \"HttpConfig\",\n\t\"RELATIONAL_DATABASE\": \"RelationalDatabaseConfig\",\n\t\"AMAZON_EVENTBRIDGE\": \"EventBridgeConfig\",\n\t\"AMAZON_OPENSEARCH_SERVICE\": \"OpenSearchServiceConfig\",\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-config-matches-type\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"Type is %s but %s is set as well; the data source create fails with \\\"Multiple configs given for data source of type\\\"\", [t, cfg]),\n\t\"Keep only the configuration block that matches Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tt := resolve(name, \"Properties.Type\")\n\tsome cfg in {\"DynamoDBConfig\", \"LambdaConfig\", \"HttpConfig\", \"RelationalDatabaseConfig\", \"EventBridgeConfig\", \"OpenSearchServiceConfig\"}\n\tcfg != _pf_dsconfigmatchestype_cfg[t]\n\tis_object(resolve(name, sprintf(\"Properties.%s\", [cfg])))\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-delta-sync-requires-versioned",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DeltaSyncConfig needs a versioned table",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dsdeltasyncrequiresversioned_versioned(n) if resolve(n, \"Properties.DynamoDBConfig.Versioned\") == true\n\n_pf_dsdeltasyncrequiresversioned_versioned(n) if resolve(n, \"Properties.DynamoDBConfig.Versioned\") == \"true\"\n\nviolation contains make_diag_full(\"pf-appsync-ds-delta-sync-requires-versioned\", \"ERROR\", name,\n\t\"Properties.DynamoDBConfig.DeltaSyncConfig\",\n\t\"DynamoDBConfig.DeltaSyncConfig is set but Versioned is not true; the data source create fails because delta sync is only available on a versioned data source\",\n\t\"Set DynamoDBConfig.Versioned: true, or drop DeltaSyncConfig\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tis_object(resolve(name, \"Properties.DynamoDBConfig.DeltaSyncConfig\"))\n\tnot _pf_dsdeltasyncrequiresversioned_versioned(name)\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-dynamodb-region-mismatch",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DynamoDBConfig.AwsRegion must be a region name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ds-dynamodb-region-mismatch\", \"ERROR\", name,\n\t\"Properties.DynamoDBConfig.AwsRegion\",\n\tsprintf(\"DynamoDBConfig.AwsRegion '%s' is not a region name; the data source create fails because there is no such region to reach the table in\", [r]),\n\t\"Use a region name such as us-east-1\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tr := resolve(name, \"Properties.DynamoDBConfig.AwsRegion\")\n\tis_string(r)\n\tnot regex.match(`^[a-z]{2}(-[a-z]+)+-[0-9]$`, r)\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-dynamodb-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A AMAZON_DYNAMODB data source needs DynamoDBConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dsdynamodbrequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-dynamodb-requires-config\", \"ERROR\", name,\n\t\"Properties.DynamoDBConfig\",\n\t\"Type is AMAZON_DYNAMODB but DynamoDBConfig is not set; the data source create has nothing to connect to\",\n\t\"Set Properties.DynamoDBConfig, or use a different Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"AMAZON_DYNAMODB\"\n\t_pf_dsdynamodbrequiresconfig_absent(name, \"DynamoDBConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-eventbridge-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A AMAZON_EVENTBRIDGE data source needs EventBridgeConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dseventbridgerequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-eventbridge-requires-config\", \"ERROR\", name,\n\t\"Properties.EventBridgeConfig\",\n\t\"Type is AMAZON_EVENTBRIDGE but EventBridgeConfig is not set; the data source create has nothing to connect to\",\n\t\"Set Properties.EventBridgeConfig, or use a different Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"AMAZON_EVENTBRIDGE\"\n\t_pf_dseventbridgerequiresconfig_absent(name, \"EventBridgeConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-http-auth-type-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "AuthorizationType takes AWS_IAM",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-ds-http-auth-type-value\", \"ERROR\", name,\n\t\"Properties.HttpConfig.AuthorizationConfig.AuthorizationType\",\n\tsprintf(\"AuthorizationType '%s' is not AWS_IAM; the data source create rejects the value\", [v]),\n\t\"Use AWS_IAM\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tv := resolve(name, \"Properties.HttpConfig.AuthorizationConfig.AuthorizationType\")\n\tis_string(v)\n\tnot v in {\"AWS_IAM\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-http-endpoint-scheme",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An HTTP endpoint is an http or https URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dshttpendpointscheme_ok(e) if startswith(e, \"http://\")\n\n_pf_dshttpendpointscheme_ok(e) if startswith(e, \"https://\")\n\nviolation contains make_diag_full(\"pf-appsync-ds-http-endpoint-scheme\", \"ERROR\", name,\n\t\"Properties.HttpConfig.Endpoint\",\n\tsprintf(\"HttpConfig.Endpoint '%s' is not an http or https URL; the data source create rejects the endpoint\", [e]),\n\t\"Use a full http:// or https:// endpoint\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\te := resolve(name, \"Properties.HttpConfig.Endpoint\")\n\tis_string(e)\n\tnot _pf_dshttpendpointscheme_ok(e)\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-http-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A HTTP data source needs HttpConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dshttprequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-http-requires-config\", \"ERROR\", name,\n\t\"Properties.HttpConfig\",\n\t\"Type is HTTP but HttpConfig is not set; the data source create has nothing to connect to\",\n\t\"Set Properties.HttpConfig, or use a different Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"HTTP\"\n\t_pf_dshttprequiresconfig_absent(name, \"HttpConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-lambda-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A AWS_LAMBDA data source needs LambdaConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dslambdarequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-lambda-requires-config\", \"ERROR\", name,\n\t\"Properties.LambdaConfig\",\n\t\"Type is AWS_LAMBDA but LambdaConfig is not set; the data source create has nothing to connect to\",\n\t\"Set Properties.LambdaConfig, or use a different Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"AWS_LAMBDA\"\n\t_pf_dslambdarequiresconfig_absent(name, \"LambdaConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-lambda-requires-service-role",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A data source that reaches another service needs ServiceRoleArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# NONE and HTTP need no role, so only the types with their own configuration\n# block are judged. An HTTP data source with no role creates fine (probed\n# 2026-09-12), so HTTP is left out even though it has a config block.\n_pf_dslambdarequiresservicerole_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n_pf_dslambdarequiresservicerole_cfg := {\n\t\"AMAZON_DYNAMODB\": \"DynamoDBConfig\",\n\t\"AWS_LAMBDA\": \"LambdaConfig\",\n\t\"HTTP\": \"HttpConfig\",\n\t\"RELATIONAL_DATABASE\": \"RelationalDatabaseConfig\",\n\t\"AMAZON_EVENTBRIDGE\": \"EventBridgeConfig\",\n\t\"AMAZON_OPENSEARCH_SERVICE\": \"OpenSearchServiceConfig\",\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-lambda-requires-service-role\", \"ERROR\", name,\n\t\"Properties.ServiceRoleArn\",\n\tsprintf(\"a %s data source is configured but ServiceRoleArn is not set; the data source create fails because AppSync has no role to call the backend with\", [t]),\n\t\"Set ServiceRoleArn to a role AppSync can assume to reach the backend\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tt := resolve(name, \"Properties.Type\")\n\tt != \"HTTP\"\n\tkey := _pf_dslambdarequiresservicerole_cfg[t]\n\tnot _pf_dslambdarequiresservicerole_absent(name, key)\n\t_pf_dslambdarequiresservicerole_absent(name, \"ServiceRoleArn\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-metrics-config-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "MetricsConfig takes ENABLED / DISABLED",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-ds-metrics-config-value\", \"ERROR\", name,\n\t\"Properties.MetricsConfig\",\n\tsprintf(\"MetricsConfig '%s' is not ENABLED or DISABLED; the data source create rejects the value\", [v]),\n\t\"Use ENABLED or DISABLED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tv := resolve(name, \"Properties.MetricsConfig\")\n\tis_string(v)\n\tnot v in {\"ENABLED\", \"DISABLED\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-none-forbids-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A NONE data source takes no configuration block",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ds-none-forbids-config\", \"ERROR\", name,\n\t\"Properties.Type\",\n\tsprintf(\"Type is NONE but %s is also set; the data source create fails with \\\"Configs were given for data source of type None, no config is expected.\\\"\", [cfg]),\n\t\"Drop the configuration block, or set the Type it belongs to\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"NONE\"\n\tsome cfg in {\"DynamoDBConfig\", \"LambdaConfig\", \"HttpConfig\", \"RelationalDatabaseConfig\", \"EventBridgeConfig\", \"OpenSearchServiceConfig\"}\n\tis_object(resolve(name, sprintf(\"Properties.%s\", [cfg])))\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-opensearch-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A AMAZON_OPENSEARCH_SERVICE data source needs OpenSearchServiceConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dsopensearchrequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-opensearch-requires-config\", \"ERROR\", name,\n\t\"Properties.OpenSearchServiceConfig\",\n\t\"Type is AMAZON_OPENSEARCH_SERVICE but OpenSearchServiceConfig is not set; the data source create has nothing to connect to\",\n\t\"Set Properties.OpenSearchServiceConfig, or use a different Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"AMAZON_OPENSEARCH_SERVICE\"\n\t_pf_dsopensearchrequiresconfig_absent(name, \"OpenSearchServiceConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-rds-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A RELATIONAL_DATABASE data source needs RelationalDatabaseConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_dsrdsrequiresconfig_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ds-rds-requires-config\", \"ERROR\", name,\n\t\"Properties.RelationalDatabaseConfig\",\n\t\"Type is RELATIONAL_DATABASE but RelationalDatabaseConfig is not set; the data source create has nothing to connect to\",\n\t\"Set Properties.RelationalDatabaseConfig, or use a different Type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(name, \"Properties.Type\") == \"RELATIONAL_DATABASE\"\n\t_pf_dsrdsrequiresconfig_absent(name, \"RelationalDatabaseConfig\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ds-rds-source-type-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "RelationalDatabaseSourceType takes RDS_HTTP_ENDPOINT",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::DataSource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-ds-rds-source-type-value\", \"ERROR\", name,\n\t\"Properties.RelationalDatabaseConfig.RelationalDatabaseSourceType\",\n\tsprintf(\"RelationalDatabaseSourceType '%s' is not RDS_HTTP_ENDPOINT; the data source create rejects the value\", [v]),\n\t\"Use RDS_HTTP_ENDPOINT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::DataSource\")\n\tv := resolve(name, \"Properties.RelationalDatabaseConfig.RelationalDatabaseSourceType\")\n\tis_string(v)\n\tnot v in {\"RDS_HTTP_ENDPOINT\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-auth-provider-cognito-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An AMAZON_COGNITO_USER_POOLS auth provider needs CognitoConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ev-auth-provider-cognito-requires-config\", \"ERROR\", name,\n\t\"Properties.EventConfig.AuthProviders\",\n\t\"an EventConfig.AuthProviders entry is AMAZON_COGNITO_USER_POOLS but carries no CognitoConfig; the API create fails because AppSync has nothing to validate tokens against\",\n\t\"Set CognitoConfig on that auth provider, or use a different AuthType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tsome p in flatten_list(name, \"Properties.EventConfig.AuthProviders\")\n\tp.value.AuthType == \"AMAZON_COGNITO_USER_POOLS\"\n\tobject.get(p.value, \"CognitoConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-auth-provider-duplicate-type",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Each auth type appears once in AuthProviders",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ev-auth-provider-duplicate-type\", \"ERROR\", name,\n\t\"Properties.EventConfig.AuthProviders\",\n\tsprintf(\"EventConfig.AuthProviders lists '%s' more than once; the API create rejects duplicate authentication providers\", [p.value.AuthType]),\n\t\"List each auth type once\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tps := flatten_list(name, \"Properties.EventConfig.AuthProviders\")\n\tsome i, p in ps\n\tsome j, q in ps\n\tj > i\n\tq.value.AuthType == p.value.AuthType\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-auth-provider-lambda-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An AWS_LAMBDA auth provider needs LambdaAuthorizerConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ev-auth-provider-lambda-requires-config\", \"ERROR\", name,\n\t\"Properties.EventConfig.AuthProviders\",\n\t\"an EventConfig.AuthProviders entry is AWS_LAMBDA but carries no LambdaAuthorizerConfig; the API create fails because AppSync has nothing to validate tokens against\",\n\t\"Set LambdaAuthorizerConfig on that auth provider, or use a different AuthType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tsome p in flatten_list(name, \"Properties.EventConfig.AuthProviders\")\n\tp.value.AuthType == \"AWS_LAMBDA\"\n\tobject.get(p.value, \"LambdaAuthorizerConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-auth-provider-oidc-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An OPENID_CONNECT auth provider needs OpenIDConnectConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ev-auth-provider-oidc-requires-config\", \"ERROR\", name,\n\t\"Properties.EventConfig.AuthProviders\",\n\t\"an EventConfig.AuthProviders entry is OPENID_CONNECT but carries no OpenIDConnectConfig; the API create fails because AppSync has nothing to validate tokens against\",\n\t\"Set OpenIDConnectConfig on that auth provider, or use a different AuthType\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tsome p in flatten_list(name, \"Properties.EventConfig.AuthProviders\")\n\tp.value.AuthType == \"OPENID_CONNECT\"\n\tobject.get(p.value, \"OpenIDConnectConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-connection-auth-mode-in-providers",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "ConnectionAuthModes may only use configured auth providers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evconnectionauthmodeinproviders_providers(n) := {p.value.AuthType |\n\tsome p in flatten_list(n, \"Properties.EventConfig.AuthProviders\")\n}\n\nviolation contains make_diag_full(\"pf-appsync-ev-connection-auth-mode-in-providers\", \"ERROR\", name,\n\t\"Properties.EventConfig.ConnectionAuthModes\",\n\tsprintf(\"ConnectionAuthModes uses '%s' but EventConfig.AuthProviders does not configure it; the API create fails because the mode has no provider to validate against\", [m.value.AuthType]),\n\t\"Add the auth type to EventConfig.AuthProviders, or use one that is already there\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tsome m in flatten_list(name, \"Properties.EventConfig.ConnectionAuthModes\")\n\tnot m.value.AuthType in _pf_evconnectionauthmodeinproviders_providers(name)\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-publish-auth-mode-in-providers",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DefaultPublishAuthModes may only use configured auth providers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evpublishauthmodeinproviders_providers(n) := {p.value.AuthType |\n\tsome p in flatten_list(n, \"Properties.EventConfig.AuthProviders\")\n}\n\nviolation contains make_diag_full(\"pf-appsync-ev-publish-auth-mode-in-providers\", \"ERROR\", name,\n\t\"Properties.EventConfig.DefaultPublishAuthModes\",\n\tsprintf(\"DefaultPublishAuthModes uses '%s' but EventConfig.AuthProviders does not configure it; the API create fails because the mode has no provider to validate against\", [m.value.AuthType]),\n\t\"Add the auth type to EventConfig.AuthProviders, or use one that is already there\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tsome m in flatten_list(name, \"Properties.EventConfig.DefaultPublishAuthModes\")\n\tnot m.value.AuthType in _pf_evpublishauthmodeinproviders_providers(name)\n}\n"
+  },
+  {
+    "id": "pf-appsync-ev-subscribe-auth-mode-in-providers",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DefaultSubscribeAuthModes may only use configured auth providers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Api"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_evsubscribeauthmodeinproviders_providers(n) := {p.value.AuthType |\n\tsome p in flatten_list(n, \"Properties.EventConfig.AuthProviders\")\n}\n\nviolation contains make_diag_full(\"pf-appsync-ev-subscribe-auth-mode-in-providers\", \"ERROR\", name,\n\t\"Properties.EventConfig.DefaultSubscribeAuthModes\",\n\tsprintf(\"DefaultSubscribeAuthModes uses '%s' but EventConfig.AuthProviders does not configure it; the API create fails because the mode has no provider to validate against\", [m.value.AuthType]),\n\t\"Add the auth type to EventConfig.AuthProviders, or use one that is already there\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Api\")\n\tsome m in flatten_list(name, \"Properties.EventConfig.DefaultSubscribeAuthModes\")\n\tnot m.value.AuthType in _pf_evsubscribeauthmodeinproviders_providers(name)\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-code-and-mapping-template-exclusive",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Code and mapping templates are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fncodeandmappingtemplateexclusive_vtl(n) if is_string(resolve(n, \"Properties.RequestMappingTemplate\"))\n\n_pf_fncodeandmappingtemplateexclusive_vtl(n) if is_string(resolve(n, \"Properties.ResponseMappingTemplate\"))\n\nviolation contains make_diag_full(\"pf-appsync-fn-code-and-mapping-template-exclusive\", \"ERROR\", name,\n\t\"Properties.RequestMappingTemplate\",\n\t\"both Code and a VTL mapping template are set; the function create rejects a handler written twice\",\n\t\"Keep either Code (APPSYNC_JS) or the VTL mapping templates\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tis_string(resolve(name, \"Properties.Code\"))\n\t_pf_fncodeandmappingtemplateexclusive_vtl(name)\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-code-and-s3-location-exclusive",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Code and CodeS3Location are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-fn-code-and-s3-location-exclusive\", \"ERROR\", name,\n\t\"Properties.CodeS3Location\",\n\t\"both Code and CodeS3Location are set; the function create rejects two sources for the same handler\",\n\t\"Keep either Code or CodeS3Location\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tis_string(resolve(name, \"Properties.Code\"))\n\tis_string(resolve(name, \"Properties.CodeS3Location\"))\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-code-requires-runtime",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Code needs a Runtime",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fncoderequiresruntime_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-fn-code-requires-runtime\", \"ERROR\", name,\n\t\"Properties.Runtime\",\n\t\"Code is set but Runtime is not; the function create fails because AppSync does not know which runtime to run the handler on\",\n\t\"Set Properties.Runtime to { Name: APPSYNC_JS, RuntimeVersion: 1.0.0 }\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tis_string(resolve(name, \"Properties.Code\"))\n\t_pf_fncoderequiresruntime_absent(name, \"Runtime\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-data-source-exists",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DataSourceName names a data source on the same API",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the API is a sibling resource: every data source of an API\n# created in this template has to be created here too.\n_pf_fndatasourceexists_has(api, dsn) if {\n\tsome d in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(d, \"Properties.ApiId\") == api\n\tresolve(d, \"Properties.Name\") == dsn\n}\n\nviolation contains make_diag_full(\"pf-appsync-fn-data-source-exists\", \"ERROR\", name,\n\t\"Properties.DataSourceName\",\n\tsprintf(\"data source '%s' is never created on API '%s' in this template; the function create fails because the data source does not exist\", [dsn, api]),\n\t\"Add an AWS::AppSync::DataSource with that Name on the same API\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tdsn := resolve(name, \"Properties.DataSourceName\")\n\tis_string(dsn)\n\tnot _pf_fndatasourceexists_has(api, dsn)\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-function-version-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "FunctionVersion is 2018-05-29",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-fn-function-version-value\", \"ERROR\", name,\n\t\"Properties.FunctionVersion\",\n\tsprintf(\"FunctionVersion '%s' does not exist; the function create fails because the only version is 2018-05-29\", [v]),\n\t\"Use FunctionVersion: 2018-05-29\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tv := resolve(name, \"Properties.FunctionVersion\")\n\tis_string(v)\n\tv != \"2018-05-29\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-max-batch-size-requires-lambda-ds",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "MaxBatchSize only applies to a Lambda data source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the data source is a sibling resource, so its Type is\n# visible in this template.\n_pf_fnmaxbatchsizerequireslambdads_ds(api, dsn) := d if {\n\tsome d in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(d, \"Properties.ApiId\") == api\n\tresolve(d, \"Properties.Name\") == dsn\n}\n\nviolation contains make_diag_full(\"pf-appsync-fn-max-batch-size-requires-lambda-ds\", \"ERROR\", name,\n\t\"Properties.MaxBatchSize\",\n\tsprintf(\"MaxBatchSize is set but data source '%s' is not AWS_LAMBDA; the function create fails because batching is only available on a direct Lambda resolver\", [dsn]),\n\t\"Point DataSourceName at an AWS_LAMBDA data source, or drop MaxBatchSize\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tto_number(resolve(name, \"Properties.MaxBatchSize\")) > 0\n\tapi := resolve(name, \"Properties.ApiId\")\n\tdsn := resolve(name, \"Properties.DataSourceName\")\n\td := _pf_fnmaxbatchsizerequireslambdads_ds(api, dsn)\n\tresolve(d, \"Properties.Type\") != \"AWS_LAMBDA\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-runtime-name-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Runtime.Name takes APPSYNC_JS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-fn-runtime-name-value\", \"ERROR\", name,\n\t\"Properties.Runtime.Name\",\n\tsprintf(\"Runtime.Name '%s' is not APPSYNC_JS; the function create rejects the value\", [v]),\n\t\"Use APPSYNC_JS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tv := resolve(name, \"Properties.Runtime.Name\")\n\tis_string(v)\n\tnot v in {\"APPSYNC_JS\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-runtime-requires-code",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A Runtime needs Code",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fnruntimerequirescode_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-fn-runtime-requires-code\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"Runtime is set but Code is not; the function create fails because an APPSYNC_JS runtime has no handler to run\",\n\t\"Set Properties.Code (or CodeS3Location), or drop Runtime and use mapping templates\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tis_object(resolve(name, \"Properties.Runtime\"))\n\t_pf_fnruntimerequirescode_absent(name, \"Code\")\n\t_pf_fnruntimerequirescode_absent(name, \"CodeS3Location\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-runtime-version-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The APPSYNC_JS runtime version is 1.0.0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-fn-runtime-version-value\", \"ERROR\", name,\n\t\"Properties.Runtime.RuntimeVersion\",\n\tsprintf(\"RuntimeVersion '%s' does not exist; the function create fails because APPSYNC_JS only has version 1.0.0\", [v]),\n\t\"Use RuntimeVersion: 1.0.0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tresolve(name, \"Properties.Runtime.Name\") == \"APPSYNC_JS\"\n\tv := resolve(name, \"Properties.Runtime.RuntimeVersion\")\n\tis_string(v)\n\tv != \"1.0.0\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-sync-conflict-detection-none-with-handler",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "ConflictDetection NONE takes no ConflictHandler",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-fn-sync-conflict-detection-none-with-handler\", \"ERROR\", name,\n\t\"Properties.SyncConfig.ConflictHandler\",\n\tsprintf(\"SyncConfig.ConflictDetection is NONE but ConflictHandler is '%s'; the function create rejects a conflict handler when conflict detection is off\", [sc.ConflictHandler]),\n\t\"Set ConflictDetection: VERSION, or drop ConflictHandler\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tsc := resolve(name, \"Properties.SyncConfig\")\n\tis_object(sc)\n\tsc.ConflictDetection == \"NONE\"\n\tobject.get(sc, \"ConflictHandler\", \"NONE\") != \"NONE\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-sync-conflict-handler-lambda-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A LAMBDA conflict handler needs LambdaConflictHandlerConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-fn-sync-conflict-handler-lambda-requires-config\", \"ERROR\", name,\n\t\"Properties.SyncConfig.LambdaConflictHandlerConfig\",\n\t\"SyncConfig.ConflictHandler is LAMBDA but LambdaConflictHandlerConfig is not set; the function create fails because there is no function to resolve conflicts with\",\n\t\"Set SyncConfig.LambdaConflictHandlerConfig, or use a different ConflictHandler\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tsc := resolve(name, \"Properties.SyncConfig\")\n\tis_object(sc)\n\tsc.ConflictHandler == \"LAMBDA\"\n\tobject.get(sc, \"LambdaConflictHandlerConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-fn-vtl-requires-function-version",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A VTL function needs FunctionVersion",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::FunctionConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_fnvtlrequiresfunctionversion_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-fn-vtl-requires-function-version\", \"ERROR\", name,\n\t\"Properties.FunctionVersion\",\n\t\"the function uses VTL mapping templates but FunctionVersion is not set; the function create fails because a VTL function is versioned\",\n\t\"Set FunctionVersion: 2018-05-29, or use Code with an APPSYNC_JS Runtime\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::FunctionConfiguration\")\n\tis_string(resolve(name, \"Properties.RequestMappingTemplate\"))\n\t_pf_fnvtlrequiresfunctionversion_absent(name, \"Runtime\")\n\t_pf_fnvtlrequiresfunctionversion_absent(name, \"FunctionVersion\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ns-auth-mode-in-api-providers",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A namespace may only use auth modes its API configures",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ChannelNamespace"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the API is a sibling resource, so its auth providers are\n# visible in this template.\n_pf_nsauthmodeinapiproviders_providers(n) := {p.value.AuthType |\n\tsome p in flatten_list(n, \"Properties.EventConfig.AuthProviders\")\n}\n\nviolation contains make_diag_full(\"pf-appsync-ns-auth-mode-in-api-providers\", \"ERROR\", name,\n\t\"Properties.PublishAuthModes\",\n\tsprintf(\"the namespace uses '%s' but API '%s' does not configure it in EventConfig.AuthProviders; the namespace create fails because the mode has no provider\", [m.value.AuthType, api]),\n\t\"Add the auth type to the API's EventConfig.AuthProviders, or use one that is already there\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-channelnamespace.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ChannelNamespace\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::AppSync::Api\")\n\tsome f in [\"PublishAuthModes\", \"SubscribeAuthModes\"]\n\tsome m in flatten_list(name, sprintf(\"Properties.%s\", [f]))\n\tnot m.value.AuthType in _pf_nsauthmodeinapiproviders_providers(api)\n}\n"
+  },
+  {
+    "id": "pf-appsync-ns-code-handlers-s3-exclusive",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "CodeHandlers and CodeS3Location are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ChannelNamespace"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ns-code-handlers-s3-exclusive\", \"ERROR\", name,\n\t\"Properties.CodeS3Location\",\n\t\"both CodeHandlers and CodeS3Location are set; the namespace create rejects two sources for the same handler code\",\n\t\"Keep either CodeHandlers or CodeS3Location\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-channelnamespace.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ChannelNamespace\")\n\tis_string(resolve(name, \"Properties.CodeHandlers\"))\n\tis_string(resolve(name, \"Properties.CodeS3Location\"))\n}\n"
+  },
+  {
+    "id": "pf-appsync-ns-handler-code-requires-code-handlers",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A CODE handler needs handler code",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ChannelNamespace"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_nshandlercoderequirescodehandlers_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-ns-handler-code-requires-code-handlers\", \"ERROR\", name,\n\t\"Properties.CodeHandlers\",\n\tsprintf(\"HandlerConfigs.%s.Behavior is CODE but neither CodeHandlers nor CodeS3Location is set; the namespace create has no handler code to run\", [k]),\n\t\"Set CodeHandlers (or CodeS3Location), or use Behavior: DIRECT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-channelnamespace.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ChannelNamespace\")\n\thc := resolve(name, \"Properties.HandlerConfigs\")\n\tis_object(hc)\n\tsome k, h in hc\n\th.Behavior == \"CODE\"\n\t_pf_nshandlercoderequirescodehandlers_absent(name, \"CodeHandlers\")\n\t_pf_nshandlercoderequirescodehandlers_absent(name, \"CodeS3Location\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-ns-handler-lambda-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A DIRECT handler needs LambdaConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ChannelNamespace"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-ns-handler-lambda-requires-config\", \"ERROR\", name,\n\t\"Properties.HandlerConfigs\",\n\tsprintf(\"HandlerConfigs.%s.Behavior is DIRECT but its Integration has no LambdaConfig; the namespace create fails because a direct integration is invoked as a Lambda function\", [k]),\n\t\"Set Integration.LambdaConfig, or use Behavior: CODE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-channelnamespace.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ChannelNamespace\")\n\thc := resolve(name, \"Properties.HandlerConfigs\")\n\tis_object(hc)\n\tsome k, h in hc\n\th.Behavior == \"DIRECT\"\n\tobject.get(h.Integration, \"LambdaConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-ns-integration-data-source-exists",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A handler integration names a data source on the same API",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::ChannelNamespace"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the API is a sibling resource: every data source of an API\n# created in this template has to be created here too.\n_pf_nsintegrationdatasourceexists_has(api, dsn) if {\n\tsome d in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(d, \"Properties.ApiId\") == api\n\tresolve(d, \"Properties.Name\") == dsn\n}\n\nviolation contains make_diag_full(\"pf-appsync-ns-integration-data-source-exists\", \"ERROR\", name,\n\t\"Properties.HandlerConfigs\",\n\tsprintf(\"HandlerConfigs.%s.Integration names data source '%s', which this template never creates on API '%s'; the namespace create fails because the data source does not exist\", [k, dsn, api]),\n\t\"Add an AWS::AppSync::DataSource with that Name on the same API\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-channelnamespace.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::ChannelNamespace\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::AppSync::Api\")\n\thc := resolve(name, \"Properties.HandlerConfigs\")\n\tis_object(hc)\n\tsome k, h in hc\n\tdsn := h.Integration.DataSourceName\n\tis_string(dsn)\n\tnot _pf_nsintegrationdatasourceexists_has(api, dsn)\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-caching-ttl-range",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "CachingConfig.Ttl is between 1 and 3600 seconds",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rescachingttlrange_bad(t) if t < 1\n\n_pf_rescachingttlrange_bad(t) if t > 3600\n\nviolation contains make_diag_full(\"pf-appsync-res-caching-ttl-range\", \"ERROR\", name,\n\t\"Properties.CachingConfig.Ttl\",\n\tsprintf(\"CachingConfig.Ttl is %v; the resolver create fails because the TTL has to be between 1 and 3600 seconds\", [t]),\n\t\"Use a TTL between 1 and 3600 seconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tt := to_number(resolve(name, \"Properties.CachingConfig.Ttl\"))\n\t_pf_rescachingttlrange_bad(t)\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-code-and-mapping-template-exclusive",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Code and mapping templates are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rescodeandmappingtemplateexclusive_vtl(n) if is_string(resolve(n, \"Properties.RequestMappingTemplate\"))\n\n_pf_rescodeandmappingtemplateexclusive_vtl(n) if is_string(resolve(n, \"Properties.ResponseMappingTemplate\"))\n\nviolation contains make_diag_full(\"pf-appsync-res-code-and-mapping-template-exclusive\", \"ERROR\", name,\n\t\"Properties.RequestMappingTemplate\",\n\t\"both Code and a VTL mapping template are set; the resolver create rejects a handler written twice\",\n\t\"Keep either Code (APPSYNC_JS) or the VTL mapping templates\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tis_string(resolve(name, \"Properties.Code\"))\n\t_pf_rescodeandmappingtemplateexclusive_vtl(name)\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-code-and-s3-location-exclusive",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Code and CodeS3Location are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-code-and-s3-location-exclusive\", \"ERROR\", name,\n\t\"Properties.CodeS3Location\",\n\t\"both Code and CodeS3Location are set; the resolver create rejects two sources for the same handler\",\n\t\"Keep either Code or CodeS3Location\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tis_string(resolve(name, \"Properties.Code\"))\n\tis_string(resolve(name, \"Properties.CodeS3Location\"))\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-code-requires-runtime",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Code needs a Runtime",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_rescoderequiresruntime_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-code-requires-runtime\", \"ERROR\", name,\n\t\"Properties.Runtime\",\n\t\"Code is set but Runtime is not; the resolver create fails because AppSync does not know which runtime to run the handler on\",\n\t\"Set Properties.Runtime to { Name: APPSYNC_JS, RuntimeVersion: 1.0.0 }\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tis_string(resolve(name, \"Properties.Code\"))\n\t_pf_rescoderequiresruntime_absent(name, \"Runtime\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-data-source-exists",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "DataSourceName names a data source on the same API",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the API is a sibling resource: every data source of an API\n# created in this template has to be created here too.\n_pf_resdatasourceexists_has(api, dsn) if {\n\tsome d in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(d, \"Properties.ApiId\") == api\n\tresolve(d, \"Properties.Name\") == dsn\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-data-source-exists\", \"ERROR\", name,\n\t\"Properties.DataSourceName\",\n\tsprintf(\"data source '%s' is never created on API '%s' in this template; the resolver create fails because the data source does not exist\", [dsn, api]),\n\t\"Add an AWS::AppSync::DataSource with that Name on the same API\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tdsn := resolve(name, \"Properties.DataSourceName\")\n\tis_string(dsn)\n\tnot _pf_resdatasourceexists_has(api, dsn)\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-field-in-schema",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "FieldName must exist on the type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when an inline schema for the same API is a sibling resource, and\n# only when the type itself is found (res-type-field-in-schema owns the rest).\n_pf_resfieldinschema_sdl(api) := s if {\n\tsome g in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tresolve(g, \"Properties.ApiId\") == api\n\ts := resolve(g, \"Properties.Definition\")\n\tis_string(s)\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-field-in-schema\", \"ERROR\", name,\n\t\"Properties.FieldName\",\n\tsprintf(\"the resolver attaches to field '%s' of type '%s', which the schema in this template does not declare; the resolver create fails because there is no such field\", [f, t]),\n\t\"Attach the resolver to a field the schema declares on that type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tsdl := _pf_resfieldinschema_sdl(api)\n\tt := resolve(name, \"Properties.TypeName\")\n\tis_string(t)\n\tf := resolve(name, \"Properties.FieldName\")\n\tis_string(f)\n\tsome b in regex.find_all_string_submatch_n(sprintf(`type\\s+%s\\b[^{]*\\{([^}]*)\\}`, [t]), sdl, -1)\n\tcount(regex.find_n(sprintf(`\\b%s\\s*[(:]`, [f]), b[1], -1)) == 0\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-kind-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Kind takes UNIT / PIPELINE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-res-kind-value\", \"ERROR\", name,\n\t\"Properties.Kind\",\n\tsprintf(\"Kind '%s' is not UNIT or PIPELINE; the resolver create rejects the value\", [v]),\n\t\"Use UNIT or PIPELINE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tv := resolve(name, \"Properties.Kind\")\n\tis_string(v)\n\tnot v in {\"UNIT\", \"PIPELINE\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-max-batch-size-requires-lambda-ds",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "MaxBatchSize only applies to a Lambda data source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the data source is a sibling resource, so its Type is\n# visible in this template.\n_pf_resmaxbatchsizerequireslambdads_ds(api, dsn) := d if {\n\tsome d in resources_of_type(\"AWS::AppSync::DataSource\")\n\tresolve(d, \"Properties.ApiId\") == api\n\tresolve(d, \"Properties.Name\") == dsn\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-max-batch-size-requires-lambda-ds\", \"ERROR\", name,\n\t\"Properties.MaxBatchSize\",\n\tsprintf(\"MaxBatchSize is set but data source '%s' is not AWS_LAMBDA; the resolver create fails because batching is only available on a direct Lambda resolver\", [dsn]),\n\t\"Point DataSourceName at an AWS_LAMBDA data source, or drop MaxBatchSize\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tto_number(resolve(name, \"Properties.MaxBatchSize\")) > 0\n\tapi := resolve(name, \"Properties.ApiId\")\n\tdsn := resolve(name, \"Properties.DataSourceName\")\n\td := _pf_resmaxbatchsizerequireslambdads_ds(api, dsn)\n\tresolve(d, \"Properties.Type\") != \"AWS_LAMBDA\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-metrics-config-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "MetricsConfig takes ENABLED / DISABLED",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-res-metrics-config-value\", \"ERROR\", name,\n\t\"Properties.MetricsConfig\",\n\tsprintf(\"MetricsConfig '%s' is not ENABLED or DISABLED; the resolver create rejects the value\", [v]),\n\t\"Use ENABLED or DISABLED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tv := resolve(name, \"Properties.MetricsConfig\")\n\tis_string(v)\n\tnot v in {\"ENABLED\", \"DISABLED\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-pipeline-forbids-data-source",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A PIPELINE resolver takes no DataSourceName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-pipeline-forbids-data-source\", \"ERROR\", name,\n\t\"Properties.DataSourceName\",\n\t\"Kind is PIPELINE but DataSourceName is set; the resolver create rejects a data source on a pipeline resolver, whose functions carry their own\",\n\t\"Drop DataSourceName, or use Kind: UNIT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tresolve(name, \"Properties.Kind\") == \"PIPELINE\"\n\tis_string(resolve(name, \"Properties.DataSourceName\"))\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-pipeline-functions-max",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A pipeline runs at most 10 functions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-pipeline-functions-max\", \"ERROR\", name,\n\t\"Properties.PipelineConfig.Functions\",\n\tsprintf(\"the pipeline lists %d functions; the resolver create fails because a pipeline is limited to 10\", [count(fs)]),\n\t\"Keep 10 or fewer functions in the pipeline\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/appsync.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tfs := flatten_list(name, \"Properties.PipelineConfig.Functions\")\n\tcount(fs) > 10\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-pipeline-requires-functions",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A PIPELINE resolver needs PipelineConfig.Functions",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-pipeline-requires-functions\", \"ERROR\", name,\n\t\"Properties.PipelineConfig\",\n\t\"Kind is PIPELINE but PipelineConfig.Functions is empty; the resolver create fails because a pipeline has no functions to run\",\n\t\"List the function ids in PipelineConfig.Functions, or use Kind: UNIT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tresolve(name, \"Properties.Kind\") == \"PIPELINE\"\n\tcount(flatten_list(name, \"Properties.PipelineConfig.Functions\")) == 0\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-runtime-name-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Runtime.Name takes APPSYNC_JS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-res-runtime-name-value\", \"ERROR\", name,\n\t\"Properties.Runtime.Name\",\n\tsprintf(\"Runtime.Name '%s' is not APPSYNC_JS; the resolver create rejects the value\", [v]),\n\t\"Use APPSYNC_JS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tv := resolve(name, \"Properties.Runtime.Name\")\n\tis_string(v)\n\tnot v in {\"APPSYNC_JS\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-runtime-requires-code",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A Runtime needs Code",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_resruntimerequirescode_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-runtime-requires-code\", \"ERROR\", name,\n\t\"Properties.Code\",\n\t\"Runtime is set but Code is not; the resolver create fails because an APPSYNC_JS runtime has no handler to run\",\n\t\"Set Properties.Code (or CodeS3Location), or drop Runtime and use mapping templates\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tis_object(resolve(name, \"Properties.Runtime\"))\n\t_pf_resruntimerequirescode_absent(name, \"Code\")\n\t_pf_resruntimerequirescode_absent(name, \"CodeS3Location\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-runtime-version-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The APPSYNC_JS runtime version is 1.0.0",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-runtime-version-value\", \"ERROR\", name,\n\t\"Properties.Runtime.RuntimeVersion\",\n\tsprintf(\"RuntimeVersion '%s' does not exist; the resolver create fails because APPSYNC_JS only has version 1.0.0\", [v]),\n\t\"Use RuntimeVersion: 1.0.0\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tresolve(name, \"Properties.Runtime.Name\") == \"APPSYNC_JS\"\n\tv := resolve(name, \"Properties.Runtime.RuntimeVersion\")\n\tis_string(v)\n\tv != \"1.0.0\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-sync-conflict-detection-none-with-handler",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "ConflictDetection NONE takes no ConflictHandler",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-sync-conflict-detection-none-with-handler\", \"ERROR\", name,\n\t\"Properties.SyncConfig.ConflictHandler\",\n\tsprintf(\"SyncConfig.ConflictDetection is NONE but ConflictHandler is '%s'; the resolver create rejects a conflict handler when conflict detection is off\", [sc.ConflictHandler]),\n\t\"Set ConflictDetection: VERSION, or drop ConflictHandler\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tsc := resolve(name, \"Properties.SyncConfig\")\n\tis_object(sc)\n\tsc.ConflictDetection == \"NONE\"\n\tobject.get(sc, \"ConflictHandler\", \"NONE\") != \"NONE\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-sync-conflict-handler-lambda-requires-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A LAMBDA conflict handler needs LambdaConflictHandlerConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-sync-conflict-handler-lambda-requires-config\", \"ERROR\", name,\n\t\"Properties.SyncConfig.LambdaConflictHandlerConfig\",\n\t\"SyncConfig.ConflictHandler is LAMBDA but LambdaConflictHandlerConfig is not set; the resolver create fails because there is no function to resolve conflicts with\",\n\t\"Set SyncConfig.LambdaConflictHandlerConfig, or use a different ConflictHandler\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tsc := resolve(name, \"Properties.SyncConfig\")\n\tis_object(sc)\n\tsc.ConflictHandler == \"LAMBDA\"\n\tobject.get(sc, \"LambdaConflictHandlerConfig\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-type-field-in-schema",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "TypeName must exist in the schema",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when an inline schema for the same API is a sibling resource.\n_pf_restypefieldinschema_sdl(api) := s if {\n\tsome g in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tresolve(g, \"Properties.ApiId\") == api\n\ts := resolve(g, \"Properties.Definition\")\n\tis_string(s)\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-type-field-in-schema\", \"ERROR\", name,\n\t\"Properties.TypeName\",\n\tsprintf(\"the resolver attaches to type '%s', which the schema in this template does not declare; the resolver create fails because there is no such type\", [t]),\n\t\"Attach the resolver to a type the schema declares\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tapi := resolve(name, \"Properties.ApiId\")\n\tsdl := _pf_restypefieldinschema_sdl(api)\n\tt := resolve(name, \"Properties.TypeName\")\n\tis_string(t)\n\tcount(regex.find_n(sprintf(`type\\s+%s\\b`, [t]), sdl, -1)) == 0\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-unit-forbids-pipeline-config",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A UNIT resolver takes no PipelineConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-res-unit-forbids-pipeline-config\", \"ERROR\", name,\n\t\"Properties.PipelineConfig\",\n\t\"Kind is UNIT but PipelineConfig is set; the resolver create rejects a pipeline configuration on a unit resolver\",\n\t\"Drop PipelineConfig, or use Kind: PIPELINE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tresolve(name, \"Properties.Kind\") == \"UNIT\"\n\tcount(flatten_list(name, \"Properties.PipelineConfig.Functions\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-appsync-res-unit-requires-data-source",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A UNIT resolver needs DataSourceName",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::Resolver"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_resunitrequiresdatasource_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-res-unit-requires-data-source\", \"ERROR\", name,\n\t\"Properties.DataSourceName\",\n\t\"Kind is UNIT but DataSourceName is not set; the resolver create fails because a unit resolver has nothing to resolve against\",\n\t\"Set DataSourceName, or use Kind: PIPELINE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::Resolver\")\n\tresolve(name, \"Properties.Kind\") == \"UNIT\"\n\t_pf_resunitrequiresdatasource_absent(name, \"DataSourceName\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-definition-or-s3-required",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A schema needs Definition or DefinitionS3Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemadefinitionors3required_absent(n, k) if {\n\tprops := input.resources[n].properties\n\tis_object(props)\n\tobject.get(props, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-definition-or-s3-required\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\t\"neither Definition nor DefinitionS3Location is set; the schema create has nothing to upload\",\n\t\"Set Properties.Definition to the SDL, or DefinitionS3Location to an S3 object holding it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlschema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\t_pf_schemadefinitionors3required_absent(name, \"Definition\")\n\t_pf_schemadefinitionors3required_absent(name, \"DefinitionS3Location\")\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-definition-s3-exclusive",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Definition and DefinitionS3Location are exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-appsync-schema-definition-s3-exclusive\", \"ERROR\", name,\n\t\"Properties.DefinitionS3Location\",\n\t\"both Definition and DefinitionS3Location are set; the schema create rejects two sources for the same SDL\",\n\t\"Keep either Definition or DefinitionS3Location\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlschema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tis_string(resolve(name, \"Properties.Definition\"))\n\tis_string(resolve(name, \"Properties.DefinitionS3Location\"))\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-duplicate-field",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A field name may only appear once per type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaduplicatefield_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-duplicate-field\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"field '%s' is declared twice in the same type; the schema create fails with \\\"has declared a field more than once\\\"\", [f]),\n\t\"Give each field in a type a distinct name\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := regex.replace(_pf_schemaduplicatefield_clean(sdl), `\\([^)]*\\)`, \" \")\n\tsome b in regex.find_all_string_submatch_n(`(?:type|input|interface)\\s+[A-Za-z_][A-Za-z0-9_]*[^{]*\\{([^}]*)\\}`, s, -1)\n\tfs := regex.find_all_string_submatch_n(`([A-Za-z_][A-Za-z0-9_]*)\\s*:`, b[1], -1)\n\tsome i, m in fs\n\tsome j, n in fs\n\tj > i\n\tn[1] == m[1]\n\tf := m[1]\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-duplicate-schema-keyword",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A schema declares the schema block once",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaduplicateschemakeyword_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-duplicate-schema-keyword\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"the SDL has %d schema{} blocks; the schema create fails to parse the SDL\", [count(regex.find_n(`schema\\s*\\{`, s, -1))]),\n\t\"Keep a single schema{} block\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := _pf_schemaduplicateschemakeyword_clean(sdl)\n\tcount(regex.find_n(`schema\\s*\\{`, s, -1)) > 1\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-duplicate-type",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A type may only be declared once",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaduplicatetype_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-duplicate-type\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"type '%s' is declared more than once; the schema create fails to parse the SDL\", [t]),\n\t\"Declare each type once, or use `extend type` for the second block\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := _pf_schemaduplicatetype_clean(sdl)\n\tms := regex.find_all_string_submatch_n(`(?:type|input|interface|enum|union|scalar)\\s+([A-Za-z_][A-Za-z0-9_]*)`, s, -1)\n\tsome i, m in ms\n\tsome j, n in ms\n\tj > i\n\tn[1] == m[1]\n\tt := m[1]\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-input-type-as-output",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An input type cannot be a field type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemainputtypeasoutput_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-input-type-as-output\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"field type '%s' is declared with `input`; the schema create fails with \\\"is not an output type\\\"\", [t]),\n\t\"Declare a separate `type` for the output shape\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts0 := _pf_schemainputtypeasoutput_clean(sdl)\n\ts := regex.replace(regex.replace(s0, `schema\\s*\\{[^}]*\\}`, \" \"), `\\([^)]*\\)`, \" \")\n\tinputs := {m[1] | some m in regex.find_all_string_submatch_n(`input\\s+([A-Za-z_][A-Za-z0-9_]*)`, s0, -1)}\n\tsome b in regex.find_all_string_submatch_n(`(?:type|interface)\\s+[A-Za-z_][A-Za-z0-9_]*[^{]*\\{([^}]*)\\}`, s, -1)\n\tsome m in regex.find_all_string_submatch_n(`:\\s*\\[?\\s*([A-Za-z_][A-Za-z0-9_]*)`, b[1], -1)\n\tt := m[1]\n\tt in inputs\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-interface-not-implemented",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A type must declare every field of the interfaces it implements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemainterfacenotimplemented_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\n_pf_schemainterfacenotimplemented_fields(b) := {m[1] |\n\tsome m in regex.find_all_string_submatch_n(`([A-Za-z_][A-Za-z0-9_]*)\\s*:`, b, -1)\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-interface-not-implemented\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"type '%s' implements '%s' but does not declare its field '%s'; the schema create fails with \\\"does not have a field\\\"\", [t, iface, f]),\n\t\"Declare the interface field on the implementing type\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := regex.replace(_pf_schemainterfacenotimplemented_clean(sdl), `\\([^)]*\\)`, \" \")\n\tsome m in regex.find_all_string_submatch_n(`type\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+implements\\s+([^{]*)\\{([^}]*)\\}`, s, -1)\n\tt := m[1]\n\tsome iface in regex.split(`[\\s&]+`, m[2])\n\tiface != \"\"\n\tsome ib in regex.find_all_string_submatch_n(`interface\\s+([A-Za-z_][A-Za-z0-9_]*)[^{]*\\{([^}]*)\\}`, s, -1)\n\tib[1] == iface\n\tsome f in _pf_schemainterfacenotimplemented_fields(ib[2])\n\tnot f in _pf_schemainterfacenotimplemented_fields(m[3])\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-object-as-argument",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "An argument type must be an input type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaobjectasargument_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-object-as-argument\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"argument type '%s' is declared with `type`; the schema create fails with \\\"is not an input type\\\"\", [t]),\n\t\"Declare the argument shape with `input` instead of `type`\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := _pf_schemaobjectasargument_clean(sdl)\n\tobjs := {m[1] | some m in regex.find_all_string_submatch_n(`type\\s+([A-Za-z_][A-Za-z0-9_]*)`, s, -1)}\n\tsome g in regex.find_all_string_submatch_n(`\\(([^)]*)\\)`, s, -1)\n\tsome m in regex.find_all_string_submatch_n(`:\\s*\\[?\\s*([A-Za-z_][A-Za-z0-9_]*)`, g[1], -1)\n\tt := m[1]\n\tt in objs\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-requires-query-root",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A schema needs a query root type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemarequiresqueryroot_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-requires-query-root\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\t\"the SDL declares no Query type and no schema{} block naming one; the schema create fails with \\\"There is no top level schema object\\\"\",\n\t\"Add `type Query { ... }`, or a schema{} block whose query: names an existing type\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := _pf_schemarequiresqueryroot_clean(sdl)\n\tcount(regex.find_n(`type\\s+Query\\b`, s, -1)) == 0\n\tcount(regex.find_n(`schema\\s*\\{[^}]*\\bquery\\s*:`, s, -1)) == 0\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-root-type-missing",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The schema block may only name declared types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaroottypemissing_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\n_pf_schemaroottypemissing_defined(s) := {m[1] |\n\tsome m in regex.find_all_string_submatch_n(`(?:type|input|interface|enum|union|scalar)\\s+([A-Za-z_][A-Za-z0-9_]*)`, s, -1)\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-root-type-missing\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"the schema block names '%s' as a root type but the SDL never declares it; the schema create fails with \\\"The operation type '%s' is not defined\\\"\", [t, t]),\n\t\"Declare the type the schema block names, or drop the operation from the block\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts := _pf_schemaroottypemissing_clean(sdl)\n\tdefined := _pf_schemaroottypemissing_defined(s)\n\tsome b in regex.find_all_string_submatch_n(`schema\\s*\\{([^}]*)\\}`, s, -1)\n\tsome m in regex.find_all_string_submatch_n(`(?:query|mutation|subscription)\\s*:\\s*([A-Za-z_][A-Za-z0-9_]*)`, b[1], -1)\n\tt := m[1]\n\tnot t in defined\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-undefined-type-reference",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Every field type must be declared in the schema",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaundefinedtypereference_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\n_pf_schemaundefinedtypereference_defined(s) := {m[1] |\n\tsome m in regex.find_all_string_submatch_n(`(?:type|input|interface|enum|union|scalar)\\s+([A-Za-z_][A-Za-z0-9_]*)`, s, -1)\n}\n\n_pf_schemaundefinedtypereference_builtin := {\"String\", \"Int\", \"Float\", \"Boolean\", \"ID\"}\n\nviolation contains make_diag_full(\"pf-appsync-schema-undefined-type-reference\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"field type '%s' is never declared in the SDL; the schema create fails with \\\"The field type '%s' is not present when required\\\"\", [t, t]),\n\t\"Declare the type, or use one that the schema defines\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts0 := _pf_schemaundefinedtypereference_clean(sdl)\n\ts1 := regex.replace(s0, `schema\\s*\\{[^}]*\\}`, \" \")\n\ts := regex.replace(s1, `\\([^)]*\\)`, \" \")\n\tdefined := _pf_schemaundefinedtypereference_defined(s0)\n\tsome m in regex.find_all_string_submatch_n(`:\\s*\\[?\\s*([A-Za-z_][A-Za-z0-9_]*)`, s, -1)\n\tt := m[1]\n\tnot t in _pf_schemaundefinedtypereference_builtin\n\tnot startswith(t, \"AWS\")\n\tnot t in defined\n}\n"
+  },
+  {
+    "id": "pf-appsync-schema-unknown-scalar",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "Only AppSync's own AWS scalars exist",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::GraphQLSchema"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_schemaunknownscalar_clean(s) := c if {\n\ta := regex.replace(s, `\"\"\"[^\"]*\"\"\"`, \" \")\n\tb := regex.replace(a, `#[^\\n]*`, \" \")\n\tc := regex.replace(b, `@[A-Za-z_][A-Za-z0-9_]*\\([^)]*\\)`, \" \")\n}\n\n_pf_schemaunknownscalar_defined(s) := {m[1] |\n\tsome m in regex.find_all_string_submatch_n(`(?:type|input|interface|enum|union|scalar)\\s+([A-Za-z_][A-Za-z0-9_]*)`, s, -1)\n}\n\n_pf_schemaunknownscalar_aws := {\n\t\"AWSDate\", \"AWSTime\", \"AWSDateTime\", \"AWSTimestamp\", \"AWSEmail\",\n\t\"AWSJSON\", \"AWSURL\", \"AWSPhone\", \"AWSIPAddress\",\n}\n\nviolation contains make_diag_full(\"pf-appsync-schema-unknown-scalar\", \"ERROR\", name,\n\t\"Properties.Definition\",\n\tsprintf(\"'%s' is not an AppSync scalar; the schema create fails with \\\"The field type '%s' is not present when required\\\"\", [t, t]),\n\t\"Use one of AWSDate, AWSTime, AWSDateTime, AWSTimestamp, AWSEmail, AWSJSON, AWSURL, AWSPhone, AWSIPAddress\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/scalars.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::GraphQLSchema\")\n\tsdl := resolve(name, \"Properties.Definition\")\n\tis_string(sdl)\n\ts0 := _pf_schemaunknownscalar_clean(sdl)\n\ts := regex.replace(s0, `schema\\s*\\{[^}]*\\}`, \" \")\n\tdefined := _pf_schemaunknownscalar_defined(s0)\n\tsome m in regex.find_all_string_submatch_n(`:\\s*\\[?\\s*(AWS[A-Za-z0-9_]*)`, s, -1)\n\tt := m[1]\n\tnot t in _pf_schemaunknownscalar_aws\n\tnot t in defined\n}\n"
+  },
+  {
+    "id": "pf-appsync-source-api-merge-type-value",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "MergeType is AUTO_MERGE or MANUAL_MERGE",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::AppSync::SourceApiAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine knows this allowed-value list but reports it as W3030 (WARN),\n# which never blocks a deploy; see AGENTS.md on the gray zone.\nviolation contains make_diag_full(\"pf-appsync-source-api-merge-type-value\", \"ERROR\", name,\n\t\"Properties.SourceApiAssociationConfig.MergeType\",\n\tsprintf(\"MergeType '%s' is not AUTO_MERGE or MANUAL_MERGE; the association create rejects the value\", [v]),\n\t\"Use AUTO_MERGE or MANUAL_MERGE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-appsync-sourceapiassociation-sourceapiassociationconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::SourceApiAssociation\")\n\tv := resolve(name, \"Properties.SourceApiAssociationConfig.MergeType\")\n\tis_string(v)\n\tnot v in {\"AUTO_MERGE\", \"MANUAL_MERGE\"}\n}\n"
+  },
+  {
+    "id": "pf-appsync-source-api-merged-not-source",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "A merged API cannot be a source API",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::SourceApiAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the source API is a sibling resource, so its ApiType is\n# visible in this template.\nviolation contains make_diag_full(\"pf-appsync-source-api-merged-not-source\", \"ERROR\", name,\n\t\"Properties.SourceApiIdentifier\",\n\tsprintf(\"source API '%s' is itself a MERGED API; the association create fails because a merged API cannot be merged into another one\", [src]),\n\t\"Point SourceApiIdentifier at an ApiType: GRAPHQL API\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/merged-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::SourceApiAssociation\")\n\tsrc := resolve(name, \"Properties.SourceApiIdentifier\")\n\tsrc in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tresolve(src, \"Properties.ApiType\") == \"MERGED\"\n}\n"
+  },
+  {
+    "id": "pf-appsync-source-api-not-merged-target",
+    "service": "appsync",
+    "severity": "ERROR",
+    "title": "The association target must be a MERGED API",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::AppSync::SourceApiAssociation"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the target API is a sibling resource, so its ApiType is\n# visible in this template.\n_pf_sourceapinotmergedtarget_merged(n) if resolve(n, \"Properties.ApiType\") == \"MERGED\"\n\nviolation contains make_diag_full(\"pf-appsync-source-api-not-merged-target\", \"ERROR\", name,\n\t\"Properties.MergedApiIdentifier\",\n\tsprintf(\"API '%s' is not an ApiType: MERGED API; the association create fails because source APIs can only be associated with a merged API\", [m]),\n\t\"Set ApiType: MERGED on the target API, or point MergedApiIdentifier at one\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/merged-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::SourceApiAssociation\")\n\tm := resolve(name, \"Properties.MergedApiIdentifier\")\n\tm in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tnot _pf_sourceapinotmergedtarget_merged(m)\n}\n"
+  },
+  {
     "id": "pf-asg-az-xor-azid",
     "service": "autoscaling",
     "severity": "ERROR",

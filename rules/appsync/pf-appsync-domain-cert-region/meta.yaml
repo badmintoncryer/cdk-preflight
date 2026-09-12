@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/custom-dom
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid request provided: Certificate must be in us-east-1. (Service: AppSync, Status Code: 400, Request ID: 8d670f29-c64a-44d4-8836-51f183405b45) (SDK Attempt Count: 1)\" (RequestToken: 80a86209-5109-25ba-a48b-57bebf226e0c, HandlerErrorCode: InvalidRequest)"
 addedOn: 2026-09-12

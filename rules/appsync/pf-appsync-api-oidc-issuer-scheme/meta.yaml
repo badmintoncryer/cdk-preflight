@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_Op
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Issuer is not a valid URL (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: 8ed5273c-80be-4d3b-8c57-c0b014e2ff59; Proxy: null)\" (RequestToken: 23bfe443-0692-4f63-876b-721d2429e646)"
 addedOn: 2026-09-12

@@ -18,10 +18,35 @@
     },
     "Name": "ds1",
     "Type": "AMAZON_DYNAMODB",
-    "ServiceRoleArn": "arn:aws:iam::123456789012:role/appsync",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
     "DynamoDBConfig": {
      "TableName": "t",
      "AwsRegion": "not-a-region"
+    }
+   },
+   "DependsOn": [
+    "Role"
+   ]
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ]
     }
    }
   }

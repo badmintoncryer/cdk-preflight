@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/security-a
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING-BENCH \u2014 see #62"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Authentication type AWS_LAMBDA for additional authentication provider 1 already specified on the API. It can only be specified once. (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: 31cd670b-f0a2-4d0b-9806-1e23e9f6d024; Proxy: null)\" (RequestToken: e476acdd-4e87-487e-9561-c647093bb87b)"
 addedOn: 2026-09-12
