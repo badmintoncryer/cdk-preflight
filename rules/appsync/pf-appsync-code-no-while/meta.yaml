@@ -1,0 +1,12 @@
+id: pf-appsync-code-no-while
+service: appsync
+resourceTypes: [AWS::AppSync::FunctionConfiguration, AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: APPSYNC_JS does not support while loops
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-function: code.js(1,30): error @aws-appsync/no-while: While statements are not supported."
+addedOn: 2026-09-12

@@ -1,0 +1,12 @@
+id: pf-appsync-code-no-increment-operator
+service: appsync
+resourceTypes: [AWS::AppSync::FunctionConfiguration, AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: APPSYNC_JS does not support ++ and --
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-function: code.js(1,39): error @aws-appsync/no-disallowed-unary-operators: The operator ++ is not supported"
+addedOn: 2026-09-12

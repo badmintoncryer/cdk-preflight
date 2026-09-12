@@ -1,0 +1,12 @@
+id: pf-appsync-code-request-response-exports-required
+service: appsync
+resourceTypes: [AWS::AppSync::FunctionConfiguration, AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: An APPSYNC_JS handler exports request and response
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-function: Unable to find valid export for response"
+addedOn: 2026-09-12

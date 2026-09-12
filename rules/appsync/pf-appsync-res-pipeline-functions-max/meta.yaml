@@ -1,0 +1,12 @@
+id: pf-appsync-res-pipeline-functions-max
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: A pipeline runs at most 10 functions
+constraintSource: https://docs.aws.amazon.com/general/latest/gr/appsync.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

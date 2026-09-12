@@ -1,0 +1,12 @@
+id: pf-appsync-ds-none-forbids-config
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: A NONE data source takes no configuration block
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-data-source --type NONE --lambda-config: BadRequestException Configs were given for data source of type None, no config is expected."
+addedOn: 2026-09-12

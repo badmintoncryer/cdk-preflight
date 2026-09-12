@@ -1,0 +1,28 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Name": "ds1",
+    "Type": "AWS_LAMBDA",
+    "ServiceRoleArn": "arn:aws:iam::123456789012:role/appsync",
+    "LambdaConfig": {
+     "LambdaFunctionArn": "arn:aws:lambda:eu-west-1:123456789012:function:a"
+    }
+   }
+  }
+ }
+}

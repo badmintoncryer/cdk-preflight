@@ -1,0 +1,12 @@
+id: pf-appsync-fn-code-and-mapping-template-exclusive
+service: appsync
+resourceTypes: [AWS::AppSync::FunctionConfiguration]
+benchRegion: us-east-1
+severity: ERROR
+title: Code and mapping templates are exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

@@ -1,0 +1,29 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Name": "ds1",
+    "Type": "AMAZON_DYNAMODB",
+    "ServiceRoleArn": "arn:aws:iam::123456789012:role/appsync",
+    "DynamoDBConfig": {
+     "TableName": "t",
+     "AwsRegion": "not-a-region"
+    }
+   }
+  }
+ }
+}

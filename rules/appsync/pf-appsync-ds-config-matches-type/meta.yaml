@@ -1,0 +1,12 @@
+id: pf-appsync-ds-config-matches-type
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: Only the configuration block matching Type may be set
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 API probe 2026-09-12 us-east-1: create-data-source --type AMAZON_DYNAMODB with both --dynamodb-config and --lambda-config: BadRequestException Multiple configs given for data source of type dynamo."
+addedOn: 2026-09-12

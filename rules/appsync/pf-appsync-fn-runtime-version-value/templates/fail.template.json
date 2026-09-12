@@ -1,0 +1,42 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Ds": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Name": "ds1",
+    "Type": "NONE"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Name": "fn1",
+    "DataSourceName": "ds1",
+    "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+    "Runtime": {
+     "Name": "APPSYNC_JS",
+     "RuntimeVersion": "2.0.0"
+    }
+   }
+  }
+ }
+}
