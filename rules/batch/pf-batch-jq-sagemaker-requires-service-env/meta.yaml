@@ -1,0 +1,12 @@
+id: pf-batch-jq-sagemaker-requires-service-env
+service: batch
+resourceTypes: [AWS::Batch::JobQueue]
+benchRegion: us-east-1
+severity: ERROR
+title: A SAGEMAKER_TRAINING job queue needs ServiceEnvironmentOrder
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/create-sagemaker-job-queue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Job queues of type SAGEMAKER_TRAINING must have serviceEnvironmentOrder.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

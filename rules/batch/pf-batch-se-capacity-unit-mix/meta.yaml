@@ -1,0 +1,12 @@
+id: pf-batch-se-capacity-unit-mix
+service: batch
+resourceTypes: [AWS::Batch::ServiceEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: CapacityLimits may not mix NUM_INSTANCES with instance types
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/create-quota-management-resources.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Capacity units must specify either number of instances OR instance type, but not both\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

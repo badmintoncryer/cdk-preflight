@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": -1
+      }
+    }
+  }
+}

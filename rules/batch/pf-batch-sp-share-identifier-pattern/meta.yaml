@@ -1,0 +1,12 @@
+id: pf-batch-sp-share-identifier-pattern
+service: batch
+resourceTypes: [AWS::Batch::SchedulingPolicy]
+benchRegion: us-east-1
+severity: ERROR
+title: Share identifiers allow letters, numbers, hyphen, underscore and a trailing wildcard
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_ShareAttributes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"ShareIdentifier name should match a valid pattern.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

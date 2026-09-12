@@ -1,0 +1,12 @@
+id: pf-batch-cr-total-quantity-negative
+service: batch
+resourceTypes: [AWS::Batch::ConsumableResource]
+benchRegion: us-east-1
+severity: ERROR
+title: TotalQuantity may not be negative
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateConsumableResource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"totalQuantity cannot be a negative number.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

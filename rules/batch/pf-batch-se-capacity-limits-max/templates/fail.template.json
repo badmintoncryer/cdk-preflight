@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ServiceEnvironment",
+      "Properties": {
+        "ServiceEnvironmentType": "SAGEMAKER_TRAINING",
+        "CapacityLimits": [
+          {
+            "CapacityUnit": "ml.m6i.xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.2xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.4xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.8xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.12xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.16xlarge",
+            "MaxCapacity": 1
+          }
+        ]
+      }
+    }
+  }
+}

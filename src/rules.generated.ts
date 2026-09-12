@@ -2261,6 +2261,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-ce-vcpus-order\", \"ERROR\", name,\n\t\"Properties.ComputeResources.MaxvCpus\",\n\tsprintf(\"MaxvCpus %v is below MinvCpus %v (\\\"maxvCpus should be greater than or equal to minvCpus.\\\")\", [mx, mn]),\n\t\"Keep MinvCpus <= MaxvCpus\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ComputeEnvironment\")\n\tmn := to_number(resolve(name, \"Properties.ComputeResources.MinvCpus\"))\n\tmx := to_number(resolve(name, \"Properties.ComputeResources.MaxvCpus\"))\n\tmx < mn\n}\n"
   },
   {
+    "id": "pf-batch-cr-name",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Consumable resource names allow only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ConsumableResource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-cr-name\", \"ERROR\", name,\n\t\"Properties.ConsumableResourceName\",\n\tsprintf(\"ConsumableResourceName %v is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters (\\\"ConsumableResource name should match a valid pattern.\\\")\", [v]),\n\t\"Rename the consumable resource to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateConsumableResource.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ConsumableResource\")\n\tv := resolve(name, \"Properties.ConsumableResourceName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-batch-cr-total-quantity-negative",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "TotalQuantity may not be negative",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ConsumableResource"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-cr-total-quantity-negative\", \"ERROR\", name,\n\t\"Properties.TotalQuantity\",\n\tsprintf(\"TotalQuantity is %v (\\\"totalQuantity cannot be a negative number.\\\")\", [n]),\n\t\"Set TotalQuantity to 0 or more\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateConsumableResource.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ConsumableResource\")\n\tn := to_number(resolve(name, \"Properties.TotalQuantity\"))\n\tn < 0\n}\n"
+  },
+  {
     "id": "pf-batch-fargate-ce-fields",
     "service": "batch",
     "severity": "ERROR",
@@ -3064,6 +3086,182 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-volume-config-exclusive\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Volumes\",\n\tsprintf(\"volume %v carries %v configuration blocks (\\\"When the volume parameter is specified, only one volume configuration type should be used.\\\")\", [object.get(v.value, \"Name\", v.index), n]),\n\t\"Keep one of Host, EfsVolumeConfiguration or S3FilesVolumeConfiguration\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_Volume.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in _pf_batch_volumes(name)\n\tn := count([k | some k in [\"Host\", \"EfsVolumeConfiguration\", \"S3FilesVolumeConfiguration\"]; _pf_batch_ohas(v.value, k)])\n\tn > 1\n}\n"
   },
   {
+    "id": "pf-batch-jq-ce-arn-region",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Attached compute environments must live in the deployment region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-ce-arn-region\", \"ERROR\", name,\n\t\"Properties.ComputeEnvironmentOrder\",\n\tsprintf(\"a compute environment in %v is attached to a job queue deploying to %v (\\\"Compute Environments must be created and valid before attaching them to a job queue\\\")\", [r, data.cdk_preflight.deploy_region]),\n\t\"Attach a compute environment from the same region as the queue\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tsome e in flatten_list(name, \"Properties.ComputeEnvironmentOrder\")\n\tr := _pf_batch_region_mismatch(_pf_batch_oget(e.value, \"ComputeEnvironment\"))\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-ce-order-duplicate-ce",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "The same compute environment may not be attached twice",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Ref/GetAtt resolves to the logical id, so two references to the same\n# in-template compute environment still compare equal.\nviolation contains make_diag_full(\"pf-batch-jq-ce-order-duplicate-ce\", \"ERROR\", name,\n\t\"Properties.ComputeEnvironmentOrder\",\n\tsprintf(\"compute environment %v is attached %v times (\\\"Duplicate ComputeEnvironments within order list.\\\")\", [ce, n]),\n\t\"List each compute environment once\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ComputeEnvironmentOrder.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tes := flatten_list(name, \"Properties.ComputeEnvironmentOrder\")\n\tsome e in es\n\tce := _pf_batch_oget(e.value, \"ComputeEnvironment\")\n\tn := count([1 | some x in es; object.get(x.value, \"ComputeEnvironment\", null) == ce])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-ce-order-duplicate-order",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "ComputeEnvironmentOrder entries need distinct Order values",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-ce-order-duplicate-order\", \"ERROR\", name,\n\t\"Properties.ComputeEnvironmentOrder\",\n\tsprintf(\"Order %v is used %v times (\\\"Duplicate ComputeEnvironment order values.\\\")\", [o, n]),\n\t\"Give every compute environment its own Order\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ComputeEnvironmentOrder.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tes := flatten_list(name, \"Properties.ComputeEnvironmentOrder\")\n\tsome e in es\n\to := _pf_batch_oget(e.value, \"Order\")\n\tn := count([1 | some x in es; object.get(x.value, \"Order\", null) == o])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-ce-order-max",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A job queue may reference at most 3 compute environments",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-ce-order-max\", \"ERROR\", name,\n\t\"Properties.ComputeEnvironmentOrder\",\n\tsprintf(\"the job queue attaches %v compute environments (\\\"Only 3 environments are allowed in job queue request.\\\")\", [n]),\n\t\"Attach at most 3 compute environments\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tn := count(flatten_list(name, \"Properties.ComputeEnvironmentOrder\"))\n\tn > 3\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-jstla-action-cancel-for-ecs",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Container job queues may only CANCEL timed-out jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-jstla-action-cancel-for-ecs\", \"ERROR\", name,\n\t\"Properties.JobStateTimeLimitActions\",\n\tsprintf(\"a %v job queue asks for the %v action (\\\"Invalid job action. Valid job actions: [CANCEL]\\\")\", [t, act]),\n\t\"Use Action: CANCEL on ECS, FARGATE and EKS job queues\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_JobStateTimeLimitAction.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tt := _pf_batch_qtype(name)\n\tt != \"SAGEMAKER_TRAINING\"\n\tsome a in flatten_list(name, \"Properties.JobStateTimeLimitActions\")\n\tact := _pf_batch_oget(a.value, \"Action\")\n\t_pf_batch_lit(act)\n\tact != \"CANCEL\"\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-jstla-action-terminate-for-sagemaker",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "SageMaker job queues may only TERMINATE timed-out jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-jstla-action-terminate-for-sagemaker\", \"ERROR\", name,\n\t\"Properties.JobStateTimeLimitActions\",\n\tsprintf(\"a SAGEMAKER_TRAINING job queue asks for the %v action (\\\"Invalid job action. Valid job actions: [TERMINATE]\\\")\", [act]),\n\t\"Use Action: TERMINATE on SAGEMAKER_TRAINING job queues\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_JobStateTimeLimitAction.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\t_pf_batch_qtype(name) == \"SAGEMAKER_TRAINING\"\n\tsome a in flatten_list(name, \"Properties.JobStateTimeLimitActions\")\n\tact := _pf_batch_oget(a.value, \"Action\")\n\t_pf_batch_lit(act)\n\tact != \"TERMINATE\"\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-jstla-duplicate",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "JobStateTimeLimitActions may not repeat the same state and reason",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The measured rejection repeats both State and Reason; only that pair is\n# claimed here, so a template the service would accept never fires.\nviolation contains make_diag_full(\"pf-batch-jq-jstla-duplicate\", \"ERROR\", name,\n\t\"Properties.JobStateTimeLimitActions\",\n\tsprintf(\"%v entries repeat state %v with the same reason (\\\"Duplicate job state limit actions are not allowed.\\\")\", [n, st]),\n\t\"Keep one job state time limit action per state\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_JobStateTimeLimitAction.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tes := flatten_list(name, \"Properties.JobStateTimeLimitActions\")\n\tsome e in es\n\tst := _pf_batch_oget(e.value, \"State\")\n\trs := _pf_batch_oget(e.value, \"Reason\")\n\tn := count([1 | some x in es; object.get(x.value, \"State\", null) == st; object.get(x.value, \"Reason\", null) == rs])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-name",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Job queue names allow only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-name\", \"ERROR\", name,\n\t\"Properties.JobQueueName\",\n\tsprintf(\"JobQueueName %v is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters (\\\"Job Queue name should match a valid pattern.\\\")\", [v]),\n\t\"Rename the job queue to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tv := resolve(name, \"Properties.JobQueueName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-quota-share-policy-requires-sagemaker",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A quota scheduling policy only attaches to a SageMaker job queue",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-quota-share-policy-requires-sagemaker\", \"ERROR\", name,\n\t\"Properties.SchedulingPolicyArn\",\n\tsprintf(\"a %v job queue uses a scheduling policy with a QuotaSharePolicy (\\\"Quota Management feature is only supported for SageMaker Training job queues.\\\")\", [t]),\n\t\"Attach the quota scheduling policy to a SAGEMAKER_TRAINING job queue, or use a FairsharePolicy\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-quota-management-resources.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tt := _pf_batch_qtype(name)\n\tt != \"SAGEMAKER_TRAINING\"\n\tsp := resolve(name, \"Properties.SchedulingPolicyArn\")\n\tp := _pf_batch_props(sp)\n\t_pf_batch_ohas(p, \"QuotaSharePolicy\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-sagemaker-requires-service-env",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A SAGEMAKER_TRAINING job queue needs ServiceEnvironmentOrder",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-sagemaker-requires-service-env\", \"ERROR\", name,\n\t\"Properties.ServiceEnvironmentOrder\",\n\t\"a SAGEMAKER_TRAINING job queue has no ServiceEnvironmentOrder (\\\"Job queues of type SAGEMAKER_TRAINING must have serviceEnvironmentOrder.\\\")\",\n\t\"Attach a service environment through ServiceEnvironmentOrder\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-sagemaker-job-queue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\t_pf_batch_qtype(name) == \"SAGEMAKER_TRAINING\"\n\tnot _pf_batch_has(name, \"ServiceEnvironmentOrder\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-scheduling-policy-arn-region",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "SchedulingPolicyArn must live in the deployment region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-scheduling-policy-arn-region\", \"ERROR\", name,\n\t\"Properties.SchedulingPolicyArn\",\n\tsprintf(\"the scheduling policy is in %v but the job queue deploys to %v (\\\"SchedulingPolicy ... not found.\\\")\", [r, data.cdk_preflight.deploy_region]),\n\t\"Reference a scheduling policy from the same region as the queue\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tr := _pf_batch_region_mismatch(resolve(name, \"Properties.SchedulingPolicyArn\"))\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-scheduling-policy-arn-type",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "SchedulingPolicyArn must be a scheduling-policy ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-scheduling-policy-arn-type\", \"ERROR\", name,\n\t\"Properties.SchedulingPolicyArn\",\n\tsprintf(\"SchedulingPolicyArn points at %v (\\\"Only scheduling policy Arn can be allowed.\\\")\", [res]),\n\t\"Pass the ARN of an AWS::Batch::SchedulingPolicy\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tv := resolve(name, \"Properties.SchedulingPolicyArn\")\n\t_pf_batch_lit(v)\n\tstartswith(v, \"arn:\")\n\tres := _pf_batch_arn_resource(v)\n\tnot startswith(res, \"scheduling-policy/\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-service-env-arn-region",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Attached service environments must live in the deployment region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-service-env-arn-region\", \"ERROR\", name,\n\t\"Properties.ServiceEnvironmentOrder\",\n\tsprintf(\"a service environment in %v is attached to a job queue deploying to %v (\\\"Service environments must be created and valid before attaching them to a job queue.\\\")\", [r, data.cdk_preflight.deploy_region]),\n\t\"Attach a service environment from the same region as the queue\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ServiceEnvironmentOrder.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tsome e in flatten_list(name, \"Properties.ServiceEnvironmentOrder\")\n\tr := _pf_batch_region_mismatch(_pf_batch_oget(e.value, \"ServiceEnvironment\"))\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-service-env-order-single",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A job queue supports only one service environment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-service-env-order-single\", \"ERROR\", name,\n\t\"Properties.ServiceEnvironmentOrder\",\n\tsprintf(\"the job queue attaches %v service environments (\\\"Job queue can only have 1 service environment.\\\")\", [n]),\n\t\"Attach exactly one service environment\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/what-are-service-environments.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\tn := count(flatten_list(name, \"Properties.ServiceEnvironmentOrder\"))\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-service-env-requires-sagemaker-type",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "ServiceEnvironmentOrder requires JobQueueType SAGEMAKER_TRAINING",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-service-env-requires-sagemaker-type\", \"ERROR\", name,\n\t\"Properties.ServiceEnvironmentOrder\",\n\tsprintf(\"a %v job queue attaches a service environment (\\\"The jobQueueType provided is %v, which is incompatible with the provided serviceEnvironmentOrder.\\\")\", [t, t]),\n\t\"Set JobQueueType: SAGEMAKER_TRAINING, or attach compute environments instead\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-sagemaker-job-queue.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\t_pf_batch_has(name, \"ServiceEnvironmentOrder\")\n\tt := _pf_batch_qtype(name)\n\tt != \"SAGEMAKER_TRAINING\"\n}\n"
+  },
+  {
+    "id": "pf-batch-jq-type-matches-ce-type",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "JobQueueType must match the orchestration type of its compute environments",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobQueue"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jq-type-matches-ce-type\", \"ERROR\", name,\n\t\"Properties.JobQueueType\",\n\tsprintf(\"an EKS job queue attaches the non-EKS compute environment %v (\\\"EKS job queue type must have EKS compute environment.\\\")\", [cel]),\n\t\"Attach an EKS compute environment, or drop JobQueueType: EKS\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/job_queue_parameters.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobQueue\")\n\t_pf_batch_qtype(name) == \"EKS\"\n\tsome e in flatten_list(name, \"Properties.ComputeEnvironmentOrder\")\n\tce := _pf_batch_oget(e.value, \"ComputeEnvironment\")\n\tcel := _pf_batch_ref(ce)\n\tp := _pf_batch_props(cel)\n\tnot _pf_batch_ohas(p, \"EksConfiguration\")\n}\n"
+  },
+  {
     "id": "pf-batch-managed-compute-resources",
     "service": "batch",
     "severity": "ERROR",
@@ -3095,6 +3293,160 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Batch::JobDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-retry-attempts\", \"ERROR\", name,\n\t\"Properties.RetryStrategy.Attempts\",\n\tsprintf(\"RetryStrategy.Attempts %v is outside the supported range (\\\"RetryAttempts must be between 1 and 10.\\\")\", [n]),\n\t\"Use between 1 and 10 attempts\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := to_number(resolve(name, \"Properties.RetryStrategy.Attempts\"))\n\t_pf_batch_outside(n, 1, 10)\n}\n"
+  },
+  {
+    "id": "pf-batch-se-capacity-limits-empty",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A service environment needs at least one capacity limit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ServiceEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# True absence is schema territory; only the present-and-empty list is claimed.\nviolation contains make_diag_full(\"pf-batch-se-capacity-limits-empty\", \"ERROR\", name,\n\t\"Properties.CapacityLimits\",\n\t\"CapacityLimits is empty (\\\"Capacitylimits are required.\\\")\",\n\t\"Declare at least one capacity limit\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-quota-shares.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ServiceEnvironment\")\n\tls := object.get(_pf_batch_props(name), \"CapacityLimits\", \"__pf_absent\")\n\tis_array(ls)\n\tcount(ls) == 0\n}\n"
+  },
+  {
+    "id": "pf-batch-se-capacity-limits-max",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A service environment supports at most 5 capacity limits",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ServiceEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-se-capacity-limits-max\", \"ERROR\", name,\n\t\"Properties.CapacityLimits\",\n\tsprintf(\"the service environment declares %v capacity limits (\\\"Number of capacity limits exceeds 5.\\\")\", [n]),\n\t\"Keep at most 5 capacity limits\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/quota-shares.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ServiceEnvironment\")\n\tn := count(flatten_list(name, \"Properties.CapacityLimits\"))\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-batch-se-capacity-unit-mix",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "CapacityLimits may not mix NUM_INSTANCES with instance types",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ServiceEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-se-capacity-unit-mix\", \"ERROR\", name,\n\t\"Properties.CapacityLimits\",\n\tsprintf(\"NUM_INSTANCES is mixed with the instance type %v (\\\"Capacity units must specify either number of instances OR instance type\\\")\", [other]),\n\t\"Express every capacity limit either as NUM_INSTANCES or as instance types\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-quota-management-resources.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ServiceEnvironment\")\n\tes := flatten_list(name, \"Properties.CapacityLimits\")\n\tunits := {u | some x in es; u := object.get(x.value, \"CapacityUnit\", null); is_string(u)}\n\t\"NUM_INSTANCES\" in units\n\tothers := [u | some u in units; u != \"NUM_INSTANCES\"]\n\tcount(others) > 0\n\tother := others[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-se-capacity-unit-value",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "CapacityUnit must be NUM_INSTANCES or a SageMaker instance type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ServiceEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-se-capacity-unit-value\", \"ERROR\", name,\n\t\"Properties.CapacityLimits\",\n\tsprintf(\"%v is not a capacity unit (\\\"... is unknown capacity unit\\\")\", [u]),\n\t\"Use NUM_INSTANCES or an ml.* instance type as the capacity unit\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CapacityLimit.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ServiceEnvironment\")\n\tsome e in flatten_list(name, \"Properties.CapacityLimits\")\n\tu := _pf_batch_oget(e.value, \"CapacityUnit\")\n\t_pf_batch_lit(u)\n\tu != \"NUM_INSTANCES\"\n\tnot startswith(u, \"ml.\")\n}\n"
+  },
+  {
+    "id": "pf-batch-se-max-capacity-min",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "MaxCapacity must be at least 1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ServiceEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-se-max-capacity-min\", \"ERROR\", name,\n\t\"Properties.CapacityLimits\",\n\tsprintf(\"a capacity limit sets MaxCapacity %v (\\\"Max capacity must be more than 0.\\\")\", [n]),\n\t\"Set MaxCapacity to 1 or more\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CapacityLimit.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ServiceEnvironment\")\n\tsome e in flatten_list(name, \"Properties.CapacityLimits\")\n\tn := to_number(_pf_batch_oget(e.value, \"MaxCapacity\"))\n\tn < 1\n}\n"
+  },
+  {
+    "id": "pf-batch-se-name",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Service environment names allow only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::ServiceEnvironment"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-se-name\", \"ERROR\", name,\n\t\"Properties.ServiceEnvironmentName\",\n\tsprintf(\"ServiceEnvironmentName %v is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters (\\\"Service environment name should match a valid pattern.\\\")\", [v]),\n\t\"Rename the service environment to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateServiceEnvironment.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::ServiceEnvironment\")\n\tv := resolve(name, \"Properties.ServiceEnvironmentName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-fairshare-quotashare-exclusive",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "FairsharePolicy and QuotaSharePolicy are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-sp-fairshare-quotashare-exclusive\", \"ERROR\", name,\n\t\"Properties.QuotaSharePolicy\",\n\t\"the scheduling policy sets both FairsharePolicy and QuotaSharePolicy (\\\"A scheduling policy can have either fairsharePolicy or quotaSharePolicy\\\")\",\n\t\"Keep one of FairsharePolicy and QuotaSharePolicy\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateSchedulingPolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\t_pf_batch_has(name, \"FairsharePolicy\")\n\t_pf_batch_has(name, \"QuotaSharePolicy\")\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-name",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Scheduling policy names allow only letters, numbers, hyphen and underscore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-sp-name\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"the scheduling policy name %v is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters (\\\"Scheduling policy name should match a valid pattern.\\\")\", [v]),\n\t\"Rename the scheduling policy to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-scheduling-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tv := resolve(name, \"Properties.Name\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-quota-share-idle-strategy-value",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "QuotaSharePolicy.IdleResourceAssignmentStrategy must be FIFO",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-sp-quota-share-idle-strategy-value\", \"ERROR\", name,\n\t\"Properties.QuotaSharePolicy.IdleResourceAssignmentStrategy\",\n\tsprintf(\"IdleResourceAssignmentStrategy is %v (\\\"Idle resource assignment strategy must be one of [FIFO].\\\")\", [v]),\n\t\"Set IdleResourceAssignmentStrategy: FIFO\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-batch-schedulingpolicy-quotasharepolicy.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tq := _pf_batch_get(name, \"QuotaSharePolicy\")\n\tv := _pf_batch_oget(q, \"IdleResourceAssignmentStrategy\")\n\t_pf_batch_lit(v)\n\tv != \"FIFO\"\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-share-distribution-max",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A fair-share policy supports at most 500 share identifiers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-sp-share-distribution-max\", \"ERROR\", name,\n\t\"Properties.FairsharePolicy.ShareDistribution\",\n\tsprintf(\"the fair-share policy declares %v share identifiers (\\\"ShareDistribution size cannot be greater than 500.\\\")\", [n]),\n\t\"Keep at most 500 share identifiers in one scheduling policy\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ShareAttributes.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tn := count(flatten_list(name, \"Properties.FairsharePolicy.ShareDistribution\"))\n\tn > 500\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-share-identifier-duplicate",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "ShareDistribution entries need unique share identifiers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-sp-share-identifier-duplicate\", \"ERROR\", name,\n\t\"Properties.FairsharePolicy.ShareDistribution\",\n\tsprintf(\"share identifier %v is declared %v times (\\\"Cannot have two or more identical shareIdentifiers.\\\")\", [si, n]),\n\t\"Declare each share identifier once\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-scheduling-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tes := flatten_list(name, \"Properties.FairsharePolicy.ShareDistribution\")\n\tsome e in es\n\tsi := _pf_batch_oget(e.value, \"ShareIdentifier\")\n\tn := count([1 | some x in es; object.get(x.value, \"ShareIdentifier\", null) == si])\n\tn > 1\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-share-identifier-overlap",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A share identifier prefix may not cover another share identifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-sp-share-identifier-overlap\", \"ERROR\", name,\n\t\"Properties.FairsharePolicy.ShareDistribution\",\n\tsprintf(\"share identifier %v is also matched by the prefix %v (\\\"Share identifier ... matches another share identifier ...\\\")\", [hit, si]),\n\t\"Remove the overlap between the wildcard prefix and the explicit share identifier\",\n\t\"https://docs.aws.amazon.com/batch/latest/userguide/create-scheduling-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tes := flatten_list(name, \"Properties.FairsharePolicy.ShareDistribution\")\n\tsome e in es\n\tsi := _pf_batch_oget(e.value, \"ShareIdentifier\")\n\t_pf_batch_lit(si)\n\tendswith(si, \"*\")\n\tprefix := substring(si, 0, count(si) - 1)\n\thits := [y | some x in es; y := object.get(x.value, \"ShareIdentifier\", null); is_string(y); y != si; startswith(y, prefix)]\n\tcount(hits) > 0\n\thit := hits[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-share-identifier-pattern",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Share identifiers allow letters, numbers, hyphen, underscore and a trailing wildcard",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One service-side pattern check covers the charset, the 255 character limit\n# and the wildcard position, so it is one rule here too.\nviolation contains make_diag_full(\"pf-batch-sp-share-identifier-pattern\", \"ERROR\", name,\n\t\"Properties.FairsharePolicy.ShareDistribution\",\n\tsprintf(\"share identifier %v is rejected by the service: letters, numbers, hyphen and underscore, an optional trailing \\\"*\\\", at most 255 characters (\\\"ShareIdentifier name should match a valid pattern.\\\")\", [si]),\n\t\"Rename the share identifier, and keep any wildcard as the last character\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ShareAttributes.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tsome e in flatten_list(name, \"Properties.FairsharePolicy.ShareDistribution\")\n\tsi := _pf_batch_oget(e.value, \"ShareIdentifier\")\n\tis_string(si)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,254}[a-zA-Z0-9_*-]?$`, si)\n}\n"
+  },
+  {
+    "id": "pf-batch-sp-weight-factor-range",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "WeightFactor must be between 0.0001 and 999.9999",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::SchedulingPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The CFN schema says 0-1000, the service says 0.0001-999.9999: both edges\n# walk straight through the bundled engine.\nviolation contains make_diag_full(\"pf-batch-sp-weight-factor-range\", \"ERROR\", name,\n\t\"Properties.FairsharePolicy.ShareDistribution\",\n\tsprintf(\"share identifier %v has WeightFactor %v (\\\"Weight factor should be between 0.0001 and 999.9999.\\\")\", [si, w]),\n\t\"Set WeightFactor between 0.0001 and 999.9999\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ShareAttributes.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::SchedulingPolicy\")\n\tsome e in flatten_list(name, \"Properties.FairsharePolicy.ShareDistribution\")\n\tsi := _pf_batch_oget(e.value, \"ShareIdentifier\")\n\tw := to_number(_pf_batch_oget(e.value, \"WeightFactor\"))\n\t_pf_batch_outside(w, 0.0001, 999.9999)\n}\n"
   },
   {
     "id": "pf-batch-timeout-minimum",
@@ -22211,7 +22563,7 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   },
   {
     "name": "_lib/batch",
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Batch rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), lists are\n# always walked through flatten_list, and the launch type is read from\n# PlatformCapabilities — which the API defaults to EC2 when it is missing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_batch_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_batch_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_batch_oget(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_batch_ohas(o, k) if {\n\t_pf_batch_oget(o, k)\n}\n\n_pf_batch_get(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_props(name), k)\n}\n\n_pf_batch_has(name, k) if {\n\t_pf_batch_get(name, k)\n}\n\n# The launch type the job definition asks for. RegisterJobDefinition defaults\n# to EC2 when PlatformCapabilities is absent.\n_pf_batch_caps(name) := {c |\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tc := pc.value\n\tis_string(c)\n}\n\n_pf_batch_fargate(name) if {\n\t\"FARGATE\" in _pf_batch_caps(name)\n}\n\n_pf_batch_mi(name) if {\n\t\"MANAGED_INSTANCES\" in _pf_batch_caps(name)\n}\n\n_pf_batch_ec2(name) if {\n\tcount(_pf_batch_caps(name)) == 0\n}\n\n_pf_batch_ec2(name) if {\n\t\"EC2\" in _pf_batch_caps(name)\n}\n\n# ContainerProperties and the nested objects the rules reach for most often.\n_pf_batch_cp(name) := cp if {\n\tcp := _pf_batch_get(name, \"ContainerProperties\")\n\tis_object(cp)\n}\n\n_pf_batch_cpget(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_cp(name), k)\n}\n\n_pf_batch_cphas(name, k) if {\n\t_pf_batch_cpget(name, k)\n}\n\n_pf_batch_lp(name) := lp if {\n\tlp := _pf_batch_cpget(name, \"LinuxParameters\")\n\tis_object(lp)\n}\n\n_pf_batch_volumes(name) := vs if {\n\tvs := flatten_list(name, \"Properties.ContainerProperties.Volumes\")\n}\n\n# The EFS configuration of one volume entry.\n_pf_batch_efs(v) := e if {\n\te := _pf_batch_oget(v.value, \"EfsVolumeConfiguration\")\n\tis_object(e)\n}\n\n# Resource requirements of a container object, by type (VCPU / MEMORY / GPU).\n# A duplicated type has to stay single-valued here, otherwise every rule that\n# reads one blows up with \"function produced multiple outputs\".\n_pf_batch_rrs(c, t) := [v |\n\tsome e in object.get(c, \"ResourceRequirements\", [])\n\tis_object(e)\n\tobject.get(e, \"Type\", \"\") == t\n\tv := object.get(e, \"Value\", null)\n]\n\n_pf_batch_rr(c, t) := v if {\n\tvs := _pf_batch_rrs(c, t)\n\tcount(vs) > 0\n\tv := vs[0]\n}\n\n_pf_batch_num(v) := n if {\n\tn := to_number(v)\n}\n\n# Outside an inclusive range; two clauses so a single rule body can express it.\n_pf_batch_outside(v, lo, _) if {\n\tv < lo\n}\n\n_pf_batch_outside(v, _, hi) if {\n\tv > hi\n}\n\n_pf_batch_anykey(o, keys) if {\n\tsome k in keys\n\t_pf_batch_ohas(o, k)\n}\n\n# EcsProperties: task elements, and every container inside them.\n_pf_batch_ecs_tasks(name) := ts if {\n\tts := flatten_list(name, \"Properties.EcsProperties.TaskProperties\")\n}\n\n_pf_batch_ecs_containers(name) := [{\"ti\": t.index, \"ci\": i, \"c\": c} |\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome i, c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n]\n\n# Literal container names declared inside one ECS task element.\n_pf_batch_ecs_names(t) := {n |\n\tsome c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n\tn := object.get(c, \"Name\", null)\n\t_pf_batch_lit(n)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Batch rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), lists are\n# always walked through flatten_list, and the launch type is read from\n# PlatformCapabilities — which the API defaults to EC2 when it is missing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_batch_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_batch_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_batch_oget(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_batch_ohas(o, k) if {\n\t_pf_batch_oget(o, k)\n}\n\n_pf_batch_get(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_props(name), k)\n}\n\n_pf_batch_has(name, k) if {\n\t_pf_batch_get(name, k)\n}\n\n# The launch type the job definition asks for. RegisterJobDefinition defaults\n# to EC2 when PlatformCapabilities is absent.\n_pf_batch_caps(name) := {c |\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tc := pc.value\n\tis_string(c)\n}\n\n_pf_batch_fargate(name) if {\n\t\"FARGATE\" in _pf_batch_caps(name)\n}\n\n_pf_batch_mi(name) if {\n\t\"MANAGED_INSTANCES\" in _pf_batch_caps(name)\n}\n\n_pf_batch_ec2(name) if {\n\tcount(_pf_batch_caps(name)) == 0\n}\n\n_pf_batch_ec2(name) if {\n\t\"EC2\" in _pf_batch_caps(name)\n}\n\n# ContainerProperties and the nested objects the rules reach for most often.\n_pf_batch_cp(name) := cp if {\n\tcp := _pf_batch_get(name, \"ContainerProperties\")\n\tis_object(cp)\n}\n\n_pf_batch_cpget(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_cp(name), k)\n}\n\n_pf_batch_cphas(name, k) if {\n\t_pf_batch_cpget(name, k)\n}\n\n_pf_batch_lp(name) := lp if {\n\tlp := _pf_batch_cpget(name, \"LinuxParameters\")\n\tis_object(lp)\n}\n\n_pf_batch_volumes(name) := vs if {\n\tvs := flatten_list(name, \"Properties.ContainerProperties.Volumes\")\n}\n\n# The EFS configuration of one volume entry.\n_pf_batch_efs(v) := e if {\n\te := _pf_batch_oget(v.value, \"EfsVolumeConfiguration\")\n\tis_object(e)\n}\n\n# Resource requirements of a container object, by type (VCPU / MEMORY / GPU).\n# A duplicated type has to stay single-valued here, otherwise every rule that\n# reads one blows up with \"function produced multiple outputs\".\n_pf_batch_rrs(c, t) := [v |\n\tsome e in object.get(c, \"ResourceRequirements\", [])\n\tis_object(e)\n\tobject.get(e, \"Type\", \"\") == t\n\tv := object.get(e, \"Value\", null)\n]\n\n_pf_batch_rr(c, t) := v if {\n\tvs := _pf_batch_rrs(c, t)\n\tcount(vs) > 0\n\tv := vs[0]\n}\n\n_pf_batch_num(v) := n if {\n\tn := to_number(v)\n}\n\n# Outside an inclusive range; two clauses so a single rule body can express it.\n_pf_batch_outside(v, lo, _) if {\n\tv < lo\n}\n\n_pf_batch_outside(v, _, hi) if {\n\tv > hi\n}\n\n_pf_batch_anykey(o, keys) if {\n\tsome k in keys\n\t_pf_batch_ohas(o, k)\n}\n\n# EcsProperties: task elements, and every container inside them.\n_pf_batch_ecs_tasks(name) := ts if {\n\tts := flatten_list(name, \"Properties.EcsProperties.TaskProperties\")\n}\n\n_pf_batch_ecs_containers(name) := [{\"ti\": t.index, \"ci\": i, \"c\": c} |\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome i, c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n]\n\n# Literal container names declared inside one ECS task element.\n_pf_batch_ecs_names(t) := {n |\n\tsome c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n\tn := object.get(c, \"Name\", null)\n\t_pf_batch_lit(n)\n}\n\n# ---- job queue -------------------------------------------------------------\n\n# The orchestration type of a job queue. CreateJobQueue defaults to ECS when\n# JobQueueType is absent; a Ref leaves it undefined so nothing fires on it.\n_pf_batch_qtype(name) := t if {\n\tt := _pf_batch_get(name, \"JobQueueType\")\n\tis_string(t)\n\tnot input.resources[t]\n}\n\n_pf_batch_qtype(name) := \"ECS\" if {\n\tnot _pf_batch_has(name, \"JobQueueType\")\n}\n\n# ---- ARNs ------------------------------------------------------------------\n\n_pf_batch_arn_region(v) := r if {\n\t_pf_batch_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\tr := parts[3]\n\tr != \"\"\n}\n\n_pf_batch_arn_resource(v) := s if {\n\t_pf_batch_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\ts := parts[5]\n}\n\n# The ARN's own region, but only when it differs from the deployment region.\n_pf_batch_region_mismatch(v) := r if {\n\tr := _pf_batch_arn_region(v)\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr != region\n}\n\n# The logical id behind a reference to an in-template resource. flatten_list\n# hands back whichever shape the engine chose (a resolved logical id, a\n# {__ref} marker, or the raw {\"Ref\": ...}), so all three are accepted.\n_pf_batch_ref(v) := v if {\n\tis_string(v)\n\tinput.resources[v]\n}\n\n_pf_batch_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", \"__pf_absent\")\n\tis_string(r)\n}\n\n_pf_batch_ref(v) := r if {\n\tis_object(v)\n\tobject.get(v, \"__ref\", \"__pf_absent\") == \"__pf_absent\"\n\tr := object.get(v, \"Ref\", \"__pf_absent\")\n\tis_string(r)\n}\n"
   },
   {
     "name": "_lib/bedrock",

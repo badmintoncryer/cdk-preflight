@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Crea
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Priority 1 + ComputeEnvironmentOrder [] (d11) -> \"computeEnvironmentOrder is required.\" ROLLBACK_COMPLETE (the schema accepts the empty list; the service treats it as absent). Priority range 0-1000 itself is engine F3034 - not duplicated."
+  evidence: "bench 2026-09-12 us-east-1: ComputeEnvironmentOrder [] -> \"computeEnvironmentOrder is required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE, re-benched after the pass fixture was given a real UNMANAGED compute environment (the original dummy-account ARN could never deploy). The schema accepts the empty list; the service treats it as absent. The Priority 0-1000 range itself is engine F3034 and is not duplicated here."
 addedOn: 2026-09-03

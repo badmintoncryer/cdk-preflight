@@ -1842,6 +1842,40 @@ describe('batch rules', () => {
     expect(ids(diagnoseTemplate(jdT(1)))).toHaveLength(0);
     expect(ids(diagnoseTemplate(jdT(0)))).toContain('pf-batch-retry-attempts');
   });
+
+  // 候補 3 本（文字種 / 長さ / ワイルドカード位置）をサービス側の 1 つのパターン検査に
+  // まとめてあるので、フィクスチャ 1 枚では踏めない 2 分岐をここで押さえる。
+  test('share identifier: charset, length and wildcard position are one pattern check', () => {
+    const sp = (si: string) => ({
+      Resources: { P: { Type: 'AWS::Batch::SchedulingPolicy', Properties: { FairsharePolicy: { ShareDistribution: [{ ShareIdentifier: si, WeightFactor: 1 }] } } } },
+    });
+    expect(ids(diagnoseTemplate(sp('*A')))).toContain('pf-batch-sp-share-identifier-pattern');
+    expect(ids(diagnoseTemplate(sp('a'.repeat(256))))).toContain('pf-batch-sp-share-identifier-pattern');
+    expect(ids(diagnoseTemplate(sp('UserA*')))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(sp('team_A-1')))).toHaveLength(0);
+  });
+
+  test('weight factor: both edges fire; 0.0001..999.9999 stays silent', () => {
+    const sp = (w: number) => ({
+      Resources: { P: { Type: 'AWS::Batch::SchedulingPolicy', Properties: { FairsharePolicy: { ShareDistribution: [{ ShareIdentifier: 'teamA', WeightFactor: w }] } } } },
+    });
+    expect(ids(diagnoseTemplate(sp(0)))).toContain('pf-batch-sp-weight-factor-range');
+    expect(ids(diagnoseTemplate(sp(1000)))).toContain('pf-batch-sp-weight-factor-range');
+    expect(ids(diagnoseTemplate(sp(0.0001)))).toHaveLength(0);
+    expect(ids(diagnoseTemplate(sp(999.9999)))).toHaveLength(0);
+  });
+
+  // 重複の鍵が State なのか Reason なのかは実測できていないので、両方そろった組だけを
+  // 主張する。Reason 違いは沈黙する（サービスが受理する形を撃たない）。
+  test('job state time limit actions: only a repeated state+reason pair fires', () => {
+    const q = (actions: unknown[]) => ({
+      Resources: { Q: { Type: 'AWS::Batch::JobQueue', Properties: { Priority: 1, ComputeEnvironmentOrder: [{ Order: 1, ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/x' }], JobStateTimeLimitActions: actions } } },
+    });
+    const act = (reason: string) => ({ Action: 'CANCEL', MaxTimeSeconds: 600, Reason: reason, State: 'RUNNABLE' });
+    const same = 'MISCONFIGURATION:COMPUTE_ENVIRONMENT_MAX_RESOURCE';
+    expect(ids(diagnoseTemplate(q([act(same), act(same)])))).toContain('pf-batch-jq-jstla-duplicate');
+    expect(ids(diagnoseTemplate(q([act(same), act('MISCONFIGURATION:JOB_RESOURCE_REQUIREMENT')])))).toHaveLength(0);
+  });
 });
 
 describe('elbv2 rules', () => {

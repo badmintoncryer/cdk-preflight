@@ -1,0 +1,68 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobQueue",
+      "Properties": {
+        "Priority": 1,
+        "JobQueueType": "ECS",
+        "ServiceEnvironmentOrder": [
+          {
+            "Order": 1,
+            "ServiceEnvironment": {
+              "Ref": "Se"
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "BatchRole",
+        "Ce",
+        "Se"
+      ]
+    },
+    "BatchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "batch.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        ]
+      }
+    },
+    "Ce": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "UNMANAGED",
+        "ServiceRole": {
+          "Fn::GetAtt": [
+            "BatchRole",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Se": {
+      "Type": "AWS::Batch::ServiceEnvironment",
+      "Properties": {
+        "ServiceEnvironmentType": "SAGEMAKER_TRAINING",
+        "CapacityLimits": [
+          {
+            "CapacityUnit": "NUM_INSTANCES",
+            "MaxCapacity": 1
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::SchedulingPolicy",
+      "Properties": {
+        "FairsharePolicy": {
+          "ShareDistribution": [
+            {
+              "ShareIdentifier": "teamA",
+              "WeightFactor": 1
+            }
+          ]
+        },
+        "QuotaSharePolicy": {
+          "IdleResourceAssignmentStrategy": "FIFO"
+        }
+      }
+    }
+  }
+}
