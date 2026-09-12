@@ -337,6 +337,15 @@
         }
       ]
     },
+    "smoke": {
+      "name": "smoke",
+      "description": "Install the packed tarball into a scratch CDK app and check that enforce still fires",
+      "steps": [
+        {
+          "exec": "bash scripts/smoke.sh dist/js/*.jsii.tgz"
+        }
+      ]
+    },
     "test": {
       "name": "test",
       "description": "Run tests",

@@ -29,6 +29,7 @@
     "pre-compile": "projen pre-compile",
     "redundancy-scan": "projen redundancy-scan",
     "release": "projen release",
+    "smoke": "projen smoke",
     "test": "projen test",
     "test:watch": "projen test:watch",
     "unbump": "projen unbump",

@@ -184,3 +184,35 @@ jobs:
       - name: Collect python artifact
         id: collect_python_artifact
         run: mv .repo/dist dist
+  package-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: ${{ !needs.build.outputs.self_mutation_happened }}
+    steps:
+      - name: Download build artifacts
+        id: download_build_artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: dist
+      - name: Restore build artifact permissions
+        id: restore_build_artifact_permissions
+        run: cd dist && setfacl --restore=permissions-backup.acl
+        continue-on-error: true
+      - name: Setup Node.js
+        id: setup_node_js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: "24"
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          path: .repo
+      - name: Smoke test the packed tarball
+        id: smoke_test_the_packed_tarball
+        run: bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz
