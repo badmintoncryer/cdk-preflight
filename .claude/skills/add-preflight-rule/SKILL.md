@@ -24,6 +24,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    - ヘルパーは `_pf_<短縮名>_` プレフィックスで一意に
    - `walk` ビルトインは無い。`to_number`/`object.get`/`flatten_list`/`resolve` で明示的に書く
    - fail テンプレートはこのルール**だけ**に違反、pass テンプレートは完全クリーン
+   - **数値・長さ・個数の制約は境界ちょうどで書く**。fail は「違反する値のうち限界に最も近いもの」、pass は「限界そのもの」— 20 文字下限なら fail=19 文字 / pass=20 文字であって、fail=5 文字 / pass=26 文字ではない。緩いペアはルールの向きしか証明しない（`count(v) < 20` は fail が 5 文字なら定数が `< 10` でも鳴り、pass が 26 文字なら `< 25` でも黙る）ので、定数も比較演算子も固定できないし、実機ゲートの証拠も弱くなる（19 文字が CREATE に失敗して初めて下限 20 が実証される）。ルールが両端を見ているレンジは fail に両端を置く（fail の判定は「自分のルールの診断が 1 件以上」なので、違反リソースを 2 つ並べてよい）。エンジンのスキーマが既に持っている側の端は入れない — ルールもそこは見ていない（原則 1）し、重複ガードが赤くなる。順序の無い制約（プロパティ欠落、enum の値違い、リソース間の不整合）には境界が無いので対象外
 4. **ローカルゲート**: まず `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>...` を回す。`rules/` を直接読んで 1 エンジンに全ルールを載せ、fail が自分のルールで鳴るか / pass が全ルール無音か / どちらも組み込みエンジンに止められないかを返す（`bundle-rules` も meta.yaml の evidence も要らないので、実機ゲート前の直しはここで回す。80 本で数秒）。全部 `ok` になってから `npx projen bundle-rules && npx jest test/rules.test.ts test/structure.test.ts`。**jest は `-t` で対象を絞る**。フルスイートは PR 直前の 1 回だけでよく、実測では 401 回中 73 回がフル実行で合計 5.8 時間を溶かしている。
 5. **実機再現ゲート**: `bash bench/verify-rule.sh <rule-id>`（要 AWS 認証）。観測したエラーメッセージと日付を `meta.yaml#repro.evidence` に記録。
    - fail テンプレートがデプロイに**成功**したら、それはドキュメント側の誤り（BROKEN-EXPECTATION）。ルールを削除し、証拠を issue に残して終了する。CloudFront では明文化された制約 9 件中 3 件がこれだった（2026-09-02）
