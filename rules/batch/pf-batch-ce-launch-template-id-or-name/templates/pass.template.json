@@ -1,0 +1,77 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "ComputeResources": {
+          "Type": "EC2",
+          "MaxvCpus": 4,
+          "MinvCpus": 0,
+          "InstanceTypes": [
+            "optimal"
+          ],
+          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ],
+          "LaunchTemplate": {
+            "LaunchTemplateId": {
+              "Fn::GetAtt": [
+                "Lt",
+                "LaunchTemplateId"
+              ]
+            }
+          }
+        }
+      },
+      "DependsOn": [
+        "Lt",
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Lt": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "Monitoring": {
+            "Enabled": false
+          }
+        }
+      }
+    }
+  }
+}

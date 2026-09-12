@@ -1,0 +1,12 @@
+id: pf-batch-jq-ce-mix-fargate-ec2
+service: batch
+resourceTypes: [AWS::Batch::JobQueue]
+benchRegion: us-east-1
+severity: ERROR
+title: A job queue cannot mix Fargate and EC2 compute environments
+constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/job_queues.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"All attached Compute Environments must be of types [EC2, SPOT] or types [FARGATE_SPOT, FARGATE] or types [ECS_MANAGED_INSTANCES], not mixed.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

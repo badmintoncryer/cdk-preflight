@@ -1,0 +1,12 @@
+id: pf-batch-ce-unmanaged-service-linked-role
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: The Batch service-linked role cannot serve an UNMANAGED compute environment
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Service Linked Role cannot be used with UNMANAGED Compute Environment.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+addedOn: 2026-09-12

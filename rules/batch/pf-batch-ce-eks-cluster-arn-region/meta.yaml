@@ -1,0 +1,12 @@
+id: pf-batch-ce-eks-cluster-arn-region
+service: batch
+resourceTypes: [AWS::Batch::ComputeEnvironment]
+benchRegion: us-east-1
+severity: ERROR
+title: The EKS cluster must live in the region of the compute environment
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"eksClusterArn must be in the same AWS region as the compute environment.\" (ROLLBACK_COMPLETE); pass template not deployed: an EKS compute environment needs a live (billable) cluster, so this rule is gated with --fail-only."
+addedOn: 2026-09-12

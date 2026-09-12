@@ -1,0 +1,57 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::ComputeEnvironment",
+      "Properties": {
+        "Type": "MANAGED",
+        "EksConfiguration": {
+          "EksClusterArn": "arn:aws:eks:us-east-1:214794239830:cluster/cdkpf-probe",
+          "KubernetesNamespace": "cdkpf-batch"
+        },
+        "ComputeResources": {
+          "Type": "FARGATE",
+          "MaxvCpus": 4,
+          "Subnets": [
+            {
+              "Ref": "Subnet"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "Sg",
+        "Subnet",
+        "Vpc"
+      ]
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}
