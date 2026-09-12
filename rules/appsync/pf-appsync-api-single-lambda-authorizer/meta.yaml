@@ -1,0 +1,12 @@
+id: pf-appsync-api-single-lambda-authorizer
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLApi]
+benchRegion: us-east-1
+severity: ERROR
+title: An API can have only one Lambda authorizer
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/security-authz.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

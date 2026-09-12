@@ -1,0 +1,12 @@
+id: pf-appsync-api-cognito-requires-userpool-config
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLApi]
+benchRegion: us-east-1
+severity: ERROR
+title: AMAZON_COGNITO_USER_POOLS authentication needs UserPoolConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

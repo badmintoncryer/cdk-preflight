@@ -1,0 +1,21 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "AMAZON_COGNITO_USER_POOLS",
+    "UserPoolConfig": {
+     "UserPoolId": "us-east-1_aaaaaaaaa",
+     "AwsRegion": "us-east-1",
+     "DefaultAction": "ALLOW"
+    },
+    "AdditionalAuthenticationProviders": [
+     {
+      "AuthenticationType": "AWS_IAM"
+     }
+    ]
+   }
+  }
+ }
+}

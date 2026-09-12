@@ -1,0 +1,14 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "OPENID_CONNECT",
+    "OpenIDConnectConfig": {
+     "Issuer": "example.com"
+    }
+   }
+  }
+ }
+}

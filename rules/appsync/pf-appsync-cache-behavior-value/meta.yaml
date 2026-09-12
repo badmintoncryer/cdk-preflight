@@ -1,0 +1,12 @@
+id: pf-appsync-cache-behavior-value
+service: appsync
+resourceTypes: [AWS::AppSync::ApiCache]
+benchRegion: us-east-1
+severity: ERROR
+title: ApiCachingBehavior takes one of FULL_REQUEST_CACHING / PER_RESOLVER_CACHING / OPERATION_LEVEL_CACHING
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-apicache.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

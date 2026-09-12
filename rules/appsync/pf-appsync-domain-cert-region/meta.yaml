@@ -1,0 +1,12 @@
+id: pf-appsync-domain-cert-region
+service: appsync
+resourceTypes: [AWS::AppSync::DomainName]
+benchRegion: us-east-1
+severity: ERROR
+title: The custom domain certificate lives in us-east-1
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/custom-domain-name.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

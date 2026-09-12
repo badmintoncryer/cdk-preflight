@@ -1,0 +1,37 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Merged": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "merged",
+    "AuthenticationType": "API_KEY",
+    "ApiType": "MERGED",
+    "MergedApiExecutionRoleArn": "arn:aws:iam::123456789012:role/appsync"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::SourceApiAssociation",
+   "Properties": {
+    "MergedApiIdentifier": {
+     "Fn::GetAtt": [
+      "Merged",
+      "Arn"
+     ]
+    },
+    "SourceApiIdentifier": {
+     "Fn::GetAtt": [
+      "Merged",
+      "Arn"
+     ]
+    }
+   }
+  }
+ }
+}

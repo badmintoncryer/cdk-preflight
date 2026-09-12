@@ -1,0 +1,12 @@
+id: pf-appsync-api-key-expires-past
+service: appsync
+resourceTypes: [AWS::AppSync::ApiKey]
+benchRegion: us-east-1
+severity: ERROR
+title: An API key expiry is an absolute Unix timestamp in seconds
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiKey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

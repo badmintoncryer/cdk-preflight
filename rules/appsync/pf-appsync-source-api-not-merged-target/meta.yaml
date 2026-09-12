@@ -1,0 +1,12 @@
+id: pf-appsync-source-api-not-merged-target
+service: appsync
+resourceTypes: [AWS::AppSync::SourceApiAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: The association target must be a MERGED API
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/merged-api.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

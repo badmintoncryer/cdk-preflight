@@ -1,0 +1,12 @@
+id: pf-appsync-api-userpool-default-action-with-additional
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLApi]
+benchRegion: us-east-1
+severity: ERROR
+title: DefaultAction must be ALLOW when additional providers are configured
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-appsync-graphqlapi-userpoolconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING-BENCH \u2014 see #62"
+addedOn: 2026-09-12

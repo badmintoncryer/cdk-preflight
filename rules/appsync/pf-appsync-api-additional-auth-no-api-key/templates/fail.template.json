@@ -1,0 +1,16 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "AWS_IAM",
+    "AdditionalAuthenticationProviders": [
+     {
+      "AuthenticationType": "API_KEY"
+     }
+    ]
+   }
+  }
+ }
+}
