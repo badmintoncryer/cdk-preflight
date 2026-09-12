@@ -1,0 +1,59 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Name": "ds1",
+    "Type": "AMAZON_DYNAMODB",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "DynamoDBConfig": {
+     "TableName": "t",
+     "AwsRegion": "us-east-1",
+     "DeltaSyncConfig": {
+      "BaseTableTTL": "0",
+      "DeltaSyncTableName": "d",
+      "DeltaSyncTableTTL": "0"
+     }
+    }
+   },
+   "DependsOn": [
+    "Role"
+   ]
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

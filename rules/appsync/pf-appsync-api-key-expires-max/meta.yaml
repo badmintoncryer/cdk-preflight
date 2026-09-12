@@ -1,0 +1,12 @@
+id: pf-appsync-api-key-expires-max
+service: appsync
+resourceTypes: [AWS::AppSync::ApiKey]
+benchRegion: us-east-1
+severity: ERROR
+title: An API key expires at most 365 days out
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiKey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"API key can be valid for a maximum of 365 days. (Service: AWSAppSync; Status Code: 400; Error Code: ApiKeyValidityOutOfBoundsException; Request ID: b6bfaa45-6f32-4be1-a718-b15571e7778d; Proxy: null)\" (RequestToken: d893ef65-0a30-4d44-aa2d-d4c7bb43cd43)"
+addedOn: 2026-09-12

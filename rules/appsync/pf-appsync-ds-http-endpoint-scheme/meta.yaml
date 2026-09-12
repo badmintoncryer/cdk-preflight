@@ -1,0 +1,12 @@
+id: pf-appsync-ds-http-endpoint-scheme
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: An HTTP endpoint is an http or https URL
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid endpoint configuration. (Service: AppSync, Status Code: 400, Request ID: cede8a18-be83-4dac-9c97-bed7cd674ca4) (SDK Attempt Count: 1)\" (RequestToken: ba2a5faa-edc6-4344-73d9-0d0f125ba1fd, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

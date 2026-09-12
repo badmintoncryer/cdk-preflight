@@ -1,0 +1,12 @@
+id: pf-appsync-ev-auth-provider-duplicate-type
+service: appsync
+resourceTypes: [AWS::AppSync::Api]
+benchRegion: us-east-1
+severity: ERROR
+title: Each auth type appears once in AuthProviders
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Event API configuration contains a duplicate auth type. (Service: AppSync, Status Code: 400, Request ID: a97e008f-bc0a-4b16-8a0e-ea9ef7369a0a) (SDK Attempt Count: 1)\" (RequestToken: 6b967e1f-5394-c96f-4323-4ff48165c5f5, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

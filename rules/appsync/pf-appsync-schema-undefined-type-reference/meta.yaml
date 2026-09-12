@@ -1,0 +1,12 @@
+id: pf-appsync-schema-undefined-type-reference
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: Every field type must be declared in the schema
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema:"
+addedOn: 2026-09-12

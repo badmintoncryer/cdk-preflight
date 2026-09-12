@@ -1,0 +1,12 @@
+id: pf-appsync-ds-lambda-requires-service-role
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: A data source that reaches another service needs ServiceRoleArn
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Service role arn not specified. (Service: AppSync, Status Code: 400, Request ID: 5ea0ed08-031a-4075-8a46-bed2e800384f) (SDK Attempt Count: 1)\" (RequestToken: ef098302-4e98-a3b0-4ecb-5b639f9e47b6, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

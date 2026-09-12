@@ -1,0 +1,12 @@
+id: pf-appsync-api-cognito-requires-userpool-config
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLApi]
+benchRegion: us-east-1
+severity: ERROR
+title: AMAZON_COGNITO_USER_POOLS authentication needs UserPoolConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"User Pool Config is empty (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: 7d25748e-0a41-461b-a080-4e80ee16423b; Proxy: null)\" (RequestToken: 67883c03-ca74-482c-82d3-ced36742f587)"
+addedOn: 2026-09-12

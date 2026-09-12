@@ -1,0 +1,56 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Name": "ds1",
+    "Type": "HTTP",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "HttpConfig": {
+     "Endpoint": "https://example.com",
+     "AuthorizationConfig": {
+      "AuthorizationType": "AWS_LAMBDA"
+     }
+    }
+   },
+   "DependsOn": [
+    "Role"
+   ]
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

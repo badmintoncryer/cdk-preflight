@@ -1,0 +1,75 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Merged": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "merged",
+    "AuthenticationType": "API_KEY",
+    "ApiType": "MERGED",
+    "MergedApiExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "Schema": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::SourceApiAssociation",
+   "Properties": {
+    "MergedApiIdentifier": {
+     "Fn::GetAtt": [
+      "Merged",
+      "Arn"
+     ]
+    },
+    "SourceApiIdentifier": {
+     "Fn::GetAtt": [
+      "Merged",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "Role",
+    "Schema"
+   ]
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": "sts:AssumeRole",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,12 @@
+id: pf-appsync-res-runtime-version-value
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: The APPSYNC_JS runtime version is 1.0.0
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Runtime version invalid. (Service: AppSync, Status Code: 400, Request ID: db9126f9-d0b0-4f91-892c-f4f0b6d6392d) (SDK Attempt Count: 1)\" (RequestToken: 94ac79cc-8d2f-fd64-0ea2-4b70ea1166d1, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

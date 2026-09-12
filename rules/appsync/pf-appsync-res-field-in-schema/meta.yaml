@@ -1,0 +1,12 @@
+id: pf-appsync-res-field-in-schema
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: FieldName must exist on the type
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"No field named nosuchfield found on type Query (Service: AppSync, Status Code: 404, Request ID: 2bb1e607-6dff-44e8-942a-37a1ddd7fc7e) (SDK Attempt Count: 1)\" (RequestToken: cdfa62bd-d0c1-5097-ebeb-2a20a19479b3, HandlerErrorCode: NotFound)"
+addedOn: 2026-09-12

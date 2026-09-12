@@ -1,0 +1,12 @@
+id: pf-appsync-source-api-not-merged-target
+service: appsync
+resourceTypes: [AWS::AppSync::SourceApiAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: The association target must be a MERGED API
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/merged-api.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid request provided: Invalid API type, expected api to be type MERGED for api : uvtpt673ozavneit5bbqngfmfi (Service: AppSync, Status Code: 400, Request ID: 2086558a-79fc-4817-ae4a-ae87c971d308) (SDK Attempt Count: 1)\" (RequestToken: 9ba5002e-8b50-0aa1-2238-b730e8bd13a8, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

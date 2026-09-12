@@ -1,0 +1,32 @@
+{
+ "Resources": {
+  "Target": {
+   "Type": "AWS::AppSync::Api",
+   "Properties": {
+    "Name": "ev-api",
+    "EventConfig": {
+     "AuthProviders": [
+      {
+       "AuthType": "AWS_LAMBDA"
+      }
+     ],
+     "ConnectionAuthModes": [
+      {
+       "AuthType": "AWS_LAMBDA"
+      }
+     ],
+     "DefaultPublishAuthModes": [
+      {
+       "AuthType": "AWS_LAMBDA"
+      }
+     ],
+     "DefaultSubscribeAuthModes": [
+      {
+       "AuthType": "AWS_LAMBDA"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

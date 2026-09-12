@@ -1,0 +1,12 @@
+id: pf-appsync-cache-type-deprecated-instance
+service: appsync
+resourceTypes: [AWS::AppSync::ApiCache]
+benchRegion: us-east-1
+severity: ERROR
+title: The T2 and R4 cache instance types are retired
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Cache instance type is not valid. (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: 9dc0358a-543c-47b5-a7ae-598f186bac9c; Proxy: null)\" (RequestToken: a0f30c94-08b3-47c5-8f57-1a73f4855e04)"
+addedOn: 2026-09-12

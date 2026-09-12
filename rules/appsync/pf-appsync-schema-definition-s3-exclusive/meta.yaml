@@ -1,0 +1,12 @@
+id: pf-appsync-schema-definition-s3-exclusive
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: Definition and DefinitionS3Location are exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlschema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Cannot set both the Definition and the DefinitionS3Location.\" (RequestToken: d99446dc-dfdd-400f-b75e-247f83f8d47a)"
+addedOn: 2026-09-12
