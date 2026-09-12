@@ -204,3 +204,146 @@ _pf_batch_ref(v) := r if {
 	r := object.get(v, "Ref", "__pf_absent")
 	is_string(r)
 }
+
+# ---- EKS pod properties ----------------------------------------------------
+
+_pf_batch_pod(name) := p if {
+	p := _pf_batch_oget(_pf_batch_get(name, "EksProperties"), "PodProperties")
+	is_object(p)
+}
+
+_pf_batch_meta(name) := m if {
+	m := _pf_batch_oget(_pf_batch_pod(name), "Metadata")
+	is_object(m)
+}
+
+# Containers and init containers, as flatten_list's {index, value} records.
+_pf_batch_eks_containers(name) := cs if {
+	cs := array.concat(
+		flatten_list(name, "Properties.EksProperties.PodProperties.Containers"),
+		flatten_list(name, "Properties.EksProperties.PodProperties.InitContainers"),
+	)
+}
+
+_pf_batch_eks_res(c, side) := r if {
+	r := _pf_batch_oget(_pf_batch_oget(c, "Resources"), side)
+	is_object(r)
+}
+
+# One resource value written by the user; a Ref is left alone.
+_pf_batch_eks_resval(c, side, k) := v if {
+	v := _pf_batch_oget(_pf_batch_eks_res(c, side), k)
+	_pf_batch_lit(v)
+}
+
+# Both sides at once, for the checks that do not care which one carries it.
+_pf_batch_eks_vals(c, k) := vs if {
+	vs := [v |
+		some side in ["Limits", "Requests"]
+		v := _pf_batch_eks_resval(c, side, k)
+	]
+}
+
+_pf_batch_eks_numval(c, side, k) := n if {
+	v := _pf_batch_eks_resval(c, side, k)
+	regex.match(`^[0-9]+(\.[0-9]+)?$`, v)
+	n := to_number(v)
+}
+
+_pf_batch_keyset(o) := {k | some k, _ in o}
+
+_pf_batch_eks_reskeys(c) := ks if {
+	r := _pf_batch_oget(c, "Resources")
+	is_object(r)
+	ks := _pf_batch_keyset(object.get(r, "Limits", {})) | _pf_batch_keyset(object.get(r, "Requests", {}))
+}
+
+# cpu is a whole number or a multiple of 0.25; milliCPU ("100m") is rejected.
+_pf_batch_eks_cpu_bad(v) if {
+	not regex.match(`^[0-9]+(\.[0-9]+)?$`, v)
+}
+
+_pf_batch_eks_cpu_bad(v) if {
+	regex.match(`^[0-9]+(\.[0-9]+)?$`, v)
+	q := to_number(v) * 4
+	q != round(q)
+}
+
+# A unit suffix other than Mi. A bare number is left alone.
+_pf_batch_eks_mem_bad(v) if {
+	regex.match(`^[0-9]+(\.[0-9]+)?[A-Za-z]+$`, v)
+	not endswith(v, "Mi")
+}
+
+_pf_batch_eks_mib(v) := n if {
+	regex.match(`^[0-9]+(Mi)?$`, v)
+	n := to_number(trim_suffix(v, "Mi"))
+}
+
+# Kubernetes reserved prefixes, plus the service's own.
+_pf_batch_k8s_reserved(k) if {
+	some p in ["kubernetes.io/", "k8s.io/", "batch.amazonaws.com/"]
+	startswith(k, p)
+}
+
+# The name half of a label or annotation key ("prefix/name" or just "name").
+_pf_batch_k8s_name_ok(k) if {
+	parts := split(k, "/")
+	regex.match(`^[a-zA-Z0-9]([a-zA-Z0-9._-]{0,61}[a-zA-Z0-9])?$`, parts[count(parts) - 1])
+}
+
+# ---- multi-node ------------------------------------------------------------
+
+_pf_batch_np(name) := np if {
+	np := _pf_batch_get(name, "NodeProperties")
+	is_object(np)
+}
+
+_pf_batch_ranges(name) := rs if {
+	rs := flatten_list(name, "Properties.NodeProperties.NodeRangeProperties")
+}
+
+# Every TargetNodes expression the template spells out in a parsable form.
+_pf_batch_target_nodes(name) := ts if {
+	ts := [t |
+		some r in _pf_batch_ranges(name)
+		t := object.get(r.value, "TargetNodes", null)
+		_pf_batch_lit(t)
+		regex.match(`^[0-9]*(:[0-9]*)?$`, t)
+	]
+}
+
+_pf_batch_bound(s, d) := d if {
+	s == ""
+}
+
+_pf_batch_bound(s, _) := n if {
+	s != ""
+	n := to_number(s)
+}
+
+# The node indexes one TargetNodes expression covers: "n", "n:", ":m", "n:m".
+_pf_batch_target(s, _) := ns if {
+	parts := split(s, ":")
+	count(parts) == 1
+	ns := {to_number(parts[0])}
+}
+
+_pf_batch_target(s, num) := ns if {
+	parts := split(s, ":")
+	count(parts) == 2
+	ns := {n | some n in numbers.range(_pf_batch_bound(parts[0], 0), _pf_batch_bound(parts[1], num - 1))}
+}
+
+_pf_batch_covered(name, num) := union({s |
+	some t in _pf_batch_target_nodes(name)
+	s := _pf_batch_target(t, num)
+})
+
+# The three payload shapes a node range may carry, at most one of them.
+_pf_batch_range_payloads(r) := ks if {
+	ks := [k |
+		some k in ["Container", "EcsProperties", "EksProperties"]
+		_pf_batch_ohas(r, k)
+	]
+}

@@ -1,0 +1,12 @@
+id: pf-batch-jd-eks-volume-mount-name-exists
+service: batch
+resourceTypes: [AWS::Batch::JobDefinition]
+benchRegion: us-east-1
+severity: ERROR
+title: A volume mount must name a volume declared in the pod
+constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"The volumeMounts name is required for eksProperties.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. The fail template does name the mount (\"other\"); the handler answers \"name is required\" when the name matches no volume. The pass template differs only by naming the declared volume."
+addedOn: 2026-09-12

@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Batch::JobDefinition",
+      "Properties": {
+        "Type": "container",
+        "EksProperties": {
+          "PodProperties": {
+            "Containers": [
+              {
+                "Name": "main",
+                "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
+                "VolumeMounts": [
+                  {
+                    "Name": "vol",
+                    "MountPath": "/scratch"
+                  }
+                ],
+                "Resources": {
+                  "Limits": {
+                    "cpu": "1",
+                    "memory": "2048Mi"
+                  }
+                }
+              }
+            ],
+            "Volumes": [
+              {
+                "Name": "vol",
+                "EmptyDir": {
+                  "Medium": "Memory",
+                  "SizeLimit": "1Gi"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -2558,6 +2558,270 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-efs-transit-encryption-port-range\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Volumes\",\n\tsprintf(\"TransitEncryptionPort is %v (\\\"TransitEncryptionPort must be a valid port number.\\\")\", [p]),\n\t\"Use a port between 0 and 65535\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EFSVolumeConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in _pf_batch_volumes(name)\n\tp := to_number(_pf_batch_oget(_pf_batch_efs(v), \"TransitEncryptionPort\"))\n\t_pf_batch_outside(p, 0, 65535)\n}\n"
   },
   {
+    "id": "pf-batch-jd-eks-annotation-key-reserved-prefix",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Pod annotation keys must not use a reserved Kubernetes prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-annotation-key-reserved-prefix\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Annotations\",\n\tsprintf(\"the pod annotation key %v uses a reserved prefix (\\\"The prefix ... of the pod annotation key cannot contain terms from the Kubernetes reserved namespaces.\\\")\", [k]),\n\t\"Use your own prefix for pod annotations\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tan := _pf_batch_oget(_pf_batch_meta(name), \"Annotations\")\n\tbad := [k | some k, _ in an; _pf_batch_k8s_reserved(k)]\n\tcount(bad) > 0\n\tk := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-annotation-value-length",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Pod annotation values are limited to 255 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-annotation-value-length\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Annotations\",\n\tsprintf(\"a pod annotation value is %v characters long\", [c]),\n\t\"Shorten the annotation value to 255 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tan := _pf_batch_oget(_pf_batch_meta(name), \"Annotations\")\n\tbad := [count(v) | some _, v in an; _pf_batch_lit(v); count(v) > 255]\n\tcount(bad) > 0\n\tc := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-container-name-unique",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Container names must be unique within an EKS pod",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-container-name-unique\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the container name %v is used %v times (\\\"The container name: %v must be unique in multi-container job.\\\")\", [n, k, n]),\n\t\"Give every container in the pod its own name\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainer.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tcs := _pf_batch_eks_containers(name)\n\tsome c in cs\n\tn := _pf_batch_oget(c.value, \"Name\")\n\t_pf_batch_lit(n)\n\tk := count([1 | some x in cs; object.get(x.value, \"Name\", null) == n])\n\tk > 1\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-containers-required",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "An EKS pod must define at least one container",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-containers-required\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\t\"the pod declares no containers (\\\"Containers must be provided for Batch on EKS jobs.\\\")\",\n\t\"Declare a container in PodProperties.Containers\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksPodProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_pod(name)\n\tcount(_pf_batch_eks_containers(name)) == 0\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-cpu-limits-ge-requests",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A cpu request must not exceed the cpu limit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-cpu-limits-ge-requests\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the cpu request is %v and the limit %v (\\\"cpu request must be <= to cpu limit if both are provided.\\\")\", [r, l]),\n\t\"Lower the cpu request to at most the cpu limit\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tl := _pf_batch_eks_numval(c.value, \"Limits\", \"cpu\")\n\tr := _pf_batch_eks_numval(c.value, \"Requests\", \"cpu\")\n\tr > l\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-cpu-value",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "EKS cpu values must be whole numbers or multiples of 0.25",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The milliCPU form (\"100m\") and any fraction that is not a multiple of\n# 0.25 are rejected by the same check, so they are one rule.\nviolation contains make_diag_full(\"pf-batch-jd-eks-cpu-value\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the cpu value %v is not valid (\\\"Value %v for type cpu in resources is not valid. Provide a valid number and unit.\\\")\", [v, v]),\n\t\"Use a whole number of vCPUs or a multiple of 0.25\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tbad := [v | some v in _pf_batch_eks_vals(c.value, \"cpu\"); _pf_batch_eks_cpu_bad(v)]\n\tcount(bad) > 0\n\tv := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-dns-policy-value",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "DnsPolicy must be Default, ClusterFirst or ClusterFirstWithHostNet",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-dns-policy-value\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.DnsPolicy\",\n\tsprintf(\"the DNS policy %v is not supported (\\\"Unsupported DNS policy value.\\\")\", [p]),\n\t\"Use Default, ClusterFirst or ClusterFirstWithHostNet\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksPodProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tp := _pf_batch_oget(_pf_batch_pod(name), \"DnsPolicy\")\n\t_pf_batch_lit(p)\n\tnot p in {\"Default\", \"ClusterFirst\", \"ClusterFirstWithHostNet\"}\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-empty-dir-medium-value",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "EksEmptyDir.Medium must be empty or Memory",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-empty-dir-medium-value\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Volumes\",\n\tsprintf(\"the empty directory medium %v is not supported (\\\"Invalid Volume mount. Allowed values - Memory or null.\\\")\", [m]),\n\t\"Leave Medium unset, or set it to Memory\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksEmptyDir.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome v in flatten_list(name, \"Properties.EksProperties.PodProperties.Volumes\")\n\tm := _pf_batch_oget(_pf_batch_oget(v.value, \"EmptyDir\"), \"Medium\")\n\t_pf_batch_lit(m)\n\tnot m in {\"\", \"Memory\"}\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-empty-dir-size-limit-unit",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "EksEmptyDir.SizeLimit must be expressed in MiB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Found while benching the volume fixtures: a SizeLimit of 1Gi is rejected\n# and 100Mi is accepted, the same MiB-only rule the container resources use.\nviolation contains make_diag_full(\"pf-batch-jd-eks-empty-dir-size-limit-unit\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Volumes\",\n\tsprintf(\"the empty directory size limit %v does not use the Mi unit (\\\"Invalid empty dir size limit.\\\")\", [v]),\n\t\"Express the size limit in MiB, for example 100Mi\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksEmptyDir.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome vol in flatten_list(name, \"Properties.EksProperties.PodProperties.Volumes\")\n\tv := _pf_batch_oget(_pf_batch_oget(vol.value, \"EmptyDir\"), \"SizeLimit\")\n\t_pf_batch_lit(v)\n\t_pf_batch_eks_mem_bad(v)\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-gpu-integer",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "nvidia.com/gpu must be a whole number",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-gpu-integer\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the nvidia.com/gpu value %v is not a whole number (\\\"Value %v for type nvidia.com/gpu in resources is not valid.\\\")\", [v, v]),\n\t\"Request a whole number of GPUs\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tbad := [v | some v in _pf_batch_eks_vals(c.value, \"nvidia.com/gpu\"); not regex.match(`^[0-9]+$`, v)]\n\tcount(bad) > 0\n\tv := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-gpu-limits-eq-requests",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A GPU request must equal the GPU limit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-gpu-limits-eq-requests\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the nvidia.com/gpu request is %v and the limit %v (\\\"gpu request must be equal to gpu limit if both are provided.\\\")\", [r, l]),\n\t\"Use the same nvidia.com/gpu value in Requests and Limits\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tl := _pf_batch_eks_numval(c.value, \"Limits\", \"nvidia.com/gpu\")\n\tr := _pf_batch_eks_numval(c.value, \"Requests\", \"nvidia.com/gpu\")\n\tl != r\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-image-pull-policy-value",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "ImagePullPolicy must be Always, IfNotPresent or Never",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-image-pull-policy-value\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the image pull policy %v is not supported (\\\"Unsupported image pull policy value.\\\")\", [p]),\n\t\"Use Always, IfNotPresent or Never\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainer.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tp := _pf_batch_oget(c.value, \"ImagePullPolicy\")\n\t_pf_batch_lit(p)\n\tnot p in {\"Always\", \"IfNotPresent\", \"Never\"}\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-label-key-format",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Pod label key names must be valid Kubernetes names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-label-key-format\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Labels\",\n\tsprintf(\"the pod label key %v is not a valid name (\\\"The name %v of the pod label key does not match a valid pattern.\\\")\", [k, k]),\n\t\"Start and end the key name with an alphanumeric character\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tls := _pf_batch_oget(_pf_batch_meta(name), \"Labels\")\n\tbad := [k | some k, _ in ls; not _pf_batch_k8s_name_ok(k)]\n\tcount(bad) > 0\n\tk := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-label-key-reserved-prefix",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Pod label keys must not use a reserved Kubernetes prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-label-key-reserved-prefix\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Labels\",\n\tsprintf(\"the pod label key %v uses a reserved prefix (\\\"The prefix ... of the pod label key cannot contain terms from the Kubernetes reserved namespaces.\\\")\", [k]),\n\t\"Use your own prefix for pod labels\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tls := _pf_batch_oget(_pf_batch_meta(name), \"Labels\")\n\tbad := [k | some k, _ in ls; _pf_batch_k8s_reserved(k)]\n\tcount(bad) > 0\n\tk := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-label-value-format",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Pod label values are limited to 63 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-label-value-format\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Labels\",\n\tsprintf(\"a pod label value is %v characters long\", [c]),\n\t\"Shorten the label value to 63 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tls := _pf_batch_oget(_pf_batch_meta(name), \"Labels\")\n\tbad := [count(v) | some _, v in ls; _pf_batch_lit(v); count(v) > 63]\n\tcount(bad) > 0\n\tc := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-memory-limits-eq-requests",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A memory request must equal the memory limit",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-memory-limits-eq-requests\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the memory request is %v MiB and the limit %v MiB (\\\"memory request must be equal to memory limit if both are provided.\\\")\", [r, l]),\n\t\"Use the same memory value in Requests and Limits\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tl := _pf_batch_eks_mib(_pf_batch_eks_resval(c.value, \"Limits\", \"memory\"))\n\tr := _pf_batch_eks_mib(_pf_batch_eks_resval(c.value, \"Requests\", \"memory\"))\n\tl != r\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-memory-unit",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "EKS memory values must be expressed in MiB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-memory-unit\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the memory value %v does not use the Mi unit (\\\"Value %v for type memory is not valid.\\\")\", [v, v]),\n\t\"Express memory in MiB, for example 2048Mi\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tbad := [v | some v in _pf_batch_eks_vals(c.value, \"memory\"); _pf_batch_eks_mem_bad(v)]\n\tcount(bad) > 0\n\tv := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-metadata-namespace-default",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "The pod namespace cannot be the default Kubernetes namespace",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-metadata-namespace-default\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Namespace\",\n\t\"the pod namespace is default (\\\"kubernetesNamespace cannot be the default Kubernetes namespace.\\\")\",\n\t\"Run the job in a dedicated namespace\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_oget(_pf_batch_meta(name), \"Namespace\") == \"default\"\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-metadata-namespace-kube-prefix",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "The pod namespace cannot be a reserved kube- namespace",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-metadata-namespace-kube-prefix\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Metadata.Namespace\",\n\tsprintf(\"the pod namespace %v is a reserved Kubernetes system namespace (\\\"kubernetesNamespace cannot be a reserved Kubernetes system namespace.\\\")\", [ns]),\n\t\"Run the job in a namespace that does not start with kube-\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksMetadata.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tns := _pf_batch_oget(_pf_batch_meta(name), \"Namespace\")\n\t_pf_batch_lit(ns)\n\tstartswith(ns, \"kube-\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-node-properties",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "EksProperties and NodeProperties are mutually exclusive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-node-properties\", \"ERROR\", name,\n\t\"Properties.NodeProperties\",\n\t\"the job definition sets both EksProperties and NodeProperties (\\\"Cannot use both nodeProperties and eksProperties\\\")\",\n\t\"Keep either EksProperties or NodeProperties\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_has(name, \"EksProperties\")\n\t_pf_batch_has(name, \"NodeProperties\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-propagate-tags",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Batch on EKS does not support tag propagation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-propagate-tags\", \"ERROR\", name,\n\t\"Properties.PropagateTags\",\n\t\"an EKS job definition sets PropagateTags (\\\"Batch on EKS does not support tag propagation.\\\")\",\n\t\"Drop PropagateTags\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_has(name, \"EksProperties\")\n\t_pf_batch_get(name, \"PropagateTags\") == true\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-resource-key-unsupported",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "EKS resource keys are limited to cpu, memory and nvidia.com/gpu",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-resource-key-unsupported\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"%v is not a supported resource type (\\\"%v is not a supported type for resources.\\\")\", [k, k]),\n\t\"Request only cpu, memory and nvidia.com/gpu\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tbad := [k | some k in _pf_batch_eks_reskeys(c.value); not k in {\"cpu\", \"memory\", \"nvidia.com/gpu\"}]\n\tcount(bad) > 0\n\tk := bad[0]\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-resources-required",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "An EKS container must request cpu and memory",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-resources-required\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the container %v sets neither Limits nor Requests for %v\", [n, k]),\n\t\"Set cpu and memory in Resources.Limits or Resources.Requests\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainerResourceRequirements.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome c in _pf_batch_eks_containers(name)\n\tmissing := [k | some k in [\"cpu\", \"memory\"]; count(_pf_batch_eks_vals(c.value, k)) == 0]\n\tcount(missing) > 0\n\tk := missing[0]\n\tn := object.get(c.value, \"Name\", \"(unnamed)\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-eks-volume-mount-name-exists",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A volume mount must name a volume declared in the pod",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-eks-volume-mount-name-exists\", \"ERROR\", name,\n\t\"Properties.EksProperties.PodProperties.Containers\",\n\tsprintf(\"the volume mount %v does not match any volume of the pod\", [n]),\n\t\"Declare the volume in PodProperties.Volumes, or fix the mount name\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksContainer.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tvs := {n | some v in flatten_list(name, \"Properties.EksProperties.PodProperties.Volumes\"); n := object.get(v.value, \"Name\", null)}\n\tsome c in _pf_batch_eks_containers(name)\n\tbad := [n | some m in object.get(c.value, \"VolumeMounts\", []); n := object.get(m, \"Name\", null); _pf_batch_lit(n); not n in vs]\n\tcount(bad) > 0\n\tn := bad[0]\n}\n"
+  },
+  {
     "id": "pf-batch-jd-env-name-required",
     "service": "batch",
     "severity": "ERROR",
@@ -2811,6 +3075,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-memory-minimum\", \"ERROR\", name,\n\t\"Properties.ContainerProperties.Memory\",\n\tsprintf(\"Memory is %v MiB (\\\"Memory must be at least 4 Mib, got %v Mib.\\\")\", [m, m]),\n\t\"Request at least 4 MiB\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_ContainerProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tm := to_number(resolve(name, \"Properties.ContainerProperties.Memory\"))\n\tm < 4\n}\n"
   },
   {
+    "id": "pf-batch-jd-mi-no-multinode",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "MANAGED_INSTANCES job definitions do not support multi-node parallel jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-mi-no-multinode\", \"ERROR\", name,\n\t\"Properties.PlatformCapabilities\",\n\t\"a MANAGED_INSTANCES job definition sets NodeProperties (\\\"MANAGED_INSTANCES does not support MNP jobs\\\")\",\n\t\"Drop NodeProperties, or use the EC2 platform capability\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_mi(name)\n\t_pf_batch_has(name, \"NodeProperties\")\n}\n"
+  },
+  {
     "id": "pf-batch-jd-mi-os-family-linux",
     "service": "batch",
     "severity": "ERROR",
@@ -2853,6 +3128,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Batch::JobDefinition"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-name\", \"ERROR\", name,\n\t\"Properties.JobDefinitionName\",\n\tsprintf(\"JobDefinitionName '%s' is rejected by the service: letters, numbers, hyphen and underscore, at most 128 characters\", [v]),\n\t\"Rename it to satisfy letters, numbers, hyphen and underscore, at most 128 characters\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tv := resolve(name, \"Properties.JobDefinitionName\")\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]{1,128}$`, v)\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-instance-types-ecs-only",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A node range may only set InstanceTypes together with EcsProperties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The user guide says every node range has to use the same instance type;\n# the service instead rejects InstanceTypes outright unless the range carries\n# ecsProperties, which is what this checks.\nviolation contains make_diag_full(\"pf-batch-jd-node-instance-types-ecs-only\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"node range %v sets InstanceTypes without EcsProperties (\\\"Using instanceTypes with nodeRangeProperty is only allowed for ecsProperties jobs.\\\")\", [t]),\n\t\"Move the node range to EcsProperties, or drop InstanceTypes\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeRangeProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome r in _pf_batch_ranges(name)\n\t_pf_batch_ohas(r.value, \"InstanceTypes\")\n\tnot _pf_batch_ohas(r.value, \"EcsProperties\")\n\tt := object.get(r.value, \"TargetNodes\", \"(unset)\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-main-node-lt-num",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "MainNode must be smaller than NumNodes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-main-node-lt-num\", \"ERROR\", name,\n\t\"Properties.NodeProperties.MainNode\",\n\tsprintf(\"MainNode is %v but the job has %v nodes (\\\"Main node index is out of range, must be less than numNodes.\\\")\", [m, n]),\n\t\"Use a MainNode index below NumNodes\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tp := _pf_batch_np(name)\n\tm := _pf_batch_oget(p, \"MainNode\")\n\tis_number(m)\n\tn := _pf_batch_oget(p, \"NumNodes\")\n\tis_number(n)\n\tm >= n\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-num-nodes-max",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A multi-node job supports between 1 and 1000 nodes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-num-nodes-max\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NumNodes\",\n\tsprintf(\"NumNodes is %v (\\\"Number of nodes must be between 1 and 1000.\\\")\", [n]),\n\t\"Use between 1 and 1000 nodes\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := _pf_batch_oget(_pf_batch_np(name), \"NumNodes\")\n\tis_number(n)\n\t_pf_batch_outside(n, 1, 1000)\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-properties-requires-multinode",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "NodeProperties requires the multinode job definition type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-properties-requires-multinode\", \"ERROR\", name,\n\t\"Properties.NodeProperties\",\n\tsprintf(\"NodeProperties is set on a job definition of type %v\", [t]),\n\t\"Set Type: multinode, or drop NodeProperties\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\t_pf_batch_has(name, \"NodeProperties\")\n\tt := _pf_batch_get(name, \"Type\")\n\t_pf_batch_lit(t)\n\tt != \"multinode\"\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-range-payload-exclusive",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A node range uses exactly one of Container, EcsProperties and EksProperties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-range-payload-exclusive\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"node range %v sets %v of Container, EcsProperties and EksProperties (\\\"NodeRangeProperties can not use both ecsProperties and container fields\\\")\", [t, c]),\n\t\"Keep one of Container, EcsProperties or EksProperties per node range\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeRangeProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome r in _pf_batch_ranges(name)\n\tc := count(_pf_batch_range_payloads(r.value))\n\tc > 1\n\tt := object.get(r.value, \"TargetNodes\", \"(unset)\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-range-payload-required",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A node range must define Container, EcsProperties or EksProperties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-range-payload-required\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"node range %v defines none of Container, EcsProperties and EksProperties (\\\"Must specify container for node range %v\\\")\", [t, t]),\n\t\"Give the node range a container\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeRangeProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome r in _pf_batch_ranges(name)\n\tcount(_pf_batch_range_payloads(r.value)) == 0\n\tt := object.get(r.value, \"TargetNodes\", \"(unset)\")\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-ranges-max",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "A multi-node job supports at most 5 node ranges",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-ranges-max\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"the job definition declares %v node ranges (\\\"Maximum allowed size of node range properties is 5\\\")\", [c]),\n\t\"Use at most 5 node ranges\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeProperties.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tc := count(_pf_batch_ranges(name))\n\tc > 5\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-target-nodes-coverage",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "Node ranges must cover every node of the job",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-target-nodes-coverage\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"the node ranges cover %v of the %v nodes\", [c, n]),\n\t\"Extend the node ranges to cover 0 through NumNodes-1\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeRangeProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := _pf_batch_oget(_pf_batch_np(name), \"NumNodes\")\n\tis_number(n)\n\tcount(_pf_batch_target_nodes(name)) == count(_pf_batch_ranges(name))\n\tc := count(_pf_batch_covered(name, n))\n\tc < n\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-target-nodes-format",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "TargetNodes must use the n, n:, :m or n:m form",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-target-nodes-format\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"TargetNodes %v is not a node index or range (\\\"targetNodes should contain only digits.\\\")\", [t]),\n\t\"Write the range as 0:1, 0: or 0\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeRangeProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tsome r in _pf_batch_ranges(name)\n\tt := _pf_batch_oget(r.value, \"TargetNodes\")\n\t_pf_batch_lit(t)\n\tnot regex.match(`^[0-9]*(:[0-9]*)?$`, t)\n}\n"
+  },
+  {
+    "id": "pf-batch-jd-node-target-nodes-in-range",
+    "service": "batch",
+    "severity": "ERROR",
+    "title": "TargetNodes indexes must be smaller than NumNodes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Batch::JobDefinition"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-batch-jd-node-target-nodes-in-range\", \"ERROR\", name,\n\t\"Properties.NodeProperties.NodeRangeProperties\",\n\tsprintf(\"TargetNodes %v addresses a node index outside the %v nodes of the job\", [t, n]),\n\t\"Keep every node index below NumNodes\",\n\t\"https://docs.aws.amazon.com/batch/latest/APIReference/API_NodeRangeProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::Batch::JobDefinition\")\n\tn := _pf_batch_oget(_pf_batch_np(name), \"NumNodes\")\n\tis_number(n)\n\tbad := [t | some t in _pf_batch_target_nodes(name); max(_pf_batch_target(t, n)) >= n]\n\tcount(bad) > 0\n\tt := bad[0]\n}\n"
   },
   {
     "id": "pf-batch-jd-platform-capabilities-single",
@@ -22563,7 +22948,7 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   },
   {
     "name": "_lib/batch",
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Batch rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), lists are\n# always walked through flatten_list, and the launch type is read from\n# PlatformCapabilities — which the API defaults to EC2 when it is missing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_batch_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_batch_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_batch_oget(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_batch_ohas(o, k) if {\n\t_pf_batch_oget(o, k)\n}\n\n_pf_batch_get(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_props(name), k)\n}\n\n_pf_batch_has(name, k) if {\n\t_pf_batch_get(name, k)\n}\n\n# The launch type the job definition asks for. RegisterJobDefinition defaults\n# to EC2 when PlatformCapabilities is absent.\n_pf_batch_caps(name) := {c |\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tc := pc.value\n\tis_string(c)\n}\n\n_pf_batch_fargate(name) if {\n\t\"FARGATE\" in _pf_batch_caps(name)\n}\n\n_pf_batch_mi(name) if {\n\t\"MANAGED_INSTANCES\" in _pf_batch_caps(name)\n}\n\n_pf_batch_ec2(name) if {\n\tcount(_pf_batch_caps(name)) == 0\n}\n\n_pf_batch_ec2(name) if {\n\t\"EC2\" in _pf_batch_caps(name)\n}\n\n# ContainerProperties and the nested objects the rules reach for most often.\n_pf_batch_cp(name) := cp if {\n\tcp := _pf_batch_get(name, \"ContainerProperties\")\n\tis_object(cp)\n}\n\n_pf_batch_cpget(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_cp(name), k)\n}\n\n_pf_batch_cphas(name, k) if {\n\t_pf_batch_cpget(name, k)\n}\n\n_pf_batch_lp(name) := lp if {\n\tlp := _pf_batch_cpget(name, \"LinuxParameters\")\n\tis_object(lp)\n}\n\n_pf_batch_volumes(name) := vs if {\n\tvs := flatten_list(name, \"Properties.ContainerProperties.Volumes\")\n}\n\n# The EFS configuration of one volume entry.\n_pf_batch_efs(v) := e if {\n\te := _pf_batch_oget(v.value, \"EfsVolumeConfiguration\")\n\tis_object(e)\n}\n\n# Resource requirements of a container object, by type (VCPU / MEMORY / GPU).\n# A duplicated type has to stay single-valued here, otherwise every rule that\n# reads one blows up with \"function produced multiple outputs\".\n_pf_batch_rrs(c, t) := [v |\n\tsome e in object.get(c, \"ResourceRequirements\", [])\n\tis_object(e)\n\tobject.get(e, \"Type\", \"\") == t\n\tv := object.get(e, \"Value\", null)\n]\n\n_pf_batch_rr(c, t) := v if {\n\tvs := _pf_batch_rrs(c, t)\n\tcount(vs) > 0\n\tv := vs[0]\n}\n\n_pf_batch_num(v) := n if {\n\tn := to_number(v)\n}\n\n# Outside an inclusive range; two clauses so a single rule body can express it.\n_pf_batch_outside(v, lo, _) if {\n\tv < lo\n}\n\n_pf_batch_outside(v, _, hi) if {\n\tv > hi\n}\n\n_pf_batch_anykey(o, keys) if {\n\tsome k in keys\n\t_pf_batch_ohas(o, k)\n}\n\n# EcsProperties: task elements, and every container inside them.\n_pf_batch_ecs_tasks(name) := ts if {\n\tts := flatten_list(name, \"Properties.EcsProperties.TaskProperties\")\n}\n\n_pf_batch_ecs_containers(name) := [{\"ti\": t.index, \"ci\": i, \"c\": c} |\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome i, c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n]\n\n# Literal container names declared inside one ECS task element.\n_pf_batch_ecs_names(t) := {n |\n\tsome c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n\tn := object.get(c, \"Name\", null)\n\t_pf_batch_lit(n)\n}\n\n# ---- job queue -------------------------------------------------------------\n\n# The orchestration type of a job queue. CreateJobQueue defaults to ECS when\n# JobQueueType is absent; a Ref leaves it undefined so nothing fires on it.\n_pf_batch_qtype(name) := t if {\n\tt := _pf_batch_get(name, \"JobQueueType\")\n\tis_string(t)\n\tnot input.resources[t]\n}\n\n_pf_batch_qtype(name) := \"ECS\" if {\n\tnot _pf_batch_has(name, \"JobQueueType\")\n}\n\n# ---- ARNs ------------------------------------------------------------------\n\n_pf_batch_arn_region(v) := r if {\n\t_pf_batch_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\tr := parts[3]\n\tr != \"\"\n}\n\n_pf_batch_arn_resource(v) := s if {\n\t_pf_batch_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\ts := parts[5]\n}\n\n# The ARN's own region, but only when it differs from the deployment region.\n_pf_batch_region_mismatch(v) := r if {\n\tr := _pf_batch_arn_region(v)\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr != region\n}\n\n# The logical id behind a reference to an in-template resource. flatten_list\n# hands back whichever shape the engine chose (a resolved logical id, a\n# {__ref} marker, or the raw {\"Ref\": ...}), so all three are accepted.\n_pf_batch_ref(v) := v if {\n\tis_string(v)\n\tinput.resources[v]\n}\n\n_pf_batch_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", \"__pf_absent\")\n\tis_string(r)\n}\n\n_pf_batch_ref(v) := r if {\n\tis_object(v)\n\tobject.get(v, \"__ref\", \"__pf_absent\") == \"__pf_absent\"\n\tr := object.get(v, \"Ref\", \"__pf_absent\")\n\tis_string(r)\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Batch rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), lists are\n# always walked through flatten_list, and the launch type is read from\n# PlatformCapabilities — which the API defaults to EC2 when it is missing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_batch_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_batch_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_batch_oget(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_batch_ohas(o, k) if {\n\t_pf_batch_oget(o, k)\n}\n\n_pf_batch_get(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_props(name), k)\n}\n\n_pf_batch_has(name, k) if {\n\t_pf_batch_get(name, k)\n}\n\n# The launch type the job definition asks for. RegisterJobDefinition defaults\n# to EC2 when PlatformCapabilities is absent.\n_pf_batch_caps(name) := {c |\n\tsome pc in flatten_list(name, \"Properties.PlatformCapabilities\")\n\tc := pc.value\n\tis_string(c)\n}\n\n_pf_batch_fargate(name) if {\n\t\"FARGATE\" in _pf_batch_caps(name)\n}\n\n_pf_batch_mi(name) if {\n\t\"MANAGED_INSTANCES\" in _pf_batch_caps(name)\n}\n\n_pf_batch_ec2(name) if {\n\tcount(_pf_batch_caps(name)) == 0\n}\n\n_pf_batch_ec2(name) if {\n\t\"EC2\" in _pf_batch_caps(name)\n}\n\n# ContainerProperties and the nested objects the rules reach for most often.\n_pf_batch_cp(name) := cp if {\n\tcp := _pf_batch_get(name, \"ContainerProperties\")\n\tis_object(cp)\n}\n\n_pf_batch_cpget(name, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_cp(name), k)\n}\n\n_pf_batch_cphas(name, k) if {\n\t_pf_batch_cpget(name, k)\n}\n\n_pf_batch_lp(name) := lp if {\n\tlp := _pf_batch_cpget(name, \"LinuxParameters\")\n\tis_object(lp)\n}\n\n_pf_batch_volumes(name) := vs if {\n\tvs := flatten_list(name, \"Properties.ContainerProperties.Volumes\")\n}\n\n# The EFS configuration of one volume entry.\n_pf_batch_efs(v) := e if {\n\te := _pf_batch_oget(v.value, \"EfsVolumeConfiguration\")\n\tis_object(e)\n}\n\n# Resource requirements of a container object, by type (VCPU / MEMORY / GPU).\n# A duplicated type has to stay single-valued here, otherwise every rule that\n# reads one blows up with \"function produced multiple outputs\".\n_pf_batch_rrs(c, t) := [v |\n\tsome e in object.get(c, \"ResourceRequirements\", [])\n\tis_object(e)\n\tobject.get(e, \"Type\", \"\") == t\n\tv := object.get(e, \"Value\", null)\n]\n\n_pf_batch_rr(c, t) := v if {\n\tvs := _pf_batch_rrs(c, t)\n\tcount(vs) > 0\n\tv := vs[0]\n}\n\n_pf_batch_num(v) := n if {\n\tn := to_number(v)\n}\n\n# Outside an inclusive range; two clauses so a single rule body can express it.\n_pf_batch_outside(v, lo, _) if {\n\tv < lo\n}\n\n_pf_batch_outside(v, _, hi) if {\n\tv > hi\n}\n\n_pf_batch_anykey(o, keys) if {\n\tsome k in keys\n\t_pf_batch_ohas(o, k)\n}\n\n# EcsProperties: task elements, and every container inside them.\n_pf_batch_ecs_tasks(name) := ts if {\n\tts := flatten_list(name, \"Properties.EcsProperties.TaskProperties\")\n}\n\n_pf_batch_ecs_containers(name) := [{\"ti\": t.index, \"ci\": i, \"c\": c} |\n\tsome t in _pf_batch_ecs_tasks(name)\n\tsome i, c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n]\n\n# Literal container names declared inside one ECS task element.\n_pf_batch_ecs_names(t) := {n |\n\tsome c in object.get(t.value, \"Containers\", [])\n\tis_object(c)\n\tn := object.get(c, \"Name\", null)\n\t_pf_batch_lit(n)\n}\n\n# ---- job queue -------------------------------------------------------------\n\n# The orchestration type of a job queue. CreateJobQueue defaults to ECS when\n# JobQueueType is absent; a Ref leaves it undefined so nothing fires on it.\n_pf_batch_qtype(name) := t if {\n\tt := _pf_batch_get(name, \"JobQueueType\")\n\tis_string(t)\n\tnot input.resources[t]\n}\n\n_pf_batch_qtype(name) := \"ECS\" if {\n\tnot _pf_batch_has(name, \"JobQueueType\")\n}\n\n# ---- ARNs ------------------------------------------------------------------\n\n_pf_batch_arn_region(v) := r if {\n\t_pf_batch_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\tr := parts[3]\n\tr != \"\"\n}\n\n_pf_batch_arn_resource(v) := s if {\n\t_pf_batch_lit(v)\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\ts := parts[5]\n}\n\n# The ARN's own region, but only when it differs from the deployment region.\n_pf_batch_region_mismatch(v) := r if {\n\tr := _pf_batch_arn_region(v)\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr != region\n}\n\n# The logical id behind a reference to an in-template resource. flatten_list\n# hands back whichever shape the engine chose (a resolved logical id, a\n# {__ref} marker, or the raw {\"Ref\": ...}), so all three are accepted.\n_pf_batch_ref(v) := v if {\n\tis_string(v)\n\tinput.resources[v]\n}\n\n_pf_batch_ref(v) := r if {\n\tis_object(v)\n\tr := object.get(v, \"__ref\", \"__pf_absent\")\n\tis_string(r)\n}\n\n_pf_batch_ref(v) := r if {\n\tis_object(v)\n\tobject.get(v, \"__ref\", \"__pf_absent\") == \"__pf_absent\"\n\tr := object.get(v, \"Ref\", \"__pf_absent\")\n\tis_string(r)\n}\n\n# ---- EKS pod properties ----------------------------------------------------\n\n_pf_batch_pod(name) := p if {\n\tp := _pf_batch_oget(_pf_batch_get(name, \"EksProperties\"), \"PodProperties\")\n\tis_object(p)\n}\n\n_pf_batch_meta(name) := m if {\n\tm := _pf_batch_oget(_pf_batch_pod(name), \"Metadata\")\n\tis_object(m)\n}\n\n# Containers and init containers, as flatten_list's {index, value} records.\n_pf_batch_eks_containers(name) := cs if {\n\tcs := array.concat(\n\t\tflatten_list(name, \"Properties.EksProperties.PodProperties.Containers\"),\n\t\tflatten_list(name, \"Properties.EksProperties.PodProperties.InitContainers\"),\n\t)\n}\n\n_pf_batch_eks_res(c, side) := r if {\n\tr := _pf_batch_oget(_pf_batch_oget(c, \"Resources\"), side)\n\tis_object(r)\n}\n\n# One resource value written by the user; a Ref is left alone.\n_pf_batch_eks_resval(c, side, k) := v if {\n\tv := _pf_batch_oget(_pf_batch_eks_res(c, side), k)\n\t_pf_batch_lit(v)\n}\n\n# Both sides at once, for the checks that do not care which one carries it.\n_pf_batch_eks_vals(c, k) := vs if {\n\tvs := [v |\n\t\tsome side in [\"Limits\", \"Requests\"]\n\t\tv := _pf_batch_eks_resval(c, side, k)\n\t]\n}\n\n_pf_batch_eks_numval(c, side, k) := n if {\n\tv := _pf_batch_eks_resval(c, side, k)\n\tregex.match(`^[0-9]+(\\.[0-9]+)?$`, v)\n\tn := to_number(v)\n}\n\n_pf_batch_keyset(o) := {k | some k, _ in o}\n\n_pf_batch_eks_reskeys(c) := ks if {\n\tr := _pf_batch_oget(c, \"Resources\")\n\tis_object(r)\n\tks := _pf_batch_keyset(object.get(r, \"Limits\", {})) | _pf_batch_keyset(object.get(r, \"Requests\", {}))\n}\n\n# cpu is a whole number or a multiple of 0.25; milliCPU (\"100m\") is rejected.\n_pf_batch_eks_cpu_bad(v) if {\n\tnot regex.match(`^[0-9]+(\\.[0-9]+)?$`, v)\n}\n\n_pf_batch_eks_cpu_bad(v) if {\n\tregex.match(`^[0-9]+(\\.[0-9]+)?$`, v)\n\tq := to_number(v) * 4\n\tq != round(q)\n}\n\n# A unit suffix other than Mi. A bare number is left alone.\n_pf_batch_eks_mem_bad(v) if {\n\tregex.match(`^[0-9]+(\\.[0-9]+)?[A-Za-z]+$`, v)\n\tnot endswith(v, \"Mi\")\n}\n\n_pf_batch_eks_mib(v) := n if {\n\tregex.match(`^[0-9]+(Mi)?$`, v)\n\tn := to_number(trim_suffix(v, \"Mi\"))\n}\n\n# Kubernetes reserved prefixes, plus the service's own.\n_pf_batch_k8s_reserved(k) if {\n\tsome p in [\"kubernetes.io/\", \"k8s.io/\", \"batch.amazonaws.com/\"]\n\tstartswith(k, p)\n}\n\n# The name half of a label or annotation key (\"prefix/name\" or just \"name\").\n_pf_batch_k8s_name_ok(k) if {\n\tparts := split(k, \"/\")\n\tregex.match(`^[a-zA-Z0-9]([a-zA-Z0-9._-]{0,61}[a-zA-Z0-9])?$`, parts[count(parts) - 1])\n}\n\n# ---- multi-node ------------------------------------------------------------\n\n_pf_batch_np(name) := np if {\n\tnp := _pf_batch_get(name, \"NodeProperties\")\n\tis_object(np)\n}\n\n_pf_batch_ranges(name) := rs if {\n\trs := flatten_list(name, \"Properties.NodeProperties.NodeRangeProperties\")\n}\n\n# Every TargetNodes expression the template spells out in a parsable form.\n_pf_batch_target_nodes(name) := ts if {\n\tts := [t |\n\t\tsome r in _pf_batch_ranges(name)\n\t\tt := object.get(r.value, \"TargetNodes\", null)\n\t\t_pf_batch_lit(t)\n\t\tregex.match(`^[0-9]*(:[0-9]*)?$`, t)\n\t]\n}\n\n_pf_batch_bound(s, d) := d if {\n\ts == \"\"\n}\n\n_pf_batch_bound(s, _) := n if {\n\ts != \"\"\n\tn := to_number(s)\n}\n\n# The node indexes one TargetNodes expression covers: \"n\", \"n:\", \":m\", \"n:m\".\n_pf_batch_target(s, _) := ns if {\n\tparts := split(s, \":\")\n\tcount(parts) == 1\n\tns := {to_number(parts[0])}\n}\n\n_pf_batch_target(s, num) := ns if {\n\tparts := split(s, \":\")\n\tcount(parts) == 2\n\tns := {n | some n in numbers.range(_pf_batch_bound(parts[0], 0), _pf_batch_bound(parts[1], num - 1))}\n}\n\n_pf_batch_covered(name, num) := union({s |\n\tsome t in _pf_batch_target_nodes(name)\n\ts := _pf_batch_target(t, num)\n})\n\n# The three payload shapes a node range may carry, at most one of them.\n_pf_batch_range_payloads(r) := ks if {\n\tks := [k |\n\t\tsome k in [\"Container\", \"EcsProperties\", \"EksProperties\"]\n\t\t_pf_batch_ohas(r, k)\n\t]\n}\n"
   },
   {
     "name": "_lib/bedrock",
