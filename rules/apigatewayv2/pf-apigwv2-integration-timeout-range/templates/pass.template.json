@@ -19,6 +19,19 @@
         "PayloadFormatVersion": "1.0",
         "TimeoutInMillis": 30000
       }
+    },
+    "Y": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "HTTP_PROXY",
+        "IntegrationMethod": "GET",
+        "IntegrationUri": "https://example.com",
+        "PayloadFormatVersion": "1.0",
+        "TimeoutInMillis": 50
+      }
     }
   }
 }

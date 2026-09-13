@@ -4,7 +4,7 @@
       "Type": "AWS::ApiGateway::ApiKey",
       "Properties": {
         "Name": "k",
-        "Value": "short"
+        "Value": "aaaaaaaaaaaaaaaaaaa"
       }
     }
   }

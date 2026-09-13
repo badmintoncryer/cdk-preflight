@@ -19,7 +19,7 @@
           "$request.header.Authorization"
         ],
         "AuthorizerPayloadFormatVersion": "2.0",
-        "AuthorizerResultTtlInSeconds": 300,
+        "AuthorizerResultTtlInSeconds": 3600,
         "AuthorizerUri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:214794239830:function:f/invocations"
       }
     }

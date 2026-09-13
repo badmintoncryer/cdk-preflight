@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Identity source must be set if authorizer caching is enabled (TTL is greater than 0)\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: AuthorizerResultTtlInSeconds 1 with an empty IdentitySource -> \"Identity source must be set if authorizer caching is enabled (TTL is greater than 0)\" (ROLLBACK_COMPLETE); pass same TTL with one identity source -> CREATE_COMPLETE"
 addedOn: 2026-09-08

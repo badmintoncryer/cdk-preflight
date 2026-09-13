@@ -7,16 +7,9 @@
 #   それ以外       — 恒久的な例外。しきい値の検出がそのルールでは意味を持たない理由を具体的に
 #                    書く（ARN の断片数のようなガード、エンジンのスキーマが持っている側の端、
 #                    実機で作れない量など）
-pf-apigw-api-key-value-length  pending #178
-pf-apigw-authorizer-ttl-range  pending #178
-pf-apigw-integration-timeout-range  pending #178
-pf-apigw-minimum-compression-size-range  pending #178
-pf-apigw-regional-certificate-region  pending #178
-pf-apigw-stage-cache-ttl-range  pending #178
-pf-apigwv2-authorizer-ttl-range  pending #178
-pf-apigwv2-domain-certificate-region  pending #178
-pf-apigwv2-integration-timeout-range  pending #178
-pf-apigwv2-websocket-integration-timeout-range  pending #178
+pf-apigw-integration-timeout-range  下限 50 はエンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。上限 29001/29000 は境界に乗せてある
+pf-apigw-regional-certificate-region  ARN を ":" で割った断片数のガード（count(parts) >= 6）。順序のある制約ではない
+pf-apigwv2-domain-certificate-region  ARN を ":" で割った断片数のガード（count(parts) >= 6）。順序のある制約ではない
 pf-appsync-api-env-var-count-max  pending #178
 pf-appsync-api-env-var-key-max-length  pending #178
 pf-appsync-api-env-var-value-max-length  pending #178

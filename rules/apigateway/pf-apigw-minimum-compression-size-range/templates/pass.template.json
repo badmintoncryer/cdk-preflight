@@ -4,7 +4,7 @@
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
         "Name": "p",
-        "MinimumCompressionSize": 1000
+        "MinimumCompressionSize": 10485760
       }
     }
   }
