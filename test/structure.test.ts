@@ -228,6 +228,21 @@ test('boundaryProblem follows the assignment to see what was counted', () => {
   expect(boundaryProblem(shape, fixture('a'), fixture('a'))).toBeUndefined();
 });
 
+test('boundaryProblem follows a helper call to what it counts', () => {
+  const list = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { V: Array.from({ length: n }, (_, i) => `i${i}`) } } } });
+  // `n := _pf_x_n(g)` のように、数えているのがヘルパー越しのこともある。定義まで辿らないと
+  // 数値プールと突き合わせてしまい、境界に乗っているペアを誤検出する
+  const helper = '_pf_x_n(g) := count([1 |\n\tsome it in flatten_list(g, "Properties.V")\n])\n\nviolation contains 1 if {\n\tn := _pf_x_n(name)\n\tn > 50\n}\n';
+  expect(boundaryProblem(helper, list(51), list(50))).toBeUndefined();
+  expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
+});
+
+test('boundaryProblem measures the string the rule sees, not the escaped JSON', () => {
+  // count(v) が見るのは解けた後の文字列。生のテキストのまま数えると `\"` を含む値でずれる
+  const rego = 'violation contains 1 if {\n\tsome v in vals\n\tcount(v) > 20\n}\n';
+  expect(boundaryProblem(rego, fixture(`"${'x'.repeat(19)}"`), fixture(`"${'x'.repeat(18)}"`))).toBeUndefined();
+});
+
 test('every fixture pair sits on the boundary, or is listed as an exception', () => {
   const exceptions = boundaryExceptions();
   const flagged = new Map<string, string>();

@@ -13,7 +13,7 @@
         "Type": "HTTPS",
         "TTL": "60",
         "ResourceRecords": [
-          "1 example.net."
+          "32767 example.net."
         ],
         "HostedZoneId": {
           "Ref": "Zone"

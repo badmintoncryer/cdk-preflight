@@ -1866,7 +1866,7 @@
 | `pf-route53-hostedzone-name-punycode` | AWS::Route53::HostedZone | An internationalized hosted zone name must be given in Punycode | ERROR | none |
 | `pf-route53-hostedzone-name-required` | AWS::Route53::HostedZone | A hosted zone needs a Name even though CloudFormation marks it optional | ERROR | none |
 | `pf-route53-hostedzone-name-tld` | AWS::Route53::HostedZone | A hosted zone cannot be created for a bare top-level domain | ERROR | none |
-| `pf-route53-hostedzone-name-total-255` | AWS::Route53::HostedZone | A hosted zone name must be 255 bytes or fewer | ERROR | none |
+| `pf-route53-hostedzone-name-total-253` | AWS::Route53::HostedZone | A hosted zone name must be 253 characters or fewer | ERROR | none |
 | `pf-route53-hostedzone-name-wildcard-label` | AWS::Route53::HostedZone | A hosted zone name cannot start with a wildcard label | ERROR | none |
 | `pf-route53-hostedzone-nameservers-private` | AWS::Route53::HostedZone<br>AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Fn::GetAtt NameServers is not available on a private hosted zone | ERROR | none |
 | `pf-route53-hostedzone-querylogging-arn-format` | AWS::Route53::HostedZone | The query logging log group must be given as a CloudWatch Logs log-group ARN | ERROR | none |
@@ -1901,7 +1901,7 @@
 | `pf-route53-record-name-charset` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name cannot contain a space | ERROR | none |
 | `pf-route53-record-name-label-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Each label of a record name is limited to 63 bytes | ERROR | none |
 | `pf-route53-record-name-punycode` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name must be ASCII (IDNs go in as Punycode) | ERROR | none |
-| `pf-route53-record-name-total-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name is limited to 255 bytes | ERROR | none |
+| `pf-route53-record-name-total-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name is limited to 253 characters | ERROR | none |
 | `pf-route53-record-name-wildcard-ns` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An NS record set cannot use a wildcard name | ERROR | none |
 | `pf-route53-record-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Type must be one of the 17 record types Route 53 supports | ERROR | none |
 | `pf-route53-record-type-routing-policy` | AWS::Route53::RecordSet | NS records take no routing policy; CNAME cannot be multivalue | ERROR | none |
