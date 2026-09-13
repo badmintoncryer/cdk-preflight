@@ -144,7 +144,10 @@ const services = fs
 // route53resolver: 実測 2026-09-11 us-east-1（fail-only）— エンドポイントが立ち切る 10 本が
 // 337 秒/本、エンドポイント自身が違反で即拒否される 19 本が 225 秒/本、残り 33 本が 50 秒/本。
 // 62 本を逐次で回すと 2.6h で、INCONCLUSIVE のリトライが重なると 4h に触れる。3 分割で 1 本 55 分前後。
-const shards: Record<string, number> = { route53resolver: 3 };
+// msk: 実測 2026-09-13/14 us-east-1 — fail は同期拒否 8 秒 + ROLLBACK 2m51s で 1 本約 3 分、
+// うち 13 本は VPC/サブネット/SG を同一スタックに建てるぶん +2 分。52 本を逐次で回すと約 3h で
+// 目安の上限に張り付き、INCONCLUSIVE のリトライが乗ると 4h の認証期限に触れる。2 分割で 1 本 1.5h 前後。
+const shards: Record<string, number> = { route53resolver: 3, msk: 2 };
 services.forEach((s) => {
   // verify-all.sh は "<service>.<i>of<n>" を '.' で切って解釈する
   if (s.includes('.')) throw new Error(`service directory name must not contain a dot: ${s}`);
