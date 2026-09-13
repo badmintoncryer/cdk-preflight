@@ -1,0 +1,12 @@
+id: pf-athena-dc-lambda-function-xor-split
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::DataCatalog]
+severity: ERROR
+title: "A Lambda data catalog uses 'function' or the metadata/record pair, never both"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-athena-datacatalog.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both.\"; bench 2026-09-13 us-east-1: fail -> \"Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

@@ -24,16 +24,17 @@
     "DS": {
       "Type": "AWS::KinesisFirehose::DeliveryStream",
       "Properties": {
+        "DeliveryStreamType": "DirectPut",
         "ExtendedS3DestinationConfiguration": {
-          "BucketARN": {
-            "Fn::GetAtt": [
-              "B",
-              "Arn"
-            ]
-          },
           "RoleARN": {
             "Fn::GetAtt": [
               "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
               "Arn"
             ]
           },
@@ -45,7 +46,7 @@
             "IntervalInSeconds": 300
           },
           "Prefix": "data/!{partitionKeyFromQuery:dept}/",
-          "ErrorOutputPrefix": "err/",
+          "ErrorOutputPrefix": "err/!{firehose:error-output-type}/",
           "ProcessingConfiguration": {
             "Enabled": true,
             "Processors": [

@@ -2314,6 +2314,160 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Judged only when the target API is a sibling resource, so its ApiType is\n# visible in this template.\n_pf_sourceapinotmergedtarget_merged(n) if resolve(n, \"Properties.ApiType\") == \"MERGED\"\n\nviolation contains make_diag_full(\"pf-appsync-source-api-not-merged-target\", \"ERROR\", name,\n\t\"Properties.MergedApiIdentifier\",\n\tsprintf(\"API '%s' is not an ApiType: MERGED API; the association create fails because source APIs can only be associated with a merged API\", [m]),\n\t\"Set ApiType: MERGED on the target API, or point MergedApiIdentifier at one\",\n\t\"https://docs.aws.amazon.com/appsync/latest/devguide/merged-api.html\") if {\n\tsome name in resources_of_type(\"AWS::AppSync::SourceApiAssociation\")\n\tm := resolve(name, \"Properties.MergedApiIdentifier\")\n\tm in resources_of_type(\"AWS::AppSync::GraphQLApi\")\n\tnot _pf_sourceapinotmergedtarget_merged(m)\n}\n"
   },
   {
+    "id": "pf-athena-dc-glue-requires-catalog-id",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A GLUE data catalog requires the catalog-id parameter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::DataCatalog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-glue-requires-catalog-id\", \"ERROR\", name,\n\t\"Properties.Parameters\",\n\t\"the GLUE catalog has no 'catalog-id' parameter; CreateDataCatalog fails with \\\"Glue catalog parameters cannot be empty.\\\"\",\n\t\"Set Parameters.catalog-id to the AWS account ID that owns the Glue Data Catalog\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-athena-datacatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tresolve(name, \"Properties.Type\") == \"GLUE\"\n\tnot _pf_athlib_has(_pf_athlib_params(name), \"catalog-id\")\n}\n"
+  },
+  {
+    "id": "pf-athena-dc-hive-requires-metadata-function",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A HIVE data catalog requires the metadata-function parameter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::DataCatalog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-hive-requires-metadata-function\", \"ERROR\", name,\n\t\"Properties.Parameters\",\n\t\"the HIVE catalog has no 'metadata-function' parameter; CreateDataCatalog fails with \\\"Hive catalog parameters cannot be empty.\\\"\",\n\t\"Set Parameters.metadata-function to the Lambda function that serves the Hive metastore\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-athena-datacatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tresolve(name, \"Properties.Type\") == \"HIVE\"\n\tnot _pf_athlib_has(_pf_athlib_params(name), \"metadata-function\")\n}\n"
+  },
+  {
+    "id": "pf-athena-dc-lambda-function-xor-split",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A Lambda data catalog uses 'function' or the metadata/record pair, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::DataCatalog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-lambda-function-xor-split\", \"ERROR\", name,\n\t\"Properties.Parameters\",\n\tsprintf(\"the Lambda catalog sets both 'function' and '%v'; CreateDataCatalog fails with \\\"Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both.\\\"\", [k]),\n\t\"Use the single 'function' parameter, or the 'metadata-function' and 'record-function' pair\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-athena-datacatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tresolve(name, \"Properties.Type\") == \"LAMBDA\"\n\tparams := _pf_athlib_params(name)\n\t_pf_athlib_has(params, \"function\")\n\tsome k in [\"metadata-function\", \"record-function\"]\n\t_pf_athlib_has(params, k)\n}\n"
+  },
+  {
+    "id": "pf-athena-dc-lambda-record-requires-metadata",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "'metadata-function' and 'record-function' must be set together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::DataCatalog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-lambda-record-requires-metadata\", \"ERROR\", name,\n\t\"Properties.Parameters\",\n\tsprintf(\"the Lambda catalog sets '%v' without '%v'; CreateDataCatalog fails with \\\"Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both.\\\"\", [pair[0], pair[1]]),\n\t\"Set both 'metadata-function' and 'record-function', or use the single 'function' parameter\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-athena-datacatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tresolve(name, \"Properties.Type\") == \"LAMBDA\"\n\tparams := _pf_athlib_params(name)\n\tnot _pf_athlib_has(params, \"function\")\n\tsome pair in [[\"record-function\", \"metadata-function\"], [\"metadata-function\", \"record-function\"]]\n\t_pf_athlib_has(params, pair[0])\n\tnot _pf_athlib_has(params, pair[1])\n}\n"
+  },
+  {
+    "id": "pf-athena-dc-name-charset",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A data catalog name may use only letters, digits, underscore, at sign and hyphen",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Athena::DataCatalog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-name-charset\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"data catalog name '%v' has characters outside [a-zA-Z0-9_@-]; CreateDataCatalog fails with \\\"DataCatalog name %v is invalid.\\\"\", [n, n]),\n\t\"Use only letters, digits, underscore, at sign and hyphen in the data catalog name\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tn := resolve(name, \"Properties.Name\")\n\t_pf_athlib_lit(n)\n\tnot regex.match(`^[a-zA-Z0-9_@-]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-athena-dc-name-max-128",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A data catalog name may be at most 128 characters",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Athena::DataCatalog"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-name-max-128\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"the data catalog name is %d characters; CreateDataCatalog fails with \\\"DataCatalog name ... is invalid.\\\"\", [count(n)]),\n\t\"Use a data catalog name of at most 128 characters\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tn := resolve(name, \"Properties.Name\")\n\t_pf_athlib_lit(n)\n\tcount(n) > 128\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-cse-kms-requires-key",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "CSE_KMS result encryption requires a KmsKey",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-cse-kms-requires-key\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.ResultConfiguration.EncryptionConfiguration.KmsKey\",\n\t\"EncryptionOption is CSE_KMS but no KmsKey is set; CreateWorkGroup fails with \\\"KMS Customer Master Key ID is null or empty\\\"\",\n\t\"Set EncryptionConfiguration.KmsKey, or use EncryptionOption SSE_S3, which needs no key\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_EncryptionConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tenc := _pf_athlib_obj(_pf_athlib_resultcfg(name), \"EncryptionConfiguration\")\n\tobject.get(enc, \"EncryptionOption\", \"\") == \"CSE_KMS\"\n\tnot _pf_athlib_has(enc, \"KmsKey\")\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-engine-version-enum",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "SelectedEngineVersion must be AUTO or a published engine version",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-engine-version-enum\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.EngineVersion.SelectedEngineVersion\",\n\tsprintf(\"SelectedEngineVersion '%v' is not a published engine version; CreateWorkGroup fails with \\\"The selected engine version is not valid.\\\"\", [ev]),\n\t\"Use AUTO, \\\"Athena engine version 3\\\" or \\\"PySpark engine version 3\\\"\",\n\t\"https://docs.aws.amazon.com/athena/latest/ug/engine-versions-reference.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tev := resolve(name, \"Properties.WorkGroupConfiguration.EngineVersion.SelectedEngineVersion\")\n\t_pf_athlib_lit(ev)\n\tnot ev in {\"AUTO\", \"Athena engine version 2\", \"Athena engine version 3\", \"PySpark engine version 3\"}\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-expected-bucket-owner-12-digits",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "ExpectedBucketOwner must be at least 12 characters (a 12-digit account ID)",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-expected-bucket-owner-12-digits\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.ResultConfiguration.ExpectedBucketOwner\",\n\tsprintf(\"ExpectedBucketOwner '%v' is %d characters, short of a 12-digit account id; CreateWorkGroup fails with \\\"Value at 'configuration.resultConfiguration.expectedBucketOwner' failed to satisfy constraint: Member must have length greater than or equal to 12\\\"\", [owner, count(owner)]),\n\t\"Use the 12-digit AWS account ID that owns the result bucket\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_ResultConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\towner := resolve(name, \"Properties.WorkGroupConfiguration.ResultConfiguration.ExpectedBucketOwner\")\n\t_pf_athlib_lit(owner)\n\tcount(owner) < 12\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-managed-storage-xor-output-location",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "Managed query results and a ResultConfiguration cannot both be set",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-managed-storage-xor-output-location\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.ManagedQueryResultsConfiguration\",\n\t\"the workgroup enables managed query results and also sets ResultConfiguration; CreateWorkGroup fails with \\\"ManagedQueryResultsConfiguration and ResultConfiguration cannot be set together.\\\"\",\n\t\"Keep managed query result storage, or drop it and keep the ResultConfiguration output location\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_WorkGroupConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tcfg := _pf_athlib_wgcfg(name)\n\tobject.get(_pf_athlib_obj(cfg, \"ManagedQueryResultsConfiguration\"), \"Enabled\", false) == true\n\t_pf_athlib_has(cfg, \"ResultConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-name-charset",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A workgroup name may use only letters, digits, period, underscore and hyphen",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-name-charset\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"workgroup name '%v' has characters outside [a-zA-Z0-9._-]; CreateWorkGroup fails with \\\"Value at 'name' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9._-]{1,128}\\\"\", [n]),\n\t\"Use only letters, digits, period, underscore and hyphen in the workgroup name\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateWorkGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tn := resolve(name, \"Properties.Name\")\n\t_pf_athlib_lit(n)\n\tnot regex.match(`^[a-zA-Z0-9._-]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-output-location-s3-uri",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "The query result OutputLocation must be an s3:// URI",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-output-location-s3-uri\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.ResultConfiguration.OutputLocation\",\n\tsprintf(\"OutputLocation '%v' is not an S3 URI; CreateWorkGroup fails with \\\"OutputLocation is not a valid S3 path.\\\"\", [loc]),\n\t\"Write the result location as s3://<bucket>/<prefix>/\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_ResultConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tloc := resolve(name, \"Properties.WorkGroupConfiguration.ResultConfiguration.OutputLocation\")\n\t_pf_athlib_lit(loc)\n\tnot startswith(loc, \"s3://\")\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-spark-requires-execution-role",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "A PySpark workgroup must set an ExecutionRole",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-spark-requires-execution-role\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.ExecutionRole\",\n\tsprintf(\"the workgroup selects '%v' but sets no ExecutionRole; CreateWorkGroup fails with \\\"ExecutionRole is null or empty\\\"\", [ev]),\n\t\"Set WorkGroupConfiguration.ExecutionRole to the IAM role the Spark calculations run as\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_WorkGroupConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tcfg := _pf_athlib_wgcfg(name)\n\tev := object.get(_pf_athlib_obj(cfg, \"EngineVersion\"), \"SelectedEngineVersion\", \"\")\n\tis_string(ev)\n\tstartswith(ev, \"PySpark\")\n\tnot _pf_athlib_has(cfg, \"ExecutionRole\")\n}\n"
+  },
+  {
+    "id": "pf-athena-wg-sse-kms-requires-key",
+    "service": "athena",
+    "severity": "ERROR",
+    "title": "SSE_KMS result encryption requires a KmsKey",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Athena::WorkGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-wg-sse-kms-requires-key\", \"ERROR\", name,\n\t\"Properties.WorkGroupConfiguration.ResultConfiguration.EncryptionConfiguration.KmsKey\",\n\t\"EncryptionOption is SSE_KMS but no KmsKey is set; CreateWorkGroup fails with \\\"KMS Customer Master Key ID is null or empty\\\"\",\n\t\"Set EncryptionConfiguration.KmsKey, or use EncryptionOption SSE_S3, which needs no key\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_EncryptionConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::WorkGroup\")\n\tenc := _pf_athlib_obj(_pf_athlib_resultcfg(name), \"EncryptionConfiguration\")\n\tobject.get(enc, \"EncryptionOption\", \"\") == \"SSE_KMS\"\n\tnot _pf_athlib_has(enc, \"KmsKey\")\n}\n"
+  },
+  {
     "id": "pf-asg-az-xor-azid",
     "service": "autoscaling",
     "severity": "ERROR",
@@ -15406,7 +15560,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::KinesisFirehose::DeliveryStream"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-http-buffer-size\", \"ERROR\", name,\n\t\"Properties.HttpEndpointDestinationConfiguration.BufferingHints.SizeInMBs\",\n\tsprintf(\"SizeInMBs is %v; the stream create fails with \\\"failed to satisfy constraint: Member must have value less than or equal to 64\\\"\", [v]),\n\t\"Set SizeInMBs between 1 and 64 for an HTTP endpoint destination\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_HttpEndpointBufferingHints.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.HttpEndpointDestinationConfiguration\"\n\traw := object.get(object.get(c, \"BufferingHints\", {}), \"SizeInMBs\", null)\n\traw != null\n\tv := to_number(raw)\n\t_pf_fhhbs_out(v)\n}\n\n_pf_fhhbs_out(v) if v < 1\n\n_pf_fhhbs_out(v) if v > 64\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 下側は見ない: スキーマの minimum が 1 なので 0 以下は同梱エンジンが F3034 で止める\n# （原則 1）。maximum は入っていないので 65 以上だけがここまで届く\n# （2026-09-13 us-east-1: SizeInMBs 0 は BLOCK F3034/FATAL、65 は素通りして\n# CreateDeliveryStream が ValidationException で拒否）。\nviolation contains make_diag_full(\"pf-firehose-http-buffer-size\", \"ERROR\", name,\n\t\"Properties.HttpEndpointDestinationConfiguration.BufferingHints.SizeInMBs\",\n\tsprintf(\"SizeInMBs is %v; the stream create fails with \\\"failed to satisfy constraint: Member must have value less than or equal to 64\\\"\", [v]),\n\t\"Set SizeInMBs between 1 and 64 for an HTTP endpoint destination\",\n\t\"https://docs.aws.amazon.com/firehose/latest/APIReference/API_HttpEndpointBufferingHints.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.HttpEndpointDestinationConfiguration\"\n\traw := object.get(object.get(c, \"BufferingHints\", {}), \"SizeInMBs\", null)\n\traw != null\n\tv := to_number(raw)\n\tv > 64\n}\n"
   },
   {
     "id": "pf-firehose-iceberg-backup-mode",
@@ -15549,7 +15703,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::KinesisFirehose::DeliveryStream"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Expressions expand at delivery time, so only a lower bound is knowable:\n# every literal character survives and every expression yields at least one.\n_pf_fhpl_min(s) := n if {\n\tstripped := regex.replace(s, `!\\{[^{}]*\\}`, \"\")\n\tn := count(stripped) + count(_pf_fhlib_exprs(s))\n}\n\nviolation contains make_diag_full(\"pf-firehose-prefix-length\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"%s evaluates to at least %d characters; the stream create fails with \\\"Length of evaluated prefix cannot be greater than 512\\\"\", [key, n]),\n\t\"Shorten the prefix to 512 characters or fewer once evaluated\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tn := _pf_fhpl_min(v)\n\tn > 512\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Expressions expand at delivery time, so only a lower bound is knowable:\n# every literal character survives and every expression yields at least one.\n_pf_fhpl_min(s) := n if {\n\tstripped := regex.replace(s, `!\\{[^{}]*\\}`, \"\")\n\tn := count(stripped) + count(_pf_fhlib_exprs(s))\n}\n\n# サービスはキーごとに別の語で拒否する: Prefix は \"evaluated prefix\"、\n# ErrorOutputPrefix は \"evaluated ErrorOutputPrefix\"（2026-09-13 us-east-1 で確認）。\n_pf_fhpl_label := {\"Prefix\": \"prefix\", \"ErrorOutputPrefix\": \"ErrorOutputPrefix\"}\n\nviolation contains make_diag_full(\"pf-firehose-prefix-length\", \"ERROR\", name,\n\tsprintf(\"%s.%s\", [path, key]),\n\tsprintf(\"%s evaluates to at least %d characters; the stream create fails with \\\"Length of evaluated %s cannot be greater than 512\\\"\", [key, n, _pf_fhpl_label[key]]),\n\t\"Shorten the prefix to 512 characters or fewer once evaluated\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html\") if {\n\tsome [name, path, c] in _pf_fhlib_prefixed\n\tsome key in {\"Prefix\", \"ErrorOutputPrefix\"}\n\tv := object.get(c, key, null)\n\t_pf_fhlib_lit(v)\n\tn := _pf_fhpl_min(v)\n\tn > 512\n}\n"
   },
   {
     "id": "pf-firehose-prefix-namespace",
@@ -24515,6 +24669,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/apigatewayv2",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Protocol of the Api a child resource points at (\"HTTP\" or \"WEBSOCKET\").\n# Undefined when ApiId is an imported id, so callers skip imported APIs. Half\n# of the ApiGatewayV2 constraints are protocol-dependent, which is why this is\n# a lib rather than a per-rule helper.\n_pf_apigwv2lib_protocol(name) := p if {\n\tapi := resolve(name, \"Properties.ApiId\")\n\tapi in resources_of_type(\"AWS::ApiGatewayV2::Api\")\n\tp := resolve(api, \"Properties.ProtocolType\")\n}\n"
+  },
+  {
+    "name": "_lib/athena",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the Athena rules: traversal of the raw document (resolve()\n# cannot prove a key absent) and the nested configuration blocks the workgroup\n# and data catalog rules read.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_athlib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# Raw properties of a resource. The preprocessed document is the only place\n# where \"the key is absent\" can be told apart from \"the value is a token\".\n_pf_athlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_athlib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_athlib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_athlib_wgcfg(name) := c if c := _pf_athlib_obj(_pf_athlib_props(name), \"WorkGroupConfiguration\")\n\n_pf_athlib_resultcfg(name) := c if c := _pf_athlib_obj(_pf_athlib_wgcfg(name), \"ResultConfiguration\")\n\n# Parameters of a data catalog: an absent map reads as empty, so a rule that\n# looks for a required key fires whether Parameters is missing or incomplete.\n_pf_athlib_params(name) := p if {\n\tp := object.get(_pf_athlib_props(name), \"Parameters\", {})\n\tis_object(p)\n}\n"
   },
   {
     "name": "_lib/autoscaling",
