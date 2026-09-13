@@ -255,6 +255,26 @@ test('boundaryProblem ignores comparisons written in the diagnostic text', () =>
   expect(boundaryProblem(rego, fx(5), fx(31))).toMatch(/fail template has no 30/);
 });
 
+test('boundaryProblem flips a comparison the rule reads through not', () => {
+  // `_ok(v) if n <= 100` を `not _ok(...)` で使うと、書かれている比較は守れている向き。
+  // 裏返さずに読むと fail に 100、pass に 101 を要求してしまう（境界の反対側）
+  const rego = [
+    '_pf_ok(v) if {',
+    '\tn := to_number(v)',
+    '\tn <= 100',
+    '}',
+    '',
+    'violation contains 1 if {',
+    '\tv := resolve(name, "Properties.R")',
+    '\tnot _pf_ok(v)',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { R: n } } } });
+  expect(boundaryProblem(rego, fx(101), fx(100))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(100), fx(101))).toMatch(/fail template has no 101/);
+});
+
 test('boundaryProblem reads an index into an object as what it holds', () => {
   const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { B: { k: { Content: 'x'.repeat(n) } } } } } });
   // `b[k].Content` は配列ではなく、その中の文字列。角括弧だけで配列と読むと

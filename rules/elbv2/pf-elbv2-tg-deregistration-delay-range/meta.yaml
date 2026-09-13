@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/applic
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (ELBv2 400: value 5000 must be between 0-3600 inclusive), pass template CREATE_COMPLETE. Log: bench/logs/pf-elbv2-tg-deregistration-delay-range.log"
+  evidence: "bench 2026-09-13 us-east-1: deregistration_delay.timeout_seconds 3601 rolled back with \"'deregistration_delay.timeout_seconds' value '3601' must be between '0-3600' inclusive\"; the -1 on the second target group is masked by the DependsOn order and answers the same message for '-1'. The pass template carries 0 and 3600 and reached CREATE_COMPLETE."
 addedOn: 2026-09-01

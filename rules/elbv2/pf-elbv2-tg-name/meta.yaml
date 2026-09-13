@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRef
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-04 us-east-1: Name '\u30c6\u30b9\u30c8\u7528' -> \"Value '????' at 'targetGroupName' failed to satisfy constraint: Member must satisfy regular expression pattern: (?!^-)(?!.*-$)^[A-Za-z0-9-]+$\"; Name 'probe_tg' -> same message; Name '-probe-tg-' -> same message; a 33-character name -> \"Target group name '...' cannot be longer than '32' characters\". All ROLLBACK_COMPLETE. The engine has neither a pattern nor a maxLength for this property."
+  evidence: "bench 2026-09-13 us-east-1: the 33-character name rolled back with \"Target group name 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' cannot be longer than '32' characters\"; the 32-character name that starts and ends with a hyphen is masked by the DependsOn order and answers \"Value '-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-' at 'targetGroupName' failed to satisfy constraint: Member must satisfy regular expression pattern: (?!^-)(?!.*-$)^[A-Za-z0-9-]+$\". The pass template's 32-character name reached CREATE_COMPLETE."
 addedOn: 2026-09-04
