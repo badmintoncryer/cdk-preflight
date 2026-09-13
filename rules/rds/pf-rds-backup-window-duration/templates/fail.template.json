@@ -10,7 +10,7 @@
         "AllocatedStorage": "20",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
-        "PreferredBackupWindow": "03:00-03:10",
+        "PreferredBackupWindow": "03:00-03:29",
         "BackupRetentionPeriod": 7
       }
     }

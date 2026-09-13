@@ -188,7 +188,10 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
       if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
       return 'both';
     };
-    return [...block.matchAll(THRESHOLD)]
+    // 診断メッセージや修正案の文面にも `>= 31` のような比較が出てくる。文字列の中は
+    // ロジックではないので、しきい値を探す前に落とす（長さを保って位置はずらさない）。
+    const code = block.replace(/"(?:[^"\\\n]|\\.)*"|`[^`]*`/g, (m) => ' '.repeat(m.length));
+    return [...code.matchAll(THRESHOLD)]
       .map((m) => {
         const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
         return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };

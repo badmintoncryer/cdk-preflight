@@ -7,7 +7,7 @@
       "Properties": {
         "Engine": "postgres",
         "DBInstanceClass": "db.t4g.micro",
-        "AllocatedStorage": "100",
+        "AllocatedStorage": "399",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
         "StorageType": "gp3",

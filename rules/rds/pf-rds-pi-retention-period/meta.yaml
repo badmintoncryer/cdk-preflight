@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Invalid Performance Insights retention period. Valid values are: [7, 31, 62, 93, 124, 155, 186, 217, 248, 279, 310, 341, 372, 403, 434, 465, 496, 527, 558, 589, 620, 651, 682, 713, 731]\" ROLLBACK_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: PerformanceInsightsRetentionPeriod 94 -> \"Invalid Performance Insights retention period. Valid values are: [7, 31, 62, 93, 124, 155, 186, 217, 248, 279, 310, 341, 372, 403, 434, 465, 496, 527, 558, 589, 620, 651, 682, 713, 731]\" (ROLLBACK_COMPLETE); pass 93 -> CREATE_COMPLETE. The valid set is discrete, so the fixtures sit either side of one step of it rather than on a numeric limit."
 addedOn: 2026-09-08

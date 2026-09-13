@@ -8,7 +8,7 @@
         "Engine": "aurora-mysql",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
-        "BacktrackWindow": 86400
+        "BacktrackWindow": 259200
       }
     }
   }

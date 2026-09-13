@@ -42,7 +42,6 @@ pf-cloudfront-vpc-origin-port-range  pending #178
 pf-cloudwatch-alarm-evaluation-window  pending #178
 pf-cloudwatch-alarm-expressions-max  pending #178
 pf-cloudwatch-composite-suppressor-format  pending #178
-pf-cloudwatch-dashboard-widget-height-max  pending #178
 pf-cloudwatch-dashboard-widget-position  pending #178
 pf-cloudwatch-extended-statistic  pending #178
 pf-cloudwatch-insight-rule-keys-max  pending #178
@@ -114,18 +113,8 @@ pf-memorydb-maintenance-window  pending #178
 pf-memorydb-replicas-per-shard  pending #178
 pf-memorydb-snapshot-retention  pending #178
 pf-memorydb-user-password  pending #178
-pf-rds-backtrack  pending #178
-pf-rds-backup-window-duration  pending #178
-pf-rds-cluster-port-range  pending #178
-pf-rds-database-insights-advanced  pending #178
-pf-rds-gp3-iops-storage-threshold  pending #178
-pf-rds-password-valid  pending #178
-pf-rds-pi-retention-period  pending #178
-pf-rds-port-range  pending #178
-pf-rds-proxy-idle-client-timeout  pending #178
-pf-rds-proxy-pool-percent  pending #178
-pf-rds-serverless-v2-capacity  pending #178
-pf-rds-storage-throughput-max  pending #178
+pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
+pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）
 pf-route53-healthcheck-alarm-high-resolution  CloudWatch の Period は 10/20/30 か 60 の倍数しか取れないので 31-59 は作れない。fail は作れる中で最大の 30、pass は 60 に乗せてある
 pf-route53-hostedzone-name-label-63  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある

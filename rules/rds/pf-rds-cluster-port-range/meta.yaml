@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Invalid endpoint port 100. Valid range is: 1150-65535\" ROLLBACK_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: two clusters, Port 1149 and Port 65536 -> \"Invalid endpoint port 65536. Valid range is: 1150-65535\" (ROLLBACK_COMPLETE; the high end is reported first, so the 1149 cluster is cancelled before it is validated); pass Port 1150 and Port 65535 -> CREATE_COMPLETE"
 addedOn: 2026-09-08
