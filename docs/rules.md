@@ -1458,6 +1458,8 @@
 | `pf-glue-connection-jdbc-credentials` | AWS::Glue::Connection | A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID | ERROR | none |
 | `pf-glue-connection-network-physical-requirements` | AWS::Glue::Connection | A NETWORK connection needs PhysicalConnectionRequirements | ERROR | none |
 | `pf-glue-connection-required-properties` | AWS::Glue::Connection | Each connection type needs its own ConnectionProperties entries | ERROR | none |
+| `pf-glue-connection-snowflake-compute-properties` | AWS::Glue::Connection | A SNOWFLAKE connection needs SparkProperties or PythonProperties | ERROR | none |
+| `pf-glue-connection-snowflake-spark-url` | AWS::Glue::Connection | A SNOWFLAKE connection's sfUrl must be a Snowflake account URL | ERROR | none |
 | `pf-glue-crawler-configuration-json` | AWS::Glue::Crawler | The crawler Configuration must be well-formed JSON | ERROR | none |
 | `pf-glue-crawler-configuration-version` | AWS::Glue::Crawler | The crawler Configuration JSON must carry Version | ERROR | none |
 | `pf-glue-crawler-configuration-version-type` | AWS::Glue::Crawler | The crawler Configuration Version has to be a JSON number | ERROR | none |

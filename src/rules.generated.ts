@@ -16113,6 +16113,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateConnection answers the same generic \"Validation for connection properties\n# failed\" for every one of these, so one rule carries the table. The entries were\n# measured one key at a time against CreateConnection (2026-09-14, us-east-1).\n_pf_glueconnreq_required := {\n\t\"JDBC\": {\"JDBC_CONNECTION_URL\"},\n\t\"KAFKA\": {\"KAFKA_BOOTSTRAP_SERVERS\"},\n\t\"MONGODB\": {\"CONNECTION_URL\"},\n\t\"CUSTOM\": {\"CONNECTOR_URL\", \"CONNECTOR_TYPE\", \"CONNECTOR_CLASS_NAME\"},\n\t\"MARKETPLACE\": {\"CONNECTOR_URL\", \"CONNECTOR_TYPE\", \"CONNECTOR_CLASS_NAME\"},\n}\n\nviolation contains make_diag_full(\"pf-glue-connection-required-properties\", \"ERROR\", name,\n\tsprintf(\"Properties.ConnectionInput.ConnectionProperties.%s\", [k]),\n\tsprintf(\"A %s connection has no %s in ConnectionProperties; CreateConnection fails with \\\"Validation for connection properties failed\\\"\", [ct, k]),\n\tsprintf(\"Add %s to ConnectionInput.ConnectionProperties\", [k]),\n\t\"https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Connection\")\n\tct := _pf_gluelib_connection_type(name)\n\tsome k in _pf_glueconnreq_required[ct]\n\tobject.get(_pf_gluelib_connection_props(name), k, \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
+    "id": "pf-glue-connection-snowflake-compute-properties",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A SNOWFLAKE connection needs SparkProperties or PythonProperties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Connection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A SNOWFLAKE connection carries its settings as JSON strings under\n# ConnectionProperties, keyed by compute environment. Measured against\n# CreateConnection 2026-09-14: either key on its own is accepted and the\n# plain keys the other connection types use (HOST, ...) are not - nor is\n# AthenaProperties, which comes back as \"Invalid properties found\".\n_pf_gluesfcomp_any(cp) if {\n\tsome k in [\"SparkProperties\", \"PythonProperties\"]\n\tobject.get(cp, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-glue-connection-snowflake-compute-properties\", \"ERROR\", name,\n\t\"Properties.ConnectionInput.ConnectionProperties\",\n\t\"the SNOWFLAKE connection has no SparkProperties or PythonProperties in ConnectionProperties; CreateConnection fails with \\\"PythonProperties: is missing but it is required, SparkProperties: is missing but it is required\\\"\",\n\t\"Add SparkProperties (sfUrl and secretId) or PythonProperties (account) to ConnectionInput.ConnectionProperties as a JSON string\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Connection\")\n\t_pf_gluelib_connection_type(name) == \"SNOWFLAKE\"\n\tnot _pf_gluesfcomp_any(_pf_gluelib_connection_props(name))\n}\n"
+  },
+  {
+    "id": "pf-glue-connection-snowflake-spark-url",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A SNOWFLAKE connection's sfUrl must be a Snowflake account URL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Connection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A SNOWFLAKE connection carries its compute-environment settings as JSON\n# strings under ConnectionProperties (the top-level SparkProperties /\n# PythonProperties members of CreateConnection are ignored by the validator,\n# measured 2026-09-14). Only a literal, parseable object is inspected, so a\n# token or a malformed string is left to other layers.\n_pf_gluesfurl_spark(name) := o if {\n\traw := object.get(_pf_gluelib_connection_props(name), \"SparkProperties\", null)\n\tis_string(raw)\n\tnot input.resources[raw]\n\tjson.is_valid(raw)\n\to := json.unmarshal(raw)\n\tis_object(o)\n}\n\n_pf_gluesfurl_bad(o) := u if {\n\tu := object.get(o, \"sfUrl\", null)\n\tis_string(u)\n\tnot regex.match(`.+[.]snowflakecomputing[.](com|cn)$`, u)\n}\n\nviolation contains make_diag_full(\"pf-glue-connection-snowflake-spark-url\", \"ERROR\", name,\n\t\"Properties.ConnectionInput.ConnectionProperties.SparkProperties\",\n\tsprintf(\"the SNOWFLAKE connection's sfUrl \\\"%s\\\" is not a Snowflake account URL; CreateConnection fails with \\\"SparkProperties.sfUrl: does not match the regex pattern .+[.]snowflakecomputing[.](com|cn)\\\"\", [_pf_gluesfurl_bad(_pf_gluesfurl_spark(name))]),\n\t\"Set sfUrl to the Snowflake account URL, which ends in .snowflakecomputing.com or .snowflakecomputing.cn\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Connection\")\n\t_pf_gluelib_connection_type(name) == \"SNOWFLAKE\"\n\t_pf_gluesfurl_bad(_pf_gluesfurl_spark(name))\n}\n"
+  },
+  {
     "id": "pf-glue-crawler-configuration-json",
     "service": "glue",
     "severity": "ERROR",

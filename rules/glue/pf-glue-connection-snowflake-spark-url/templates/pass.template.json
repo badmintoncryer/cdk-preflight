@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "SNOWFLAKE",
+          "ConnectionProperties": {
+            "SparkProperties": "{\"sfUrl\": \"pfacct.snowflakecomputing.com\", \"secretId\": \"arn:aws:secretsmanager:us-east-1:214794239830:secret:pfsecret-AbCdEf\"}",
+            "PythonProperties": "{\"account\": \"pfacct\"}"
+          }
+        }
+      }
+    }
+  }
+}
