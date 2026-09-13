@@ -7,14 +7,9 @@
 #   それ以外       — 恒久的な例外。しきい値の検出がそのルールでは意味を持たない理由を具体的に
 #                    書く（ARN の断片数のようなガード、エンジンのスキーマが持っている側の端、
 #                    実機で作れない量など）
-pf-agentcore-runtime-env-var-count  pending #178
 pf-apigw-integration-timeout-range  下限 50 はエンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。上限 29001/29000 は境界に乗せてある
-pf-appsync-api-env-var-count-max  pending #178
-pf-appsync-api-env-var-key-max-length  pending #178
-pf-appsync-api-env-var-value-max-length  pending #178
-pf-appsync-api-key-expires-max  pending #178
-pf-appsync-api-key-expires-past  pending #178
-pf-appsync-res-pipeline-functions-max  pending #178
+pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」で、テンプレートに固定値としては書けない（エンジンに時計が無い）。ルールが見ている 100000000000（西暦 5138 年＝秒とミリ秒の取り違え）はどの日付でも違反になる部分集合で、pass をその値に乗せると 365 日を超えて実機に拒否される。fail は 100000000001 に乗せ、pass は Expires を省いて既定の 7 日にしてある
+pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
 pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
 pf-bedrock-datasource-chunk-max-tokens  pending #178
@@ -34,7 +29,6 @@ pf-ecs-ephemeral-storage-range  pending #178
 pf-ecs-fargate-windows-cpu-under-1vcpu  pending #178
 pf-ecs-service-deployment-percent  pending #178
 pf-ecs-svc-daemon-max-percent  pending #178
-pf-efs-mount-target-network  pending #178
 pf-efs-throughput-mode  pending #178
 pf-elasticache-auth-token  pending #178
 pf-elasticache-maintenance-window  pending #178

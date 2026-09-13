@@ -243,6 +243,24 @@ test('boundaryProblem follows a helper call to what it counts', () => {
   expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
 });
 
+test('boundaryProblem believes the type guard the rego writes', () => {
+  // resolve() は文字列もマップも返す。`is_object(ev)` と書いてあるなら数えているのは
+  // マップの要素数で、文字列長のプールと突き合わせてはいけない
+  const rego = [
+    'violation contains 1 if {',
+    '\tev := resolve(name, "Properties.EnvironmentVariables")',
+    '\tis_object(ev)',
+    '\tcount(ev) > 2',
+    '}',
+    '',
+  ].join('\n');
+  const map = (n: number) => JSON.stringify({
+    Resources: { R: { Type: 'A::B::C', Properties: { EnvironmentVariables: Object.fromEntries([...Array(n)].map((_, i) => [`K${i}`, 'v'])) } } },
+  });
+  expect(boundaryProblem(rego, map(3), map(2))).toBeUndefined();
+  expect(boundaryProblem(rego, map(9), map(2))).toMatch(/fail template has no 3/);
+});
+
 test('boundaryProblem ignores comparisons written in comments', () => {
   // 「x <= 23 と width <= 24 だけを主張する」のような覚書はロジックではない。拾うと
   // ルールに無いしきい値を要求する。文字列の中の `#`（URL のフラグメント）は巻き込まない

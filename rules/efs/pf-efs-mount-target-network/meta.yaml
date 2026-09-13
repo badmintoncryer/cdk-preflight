@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/efs/latest/ug/limits.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The maximum number of security groups per interface has been reached.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: six security groups on one mount target -> \"The maximum number of security groups per interface has been reached.\" ROLLBACK_COMPLETE; pass five security groups -> CREATE_COMPLETE. The registry schema allows 100, so the bare engine is clean on six."
 addedOn: 2026-09-06

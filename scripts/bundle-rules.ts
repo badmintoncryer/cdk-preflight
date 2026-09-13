@@ -217,7 +217,15 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
     const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
       const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
-      const src = deref(assigned.get(inner.trim()) ?? inner);
+      const v = inner.trim();
+      // rego が型を宣言していればそれが答え。`ev := resolve(...)` のあとに `is_object(ev)` と
+      // 書いてあるなら、数えているのはマップの要素数であって文字列長ではない。resolve() は
+      // 文字列も配列もマップも返すので、この宣言が無いときだけ下の推測に回す
+      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(v)) {
+        if (new RegExp(`\\bis_string\\(${v}\\)`).test(block)) return 'string';
+        if (new RegExp(`\\bis_(?:object|array)\\(${v}\\)`).test(block)) return 'array';
+      }
+      const src = deref(assigned.get(v) ?? inner);
       if (/\bsplit\(/.test(src)) return 'shape';
       if (GET_STRING.test(src)) return 'string';
       if (GET_ARRAY.test(src) || ARRAYISH.test(src)) return 'array';

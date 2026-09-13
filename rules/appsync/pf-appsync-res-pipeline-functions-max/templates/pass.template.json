@@ -1,59 +1,353 @@
 {
- "Resources": {
-  "Api": {
-   "Type": "AWS::AppSync::GraphQLApi",
-   "Properties": {
-    "Name": "api1",
-    "AuthenticationType": "API_KEY"
-   }
-  },
-  "Ds": {
-   "Type": "AWS::AppSync::DataSource",
-   "Properties": {
-    "ApiId": {
-     "Fn::GetAtt": [
-      "Api",
-      "ApiId"
-     ]
+  "Resources": {
+    "Api": {
+      "Type": "AWS::AppSync::GraphQLApi",
+      "Properties": {
+        "Name": "api1",
+        "AuthenticationType": "API_KEY"
+      }
     },
-    "Name": "ds1",
-    "Type": "NONE"
-   }
-  },
-  "Schema": {
-   "Type": "AWS::AppSync::GraphQLSchema",
-   "Properties": {
-    "ApiId": {
-     "Fn::GetAtt": [
-      "Api",
-      "ApiId"
-     ]
+    "Ds": {
+      "Type": "AWS::AppSync::DataSource",
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "ds1",
+        "Type": "NONE"
+      }
     },
-    "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
-   }
-  },
-  "Target": {
-   "Type": "AWS::AppSync::Resolver",
-   "Properties": {
-    "ApiId": {
-     "Fn::GetAtt": [
-      "Api",
-      "ApiId"
-     ]
+    "Schema": {
+      "Type": "AWS::AppSync::GraphQLSchema",
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Definition": "schema { query: Query }\ntype Query { hi: String }\n"
+      }
     },
-    "TypeName": "Query",
-    "FieldName": "hi",
-    "DataSourceName": "ds1",
-    "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
-    "Runtime": {
-     "Name": "APPSYNC_JS",
-     "RuntimeVersion": "1.0.0"
+    "Fn0": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f0",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn1": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f1",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn2": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f2",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn3": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f3",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn4": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f4",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn5": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f5",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn6": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f6",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn7": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f7",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn8": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f8",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Fn9": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "DependsOn": [
+        "Ds",
+        "Schema"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Name": "f9",
+        "DataSourceName": "ds1",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        }
+      }
+    },
+    "Target": {
+      "Type": "AWS::AppSync::Resolver",
+      "DependsOn": [
+        "Schema",
+        "Ds",
+        "Fn0",
+        "Fn1",
+        "Fn2",
+        "Fn3",
+        "Fn4",
+        "Fn5",
+        "Fn6",
+        "Fn7",
+        "Fn8",
+        "Fn9"
+      ],
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "TypeName": "Query",
+        "FieldName": "hi",
+        "Code": "export function request(ctx){return {};}\nexport function response(ctx){return ctx.result;}\n",
+        "Runtime": {
+          "Name": "APPSYNC_JS",
+          "RuntimeVersion": "1.0.0"
+        },
+        "Kind": "PIPELINE",
+        "PipelineConfig": {
+          "Functions": [
+            {
+              "Fn::GetAtt": [
+                "Fn0",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn1",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn2",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn3",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn4",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn5",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn6",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn7",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn8",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "Fn9",
+                "FunctionId"
+              ]
+            }
+          ]
+        }
+      }
     }
-   },
-   "DependsOn": [
-    "Schema",
-    "Ds"
-   ]
   }
- }
 }

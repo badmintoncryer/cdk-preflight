@@ -50,8 +50,56 @@
         "SecurityGroups": [
           {
             "Ref": "SG"
+          },
+          {
+            "Ref": "SG2"
+          },
+          {
+            "Ref": "SG3"
+          },
+          {
+            "Ref": "SG4"
+          },
+          {
+            "Ref": "SG5"
           }
         ]
+      }
+    },
+    "SG2": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 2",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG3": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 3",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG4": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 4",
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "SG5": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight bench 5",
+        "VpcId": {
+          "Ref": "VPC"
+        }
       }
     }
   }

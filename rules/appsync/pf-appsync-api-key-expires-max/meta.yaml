@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_Cr
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"API key can be valid for a maximum of 365 days. (Service: AWSAppSync; Status Code: 400; Error Code: ApiKeyValidityOutOfBoundsException; Request ID: b6bfaa45-6f32-4be1-a718-b15571e7778d; Proxy: null)\" (RequestToken: d893ef65-0a30-4d44-aa2d-d4c7bb43cd43)"
+  evidence: "bench 2026-09-13 us-east-1: Expires 100000000001 (the year 5138 in seconds, i.e. epoch milliseconds by mistake) -> \"API key can be valid for a maximum of 365 days.\" ROLLBACK_COMPLETE; pass without Expires (the API default of 7 days) -> CREATE_COMPLETE. The real cap is 365 days from the deploy, which no fixed value in a template can sit on and the engine has no clock, so the rule only judges values that are over the cap whatever the deploy date."
 addedOn: 2026-09-12
