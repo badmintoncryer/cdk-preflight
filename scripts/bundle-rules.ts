@@ -93,6 +93,63 @@ export function docOnlyProblem(repro: { method: string }, severity: string): str
  * `package cdk_preflight` と `import rego.v1`——以外のものが混じっていてはいけない。
  * 別の import を書いたルールが黙って import 無しで結合されるのを防ぐ。
  */
+/**
+ * フィクスチャに現れうる「量」を 3 つのプールに集める。数値はテンプレートを生の文字列として
+ * 走査するので、文字列に包まれた数（`"512"`）も拾う——rego 側が to_number で読む値がこれ。
+ * 文字列長はエスケープを展開しないので `\n` は 2 文字と数える（境界ちょうどの値に
+ * エスケープを混ぜないかぎり実害はない）。
+ */
+function fixturePools(raw: string) {
+  const nums = new Set<number>([...raw.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => Number(m[0])));
+  const lens = new Set<number>([...raw.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1].length));
+  const sizes = new Set<number>();
+  const walk = (v: unknown): void => {
+    if (Array.isArray(v)) {
+      sizes.add(v.length);
+      v.forEach(walk);
+    } else if (v && typeof v === 'object') {
+      sizes.add(Object.keys(v).length);
+      Object.values(v).forEach(walk);
+    }
+  };
+  walk(JSON.parse(raw));
+  return { nums, lens, sizes };
+}
+
+// count(...) の引数は 1 段だけ入れ子を許す。`count(split(v, \":\")) < 6` のような書き方は
+// `[^)]*` だと最初の \")\" で止まって比較ごと取り逃がす（＝緩いペアが黙って通る）。
+const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
+
+/**
+ * AGENTS.md 原則 2 の「両方のフィクスチャが境界に乗る」の機械チェック。rego のしきい値ごとに
+ * 「違反する中で限界に最も近い値」が fail テンプレートに、「限界そのもの」が pass テンプレートに
+ * 現れることを要求する。緩いペアはルールの向きしか証明しない（`count(v) < 20` は fail が
+ * 5 文字なら定数が `< 10` でも鳴る）。
+ *
+ * 見るのは絶対値 2 以上の整数しきい値だけ。`count(x) > 0` や `n < 1` は存在チェックや
+ * 空判定として書かれることが多く、そこを数えると検出のほとんどが偽陽性になる。
+ * 小数のしきい値は「隣の値」が定義できないので対象外。
+ * ヒューリスティックなので取り違えは残る（ARN を割った断片数のようなガードも拾う）:
+ * 順序の無い制約として除外するものは rules/_boundary-exceptions.txt に理由付きで書く。
+ */
+export function boundaryProblem(rego: string, fail: string, pass: string): string | undefined {
+  const thresholds = [...rego.matchAll(THRESHOLD)]
+    .map((m) => ({ counted: m[1].startsWith('count('), op: m[2], n: Number(m[3]) }))
+    .filter((t) => Number.isInteger(t.n) && Math.abs(t.n) >= 2);
+  if (thresholds.length === 0) return undefined;
+  const pools = { fail: fixturePools(fail), pass: fixturePools(pass) };
+  const problems: string[] = [];
+  for (const t of thresholds) {
+    // 違反する中で限界に最も近い値 / 限界そのもの
+    const tightest = t.op === '<' ? t.n - 1 : t.op === '<=' ? t.n : t.op === '>' ? t.n + 1 : t.n;
+    const limit = t.op === '<' ? t.n : t.op === '<=' ? t.n + 1 : t.op === '>' ? t.n : t.n - 1;
+    const has = (p: ReturnType<typeof fixturePools>, v: number) => (t.counted ? p.lens.has(v) || p.sizes.has(v) : p.nums.has(v));
+    if (!has(pools.fail, tightest)) problems.push(`fail template has no ${tightest} for \`${t.op} ${t.n}\``);
+    if (!has(pools.pass, limit)) problems.push(`pass template has no ${limit} for \`${t.op} ${t.n}\``);
+  }
+  return problems.length === 0 ? undefined : problems.join('; ');
+}
+
 export function headerProblem(rego: string): string | undefined {
   const packages = [...rego.matchAll(/^package\s+(\S+)/gm)].map((m) => m[1]);
   if (packages.length !== 1 || packages[0] !== 'cdk_preflight') {
