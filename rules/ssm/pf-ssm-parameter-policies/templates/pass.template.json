@@ -7,7 +7,7 @@
         "Value": "v",
         "Name": "/cdkpf/policies-pass",
         "Tier": "Advanced",
-        "Policies": "[{\"Type\":\"Expiration\",\"Version\":\"1.0\",\"Attributes\":{\"Timestamp\":\"2030-01-01T00:00:00.000Z\"}},{\"Type\":\"ExpirationNotification\",\"Version\":\"1.0\",\"Attributes\":{\"Before\":\"1\",\"Unit\":\"Days\"}}]"
+        "Policies": "[{\"Type\": \"Expiration\", \"Version\": \"1.0\", \"Attributes\": {\"Timestamp\": \"2027-01-01T00:00:00.000Z\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"1\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"2\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"3\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"4\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"5\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"6\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"7\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"8\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"9\", \"Unit\": \"Days\"}}]"
       }
     }
   }

@@ -73,10 +73,8 @@ pf-sfn-asl-name-limits  pending #178
 pf-sns-fifo-only-attributes  pending #178
 pf-sqs-redrive-allow-policy  pending #178
 pf-sqs-redrive-policy  pending #178
-pf-ssm-association-schedule  pending #178
-pf-ssm-parameter-name  pending #178
-pf-ssm-parameter-policies  pending #178
-pf-ssm-parameter-tier  pending #178
+pf-ssm-parameter-name  1011 は名前そのものではなく ARN 全体（arn:aws:ssm:<region>:<account>:parameter/ + 名前）の上限で、検出器が拾っているのは足し算の右辺。許される名前の長さはリージョン名の長さで変わるので固定の数値としてはテンプレートに現れない。フィクスチャは us-east-1 + 12 桁アカウントの端（素の名前 967 / 966）に乗せてある
+pf-ssm-parameter-policies  しきい値と突き合わせるのは Policies（JSON 文字列）の中の配列長で、テンプレートの構造には配列として現れない（CloudFormation の Policies は文字列型）。フィクスチャは 11 / 10 本に乗せてある
 pf-wafv2-custom-request-handling  コンテナ全体で 100 という上限は、CustomRequestHandling をまたいだヘッダ数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 本に乗せてある（1 オブジェクトあたりの 10 本は境界で検出できている）
 pf-wafv2-custom-response  コンテナ全体で 50 KB という上限は本文の文字数の合計。加えて上限ちょうどの pass は作れない: 本文 51,200 文字は CloudFormation のインラインテンプレート上限 51,200 バイトを超える。50 本 / 1 本 4,096 文字の 2 つは境界に乗せてある
 pf-wafv2-ipset-addresses  p <= 32 は IPv4 のプレフィックス長が範囲内かの形のガードで、順序のある制約ではない（33 は有効な値ですらない）
