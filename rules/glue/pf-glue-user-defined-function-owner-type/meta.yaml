@@ -1,0 +1,12 @@
+id: pf-glue-user-defined-function-owner-type
+service: glue
+resourceTypes: [AWS::Glue::UserDefinedFunction]
+benchRegion: us-east-1
+severity: ERROR
+title: A user-defined function needs an OwnerType of USER, ROLE or GROUP
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_UserDefinedFunctionInput.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (function with no OwnerType) -> \"Owner type for function can not be null\" (ROLLBACK_COMPLETE); pass template (OwnerType USER) -> CREATE_COMPLETE. CreateUserDefinedFunction the same day: USER, ROLE and GROUP are accepted and \"SERVICE\" gives \"Owner Type is not valid\" - that half is not in the bench fixture because CloudFormation rejects an out-of-enum value in its own early property validation, which reports only \"Validation failed with 1 error(s)\"."
+addedOn: 2026-09-14

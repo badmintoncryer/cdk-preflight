@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Schema",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}"
+        },
+        "DataFormat": "AVRO",
+        "Compatibility": "BACKWARDS",
+        "SchemaDefinition": "{\"type\":\"record\",\"name\":\"r\",\"fields\":[{\"name\":\"f\",\"type\":\"string\"}]}"
+      }
+    }
+  }
+}

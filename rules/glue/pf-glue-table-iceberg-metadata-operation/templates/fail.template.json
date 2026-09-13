@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "Db": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}"
+          }
+        }
+      }
+    },
+    "Tbl": {
+      "Type": "AWS::Glue::Table",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseName": {
+          "Ref": "Db"
+        },
+        "TableInput": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-t"
+          },
+          "TableType": "EXTERNAL_TABLE",
+          "StorageDescriptor": {
+            "Location": "s3://cdkpf-glue-probe-214794239830/ice/",
+            "Columns": [
+              {
+                "Name": "c1",
+                "Type": "string"
+              },
+              {
+                "Name": "c2",
+                "Type": "string"
+              }
+            ]
+          }
+        },
+        "OpenTableFormatInput": {
+          "IcebergInput": {}
+        }
+      }
+    }
+  }
+}

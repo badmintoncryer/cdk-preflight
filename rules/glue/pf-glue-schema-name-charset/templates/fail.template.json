@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Schema",
+      "Properties": {
+        "Name": "cdkpf schema name",
+        "DataFormat": "AVRO",
+        "Compatibility": "BACKWARD",
+        "SchemaDefinition": "{\"type\":\"record\",\"name\":\"r\",\"fields\":[{\"name\":\"f\",\"type\":\"string\"}]}"
+      }
+    }
+  }
+}

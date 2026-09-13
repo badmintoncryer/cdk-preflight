@@ -1,0 +1,12 @@
+id: pf-glue-database-resource-link-exclusive
+service: glue
+resourceTypes: [AWS::Glue::Database]
+benchRegion: us-east-1
+severity: ERROR
+title: A database resource link cannot also carry a LocationUri
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_DatabaseInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (DatabaseInput with both TargetDatabase and LocationUri) -> \"Resource path and resource link cannot exist together in a database!\" (ROLLBACK_COMPLETE); pass template (the same resource link without LocationUri) -> CREATE_COMPLETE. CreateDatabase probes the same day: TargetDatabase alone and LocationUri alone are both accepted, and the target database does not have to exist."
+addedOn: 2026-09-14

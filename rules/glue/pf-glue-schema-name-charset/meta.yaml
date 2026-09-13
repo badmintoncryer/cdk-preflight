@@ -1,0 +1,12 @@
+id: pf-glue-schema-name-charset
+service: glue
+resourceTypes: [AWS::Glue::Schema]
+benchRegion: us-east-1
+severity: ERROR
+title: A schema name is limited to letters, digits and - _ $ # .
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Name \"cdkpf schema name\") -> \"The parameter value contains one or more characters that are not valid. Parameter Name: schemaName\" (ROLLBACK_COMPLETE); pass template (the stack name) -> CREATE_COMPLETE. CreateSchema probes the same day fix the set: \"-\", \"_\", \"$\", \"#\" and \".\" are accepted, a space, \"@\" and \"/\" are not - the user guide omits \".\"."
+addedOn: 2026-09-14

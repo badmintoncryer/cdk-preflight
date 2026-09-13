@@ -1,0 +1,12 @@
+id: pf-glue-crawler-schedule-day-of-month-or-week
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: A crawler cron needs ? in exactly one of day-of-month and day-of-week
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Schedule.ScheduleExpression \"cron(0 10 1 * MON 2099)\") -> \"Invalid schedule cron expression: cron(0 10 1 * MON 2099)\" (ROLLBACK_COMPLETE); pass template (\"cron(0 10 1 * ? 2099)\", far enough out that the bench never starts a crawl) -> CREATE_COMPLETE. CreateCrawler the same day rejects \"cron(0 10 ? * ? 2099)\" the same way, so exactly one of the two fields has to be \"?\" - the same rule the scheduled triggers follow."
+addedOn: 2026-09-14

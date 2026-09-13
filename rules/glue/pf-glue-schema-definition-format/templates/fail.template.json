@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "NotJson": {
+      "Type": "AWS::Glue::Schema",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-a"
+        },
+        "DataFormat": "AVRO",
+        "Compatibility": "BACKWARD",
+        "SchemaDefinition": "{\"type\":\"record\""
+      }
+    },
+    "NoName": {
+      "Type": "AWS::Glue::Schema",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-b"
+        },
+        "DataFormat": "AVRO",
+        "Compatibility": "BACKWARD",
+        "SchemaDefinition": "{\"type\":\"record\"}"
+      }
+    }
+  }
+}

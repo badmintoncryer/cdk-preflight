@@ -1460,12 +1460,18 @@
 | `pf-glue-connection-required-properties` | AWS::Glue::Connection | Each connection type needs its own ConnectionProperties entries | ERROR | none |
 | `pf-glue-crawler-configuration-json` | AWS::Glue::Crawler | The crawler Configuration must be well-formed JSON | ERROR | none |
 | `pf-glue-crawler-configuration-version` | AWS::Glue::Crawler | The crawler Configuration JSON must carry Version | ERROR | none |
+| `pf-glue-crawler-configuration-version-type` | AWS::Glue::Crawler | The crawler Configuration Version has to be a JSON number | ERROR | none |
 | `pf-glue-crawler-dynamodb-scan-rate` | AWS::Glue::Crawler | A DynamoDB target scan rate must be between 0.1 and 1.5 | ERROR | pending-engine |
 | `pf-glue-crawler-event-mode-requires-event-queue` | AWS::Glue::Crawler | CRAWL_EVENT_MODE needs an S3 target with EventQueueArn | ERROR | none |
+| `pf-glue-crawler-non-catalog-target-database-name` | AWS::Glue::Crawler | A crawler with non-catalog targets needs a DatabaseName | ERROR | none |
 | `pf-glue-crawler-recrawl-behavior-s3-only` | AWS::Glue::Crawler | CRAWL_EVENT_MODE and CRAWL_NEW_FOLDERS_ONLY apply to S3 targets only | ERROR | none |
 | `pf-glue-crawler-s3-target-path` | AWS::Glue::Crawler | An S3 crawl target path cannot start with a slash | ERROR | none |
 | `pf-glue-crawler-schedule-cron-only` | AWS::Glue::Crawler | A crawler schedule is a cron() expression | ERROR | pending-engine |
+| `pf-glue-crawler-schedule-day-of-month-or-week` | AWS::Glue::Crawler | A crawler cron needs ? in exactly one of day-of-month and day-of-week | ERROR | none |
 | `pf-glue-crawler-target-connection-name` | AWS::Glue::Crawler | JDBC and MongoDB crawl targets need a connection name | ERROR | none |
+| `pf-glue-custom-entity-type-regex-string-required` | AWS::Glue::CustomEntityType | A custom entity type needs a RegexString | ERROR | pending-engine |
+| `pf-glue-data-quality-ruleset-rules` | AWS::Glue::DataQualityRuleset | A DQDL ruleset needs a non-empty Rules list | ERROR | none |
+| `pf-glue-database-resource-link-exclusive` | AWS::Glue::Database | A database resource link cannot also carry a LocationUri | ERROR | none |
 | `pf-glue-job-flex-command-name` | AWS::Glue::Job | ExecutionClass FLEX is only available for Spark ETL jobs | ERROR | none |
 | `pf-glue-job-flex-worker-type` | AWS::Glue::Job | A FLEX job runs only on G.1X or G.2X workers | ERROR | none |
 | `pf-glue-job-g025x-streaming-only` | AWS::Glue::Job | The G.025X worker type is only available for streaming jobs | ERROR | none |
@@ -1481,16 +1487,28 @@
 | `pf-glue-job-worker-type-and-number-of-workers` | AWS::Glue::Job | WorkerType and NumberOfWorkers must be set together | ERROR | none |
 | `pf-glue-job-worker-type-requires-glue-4` | AWS::Glue::Job | The large and memory-optimised worker types require Glue 4.0 or later | ERROR | none |
 | `pf-glue-job-z2x-ray-only` | AWS::Glue::Job | The Z.2X worker type is only available for Ray jobs | ERROR | none |
+| `pf-glue-ml-transform-find-matches-parameters` | AWS::Glue::MLTransform | A FIND_MATCHES transform needs FindMatchesParameters | ERROR | none |
+| `pf-glue-ml-transform-glue-version-eol` | AWS::Glue::MLTransform | MLTransform Glue versions below 2.0 are past end of life | ERROR | none |
+| `pf-glue-ml-transform-max-capacity-with-worker-type` | AWS::Glue::MLTransform | MLTransform MaxCapacity cannot be combined with WorkerType | ERROR | none |
+| `pf-glue-ml-transform-worker-type-and-number-of-workers` | AWS::Glue::MLTransform | MLTransform WorkerType and NumberOfWorkers have to be set together | ERROR | none |
+| `pf-glue-partition-values-match-partition-keys` | AWS::Glue::Partition | Partition Values must be as many as the table's PartitionKeys | ERROR | none |
+| `pf-glue-schema-compatibility` | AWS::Glue::Schema | Schema Compatibility must be one of the seven documented modes | ERROR | pending-engine |
+| `pf-glue-schema-definition-format` | AWS::Glue::Schema | SchemaDefinition must parse as the declared DataFormat | ERROR | none |
+| `pf-glue-schema-name-charset` | AWS::Glue::Schema | A schema name is limited to letters, digits and - _ $ | ERROR | pending-engine |
 | `pf-glue-security-configuration-kms-key` | AWS::Glue::SecurityConfiguration | KMS encryption modes need a KmsKeyArn | ERROR | none |
+| `pf-glue-table-iceberg-metadata-operation` | AWS::Glue::Table | An Iceberg table needs MetadataOperation in IcebergInput | ERROR | pending-engine |
 | `pf-glue-trigger-action-job-or-crawler` | AWS::Glue::Trigger | A trigger action names either a job or a crawler, not both | ERROR | none |
 | `pf-glue-trigger-condition-crawl-state` | AWS::Glue::Trigger | A crawler condition can only watch SUCCEEDED, FAILED or CANCELLED | ERROR | pending-engine |
 | `pf-glue-trigger-condition-job-state` | AWS::Glue::Trigger | A job condition can only watch SUCCEEDED, STOPPED, FAILED or TIMEOUT | ERROR | pending-engine |
 | `pf-glue-trigger-conditional-requires-predicate` | AWS::Glue::Trigger | A CONDITIONAL trigger must carry a Predicate | ERROR | none |
 | `pf-glue-trigger-event-requires-workflow` | AWS::Glue::Trigger | An EVENT trigger must belong to a workflow | ERROR | none |
 | `pf-glue-trigger-ondemand-start-on-creation` | AWS::Glue::Trigger | An ON_DEMAND trigger cannot be started on creation | ERROR | none |
+| `pf-glue-trigger-predicate-job-not-action-job` | AWS::Glue::Trigger | A conditional trigger cannot watch and start the same job | ERROR | none |
 | `pf-glue-trigger-predicate-logical-required` | AWS::Glue::Trigger | A predicate with more than one condition needs Logical | ERROR | none |
 | `pf-glue-trigger-schedule-day-of-month-or-week` | AWS::Glue::Trigger | A Glue cron expression must put ? in exactly one of day-of-month and day-of-week | ERROR | none |
 | `pf-glue-trigger-scheduled-requires-schedule` | AWS::Glue::Trigger | A SCHEDULED trigger must carry a Schedule | ERROR | none |
+| `pf-glue-user-defined-function-owner-type` | AWS::Glue::UserDefinedFunction | A user-defined function needs an OwnerType of USER, ROLE or GROUP | ERROR | pending-engine |
+| `pf-glue-user-defined-function-resource-uri-type` | AWS::Glue::UserDefinedFunction | A function ResourceUri needs a ResourceType of JAR, FILE or ARCHIVE | ERROR | pending-engine |
 | `pf-glue-workflow-max-concurrent-runs-min` | AWS::Glue::Workflow | A workflow needs at least one concurrent run | ERROR | pending-engine |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |

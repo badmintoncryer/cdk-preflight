@@ -102,3 +102,20 @@ _pf_gluelib_encryption(name) := e if {
 }
 
 _pf_gluelib_schedule_expression(name) := _pf_gluelib_str(name, "Properties.Schedule.ScheduleExpression")
+
+# cron(...) の 6 フィールド。トリガー（Properties.Schedule）とクローラー
+# （Properties.Schedule.ScheduleExpression）が同じ検証を受ける。
+_pf_gluelib_cron_fields(sch) := f if {
+	m := regex.find_all_string_submatch_n(`^cron\((.*)\)$`, sch, 1)
+	f := regex.split(`\s+`, trim_space(m[0][1]))
+}
+
+_pf_gluelib_cron_dom_dow_bad(dom, dow) if {
+	dom == "?"
+	dow == "?"
+}
+
+_pf_gluelib_cron_dom_dow_bad(dom, dow) if {
+	dom != "?"
+	dow != "?"
+}
