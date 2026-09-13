@@ -45,16 +45,7 @@ pf-cloudwatch-composite-suppressor-format  pending #178
 pf-cloudwatch-dashboard-widget-position  pending #178
 pf-cloudwatch-extended-statistic  pending #178
 pf-cloudwatch-insight-rule-keys-max  pending #178
-pf-cognito-domain-prefix-length  pending #178
-pf-cognito-idp-provider-name-length  pending #178
-pf-cognito-password-history-size-range  pending #178
-pf-cognito-password-min-length  pending #178
-pf-cognito-role-mapping-rules-max  pending #178
-pf-cognito-schema-custom-name-length  pending #178
-pf-cognito-temporary-password-validity-range  pending #178
-pf-cognito-token-validity-range  pending #178
-pf-cognito-unused-account-validity-range  pending #178
-pf-cognito-verification-email-subject-length  pending #178
+pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
 pf-dynamodb-global-table-gsi-count  pending #178
 pf-dynamodb-global-table-key-schema-shape  pending #178
 pf-dynamodb-global-table-lsi-count  pending #178

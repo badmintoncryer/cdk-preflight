@@ -5,7 +5,7 @@
       "Properties": {
         "UserPoolName": "pfprobe",
         "AdminCreateUserConfig": {
-          "UnusedAccountValidityDays": 400
+          "UnusedAccountValidityDays": 366
         }
       }
     }

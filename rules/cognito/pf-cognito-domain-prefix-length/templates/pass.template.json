@@ -12,7 +12,7 @@
         "UserPoolId": {
           "Ref": "P"
         },
-        "Domain": "cdkpf-domain-prefix-length"
+        "Domain": "cdkpf-domain-prefix-length-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       }
     }
   }

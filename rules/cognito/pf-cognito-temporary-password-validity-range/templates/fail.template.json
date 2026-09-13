@@ -7,7 +7,7 @@
         "Policies": {
           "PasswordPolicy": {
             "MinimumLength": 8,
-            "TemporaryPasswordValidityDays": 400
+            "TemporaryPasswordValidityDays": 366
           }
         }
       }
