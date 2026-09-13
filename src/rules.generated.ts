@@ -19236,6 +19236,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK keeps deprecated versions readable in list-kafka-versions but refuses to create with them:\n# \"Standard instance types are not supported for Kafka version 2.8.1. Valid values: [...] ...\n# InvalidParameter: kafkaVersion\". The set below is every version whose only status was\n# DEPRECATED on 2026-09-14 (aws kafka list-kafka-versions, us-east-1); 3.9.x and 4.2.x.kraft are\n# listed twice by the API and stay out because their other row is ACTIVE.\nviolation contains make_diag_full(\"pf-msk-kafka-version-deprecated\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Apache Kafka %s is deprecated; the create fails with \\\"Standard instance types are not supported for Kafka version %s\\\"\", [v, v]),\n\t\"Pick a version that aws kafka list-kafka-versions still reports as ACTIVE\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskkvd_deprecated\n}\n\n_pf_mskkvd_deprecated := {\n\t\"1.1.1\", \"2.1.0\", \"2.2.1\", \"2.3.1\", \"2.4.1\", \"2.4.1.1\",\n\t\"2.5.1\", \"2.6.0\", \"2.6.1\", \"2.6.2\", \"2.6.3\",\n\t\"2.7.0\", \"2.7.1\", \"2.7.2\", \"2.8.0\", \"2.8.1\", \"2.8.2.tiered\",\n\t\"3.1.1\", \"3.2.0\", \"3.3.1\", \"3.3.2\", \"3.4.0\", \"3.5.1\",\n\t\"3.6.0.1\", \"3.8.link\",\n}\n"
   },
   {
+    "id": "pf-msk-network-type-ipv4-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster is created IPv4-only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema lists IPV4 | DUAL, but DUAL is reachable only by updating an existing cluster: the\n# create fails with \"Invalid NetworkType value in ConnectivityInfo. When creating a cluster, only\n# IPV4 is supported. ... InvalidParameter: networkType\".\nviolation contains make_diag_full(\"pf-msk-network-type-ipv4-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType\",\n\tsprintf(\"NetworkType '%s'; the create fails with \\\"When creating a cluster, only IPV4 is supported\\\"\", [t]),\n\t\"Create the cluster as IPV4 and switch it to DUAL in a later update\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/mskp-choose-cluster-network-type.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tt := resolve(name, \"Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType\")\n\tis_string(t)\n\tt != \"IPV4\"\n}\n"
+  },
+  {
+    "id": "pf-msk-open-monitoring-requires-exporter",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Prometheus open monitoring needs an exporter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both exporters are Required: No, so an empty Prometheus block is schema-valid and turns\n# monitoring on with nothing to scrape; the create fails with \"You must specify at least one type\n# of exporter, either nodeExporter or jmxExporter. ... InvalidParameter: openMonitoring\".\nviolation contains make_diag_full(\"pf-msk-open-monitoring-requires-exporter\", \"ERROR\", name,\n\t\"Properties.OpenMonitoring.Prometheus\",\n\t\"OpenMonitoring.Prometheus names no exporter; the create fails with \\\"You must specify at least one type of exporter, either nodeExporter or jmxExporter\\\"\",\n\t\"Declare JmxExporter or NodeExporter under Prometheus, or drop OpenMonitoring altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-prometheus.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprom := object.get(props, [\"OpenMonitoring\", \"Prometheus\"], null)\n\tis_object(prom)\n\tnamed := [k | some k in object.keys(prom); k in {\"JmxExporter\", \"NodeExporter\"}]\n\tcount(named) == 0\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-instance-type",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput needs kafka.m5.4xlarge / kafka.m7g.2xlarge or larger",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"To provision storage throughput, you must choose broker size kafka.m5.4xlarge or larger (or\n# kafka.m7g.2xlarge or larger)\" - the create fails on anything below with \"Provisioned throughput\n# is not supported for the specified broker type. ... InvalidParameter: provisionedThroughput\".\n# Written as a deny list of the sizes below the floor: an allow list would turn every broker size\n# AWS adds into a false positive.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-instance-type\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.InstanceType\",\n\tsprintf(\"ProvisionedThroughput is enabled on '%s'; the create fails with \\\"Provisioned throughput is not supported for the specified broker type\\\"\", [itype]),\n\t\"Move to kafka.m5.4xlarge or kafka.m7g.2xlarge (or larger), or turn ProvisionedThroughput off\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\", \"Enabled\"], false) == true\n\titype := object.get(props, [\"BrokerNodeGroupInfo\", \"InstanceType\"], \"\")\n\titype in _pf_mskptit_too_small\n}\n\n# Standard broker sizes below the provisioned-throughput floor.\n_pf_mskptit_too_small := {\n\t\"kafka.t3.small\",\n\t\"kafka.m5.large\", \"kafka.m5.xlarge\", \"kafka.m5.2xlarge\",\n\t\"kafka.m7g.large\", \"kafka.m7g.xlarge\",\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-max-per-instance",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput has a per-broker-size ceiling",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The 1000 MiB/s top of the range is only reachable on the largest brokers - every size carries\n# its own ceiling (user guide table), and the create fails with \"For brokers of type m5.4xlarge,\n# the maximum value for VolumeThroughput cannot exceed 593.75 MiB/s. ... InvalidParameter:\n# volumeThroughput\". VolumeThroughput is an Integer, so the table holds the largest integer the\n# service accepts for each size.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-max-per-instance\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.VolumeThroughput\",\n\tsprintf(\"VolumeThroughput %d MiB/s on '%s', which tops out at %d MiB/s; the create fails with \\\"the maximum value for VolumeThroughput cannot exceed\\\"\", [t, itype, cap]),\n\t\"Lower VolumeThroughput to the ceiling for this broker size, or move to a larger broker\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], {})\n\tobject.get(prov, \"Enabled\", false) == true\n\titype := object.get(props, [\"BrokerNodeGroupInfo\", \"InstanceType\"], \"\")\n\tcap := object.get(_pf_mskptmax_caps, itype, null)\n\tcap != null\n\tv := object.get(prov, \"VolumeThroughput\", null)\n\tv != null\n\tt := to_number(v)\n\tt > cap\n}\n\n# Maximum storage throughput per broker size (user guide table, 2026-09-14), floored to the\n# largest integer VolumeThroughput accepts. Sizes the table does not list are not checked.\n_pf_mskptmax_caps := {\n\t\"kafka.m5.4xlarge\": 593,\n\t\"kafka.m5.8xlarge\": 850,\n\t\"kafka.m5.12xlarge\": 1000,\n\t\"kafka.m5.16xlarge\": 1000,\n\t\"kafka.m5.24xlarge\": 1000,\n\t\"kafka.m7g.2xlarge\": 312,\n\t\"kafka.m7g.4xlarge\": 625,\n\t\"kafka.m7g.8xlarge\": 1000,\n\t\"kafka.m7g.12xlarge\": 1000,\n\t\"kafka.m7g.16xlarge\": 1000,\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-min",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput starts at 250 MiB/s",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VolumeThroughput is a plain Integer in the schema; the service floor is 250 MiB/s and the\n# create fails with \"EBS volume throughput should be between 250 and 1000 MiB/s. ...\n# InvalidParameter: volumeThroughput\". The per-broker-size ceiling is pf-msk-provisioned-throughput-max-per-instance.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-min\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.VolumeThroughput\",\n\tsprintf(\"VolumeThroughput %d MiB/s; the create fails with \\\"EBS volume throughput should be between 250 and 1000 MiB/s\\\"\", [t]),\n\t\"Ask for at least 250 MiB/s, or turn ProvisionedThroughput off to keep the baseline throughput\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], {})\n\tobject.get(prov, \"Enabled\", false) == true\n\tv := object.get(prov, \"VolumeThroughput\", null)\n\tv != null\n\tt := to_number(v)\n\tt < 250\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-volume-size",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput needs a volume of at least 10 GiB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VolumeSize accepts 1..16384 in the schema; provisioned throughput narrows the floor to 10 GiB.\n# The create fails with \"To enable ProvisionedThroughput, you must set volume size to a value that\n# is greater than or equal to 10. ... InvalidParameter: volumeSize\".\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-volume-size\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.VolumeSize\",\n\tsprintf(\"ProvisionedThroughput is enabled on a %d GiB volume; the create fails with \\\"you must set volume size to a value that is greater than or equal to 10\\\"\", [s]),\n\t\"Give the broker volume at least 10 GiB, or turn ProvisionedThroughput off\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tebs := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\"], {})\n\tobject.get(ebs, [\"ProvisionedThroughput\", \"Enabled\"], false) == true\n\tv := object.get(ebs, \"VolumeSize\", null)\n\tv != null\n\ts := to_number(v)\n\ts < 10\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-without-enabled",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "VolumeThroughput only counts when ProvisionedThroughput is enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members of ProvisionedThroughput are Required: No, so naming a throughput without the\n# switch passes every earlier layer; the create fails with \"To specify a value for\n# VolumeThroughput, you must enable ProvisionedThroughput. ... InvalidParameter: volumeThroughput\".\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-without-enabled\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.Enabled\",\n\t\"VolumeThroughput is set while ProvisionedThroughput.Enabled is not true; the create fails with \\\"To specify a value for VolumeThroughput, you must enable ProvisionedThroughput\\\"\",\n\t\"Set ProvisionedThroughput.Enabled to true, or drop VolumeThroughput\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-provisionedthroughput.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], null)\n\tis_object(prov)\n\tobject.get(prov, \"VolumeThroughput\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(prov, \"Enabled\", false) != true\n}\n"
+  },
+  {
+    "id": "pf-msk-public-access-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Public access cannot be turned on while the cluster is created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PublicAccess.Type is a free String of 7..23 characters in the schema, so SERVICE_PROVIDED_EIPS\n# passes every earlier layer - but public access is an update-only switch and the create fails\n# with \"When creating a cluster, the only valid value for the Type parameter in PublicAccess is\n# DISABLED. ... InvalidParameter: publicAccess\".\nviolation contains make_diag_full(\"pf-msk-public-access-not-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type\",\n\tsprintf(\"PublicAccess.Type is '%s'; the create fails with \\\"When creating a cluster, the only valid value for the Type parameter in PublicAccess is DISABLED\\\"\", [t]),\n\t\"Create the cluster with DISABLED (or no PublicAccess at all) and turn public access on afterwards\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tt := resolve(name, \"Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type\")\n\tis_string(t)\n\tt != \"DISABLED\"\n}\n"
+  },
+  {
     "id": "pf-msk-replicator-apache-kafka-cluster-requires-auth",
     "service": "msk",
     "severity": "ERROR",
@@ -19346,6 +19434,28 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VpcConfig describes how the replicator reaches an MSK cluster. An entry that\n# describes a self-managed Apache Kafka cluster must not carry one.\n# An entry with both cluster kinds is pf-msk-replicator-kafka-cluster-exactly-one-kind's\n# business, so this rule stays out of it.\nviolation contains make_diag_full(\"pf-msk-replicator-vpc-config-only-for-msk-cluster\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d].VpcConfig\", [it.index]),\n\t\"an ApacheKafkaCluster entry carries VpcConfig; the replicator create fails with \\\"The vpcConfig parameter is only supported for AmazonMskCluster\\\"\",\n\t\"Drop VpcConfig from the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"VpcConfig\", null) != null\n}\n"
   },
   {
+    "id": "pf-msk-sasl-requires-in-cluster-encryption",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Client authentication needs in-cluster encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"To turn on SASL, you must also turn on EncryptionInTransit by setting inCluster to true.\"\n# InCluster defaults to true, so only an explicit false is a problem, and the create then fails\n# with \"To turn on client authentication, you must also turn on in-cluster encryption. ...\n# InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-sasl-requires-in-cluster-encryption\", \"ERROR\", name,\n\t\"Properties.EncryptionInfo.EncryptionInTransit.InCluster\",\n\t\"client authentication is turned on with InCluster false; the create fails with \\\"To turn on client authentication, you must also turn on in-cluster encryption\\\"\",\n\t\"Set InCluster to true (its default), or turn client authentication off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\t_pf_msksrice_authenticated(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"InCluster\"], true) == false\n}\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-sasl-requires-tls-client-broker",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Client authentication needs client-broker encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"You must set clientBroker to either TLS or TLS_PLAINTEXT\" - a cluster that authenticates its\n# clients over a plaintext listener is rejected with \"Client-broker encryption in transit must be\n# set to either TLS or TLS_PLAINTEXT to enable client authentication. ... InvalidParameter:\n# clientAuthentication\". Both members are independently valid, so nothing earlier sees the pair.\nviolation contains make_diag_full(\"pf-msk-sasl-requires-tls-client-broker\", \"ERROR\", name,\n\t\"Properties.EncryptionInfo.EncryptionInTransit.ClientBroker\",\n\t\"client authentication is turned on with ClientBroker PLAINTEXT; the create fails with \\\"Client-broker encryption in transit must be set to either TLS or TLS_PLAINTEXT to enable client authentication\\\"\",\n\t\"Set ClientBroker to TLS (or TLS_PLAINTEXT), or turn client authentication off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\t_pf_msksrtcb_authenticated(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"ClientBroker\"], \"TLS\") == \"PLAINTEXT\"\n}\n\n# Any client authentication mechanism explicitly switched on.\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
     "id": "pf-msk-scram-secret-account",
     "service": "msk",
     "severity": "ERROR",
@@ -19410,6 +19520,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::MSK::ServerlessCluster"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless attaches to at most 5 VPCs. CreateClusterV2 rejects a sixth with \"The size of list\n# should be between 1 and 5. ... InvalidParameter: vpcConfigs\". (The lower end is the schema's job.)\nviolation contains make_diag_full(\"pf-msk-serverless-vpc-configs-max\", \"ERROR\", name,\n\t\"Properties.VpcConfigs\",\n\tsprintf(\"VpcConfigs lists %d VPC configurations; the create fails with \\\"The size of list should be between 1 and 5\\\"\", [n]),\n\t\"Attach the serverless cluster to at most 5 VPCs\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tcfgs := flatten_list(name, \"Properties.VpcConfigs\")\n\tn := count(cfgs)\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-msk-t3-small-not-kraft",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "kafka.t3.small does not run KRaft metadata mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The .kraft Apache Kafka versions drop the smallest Standard broker: CreateClusterV2 answers\n# \"Unsupported InstanceType specified. Valid values: [...]\" with a list that holds every other\n# broker size but not kafka.t3.small. The same instance type is perfectly valid on 3.9.x, so no\n# layer that looks at either property alone can see this.\nviolation contains make_diag_full(\"pf-msk-t3-small-not-kraft\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.InstanceType\",\n\tsprintf(\"kafka.t3.small with Apache Kafka %s; the create fails with \\\"Unsupported InstanceType specified\\\" because KRaft mode has no t3 broker\", [v]),\n\t\"Move to kafka.m5.large or larger, or pick a ZooKeeper-mode version such as 3.9.x\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tresolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\") == \"kafka.t3.small\"\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tis_string(v)\n\tendswith(v, \".kraft\")\n}\n"
+  },
+  {
+    "id": "pf-msk-tiered-storage-instance-type",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Tiered storage is not available on kafka.t3.small brokers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The smallest Standard broker has no tiered tier: \"Tiered storage doesn't support broker size\n# t3.small\" (user guide), and CreateClusterV2 answers \"Tiered storage is not supported for the\n# specified broker type. ... InvalidParameter: instanceType\". Express brokers reject StorageMode\n# for a different reason and are covered by pf-msk-express-no-storage-mode.\nviolation contains make_diag_full(\"pf-msk-tiered-storage-instance-type\", \"ERROR\", name,\n\t\"Properties.StorageMode\",\n\t\"StorageMode TIERED on a kafka.t3.small broker; the create fails with \\\"Tiered storage is not supported for the specified broker type\\\"\",\n\t\"Move to kafka.m5.large or larger, or drop StorageMode\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-tiered-storage.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tresolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\") == \"kafka.t3.small\"\n\tresolve(name, \"Properties.StorageMode\") == \"TIERED\"\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-cert-authority-arn-format",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "CertificateAuthorityArnList holds AWS Private CA ARNs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The list is typed Array of String with no pattern, so an ACM certificate ARN - the neighbouring\n# service, and the one an author reaches for first - passes every earlier layer. The create fails\n# with \"One or more of the certificate authority ARNs provided in the request are invalid. ...\n# InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-tls-cert-authority-arn-format\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\",\n\tsprintf(\"'%s' is a %s ARN, not an AWS Private CA one; the create fails with \\\"One or more of the certificate authority ARNs provided in the request are invalid\\\"\", [arn, svc]),\n\t\"List AWS Private CA authorities (arn:<partition>:acm-pca:<region>:<account>:certificate-authority/<id>)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tsome item in flatten_list(name, \"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\")\n\tarn := item.value\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 5\n\tsvc := parts[2]\n\tsvc != \"acm-pca\"\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-enabled-requires-ca-list",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A Tls block needs both Enabled and CertificateAuthorityArnList",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members of Tls are Required: No, so half a block is schema-valid; the resource handler\n# rejects it before it ever calls Kafka - \"Enabled and CertificateAuthorityArnList fields must\n# both be defined for TLS. 'TLS'\". The requirement is symmetric: neither half stands on its own.\nviolation contains make_diag_full(\"pf-msk-tls-enabled-requires-ca-list\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Tls\",\n\t\"the Tls block defines only one of Enabled and CertificateAuthorityArnList; the create fails with \\\"Enabled and CertificateAuthorityArnList fields must both be defined for TLS\\\"\",\n\t\"Write both fields, or drop the Tls block altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttls := object.get(props, [\"ClientAuthentication\", \"Tls\"], null)\n\tis_object(tls)\n\tnot _pf_msktercl_complete(name, tls)\n}\n\n_pf_msktercl_complete(name, tls) if {\n\tobject.get(tls, \"Enabled\", \"__pf_absent\") != \"__pf_absent\"\n\tcount(flatten_list(name, \"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-plaintext-requires-unauthenticated",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A TLS_PLAINTEXT listener has to enable unauthenticated traffic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"If you choose TLS_PLAINTEXT, then you must also set unauthenticated to true\" - the plaintext\n# half of the listener has no authentication to offer, so the create fails with \"You must enable\n# unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT.\n# ... InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-tls-plaintext-requires-unauthenticated\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Unauthenticated.Enabled\",\n\t\"ClientBroker TLS_PLAINTEXT with client authentication but without Unauthenticated.Enabled; the create fails with \\\"You must enable unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT\\\"\",\n\t\"Set ClientAuthentication.Unauthenticated.Enabled to true, or move ClientBroker to TLS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"ClientBroker\"], \"TLS\") == \"TLS_PLAINTEXT\"\n\t_pf_msktpru_authenticated(props)\n\tobject.get(props, [\"ClientAuthentication\", \"Unauthenticated\", \"Enabled\"], false) != true\n}\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-unauthenticated-only-requires-no-tls-only",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster has to accept some kind of client",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every member of ClientAuthentication is optional and each Enabled is an independent Boolean,\n# so \"all of them false\" is a perfectly well-formed template that no client could ever reach. The\n# create fails with \"Unauthenticated cannot be set to false without enabling any authentication\n# mechanisms. ... InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-unauthenticated-only-requires-no-tls-only\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication\",\n\t\"Unauthenticated is false and no authentication mechanism is enabled; the create fails with \\\"Unauthenticated cannot be set to false without enabling any authentication mechanisms\\\"\",\n\t\"Enable SASL/IAM, SASL/SCRAM or TLS client authentication, or let unauthenticated traffic in\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"ClientAuthentication\", \"Unauthenticated\", \"Enabled\"], true) == false\n\tnot _pf_mskuorn_authenticated(props)\n}\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-vpc-connectivity-auth-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Multi-VPC connectivity auth schemes cannot be enabled at create time",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every VpcConnectivity auth switch is an ordinary Boolean in the schema, but the service only\n# accepts them on an existing cluster: \"When creating a cluster, all vpcConnectivity auth schemes\n# must be disabled ('enabled' : false). You can enable auth schemes after the cluster is created.\n# ... InvalidParameter: vpcConnectivity.clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-vpc-connectivity-auth-not-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.VpcConnectivity.ClientAuthentication\",\n\t\"a VpcConnectivity authentication scheme is enabled; the create fails with \\\"When creating a cluster, all vpcConnectivity auth schemes must be disabled\\\"\",\n\t\"Create the cluster with every VpcConnectivity auth scheme false and enable them in a later update\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tauth := object.get(props, [\"BrokerNodeGroupInfo\", \"ConnectivityInfo\", \"VpcConnectivity\", \"ClientAuthentication\"], {})\n\tsome path in [[\"Sasl\", \"Iam\", \"Enabled\"], [\"Sasl\", \"Scram\", \"Enabled\"], [\"Tls\", \"Enabled\"]]\n\tobject.get(auth, path, false) == true\n}\n"
+  },
+  {
+    "id": "pf-msk-zookeeper-access-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ZookeeperAccess cannot be set while the cluster is created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ZookeeperAccess exists only in CloudFormation - CreateClusterV2 has no such parameter - and\n# its documentation page carries no description at all, so nothing says it is an update-only\n# switch. The resource handler rejects it outright: \"Zookeeper Access cannot be configured during\n# cluster creation. 'ZookeeperAccess'\".\nviolation contains make_diag_full(\"pf-msk-zookeeper-access-not-at-create\", \"ERROR\", name,\n\t\"Properties.ZookeeperAccess\",\n\t\"ZookeeperAccess is set on a cluster being created; the create fails with \\\"Zookeeper Access cannot be configured during cluster creation\\\"\",\n\t\"Drop ZookeeperAccess from the template and set it in a later update\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-zookeeperaccess.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tis_object(object.get(props, \"ZookeeperAccess\", null))\n}\n"
   },
   {
     "id": "pf-pipes-batch-size-target-limit",

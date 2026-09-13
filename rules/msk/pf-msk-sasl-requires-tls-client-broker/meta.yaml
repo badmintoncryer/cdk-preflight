@@ -1,0 +1,12 @@
+id: pf-msk-sasl-requires-tls-client-broker
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Client authentication needs client-broker encryption"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: SASL/IAM with ClientBroker PLAINTEXT -> \"Client-broker encryption in transit must be set to either TLS or TLS_PLAINTEXT to enable client authentication. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

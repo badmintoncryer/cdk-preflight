@@ -1,0 +1,12 @@
+id: pf-msk-sasl-requires-in-cluster-encryption
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Client authentication needs in-cluster encryption"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: SASL/IAM with InCluster false -> \"To turn on client authentication, you must also turn on in-cluster encryption. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

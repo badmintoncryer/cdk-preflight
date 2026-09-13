@@ -1,0 +1,12 @@
+id: pf-msk-open-monitoring-requires-exporter
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Prometheus open monitoring needs an exporter"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-prometheus.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: OpenMonitoring.Prometheus with neither exporter -> \"You must specify at least one type of exporter, either nodeExporter or jmxExporter. ... 'openMonitoring'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

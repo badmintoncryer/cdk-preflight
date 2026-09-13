@@ -1,0 +1,12 @@
+id: pf-msk-provisioned-throughput-max-per-instance
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Provisioned storage throughput has a per-broker-size ceiling"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: VolumeThroughput 594 on kafka.m5.4xlarge -> \"For brokers of type m5.4xlarge, the maximum value for VolumeThroughput cannot exceed 593.75 MiB/s. ... 'volumeThroughput'\" (ROLLBACK_COMPLETE). Only the m5.4xlarge row of the ceiling table is measured; the other nine come from the user guide table of 2026-09-14"
+addedOn: 2026-09-14

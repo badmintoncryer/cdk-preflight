@@ -1,0 +1,12 @@
+id: pf-msk-tls-enabled-requires-ca-list
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "A Tls block needs both Enabled and CertificateAuthorityArnList"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: one cluster with only Tls.Enabled and one with only Tls.CertificateAuthorityArnList -> \"Enabled and CertificateAuthorityArnList fields must both be defined for TLS. 'TLS'\" (ROLLBACK_COMPLETE; the resource handler rejects this before it calls Kafka)"
+addedOn: 2026-09-14
