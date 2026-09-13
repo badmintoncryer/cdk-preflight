@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   App,
+  CloudFormationValidatePlugin,
   type IPolicyValidationContext,
   type IPolicyValidationPlugin,
   type PolicyValidationPluginReport,
@@ -379,6 +380,32 @@ function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: 
     cachedRegoEngine = { key, engine: new engineModule.RegoEngine({ customRules }) };
   }
   return cachedRegoEngine.engine;
+}
+
+// 観測モード（enforce: false）は CDK 組み込みの CloudFormationValidatePlugin に相乗りする。
+// あちらはコンストラクタでエンジンを 1 つ作って free() しないので、同じプロセスで App を
+// 作り直すたびにインスタンスが積み上がり、regoEngineCached と同じ超線形の悪化を起こす
+// （実測 2026-09-13: 同じルールセットで 4 回 synth して 36s -> 95s -> 131s -> 178s）。
+// ルールセットが変わらない限りプラグインごと使い回す。
+// ponytail: キーが変わったときに古いエンジンは free() しない（エンジンは CDK 側の
+// private フィールドで、触るには内部実装に手を入れることになる）。設定違いの Stage が
+// N 個あれば N 個積むが、実アプリでは 1〜2 個。積み上がりが問題になるなら、そのときに
+// アップストリームへ free/dispose を入れてもらう。
+let cachedObservePlugin: { key: string; plugin: CloudFormationValidatePlugin } | undefined;
+export function observePluginCached(rules: BundledRuleData[]): CloudFormationValidatePlugin {
+  const key = rules.map((r) => r.id).join(',');
+  if (cachedObservePlugin?.key !== key) {
+    cachedObservePlugin = {
+      key,
+      plugin: new CloudFormationValidatePlugin({
+        regoRules: [
+          ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
+          ...mergeRuleModules(rules),
+        ],
+      }),
+    };
+  }
+  return cachedObservePlugin.plugin;
 }
 
 /** 全ルールに共通の rego ヘッダ。bundle-rules が package 名と import を 1 種類に強制している。 */

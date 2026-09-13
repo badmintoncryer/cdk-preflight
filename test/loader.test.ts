@@ -14,6 +14,7 @@ import {
   installEnforceGate,
   loadFormatter,
   mergeRuleModules,
+  observePluginCached,
   prune,
   templateResourceTypes,
 } from '../src/private/enforce';
@@ -546,5 +547,13 @@ describe('fixed cost', () => {
     // 0 本だとこのテストが素通りしてしまうので、刈り込みすぎの側も見る
     expect(kept.length).toBeGreaterThan(0);
     expect(kept.length / BUNDLED_RULES.length).toBeLessThan(MAX_SHARE);
+  });
+
+  // 観測モードが乗る CDK 組み込みプラグインは、コンストラクタでエンジンを作って free() しない。
+  // App ごとに作り直すと同一プロセスでインスタンスが積み上がり、同じルールセットで 4 回
+  // synth しただけで 36s -> 95s -> 131s -> 178s まで悪化する（実測 2026-09-13）。
+  // ルールセットが違えば作り直すことは 'exclude removes a rule' が担保している。
+  test('observe mode builds one plugin per rule set, not one per app', () => {
+    expect(observePluginCached(BUNDLED_RULES)).toBe(observePluginCached(BUNDLED_RULES));
   });
 });
