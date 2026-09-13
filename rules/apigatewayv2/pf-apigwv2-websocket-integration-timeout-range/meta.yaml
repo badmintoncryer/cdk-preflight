@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-13 us-east-1: TimeoutInMillis 29001 and 49 -> \"Timeout should be between 50 ms and 29000 ms\" (ROLLBACK_COMPLETE); pass 29000 and 50 -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: TimeoutInMillis 29001 and 49 -> \"Timeout should be between 50 ms and 29000 ms\" (ROLLBACK_COMPLETE); pass 29000 and 50 -> CREATE_COMPLETE。2026-09-14 に CreateIntegration を直叩きして再確認: WEBSOCKET は 29000/50 が成功、29001・30000・30001 は同じメッセージで拒否。L-E5AE38E3（Maximum integration timeout in milliseconds、Adjustable）の引き上げ対象は Regional / private の REST API だけ（2024-06 の告知と PutIntegration / CreateIntegration のドキュメント）なので、WebSocket の 29000 はハードな上限として残す（原則 6）。"
 addedOn: 2026-09-08
