@@ -237,6 +237,38 @@ test('boundaryProblem follows a helper call to what it counts', () => {
   expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
 });
 
+test('boundaryProblem reads an index into an object as what it holds', () => {
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { B: { k: { Content: 'x'.repeat(n) } } } } } });
+  // `b[k].Content` は配列ではなく、その中の文字列。角括弧だけで配列と読むと
+  // 要素数プールと突き合わせて、境界に乗っているペアを誤検出する
+  const rego = 'violation contains 1 if {\n\tc := b[k].Content\n\tcount(c) > 40\n}\n';
+  expect(boundaryProblem(rego, fx(41), fx(40))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(60), fx(40))).toMatch(/fail template has no 41/);
+});
+
+test('boundaryProblem keeps each rule body\'s assignments to itself', () => {
+  const fx = (name: string, refs: number) => JSON.stringify({
+    Resources: { X: { Type: 'AWS::X::Y', Properties: { Name: name, Refs: Array.from({ length: refs }, (_, i) => `r${i}`) } } },
+  });
+  // 同じ `n` が、片方の本体では文字列、もう片方では数えた結果。1 つの表にまとめると
+  // 後から出てきたほうで上書きされ、文字列のほうが要素数プールと突き合わされる
+  const rego = [
+    'violation contains 1 if {',
+    '\tn := b.FieldToMatch.Name',
+    '\tcount(n) > 30',
+    '}',
+    '',
+    'violation contains 2 if {',
+    '\tn := count([1 | some r in refs])',
+    '\tn > 50',
+    '}',
+    '',
+  ].join('\n');
+  expect(boundaryProblem(rego, fx('a'.repeat(31), 51), fx('a'.repeat(30), 50))).toBeUndefined();
+  expect(boundaryProblem(rego, fx('short', 51), fx('a'.repeat(30), 50))).toMatch(/fail template has no 31/);
+  expect(boundaryProblem(rego, fx('a'.repeat(31), 51), fx('a'.repeat(30), 40))).toMatch(/pass template has no 50/);
+});
+
 test('boundaryProblem measures the string the rule sees, not the escaped JSON', () => {
   // count(v) が見るのは解けた後の文字列。生のテキストのまま数えると `\"` を含む値でずれる
   const rego = 'violation contains 1 if {\n\tsome v in vals\n\tcount(v) > 20\n}\n';
