@@ -6,7 +6,7 @@
         "RepositoryName": "cdkpf-lifecycletagstatus",
         "EmptyOnDelete": true,
         "LifecyclePolicy": {
-          "LifecyclePolicyText": "{\"rules\":[{\"rulePriority\":1,\"description\":\"cdk-preflight fixture rule for the ECR lifecycle policy gate\",\"selection\":{\"tagStatus\":\"tagged\",\"tagPatternList\":[\"prod*\"],\"countType\":\"imageCountMoreThan\",\"countNumber\":10},\"action\":{\"type\":\"expire\"}}]}"
+          "LifecyclePolicyText": "{\"rules\": [{\"rulePriority\": 1, \"description\": \"cdk-preflight fixture rule for the ECR lifecycle policy gate\", \"selection\": {\"tagStatus\": \"tagged\", \"tagPatternList\": [\"prod*\"], \"countType\": \"imageCountMoreThan\", \"countNumber\": 10}, \"action\": {\"type\": \"expire\"}}, {\"rulePriority\": 2, \"description\": \"wildcards in the tag pattern\", \"selection\": {\"tagStatus\": \"tagged\", \"tagPatternList\": [\"a*b*b*b*\"], \"countType\": \"imageCountMoreThan\", \"countNumber\": 11}, \"action\": {\"type\": \"expire\"}}]}"
         }
       }
     }

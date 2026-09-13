@@ -1,5 +1,4 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
     "G": {
       "Type": "AWS::S3::StorageLensGroup",
@@ -9,7 +8,14 @@
           "MatchAnyPrefix": [
             "a/",
             "b/",
-            "c/"
+            "c/",
+            "d/",
+            "e/",
+            "f/",
+            "g/",
+            "h/",
+            "i/",
+            "j/"
           ]
         }
       }

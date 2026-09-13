@@ -9,8 +9,22 @@
             "Value": "bench"
           }
         ],
-        "ThroughputMode": "elastic"
+        "ThroughputMode": "provisioned",
+        "ProvisionedThroughputInMibps": 1
       }
+    },
+    "FS2": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "cdkpf",
+            "Value": "bench"
+          }
+        ],
+        "ThroughputMode": "elastic"
+      },
+      "DependsOn": "FS"
     }
   }
 }

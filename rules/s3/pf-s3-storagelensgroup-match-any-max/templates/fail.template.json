@@ -1,5 +1,4 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
     "G": {
       "Type": "AWS::S3::StorageLensGroup",

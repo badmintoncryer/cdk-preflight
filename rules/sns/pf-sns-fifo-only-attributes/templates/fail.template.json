@@ -3,8 +3,32 @@
     "T": {
       "Type": "AWS::SNS::Topic",
       "Properties": {
-        "ContentBasedDeduplication": true
+        "FifoTopic": true,
+        "TopicName": "cdkpf-fifo-attrs-a.fifo",
+        "ContentBasedDeduplication": true,
+        "ArchivePolicy": {
+          "MessageRetentionPeriod": 366
+        }
       }
+    },
+    "T2": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "FifoTopic": true,
+        "TopicName": "cdkpf-fifo-attrs-b.fifo",
+        "ContentBasedDeduplication": true,
+        "ArchivePolicy": {
+          "MessageRetentionPeriod": 0
+        }
+      },
+      "DependsOn": "T"
+    },
+    "T3": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "ContentBasedDeduplication": true
+      },
+      "DependsOn": "T2"
     }
   }
 }

@@ -4,9 +4,53 @@
       "Type": "AWS::SQS::Queue",
       "Properties": {
         "RedriveAllowPolicy": {
-          "redrivePermission": "byQueue"
+          "redrivePermission": "byQueue",
+          "sourceQueueArns": [
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-0"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-1"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-2"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-3"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-4"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-5"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-6"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-7"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-8"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-9"
+            },
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-src-10"
+            }
+          ]
         }
       }
+    },
+    "Q2": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedriveAllowPolicy": {
+          "redrivePermission": "byQueue"
+        }
+      },
+      "DependsOn": "Q"
     }
   }
 }
