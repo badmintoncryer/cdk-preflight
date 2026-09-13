@@ -5,10 +5,10 @@
       "DeletionPolicy": "Delete",
       "UpdateReplacePolicy": "Delete",
       "Properties": {
-        "Engine": "aurora-postgresql",
+        "Engine": "aurora-mysql",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
-        "BacktrackWindow": 3600
+        "BacktrackWindow": 259201
       }
     }
   }

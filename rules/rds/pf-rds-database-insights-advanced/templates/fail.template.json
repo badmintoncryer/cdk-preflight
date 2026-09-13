@@ -8,7 +8,9 @@
         "Engine": "aurora-postgresql",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
-        "DatabaseInsightsMode": "advanced"
+        "DatabaseInsightsMode": "advanced",
+        "PerformanceInsightsEnabled": true,
+        "PerformanceInsightsRetentionPeriod": 30
       }
     }
   }

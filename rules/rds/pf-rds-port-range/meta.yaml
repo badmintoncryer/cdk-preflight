@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Port 80 (r16) -> \"Invalid endpoint port 80. Valid range is: 1150-65535\" ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-13 ap-northeast-1: two instances, Port 1149 and Port 65536 -> \"Invalid endpoint port 1149. Valid range is: 1150-65535\" (ROLLBACK_COMPLETE; the low end is reported first here, the cluster rule reports its high end first); pass Port 1150 and Port 65535 -> CREATE_COMPLETE"
 addedOn: 2026-09-03

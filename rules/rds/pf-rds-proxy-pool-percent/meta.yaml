@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"MaxConnectionsPercent 50 must be greater than MaxIdleConnectionsPercent 80\" ROLLBACK_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: MaxConnectionsPercent 0 with ConnectionBorrowTimeout 301 -> \"MaxConnectionsPercent 0 is beyond supported range 1-100\" (ROLLBACK_COMPLETE); pass MaxConnectionsPercent 100 with ConnectionBorrowTimeout 300 -> CREATE_COMPLETE. The other end, MaxConnectionsPercent above 100, cannot go in the fail fixture: the bundled engine stops it at F3034/FATAL before the rule is reached (AGENTS.md principle 1)."
 addedOn: 2026-09-08
