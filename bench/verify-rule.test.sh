@@ -14,11 +14,13 @@ case "$args" in *-pass*) w=P ;; *) w=F ;; esac
 eval "status=\${CDKPF_STUB_${w}STATUS:-}"
 eval "reason=\${CDKPF_STUB_${w}REASON:-}"
 eval "ftype=\${CDKPF_STUB_${w}TYPE:-None}"
+eval "cerr=\${CDKPF_STUB_${w}CREATE_ERR:-}"
 case "$args" in
   *"describe-stacks"*"StackStatus"*) echo "${status:-ROLLBACK_COMPLETE}" ;;
   *"describe-stack-events"*ResourceStatusReason*) echo "$reason" ;;
   *"describe-stack-events"*ResourceType*) echo "$ftype" ;;
   *"describe-stack-resources"*) echo "" ;;
+  *"create-stack"*) [ -z "$cerr" ] || { echo "$cerr" >&2; exit 254; } ;;
   *) exit 0 ;;
 esac
 STUB
@@ -66,4 +68,26 @@ got=$(CDKPF_STUB_PSTATUS=CREATE_COMPLETE \
       run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
 expect 0 "$got" "a clean pass stack still verifies"
 
-echo "ok: verify-rule.sh scaffolding guard"
+# pass が本当にデプロイされて CREATE_COMPLETE 以外で終わったなら exit 3 のまま（下の 4 と別物）
+got=$(run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
+expect 3 "$got" "a pass stack that deployed and rolled back is an unclean fixture, not INCONCLUSIVE"
+
+# pass テンプレートが API に弾かれた場合: スタックは一度も作られないので poll は GONE を返す。
+# それを「デプロイしたが CREATE_COMPLETE で終わらなかった」(exit 3) と同じ扱いにすると、
+# 本当の理由（ここでは templateBody の 51200 バイト上限）がログを開くまで見えない。
+APIERR="An error occurred (ValidationError) when calling the CreateStack operation: 1 validation error detected: Value '{...}' at 'templateBody' failed to satisfy constraint: Member must have length less than or equal to 51200"
+got=$(CDKPF_STUB_PCREATE_ERR="$APIERR" \
+      run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
+expect 4 "$got" "a pass template the API rejects outright is INCONCLUSIVE, not an unclean fixture"
+grep -q "INCONCLUSIVE: pass create-stack API error:.*51200" "$tmp/out" \
+  || { echo "FAIL: the pass-side API error was not reported"; cat "$tmp/out"; exit 1; }
+! grep -q "fixture is not clean" "$tmp/out" \
+  || { echo "FAIL: a rejected pass template must not read as an unclean fixture"; cat "$tmp/out"; exit 1; }
+
+# fail 側も同じ経路を通る
+got=$(CDKPF_STUB_FCREATE_ERR="$APIERR" run "AWS::Batch::ComputeEnvironment" "irrelevant")
+expect 4 "$got" "a fail template the API rejects outright is INCONCLUSIVE"
+grep -q "INCONCLUSIVE: fail create-stack API error:.*51200" "$tmp/out" \
+  || { echo "FAIL: the fail-side API error was not reported"; cat "$tmp/out"; exit 1; }
+
+echo "ok: verify-rule.sh scaffolding guard + create-stack rejection"
