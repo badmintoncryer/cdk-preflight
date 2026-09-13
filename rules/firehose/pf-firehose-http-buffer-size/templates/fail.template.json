@@ -50,7 +50,7 @@
             ]
           },
           "BufferingHints": {
-            "SizeInMBs": 128,
+            "SizeInMBs": 65,
             "IntervalInSeconds": 60
           }
         }

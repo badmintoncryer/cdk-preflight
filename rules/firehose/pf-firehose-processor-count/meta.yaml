@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_P
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 ap-northeast-1: A maximum of 5 and a minimum of 1 processor needs to be supplied when processing is enabled. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: six processors -> InvalidArgumentException \"A maximum of 5 and a minimum of 1 processor needs to be supplied when processing is enabled.\" An enabled configuration with an empty Processors array gives the same message."
+  evidence: "bench 2026-09-13 us-east-1: six processors -> \"A maximum of 5 and a minimum of 1 processor needs to be supplied when processing is enabled.\" ROLLBACK_COMPLETE; pass five processors and one processor -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDeliveryStream: six processors and an enabled configuration with an empty Processors array both give that message; five (MetadataExtraction / Lambda / AppendDelimiterToRecord / RecordDeAggregation / Decompression, with dynamic partitioning on) and one are accepted. Per-processor validation runs before the count is looked at, so the five in the pass template have to be a combination the service allows together."
 addedOn: 2026-09-10

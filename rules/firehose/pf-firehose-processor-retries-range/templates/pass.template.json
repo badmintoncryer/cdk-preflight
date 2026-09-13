@@ -50,7 +50,7 @@
                   },
                   {
                     "ParameterName": "NumberOfRetries",
-                    "ParameterValue": "3"
+                    "ParameterValue": "300"
                   }
                 ]
               }
@@ -58,6 +58,45 @@
           }
         }
       }
+    },
+    "DS2": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "ProcessingConfiguration": {
+            "Enabled": true,
+            "Processors": [
+              {
+                "Type": "Lambda",
+                "Parameters": [
+                  {
+                    "ParameterName": "LambdaArn",
+                    "ParameterValue": "arn:aws:lambda:us-east-1:214794239830:function:cdkpf-noop"
+                  },
+                  {
+                    "ParameterName": "NumberOfRetries",
+                    "ParameterValue": "0"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": "DS"
     }
   }
 }

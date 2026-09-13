@@ -50,7 +50,7 @@
                   },
                   {
                     "ParameterName": "BufferSizeInMBs",
-                    "ParameterValue": "5"
+                    "ParameterValue": "3.1"
                   },
                   {
                     "ParameterName": "BufferIntervalInSeconds",
@@ -62,6 +62,49 @@
           }
         }
       }
+    },
+    "DS2": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "ProcessingConfiguration": {
+            "Enabled": true,
+            "Processors": [
+              {
+                "Type": "Lambda",
+                "Parameters": [
+                  {
+                    "ParameterName": "LambdaArn",
+                    "ParameterValue": "arn:aws:lambda:us-east-1:214794239830:function:cdkpf-noop"
+                  },
+                  {
+                    "ParameterName": "BufferSizeInMBs",
+                    "ParameterValue": "0.19"
+                  },
+                  {
+                    "ParameterName": "BufferIntervalInSeconds",
+                    "ParameterValue": "60"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": "DS"
     }
   }
 }

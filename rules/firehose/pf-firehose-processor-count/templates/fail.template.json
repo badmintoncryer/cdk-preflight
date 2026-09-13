@@ -41,12 +41,12 @@
           "DynamicPartitioningConfiguration": {
             "Enabled": true
           },
-          "Prefix": "p/!{partitionKeyFromQuery:a}/",
-          "ErrorOutputPrefix": "err/!{firehose:error-output-type}/",
           "BufferingHints": {
             "SizeInMBs": 64,
-            "IntervalInSeconds": 60
+            "IntervalInSeconds": 300
           },
+          "Prefix": "data/!{partitionKeyFromQuery:dept}/",
+          "ErrorOutputPrefix": "err/!{firehose:error-output-type}/",
           "ProcessingConfiguration": {
             "Enabled": true,
             "Processors": [
@@ -55,7 +55,7 @@
                 "Parameters": [
                   {
                     "ParameterName": "MetadataExtractionQuery",
-                    "ParameterValue": "{a:.a}"
+                    "ParameterValue": "{dept: .dept}"
                   },
                   {
                     "ParameterName": "JsonParsingEngine",
@@ -77,7 +77,16 @@
                 "Parameters": [
                   {
                     "ParameterName": "Delimiter",
-                    "ParameterValue": "Cg=="
+                    "ParameterValue": "\\n"
+                  }
+                ]
+              },
+              {
+                "Type": "RecordDeAggregation",
+                "Parameters": [
+                  {
+                    "ParameterName": "SubRecordType",
+                    "ParameterValue": "JSON"
                   }
                 ]
               },
@@ -98,20 +107,36 @@
                     "ParameterValue": "true"
                   }
                 ]
-              },
-              {
-                "Type": "RecordDeAggregation",
-                "Parameters": [
-                  {
-                    "ParameterName": "SubRecordType",
-                    "ParameterValue": "JSON"
-                  }
-                ]
               }
             ]
           }
         }
       }
+    },
+    "DS2": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          },
+          "ProcessingConfiguration": {
+            "Enabled": true,
+            "Processors": []
+          }
+        }
+      },
+      "DependsOn": "DS"
     }
   }
 }

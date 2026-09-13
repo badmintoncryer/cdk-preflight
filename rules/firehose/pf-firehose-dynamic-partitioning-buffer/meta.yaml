@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: dynamic partitioning enabled with BufferingHints.SizeInMBs 32 (f08) -> \"BufferingHints.SizeInMBs must be at least 64 when Dynamic Partitioning is enabled.\" ROLLBACK_COMPLETE. The schema minimum is 1 (engine clean on 32) - the 64 floor exists only conditionally in the service."
+  evidence: "bench 2026-09-13 us-east-1: dynamic partitioning enabled with BufferingHints.SizeInMBs 63 -> \"BufferingHints.SizeInMBs must be at least 64 when Dynamic Partitioning is enabled.\" ROLLBACK_COMPLETE; pass 64 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDeliveryStream: 63 is rejected with the same message and 64 is accepted. The schema minimum is 1 (the bare engine is clean on 63) - the 64 floor exists only conditionally in the service."
 addedOn: 2026-09-03
