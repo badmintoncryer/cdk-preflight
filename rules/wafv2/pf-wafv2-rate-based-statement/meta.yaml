@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/waf/latest/APIReference/API_RateBa
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: You are missing at-least one of condition between some parameters or all parameters of object., field: CUSTOM_KEYS, parameter: RateBasedStatement\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 ap-northeast-1: a rule group with 5 rate-based rules alongside a web ACL with 11 -> \"AWS WAF couldn't perform the operation because you exceeded your resource limit NUM_RATEBASED_STATEMENT_IN_RULE_GROUP\" (ROLLBACK_COMPLETE; the rule group is created first, so the web ACL's own limit is not reached); pass 4 in the rule group and 10 in the web ACL -> CREATE_COMPLETE"
 addedOn: 2026-09-05

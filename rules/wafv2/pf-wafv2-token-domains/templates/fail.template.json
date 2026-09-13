@@ -16,7 +16,17 @@
         },
         "Rules": [],
         "TokenDomains": [
-          "co.uk"
+          "d0.example.com",
+          "d1.example.com",
+          "d2.example.com",
+          "d3.example.com",
+          "d4.example.com",
+          "d5.example.com",
+          "d6.example.com",
+          "d7.example.com",
+          "d8.example.com",
+          "d9.example.com",
+          "d10.example.com"
         ]
       }
     }

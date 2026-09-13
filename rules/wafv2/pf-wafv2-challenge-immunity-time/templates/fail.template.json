@@ -17,7 +17,7 @@
         "Rules": [],
         "ChallengeConfig": {
           "ImmunityTimeProperty": {
-            "ImmunityTime": 100
+            "ImmunityTime": 299
           }
         }
       }

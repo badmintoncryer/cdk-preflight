@@ -71,6 +71,7 @@ pf-ec2-sg-source-exclusive  pending #178
 pf-ec2-subnet-cidr-size  pending #178
 pf-ec2-tgw-amazon-side-asn  pending #178
 pf-ec2-volume-iops  pending #178
+pf-ec2-vpc-cidr-block-size  pending #178
 pf-ec2-vpn-pre-shared-key  pending #178
 pf-ecr-lifecycle-policy-syntax  pending #178
 pf-ecr-lifecycle-tag-status  pending #178
@@ -104,8 +105,6 @@ pf-firehose-processor-buffer-size-range  pending #178
 pf-firehose-processor-count  pending #178
 pf-firehose-processor-retries-range  pending #178
 pf-iam-managed-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（6145/6144 ちょうどで撮ってある）
-pf-kms-alias-target  pending #178
-pf-kms-replica-primary-arn  pending #178
 pf-lambda-env-size  しきい値は環境変数をシリアライズしたバイト数の合計。テンプレートに数値としては現れない（4097/4096 ちょうどで撮ってある）
 pf-lambda-esm-on-failure-destination-api-max-length  上限 350 に届く有効な ARN が存在しない（SQS/S3 の名前長の上限より先に頭打ちになる）。fail は 351 文字ちょうど
 pf-lambda-esm-poller-group-esm-count  doc-only。fail の 101 本で既にテンプレートが 57KB あり CFN の 51,200 バイト上限を超える。pass の 100 本も同じ理由で作れない
@@ -130,7 +129,6 @@ pf-rds-storage-throughput-max  pending #178
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）
 pf-route53-healthcheck-alarm-high-resolution  CloudWatch の Period は 10/20/30 か 60 の倍数しか取れないので 31-59 は作れない。fail は作れる中で最大の 30、pass は 60 に乗せてある
 pf-route53-hostedzone-name-label-63  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
-pf-route53-naptr-regexp-replacement-exclusive  count(f[4]) > 2 は「regexp が引用符だけではない」という形のガードで、順序のある制約ではない
 pf-route53-record-name-label-length  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
 pf-route53-recordsetgroup-max-1000-elements  しきい値と突き合わせるのはレコードセットをまたいだ値の合計で、1 レコードセットは 400 値までなので 1001 要素の配列はテンプレートに存在しない。フィクスチャは 1001 / 1000 値に乗せてある
 pf-route53-recordsetgroup-max-32000-chars  しきい値は全値の文字数の合計で、どの配列長とも文字列長とも一致しない。フィクスチャは 32001 / 32000 文字に乗せてある
@@ -142,7 +140,6 @@ pf-route53resolver-firewallrulegroupassociation-max-per-vpc  pending #178
 pf-s3-metadata-record-expiration-days  pending #178
 pf-s3-storagelensgroup-match-any-max  pending #178
 pf-secretsmanager-generate-secret-string  pending #178
-pf-secretsmanager-kms-key  pending #178
 pf-secretsmanager-rotation-rules  pending #178
 pf-sfn-asl-name-limits  pending #178
 pf-sns-fifo-only-attributes  pending #178
@@ -152,17 +149,8 @@ pf-ssm-association-schedule  pending #178
 pf-ssm-parameter-name  pending #178
 pf-ssm-parameter-policies  pending #178
 pf-ssm-parameter-tier  pending #178
-pf-wafv2-byte-match  pending #178
-pf-wafv2-capacity  pending #178
-pf-wafv2-challenge-immunity-time  pending #178
-pf-wafv2-custom-request-handling  pending #178
-pf-wafv2-custom-response  pending #178
-pf-wafv2-ipset-addresses  pending #178
-pf-wafv2-label-syntax  pending #178
-pf-wafv2-logging-destination  pending #178
-pf-wafv2-managed-rule-group  pending #178
-pf-wafv2-rate-based-statement  pending #178
-pf-wafv2-regex-syntax  pending #178
-pf-wafv2-statement-limits  pending #178
-pf-wafv2-text-transformations  pending #178
-pf-wafv2-token-domains  pending #178
+pf-wafv2-custom-request-handling  コンテナ全体で 100 という上限は、CustomRequestHandling をまたいだヘッダ数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 本に乗せてある（1 オブジェクトあたりの 10 本は境界で検出できている）
+pf-wafv2-custom-response  コンテナ全体で 50 KB という上限は本文の文字数の合計。加えて上限ちょうどの pass は作れない: 本文 51,200 文字は CloudFormation のインラインテンプレート上限 51,200 バイトを超える。50 本 / 1 本 4,096 文字の 2 つは境界に乗せてある
+pf-wafv2-ipset-addresses  p <= 32 は IPv4 のプレフィックス長が範囲内かの形のガードで、順序のある制約ではない（33 は有効な値ですらない）
+pf-wafv2-logging-destination  count(parts) >= 7 は ARN を割った断片数のガード。parts が some で束縛されているので split の検出に引っかからない
+pf-wafv2-managed-rule-group  ExemptUriRegularExpressions の 1..5 はヘルパー述語（_pf_wafmrg_bad_count(n) if n > 5）の引数で、検出器は呼び出し側の値まで辿れない。フィクスチャは 6 / 5 本に乗せてある

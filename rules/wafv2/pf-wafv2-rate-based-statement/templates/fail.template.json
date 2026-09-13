@@ -21,7 +21,7 @@
             "Statement": {
               "RateBasedStatement": {
                 "Limit": 100,
-                "AggregateKeyType": "CUSTOM_KEYS"
+                "AggregateKeyType": "IP"
               }
             },
             "Action": {
@@ -31,6 +31,291 @@
               "SampledRequestsEnabled": false,
               "CloudWatchMetricsEnabled": false,
               "MetricName": "r1"
+            }
+          },
+          {
+            "Name": "r2",
+            "Priority": 2,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r2"
+            }
+          },
+          {
+            "Name": "r3",
+            "Priority": 3,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r3"
+            }
+          },
+          {
+            "Name": "r4",
+            "Priority": 4,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r4"
+            }
+          },
+          {
+            "Name": "r5",
+            "Priority": 5,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r5"
+            }
+          },
+          {
+            "Name": "r6",
+            "Priority": 6,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r6"
+            }
+          },
+          {
+            "Name": "r7",
+            "Priority": 7,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r7"
+            }
+          },
+          {
+            "Name": "r8",
+            "Priority": 8,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r8"
+            }
+          },
+          {
+            "Name": "r9",
+            "Priority": 9,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r9"
+            }
+          },
+          {
+            "Name": "r10",
+            "Priority": 10,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r10"
+            }
+          },
+          {
+            "Name": "r11",
+            "Priority": 11,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r11"
+            }
+          }
+        ]
+      }
+    },
+    "G": {
+      "Type": "AWS::WAFv2::RuleGroup",
+      "Properties": {
+        "Name": "cdkpf-g-ratebasedstatement",
+        "Scope": "REGIONAL",
+        "Capacity": 100,
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": false,
+          "CloudWatchMetricsEnabled": false,
+          "MetricName": "g"
+        },
+        "Rules": [
+          {
+            "Name": "r1",
+            "Priority": 1,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r1"
+            }
+          },
+          {
+            "Name": "r2",
+            "Priority": 2,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r2"
+            }
+          },
+          {
+            "Name": "r3",
+            "Priority": 3,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r3"
+            }
+          },
+          {
+            "Name": "r4",
+            "Priority": 4,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r4"
+            }
+          },
+          {
+            "Name": "r5",
+            "Priority": 5,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "IP"
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r5"
             }
           }
         ]
