@@ -2380,17 +2380,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-name-max-128\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"the data catalog name is %d characters; CreateDataCatalog fails with \\\"DataCatalog name ... is invalid.\\\"\", [count(n)]),\n\t\"Use a data catalog name of at most 128 characters\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tn := resolve(name, \"Properties.Name\")\n\t_pf_athlib_lit(n)\n\tcount(n) > 128\n}\n"
   },
   {
-    "id": "pf-athena-dc-name-not-awsdatacatalog",
-    "service": "athena",
-    "severity": "ERROR",
-    "title": "AwsDataCatalog is reserved and cannot be created",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Athena::DataCatalog"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-athena-dc-name-not-awsdatacatalog\", \"ERROR\", name,\n\t\"Properties.Name\",\n\t\"AwsDataCatalog is the built-in Glue catalog; CreateDataCatalog fails with \\\"DataCatalog name AwsDataCatalog is reserved.\\\"\",\n\t\"Drop the resource and reference AwsDataCatalog directly, or give the catalog another name\",\n\t\"https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html\") if {\n\tsome name in resources_of_type(\"AWS::Athena::DataCatalog\")\n\tresolve(name, \"Properties.Name\") == \"AwsDataCatalog\"\n}\n"
-  },
-  {
     "id": "pf-athena-wg-cse-kms-requires-key",
     "service": "athena",
     "severity": "ERROR",

@@ -218,7 +218,6 @@
 | `pf-athena-dc-lambda-record-requires-metadata` | AWS::Athena::DataCatalog | 'metadata-function' and 'record-function' must be set together | ERROR | none |
 | `pf-athena-dc-name-charset` | AWS::Athena::DataCatalog | A data catalog name may use only letters, digits, underscore, at sign and hyphen | ERROR | pending-engine |
 | `pf-athena-dc-name-max-128` | AWS::Athena::DataCatalog | A data catalog name may be at most 128 characters | ERROR | pending-engine |
-| `pf-athena-dc-name-not-awsdatacatalog` | AWS::Athena::DataCatalog | AwsDataCatalog is reserved and cannot be created | ERROR | none |
 | `pf-athena-wg-cse-kms-requires-key` | AWS::Athena::WorkGroup | CSE_KMS result encryption requires a KmsKey | ERROR | none |
 | `pf-athena-wg-engine-version-enum` | AWS::Athena::WorkGroup | SelectedEngineVersion must be AUTO or a published engine version | ERROR | pending-engine |
 | `pf-athena-wg-expected-bucket-owner-12-digits` | AWS::Athena::WorkGroup | ExpectedBucketOwner must be at least 12 characters (a 12-digit account ID) | ERROR | pending-engine |
