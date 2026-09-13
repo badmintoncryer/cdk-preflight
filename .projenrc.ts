@@ -95,6 +95,11 @@ project.gitignore.addPatterns('/bench/out/');
 // テストに混ぜ、削除分岐が壊れたら CI で落ちるようにする（実 API は叩かない）。
 project.testTask.exec('bash bench/sweep.test.sh');
 
+// verify-rule.sh の判定も同じ理由でスタブ版を CI に混ぜる。足場（VPC やロール）が
+// アカウントのクォータで倒れたスタックも ROLLBACK_COMPLETE で終わるので、素通しだと
+// 嘘の証拠が meta.yaml に焼き付く。
+project.testTask.exec('bash bench/verify-rule.test.sh');
+
 // 公開される tarball の smoke test。テストは全部 src/ を import しているので、
 // パッケージング側の壊れ（exports の漏れ、lib/rules.generated の解決失敗）は
 // ここでしか出ない。ローカルでは `CI=true npx projen package:js && npx projen smoke`。

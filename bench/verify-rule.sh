@@ -12,6 +12,7 @@ FAIL_ONLY="${2:-}"
 DIR=$(find rules -maxdepth 2 -type d -name "$RULE" | head -1)
 [ -z "$DIR" ] && { echo "rule not found: $RULE"; exit 1; }
 META_REGION=$(grep -E '^benchRegion:' "$DIR/meta.yaml" | awk '{print $2}')
+RTYPES=$(grep -E '^resourceTypes:' "$DIR/meta.yaml")
 REGION="${CDKPF_REGION:-${META_REGION:-ap-northeast-1}}"
 mkdir -p bench/logs
 LOG="bench/logs/$RULE.log"
@@ -40,6 +41,27 @@ reason_of() { # リソースの CREATE_FAILED を優先。無ければスタッ�
     [ -n "$r" ] && [ "$r" != "None" ] && { echo "$r"; return; }
   done
   echo "$r"
+}
+
+failed_type() { # スタックの中で最初に CREATE_FAILED になったリソースの型
+  aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
+    --query "StackEvents[?ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack']|[-1].ResourceType" \
+    --output text 2>/dev/null
+}
+
+# フィクスチャは検査対象の周りに足場（VPC、ロール、バケット）を建てる。足場のほうが
+# 倒れた場合 — アカウントのクォータ、前回の消し残り、スロットリング — でもスタックは
+# ROLLBACK_COMPLETE で終わるので、そのままだと「制約を再現した」と読めてしまい、
+# 嘘の証拠が meta.yaml に焼き付く（2026-09-12、VPC のクォータで計算環境のルール 6 本が
+# verified に見えた）。判定するのは「倒れたのがルールの対象型」か「上限系の文面ではない」
+# ときだけにする。メッセージだけで見分けようとすると誤検出する: 名前の一意性を見る
+# ルールは "already exists" が、ロールのアカウントを見るルールは "is not authorized" が
+# 本物の証拠になる。
+scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失敗なら 0
+  local ftype=$1 reason=$2
+  case "$ftype" in "" | None) return 1 ;; esac
+  grep -qF "$ftype" <<<"$RTYPES" && return 1
+  grep -qiE 'maximum number of|LimitExceeded|limit exceeded|quota|Rate exceeded|Throttl|already exists' <<<"$reason"
 }
 
 cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除まで自動で撃つ
@@ -76,9 +98,14 @@ if ! aws cloudformation create-stack --stack-name "$FSTACK" --region "$REGION" \
 fi
 FSTATUS=$(poll_terminal "$FSTACK")
 REASON=$(reason_of "$FSTACK")
+FTYPE=$(failed_type "$FSTACK")
 echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
 echo "fail: reason=$REASON" | tee -a "$LOG"
 cleanup "$FSTACK"
+if scaffolding_failure "$FTYPE" "$REASON"; then
+  echo "!! INCONCLUSIVE: the fixture's $FTYPE failed before the constraint could fire: $REASON" | tee -a "$LOG"
+  exit 4
+fi
 case "$FSTATUS" in
   CREATE_COMPLETE)
     echo "!! BROKEN-EXPECTATION: fail template deployed successfully — the constraint may have drifted" | tee -a "$LOG"
@@ -96,9 +123,14 @@ if [ "$FAIL_ONLY" != "--fail-only" ]; then
       --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1
   PSTATUS=$(poll_terminal "$PSTACK")
   PREASON=$(reason_of "$PSTACK")
+  PTYPE=$(failed_type "$PSTACK")
   echo "pass: finalStatus=$PSTATUS" | tee -a "$LOG"
   echo "pass: reason=$PREASON" | tee -a "$LOG"
   cleanup "$PSTACK"
+  if scaffolding_failure "$PTYPE" "$PREASON"; then
+    echo "!! INCONCLUSIVE: the pass fixture's $PTYPE failed for a reason of its own: $PREASON" | tee -a "$LOG"
+    exit 4
+  fi
   [ "$PSTATUS" != "CREATE_COMPLETE" ] && { echo "!! pass template failed to deploy — fixture is not clean" | tee -a "$LOG"; exit 3; }
 fi
 

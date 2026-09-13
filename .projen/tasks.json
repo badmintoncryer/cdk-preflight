@@ -363,6 +363,9 @@
         },
         {
           "exec": "bash bench/sweep.test.sh"
+        },
+        {
+          "exec": "bash bench/verify-rule.test.sh"
         }
       ]
     },
