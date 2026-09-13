@@ -1,0 +1,121 @@
+package cdk_preflight
+
+import rego.v1
+
+# Shared helpers for the AWS Glue rules. Absence is proven against the raw
+# document (resolve() cannot tell "absent" from "unresolvable"), string values
+# are guarded so a Ref/GetAtt resolved to a logical id is never compared against
+# a literal, and numbers go through to_number so tokens skip instead of firing.
+# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.
+
+_pf_gluelib_props(name) := p if {
+	p := input.resources[name].properties
+	is_object(p)
+}
+
+# Absent-safe object access; undefined when the key is missing.
+_pf_gluelib_get(name, k) := v if {
+	p := _pf_gluelib_props(name)
+	v := object.get(p, k, "__pf_absent")
+	v != "__pf_absent"
+}
+
+_pf_gluelib_has(name, k) if {
+	_pf_gluelib_get(name, k)
+}
+
+_pf_gluelib_absent(name, k) if {
+	p := _pf_gluelib_props(name)
+	object.get(p, k, "__pf_absent") == "__pf_absent"
+}
+
+# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.
+_pf_gluelib_lit(v) if {
+	is_string(v)
+	not input.resources[v]
+}
+
+_pf_gluelib_str(name, path) := v if {
+	v := resolve(name, path)
+	_pf_gluelib_lit(v)
+}
+
+_pf_gluelib_num(name, path) := n if {
+	n := to_number(resolve(name, path))
+}
+
+# The job flavour every combination rule keys on.
+_pf_gluelib_command_name(name) := _pf_gluelib_str(name, "Properties.Command.Name")
+
+_pf_gluelib_worker_type(name) := _pf_gluelib_str(name, "Properties.WorkerType")
+
+_pf_gluelib_glue_version(name) := _pf_gluelib_str(name, "Properties.GlueVersion")
+
+# Trigger and crawler shapes shared by the trigger / workflow / crawler rules.
+_pf_gluelib_trigger_type(name) := _pf_gluelib_str(name, "Properties.Type")
+
+_pf_gluelib_predicate(name) := p if {
+	p := _pf_gluelib_get(name, "Predicate")
+	is_object(p)
+}
+
+_pf_gluelib_conditions(name) := c if {
+	c := object.get(_pf_gluelib_predicate(name), "Conditions", [])
+	is_array(c)
+}
+
+_pf_gluelib_targets(name) := t if {
+	t := _pf_gluelib_get(name, "Targets")
+	is_object(t)
+}
+
+_pf_gluelib_recrawl(name) := _pf_gluelib_str(name, "Properties.RecrawlPolicy.RecrawlBehavior")
+
+_pf_gluelib_config(name) := c if {
+	c := _pf_gluelib_get(name, "Configuration")
+	is_string(c)
+	not input.resources[c]
+}
+
+# Connection, classifier and security-configuration shapes shared by the
+# connection / classifier / encryption rules.
+_pf_gluelib_connection_input(name) := ci if {
+	ci := _pf_gluelib_get(name, "ConnectionInput")
+	is_object(ci)
+}
+
+_pf_gluelib_connection_type(name) := _pf_gluelib_str(name, "Properties.ConnectionInput.ConnectionType")
+
+_pf_gluelib_connection_props(name) := p if {
+	p := object.get(_pf_gluelib_connection_input(name), "ConnectionProperties", {})
+	is_object(p)
+}
+
+_pf_gluelib_classifier(name, kind) := c if {
+	c := _pf_gluelib_get(name, kind)
+	is_object(c)
+}
+
+_pf_gluelib_encryption(name) := e if {
+	e := _pf_gluelib_get(name, "EncryptionConfiguration")
+	is_object(e)
+}
+
+_pf_gluelib_schedule_expression(name) := _pf_gluelib_str(name, "Properties.Schedule.ScheduleExpression")
+
+# cron(...) の 6 フィールド。トリガー（Properties.Schedule）とクローラー
+# （Properties.Schedule.ScheduleExpression）が同じ検証を受ける。
+_pf_gluelib_cron_fields(sch) := f if {
+	m := regex.find_all_string_submatch_n(`^cron\((.*)\)$`, sch, 1)
+	f := regex.split(`\s+`, trim_space(m[0][1]))
+}
+
+_pf_gluelib_cron_dom_dow_bad(dom, dow) if {
+	dom == "?"
+	dow == "?"
+}
+
+_pf_gluelib_cron_dom_dow_bad(dom, dow) if {
+	dom != "?"
+	dow != "?"
+}

@@ -1,0 +1,12 @@
+id: pf-glue-ml-transform-glue-version-eol
+service: glue
+resourceTypes: [AWS::Glue::MLTransform]
+benchRegion: us-east-1
+severity: ERROR
+title: MLTransform Glue versions below 2.0 are past end of life
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/machine-learning.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (GlueVersion 1.0) -> \"Glue version 1.0 is deprecated and is no longer supported for ML transforms. Specify Glue version 2.0 or higher.\" (ROLLBACK_COMPLETE); pass template (GlueVersion 2.0) -> CREATE_COMPLETE. CreateMLTransform the same day: 0.9 gives the same sentence, 2.0, 3.0 and 4.0 are accepted."
+addedOn: 2026-09-14

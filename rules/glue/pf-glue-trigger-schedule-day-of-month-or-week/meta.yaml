@@ -1,0 +1,12 @@
+id: pf-glue-trigger-schedule-day-of-month-or-week
+service: glue
+resourceTypes: [AWS::Glue::Trigger]
+benchRegion: us-east-1
+severity: ERROR
+title: A Glue cron expression must put ? in exactly one of day-of-month and day-of-week
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (cron(0 10 1 * MON *), day-of-month and day-of-week both concrete) -> \"The schedule cron(0 10 1 * MON *) is invalid.\" (ROLLBACK_COMPLETE); pass template (cron(0 10 1 * ? 2099)) -> CREATE_COMPLETE"
+addedOn: 2026-09-14

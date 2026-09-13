@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::SecurityConfiguration",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}"
+        },
+        "EncryptionConfiguration": {
+          "S3Encryptions": [
+            {
+              "S3EncryptionMode": "SSE-KMS",
+              "KmsKeyArn": "arn:aws:kms:us-east-1:214794239830:key/11111111-2222-3333-4444-555555555555"
+            }
+          ],
+          "CloudWatchEncryption": {
+            "CloudWatchEncryptionMode": "SSE-KMS",
+            "KmsKeyArn": "arn:aws:kms:us-east-1:214794239830:key/11111111-2222-3333-4444-555555555555"
+          },
+          "JobBookmarksEncryption": {
+            "JobBookmarksEncryptionMode": "CSE-KMS",
+            "KmsKeyArn": "arn:aws:kms:us-east-1:214794239830:key/11111111-2222-3333-4444-555555555555"
+          }
+        }
+      }
+    }
+  }
+}

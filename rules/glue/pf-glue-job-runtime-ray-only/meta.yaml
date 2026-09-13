@@ -1,0 +1,12 @@
+id: pf-glue-job-runtime-ray-only
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: Command.Runtime is only accepted on Ray jobs
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (glueetl with Command.Runtime Ray2.4) -> \"Runtime field is not supported for glueetl command type\" (ROLLBACK_COMPLETE); pass template (same job without Command.Runtime) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::CustomEntityType",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}"
+        },
+        "RegexString": "[0-9]{3}",
+        "ContextWords": [
+          "aa",
+          "bb"
+        ]
+      }
+    }
+  }
+}

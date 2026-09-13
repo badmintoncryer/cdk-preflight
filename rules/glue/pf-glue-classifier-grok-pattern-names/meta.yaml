@@ -1,0 +1,12 @@
+id: pf-glue-classifier-grok-pattern-names
+service: glue
+resourceTypes: [AWS::Glue::Classifier]
+benchRegion: us-east-1
+severity: ERROR
+title: A grok pattern only names built-in or custom patterns
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (GrokPattern \"%{PF_UNDEFINED:a}\" with no CustomPatterns) -> \"Grok pattern cannot be compiled.\" (ROLLBACK_COMPLETE); pass template (\"%{GREEDYDATA:a} %{PF_MINE:b}\" with CustomPatterns \"PF_MINE .*\") -> CREATE_COMPLETE. The built-in set was measured against CreateClassifier the same day: all 74 names the user guide prints compile, one at a time and in a single combined pattern; the guide stray line \"E\" does not; and 25 logstash names outside the list (DATESTAMP, JAVACLASS, NGINXACCESS, RUBY_LOGGER, ...) are all rejected with the same sentence."
+addedOn: 2026-09-14

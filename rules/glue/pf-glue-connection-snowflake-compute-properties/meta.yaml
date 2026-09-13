@@ -1,0 +1,12 @@
+id: pf-glue-connection-snowflake-compute-properties
+service: glue
+resourceTypes: [AWS::Glue::Connection]
+benchRegion: us-east-1
+severity: ERROR
+title: A SNOWFLAKE connection needs SparkProperties or PythonProperties
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (SNOWFLAKE connection with an empty ConnectionProperties) -> \"PythonProperties: is missing but it is required, SparkProperties: is missing but it is required\" (ROLLBACK_COMPLETE); pass template (the same connection with PythonProperties set to the JSON string {\"account\":\"pfacct\"}) -> CREATE_COMPLETE. CreateConnection probes the same day show the service sentence names both keys but means either one: SparkProperties alone and PythonProperties alone are each accepted, which is why the rule only fires when neither is present. AthenaProperties does not satisfy it (\"Invalid properties found: [AthenaProperties]\"), and the plain HOST key the other connection types use is rejected as an invalid property."
+addedOn: 2026-09-14

@@ -1,0 +1,12 @@
+id: pf-glue-classifier-grok-pattern-single-line
+service: glue
+resourceTypes: [AWS::Glue::Classifier]
+benchRegion: us-east-1
+severity: ERROR
+title: A grok pattern holds no line break
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (GrokPattern \"%{GREEDYDATA:a}\" + newline + \"%{GREEDYDATA:b}\") -> \"failed to satisfy constraint: Member must satisfy regular expression pattern\" (ROLLBACK_COMPLETE); pass template (the same pattern on one line) -> CREATE_COMPLETE. The allowed character set holds carriage return and tab but not newline, and the CustomPatterns field carries a pattern that does allow newlines, so the rule reads GrokPattern only."
+addedOn: 2026-09-14

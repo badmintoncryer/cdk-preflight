@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "DatabaseName": "pfcrawldb",
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "s3://cdkpf-glue-probe-214794239830/in/"
+            }
+          ]
+        },
+        "Configuration": "{\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
+      }
+    }
+  }
+}

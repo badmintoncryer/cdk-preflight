@@ -1,0 +1,12 @@
+id: pf-glue-classifier-csv-custom-datatype-flag
+service: glue
+resourceTypes: [AWS::Glue::Classifier]
+benchRegion: us-east-1
+severity: ERROR
+title: ContainsCustomDatatype and CustomDatatypeConfigured travel together
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (one classifier with ContainsCustomDatatype and no CustomDatatypeConfigured, one with CustomDatatypeConfigured true and no list) -> \"Must enable using custom datatypes and pass in the list of datatypes\" (ROLLBACK_COMPLETE); pass template (the pair set together, plus a plain CSV classifier with neither) -> CREATE_COMPLETE. A CreateClassifier probe the same day gave the same sentence for CustomDatatypeConfigured false next to a list."
+addedOn: 2026-09-14

@@ -1,0 +1,12 @@
+id: pf-glue-table-iceberg-metadata-operation
+service: glue
+resourceTypes: [AWS::Glue::Table]
+benchRegion: us-east-1
+severity: ERROR
+title: An Iceberg table needs MetadataOperation in IcebergInput
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTable.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (OpenTableFormatInput.IcebergInput {}) -> \"Metadata information must be present\" (ROLLBACK_COMPLETE); pass template (IcebergInput with MetadataOperation CREATE) -> CREATE_COMPLETE. CreateTable the same day: the botocore model already refuses the empty input (\"Missing required parameter in OpenTableFormatInput.IcebergInput: MetadataOperation\") and CREATE is the only accepted value."
+addedOn: 2026-09-14

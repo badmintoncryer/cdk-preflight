@@ -1,0 +1,83 @@
+{
+  "Resources": {
+    "Jdbc": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "JDBC",
+          "ConnectionProperties": {
+            "JDBC_CONNECTION_URL": "jdbc:mysql://db.example.com:3306/d",
+            "USERNAME": "u",
+            "PASSWORD": "p"
+          }
+        }
+      }
+    },
+    "Kafka": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "KAFKA",
+          "ConnectionProperties": {
+            "KAFKA_BOOTSTRAP_SERVERS": "b1.example.com:9094",
+            "KAFKA_SSL_ENABLED": "true"
+          }
+        }
+      }
+    },
+    "Mongo": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "MONGODB",
+          "ConnectionProperties": {
+            "CONNECTION_URL": "mongodb://db.example.com:27017",
+            "USERNAME": "u",
+            "PASSWORD": "p"
+          }
+        }
+      }
+    },
+    "Custom": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "CUSTOM",
+          "ConnectionProperties": {
+            "CONNECTOR_URL": "s3://cdkpf-glue-probe-214794239830/c.jar",
+            "CONNECTOR_TYPE": "Jdbc",
+            "CONNECTOR_CLASS_NAME": "com.example.Driver"
+          }
+        }
+      }
+    },
+    "Marketplace": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "MARKETPLACE",
+          "ConnectionProperties": {
+            "CONNECTOR_URL": "s3://cdkpf-glue-probe-214794239830/c.jar",
+            "CONNECTOR_TYPE": "Jdbc",
+            "CONNECTOR_CLASS_NAME": "com.example.Driver"
+          }
+        }
+      }
+    }
+  }
+}

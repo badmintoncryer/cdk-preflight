@@ -1,0 +1,12 @@
+id: pf-glue-crawler-recrawl-behavior-s3-only
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: CRAWL_EVENT_MODE and CRAWL_NEW_FOLDERS_ONLY apply to S3 targets only
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (CRAWL_NEW_FOLDERS_ONLY with a JDBC target whose connection the same stack creates) -> \"RecrawlBehavior \\\"Crawl new folders only\\\" can only apply to Amazon S3 target.\" (ROLLBACK_COMPLETE); pass template (CRAWL_NEW_FOLDERS_ONLY with an S3 target) -> CREATE_COMPLETE. A CreateCrawler probe the same day answered \"Only S3 targets are allowed for event based crawlers.\" for the CRAWL_EVENT_MODE half."
+addedOn: 2026-09-14

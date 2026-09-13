@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Wf": {
+      "Type": "AWS::Glue::Workflow",
+      "Properties": {}
+    },
+    "Main": {
+      "Type": "AWS::Glue::Trigger",
+      "Properties": {
+        "Type": "EVENT",
+        "Actions": [
+          {
+            "JobName": "pfjob"
+          }
+        ],
+        "StartOnCreation": false,
+        "WorkflowName": {
+          "Ref": "Wf"
+        }
+      }
+    }
+  }
+}

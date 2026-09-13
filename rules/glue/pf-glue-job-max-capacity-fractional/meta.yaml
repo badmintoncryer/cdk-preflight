@@ -1,0 +1,12 @@
+id: pf-glue-job-max-capacity-fractional
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A Spark job cannot take a fractional DPU allocation
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (glueetl, MaxCapacity 2.5) -> \"Max Capacity with precision currently not supported for glueetl.\" (ROLLBACK_COMPLETE); pass template (MaxCapacity 2) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

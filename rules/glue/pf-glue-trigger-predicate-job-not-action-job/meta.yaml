@@ -1,0 +1,12 @@
+id: pf-glue-trigger-predicate-job-not-action-job
+service: glue
+resourceTypes: [AWS::Glue::Trigger]
+benchRegion: us-east-1
+severity: ERROR
+title: A conditional trigger cannot watch and start the same job
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (CONDITIONAL trigger whose predicate condition and action name the same job) -> \"Job cannot be a Predicate and Action for Conditional Trigger.\" (ROLLBACK_COMPLETE); pass template (the action pointing at a different job) -> CREATE_COMPLETE. Neither job has to exist, and StartOnCreation is false in both fixtures so nothing is ever run."
+addedOn: 2026-09-14

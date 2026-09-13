@@ -1,0 +1,12 @@
+id: pf-glue-job-g025x-streaming-only
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: The G.025X worker type is only available for streaming jobs
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/worker-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (glueetl, WorkerType G.025X) -> \"G.025X is only supported for job command [gluestreaming].\" (ROLLBACK_COMPLETE); pass template (gluestreaming, WorkerType G.025X) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

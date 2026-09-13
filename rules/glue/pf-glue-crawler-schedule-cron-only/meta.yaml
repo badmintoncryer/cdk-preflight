@@ -1,0 +1,12 @@
+id: pf-glue-crawler-schedule-cron-only
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: A crawler schedule is a cron() expression
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Schedule.ScheduleExpression \"rate(1 hour)\") -> \"Invalid schedule cron expression. Expected format: Cron(CRON_EXPRESSION)\" (ROLLBACK_COMPLETE); pass template (\"cron(0 10 1 * ? 2099)\", far enough out that the bench never starts a crawl) -> CREATE_COMPLETE. CreateCrawler probes the same day: \"Cron(...)\" and \"CRON(...)\" are accepted, a leading space is not, and \"every hour\" gives the same message. The neighbouring claim that crawler crons cannot run faster than five minutes is not enforced - cron(0/1 * * * ? *) is accepted."
+addedOn: 2026-09-14

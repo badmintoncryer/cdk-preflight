@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "NETWORK",
+          "ConnectionProperties": {}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Workflow",
+      "Properties": {
+        "MaxConcurrentRuns": 0
+      }
+    }
+  }
+}

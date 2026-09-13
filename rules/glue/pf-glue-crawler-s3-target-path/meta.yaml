@@ -1,0 +1,12 @@
+id: pf-glue-crawler-s3-target-path
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: An S3 crawl target path cannot start with a slash
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (S3 target Path \"/data/in\") -> \"Invalid S3 Target Path\" (ROLLBACK_COMPLETE); pass template (Path s3://cdkpf-glue-probe-214794239830/in/) -> CREATE_COMPLETE"
+addedOn: 2026-09-14

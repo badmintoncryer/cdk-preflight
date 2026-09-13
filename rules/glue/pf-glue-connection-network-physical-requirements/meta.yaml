@@ -1,0 +1,12 @@
+id: pf-glue-connection-network-physical-requirements
+service: glue
+resourceTypes: [AWS::Glue::Connection]
+benchRegion: us-east-1
+severity: ERROR
+title: A NETWORK connection needs PhysicalConnectionRequirements
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (NETWORK connection with empty ConnectionProperties and no PhysicalConnectionRequirements) -> \"PhysicalConnectionRequirements cannot be null\" (ROLLBACK_COMPLETE); pass template (the same connection pointing at a subnet and security group the stack creates, with the subnet AvailabilityZone) -> CREATE_COMPLETE. Omitting ConnectionProperties entirely gives the same message, so the empty map is not what is rejected."
+addedOn: 2026-09-14

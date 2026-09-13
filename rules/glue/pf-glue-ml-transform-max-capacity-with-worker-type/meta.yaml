@@ -1,0 +1,12 @@
+id: pf-glue-ml-transform-max-capacity-with-worker-type
+service: glue
+resourceTypes: [AWS::Glue::MLTransform]
+benchRegion: us-east-1
+severity: ERROR
+title: MLTransform MaxCapacity cannot be combined with WorkerType
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/machine-learning.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (MaxCapacity 10 alongside WorkerType G.1X and NumberOfWorkers 2) -> \"Cannot set Max Capacity and Worker Num/Type at the same time\" (ROLLBACK_COMPLETE); pass template (WorkerType and NumberOfWorkers, no MaxCapacity) -> CREATE_COMPLETE. CreateMLTransform the same day accepts MaxCapacity on its own."
+addedOn: 2026-09-14

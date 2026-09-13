@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Trigger",
+      "Properties": {
+        "Type": "SCHEDULED",
+        "Actions": [
+          {
+            "JobName": "pfjob"
+          }
+        ],
+        "StartOnCreation": false,
+        "Schedule": "cron(0 10 1 * ? 2099)"
+      }
+    }
+  }
+}
