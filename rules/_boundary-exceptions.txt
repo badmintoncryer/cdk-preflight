@@ -25,10 +25,7 @@ pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エント�
 pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
 pf-ecr-lifecycle-policy-syntax  pending #178
 pf-ecr-lifecycle-tag-status  pending #178
-pf-ecs-ephemeral-storage-range  pending #178
-pf-ecs-fargate-windows-cpu-under-1vcpu  pending #178
-pf-ecs-service-deployment-percent  pending #178
-pf-ecs-svc-daemon-max-percent  pending #178
+pf-ecs-fargate-windows-cpu-under-1vcpu  Fargate の Cpu は 256 / 512 / 1024 … という飛び飛びの集合なので 1023 は存在しない値。1024 未満で実際に指定できる最大は 512 で、fail はそこに乗せてある（2026-09-13 us-east-1 RegisterTaskDefinition: Windows + 512 CPU / 2048 memory は "No Fargate configuration exists for given values"、1024 は通る）
 pf-efs-throughput-mode  pending #178
 pf-elasticache-auth-token  pending #178
 pf-elasticache-maintenance-window  pending #178

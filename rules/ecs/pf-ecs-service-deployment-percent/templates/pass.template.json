@@ -11,7 +11,7 @@
         "ContainerDefinitions": [
           {
             "Name": "app",
-            "Image": "public.ecr.aws/amazonlinux/amazonlinux:2023",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
             "Essential": true,
             "Memory": 512
           }
@@ -27,13 +27,31 @@
         "TaskDefinition": {
           "Ref": "TaskDef"
         },
-        "DesiredCount": 0,
+        "LaunchType": "EC2",
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200
+        },
+        "DesiredCount": 0
+      }
+    },
+    "Service2": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDef"
+        },
         "LaunchType": "EC2",
         "DeploymentConfiguration": {
           "MinimumHealthyPercent": 50,
-          "MaximumPercent": 200
-        }
-      }
+          "MaximumPercent": 100
+        },
+        "DesiredCount": 0
+      },
+      "DependsOn": "Service"
     }
   }
 }

@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 ap-northeast-1: SizeInGiB 10 (e08) -> \"EphemeralStorage size should be at least 21\"; SizeInGiB 300 (e08b) -> \"EphemeralStorage size should be at most 200\". Both ROLLBACK_COMPLETE. Registry schema carries no minimum/maximum for SizeInGiB."
+  evidence: "bench 2026-09-13 us-east-1: EphemeralStorage.SizeInGiB 20 -> \"Create TaskDefinition: EphemeralStorage size should be at least 21\" ROLLBACK_COMPLETE (the chained second task definition carries 201); pass 21 and 200 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 RegisterTaskDefinition: 20 and 201 are rejected (\"should be at least 21\" / \"should be at most 200\"), 21 and 200 are accepted."
 addedOn: 2026-09-02
