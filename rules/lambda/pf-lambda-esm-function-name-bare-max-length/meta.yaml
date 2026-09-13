@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): "Function does not exist". Unremovable confound: a bare name over 64 characters cannot name a function that exists, so the deploy always fails, but the service reports the lookup miss rather than the length limit.'
+  evidence: "bench 2026-09-13 us-east-1: a 65-character bare function name -> \"Function does not exist\" (ROLLBACK_COMPLETE). Unremovable confound: a bare name over 64 characters cannot name a function that exists. pass a real function named with 64 characters -> CREATE_COMPLETE"
 addedOn: 2026-09-07

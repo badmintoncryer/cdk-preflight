@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): MaximumRecordAgeInSeconds must be either -1 (forever) or between 60 and 604800 (inclusive)'
+  evidence: "bench 2026-09-13 us-east-1: MaximumRecordAgeInSeconds 59 -> \"MaximumRecordAgeInSeconds must be either -1 (forever) or between 60 and 604800 (inclusive)\" (ROLLBACK_COMPLETE); pass 60 -> CREATE_COMPLETE"
 addedOn: 2026-09-07

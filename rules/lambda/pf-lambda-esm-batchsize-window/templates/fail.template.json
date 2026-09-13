@@ -73,7 +73,7 @@
             "Arn"
           ]
         },
-        "BatchSize": 100
+        "BatchSize": 11
       }
     }
   }

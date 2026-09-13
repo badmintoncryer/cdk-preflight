@@ -17,11 +17,12 @@
         "DestinationConfig": {
           "OnFailure": {
             "Destination": {
-              "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:q"
+              "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:cdkpf-onfail-dest"
             }
           }
         }
-      }
+      },
+      "DependsOn": "DQ"
     },
     "F": {
       "Type": "AWS::Lambda::Function",
@@ -95,6 +96,13 @@
                     "ec2:DescribeSecurityGroups"
                   ],
                   "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:SendMessage"
+                  ],
+                  "Resource": "*"
                 }
               ]
             }
@@ -108,6 +116,12 @@
         "StreamModeDetails": {
           "StreamMode": "ON_DEMAND"
         }
+      }
+    },
+    "DQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "cdkpf-onfail-dest"
       }
     }
   }

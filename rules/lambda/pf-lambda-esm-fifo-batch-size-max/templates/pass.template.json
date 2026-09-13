@@ -8,10 +8,11 @@
           "Ref": "F"
         },
         "EventSourceArn": {
-          "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:q.fifo"
+          "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:cdkpf-fifo-bs.fifo"
         },
         "BatchSize": 10
-      }
+      },
+      "DependsOn": "Q"
     },
     "F": {
       "Type": "AWS::Lambda::Function",
@@ -90,6 +91,13 @@
             }
           }
         ]
+      }
+    },
+    "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": "cdkpf-fifo-bs.fifo",
+        "FifoQueue": true
       }
     }
   }

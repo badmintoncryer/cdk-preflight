@@ -61,7 +61,7 @@
     "U": {
       "Type": "AWS::Lambda::Url",
       "Properties": {
-        "TargetFunctionArn": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "TargetFunctionArn": "cdkpf-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
         "AuthType": "AWS_IAM"
       }
     }

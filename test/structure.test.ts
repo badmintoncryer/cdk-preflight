@@ -213,6 +213,21 @@ test('boundaryProblem pins both the constant and the operator', () => {
   expect(boundaryProblem('violation contains 1 if {\n\tnot p.Enabled\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
 });
 
+test('boundaryProblem follows the assignment to see what was counted', () => {
+  const list = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { V: Array.from({ length: n }, (_, i) => `i${i}`) } } } });
+  // `n := count(items)` と置いてから `n > 50` と書く形。数えたのは配列なので要素数と突き合わせる
+  const counted = 'violation contains 1 if {\n\titems := flatten_list(name, "Properties.V")\n\tn := count(items)\n\tn > 50\n}\n';
+  expect(boundaryProblem(counted, list(51), list(50))).toBeUndefined();
+  expect(boundaryProblem(counted, list(60), list(50))).toMatch(/fail template has no 51/);
+  // 同じ 51 でも、数えたのが文字列なら要素数ではなく長さを見る
+  const len = 'violation contains 1 if {\n\tv := resolve(name, "Properties.V")\n\tcount(v) > 50\n}\n';
+  expect(boundaryProblem(len, list(51), list(50))).toMatch(/fail template has no 51/);
+  expect(boundaryProblem(len, fixture('x'.repeat(51)), fixture('x'.repeat(50)))).toBeUndefined();
+  // ARN を割った断片数のガードは順序のある制約ではないので見ない
+  const shape = 'violation contains 1 if {\n\tparts := split(arn, ":")\n\tcount(parts) >= 6\n}\n';
+  expect(boundaryProblem(shape, fixture('a'), fixture('a'))).toBeUndefined();
+});
+
 test('every fixture pair sits on the boundary, or is listed as an exception', () => {
   const exceptions = boundaryExceptions();
   const flagged = new Map<string, string>();

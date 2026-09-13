@@ -55,20 +55,17 @@
           "ZipFile": "exports.handler=async()=>{}"
         },
         "Runtime": "nodejs22.x",
-        "Handler": "index.handler"
+        "Handler": "index.handler",
+        "FunctionName": "cdkpf-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
       }
     },
     "U": {
       "Type": "AWS::Lambda::Url",
       "Properties": {
-        "TargetFunctionArn": {
-          "Fn::GetAtt": [
-            "F",
-            "Arn"
-          ]
-        },
+        "TargetFunctionArn": "cdkpf-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
         "AuthType": "AWS_IAM"
-      }
+      },
+      "DependsOn": "F"
     }
   }
 }

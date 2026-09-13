@@ -1629,7 +1629,6 @@
 | `pf-lambda-layerperm-arn-length` | AWS::Lambda::LayerVersionPermission | A layer version ARN is at most 140 characters | ERROR | none |
 | `pf-lambda-layerperm-arn-version-suffix` | AWS::Lambda::LayerVersionPermission | A layer permission names a layer version | ERROR | none |
 | `pf-lambda-layerperm-organization-id-needs-wildcard-principal` | AWS::Lambda::LayerVersionPermission | OrganizationId narrows a wildcard principal | ERROR | none |
-| `pf-lambda-layerperm-policy-size` | AWS::Lambda::LayerVersionPermission | A layer version policy has a size limit | ERROR | pending-engine |
 | `pf-lambda-loggroup-no-aws-prefix` | AWS::Lambda::Function | A custom log group cannot start with aws/ | ERROR | none |
 | `pf-lambda-loggroup-pattern` | AWS::Lambda::Function | A log group name follows the CloudWatch Logs naming rules | ERROR | none |
 | `pf-lambda-loglevel-requires-json` | AWS::Lambda::Function | Log-level filters need JSON log format | ERROR | none |
