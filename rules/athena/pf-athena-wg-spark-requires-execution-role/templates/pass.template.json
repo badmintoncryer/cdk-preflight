@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "athena.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "R": {
+      "Type": "AWS::Athena::WorkGroup",
+      "Properties": {
+        "Name": "cdkpf-wg-spark",
+        "WorkGroupConfiguration": {
+          "ResultConfiguration": {
+            "OutputLocation": "s3://cdkpf-athena-probe/res/"
+          },
+          "EngineVersion": {
+            "SelectedEngineVersion": "PySpark engine version 3"
+          },
+          "ExecutionRole": {
+            "Fn::GetAtt": [
+              "Role",
+              "Arn"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

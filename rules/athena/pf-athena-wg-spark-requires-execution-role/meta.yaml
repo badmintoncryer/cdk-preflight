@@ -1,0 +1,12 @@
+id: pf-athena-wg-spark-requires-execution-role
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::WorkGroup]
+severity: ERROR
+title: "A PySpark workgroup must set an ExecutionRole"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_WorkGroupConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: ExecutionRole is null or empty\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: ExecutionRole is null or empty\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

@@ -1,0 +1,12 @@
+id: pf-athena-wg-sse-kms-requires-key
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::WorkGroup]
+severity: ERROR
+title: "SSE_KMS result encryption requires a KmsKey"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_EncryptionConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: KMS Customer Master Key ID is null or empty\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: KMS Customer Master Key ID is null or empty\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

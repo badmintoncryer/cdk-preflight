@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::DataCatalog",
+      "Properties": {
+        "Name": "cdkpf-dc-rec",
+        "Type": "LAMBDA",
+        "Parameters": {
+          "metadata-function": {
+            "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf-athena-probe"
+          },
+          "record-function": {
+            "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf-athena-probe"
+          }
+        }
+      }
+    }
+  }
+}

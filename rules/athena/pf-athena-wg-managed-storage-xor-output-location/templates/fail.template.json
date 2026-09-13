@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::WorkGroup",
+      "Properties": {
+        "Name": "cdkpf-wg-managed",
+        "WorkGroupConfiguration": {
+          "ResultConfiguration": {
+            "OutputLocation": "s3://cdkpf-athena-probe/res/"
+          },
+          "ManagedQueryResultsConfiguration": {
+            "Enabled": true
+          }
+        }
+      }
+    }
+  }
+}

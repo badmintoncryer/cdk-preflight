@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::WorkGroup",
+      "Properties": {
+        "Name": "cdkpf-wg-cse",
+        "WorkGroupConfiguration": {
+          "ResultConfiguration": {
+            "OutputLocation": "s3://cdkpf-athena-probe/res/",
+            "EncryptionConfiguration": {
+              "EncryptionOption": "CSE_KMS",
+              "KmsKey": "alias/aws/s3"
+            }
+          }
+        }
+      }
+    }
+  }
+}

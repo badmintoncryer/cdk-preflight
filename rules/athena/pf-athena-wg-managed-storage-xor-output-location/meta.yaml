@@ -1,0 +1,12 @@
+id: pf-athena-wg-managed-storage-xor-output-location
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::WorkGroup]
+severity: ERROR
+title: "Managed query results and a ResultConfiguration cannot both be set"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_WorkGroupConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: ManagedQueryResultsConfiguration and ResultConfiguration cannot be set together.\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: ManagedQueryResultsConfiguration and ResultConfiguration cannot be set together.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

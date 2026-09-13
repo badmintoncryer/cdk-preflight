@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::DataCatalog",
+      "Properties": {
+        "Name": "cdkpf-dc-reserved",
+        "Type": "GLUE",
+        "Parameters": {
+          "catalog-id": {
+            "Ref": "AWS::AccountId"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-athena-dc-name-not-awsdatacatalog
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::DataCatalog]
+severity: ERROR
+title: "AwsDataCatalog is reserved and cannot be created"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: DataCatalog name AwsDataCatalog is reserved.\"; bench 2026-09-13 us-east-1: fail -> \"DataCatalog name AwsDataCatalog is reserved.\" (ROLLBACK_FAILED); pass -> CREATE_COMPLETE; the rollback's DeleteDataCatalog on the reserved name fails too, so the fail stack needs a retain-delete"
+addedOn: 2026-09-13
