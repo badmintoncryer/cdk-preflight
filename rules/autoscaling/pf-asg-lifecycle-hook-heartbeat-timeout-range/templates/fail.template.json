@@ -32,7 +32,12 @@
           {
             "LifecycleHookName": "h1",
             "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
-            "HeartbeatTimeout": 10
+            "HeartbeatTimeout": 7201
+          },
+          {
+            "LifecycleHookName": "h2",
+            "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+            "HeartbeatTimeout": 29
           }
         ]
       }

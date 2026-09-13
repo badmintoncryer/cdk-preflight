@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: maxInstanceLifetime must be between 86400 and 31536000 seconds (inclusive). -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: MaxInstanceLifetime 86399 -> \"maxInstanceLifetime must be either equal to 0 or between 86400 and 31536000 seconds\" ROLLBACK_COMPLETE (the chained second group carries 31536001); pass 86400 and 31536000 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 UpdateAutoScalingGroup: 86399 and 31536001 are rejected while 0, 86400 and 31536000 are accepted - 0 means the lifetime is disabled, which is why the rule skips it."
 addedOn: 2026-09-09

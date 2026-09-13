@@ -15,12 +15,7 @@ pf-appsync-api-env-var-value-max-length  pending #178
 pf-appsync-api-key-expires-max  pending #178
 pf-appsync-api-key-expires-past  pending #178
 pf-appsync-res-pipeline-functions-max  pending #178
-pf-asg-instance-maintenance-policy-range-diff  pending #178
-pf-asg-lh-heartbeat-timeout-range  pending #178
-pf-asg-lifecycle-hook-heartbeat-timeout-range  pending #178
-pf-asg-max-instance-lifetime-range  pending #178
-pf-asg-ondemand-percentage-max  pending #178
-pf-asg-tt-period-max-60  pending #178
+pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
 pf-bedrock-datasource-chunk-max-tokens  pending #178
 pf-cloudwatch-alarm-evaluation-window  3600 は予算の段を選ぶ境目（Period >= 3600 なら 1 週間、未満なら 1 日）で、順序のある制約ではない。実際のしきい値 604800 / 86400 は Period x EvaluationPeriods の積なのでテンプレートに数値としては現れない。フィクスチャは 3600x169 / 3600x168 と 60x1441 / 60x1440 に乗せてある

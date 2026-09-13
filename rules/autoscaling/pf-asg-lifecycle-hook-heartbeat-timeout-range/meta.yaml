@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: HeartbeatTimeout must be between 30 and 7200 seconds -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: a LifecycleHookSpecificationList entry with HeartbeatTimeout 7201 -> \"HeartbeatTimeout must be between 30 and 7200 seconds\" ROLLBACK_COMPLETE (the same list carries an entry at 29); pass 7200 and 30 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutLifecycleHook: 29 and 7201 are rejected with that message, 30 and 7200 are accepted. The embedded list and the standalone AWS::AutoScaling::LifecycleHook share the limit (pf-asg-lh-heartbeat-timeout-range covers the standalone form)."
 addedOn: 2026-09-09

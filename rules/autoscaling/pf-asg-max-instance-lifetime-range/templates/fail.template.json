@@ -28,8 +28,31 @@
             ]
           }
         },
-        "MaxInstanceLifetime": 100
+        "MaxInstanceLifetime": 86399
       }
+    },
+    "G2": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": "0",
+        "MaxSize": "1",
+        "AvailabilityZones": [
+          "us-east-1a"
+        ],
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LT"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LT",
+              "LatestVersionNumber"
+            ]
+          }
+        },
+        "MaxInstanceLifetime": 31536001
+      },
+      "DependsOn": "G"
     }
   }
 }
