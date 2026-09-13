@@ -102,6 +102,33 @@ test/                       # 4 layers: rules / loader / structure / cli
 bench/                      # real-deploy verification (needs an AWS account; not part of CI)
 ```
 
+## Working a discovery issue (the skills)
+
+Three skills in `.claude/skills/` cover the work end to end. Pick the entry point by what you have:
+
+| You have | Skill | What it does |
+|---|---|---|
+| An issue number from the queue (#91) | **`run-preflight-issue`** | Orchestrates the whole issue. Dispatches each phase to a separate subagent and never opens a deliverable itself |
+| A service but no candidates yet | `find-preflight-rules` | Survey: inventory → 6 lenses → duplication guard → candidate checklist on the issue |
+| One constraint, or a candidate list | `add-preflight-rule` | Implement: rule.rego + fixtures → local gate → real-deploy gate → `meta.yaml` → commit |
+
+`/run-preflight-issue <issue number | next> [--from=A|B|C]` is the normal way in — `next` takes the first unstarted
+item off #91, and the phase is otherwise read from the ledger at the top of `~/cdk-preflight-surveys/<svc>-<issue>/handoff.md`,
+so a cleared or crashed session resumes from `head -20`. Phases map to agents as **A** survey + duplication guard,
+**B** API-direct triage (kept separate: it needs AWS credentials and can spend money), **C1..Cn** one implementation
+slice each (20–25 rules, split on candidate-id prefix, serial within a service so two agents never fight over
+`rules/_lib/<service>.rego`).
+
+Why the indirection: `cache_read` is 98% of input tokens, so a phase costs whatever parent context it drags along.
+A cold subagent drops that fixed cost — and reading its output in the parent puts the cost straight back, which is why
+the orchestrator is forbidden from opening deliverables (`wc -l`, `grep -c`, `gh issue comment --body-file`, nothing more).
+It verifies each report with four cheap mechanical checks instead, and re-dispatches to the same agent when they disagree.
+
+Human gates are explicit: posting issue comments and running the real-deploy gate are automatic; **`git push` and
+`gh pr create` stop for approval** (soft judgement calls are batched and presented there); billable resources are refused
+before the create call; and the orchestrator never edits permission settings, closes an issue, or ticks the queue.
+If you are a subagent running one of these phases, do not spawn further agents.
+
 ## Adding a rule (the pipeline)
 
 1. Identify a constraint that fails only at deploy time (doc page, API error message, war story).
