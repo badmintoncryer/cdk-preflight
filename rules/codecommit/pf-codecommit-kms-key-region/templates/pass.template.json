@@ -1,0 +1,10 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodeCommit::Repository",
+   "Properties": {
+    "RepositoryName": "cdkpf-cc-kms-p"
+   }
+  }
+ }
+}

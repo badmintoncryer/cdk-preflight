@@ -1,0 +1,12 @@
+id: pf-codecommit-trigger-branch-name-valid
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "Trigger branch names must be valid Git branch names"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail Branches [bad branch] -> \"Service returned error code InvalidRepositoryTriggerBranchNameException\" (ROLLBACK_COMPLETE); pass Branches [main] -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1 (PutRepositoryTriggers, 42 names): rejected a space or tab, '..', '//', '@{', ~^:?*[ and backslash, a leading '/' or '.', a trailing '/' or '.', and a '.lock' suffix; accepted ;,'()&%#!+=<|\"` , a leading '-', a bare '@', non-ASCII and a 255-character name - only the rejected set is encoded."
+addedOn: 2026-09-14

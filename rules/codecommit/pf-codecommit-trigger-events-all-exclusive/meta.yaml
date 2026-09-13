@@ -1,0 +1,12 @@
+id: pf-codecommit-trigger-events-all-exclusive
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "The trigger event 'all' cannot be combined with another event"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail Events [all, createReference] -> \"Repository trigger events cannot contain 'all' and additional event types simultaneously\" (ROLLBACK_COMPLETE); pass Events [all] -> CREATE_COMPLETE"
+addedOn: 2026-09-14
