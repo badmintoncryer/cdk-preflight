@@ -16124,17 +16124,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Worker types belong to the Spark allocation model; pythonshell has none.\nviolation contains make_diag_full(\"pf-glue-job-pythonshell-worker-type\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType %v on a pythonshell job; Python shell jobs are sized with MaxCapacity\", [wt]),\n\t\"Remove WorkerType and NumberOfWorkers, and set MaxCapacity to 0.0625 or 1\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job-python.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_command_name(name) == \"pythonshell\"\n\twt := _pf_gluelib_worker_type(name)\n}\n"
   },
   {
-    "id": "pf-glue-job-ray-worker-type",
-    "service": "glue",
-    "severity": "ERROR",
-    "title": "A Ray job must use the Z.2X worker type",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Glue::Job"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Kept for the message it produces, not because a Ray job can still be\n# created: CreateJob checks the worker type first and names it, which is\n# the more useful diagnostic of the two failures a glueray job now hits.\nviolation contains make_diag_full(\"pf-glue-job-ray-worker-type\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType %v on a glueray job; Ray runs on Z.2X workers only\", [wt]),\n\t\"Set WorkerType to Z.2X (note that Glue Ray is deprecated and new Ray jobs are rejected)\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_command_name(name) == \"glueray\"\n\twt := _pf_gluelib_worker_type(name)\n\twt != \"Z.2X\"\n}\n"
-  },
-  {
     "id": "pf-glue-job-runtime-ray-only",
     "service": "glue",
     "severity": "ERROR",

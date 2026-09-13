@@ -1459,7 +1459,6 @@
 | `pf-glue-job-number-of-workers-min` | AWS::Glue::Job | A job needs at least 2 workers | ERROR | none |
 | `pf-glue-job-pythonshell-max-capacity-values` | AWS::Glue::Job | A Python shell job can only allocate 0.0625 or 1 DPU | ERROR | none |
 | `pf-glue-job-pythonshell-worker-type` | AWS::Glue::Job | A Python shell job cannot be sized with WorkerType | ERROR | none |
-| `pf-glue-job-ray-worker-type` | AWS::Glue::Job | A Ray job must use the Z.2X worker type | ERROR | none |
 | `pf-glue-job-runtime-ray-only` | AWS::Glue::Job | Command.Runtime is only accepted on Ray jobs | ERROR | none |
 | `pf-glue-job-timeout-max` | AWS::Glue::Job | A job timeout cannot exceed 10080 minutes (7 days) | ERROR | pending-engine |
 | `pf-glue-job-worker-type-and-number-of-workers` | AWS::Glue::Job | WorkerType and NumberOfWorkers must be set together | ERROR | none |
