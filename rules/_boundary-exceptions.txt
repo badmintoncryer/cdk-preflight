@@ -59,13 +59,9 @@ pf-elbv2-rule-condition-values-max  しきい値と突き合わせるのは Cond
 pf-elbv2-tg-name  count(n) <= 32 は長すぎる名前を書式のほうの本体に渡さないための排他ガードで、上限そのものは同じファイルの count(n) > 32 が見ている。フィクスチャは 33 / 32 に乗せてある
 pf-events-rule-pattern-size  pending #178
 pf-events-target-ecs-parameters  pending #178
-pf-firehose-dynamic-partitioning-buffer  pending #178
-pf-firehose-http-buffer-size  pending #178
-pf-firehose-prefix-length  pending #178
-pf-firehose-processor-buffer-interval-range  pending #178
-pf-firehose-processor-buffer-size-range  pending #178
-pf-firehose-processor-count  pending #178
-pf-firehose-processor-retries-range  pending #178
+pf-firehose-prefix-length  しきい値は展開後のプレフィックスの文字数で、テンプレートに数値としては現れない。数えているのも 2 つの count の和なので検出器は「何を数えたか」まで辿れない。フィクスチャは Prefix / ErrorOutputPrefix それぞれ 513 文字と、両方 512 文字ちょうどに乗せてある
+pf-firehose-processor-buffer-size-range  BufferSizeInMBs は小数を取るので、上限 3 の隣は整数の 4 ではない。fail は 3.1 と 0.19（実機は 3.01 / 0.199 も拒否するので丸めではない）、pass は 3 と 0.2 ちょうどに乗せてある
+pf-firehose-processor-count  しきい値と突き合わせるのは Processors 配列の要素数だが、数えているのはヘルパー述語の本体（_pf_fhpc_count）の中なので検出器は呼び出し側から辿れない。フィクスチャは 6 / 0 本と 5 / 1 本に乗せてある
 pf-iam-managed-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（6145/6144 ちょうどで撮ってある）
 pf-lambda-env-size  しきい値は環境変数をシリアライズしたバイト数の合計。テンプレートに数値としては現れない（4097/4096 ちょうどで撮ってある）
 pf-lambda-esm-on-failure-destination-api-max-length  上限 350 に届く有効な ARN が存在しない（SQS/S3 の名前長の上限より先に頭打ちになる）。fail は 351 文字ちょうど
