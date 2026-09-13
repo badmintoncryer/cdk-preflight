@@ -8,7 +8,7 @@
         "ACLName": "open-access",
         "NumShards": 1,
         "NumReplicasPerShard": 0,
-        "SnapshotRetentionLimit": 40
+        "SnapshotRetentionLimit": 36
       }
     }
   }

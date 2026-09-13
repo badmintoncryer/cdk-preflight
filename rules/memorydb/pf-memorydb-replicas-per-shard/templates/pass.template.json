@@ -7,7 +7,7 @@
         "NodeType": "db.t4g.small",
         "ACLName": "open-access",
         "NumShards": 1,
-        "NumReplicasPerShard": 0
+        "NumReplicasPerShard": 5
       }
     }
   }

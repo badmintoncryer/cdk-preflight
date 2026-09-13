@@ -8,7 +8,7 @@
         "ACLName": "open-access",
         "NumShards": 1,
         "NumReplicasPerShard": 0,
-        "MaintenanceWindow": "sun:23:00-mon:01:30"
+        "MaintenanceWindow": "sun:23:00-mon:00:00"
       }
     }
   }

@@ -4,10 +4,13 @@
       "Type": "AWS::ElastiCache::User",
       "Properties": {
         "Engine": "redis",
-        "UserId": "cdkpf-u-userauthentication",
+        "UserId": "cdkpf-u-ua-a",
         "UserName": "cdkpfu",
-        "NoPasswordRequired": true,
-        "AccessString": "on ~* +@all"
+        "AccessString": "on ~* +@all",
+        "Passwords": [
+          "cdkpfBenchPwxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "cdkpfBenchPwxxxx"
+        ]
       }
     }
   }

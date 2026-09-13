@@ -3,15 +3,29 @@
     "U": {
       "Type": "AWS::MemoryDB::User",
       "Properties": {
-        "UserName": "cdkpf-userpassword",
+        "UserName": "cdkpf-userpassword-a",
         "AccessString": "on ~* &* +@all",
         "AuthenticationMode": {
           "Type": "password",
           "Passwords": [
-            "tooshort"
+            "cdkpfBenchPwxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
           ]
         }
       }
+    },
+    "U2": {
+      "Type": "AWS::MemoryDB::User",
+      "Properties": {
+        "UserName": "cdkpf-userpassword-b",
+        "AccessString": "on ~* &* +@all",
+        "AuthenticationMode": {
+          "Type": "password",
+          "Passwords": [
+            "cdkpfBenchPwxxx"
+          ]
+        }
+      },
+      "DependsOn": "U"
     }
   }
 }
