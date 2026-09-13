@@ -1,0 +1,12 @@
+id: pf-glue-trigger-condition-job-state
+service: glue
+resourceTypes: [AWS::Glue::Trigger]
+benchRegion: us-east-1
+severity: ERROR
+title: A job condition can only watch SUCCEEDED, STOPPED, FAILED or TIMEOUT
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (State RUNNING) -> \"JobRunState should be any of: [SUCCEEDED, STOPPED, FAILED, TIMEOUT]\" (ROLLBACK_COMPLETE); pass template (State SUCCEEDED) -> CREATE_COMPLETE"
+addedOn: 2026-09-14

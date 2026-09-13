@@ -50,3 +50,29 @@ _pf_gluelib_command_name(name) := _pf_gluelib_str(name, "Properties.Command.Name
 _pf_gluelib_worker_type(name) := _pf_gluelib_str(name, "Properties.WorkerType")
 
 _pf_gluelib_glue_version(name) := _pf_gluelib_str(name, "Properties.GlueVersion")
+
+# Trigger and crawler shapes shared by the trigger / workflow / crawler rules.
+_pf_gluelib_trigger_type(name) := _pf_gluelib_str(name, "Properties.Type")
+
+_pf_gluelib_predicate(name) := p if {
+	p := _pf_gluelib_get(name, "Predicate")
+	is_object(p)
+}
+
+_pf_gluelib_conditions(name) := c if {
+	c := object.get(_pf_gluelib_predicate(name), "Conditions", [])
+	is_array(c)
+}
+
+_pf_gluelib_targets(name) := t if {
+	t := _pf_gluelib_get(name, "Targets")
+	is_object(t)
+}
+
+_pf_gluelib_recrawl(name) := _pf_gluelib_str(name, "Properties.RecrawlPolicy.RecrawlBehavior")
+
+_pf_gluelib_config(name) := c if {
+	c := _pf_gluelib_get(name, "Configuration")
+	is_string(c)
+	not input.resources[c]
+}

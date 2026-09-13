@@ -1,0 +1,12 @@
+id: pf-glue-trigger-ondemand-start-on-creation
+service: glue
+resourceTypes: [AWS::Glue::Trigger]
+benchRegion: us-east-1
+severity: ERROR
+title: An ON_DEMAND trigger cannot be started on creation
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Type ON_DEMAND, StartOnCreation true) -> \"Starting trigger on create is not supported for ON_DEMAND trigger type.\" (ROLLBACK_COMPLETE); pass template (StartOnCreation false) -> CREATE_COMPLETE"
+addedOn: 2026-09-14

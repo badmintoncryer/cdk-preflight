@@ -1,0 +1,52 @@
+{
+  "Resources": {
+    "Two": {
+      "Type": "AWS::Glue::Trigger",
+      "Properties": {
+        "Type": "CONDITIONAL",
+        "Actions": [
+          {
+            "JobName": "pfjob"
+          }
+        ],
+        "StartOnCreation": false,
+        "Predicate": {
+          "Logical": "AND",
+          "Conditions": [
+            {
+              "JobName": "pfupstream",
+              "State": "SUCCEEDED",
+              "LogicalOperator": "EQUALS"
+            },
+            {
+              "JobName": "pfupstream2",
+              "State": "SUCCEEDED",
+              "LogicalOperator": "EQUALS"
+            }
+          ]
+        }
+      }
+    },
+    "One": {
+      "Type": "AWS::Glue::Trigger",
+      "Properties": {
+        "Type": "CONDITIONAL",
+        "Actions": [
+          {
+            "JobName": "pfjob"
+          }
+        ],
+        "StartOnCreation": false,
+        "Predicate": {
+          "Conditions": [
+            {
+              "JobName": "pfupstream",
+              "State": "SUCCEEDED",
+              "LogicalOperator": "EQUALS"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

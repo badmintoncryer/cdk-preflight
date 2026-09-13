@@ -16014,6 +16014,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-splunk-hec-endpoint-https\", \"ERROR\", name,\n\t\"Properties.SplunkDestinationConfiguration.HECEndpoint\",\n\tsprintf(\"HECEndpoint '%s' is not an HTTPS URL; the stream create fails with \\\"Invalid HECEndpoint. Supported endpoint format is https://<domain>:<port>.\\\"\", [u]),\n\t\"Write the endpoint as https://<domain>:<port>\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SplunkDestinationConfiguration\"\n\tu := object.get(c, \"HECEndpoint\", null)\n\t_pf_fhlib_lit(u)\n\tnot startswith(u, \"https://\")\n}\n"
   },
   {
+    "id": "pf-glue-crawler-configuration-json",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The crawler Configuration must be well-formed JSON",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-crawler-configuration-json\", \"ERROR\", name,\n\t\"Properties.Configuration\",\n\t\"The crawler Configuration is not well-formed JSON; CreateCrawler fails with \\\"Crawler configuration not valid: Error parsing JSON\\\"\",\n\t\"Write Configuration as a JSON document, e.g. {\\\"Version\\\": 1.0, \\\"Grouping\\\": {\\\"TableGroupingPolicy\\\": \\\"CombineCompatibleSchemas\\\"}}\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/crawler-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\tcfg := _pf_gluelib_config(name)\n\tnot json.is_valid(cfg)\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-configuration-version",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The crawler Configuration JSON must carry Version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-crawler-configuration-version\", \"ERROR\", name,\n\t\"Properties.Configuration\",\n\t\"The crawler Configuration JSON has no Version field; CreateCrawler fails with \\\"Crawler configuration not valid: Crawler configuration missing required key: Version.\\\"\",\n\t\"Add \\\"Version\\\": 1.0 (a number, not a string) to the Configuration JSON\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/crawler-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\tcfg := _pf_gluelib_config(name)\n\tjson.is_valid(cfg)\n\tparsed := json.unmarshal(cfg)\n\tis_object(parsed)\n\tobject.get(parsed, \"Version\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-dynamodb-scan-rate",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A DynamoDB target scan rate must be between 0.1 and 1.5",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bundled registry schema types ScanRate as a bare number.\n_pf_gluecsr_bad(r) if r < 0.1\n\n_pf_gluecsr_bad(r) if r > 1.5\n\nviolation contains make_diag_full(\"pf-glue-crawler-dynamodb-scan-rate\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.DynamoDBTargets.%d.ScanRate\", [i]),\n\tsprintf(\"ScanRate %v is outside 0.1-1.5; CreateCrawler fails with \\\"Invalid scan rate value. Valid values are between 0.1 to 1.5\\\"\", [r]),\n\t\"Use a ScanRate between 0.1 and 1.5 (the fraction of the table's read capacity the crawler may use), or leave it out\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\tarr := object.get(_pf_gluelib_targets(name), \"DynamoDBTargets\", [])\n\tis_array(arr)\n\tsome i, t in arr\n\tis_object(t)\n\traw := object.get(t, \"ScanRate\", null)\n\traw != null\n\tr := to_number(raw)\n\t_pf_gluecsr_bad(r)\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-event-mode-requires-event-queue",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "CRAWL_EVENT_MODE needs an S3 target with EventQueueArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gluecmq_queued(name) if {\n\tsome item in flatten_list(name, \"Properties.Targets.S3Targets\")\n\tis_object(item.value)\n\tobject.get(item.value, \"EventQueueArn\", \"__pf_absent\") != \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-glue-crawler-event-mode-requires-event-queue\", \"ERROR\", name,\n\t\"Properties.Targets.S3Targets\",\n\t\"RecrawlBehavior is CRAWL_EVENT_MODE but no S3 target carries EventQueueArn; CreateCrawler fails with \\\"Event queue ARN is required when event crawler is selected.\\\"\",\n\t\"Set EventQueueArn on the S3 target to the SQS queue receiving the Amazon S3 event notifications\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\t_pf_gluelib_recrawl(name) == \"CRAWL_EVENT_MODE\"\n\tnot _pf_gluecmq_queued(name)\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-recrawl-behavior-s3-only",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "CRAWL_EVENT_MODE and CRAWL_NEW_FOLDERS_ONLY apply to S3 targets only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gluecrs_s3only := {\"CRAWL_EVENT_MODE\", \"CRAWL_NEW_FOLDERS_ONLY\"}\n\nviolation contains make_diag_full(\"pf-glue-crawler-recrawl-behavior-s3-only\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%s\", [k]),\n\tsprintf(\"RecrawlBehavior %s is set while the crawler also has %s; CreateCrawler fails with \\\"RecrawlBehavior \\\\\\\"Crawl new folders only\\\\\\\" can only apply to Amazon S3 target.\\\" / \\\"Only S3 targets are allowed for event based crawlers.\\\"\", [rb, k]),\n\t\"Use RecrawlBehavior CRAWL_EVERYTHING with non-S3 targets, or crawl only Amazon S3 locations\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\trb := _pf_gluelib_recrawl(name)\n\trb in _pf_gluecrs_s3only\n\tsome k, v in _pf_gluelib_targets(name)\n\tk != \"S3Targets\"\n\tis_array(v)\n\tcount(v) > 0\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-s3-target-path",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "An S3 crawl target path cannot start with a slash",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue reads a bare path as a bucket-relative s3:// location, so \"data/in\" is\n# accepted; only a leading slash is rejected outright.\nviolation contains make_diag_full(\"pf-glue-crawler-s3-target-path\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.S3Targets.%d.Path\", [i]),\n\tsprintf(\"S3 target Path '%s' starts with '/'; CreateCrawler fails with \\\"Invalid S3 Target Path\\\"\", [p]),\n\t\"Use an Amazon S3 location, e.g. s3://my-bucket/prefix/\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\tarr := object.get(_pf_gluelib_targets(name), \"S3Targets\", [])\n\tis_array(arr)\n\tsome i, t in arr\n\tis_object(t)\n\tp := object.get(t, \"Path\", null)\n\t_pf_gluelib_lit(p)\n\tstartswith(p, \"/\")\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-target-connection-name",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "JDBC and MongoDB crawl targets need a connection name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both target kinds are rejected with the same message; JDBC_CONNECTION and\n# MONGODB connections are the only way the crawler can reach the store.\nviolation contains make_diag_full(\"pf-glue-crawler-target-connection-name\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.%s.%d.ConnectionName\", [k, i]),\n\tsprintf(\"A %s entry has no ConnectionName; CreateCrawler fails with \\\"Connection name cannot be equal to null or empty.\\\"\", [k]),\n\t\"Set ConnectionName to an AWS::Glue::Connection of the matching type (JDBC for JdbcTargets, MONGODB for MongoDBTargets)\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\tsome k in [\"JdbcTargets\", \"MongoDBTargets\"]\n\tarr := object.get(_pf_gluelib_targets(name), k, [])\n\tis_array(arr)\n\tsome i, t in arr\n\tis_object(t)\n\tobject.get(t, \"ConnectionName\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-glue-job-flex-command-name",
     "service": "glue",
     "severity": "ERROR",
@@ -16177,6 +16254,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Glue::Job"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue Ray is deprecated, so glueray + Z.2X is itself rejected now (the\n# account-level message, not this one). This rule stays scoped to the\n# non-Ray commands, where the worker-type list is the reason for the\n# failure.\nviolation contains make_diag_full(\"pf-glue-job-z2x-ray-only\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType Z.2X on a %v job; Z.2X exists only for Ray (glueray) jobs\", [cmd]),\n\t\"Pick a worker type the command supports (G.1X and up for Spark)\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/worker-types.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_worker_type(name) == \"Z.2X\"\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"glueray\"\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-action-job-or-crawler",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A trigger action names either a job or a crawler, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-trigger-action-job-or-crawler\", \"ERROR\", name,\n\tsprintf(\"Properties.Actions.%d\", [item.index]),\n\t\"A trigger action sets both JobName and CrawlerName; CreateTrigger fails with \\\"Both JobName or CrawlerName cannot be set together in an action\\\"\",\n\t\"Split the action in two: one action with JobName, another with CrawlerName\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\tsome item in flatten_list(name, \"Properties.Actions\")\n\tis_object(item.value)\n\tobject.get(item.value, \"JobName\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(item.value, \"CrawlerName\", \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-condition-crawl-state",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A crawler condition can only watch SUCCEEDED, FAILED or CANCELLED",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gluetcs_states := {\"SUCCEEDED\", \"FAILED\", \"CANCELLED\"}\n\nviolation contains make_diag_full(\"pf-glue-trigger-condition-crawl-state\", \"ERROR\", name,\n\tsprintf(\"Properties.Predicate.Conditions.%d.CrawlState\", [i]),\n\tsprintf(\"Condition CrawlState '%v' is not a crawler state a trigger can watch; CreateTrigger fails with \\\"CrawlerState should be any of: [SUCCEEDED, FAILED, CANCELLED]\\\"\", [s]),\n\t\"Use SUCCEEDED, FAILED or CANCELLED\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\tsome i, c in _pf_gluelib_conditions(name)\n\tis_object(c)\n\ts := object.get(c, \"CrawlState\", null)\n\t_pf_gluelib_lit(s)\n\tnot s in _pf_gluetcs_states\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-condition-job-state",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A job condition can only watch SUCCEEDED, STOPPED, FAILED or TIMEOUT",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_gluetjs_states := {\"SUCCEEDED\", \"STOPPED\", \"FAILED\", \"TIMEOUT\"}\n\nviolation contains make_diag_full(\"pf-glue-trigger-condition-job-state\", \"ERROR\", name,\n\tsprintf(\"Properties.Predicate.Conditions.%d.State\", [i]),\n\tsprintf(\"Condition State '%v' is not a job run state a trigger can watch; CreateTrigger fails with \\\"JobRunState should be any of: [SUCCEEDED, STOPPED, FAILED, TIMEOUT]\\\"\", [s]),\n\t\"Use SUCCEEDED, STOPPED, FAILED or TIMEOUT\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\tsome i, c in _pf_gluelib_conditions(name)\n\tis_object(c)\n\ts := object.get(c, \"State\", null)\n\t_pf_gluelib_lit(s)\n\tnot s in _pf_gluetjs_states\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-conditional-requires-predicate",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A CONDITIONAL trigger must carry a Predicate",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-trigger-conditional-requires-predicate\", \"ERROR\", name,\n\t\"Properties.Predicate\",\n\t\"A CONDITIONAL trigger has no Predicate; CreateTrigger fails with \\\"Predicate cannot be null or empty\\\"\",\n\t\"Add Predicate.Conditions naming the job or crawler state this trigger waits for\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\t_pf_gluelib_trigger_type(name) == \"CONDITIONAL\"\n\t_pf_gluelib_absent(name, \"Predicate\")\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-event-requires-workflow",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "An EVENT trigger must belong to a workflow",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-trigger-event-requires-workflow\", \"ERROR\", name,\n\t\"Properties.WorkflowName\",\n\t\"An EVENT trigger has no WorkflowName; CreateTrigger fails with \\\"Workflow name cannot be null or empty\\\"\",\n\t\"Set WorkflowName to the AWS::Glue::Workflow this EventBridge trigger belongs to\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\t_pf_gluelib_trigger_type(name) == \"EVENT\"\n\t_pf_gluelib_absent(name, \"WorkflowName\")\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-ondemand-start-on-creation",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "An ON_DEMAND trigger cannot be started on creation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-trigger-ondemand-start-on-creation\", \"ERROR\", name,\n\t\"Properties.StartOnCreation\",\n\t\"StartOnCreation is true on an ON_DEMAND trigger; CreateTrigger fails with \\\"Starting trigger on create is not supported for ON_DEMAND trigger type.\\\"\",\n\t\"Drop StartOnCreation (or set it to false); only SCHEDULED and CONDITIONAL triggers can start on creation\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\t_pf_gluelib_trigger_type(name) == \"ON_DEMAND\"\n\t_pf_gluelib_get(name, \"StartOnCreation\") in {true, \"true\"}\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-predicate-logical-required",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A predicate with more than one condition needs Logical",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-trigger-predicate-logical-required\", \"ERROR\", name,\n\t\"Properties.Predicate.Logical\",\n\tsprintf(\"Predicate lists %d conditions but has no Logical; CreateTrigger fails with \\\"Logical operator cannot be null or empty when more than one condition is present.\\\"\", [count(conds)]),\n\t\"Set Predicate.Logical to AND or ANY\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\tp := _pf_gluelib_predicate(name)\n\tconds := _pf_gluelib_conditions(name)\n\tcount(conds) > 1\n\tobject.get(p, \"Logical\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-schedule-day-of-month-or-week",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A Glue cron expression must put ? in exactly one of day-of-month and day-of-week",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue rejects both fields being concrete and both being \"?\": exactly one of the\n# two has to be \"?\". Only six-field cron() expressions are judged; anything else\n# is a different constraint and stays silent here.\n_pf_gluetdw_fields(sch) := f if {\n\tm := regex.find_all_string_submatch_n(`^cron\\((.*)\\)$`, sch, 1)\n\tf := regex.split(`\\s+`, trim_space(m[0][1]))\n}\n\n_pf_gluetdw_bad(dom, dow) if {\n\tdom == \"?\"\n\tdow == \"?\"\n}\n\n_pf_gluetdw_bad(dom, dow) if {\n\tdom != \"?\"\n\tdow != \"?\"\n}\n\nviolation contains make_diag_full(\"pf-glue-trigger-schedule-day-of-month-or-week\", \"ERROR\", name,\n\t\"Properties.Schedule\",\n\tsprintf(\"Schedule '%s' sets day-of-month '%s' and day-of-week '%s'; exactly one of them has to be \\\"?\\\" and CreateTrigger fails with \\\"The schedule %s is invalid.\\\"\", [sch, f[2], f[4], sch]),\n\t\"Put ? in whichever of day-of-month and day-of-week you are not constraining, e.g. cron(0 10 1 * ? *)\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\tsch := _pf_gluelib_str(name, \"Properties.Schedule\")\n\tf := _pf_gluetdw_fields(sch)\n\tcount(f) == 6\n\t_pf_gluetdw_bad(f[2], f[4])\n}\n"
+  },
+  {
+    "id": "pf-glue-trigger-scheduled-requires-schedule",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A SCHEDULED trigger must carry a Schedule",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Trigger"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-glue-trigger-scheduled-requires-schedule\", \"ERROR\", name,\n\t\"Properties.Schedule\",\n\t\"A SCHEDULED trigger has no Schedule; CreateTrigger fails with \\\"Schedule cannot be null or empty\\\"\",\n\t\"Set Schedule to a six-field cron() expression, e.g. cron(0 10 1 * ? *)\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Trigger\")\n\t_pf_gluelib_trigger_type(name) == \"SCHEDULED\"\n\t_pf_gluelib_absent(name, \"Schedule\")\n}\n"
+  },
+  {
+    "id": "pf-glue-workflow-max-concurrent-runs-min",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A workflow needs at least one concurrent run",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Workflow"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bundled registry schema types MaxConcurrentRuns as a bare integer.\nviolation contains make_diag_full(\"pf-glue-workflow-max-concurrent-runs-min\", \"ERROR\", name,\n\t\"Properties.MaxConcurrentRuns\",\n\tsprintf(\"MaxConcurrentRuns is %v; CreateWorkflow fails with \\\"MaxConcurrentRuns should be greater than or equal to 1 if present.\\\"\", [n]),\n\t\"Set MaxConcurrentRuns to 1 or more, or leave it out\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateWorkflow.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Workflow\")\n\tn := _pf_gluelib_num(name, \"Properties.MaxConcurrentRuns\")\n\tn < 1\n}\n"
   },
   {
     "id": "pf-iam-identity-policy-no-principal",
@@ -24846,7 +25033,7 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   },
   {
     "name": "_lib/glue",
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Glue rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), string values\n# are guarded so a Ref/GetAtt resolved to a logical id is never compared against\n# a literal, and numbers go through to_number so tokens skip instead of firing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_gluelib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_gluelib_get(name, k) := v if {\n\tp := _pf_gluelib_props(name)\n\tv := object.get(p, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_gluelib_has(name, k) if {\n\t_pf_gluelib_get(name, k)\n}\n\n_pf_gluelib_absent(name, k) if {\n\tp := _pf_gluelib_props(name)\n\tobject.get(p, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_gluelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_gluelib_str(name, path) := v if {\n\tv := resolve(name, path)\n\t_pf_gluelib_lit(v)\n}\n\n_pf_gluelib_num(name, path) := n if {\n\tn := to_number(resolve(name, path))\n}\n\n# The job flavour every combination rule keys on.\n_pf_gluelib_command_name(name) := _pf_gluelib_str(name, \"Properties.Command.Name\")\n\n_pf_gluelib_worker_type(name) := _pf_gluelib_str(name, \"Properties.WorkerType\")\n\n_pf_gluelib_glue_version(name) := _pf_gluelib_str(name, \"Properties.GlueVersion\")\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Glue rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), string values\n# are guarded so a Ref/GetAtt resolved to a logical id is never compared against\n# a literal, and numbers go through to_number so tokens skip instead of firing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_gluelib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_gluelib_get(name, k) := v if {\n\tp := _pf_gluelib_props(name)\n\tv := object.get(p, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_gluelib_has(name, k) if {\n\t_pf_gluelib_get(name, k)\n}\n\n_pf_gluelib_absent(name, k) if {\n\tp := _pf_gluelib_props(name)\n\tobject.get(p, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_gluelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_gluelib_str(name, path) := v if {\n\tv := resolve(name, path)\n\t_pf_gluelib_lit(v)\n}\n\n_pf_gluelib_num(name, path) := n if {\n\tn := to_number(resolve(name, path))\n}\n\n# The job flavour every combination rule keys on.\n_pf_gluelib_command_name(name) := _pf_gluelib_str(name, \"Properties.Command.Name\")\n\n_pf_gluelib_worker_type(name) := _pf_gluelib_str(name, \"Properties.WorkerType\")\n\n_pf_gluelib_glue_version(name) := _pf_gluelib_str(name, \"Properties.GlueVersion\")\n\n# Trigger and crawler shapes shared by the trigger / workflow / crawler rules.\n_pf_gluelib_trigger_type(name) := _pf_gluelib_str(name, \"Properties.Type\")\n\n_pf_gluelib_predicate(name) := p if {\n\tp := _pf_gluelib_get(name, \"Predicate\")\n\tis_object(p)\n}\n\n_pf_gluelib_conditions(name) := c if {\n\tc := object.get(_pf_gluelib_predicate(name), \"Conditions\", [])\n\tis_array(c)\n}\n\n_pf_gluelib_targets(name) := t if {\n\tt := _pf_gluelib_get(name, \"Targets\")\n\tis_object(t)\n}\n\n_pf_gluelib_recrawl(name) := _pf_gluelib_str(name, \"Properties.RecrawlPolicy.RecrawlBehavior\")\n\n_pf_gluelib_config(name) := c if {\n\tc := _pf_gluelib_get(name, \"Configuration\")\n\tis_string(c)\n\tnot input.resources[c]\n}\n"
   },
   {
     "name": "_lib/iam",

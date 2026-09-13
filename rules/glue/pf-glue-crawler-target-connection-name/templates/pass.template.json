@@ -1,0 +1,61 @@
+{
+  "Resources": {
+    "Jdbc": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "JDBC",
+          "ConnectionProperties": {
+            "JDBC_CONNECTION_URL": "jdbc:mysql://db.example.com:3306/d",
+            "USERNAME": "u",
+            "PASSWORD": "p"
+          }
+        }
+      }
+    },
+    "Mongo": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "MONGODB",
+          "ConnectionProperties": {
+            "CONNECTION_URL": "mongodb://db.example.com:27017",
+            "USERNAME": "u",
+            "PASSWORD": "p"
+          }
+        }
+      }
+    },
+    "Main": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "DatabaseName": "pfcrawldb",
+        "Targets": {
+          "JdbcTargets": [
+            {
+              "ConnectionName": {
+                "Ref": "Jdbc"
+              },
+              "Path": "d/%"
+            }
+          ],
+          "MongoDBTargets": [
+            {
+              "ConnectionName": {
+                "Ref": "Mongo"
+              },
+              "Path": "d/c"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

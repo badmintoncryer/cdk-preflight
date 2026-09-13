@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Trigger",
+      "Properties": {
+        "Type": "ON_DEMAND",
+        "Actions": [
+          {
+            "JobName": "pfjob",
+            "CrawlerName": "pfcrawl"
+          }
+        ],
+        "StartOnCreation": false
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-glue-workflow-max-concurrent-runs-min
+service: glue
+resourceTypes: [AWS::Glue::Workflow]
+benchRegion: us-east-1
+severity: ERROR
+title: A workflow needs at least one concurrent run
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateWorkflow.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (MaxConcurrentRuns 0) -> \"MaxConcurrentRuns should be greater than or equal to 1 if present.\" (ROLLBACK_COMPLETE); pass template (MaxConcurrentRuns 1) -> CREATE_COMPLETE"
+addedOn: 2026-09-14
