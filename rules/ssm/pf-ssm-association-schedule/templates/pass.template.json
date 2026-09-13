@@ -17,10 +17,33 @@
             "echo hi"
           ]
         },
-        "ScheduleExpression": "cron(0 0 ? * TUE#3 *)",
+        "ScheduleExpression": "rate(30 minutes)",
+        "AssociationName": "cdkpf-rate"
+      }
+    },
+    "A2": {
+      "Type": "AWS::SSM::Association",
+      "Properties": {
+        "Name": "AWS-RunShellScript",
+        "Targets": [
+          {
+            "Key": "tag:cdkpf",
+            "Values": [
+              "probe"
+            ]
+          }
+        ],
+        "Parameters": {
+          "commands": [
+            "echo hi"
+          ]
+        },
+        "ScheduleExpression": "cron(0 0 ? * TUE#5 *)",
+        "AssociationName": "cdkpf-cron",
         "ApplyOnlyAtCronInterval": true,
         "ScheduleOffset": 2
-      }
+      },
+      "DependsOn": "A"
     }
   }
 }
