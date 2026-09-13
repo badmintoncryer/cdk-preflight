@@ -1,10 +1,27 @@
 {
   "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.1.0.0/16"
+      }
+    },
+    "Src": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdkpf source group",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
     "G": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupDescription": "bench",
-        "VpcId": "vpc-11112222",
+        "GroupDescription": "cdkpf source exclusive fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",

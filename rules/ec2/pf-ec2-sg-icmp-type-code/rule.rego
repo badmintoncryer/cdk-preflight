@@ -6,6 +6,8 @@ _pf_ec2icmp_url := "https://docs.aws.amazon.com/AWSCloudFormation/latest/Templat
 
 # For ICMP, FromPort carries the type and ToPort the code; both run -1..255,
 # which is far narrower than the 0..65535 the schema allows for ports.
+# 下側は見ない: スキーマの minimum が -1 なので -2 以下は同梱エンジンが F3034 で
+# 止める（原則 1）。上側 256 以上だけがエンジンを通り抜けて EC2 に拒否される。
 # resources_of_type は配列を返すので集合演算ができない。2 節の部分集合で束ねる
 _pf_ec2icmp_names contains n if some n in resources_of_type("AWS::EC2::SecurityGroupIngress")
 
@@ -18,11 +20,6 @@ _pf_ec2icmp_icmp(name) if to_number(resolve(name, "Properties.IpProtocol")) == 1
 _pf_ec2icmp_bad(name, key) := v if {
 	v := to_number(resolve(name, sprintf("Properties.%s", [key])))
 	v > 255
-}
-
-_pf_ec2icmp_bad(name, key) := v if {
-	v := to_number(resolve(name, sprintf("Properties.%s", [key])))
-	v < -1
 }
 
 violation contains make_diag_full("pf-ec2-sg-icmp-type-code", "ERROR", name,

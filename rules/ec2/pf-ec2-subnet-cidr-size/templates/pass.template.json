@@ -12,7 +12,22 @@
         "VpcId": {
           "Ref": "Vpc"
         },
-        "CidrBlock": "10.0.0.0/24"
+        "CidrBlock": "10.0.0.0/28"
+      }
+    },
+    "VpcFull": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.101.0.0/16"
+      }
+    },
+    "SubFull": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VpcFull"
+        },
+        "CidrBlock": "10.101.0.0/16"
       }
     }
   }

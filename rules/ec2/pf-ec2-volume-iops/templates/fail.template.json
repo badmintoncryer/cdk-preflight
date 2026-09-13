@@ -1,13 +1,191 @@
 {
   "Resources": {
-    "Volume": {
+    "VolThrOverDefaultIops": {
       "Type": "AWS::EC2::Volume",
       "Properties": {
-        "AvailabilityZone": { "Fn::Select": ["0", { "Fn::GetAZs": "" }] },
         "Size": 10,
         "VolumeType": "gp3",
-        "Iops": 8000
+        "Throughput": 751,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
       }
+    },
+    "VolIopsTooLow": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 10,
+        "VolumeType": "gp3",
+        "Iops": 99,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolThrOverDefaultIops"
+    },
+    "VolIopsTooHigh": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 200,
+        "VolumeType": "gp3",
+        "Iops": 80001,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIopsTooLow"
+    },
+    "VolIopsPerGib": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 10,
+        "VolumeType": "gp3",
+        "Iops": 5001,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIopsTooHigh"
+    },
+    "VolThrTooHigh": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 200,
+        "VolumeType": "gp3",
+        "Iops": 80000,
+        "Throughput": 2001,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIopsPerGib"
+    },
+    "VolIo1IopsTooHigh": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 1300,
+        "VolumeType": "io1",
+        "Iops": 64001,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolThrTooHigh"
+    },
+    "VolIo1PerGib": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 10,
+        "VolumeType": "io1",
+        "Iops": 501,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIo1IopsTooHigh"
+    },
+    "VolIo2IopsTooHigh": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 300,
+        "VolumeType": "io2",
+        "Iops": 256001,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIo1PerGib"
+    },
+    "VolIo2PerGib": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 10,
+        "VolumeType": "io2",
+        "Iops": 10001,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIo2IopsTooHigh"
+    },
+    "VolGp2Iops": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 10,
+        "VolumeType": "gp2",
+        "Iops": 3000,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolIo2PerGib"
+    },
+    "VolSt1Throughput": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 500,
+        "VolumeType": "st1",
+        "Throughput": 125,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      },
+      "DependsOn": "VolGp2Iops"
     }
   }
 }

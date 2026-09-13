@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-04 us-east-1: VPC 10.197.0.0/16 with a 10.197.0.0/29 subnet -> \"The CIDR '10.197.0.0/29' is invalid.\" ROLLBACK_COMPLETE. The engine's E3059/E3060 cover subnet-within-VPC and sibling overlap, not the netmask size; pf-ec2-vpc-cidr-block-size covers the VPC side only."
+  evidence: "bench 2026-09-13 us-east-1: VPC 10.0.0.0/16 with a 10.0.0.0/29 subnet -> \"The CIDR '10.0.0.0/29' is invalid.\" ROLLBACK_COMPLETE; pass = a /28 subnet plus a second VPC whose single subnet is the whole /16 -> CREATE_COMPLETE, so both ends of 16..28 are measured. The /15 side cannot be built at all: the largest VPC is /16, so the engine's E3059 (subnet not within the VPC) stops it before EC2 sees it. The engine's E3059/E3060 cover containment and sibling overlap, not the netmask size; pf-ec2-vpc-cidr-block-size covers the VPC side."
 addedOn: 2026-09-04

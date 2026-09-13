@@ -2,11 +2,15 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_voliops_fix := "Match Iops/Throughput to the volume type: gp3 3000-80000 IOPS (max 500/GiB, throughput 125-2000 MiB/s and at most IOPS/4), io1 100-64000 (max 50/GiB), io2 100-256000 (max 1000/GiB); gp2/st1/sc1/standard accept neither property"
+_pf_voliops_fix := "Match Iops/Throughput to the volume type: gp3 100-80000 IOPS (anything under 3000 is provisioned as 3000, max 500/GiB, throughput at most 2000 MiB/s and at most IOPS/4), io1 100-64000 (max 50/GiB), io2 100-256000 (max 1000/GiB); gp2/st1/sc1/standard accept neither property"
 
 _pf_voliops_url := "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
 
-_pf_voliops_range := {"gp3": [3000, 80000], "io1": [100, 64000], "io2": [100, 256000]}
+# 下限はどの型も 100。gp3 の「最小 3000 IOPS」は拒否される値ではない——100..2999 は
+# 受け付けられて黙って 3000 に引き上げられるので、ここで弾くと誤検出になる
+# （2026-09-13 us-east-1: --iops 2999 が Iops=3000 で作成、--iops 99 は
+# "Volume iops of 99 is too low; minimum is 100." で拒否）。
+_pf_voliops_range := {"gp3": [100, 80000], "io1": [100, 64000], "io2": [100, 256000]}
 
 _pf_voliops_per_gib := {"gp3": 500, "io1": 50, "io2": 1000}
 
@@ -60,14 +64,15 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	resolve(name, "Properties.Throughput")
 }
 
-# gp3 Throughput の絶対レンジ
+# gp3 Throughput の上限。下限 125 は入れない: 125 未満は拒否ではなく 125 に丸められる
+# （2026-09-13 us-east-1: --throughput 0/1/124 はいずれも Throughput=125 で作成）
 violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properties.Throughput",
-	sprintf("Throughput %v MiB/s is outside the supported range 125-2000 for gp3 volumes", [t]),
+	sprintf("Throughput %v MiB/s exceeds the maximum of 2000 MiB/s for gp3 volumes", [t]),
 	_pf_voliops_fix, _pf_voliops_url) if {
 	some name in resources_of_type("AWS::EC2::Volume")
 	resolve(name, "Properties.VolumeType") == "gp3"
 	t := to_number(resolve(name, "Properties.Throughput"))
-	_pf_voliops_out(t, 125, 2000)
+	t > 2000
 }
 
 # gp3 Throughput : IOPS 比（最大 0.25 MiB/s per IOPS）

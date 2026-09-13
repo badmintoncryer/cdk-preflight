@@ -39,14 +39,9 @@ pf-cloudwatch-insight-rule-keys-max  pending #178
 pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
 pf-dynamodb-projection-nonkey-total  しきい値と突き合わせるのは INCLUDE インデックスをまたいだ投影属性数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 に乗せてある（1 インデックス 20 本の上限は pf-dynamodb-projection-nonkey-limit 側で境界に乗っている）
 pf-dynamodb-resource-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（解決後の形で 20481 / 20480 ちょうどに乗せてある）
-pf-ec2-sg-icmp-type-code  pending #178
-pf-ec2-sg-port-range  pending #178
-pf-ec2-sg-source-exclusive  pending #178
-pf-ec2-subnet-cidr-size  pending #178
-pf-ec2-tgw-amazon-side-asn  pending #178
-pf-ec2-volume-iops  pending #178
-pf-ec2-vpc-cidr-block-size  pending #178
-pf-ec2-vpn-pre-shared-key  pending #178
+pf-ec2-sg-port-range  順序チェックの本体にある t <= 65535 は「両方とも範囲内の値のときだけ前後関係を見る」ためのガードで、上限そのものは同じファイルの _pf_port_out(n) if n > 65535 が見ている。フィクスチャは 65536 / 65535 に乗せてあり、順序の違反も 65535:65534 で境界に乗っている（埋め込み ingress の順序は同梱エンジンの E9002 が持っているので、fail では単独リソース側に置いた）
+pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エントリに立っている source 系フィールドの本数（固定の 4 キーを数えたヘルパーの戻り値）で、どの配列長とも文字列長とも一致しない。フィクスチャは 2 / 1 本に乗せてある
+pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
 pf-ecr-lifecycle-policy-syntax  pending #178
 pf-ecr-lifecycle-tag-status  pending #178
 pf-ecs-ephemeral-storage-range  pending #178

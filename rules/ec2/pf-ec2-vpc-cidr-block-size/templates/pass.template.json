@@ -3,7 +3,13 @@
     "V": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
-        "CidrBlock": "10.0.0.0/16"
+        "CidrBlock": "10.99.0.0/28"
+      }
+    },
+    "VBig": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.100.0.0/16"
       }
     }
   }

@@ -1,5 +1,4 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
     "Vpc": {
       "Type": "AWS::EC2::VPC",
@@ -40,8 +39,8 @@
           "Ref": "Sg"
         },
         "IpProtocol": "icmp",
-        "FromPort": 300,
-        "ToPort": -1,
+        "FromPort": 256,
+        "ToPort": 0,
         "CidrIp": "10.0.0.0/8"
       }
     }

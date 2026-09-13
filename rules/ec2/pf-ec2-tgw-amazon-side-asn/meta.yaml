@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Tra
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE, "Value (1000) for parameter amazonSideAsn is invalid."; pass template -> CREATE_COMPLETE'
+  evidence: "api 2026-09-13 us-east-1: CreateTransitGateway with amazonSideAsn 64511, 65535, 4199999999 and 4294967295 each -> \"Value (<n>) for parameter amazonSideAsn is invalid.\" bench 2026-09-13 us-east-1: fail chains the four ends with DependsOn and reports the first (64511) -> ROLLBACK_COMPLETE; pass with 64512, 65534, 4200000000 and 4294967294 -> CREATE_COMPLETE, so every end of both private ranges is measured."
 addedOn: 2026-09-06
