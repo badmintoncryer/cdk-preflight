@@ -1,0 +1,12 @@
+id: pf-codedeploy-config-zonal-server-only
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentConfig]
+severity: ERROR
+title: "ZonalConfig is only supported on the Server compute platform"
+constraintSource: https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations-create.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: ComputePlatform Lambda + ZonalConfig MonitorDurationInSeconds 60 -> \"Zonal deployments are only supported with EC2 deployments.\" (ROLLBACK_COMPLETE); pass ComputePlatform Server + the same ZonalConfig -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: ECS is rejected the same way."
+addedOn: 2026-09-14

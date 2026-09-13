@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Lambda",
+        "TrafficRoutingConfig": {
+          "Type": "AllAtOnce",
+          "TimeBasedCanary": {
+            "CanaryInterval": 5,
+            "CanaryPercentage": 10
+          }
+        }
+      }
+    },
+    "R2": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Lambda",
+        "TrafficRoutingConfig": {
+          "Type": "TimeBasedCanary"
+        }
+      }
+    }
+  }
+}

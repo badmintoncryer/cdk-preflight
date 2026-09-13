@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Server",
+        "MinimumHealthyHosts": {
+          "Type": "FLEET_PERCENT",
+          "Value": 75
+        },
+        "TrafficRoutingConfig": {
+          "Type": "AllAtOnce"
+        }
+      }
+    }
+  }
+}

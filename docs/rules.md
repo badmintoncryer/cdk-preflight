@@ -795,6 +795,16 @@
 | `pf-cloudwatch-metric-stream-role-account` | AWS::CloudWatch::MetricStream | RoleArn must be in the stack's own account | ERROR | none |
 | `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | ERROR | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | ERROR | none |
+| `pf-codedeploy-app-compute-platform-value` | AWS::CodeDeploy::Application | Application ComputePlatform must be Server, Lambda, ECS or Kubernetes | ERROR | pending-engine |
+| `pf-codedeploy-config-fleet-percent-range` | AWS::CodeDeploy::DeploymentConfig | MinimumHealthyHosts FLEET_PERCENT must be below 100 | ERROR | none |
+| `pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts` | AWS::CodeDeploy::DeploymentConfig | MinimumHealthyHosts is only valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-config-name-reserved-prefix` | AWS::CodeDeploy::DeploymentConfig | A custom deployment configuration may not use the CodeDeployDefault. prefix | ERROR | none |
+| `pf-codedeploy-config-server-forbids-traffic-routing` | AWS::CodeDeploy::DeploymentConfig | TrafficRoutingConfig is not valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-config-traffic-routing-block-matches-type` | AWS::CodeDeploy::DeploymentConfig | TrafficRoutingConfig must carry exactly the sub-block its Type names | ERROR | none |
+| `pf-codedeploy-config-traffic-routing-percentage-range` | AWS::CodeDeploy::DeploymentConfig | Traffic routing percentage must be between 1 and 99 | ERROR | none |
+| `pf-codedeploy-config-traffic-shift-interval-max` | AWS::CodeDeploy::DeploymentConfig | A traffic shift may not take more than 2880 minutes end to end | ERROR | none |
+| `pf-codedeploy-config-zonal-minimum-healthy-per-zone-range` | AWS::CodeDeploy::DeploymentConfig | ZonalConfig MinimumHealthyHostsPerZone FLEET_PERCENT must be below 100 | ERROR | none |
+| `pf-codedeploy-config-zonal-server-only` | AWS::CodeDeploy::DeploymentConfig | ZonalConfig is only supported on the Server compute platform | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
 | `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | ERROR | none |

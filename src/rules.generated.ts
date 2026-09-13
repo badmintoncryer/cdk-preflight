@@ -8748,6 +8748,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matching means Id equality AND effective ReturnData true (default true,\n# bench w04b); w12 proved an Id match with ReturnData false does not count.\n# Only n == 0 fires - the duplicate-match side is unbenched. Queries with\n# unresolvable Id/ReturnData make the count unknowable, so the rule skips.\n_pf_cwtmi_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwtmi_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwtmi_matches(q, tmid) if {\n\tobject.get(q, \"Id\", null) == tmid\n\tobject.get(q, \"ReturnData\", true) == true\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-threshold-metric-id\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"No metric query with Id '%s' returns data; PutMetricAlarm fails with \\\"Metrics list must contain exactly one metric matching the ThresholdMetricId parameter\\\"\", [tmid]),\n\t\"Point ThresholdMetricId at a query whose ReturnData is true\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ttmid := resolve(name, \"Properties.ThresholdMetricId\")\n\tis_string(tmid)\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\tis_string(object.get(q.value, \"Id\", null))\n\t\t_pf_cwtmi_countable(q.value)\n\t}\n\tcount([q | some q in items; _pf_cwtmi_matches(q.value, tmid)]) == 0\n}\n"
   },
   {
+    "id": "pf-codedeploy-app-compute-platform-value",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Application ComputePlatform must be Server, Lambda, ECS or Kubernetes",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bundled engine knows this enum but lists only ECS/Lambda/Server and\n# reports the miss as W3030, which does not block a synth; the service takes a\n# fourth value (Kubernetes) the engine has never heard of.\nviolation contains make_diag_full(\"pf-codedeploy-app-compute-platform-value\", \"ERROR\", name,\n\t\"Properties.ComputePlatform\",\n\tsprintf(\"ComputePlatform '%v' is not a CodeDeploy compute platform; the application create fails with \\\"ComputePlatform '%v' is not valid. Valid values are [Server, Lambda, ECS, Kubernetes]\\\"\", [cp, cp]),\n\t\"Use Server, Lambda, ECS or Kubernetes - EC2 and on-premises deployments are the Server platform\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateApplication.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::Application\")\n\tcp := resolve(name, \"Properties.ComputePlatform\")\n\t_pf_codedeploylib_lit(cp)\n\tnot cp in {\"Server\", \"Lambda\", \"ECS\", \"Kubernetes\"}\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-fleet-percent-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "MinimumHealthyHosts FLEET_PERCENT must be below 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 100% healthy would leave nothing to deploy to, so the ceiling is exclusive.\n# There is no floor: 0 is accepted despite the \"should be positive\" wording.\nviolation contains make_diag_full(\"pf-codedeploy-config-fleet-percent-range\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts.Value\",\n\tsprintf(\"MinimumHealthyHosts is FLEET_PERCENT %v; the deployment configuration create fails with \\\"The value for the minimum healthy hosts with type of FLEET_PERCENT should be positive and less than 100\\\"\", [v]),\n\t\"Use a FLEET_PERCENT value of 99 or less, or switch Type to HOST_COUNT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-minimumhealthyhosts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tresolve(name, \"Properties.MinimumHealthyHosts.Type\") == \"FLEET_PERCENT\"\n\tv := _pf_codedeploylib_num(resolve(name, \"Properties.MinimumHealthyHosts.Value\"))\n\tv > 99\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "MinimumHealthyHosts is only valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MinimumHealthyHosts counts instances, which the Lambda and ECS platforms do\n# not have. Both reject it; the message names the platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts\",\n\tsprintf(\"MinimumHealthyHosts is set on a %v deployment configuration; the create fails with \\\"minimum healthy hosts should be null for %v deployment configuration\\\"\", [p, p]),\n\t\"Drop MinimumHealthyHosts - only the Server (EC2/on-premises) platform takes it; Lambda and ECS use TrafficRoutingConfig\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp in {\"Lambda\", \"ECS\"}\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"MinimumHealthyHosts\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-name-reserved-prefix",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A custom deployment configuration may not use the CodeDeployDefault. prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The prefix is reserved for the predefined configurations. Only the dot makes\n# it reserved: \"CodeDeployDefaultFoo\" is accepted, and the match is case\n# sensitive (\"codedeploydefault.\" is accepted too).\nviolation contains make_diag_full(\"pf-codedeploy-config-name-reserved-prefix\", \"ERROR\", name,\n\t\"Properties.DeploymentConfigName\",\n\tsprintf(\"DeploymentConfigName '%v' uses the reserved CodeDeployDefault. prefix; the deployment configuration create fails with \\\"The prefix CodeDeployDefault. is reserved for predefined configuration names\\\"\", [n]),\n\t\"Name the custom deployment configuration something that does not start with \\\"CodeDeployDefault.\\\"\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tn := resolve(name, \"Properties.DeploymentConfigName\")\n\t_pf_codedeploylib_lit(n)\n\tstartswith(n, \"CodeDeployDefault.\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-server-forbids-traffic-routing",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TrafficRoutingConfig is not valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An in-place EC2/on-premises deployment has no traffic to shift. An absent\n# ComputePlatform is Server, so the same rejection applies to a configuration\n# that never names a platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-server-forbids-traffic-routing\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig\",\n\t\"TrafficRoutingConfig is set on a Server deployment configuration; the create fails with \\\"Traffic routing configuration should be null for Server deployment configuration\\\"\",\n\t\"Drop TrafficRoutingConfig, or set ComputePlatform to Lambda or ECS (an absent ComputePlatform is Server)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\t_pf_codedeploylib_platform(name) == \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-routing-block-matches-type",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TrafficRoutingConfig must carry exactly the sub-block its Type names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Type picks the sub-block: the one it names has to be there and the other one\n# has to be absent. AllAtOnce names neither, so it takes neither.\n_pf_cdtrb_cfg(name) := trc if {\n\ttrc := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-block-matches-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [blk]),\n\tsprintf(\"TrafficRoutingConfig.Type is %v but %v is also set; the deployment configuration create fails with \\\"%vConfiguration should be null for %v type\\\"\", [t, blk, blk, t]),\n\tsprintf(\"Drop %v, or set Type to %v\", [blk, blk]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-trafficroutingconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\ttrc := _pf_cdtrb_cfg(name)\n\tt := object.get(trc, \"Type\", null)\n\t_pf_codedeploylib_lit(t)\n\tsome blk in [\"TimeBasedCanary\", \"TimeBasedLinear\"]\n\tblk != t\n\t_pf_codedeploylib_has(trc, blk)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-block-matches-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [t]),\n\tsprintf(\"TrafficRoutingConfig.Type is %v but there is no %v block; the deployment configuration create fails with \\\"%vConfiguration should not be null for %v type\\\"\", [t, t, t, t]),\n\tsprintf(\"Add the %v block with its interval and percentage, or use Type AllAtOnce\", [t]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-trafficroutingconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\ttrc := _pf_cdtrb_cfg(name)\n\tt := object.get(trc, \"Type\", null)\n\tt in {\"TimeBasedCanary\", \"TimeBasedLinear\"}\n\tnot _pf_codedeploylib_has(trc, t)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-routing-percentage-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Traffic routing percentage must be between 1 and 99",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One check covers both blocks: the canary and the linear percentage go through\n# the same validation and come back with the same message.\n_pf_cdtrpct_bad(p) if p > 99\n\n_pf_cdtrpct_bad(p) if p < 1\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-percentage-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [blk]),\n\tsprintf(\"%v is %v; the deployment configuration create fails with \\\"Valid traffic routing percentage is from 1 to 99\\\"\", [blk, p]),\n\t\"Shift between 1 and 99 percent of the traffic per step (100 percent at once is Type AllAtOnce)\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tsome blk in [\"TimeBasedCanary.CanaryPercentage\", \"TimeBasedLinear.LinearPercentage\"]\n\tp := _pf_codedeploylib_num(resolve(name, sprintf(\"Properties.TrafficRoutingConfig.%v\", [blk])))\n\t_pf_cdtrpct_bad(p)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-shift-interval-max",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A traffic shift may not take more than 2880 minutes end to end",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The cap is on the whole shift, not on one wait. A canary waits once, so its\n# ceiling is the interval itself. A linear configuration waits\n# floor(100 / LinearPercentage) times, so the interval that fits shrinks as the\n# step does - measured 2026-09-14 us-east-1: 2880x99%, 1440x50%, 960x33%,\n# 288x10% and 28x1% are accepted and one minute more on any of them is not.\n_pf_cdtsi_shifts(pct) := floor(100 / pct)\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-shift-interval-max\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig.TimeBasedCanary.CanaryInterval\",\n\tsprintf(\"CanaryInterval is %v minutes; the deployment configuration create fails with \\\"Canary interval must be between 1 and 2880 minutes (2 days)\\\"\", [civ]),\n\t\"Wait at most 2880 minutes (2 days) before shifting the rest of the traffic\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tciv := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedCanary.CanaryInterval\"))\n\tciv > 2880\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-shift-interval-max\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearInterval\",\n\tsprintf(\"Shifting %v percent every %v minutes takes %v minutes end to end; the deployment configuration create fails with \\\"Total Traffic shifting intervals must be positive integers up to 2880 minutes (2 days)\\\"\", [pct, liv, total]),\n\t\"Keep LinearInterval x floor(100 / LinearPercentage) at or below 2880 minutes (2 days)\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tliv := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearInterval\"))\n\tpct := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearPercentage\"))\n\tpct > 0\n\ttotal := liv * _pf_cdtsi_shifts(pct)\n\ttotal > 2880\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-zonal-minimum-healthy-per-zone-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ZonalConfig MinimumHealthyHostsPerZone FLEET_PERCENT must be below 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The per-zone minimum has the same exclusive ceiling as the fleet-wide one,\n# but its own exception type and message.\nviolation contains make_diag_full(\"pf-codedeploy-config-zonal-minimum-healthy-per-zone-range\", \"ERROR\", name,\n\t\"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Value\",\n\tsprintf(\"MinimumHealthyHostsPerZone is FLEET_PERCENT %v; the deployment configuration create fails with \\\"The value of the 'Minimum health hosts per zone' setting when configured with a 'Type' value of 'FLEET_PERCENT' must be positive and less than 100.\\\"\", [v]),\n\t\"Use a FLEET_PERCENT value of 99 or less, or switch MinimumHealthyHostsPerZone.Type to HOST_COUNT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-zonalconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tresolve(name, \"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Type\") == \"FLEET_PERCENT\"\n\tv := _pf_codedeploylib_num(resolve(name, \"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Value\"))\n\tv > 99\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-zonal-server-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ZonalConfig is only supported on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Zonal deployments roll through Availability Zones one at a time, which only\n# the EC2/on-premises platform does.\nviolation contains make_diag_full(\"pf-codedeploy-config-zonal-server-only\", \"ERROR\", name,\n\t\"Properties.ZonalConfig\",\n\tsprintf(\"ZonalConfig is set on a %v deployment configuration; the create fails with \\\"Zonal deployments are only supported with EC2 deployments.\\\"\", [p]),\n\t\"Drop ZonalConfig - it exists only for the Server (EC2/on-premises) platform\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations-create.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp != \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ZonalConfig\")\n}\n"
+  },
+  {
     "id": "pf-cognito-alias-username-exclusive",
     "service": "cognito",
     "severity": "ERROR",
@@ -25335,6 +25445,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cloudwatch",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch rules.\n\n# True absence needs the preprocessed document (see AGENTS.md); resolve() is\n# undefined for a missing key, so \"resolve(...) != x\" never fires on one.\n_pf_cwlib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The statistic grammar CloudWatch accepts wherever a statistic is a string:\n# MetricStat.Stat, a dashboard widget's \"stat\", PutAnomalyDetector's Stat and\n# a metric stream's AdditionalStatistics. Percentiles stop at 100, which is\n# why the numeric part is spelled out instead of [0-9.]+ (p101 is rejected by\n# the service with \"Unsupported statistic p101\").\n# ponytail: the trimmed-mean interval forms (TM(10%:90%)) are matched loosely;\n# a malformed interval passes the rule and is caught by the service.\n_pf_cwlib_stat_re := `^(SampleCount|Average|Sum|Minimum|Maximum|IQM|[pP](100|[0-9]{1,2}(\\.[0-9]{1,2})?)|(TM|TC|TS|WM|tm|tc|ts|wm)((100|[0-9]{1,2}(\\.[0-9]{1,2})?)%?|\\([0-9.%:]*\\))|PR\\([0-9.:]*\\))$`\n\n_pf_cwlib_stat_ok(s) if regex.match(_pf_cwlib_stat_re, s)\n\n# DashboardBody is an opaque JSON string; every dashboard rule reads it here.\n_pf_cwlib_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwlib_wprops(w) := p if {\n\tis_object(w)\n\tp := object.get(w, \"properties\", null)\n\tis_object(p)\n}\n\n_pf_cwlib_wtype(w, t) if {\n\tis_object(w)\n\tobject.get(w, \"type\", null) == t\n}\n\n# InsightRule RuleBody is the other opaque JSON DSL on this service.\n_pf_cwlib_rulebody(name) := obj if {\n\tb := resolve(name, \"Properties.RuleBody\")\n\tis_string(b)\n\tjson.is_valid(b)\n\tobj := json.unmarshal(b)\n\tis_object(obj)\n}\n\n# The three alarm action lists, shared by the action rules.\n_pf_cwlib_action_keys := {\"AlarmActions\", \"OKActions\", \"InsufficientDataActions\"}\n\n# Metric queries of one kind (MetricStat / Expression) on an alarm.\n_pf_cwlib_queries(name, key) := qs if {\n\tqs := [q |\n\t\tsome item in flatten_list(name, \"Properties.Metrics\")\n\t\tq := item.value\n\t\tis_object(q)\n\t\tobject.get(q, key, null) != null\n\t]\n}\n\n# A literal ARN split into its six-plus segments. Refs and GetAtts resolve to a\n# logical id, which has no \"arn:\" prefix, so they skip.\n_pf_cwlib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n"
+  },
+  {
+    "name": "_lib/codedeploy",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeDeploy rules: traversal of the raw document\n# (resolve() cannot prove a key absent), literal/number guards, and the compute\n# platform that decides which half of a deployment configuration is legal.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_codedeploylib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# Raw properties of a resource. The preprocessed document is the only place\n# where \"the key is absent\" can be told apart from \"the value is a token\".\n_pf_codedeploylib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_codedeploylib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_codedeploylib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n# A number written as a literal - a JSON number, or the string CloudFormation\n# also accepts for a numeric property. A Ref and an absent key both yield\n# nothing, so a caller checking a lower bound is not fooled by to_number(null),\n# which is 0.\n_pf_codedeploylib_num(v) := v if is_number(v)\n\n_pf_codedeploylib_num(v) := n if {\n\tis_string(v)\n\tregex.match(`^-?[0-9]+$`, v)\n\tn := to_number(v)\n}\n\n# ComputePlatform of a resource that carries its own - AWS::CodeDeploy::Application\n# and AWS::CodeDeploy::DeploymentConfig. An absent property is Server: the\n# service applies that default and then enforces the Server rules against it\n# (measured 2026-09-14 us-east-1: CreateDeploymentConfig with no computePlatform\n# and a trafficRoutingConfig fails with \"should be null for Server deployment\n# configuration\"). A Ref or token yields nothing, so a rule built on this helper\n# stays silent rather than guessing.\n#\n# A deployment group does NOT carry one: its platform comes from the application\n# it names, which is a cross-resource hop this helper deliberately does not make.\n_pf_codedeploylib_platform(name) := p if {\n\tp := resolve(name, \"Properties.ComputePlatform\")\n\t_pf_codedeploylib_lit(p)\n}\n\n_pf_codedeploylib_platform(name) := \"Server\" if {\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ComputePlatform\")\n}\n"
   },
   {
     "name": "_lib/cognito",

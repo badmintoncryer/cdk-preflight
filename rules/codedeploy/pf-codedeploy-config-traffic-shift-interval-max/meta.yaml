@@ -1,0 +1,12 @@
+id: pf-codedeploy-config-traffic-shift-interval-max
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentConfig]
+severity: ERROR
+title: "A traffic shift may not take more than 2880 minutes end to end"
+constraintSource: https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: LinearInterval 2881 at 99% and 1441 at 50% -> \"Total Traffic shifting intervals must be positive integers up to 2880 minutes (2 days)\" (ROLLBACK_COMPLETE); CanaryInterval 2881 in the same fail template -> \"Canary interval must be between 1 and 2880 minutes (2 days)\" (api-probe 2026-09-14 us-east-1); pass CanaryInterval 2880, LinearInterval 2880 at 99% and 1440 at 50% -> CREATE_COMPLETE. The linear cap is on LinearInterval x floor(100/LinearPercentage), measured over 21 points: 2880x99%, 2880x67%, 1440x50%, 1440x34%, 960x33%, 288x10% and 28x1% are accepted and one minute more on each is not."
+addedOn: 2026-09-14
