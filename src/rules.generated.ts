@@ -20758,15 +20758,15 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-tld\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"hosted zone name %s is a single label; Route 53 does not host top-level domains\", [n]),\n\t\"Use a domain you control, such as example.com\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tcount(split(trim_suffix(n, \".\"), \".\")) == 1\n\tn != \"\"\n}\n"
   },
   {
-    "id": "pf-route53-hostedzone-name-total-255",
+    "id": "pf-route53-hostedzone-name-total-253",
     "service": "route53",
     "severity": "ERROR",
-    "title": "A hosted zone name must be 255 bytes or fewer",
+    "title": "A hosted zone name must be 253 characters or fewer",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Route53::HostedZone"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-total-255\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"the hosted zone name is %d characters; a DNS name stops at 255 (the CloudFormation reference says 1024)\", [count(n)]),\n\t\"Shorten the domain name to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tcount(n) > 255\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 normalises the trailing dot away before it measures the name, so the\n# limit bites at 253 characters of labels and separators, not the 255 the docs\n# quote (bench 2026-09-13 us-east-1: 253 creates, 254 answers DomainNameTooLong,\n# with or without the trailing dot).\nviolation contains make_diag_full(\"pf-route53-hostedzone-name-total-253\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"the hosted zone name is %d characters; a DNS name stops at 253 once the trailing dot is dropped (the CloudFormation reference says 1024)\", [count(trim_suffix(n, \".\"))]),\n\t\"Shorten the domain name to 253 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::HostedZone\")\n\tn := _pf_r53z_str(_pf_r53z_props(name), \"Name\")\n\tcount(trim_suffix(n, \".\")) > 253\n}\n"
   },
   {
     "id": "pf-route53-hostedzone-name-wildcard-label",
@@ -21168,13 +21168,13 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-route53-record-name-total-length",
     "service": "route53",
     "severity": "ERROR",
-    "title": "A record name is limited to 255 bytes",
+    "title": "A record name is limited to 253 characters",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Route53::RecordSet",
       "AWS::Route53::RecordSetGroup"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-record-name-total-length\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The record name is %d characters; a DNS name may not exceed 255\", [count(n)]),\n\t\"Shorten the name to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcount(n) > 255\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-total-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\tsprintf(\"The record name is %d characters; a DNS name may not exceed 255\", [count(n)]),\n\t\"Shorten the name to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcount(n) > 255\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Route 53 normalises the trailing dot away before it measures the name, so the limit\n# bites at 253 characters, not the 255 the docs quote (bench 2026-09-13 us-east-1).\nviolation contains make_diag_full(\"pf-route53-record-name-total-length\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"The record name is %d characters; a DNS name may not exceed 253 once the trailing dot is dropped\", [count(trim_suffix(n, \".\"))]),\n\t\"Shorten the name to 253 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSet\")\n\trs := _pf_r53lib_props(name)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcount(trim_suffix(n, \".\")) > 253\n}\n\nviolation contains make_diag_full(\"pf-route53-record-name-total-length\", \"ERROR\", name,\n\tsprintf(\"Properties.RecordSets[%d].Name\", [_pf_it.index]),\n\tsprintf(\"The record name is %d characters; a DNS name may not exceed 253 once the trailing dot is dropped\", [count(trim_suffix(n, \".\"))]),\n\t\"Shorten the name to 253 characters or fewer\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::RecordSetGroup\")\n\tsome _pf_it in flatten_list(name, \"Properties.RecordSets\")\n\trs := _pf_it.value\n\tis_object(rs)\n\tn := _pf_r53lib_str(rs, \"Name\")\n\tcount(trim_suffix(n, \".\")) > 253\n}\n"
   },
   {
     "id": "pf-route53-record-name-wildcard-ns",

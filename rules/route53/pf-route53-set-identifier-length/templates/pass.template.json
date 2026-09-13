@@ -15,7 +15,7 @@
         "ResourceRecords": [
           "192.0.2.1"
         ],
-        "SetIdentifier": "s1",
+        "SetIdentifier": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         "Weight": 10,
         "HostedZoneId": {
           "Ref": "Zone"

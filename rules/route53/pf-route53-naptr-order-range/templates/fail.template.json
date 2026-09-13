@@ -13,7 +13,7 @@
         "Type": "NAPTR",
         "TTL": "60",
         "ResourceRecords": [
-          "70000 50 \"U\" \"E2U+sip\" \"!^.*$!sip:info@example.com!\" ."
+          "65536 50 \"U\" \"E2U+sip\" \"!^.*$!sip:info@example.com!\" ."
         ],
         "HostedZoneId": {
           "Ref": "Zone"

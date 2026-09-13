@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/general/latest/gr/r53.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template (1001 blocks over two locations) -> CREATE_FAILED with an empty Route 53 400; the same change put straight to ChangeCidrCollection answers LimitsExceeded (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: 1001 CIDR blocks in one location -> \"cvc-complex-type.2.4.d: Invalid content was found starting with element 'Cidr'. No child element is expected at this point\" (ROLLBACK_COMPLETE, the schema's own bound on a CidrList); pass 1000 -> CREATE_COMPLETE. The limit is on the collection, not the location: bench 2026-09-10 put 1001 blocks over two locations and ChangeCidrCollection answered LimitsExceeded (through CloudFormation the same template only gave an empty Route 53 400)."
 addedOn: 2026-09-10

@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Reso
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='NAPTR'] but it was not found, Invalid Resource Record: 'FATAL problem: NAPTRRRDATAOrderOutOfBounds (NAPTR record order value is out of bounds) encountered with '70000 50 \"U\" \"E2U+sip\" \"!^.*$!sip:info@example.com!\" .''] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: order 65536 -> \"Invalid Resource Record: 'FATAL problem: NAPTRRRDATAOrderOutOfBounds (NAPTR record order value is out of bounds) encountered with '65536 50 ...''\" (ROLLBACK_COMPLETE); pass order 65535 -> CREATE_COMPLETE"
 addedOn: 2026-09-10
