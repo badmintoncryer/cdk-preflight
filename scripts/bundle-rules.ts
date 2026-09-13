@@ -120,6 +120,27 @@ function fixturePools(raw: string) {
 
 // count(...) の引数は 1 段だけ入れ子を許す。`count(split(v, \":\")) < 6` のような書き方は
 // `[^)]*` だと最初の \")\" で止まって比較ごと取り逃がす（＝緩いペアが黙って通る）。
+function stripRegoComments(src: string): string {
+  const out = [...src];
+  let quote: string | null = null;
+  for (let i = 0; i < out.length; i++) {
+    const c = out[i];
+    if (quote) {
+      if (c === '\\' && quote === '"') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === '`') {
+      quote = c;
+      continue;
+    }
+    if (c === '#') {
+      while (i < out.length && out[i] !== '\n') out[i++] = ' ';
+    }
+  }
+  return out.join('');
+}
+
 const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
 
 /**
@@ -135,6 +156,10 @@ const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<
  * 順序の無い制約として除外するものは rules/_boundary-exceptions.txt に理由付きで書く。
  */
 export function boundaryProblem(rego: string, fail: string, pass: string): string | undefined {
+  // 行コメントはロジックではない。`# x <= 23` と書いてあるだけの値をしきい値として
+  // 要求してしまうので、走査の前に落とす。文字列の中の `#`（URL のフラグメント）を
+  // 巻き込まないよう引用符の外だけを見て、長さは保って位置をずらさない。
+  rego = stripRegoComments(rego);
   // `n := count(x)` と置いてから `n > 50` と書くのがこのリポジトリの標準形なので、代入を辿って
   // 「何を数えた値か」まで見る。数えた対象が配列なら要素数と、文字列なら長さと突き合わせる
   // ——どちらか決められないときだけ両方見る（偶然の一致を許すが、見当違いのプールで

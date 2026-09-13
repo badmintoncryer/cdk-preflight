@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with 5 Contribution.Keys -> \"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4 \\\"Keys\\\" in the \\\"Contribution\\\".\" Bare engine clean."
+  evidence: "bench 2026-09-13 us-east-1: 5 Contribution.Keys -> \"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4 \"Keys\" in the \"Contribution\".\" ROLLBACK_COMPLETE; pass 4 -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with 5 keys gave the same message. Filters belongs inside Contribution - a body that puts it at the top level is rejected with INVALID_RULE_BODY before the key count is looked at."
 addedOn: 2026-09-08
