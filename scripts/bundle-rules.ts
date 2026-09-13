@@ -390,6 +390,58 @@ export function renderDocs(rules: BundledRule[]): string {
   ].join('\n');
 }
 
+const SUPPORTED_START = '<!-- supported-resources:start -->';
+const SUPPORTED_END = '<!-- supported-resources:end -->';
+
+/**
+ * README の「対応リソースタイプ」節。275 型あるので <details> で畳む。
+ * AWS::<Service>::<Resource> の Service でまとめ、型ごとのルール数を添える。
+ */
+export function renderSupported(rules: BundledRule[]): string {
+  const byService = new Map<string, Map<string, number>>();
+  for (const rule of rules) {
+    for (const type of rule.resourceTypes) {
+      const parts = type.split('::');
+      const [service, resource] = parts.length === 3 ? [parts[1], parts[2]] : ['(any resource type)', type];
+      const types = byService.get(service) ?? new Map<string, number>();
+      types.set(resource, (types.get(resource) ?? 0) + 1);
+      byService.set(service, types);
+    }
+  }
+  const services = [...byService.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const typeCount = services.reduce((n, [, types]) => n + types.size, 0);
+  const rows = services.map(([service, types]) => {
+    const list = [...types.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([resource, count]) => `\`${resource}\` (${count})`)
+      .join(', ');
+    return `| **${service}** | ${list} |`;
+  });
+  return [
+    SUPPORTED_START,
+    '<details>',
+    `<summary><b>${typeCount} resource types across ${services.length} services</b> — click to expand</summary>`,
+    '',
+    'Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.',
+    '',
+    '| Service | Resource types |',
+    '|---|---|',
+    ...rows,
+    '',
+    '</details>',
+    SUPPORTED_END,
+  ].join('\n');
+}
+
+function withSupported(readme: string, rules: BundledRule[]): string {
+  const start = readme.indexOf(SUPPORTED_START);
+  const end = readme.indexOf(SUPPORTED_END);
+  if (start < 0 || end < 0) {
+    throw new Error(`README.md is missing the ${SUPPORTED_START} / ${SUPPORTED_END} markers`);
+  }
+  return readme.slice(0, start) + renderSupported(rules) + readme.slice(end + SUPPORTED_END.length);
+}
+
 if (require.main === module) {
   const root = path.join(__dirname, '..');
   const rules = collectRules(root);
@@ -403,9 +455,9 @@ if (require.main === module) {
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'rules.md'), renderDocs(rules));
   const readme = path.join(root, 'README.md');
-  fs.writeFileSync(readme, fs.readFileSync(readme, 'utf8')
+  fs.writeFileSync(readme, withSupported(fs.readFileSync(readme, 'utf8')
     .replace(/badge\/rules-\d+-/, `badge/rules-${rules.length}-`)
-    .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`));
+    .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`), rules));
   // eslint-disable-next-line no-console
-  console.log(`bundled ${rules.length} rules -> src/rules.generated.ts, docs/rules.md`);
+  console.log(`bundled ${rules.length} rules -> src/rules.generated.ts, docs/rules.md, README.md`);
 }
