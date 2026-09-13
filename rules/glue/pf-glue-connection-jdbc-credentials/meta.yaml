@@ -1,0 +1,12 @@
+id: pf-glue-connection-jdbc-credentials
+service: glue
+resourceTypes: [AWS::Glue::Connection]
+benchRegion: us-east-1
+severity: ERROR
+title: A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (JDBC with JDBC_CONNECTION_URL and USERNAME but no PASSWORD) -> \"Validation for connection properties failed\" (ROLLBACK_COMPLETE); pass template (the same connection with PASSWORD added) -> CREATE_COMPLETE. CreateConnection probes the same day: USERNAME alone and PASSWORD alone are both rejected, SECRET_ID on its own is accepted, and USERNAME with ENCRYPTED_PASSWORD is rejected in this account (catalog encryption off) - which is why the rule counts ENCRYPTED_PASSWORD as satisfying the pair instead of firing on it."
+addedOn: 2026-09-14

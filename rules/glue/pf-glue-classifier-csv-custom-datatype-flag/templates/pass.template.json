@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::Glue::Classifier",
+      "Properties": {
+        "CsvClassifier": {
+          "Delimiter": ",",
+          "QuoteSymbol": "\"",
+          "CustomDatatypeConfigured": true,
+          "ContainsCustomDatatype": [
+            "STRING"
+          ],
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-a"
+          }
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::Glue::Classifier",
+      "Properties": {
+        "CsvClassifier": {
+          "Delimiter": ",",
+          "QuoteSymbol": "\"",
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-b"
+          }
+        }
+      }
+    }
+  }
+}

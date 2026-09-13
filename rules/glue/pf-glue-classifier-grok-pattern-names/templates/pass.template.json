@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Classifier",
+      "Properties": {
+        "GrokClassifier": {
+          "Classification": "log",
+          "GrokPattern": "%{GREEDYDATA:a} %{PF_MINE:b}",
+          "CustomPatterns": "PF_MINE .*",
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-grok"
+          }
+        }
+      }
+    }
+  }
+}

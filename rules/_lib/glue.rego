@@ -76,3 +76,29 @@ _pf_gluelib_config(name) := c if {
 	is_string(c)
 	not input.resources[c]
 }
+
+# Connection, classifier and security-configuration shapes shared by the
+# connection / classifier / encryption rules.
+_pf_gluelib_connection_input(name) := ci if {
+	ci := _pf_gluelib_get(name, "ConnectionInput")
+	is_object(ci)
+}
+
+_pf_gluelib_connection_type(name) := _pf_gluelib_str(name, "Properties.ConnectionInput.ConnectionType")
+
+_pf_gluelib_connection_props(name) := p if {
+	p := object.get(_pf_gluelib_connection_input(name), "ConnectionProperties", {})
+	is_object(p)
+}
+
+_pf_gluelib_classifier(name, kind) := c if {
+	c := _pf_gluelib_get(name, kind)
+	is_object(c)
+}
+
+_pf_gluelib_encryption(name) := e if {
+	e := _pf_gluelib_get(name, "EncryptionConfiguration")
+	is_object(e)
+}
+
+_pf_gluelib_schedule_expression(name) := _pf_gluelib_str(name, "Properties.Schedule.ScheduleExpression")

@@ -1,0 +1,78 @@
+{
+  "Resources": {
+    "Jdbc": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "JDBC",
+          "ConnectionProperties": {
+            "USERNAME": "u",
+            "PASSWORD": "p"
+          }
+        }
+      }
+    },
+    "Kafka": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "KAFKA",
+          "ConnectionProperties": {
+            "KAFKA_SSL_ENABLED": "true"
+          }
+        }
+      }
+    },
+    "Mongo": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "MONGODB",
+          "ConnectionProperties": {
+            "USERNAME": "u",
+            "PASSWORD": "p"
+          }
+        }
+      }
+    },
+    "Custom": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "CUSTOM",
+          "ConnectionProperties": {
+            "CONNECTOR_TYPE": "Jdbc",
+            "CONNECTOR_CLASS_NAME": "com.example.Driver"
+          }
+        }
+      }
+    },
+    "Marketplace": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "MARKETPLACE",
+          "ConnectionProperties": {
+            "CONNECTOR_TYPE": "Jdbc",
+            "CONNECTOR_CLASS_NAME": "com.example.Driver"
+          }
+        }
+      }
+    }
+  }
+}

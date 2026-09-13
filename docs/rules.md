@@ -1449,12 +1449,22 @@
 | `pf-firehose-snowflake-user` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a user or a secret | ERROR | none |
 | `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
 | `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
+| `pf-glue-classifier-csv-custom-datatype` | AWS::Glue::Classifier | Custom CSV datatypes come from the supported set | ERROR | pending-engine |
+| `pf-glue-classifier-csv-custom-datatype-flag` | AWS::Glue::Classifier | ContainsCustomDatatype and CustomDatatypeConfigured travel together | ERROR | none |
+| `pf-glue-classifier-csv-quote-symbol` | AWS::Glue::Classifier | The CSV quote symbol differs from the delimiter | ERROR | none |
+| `pf-glue-classifier-csv-single-char` | AWS::Glue::Classifier | The CSV delimiter and quote symbol are one character each | ERROR | pending-engine |
+| `pf-glue-classifier-grok-pattern-names` | AWS::Glue::Classifier | A grok pattern only names built-in or custom patterns | ERROR | none |
+| `pf-glue-classifier-grok-pattern-single-line` | AWS::Glue::Classifier | A grok pattern holds no line break | ERROR | pending-engine |
+| `pf-glue-connection-jdbc-credentials` | AWS::Glue::Connection | A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID | ERROR | none |
+| `pf-glue-connection-network-physical-requirements` | AWS::Glue::Connection | A NETWORK connection needs PhysicalConnectionRequirements | ERROR | none |
+| `pf-glue-connection-required-properties` | AWS::Glue::Connection | Each connection type needs its own ConnectionProperties entries | ERROR | none |
 | `pf-glue-crawler-configuration-json` | AWS::Glue::Crawler | The crawler Configuration must be well-formed JSON | ERROR | none |
 | `pf-glue-crawler-configuration-version` | AWS::Glue::Crawler | The crawler Configuration JSON must carry Version | ERROR | none |
 | `pf-glue-crawler-dynamodb-scan-rate` | AWS::Glue::Crawler | A DynamoDB target scan rate must be between 0.1 and 1.5 | ERROR | pending-engine |
 | `pf-glue-crawler-event-mode-requires-event-queue` | AWS::Glue::Crawler | CRAWL_EVENT_MODE needs an S3 target with EventQueueArn | ERROR | none |
 | `pf-glue-crawler-recrawl-behavior-s3-only` | AWS::Glue::Crawler | CRAWL_EVENT_MODE and CRAWL_NEW_FOLDERS_ONLY apply to S3 targets only | ERROR | none |
 | `pf-glue-crawler-s3-target-path` | AWS::Glue::Crawler | An S3 crawl target path cannot start with a slash | ERROR | none |
+| `pf-glue-crawler-schedule-cron-only` | AWS::Glue::Crawler | A crawler schedule is a cron() expression | ERROR | pending-engine |
 | `pf-glue-crawler-target-connection-name` | AWS::Glue::Crawler | JDBC and MongoDB crawl targets need a connection name | ERROR | none |
 | `pf-glue-job-flex-command-name` | AWS::Glue::Job | ExecutionClass FLEX is only available for Spark ETL jobs | ERROR | none |
 | `pf-glue-job-flex-worker-type` | AWS::Glue::Job | A FLEX job runs only on G.1X or G.2X workers | ERROR | none |
@@ -1471,6 +1481,7 @@
 | `pf-glue-job-worker-type-and-number-of-workers` | AWS::Glue::Job | WorkerType and NumberOfWorkers must be set together | ERROR | none |
 | `pf-glue-job-worker-type-requires-glue-4` | AWS::Glue::Job | The large and memory-optimised worker types require Glue 4.0 or later | ERROR | none |
 | `pf-glue-job-z2x-ray-only` | AWS::Glue::Job | The Z.2X worker type is only available for Ray jobs | ERROR | none |
+| `pf-glue-security-configuration-kms-key` | AWS::Glue::SecurityConfiguration | KMS encryption modes need a KmsKeyArn | ERROR | none |
 | `pf-glue-trigger-action-job-or-crawler` | AWS::Glue::Trigger | A trigger action names either a job or a crawler, not both | ERROR | none |
 | `pf-glue-trigger-condition-crawl-state` | AWS::Glue::Trigger | A crawler condition can only watch SUCCEEDED, FAILED or CANCELLED | ERROR | pending-engine |
 | `pf-glue-trigger-condition-job-state` | AWS::Glue::Trigger | A job condition can only watch SUCCEEDED, STOPPED, FAILED or TIMEOUT | ERROR | pending-engine |

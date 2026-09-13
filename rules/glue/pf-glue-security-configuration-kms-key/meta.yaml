@@ -1,0 +1,12 @@
+id: pf-glue-security-configuration-kms-key
+service: glue
+resourceTypes: [AWS::Glue::SecurityConfiguration]
+benchRegion: us-east-1
+severity: ERROR
+title: KMS encryption modes need a KmsKeyArn
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (one security configuration with S3 SSE-KMS, CloudWatch SSE-KMS and job bookmarks CSE-KMS, none of them with KmsKeyArn) -> \"kmsKeyArn can not be empty for s3EncryptionMode SSE_KMS\" (ROLLBACK_COMPLETE); pass template (the same three blocks each carrying a KmsKeyArn) -> CREATE_COMPLETE. The stack reports the S3 block only; CreateSecurityConfiguration probes the same day answered \"kmsKeyArn can not be empty for cloudWatchEncryptionMode SSE_KMS\" and \"kmsKeyArn can only be empty for jobBookmarksEncryptionMode CSE_KMS\" for the other two, and accepted S3 SSE-S3 with no key."
+addedOn: 2026-09-14

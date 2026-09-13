@@ -16014,6 +16014,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-splunk-hec-endpoint-https\", \"ERROR\", name,\n\t\"Properties.SplunkDestinationConfiguration.HECEndpoint\",\n\tsprintf(\"HECEndpoint '%s' is not an HTTPS URL; the stream create fails with \\\"Invalid HECEndpoint. Supported endpoint format is https://<domain>:<port>.\\\"\", [u]),\n\t\"Write the endpoint as https://<domain>:<port>\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SplunkDestinationConfiguration\"\n\tu := object.get(c, \"HECEndpoint\", null)\n\t_pf_fhlib_lit(u)\n\tnot startswith(u, \"https://\")\n}\n"
   },
   {
+    "id": "pf-glue-classifier-csv-custom-datatype",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "Custom CSV datatypes come from the supported set",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Classifier"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service takes the eleven Glue datatypes in any case; SQL spellings such as\n# BIGINT, INTEGER, CHAR and VARCHAR are all rejected by name.\n_pf_gluecdt_types := {\"BINARY\", \"BOOLEAN\", \"DATE\", \"DECIMAL\", \"DOUBLE\", \"FLOAT\", \"INT\", \"LONG\", \"SHORT\", \"STRING\", \"TIMESTAMP\"}\n\nviolation contains make_diag_full(\"pf-glue-classifier-csv-custom-datatype\", \"ERROR\", name,\n\tsprintf(\"Properties.CsvClassifier.ContainsCustomDatatype.%d\", [i]),\n\tsprintf(\"\\\"%s\\\" is not a Glue datatype; CreateClassifier fails with \\\"The following types are invalid: %s\\\"\", [t, t]),\n\t\"Use one of BINARY BOOLEAN DATE DECIMAL DOUBLE FLOAT INT LONG SHORT STRING TIMESTAMP\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tcsv := _pf_gluelib_classifier(name, \"CsvClassifier\")\n\tarr := csv.ContainsCustomDatatype\n\tis_array(arr)\n\tsome i, t in arr\n\t_pf_gluelib_lit(t)\n\tu := upper(t)\n\tnot u in _pf_gluecdt_types\n}\n"
+  },
+  {
+    "id": "pf-glue-classifier-csv-custom-datatype-flag",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "ContainsCustomDatatype and CustomDatatypeConfigured travel together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Classifier"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The service checks the pair in both directions and answers the same sentence:\n# a list without the flag, the flag without a list, and the flag set to false\n# next to a list are all rejected.\n_pf_gluecdtflag_on(csv) if csv.CustomDatatypeConfigured == true\n\n_pf_gluecdtflag_on(csv) if csv.CustomDatatypeConfigured == \"true\"\n\nviolation contains make_diag_full(\"pf-glue-classifier-csv-custom-datatype-flag\", \"ERROR\", name,\n\t\"Properties.CsvClassifier.CustomDatatypeConfigured\",\n\t\"ContainsCustomDatatype is listed without CustomDatatypeConfigured set to true; CreateClassifier fails with \\\"Must enable using custom datatypes and pass in the list of datatypes\\\"\",\n\t\"Set CustomDatatypeConfigured to true alongside ContainsCustomDatatype\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tcsv := _pf_gluelib_classifier(name, \"CsvClassifier\")\n\tarr := csv.ContainsCustomDatatype\n\tis_array(arr)\n\tcount(arr) > 0\n\tnot _pf_gluecdtflag_on(csv)\n}\n\nviolation contains make_diag_full(\"pf-glue-classifier-csv-custom-datatype-flag\", \"ERROR\", name,\n\t\"Properties.CsvClassifier.ContainsCustomDatatype\",\n\t\"CustomDatatypeConfigured is true but no ContainsCustomDatatype list is given; CreateClassifier fails with \\\"Must enable using custom datatypes and pass in the list of datatypes\\\"\",\n\t\"List the datatypes in ContainsCustomDatatype, or drop CustomDatatypeConfigured\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tcsv := _pf_gluelib_classifier(name, \"CsvClassifier\")\n\t_pf_gluecdtflag_on(csv)\n\tobject.get(csv, \"ContainsCustomDatatype\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-glue-classifier-csv-quote-symbol",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The CSV quote symbol differs from the delimiter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Classifier"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both are single characters, so equality is the whole check.\nviolation contains make_diag_full(\"pf-glue-classifier-csv-quote-symbol\", \"ERROR\", name,\n\t\"Properties.CsvClassifier.QuoteSymbol\",\n\tsprintf(\"QuoteSymbol and Delimiter are both \\\"%s\\\"; CreateClassifier fails with \\\"Parameters Delimiter and QuoteSymbol cannot be equal.\\\"\", [q]),\n\t\"Give QuoteSymbol a character the Delimiter does not use\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tcsv := _pf_gluelib_classifier(name, \"CsvClassifier\")\n\td := object.get(csv, \"Delimiter\", \"__pf_absent\")\n\tq := object.get(csv, \"QuoteSymbol\", \"__pf_absent\")\n\td != \"__pf_absent\"\n\t_pf_gluelib_lit(d)\n\t_pf_gluelib_lit(q)\n\td == q\n}\n"
+  },
+  {
+    "id": "pf-glue-classifier-csv-single-char",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The CSV delimiter and quote symbol are one character each",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Classifier"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# csvClassifier.delimiter and .quoteSymbol both carry maxLength 1 on the wire.\nviolation contains make_diag_full(\"pf-glue-classifier-csv-single-char\", \"ERROR\", name,\n\tsprintf(\"Properties.CsvClassifier.%s\", [k]),\n\tsprintf(\"CsvClassifier.%s is %d characters; CreateClassifier fails with \\\"Member must have length less than or equal to 1\\\"\", [k, count(v)]),\n\tsprintf(\"Give %s a single character\", [k]),\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tcsv := _pf_gluelib_classifier(name, \"CsvClassifier\")\n\tsome k in [\"Delimiter\", \"QuoteSymbol\"]\n\tv := csv[k]\n\t_pf_gluelib_lit(v)\n\tcount(v) > 1\n}\n"
+  },
+  {
+    "id": "pf-glue-classifier-grok-pattern-names",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A grok pattern only names built-in or custom patterns",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Classifier"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The built-in set is exactly the list the user guide prints; every one of the\n# 74 names compiles and every logstash name outside it does not (measured against\n# CreateClassifier, 2026-09-14). Names the template defines in CustomPatterns\n# count as known; a CustomPatterns value the engine cannot resolve skips the rule.\n_pf_gluegrok_builtin := {\"BASE10NUM\", \"BASE16FLOAT\", \"BASE16NUM\", \"BOOLEAN\", \"CISCOMAC\", \"CISCOTIMESTAMP\", \"COMBINEDAPACHELOG\", \"COMMONAPACHELOG\", \"COMMONAPACHELOG_DATATYPED\", \"COMMONMAC\", \"DATA\", \"DATESTAMP_EU\", \"DATESTAMP_EVENTLOG\", \"DATESTAMP_OTHER\", \"DATESTAMP_RFC2822\", \"DATESTAMP_RFC822\", \"DATESTAMP_US\", \"DATE_EU\", \"DATE_US\", \"DAY\", \"GREEDYDATA\", \"HOST\", \"HOSTNAME\", \"HOSTPORT\", \"HOUR\", \"HTTPDATE\", \"INT\", \"IP\", \"IPORHOST\", \"IPV4\", \"IPV6\", \"ISO8601_SECOND\", \"ISO8601_TIMEZONE\", \"LOGLEVEL\", \"MAC\", \"MESSAGESLOG\", \"MINUTE\", \"MONTH\", \"MONTHDAY\", \"MONTHNUM\", \"MONTHNUM2\", \"NONNEGINT\", \"NOTSPACE\", \"NUMBER\", \"PATH\", \"POSINT\", \"PROG\", \"QS\", \"QUOTEDSTRING\", \"SECOND\", \"SPACE\", \"SYSLOGBASE\", \"SYSLOGFACILITY\", \"SYSLOGHOST\", \"SYSLOGPROG\", \"SYSLOGTIMESTAMP\", \"TIME\", \"TIMESTAMP_ISO8601\", \"TTY\", \"TZ\", \"UNIXPATH\", \"URI\", \"URIHOST\", \"URIPARAM\", \"URIPATH\", \"URIPATHPARAM\", \"URIPROTO\", \"USER\", \"USERNAME\", \"UUID\", \"WINDOWSMAC\", \"WINPATH\", \"WORD\", \"YEAR\"}\n\n_pf_gluegrok_defined(grok) := d if {\n\tcp := grok.CustomPatterns\n\t_pf_gluelib_lit(cp)\n\td := {n |\n\t\tsome line in split(cp, \"\\n\")\n\t\tn := regex.split(`\\s+`, trim_space(line))[0]\n\t\tn != \"\"\n\t}\n}\n\n_pf_gluegrok_defined(grok) := set() if {\n\tobject.get(grok, \"CustomPatterns\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-glue-classifier-grok-pattern-names\", \"ERROR\", name,\n\t\"Properties.GrokClassifier.GrokPattern\",\n\tsprintf(\"GrokPattern references %%{%s}, which is neither an AWS Glue built-in pattern nor defined in CustomPatterns; CreateClassifier fails with \\\"Grok pattern cannot be compiled.\\\"\", [ref]),\n\tsprintf(\"Use a built-in pattern name or define %s in CustomPatterns\", [ref]),\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tgrok := _pf_gluelib_classifier(name, \"GrokClassifier\")\n\tgp := grok.GrokPattern\n\t_pf_gluelib_lit(gp)\n\tdefined := _pf_gluegrok_defined(grok)\n\tsome m in regex.find_all_string_submatch_n(`%\\{([A-Za-z0-9_]+)`, gp, -1)\n\tref := m[1]\n\tnot ref in _pf_gluegrok_builtin\n\tnot ref in defined\n}\n"
+  },
+  {
+    "id": "pf-glue-classifier-grok-pattern-single-line",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A grok pattern holds no line break",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Classifier"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# grokClassifier.grokPattern accepts \\r and \\t but not \\n; CustomPatterns is the\n# multi-line field and is deliberately left alone.\nviolation contains make_diag_full(\"pf-glue-classifier-grok-pattern-single-line\", \"ERROR\", name,\n\t\"Properties.GrokClassifier.GrokPattern\",\n\t\"GrokPattern spans more than one line; CreateClassifier fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern\\\"\",\n\t\"Keep the pattern on one line and move reusable pieces into CustomPatterns\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Classifier\")\n\tgrok := _pf_gluelib_classifier(name, \"GrokClassifier\")\n\tgp := grok.GrokPattern\n\t_pf_gluelib_lit(gp)\n\tcontains(gp, \"\\n\")\n}\n"
+  },
+  {
+    "id": "pf-glue-connection-jdbc-credentials",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Connection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# USERNAME alone and PASSWORD alone are both rejected; SECRET_ID on its own is\n# accepted. ENCRYPTED_PASSWORD stands in for PASSWORD so accounts with catalog\n# encryption turned on are never flagged.\n_pf_glueconncred_has(cp, k) if {\n\tobject.get(cp, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_glueconncred_ok(cp) if _pf_glueconncred_has(cp, \"SECRET_ID\")\n\n_pf_glueconncred_ok(cp) if {\n\t_pf_glueconncred_has(cp, \"USERNAME\")\n\t_pf_glueconncred_has(cp, \"PASSWORD\")\n}\n\n_pf_glueconncred_ok(cp) if {\n\t_pf_glueconncred_has(cp, \"USERNAME\")\n\t_pf_glueconncred_has(cp, \"ENCRYPTED_PASSWORD\")\n}\n\nviolation contains make_diag_full(\"pf-glue-connection-jdbc-credentials\", \"ERROR\", name,\n\t\"Properties.ConnectionInput.ConnectionProperties\",\n\t\"A JDBC connection carries neither USERNAME with PASSWORD nor SECRET_ID; CreateConnection fails with \\\"Validation for connection properties failed\\\"\",\n\t\"Set both USERNAME and PASSWORD, or point SECRET_ID at a Secrets Manager secret in the same region\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Connection\")\n\t_pf_gluelib_connection_type(name) == \"JDBC\"\n\tcp := _pf_gluelib_connection_props(name)\n\tnot _pf_glueconncred_ok(cp)\n}\n"
+  },
+  {
+    "id": "pf-glue-connection-network-physical-requirements",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A NETWORK connection needs PhysicalConnectionRequirements",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Connection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A NETWORK connection carries no connection parameters at all; the subnet and\n# security groups in PhysicalConnectionRequirements are the whole definition.\nviolation contains make_diag_full(\"pf-glue-connection-network-physical-requirements\", \"ERROR\", name,\n\t\"Properties.ConnectionInput.PhysicalConnectionRequirements\",\n\t\"A NETWORK connection has no PhysicalConnectionRequirements; CreateConnection fails with \\\"PhysicalConnectionRequirements cannot be null\\\"\",\n\t\"Add PhysicalConnectionRequirements with SubnetId, SecurityGroupIdList and the subnet's AvailabilityZone\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Connection\")\n\t_pf_gluelib_connection_type(name) == \"NETWORK\"\n\tci := _pf_gluelib_connection_input(name)\n\tobject.get(ci, \"PhysicalConnectionRequirements\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-glue-connection-required-properties",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "Each connection type needs its own ConnectionProperties entries",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Connection"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateConnection answers the same generic \"Validation for connection properties\n# failed\" for every one of these, so one rule carries the table. The entries were\n# measured one key at a time against CreateConnection (2026-09-14, us-east-1).\n_pf_glueconnreq_required := {\n\t\"JDBC\": {\"JDBC_CONNECTION_URL\"},\n\t\"KAFKA\": {\"KAFKA_BOOTSTRAP_SERVERS\"},\n\t\"MONGODB\": {\"CONNECTION_URL\"},\n\t\"CUSTOM\": {\"CONNECTOR_URL\", \"CONNECTOR_TYPE\", \"CONNECTOR_CLASS_NAME\"},\n\t\"MARKETPLACE\": {\"CONNECTOR_URL\", \"CONNECTOR_TYPE\", \"CONNECTOR_CLASS_NAME\"},\n}\n\nviolation contains make_diag_full(\"pf-glue-connection-required-properties\", \"ERROR\", name,\n\tsprintf(\"Properties.ConnectionInput.ConnectionProperties.%s\", [k]),\n\tsprintf(\"A %s connection has no %s in ConnectionProperties; CreateConnection fails with \\\"Validation for connection properties failed\\\"\", [ct, k]),\n\tsprintf(\"Add %s to ConnectionInput.ConnectionProperties\", [k]),\n\t\"https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Connection\")\n\tct := _pf_gluelib_connection_type(name)\n\tsome k in _pf_glueconnreq_required[ct]\n\tobject.get(_pf_gluelib_connection_props(name), k, \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
     "id": "pf-glue-crawler-configuration-json",
     "service": "glue",
     "severity": "ERROR",
@@ -16078,6 +16177,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Glue::Crawler"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue reads a bare path as a bucket-relative s3:// location, so \"data/in\" is\n# accepted; only a leading slash is rejected outright.\nviolation contains make_diag_full(\"pf-glue-crawler-s3-target-path\", \"ERROR\", name,\n\tsprintf(\"Properties.Targets.S3Targets.%d.Path\", [i]),\n\tsprintf(\"S3 target Path '%s' starts with '/'; CreateCrawler fails with \\\"Invalid S3 Target Path\\\"\", [p]),\n\t\"Use an Amazon S3 location, e.g. s3://my-bucket/prefix/\",\n\t\"https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\tarr := object.get(_pf_gluelib_targets(name), \"S3Targets\", [])\n\tis_array(arr)\n\tsome i, t in arr\n\tis_object(t)\n\tp := object.get(t, \"Path\", null)\n\t_pf_gluelib_lit(p)\n\tstartswith(p, \"/\")\n}\n"
+  },
+  {
+    "id": "pf-glue-crawler-schedule-cron-only",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A crawler schedule is a cron() expression",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Crawler"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue takes cron() in any case (Cron, CRON) but nothing else: rate() and bare\n# prose are both refused. Leading whitespace is refused too, so the prefix test\n# is the whole check.\nviolation contains make_diag_full(\"pf-glue-crawler-schedule-cron-only\", \"ERROR\", name,\n\t\"Properties.Schedule.ScheduleExpression\",\n\tsprintf(\"The schedule expression \\\"%s\\\" is not a cron() expression; CreateCrawler fails with \\\"Invalid schedule cron expression. Expected format: Cron(CRON_EXPRESSION)\\\"\", [expr]),\n\t\"Write the schedule as cron(Minutes Hours Day-of-month Month Day-of-week Year); rate() is not supported for crawlers\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Crawler\")\n\texpr := _pf_gluelib_schedule_expression(name)\n\tlow := lower(expr)\n\tnot startswith(low, \"cron(\")\n}\n"
   },
   {
     "id": "pf-glue-crawler-target-connection-name",
@@ -16254,6 +16364,17 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Glue::Job"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue Ray is deprecated, so glueray + Z.2X is itself rejected now (the\n# account-level message, not this one). This rule stays scoped to the\n# non-Ray commands, where the worker-type list is the reason for the\n# failure.\nviolation contains make_diag_full(\"pf-glue-job-z2x-ray-only\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType Z.2X on a %v job; Z.2X exists only for Ray (glueray) jobs\", [cmd]),\n\t\"Pick a worker type the command supports (G.1X and up for Spark)\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/worker-types.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_worker_type(name) == \"Z.2X\"\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"glueray\"\n}\n"
+  },
+  {
+    "id": "pf-glue-security-configuration-kms-key",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "KMS encryption modes need a KmsKeyArn",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::SecurityConfiguration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# S3 and CloudWatch take SSE-KMS, job bookmarks take CSE-KMS; each one refuses to\n# be created without a key. The other modes (SSE-S3, DISABLED) take no key.\n_pf_gluesec_single := {\n\t\"CloudWatchEncryption\": [\"CloudWatchEncryptionMode\", \"SSE-KMS\"],\n\t\"JobBookmarksEncryption\": [\"JobBookmarksEncryptionMode\", \"CSE-KMS\"],\n}\n\nviolation contains make_diag_full(\"pf-glue-security-configuration-kms-key\", \"ERROR\", name,\n\tsprintf(\"Properties.EncryptionConfiguration.S3Encryptions.%d.KmsKeyArn\", [i]),\n\t\"An S3Encryptions entry asks for SSE-KMS with no KmsKeyArn; CreateSecurityConfiguration fails with \\\"kmsKeyArn can not be empty for s3EncryptionMode SSE_KMS\\\"\",\n\t\"Set KmsKeyArn to a KMS key in the same region, or use SSE-S3\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::SecurityConfiguration\")\n\tarr := object.get(_pf_gluelib_encryption(name), \"S3Encryptions\", [])\n\tis_array(arr)\n\tsome i, e in arr\n\tis_object(e)\n\te.S3EncryptionMode == \"SSE-KMS\"\n\tobject.get(e, \"KmsKeyArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n\nviolation contains make_diag_full(\"pf-glue-security-configuration-kms-key\", \"ERROR\", name,\n\tsprintf(\"Properties.EncryptionConfiguration.%s.KmsKeyArn\", [k]),\n\tsprintf(\"%s asks for %s with no KmsKeyArn; CreateSecurityConfiguration refuses the empty kmsKeyArn\", [k, spec[1]]),\n\t\"Set KmsKeyArn to a KMS key in the same region, or turn the mode off\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::SecurityConfiguration\")\n\tsome k, spec in _pf_gluesec_single\n\te := object.get(_pf_gluelib_encryption(name), k, {})\n\tis_object(e)\n\te[spec[0]] == spec[1]\n\tobject.get(e, \"KmsKeyArn\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
   },
   {
     "id": "pf-glue-trigger-action-job-or-crawler",
@@ -25033,7 +25154,7 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   },
   {
     "name": "_lib/glue",
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Glue rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), string values\n# are guarded so a Ref/GetAtt resolved to a logical id is never compared against\n# a literal, and numbers go through to_number so tokens skip instead of firing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_gluelib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_gluelib_get(name, k) := v if {\n\tp := _pf_gluelib_props(name)\n\tv := object.get(p, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_gluelib_has(name, k) if {\n\t_pf_gluelib_get(name, k)\n}\n\n_pf_gluelib_absent(name, k) if {\n\tp := _pf_gluelib_props(name)\n\tobject.get(p, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_gluelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_gluelib_str(name, path) := v if {\n\tv := resolve(name, path)\n\t_pf_gluelib_lit(v)\n}\n\n_pf_gluelib_num(name, path) := n if {\n\tn := to_number(resolve(name, path))\n}\n\n# The job flavour every combination rule keys on.\n_pf_gluelib_command_name(name) := _pf_gluelib_str(name, \"Properties.Command.Name\")\n\n_pf_gluelib_worker_type(name) := _pf_gluelib_str(name, \"Properties.WorkerType\")\n\n_pf_gluelib_glue_version(name) := _pf_gluelib_str(name, \"Properties.GlueVersion\")\n\n# Trigger and crawler shapes shared by the trigger / workflow / crawler rules.\n_pf_gluelib_trigger_type(name) := _pf_gluelib_str(name, \"Properties.Type\")\n\n_pf_gluelib_predicate(name) := p if {\n\tp := _pf_gluelib_get(name, \"Predicate\")\n\tis_object(p)\n}\n\n_pf_gluelib_conditions(name) := c if {\n\tc := object.get(_pf_gluelib_predicate(name), \"Conditions\", [])\n\tis_array(c)\n}\n\n_pf_gluelib_targets(name) := t if {\n\tt := _pf_gluelib_get(name, \"Targets\")\n\tis_object(t)\n}\n\n_pf_gluelib_recrawl(name) := _pf_gluelib_str(name, \"Properties.RecrawlPolicy.RecrawlBehavior\")\n\n_pf_gluelib_config(name) := c if {\n\tc := _pf_gluelib_get(name, \"Configuration\")\n\tis_string(c)\n\tnot input.resources[c]\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Glue rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), string values\n# are guarded so a Ref/GetAtt resolved to a logical id is never compared against\n# a literal, and numbers go through to_number so tokens skip instead of firing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_gluelib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_gluelib_get(name, k) := v if {\n\tp := _pf_gluelib_props(name)\n\tv := object.get(p, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_gluelib_has(name, k) if {\n\t_pf_gluelib_get(name, k)\n}\n\n_pf_gluelib_absent(name, k) if {\n\tp := _pf_gluelib_props(name)\n\tobject.get(p, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_gluelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_gluelib_str(name, path) := v if {\n\tv := resolve(name, path)\n\t_pf_gluelib_lit(v)\n}\n\n_pf_gluelib_num(name, path) := n if {\n\tn := to_number(resolve(name, path))\n}\n\n# The job flavour every combination rule keys on.\n_pf_gluelib_command_name(name) := _pf_gluelib_str(name, \"Properties.Command.Name\")\n\n_pf_gluelib_worker_type(name) := _pf_gluelib_str(name, \"Properties.WorkerType\")\n\n_pf_gluelib_glue_version(name) := _pf_gluelib_str(name, \"Properties.GlueVersion\")\n\n# Trigger and crawler shapes shared by the trigger / workflow / crawler rules.\n_pf_gluelib_trigger_type(name) := _pf_gluelib_str(name, \"Properties.Type\")\n\n_pf_gluelib_predicate(name) := p if {\n\tp := _pf_gluelib_get(name, \"Predicate\")\n\tis_object(p)\n}\n\n_pf_gluelib_conditions(name) := c if {\n\tc := object.get(_pf_gluelib_predicate(name), \"Conditions\", [])\n\tis_array(c)\n}\n\n_pf_gluelib_targets(name) := t if {\n\tt := _pf_gluelib_get(name, \"Targets\")\n\tis_object(t)\n}\n\n_pf_gluelib_recrawl(name) := _pf_gluelib_str(name, \"Properties.RecrawlPolicy.RecrawlBehavior\")\n\n_pf_gluelib_config(name) := c if {\n\tc := _pf_gluelib_get(name, \"Configuration\")\n\tis_string(c)\n\tnot input.resources[c]\n}\n\n# Connection, classifier and security-configuration shapes shared by the\n# connection / classifier / encryption rules.\n_pf_gluelib_connection_input(name) := ci if {\n\tci := _pf_gluelib_get(name, \"ConnectionInput\")\n\tis_object(ci)\n}\n\n_pf_gluelib_connection_type(name) := _pf_gluelib_str(name, \"Properties.ConnectionInput.ConnectionType\")\n\n_pf_gluelib_connection_props(name) := p if {\n\tp := object.get(_pf_gluelib_connection_input(name), \"ConnectionProperties\", {})\n\tis_object(p)\n}\n\n_pf_gluelib_classifier(name, kind) := c if {\n\tc := _pf_gluelib_get(name, kind)\n\tis_object(c)\n}\n\n_pf_gluelib_encryption(name) := e if {\n\te := _pf_gluelib_get(name, \"EncryptionConfiguration\")\n\tis_object(e)\n}\n\n_pf_gluelib_schedule_expression(name) := _pf_gluelib_str(name, \"Properties.Schedule.ScheduleExpression\")\n"
   },
   {
     "name": "_lib/iam",

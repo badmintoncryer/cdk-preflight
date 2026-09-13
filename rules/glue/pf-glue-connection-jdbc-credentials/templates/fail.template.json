@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "ConnectionInput": {
+          "ConnectionType": "JDBC",
+          "ConnectionProperties": {
+            "JDBC_CONNECTION_URL": "jdbc:mysql://db.example.com:3306/d",
+            "USERNAME": "u"
+          }
+        }
+      }
+    }
+  }
+}
