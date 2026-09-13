@@ -1365,7 +1365,6 @@
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | ERROR | none |
 | `pf-events-rule-cron-fields` | AWS::Events::Rule | cron() fields must stay in range and keep | ERROR | none |
 | `pf-events-rule-name-duplicate` | AWS::Events::Rule | Two rules in one template may not share a name | ERROR | none |
-| `pf-events-rule-pattern-size` | AWS::Events::Rule | An event pattern may not exceed 2048 bytes | ERROR | none |
 | `pf-events-rule-schedule-default-bus` | AWS::Events::Rule | A scheduled rule only works on the default event bus | ERROR | none |
 | `pf-events-target-batch-parameters` | AWS::Events::Rule | Batch array size and retry attempts have service-stated bounds | ERROR | none |
 | `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | ERROR | none |

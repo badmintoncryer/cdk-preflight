@@ -59,9 +59,6 @@
     },
     "R": {
       "Type": "AWS::SecretsManager::RotationSchedule",
-      "DependsOn": [
-        "Perm"
-      ],
       "Properties": {
         "SecretId": {
           "Ref": "S"
@@ -73,10 +70,39 @@
           ]
         },
         "RotationRules": {
-          "ScheduleExpression": "rate(4 hours)",
-          "Duration": "2h"
+          "ScheduleExpression": "cron(0 0 ? * SUN *)",
+          "Duration": "24h"
         }
-      }
+      },
+      "DependsOn": "S"
+    },
+    "S3": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "GenerateSecretString": {
+          "SecretStringTemplate": "{\"username\":\"admin\"}",
+          "GenerateStringKey": "password"
+        }
+      },
+      "DependsOn": "R"
+    },
+    "R3": {
+      "Type": "AWS::SecretsManager::RotationSchedule",
+      "Properties": {
+        "SecretId": {
+          "Ref": "S3"
+        },
+        "RotationLambdaARN": {
+          "Fn::GetAtt": [
+            "Fn",
+            "Arn"
+          ]
+        },
+        "RotationRules": {
+          "ScheduleExpression": "rate(4 hours)"
+        }
+      },
+      "DependsOn": "S3"
     }
   }
 }

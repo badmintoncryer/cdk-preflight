@@ -12,7 +12,6 @@ pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」�
 pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
 pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
-pf-bedrock-datasource-chunk-max-tokens  pending #178
 pf-cloudwatch-alarm-evaluation-window  3600 は予算の段を選ぶ境目（Period >= 3600 なら 1 週間、未満なら 1 日）で、順序のある制約ではない。実際のしきい値 604800 / 86400 は Period x EvaluationPeriods の積なのでテンプレートに数値としては現れない。フィクスチャは 3600x169 / 3600x168 と 60x1441 / 60x1440 に乗せてある
 pf-cloudwatch-alarm-expressions-max  数えているのは Metrics のうち Expression を持つ要素だけを集めるヘルパーの戻り値で、Metrics 配列そのものの長さとは 1 ずれる。フィクスチャは 11 / 10 本に乗せてある
 pf-cloudwatch-composite-suppressor-format  count(parts) >= 7 は ActionsSuppressor を ARN として割った断片数のガードで、順序のある制約ではない
@@ -33,8 +32,6 @@ pf-elasticache-snapshot-retention  pending #178
 pf-elasticache-user-authentication  pending #178
 pf-elbv2-rule-condition-values-max  しきい値と突き合わせるのは Conditions をまたいだ値の数の合計で、どの配列長とも一致しない。フィクスチャは 6 / 5 値に乗せてある（実機も 3+3 の分割で上限を返す）
 pf-elbv2-tg-name  count(n) <= 32 は長すぎる名前を書式のほうの本体に渡さないための排他ガードで、上限そのものは同じファイルの count(n) > 32 が見ている。フィクスチャは 33 / 32 に乗せてある
-pf-events-rule-pattern-size  pending #178
-pf-events-target-ecs-parameters  pending #178
 pf-firehose-prefix-length  しきい値は展開後のプレフィックスの文字数で、テンプレートに数値としては現れない。数えているのも 2 つの count の和なので検出器は「何を数えたか」まで辿れない。フィクスチャは Prefix / ErrorOutputPrefix それぞれ 513 文字と、両方 512 文字ちょうどに乗せてある
 pf-firehose-processor-buffer-size-range  BufferSizeInMBs は小数を取るので、上限 3 の隣は整数の 4 ではない。fail は 3.1 と 0.19（実機は 3.01 / 0.199 も拒否するので丸めではない）、pass は 3 と 0.2 ちょうどに乗せてある
 pf-firehose-processor-count  しきい値と突き合わせるのは Processors 配列の要素数だが、数えているのはヘルパー述語の本体（_pf_fhpc_count）の中なので検出器は呼び出し側から辿れない。フィクスチャは 6 / 0 本と 5 / 1 本に乗せてある
@@ -56,11 +53,9 @@ pf-route53-hostedzone-name-label-63  ラベルは Name の一部分なので、�
 pf-route53-record-name-label-length  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
 pf-route53-recordsetgroup-max-1000-elements  しきい値と突き合わせるのはレコードセットをまたいだ値の合計で、1 レコードセットは 400 値までなので 1001 要素の配列はテンプレートに存在しない。フィクスチャは 1001 / 1000 値に乗せてある
 pf-route53-recordsetgroup-max-32000-chars  しきい値は全値の文字数の合計で、どの配列長とも文字列長とも一致しない。フィクスチャは 32001 / 32000 文字に乗せてある
-pf-route53profiles-profileresourceassociation-rulegroups-max  pending #178
+pf-route53profiles-profileresourceassociation-rulegroups-max  しきい値と突き合わせるのは「同じプロファイルに紐づいたルールグループの本数」で、リソースをまたいで数えた値なのでどの配列長とも一致しない。フィクスチャは 6 / 5 本に乗せてある（L-F8A07EF1「DNS Firewall rule groups associations to a Route 53 Profile」は Adjustable: false）
 pf-route53resolver-firewallrulegroupassociation-max-per-vpc  しきい値と突き合わせるのは「同じ VPC を指しているアソシエーションの本数」で、テンプレートのどの配列長とも一致しない（リソースをまたいで数えた値）。フィクスチャは 6 / 5 本に乗せてある
-pf-secretsmanager-generate-secret-string  pending #178
-pf-secretsmanager-rotation-rules  pending #178
-pf-sfn-asl-name-limits  pending #178
+pf-sfn-asl-name-limits  ステート名も Label も DefinitionString（JSON 文字列）の中にあるので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない（エスケープされた引用符は文字列の一部として読まれる）。フィクスチャは 81 / 80 文字と 41 / 40 文字に乗せてある
 pf-sns-fifo-only-attributes  上限ちょうどの pass は残せない: ArchivePolicy を持つトピックは削除できず（2026-09-13 us-east-1: "Cannot delete a topic with an ArchivePolicy"）、スタック削除が DELETE_FAILED になってトピックが毎回残る。fail に 366 日と 0 日を置いて両端を確認し、pass は ArchivePolicy を持たない FIFO トピックにしてある
 pf-sqs-redrive-allow-policy  しきい値はヘルパー述語の引数（`_pf_sqsrap_out(n) if n > 10`）にあり、n が何を数えた値かは呼び出し側の別ブロックにあるので検出器から辿れない。フィクスチャは 11 / 10 本に乗せてある
 pf-ssm-parameter-name  1011 は名前そのものではなく ARN 全体（arn:aws:ssm:<region>:<account>:parameter/ + 名前）の上限で、検出器が拾っているのは足し算の右辺。許される名前の長さはリージョン名の長さで変わるので固定の数値としてはテンプレートに現れない。フィクスチャは us-east-1 + 12 桁アカウントの端（素の名前 967 / 966）に乗せてある
