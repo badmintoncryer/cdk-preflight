@@ -27,12 +27,14 @@ violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	_pf_port_out(n)
 }
 
+# 埋め込みは egress だけ見る: ingress の FromPort > ToPort は同梱エンジンの E9002 が
+# 持っている（原則 1）。egress と単独リソースは素通りするのでこちらで見る
 violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	sprintf("Properties.%s.%d.FromPort", [dir, item.index]),
 	sprintf("FromPort (%v) must be less than or equal to ToPort (%v)", [f, t]),
 	_pf_sg_fix, _pf_sg_url) if {
 	some name in resources_of_type("AWS::EC2::SecurityGroup")
-	some dir in {"SecurityGroupIngress", "SecurityGroupEgress"}
+	some dir in {"SecurityGroupEgress"}
 	some item in flatten_list(name, sprintf("Properties.%s", [dir]))
 	entry := item.value
 	is_object(entry)

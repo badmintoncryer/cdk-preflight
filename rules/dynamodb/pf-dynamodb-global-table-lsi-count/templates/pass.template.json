@@ -13,7 +13,23 @@
             "AttributeType": "S"
           },
           {
-            "AttributeName": "lk",
+            "AttributeName": "l0",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l1",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l2",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l3",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l4",
             "AttributeType": "S"
           }
         ],
@@ -45,7 +61,71 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l0",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "KEYS_ONLY"
+            }
+          },
+          {
+            "IndexName": "lsi1",
+            "KeySchema": [
+              {
+                "AttributeName": "pk",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "l1",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "KEYS_ONLY"
+            }
+          },
+          {
+            "IndexName": "lsi2",
+            "KeySchema": [
+              {
+                "AttributeName": "pk",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "l2",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "KEYS_ONLY"
+            }
+          },
+          {
+            "IndexName": "lsi3",
+            "KeySchema": [
+              {
+                "AttributeName": "pk",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "l3",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "KEYS_ONLY"
+            }
+          },
+          {
+            "IndexName": "lsi4",
+            "KeySchema": [
+              {
+                "AttributeName": "pk",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "l4",
                 "KeyType": "RANGE"
               }
             ],

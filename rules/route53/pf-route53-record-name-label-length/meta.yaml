@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Doma
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> FATAL problem: DomainLabelTooLong (Domain label is too long) encountered with 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: 64-character label -> \"FATAL problem: DomainLabelTooLong (Domain label is too long) encountered with 'aaaa...(64 a's)'\" (ROLLBACK_COMPLETE); pass 63-character label -> CREATE_COMPLETE"
 addedOn: 2026-09-10

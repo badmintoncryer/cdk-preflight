@@ -1,15 +1,49 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
-    "TG": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "TGLow": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "Protocol": "HTTP",
         "Port": 80,
-        "VpcId": "vpc-4331593e",
-        "TargetType": "instance",
-        "HealthCheckPort": "traffic_port"
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "HealthCheckPort": "0"
+      },
+      "DependsOn": "TGHigh"
+    },
+    "TGHigh": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "HealthCheckPort": "65536"
       }
+    },
+    "TGWord": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "HealthCheckPort": "traffic_port"
+      },
+      "DependsOn": "TGLow"
     }
   }
 }

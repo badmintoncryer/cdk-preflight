@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A rule can only have '5' condition values and regex values\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: six condition values split 3 path-pattern + 3 host-header rolled back with \"A rule can only have '5' condition values and regex values\"; the limit really is the total across conditions, not per condition. The pass template carries five (3 + 2) and reached CREATE_COMPLETE."
 addedOn: 2026-09-08

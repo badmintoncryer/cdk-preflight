@@ -3,10 +3,10 @@ service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
 severity: ERROR
-title: "A record name is limited to 255 bytes"
+title: "A record name is limited to 253 characters"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DomainNameFormat.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> FATAL problem: DomainNameTooLong (Domain name is too long) encountered with 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.cdkpf-example.com' (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: 254-character record name -> \"FATAL problem: DomainNameTooLong (Domain name is too long)\" (ROLLBACK_COMPLETE); pass 253-character name -> CREATE_COMPLETE. ChangeResourceRecordSets takes 253 and turns 254 away, so the limit is 253 characters once the trailing dot is dropped - not the 255 the Route 53 doc quotes."
 addedOn: 2026-09-10

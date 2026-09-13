@@ -22,6 +22,8 @@ Growth is the normal state. The upstream engine ships slowly and carefully by de
 4. **Tests are the contract.** Never merge with a red test; never weaken an assertion to make it pass. New behavior needs a new test first.
 5. **The boundary is the engine, not the CDK L2 layer.** Rules validate synthesized templates, so an L2 construct that validates (or structurally prevents) the same mistake does not make a rule redundant — L1 usage, escape hatches, `addPropertyOverride`, and externally generated templates all bypass L2. Overlapping an L2 guard is fine and expected; overlapping the bundled engine is forbidden (principle 1). L2 coverage is not a retirement trigger either — deleting a rule because an L2 construct checks it would strip the coverage from exactly the users this pack exists for. Only a layer that sees the same synthesized template retires a rule: the bundled engine, or CloudFormation's server-side validation. Noting an L2 overlap in the PR is useful context, not something to justify. See "Where this pack sits among validation layers" below.
 
+6. **The threshold is a hard limit, not an adjustable quota.** A rule may only assert a number that no account can change. If Service Quotas lists the limit as `Adjustable: true`, an account that has raised it deploys the template fine and the rule is simply wrong there — a false positive we cannot detect from the template, and the one kind of error that makes users switch the pack off. Check before writing the rule: `aws service-quotas list-service-quotas --service-code <code> --query 'Quotas[?Adjustable==`true`]'`. The bench account having the default value is not evidence of a hard limit; it is evidence of nothing. Limits that a quota increase cannot raise are fair game — say so in the rego comment, because the next reader will wonder.
+
 ## Where this pack sits among validation layers
 
 Five other validation layers sit around a CDK app. Exactly one of them is a boundary for this pack, and the same one is the only trigger for retiring a rule; the relationships are:
@@ -101,6 +103,33 @@ scripts/rule-check.ts       # one-process local gates: `guard` (bare engine) and
 test/                       # 4 layers: rules / loader / structure / cli
 bench/                      # real-deploy verification (needs an AWS account; not part of CI)
 ```
+
+## Working a discovery issue (the skills)
+
+Three skills in `.claude/skills/` cover the work end to end. Pick the entry point by what you have:
+
+| You have | Skill | What it does |
+|---|---|---|
+| An issue number from the queue (#91) | **`run-preflight-issue`** | Orchestrates the whole issue. Dispatches each phase to a separate subagent and never opens a deliverable itself |
+| A service but no candidates yet | `find-preflight-rules` | Survey: inventory → 6 lenses → duplication guard → candidate checklist on the issue |
+| One constraint, or a candidate list | `add-preflight-rule` | Implement: rule.rego + fixtures → local gate → real-deploy gate → `meta.yaml` → commit |
+
+`/run-preflight-issue <issue number | next> [--from=A|B|C]` is the normal way in — `next` takes the first unstarted
+item off #91, and the phase is otherwise read from the ledger at the top of `~/cdk-preflight-surveys/<svc>-<issue>/handoff.md`,
+so a cleared or crashed session resumes from `head -20`. Phases map to agents as **A** survey + duplication guard,
+**B** API-direct triage (kept separate: it needs AWS credentials and can spend money), **C1..Cn** one implementation
+slice each (20–25 rules, split on candidate-id prefix, serial within a service so two agents never fight over
+`rules/_lib/<service>.rego`).
+
+Why the indirection: `cache_read` is 98% of input tokens, so a phase costs whatever parent context it drags along.
+A cold subagent drops that fixed cost — and reading its output in the parent puts the cost straight back, which is why
+the orchestrator is forbidden from opening deliverables (`wc -l`, `grep -c`, `gh issue comment --body-file`, nothing more).
+It verifies each report with four cheap mechanical checks instead, and re-dispatches to the same agent when they disagree.
+
+Human gates are explicit: posting issue comments and running the real-deploy gate are automatic; **`git push` and
+`gh pr create` stop for approval** (soft judgement calls are batched and presented there); billable resources are refused
+before the create call; and the orchestrator never edits permission settings, closes an issue, or ticks the queue.
+If you are a subagent running one of these phases, do not spawn further agents.
 
 ## Adding a rule (the pipeline)
 

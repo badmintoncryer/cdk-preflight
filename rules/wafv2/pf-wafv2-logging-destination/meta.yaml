@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/waf/latest/developerguide/logging-
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: The ARN isn't valid. A valid ARN begins with arn: and includes other information separated by colons or slashes., field: LOG_DESTINATION, parameter: arn:aws:logs:ap-northeast-1:214794239830:log-group:cdkpf-pf-wafv2-logging-destination-fail-LG-Uzp77t3MkCFf:*\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 ap-northeast-1: a log group whose name does not start with aws-waf-logs- -> \"Error reason: The ARN isn't valid. A valid ARN begins with arn: and includes other information separated by colons or slashes., field: LOG_DESTINATION\" (ROLLBACK_COMPLETE); pass an aws-waf-logs- log group -> CREATE_COMPLETE"
 addedOn: 2026-09-05

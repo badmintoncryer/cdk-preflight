@@ -1,17 +1,42 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
-    "TG": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "TGHigh": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "Protocol": "HTTP",
         "Port": 80,
-        "VpcId": "vpc-4331593e",
-        "TargetType": "instance",
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
         "TargetGroupAttributes": [
           {
-            "Key": "stickiness.enabled",
-            "Value": "false"
+            "Key": "target_group_health.dns_failover.minimum_healthy_targets.percentage",
+            "Value": "100"
+          }
+        ]
+      }
+    },
+    "TGLow": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "target_group_health.unhealthy_state_routing.minimum_healthy_targets.percentage",
+            "Value": "1"
           }
         ]
       }

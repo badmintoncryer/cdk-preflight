@@ -1,26 +1,70 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
-    "LB": {
-      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
       "Properties": {
-        "Type": "application",
-        "Subnets": [
-          "subnet-2e0a500f",
-          "subnet-ab11fde7"
-        ],
-        "SecurityGroups": [
-          "sg-7d699f61"
-        ]
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
       }
     },
     "TG": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "Protocol": "HTTP",
         "Port": 80,
-        "VpcId": "vpc-4331593e",
-        "TargetType": "instance"
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "LB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internal",
+        "Subnets": [
+          {
+            "Ref": "SubnetA"
+          },
+          {
+            "Ref": "SubnetB"
+          }
+        ]
       }
     },
     "Listener": {
@@ -29,6 +73,8 @@
         "LoadBalancerArn": {
           "Ref": "LB"
         },
+        "Port": 80,
+        "Protocol": "HTTP",
         "DefaultActions": [
           {
             "Type": "forward",
@@ -36,9 +82,7 @@
               "Ref": "TG"
             }
           }
-        ],
-        "Port": 80,
-        "Protocol": "HTTP"
+        ]
       }
     },
     "Rule": {
@@ -50,14 +94,21 @@
         "Priority": 10,
         "Conditions": [
           {
+            "Field": "path-pattern",
+            "PathPatternConfig": {
+              "Values": [
+                "/a",
+                "/b",
+                "/c"
+              ]
+            }
+          },
+          {
             "Field": "host-header",
             "HostHeaderConfig": {
               "Values": [
-                "h0.example.com",
-                "h1.example.com",
-                "h2.example.com",
-                "h3.example.com",
-                "h4.example.com"
+                "a.example.com",
+                "b.example.com"
               ]
             }
           }

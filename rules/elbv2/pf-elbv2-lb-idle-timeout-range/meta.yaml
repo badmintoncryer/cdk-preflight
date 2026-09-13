@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/applic
 upstream: none
 repro:
   method: research-case
-  evidence: cdk-validation-gap-research case06 (2026-09-01, "cannot be greater than 4000" at deploy, tte=176s)
+  evidence: "bench 2026-09-13 us-east-1: idle_timeout.timeout_seconds 4001 rolled back with \"The value of 'idle_timeout.timeout_seconds' cannot be greater than 4000 characters\" (the service says \"characters\" for a count of seconds). The 0 on the second load balancer is masked by the DependsOn order; ModifyLoadBalancerAttributes answers it directly with \"cannot be less than 1 characters\". The pass template carries 1 and 4000 and reached CREATE_COMPLETE."
 addedOn: 2026-09-01

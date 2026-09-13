@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The number of rules in the request exceeded 25.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: a role mapping with 26 rules -> \"The number of rules in the request exceeded 25.\" (ROLLBACK_COMPLETE); pass 25 -> CREATE_COMPLETE. The pass fixture needs a provider the identity pool actually has: RoleMappings keys are map keys, so they cannot be built from Refs, and a DeveloperProviderName is turned away with \"is not a valid RoleMapping ProviderName or is not a configured provider\". A SupportedLoginProviders entry is a literal string and is accepted. The fail fixture can keep a synthetic key because the rule count is checked first."
 addedOn: 2026-09-08

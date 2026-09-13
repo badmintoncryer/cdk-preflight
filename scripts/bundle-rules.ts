@@ -101,7 +101,9 @@ export function docOnlyProblem(repro: { method: string }, severity: string): str
  */
 function fixturePools(raw: string) {
   const nums = new Set<number>([...raw.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => Number(m[0])));
-  const lens = new Set<number>([...raw.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1].length));
+  // JSON のエスケープを戻してから数える。rego の count(v) が見るのは解けた後の文字列なので、
+  // 生のテキストのまま数えると TXT レコードのような `\"` を含む値でプールがずれる。
+  const lens = new Set<number>([...raw.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => JSON.parse(`"${m[1]}"`).length));
   const sizes = new Set<number>();
   const walk = (v: unknown): void => {
     if (Array.isArray(v)) {
@@ -137,24 +139,83 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   // 「何を数えた値か」まで見る。数えた対象が配列なら要素数と、文字列なら長さと突き合わせる
   // ——どちらか決められないときだけ両方見る（偶然の一致を許すが、見当違いのプールで
   // 誤検出するよりましなので）。
-  const assigned = new Map([...rego.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*:=\s*(.*)/g)].map((m) => [m[1], m[2]] as const));
-  const ARRAYISH = /flatten_list\(|\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
-  // `count(split(arn, ":")) >= 6` は ARN の形が壊れていないかのガードで、順序のある制約ではない。
-  // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
-  const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
-    const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
-    const src = assigned.get(inner.trim()) ?? inner;
-    if (/\bsplit\(/.test(src)) return 'shape';
-    if (ARRAYISH.test(src)) return 'array';
-    if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
-    return 'both';
+  //
+  // 代入はルール本体ごとに見る。1 つのモジュールの中で `n` が別の本体では別のものを
+  // 指すのはふつうにあり、まとめて 1 つの表にすると片方が上書きされて見当違いの
+  // プールと突き合わせてしまう（誤検出も見逃しも出る）。トップレベルの定義だけは
+  // どの本体からも呼べるので全体で共有する。
+  const blocks: string[] = [];
+  let cur = '';
+  let depth = 0;
+  for (const line of rego.split('\n')) {
+    cur += line + '\n';
+    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+    if (depth <= 0 && line.trimEnd() === '}') {
+      blocks.push(cur);
+      cur = '';
+      depth = 0;
+    }
+  }
+  if (cur.trim()) blocks.push(cur);
+
+  const ASSIGN = /([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/g;
+  // `_pf_x_n(g, k) := count([...])` のようなトップレベル定義。呼び出しを本体まで辿るのに使う
+  const shared = new Map([...rego.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/gm)].map((m) => [m[1], m[2]] as const));
+
+  const ARRAYISH = /flatten_list\(|(?:^|[^A-Za-z0-9_)\]])\[|object\.keys\(|resources_of_type\(|\{[a-z]/;
+  // object.get(x, "k", d) が返すものは d が教えてくれる: [] なら配列、"" なら文字列。
+  // それ以外（"__pf_absent" のような番兵）は決められないので両方見る。
+  const GET_ARRAY = /object\.get\([^()]*,\s*(?:\[\]|\{\})\s*\)/;
+  const GET_STRING = /object\.get\([^()]*,\s*""\s*\)/;
+
+  // `_pf_x_ok(v) if { n <= 100 }` を `not _pf_x_ok(...)` で使うのが、この直接比較と並ぶ
+  // もう 1 つの標準形。守れている向きに書かれた比較なので、境界を出す前に裏返す。
+  // そのままだと fail に 100、pass に 101 を要求してしまう（向きが逆）。
+  const negated = new Set([...rego.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
+  const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
+
+  type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number };
+  const thresholdsOf = (block: string): Threshold[] => {
+    const assigned = new Map(shared);
+    for (const m of block.matchAll(ASSIGN)) assigned.set(m[1], m[2]);
+    const deref = (expr: string): string => {
+      let e = expr.trim();
+      for (let i = 0; i < 4; i++) {
+        const call = /^([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)$/.exec(e);
+        const body = call && assigned.get(call[1]);
+        if (!body) return e;
+        e = body.trim();
+      }
+      return e;
+    };
+    // `count(split(arn, ":")) >= 6` は ARN の形が壊れていないかのガードで、順序のある制約ではない。
+    // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
+    const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
+      const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
+      const src = deref(assigned.get(inner.trim()) ?? inner);
+      if (/\bsplit\(/.test(src)) return 'shape';
+      if (GET_STRING.test(src)) return 'string';
+      if (GET_ARRAY.test(src) || ARRAYISH.test(src)) return 'array';
+      if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
+      return 'both';
+    };
+    // 診断メッセージや修正案の文面にも `>= 31` のような比較が出てくる。文字列の中は
+    // ロジックではないので、しきい値を探す前に落とす（長さを保って位置はずらさない）。
+    const code = block.replace(/"(?:[^"\\\n]|\\.)*"|`[^`]*`/g, (m) => ' '.repeat(m.length));
+    // どの定義の中の比較かは、その位置より前にある一番近い行頭の識別子で決まる。1 行の
+    // 述語は閉じ括弧を持たないので次のブロックにくっついて切られる——ブロックの先頭では決められない。
+    const owners = [...code.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)/gm)].map((m) => [m.index ?? 0, m[1]] as const);
+    const ownerAt = (i: number) => owners.filter(([at]) => at <= i).pop()?.[1] ?? '';
+    return [...code.matchAll(THRESHOLD)]
+      .map((m) => {
+        const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
+        const op = negated.has(ownerAt(m.index ?? 0)) ? FLIP[m[2]] : m[2];
+        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op, n: Number(m[3]) };
+      })
+      .filter((t): t is Threshold => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   };
-  const thresholds = [...rego.matchAll(THRESHOLD)]
-    .map((m) => {
-      const expr = m[1].startsWith('count(') ? m[1] : assigned.get(m[1]) ?? '';
-      return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
-    })
-    .filter((t) => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
+
+  const thresholds = blocks.flatMap(thresholdsOf);
   if (thresholds.length === 0) return undefined;
   const pools = { fail: fixturePools(fail), pass: fixturePools(pass) };
   const problems: string[] = [];

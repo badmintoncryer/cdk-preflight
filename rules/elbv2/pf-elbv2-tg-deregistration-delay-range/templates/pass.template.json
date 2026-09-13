@@ -1,15 +1,43 @@
 {
+  "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
-    "Vpc": { "Type": "AWS::EC2::VPC", "Properties": { "CidrBlock": "10.0.0.0/16" } },
-    "TG": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "TGLow": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
         "Port": 80,
         "Protocol": "HTTP",
-        "TargetType": "instance",
-        "VpcId": { "Ref": "Vpc" },
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
         "TargetGroupAttributes": [
-          { "Key": "deregistration_delay.timeout_seconds", "Value": "120" }
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "0"
+          }
+        ]
+      }
+    },
+    "TGHigh": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "3600"
+          }
         ]
       }
     }

@@ -6,17 +6,19 @@
         "UserPoolName": "p"
       }
     },
-    "C": {
+    "CLo": {
       "Type": "AWS::Cognito::UserPoolClient",
       "Properties": {
         "UserPoolId": {
           "Ref": "UP"
         },
-        "ClientName": "c",
+        "ClientName": "c1",
         "TokenValidityUnits": {
-          "AccessToken": "hours"
+          "AccessToken": "seconds",
+          "RefreshToken": "seconds"
         },
-        "AccessTokenValidity": 25
+        "AccessTokenValidity": 299,
+        "RefreshTokenValidity": 3599
       }
     }
   }

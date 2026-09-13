@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developergui
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: Maximum policy size of 20480 bytes exceeded\"; pass -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: a resource policy whose compact serialization is 20481 bytes rolled back with \"One or more parameter values were invalid: Maximum policy size of 20480 bytes exceeded\"; the pass template sits on exactly 20480 and reached CREATE_COMPLETE. The limit applies to the resolved document, not to what the template says: the principal has to be an account-scoped ARN (a wildcard is refused with \"Resource-based policy grants unbounded access in one or more elements\"), so it is written as Fn::Sub and the resolved form is 17 bytes shorter than the template text. The engine substitutes a 12-digit placeholder account id, so its count and the service's agree."
 addedOn: 2026-09-08

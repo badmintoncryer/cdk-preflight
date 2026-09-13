@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Reso
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='NAPTR'] but it was not found, Invalid Resource Record: 'FATAL problem: NAPTRRRDATAPreferenceOutOfBounds (NAPTR record preference value is out of bounds) encountered with '100 70000 \"U\" \"E2U+sip\" \"!^.*$!sip:info@example.com!\" .''] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: preference 65536 -> \"Invalid Resource Record: 'FATAL problem: NAPTRRRDATAPreferenceOutOfBounds (NAPTR record preference value is out of bounds) encountered with '100 65536 ...''\" (ROLLBACK_COMPLETE); pass preference 65535 -> CREATE_COMPLETE"
 addedOn: 2026-09-10

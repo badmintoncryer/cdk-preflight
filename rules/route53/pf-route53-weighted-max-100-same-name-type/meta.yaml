@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/general/latest/gr/r53.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [Exceeded limit on number of weighted RRSets for www.cdkpf-example.com., type A in this zone.] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: 101 weighted record sets for one name and type -> \"[Exceeded limit on number of weighted RRSets for www.cdkpf-example.com., type A in this zone.]\" (ROLLBACK_COMPLETE); pass 100 -> CREATE_COMPLETE"
 addedOn: 2026-09-10

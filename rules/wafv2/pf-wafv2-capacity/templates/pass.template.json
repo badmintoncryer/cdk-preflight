@@ -6,7 +6,7 @@
       "Properties": {
         "Name": "cdkpf-rg-capacity",
         "Scope": "REGIONAL",
-        "Capacity": 100,
+        "Capacity": 5000,
         "VisibilityConfig": {
           "SampledRequestsEnabled": false,
           "CloudWatchMetricsEnabled": false,

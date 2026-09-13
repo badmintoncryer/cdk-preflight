@@ -18,7 +18,7 @@
           ]
         },
         "Timeout": {
-          "AttemptDurationSeconds": 30
+          "AttemptDurationSeconds": 59
         }
       }
     }

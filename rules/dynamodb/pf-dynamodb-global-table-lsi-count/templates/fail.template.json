@@ -13,7 +13,27 @@
             "AttributeType": "S"
           },
           {
-            "AttributeName": "lk",
+            "AttributeName": "l0",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l1",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l2",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l3",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l4",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "l5",
             "AttributeType": "S"
           }
         ],
@@ -45,7 +65,7 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l0",
                 "KeyType": "RANGE"
               }
             ],
@@ -61,7 +81,7 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l1",
                 "KeyType": "RANGE"
               }
             ],
@@ -77,7 +97,7 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l2",
                 "KeyType": "RANGE"
               }
             ],
@@ -93,7 +113,7 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l3",
                 "KeyType": "RANGE"
               }
             ],
@@ -109,7 +129,7 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l4",
                 "KeyType": "RANGE"
               }
             ],
@@ -125,7 +145,7 @@
                 "KeyType": "HASH"
               },
               {
-                "AttributeName": "lk",
+                "AttributeName": "l5",
                 "KeyType": "RANGE"
               }
             ],

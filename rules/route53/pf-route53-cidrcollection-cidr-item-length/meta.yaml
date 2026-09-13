@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_Cr
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED with an empty Route 53 400; the same entry put straight to ChangeCidrCollection answers \"cvc-maxLength-valid: Value '192.0.2.0/240000000000000000000000000000000000000000' with length = '52' is not facet-valid with respect to maxLength '50'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: 51-character entry -> \"cvc-maxLength-valid: Value '192.0.2.0/24000000000000000000000000000000000000000' with length = '51' is not facet-valid with respect to maxLength '50' for type 'Cidr'\" (ROLLBACK_COMPLETE); pass 192.0.2.0/24 -> CREATE_COMPLETE. The pass fixture cannot sit on the limit: a 50-character entry is turned away as \"Invalid CIDR Prefix\" before the length facet is reached, and no valid CIDR text gets that long (a fully expanded IPv6 /48 is 42 characters)."
 addedOn: 2026-09-10

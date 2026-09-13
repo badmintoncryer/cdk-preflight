@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/A
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: BacktrackWindow 3600 on aurora-postgresql (r13) -> \"Backtrack is not enabled for the aurora-postgresql engine.\"; BacktrackWindow 300000 on aurora-mysql (r13b) -> \"The specified value (300000) is not a valid Backtrack Window. Allowed values are within the range of 0 to 259200\". Both ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-13 ap-northeast-1: BacktrackWindow 259201 on aurora-mysql -> \"The specified value (259201) is not a valid Backtrack Window. Allowed values are within the range of 0 to 259200\" (ROLLBACK_COMPLETE); pass 259200 -> CREATE_COMPLETE. The engine branch (BacktrackWindow on anything but aurora-mysql) is the other half of this rule and is not what the fixture reports."
 addedOn: 2026-09-03

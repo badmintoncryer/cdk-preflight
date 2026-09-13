@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Health check port 'traffic_port' must be within '1-65535' or 'traffic-port'\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: HealthCheckPort 65536 rolled back with \"Health check port '65536' must be within '1-65535' or 'traffic-port'\"; the 0 and the traffic_port (underscore) target groups are masked by the DependsOn order and answer the same message. The pass template carries 1, 65535 and traffic-port and reached CREATE_COMPLETE."
 addedOn: 2026-09-08

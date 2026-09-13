@@ -228,6 +228,91 @@ test('boundaryProblem follows the assignment to see what was counted', () => {
   expect(boundaryProblem(shape, fixture('a'), fixture('a'))).toBeUndefined();
 });
 
+test('boundaryProblem follows a helper call to what it counts', () => {
+  const list = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { V: Array.from({ length: n }, (_, i) => `i${i}`) } } } });
+  // `n := _pf_x_n(g)` のように、数えているのがヘルパー越しのこともある。定義まで辿らないと
+  // 数値プールと突き合わせてしまい、境界に乗っているペアを誤検出する
+  const helper = '_pf_x_n(g) := count([1 |\n\tsome it in flatten_list(g, "Properties.V")\n])\n\nviolation contains 1 if {\n\tn := _pf_x_n(name)\n\tn > 50\n}\n';
+  expect(boundaryProblem(helper, list(51), list(50))).toBeUndefined();
+  expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
+});
+
+test('boundaryProblem ignores comparisons written in the diagnostic text', () => {
+  // 修正案の文面に書いた `>= 31` はロジックではない。拾うとルールに存在しない
+  // しきい値を要求してしまう
+  const rego = [
+    'violation contains make_diag_full("x", "ERROR", name, "p",',
+    '\t"retention is below 31 days",',
+    '\t"Set PerformanceInsightsRetentionPeriod >= 31",',
+    '\t"https://example.com") if {',
+    '\tn := to_number(resolve(name, "Properties.R"))',
+    '\tn < 31',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { R: n } } } });
+  expect(boundaryProblem(rego, fx(30), fx(31))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(5), fx(31))).toMatch(/fail template has no 30/);
+});
+
+test('boundaryProblem flips a comparison the rule reads through not', () => {
+  // `_ok(v) if n <= 100` を `not _ok(...)` で使うと、書かれている比較は守れている向き。
+  // 裏返さずに読むと fail に 100、pass に 101 を要求してしまう（境界の反対側）
+  const rego = [
+    '_pf_ok(v) if {',
+    '\tn := to_number(v)',
+    '\tn <= 100',
+    '}',
+    '',
+    'violation contains 1 if {',
+    '\tv := resolve(name, "Properties.R")',
+    '\tnot _pf_ok(v)',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { R: n } } } });
+  expect(boundaryProblem(rego, fx(101), fx(100))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(100), fx(101))).toMatch(/fail template has no 101/);
+});
+
+test('boundaryProblem reads an index into an object as what it holds', () => {
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { B: { k: { Content: 'x'.repeat(n) } } } } } });
+  // `b[k].Content` は配列ではなく、その中の文字列。角括弧だけで配列と読むと
+  // 要素数プールと突き合わせて、境界に乗っているペアを誤検出する
+  const rego = 'violation contains 1 if {\n\tc := b[k].Content\n\tcount(c) > 40\n}\n';
+  expect(boundaryProblem(rego, fx(41), fx(40))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(60), fx(40))).toMatch(/fail template has no 41/);
+});
+
+test('boundaryProblem keeps each rule body\'s assignments to itself', () => {
+  const fx = (name: string, refs: number) => JSON.stringify({
+    Resources: { X: { Type: 'AWS::X::Y', Properties: { Name: name, Refs: Array.from({ length: refs }, (_, i) => `r${i}`) } } },
+  });
+  // 同じ `n` が、片方の本体では文字列、もう片方では数えた結果。1 つの表にまとめると
+  // 後から出てきたほうで上書きされ、文字列のほうが要素数プールと突き合わされる
+  const rego = [
+    'violation contains 1 if {',
+    '\tn := b.FieldToMatch.Name',
+    '\tcount(n) > 30',
+    '}',
+    '',
+    'violation contains 2 if {',
+    '\tn := count([1 | some r in refs])',
+    '\tn > 50',
+    '}',
+    '',
+  ].join('\n');
+  expect(boundaryProblem(rego, fx('a'.repeat(31), 51), fx('a'.repeat(30), 50))).toBeUndefined();
+  expect(boundaryProblem(rego, fx('short', 51), fx('a'.repeat(30), 50))).toMatch(/fail template has no 31/);
+  expect(boundaryProblem(rego, fx('a'.repeat(31), 51), fx('a'.repeat(30), 40))).toMatch(/pass template has no 50/);
+});
+
+test('boundaryProblem measures the string the rule sees, not the escaped JSON', () => {
+  // count(v) が見るのは解けた後の文字列。生のテキストのまま数えると `\"` を含む値でずれる
+  const rego = 'violation contains 1 if {\n\tsome v in vals\n\tcount(v) > 20\n}\n';
+  expect(boundaryProblem(rego, fixture(`"${'x'.repeat(19)}"`), fixture(`"${'x'.repeat(18)}"`))).toBeUndefined();
+});
+
 test('every fixture pair sits on the boundary, or is listed as an exception', () => {
   const exceptions = boundaryExceptions();
   const flagged = new Map<string, string>();

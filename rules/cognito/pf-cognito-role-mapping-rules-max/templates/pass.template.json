@@ -4,7 +4,10 @@
       "Type": "AWS::Cognito::IdentityPool",
       "Properties": {
         "AllowUnauthenticatedIdentities": false,
-        "IdentityPoolName": "pfprobe"
+        "IdentityPoolName": "pfprobe",
+        "SupportedLoginProviders": {
+          "graph.facebook.com": "1234567890123456"
+        }
       }
     },
     "X": {
@@ -19,6 +22,291 @@
               "R",
               "Arn"
             ]
+          }
+        },
+        "RoleMappings": {
+          "graph.facebook.com": {
+            "Type": "Rules",
+            "AmbiguousRoleResolution": "Deny",
+            "RulesConfiguration": {
+              "Rules": [
+                {
+                  "Claim": "c0",
+                  "MatchType": "Equals",
+                  "Value": "v0",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c1",
+                  "MatchType": "Equals",
+                  "Value": "v1",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c2",
+                  "MatchType": "Equals",
+                  "Value": "v2",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c3",
+                  "MatchType": "Equals",
+                  "Value": "v3",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c4",
+                  "MatchType": "Equals",
+                  "Value": "v4",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c5",
+                  "MatchType": "Equals",
+                  "Value": "v5",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c6",
+                  "MatchType": "Equals",
+                  "Value": "v6",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c7",
+                  "MatchType": "Equals",
+                  "Value": "v7",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c8",
+                  "MatchType": "Equals",
+                  "Value": "v8",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c9",
+                  "MatchType": "Equals",
+                  "Value": "v9",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c10",
+                  "MatchType": "Equals",
+                  "Value": "v10",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c11",
+                  "MatchType": "Equals",
+                  "Value": "v11",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c12",
+                  "MatchType": "Equals",
+                  "Value": "v12",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c13",
+                  "MatchType": "Equals",
+                  "Value": "v13",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c14",
+                  "MatchType": "Equals",
+                  "Value": "v14",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c15",
+                  "MatchType": "Equals",
+                  "Value": "v15",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c16",
+                  "MatchType": "Equals",
+                  "Value": "v16",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c17",
+                  "MatchType": "Equals",
+                  "Value": "v17",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c18",
+                  "MatchType": "Equals",
+                  "Value": "v18",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c19",
+                  "MatchType": "Equals",
+                  "Value": "v19",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c20",
+                  "MatchType": "Equals",
+                  "Value": "v20",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c21",
+                  "MatchType": "Equals",
+                  "Value": "v21",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c22",
+                  "MatchType": "Equals",
+                  "Value": "v22",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c23",
+                  "MatchType": "Equals",
+                  "Value": "v23",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Claim": "c24",
+                  "MatchType": "Equals",
+                  "Value": "v24",
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "R",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
           }
         }
       }

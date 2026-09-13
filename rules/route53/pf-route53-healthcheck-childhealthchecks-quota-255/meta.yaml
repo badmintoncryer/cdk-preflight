@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/general/latest/gr/r53.html
 upstream: none
 repro:
   method: doc-only
-  evidence: "doc-only 2026-09-10: the 255-child quota cannot be reproduced - the account limit is 200 health checks, so a stack with 256 children cannot be created, and CreateHealthCheck with 256 synthetic child ids answers \"Invalid parameter : Child health check IDs do not exist or are deleted\" (us-east-1), which names the ids and not the count. The limit is published in the Route 53 service quotas (API doc says 256, the quota page says 255)."
+  evidence: "doc-only 2026-09-10: the 255-child quota cannot be reproduced - the account limit is 200 health checks, so a stack with 256 children cannot be created, and CreateHealthCheck with 256 synthetic child ids answers \"Invalid parameter : Child health check IDs do not exist or are deleted\" (us-east-1), which names the ids and not the count. The limit is published in the Route 53 service quotas (API doc says 256, the quota page says 255). The fixtures sit on the boundary anyway - 256 ids fail, 255 pass - so they pin the constant even though neither can be deployed."
 addedOn: 2026-09-10

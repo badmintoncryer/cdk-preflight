@@ -17,8 +17,8 @@
         ],
         "BillingMode": "PAY_PER_REQUEST",
         "WarmThroughput": {
-          "ReadUnitsPerSecond": 100,
-          "WriteUnitsPerSecond": 100
+          "ReadUnitsPerSecond": 11999,
+          "WriteUnitsPerSecond": 3999
         }
       }
     }

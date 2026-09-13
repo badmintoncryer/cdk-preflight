@@ -119,8 +119,9 @@
       "Properties": {
         "TargetGroupName": "default",
         "ConnectionPoolConfigurationInfo": {
-          "MaxConnectionsPercent": 50,
-          "MaxIdleConnectionsPercent": 80
+          "MaxConnectionsPercent": 0,
+          "MaxIdleConnectionsPercent": 0,
+          "ConnectionBorrowTimeout": 301
         },
         "DBProxyName": "cdkpf-pxpool-f"
       },

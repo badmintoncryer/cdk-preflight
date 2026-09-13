@@ -9,7 +9,27 @@
             "AttributeType": "S"
           },
           {
-            "AttributeName": "gk",
+            "AttributeName": "g0",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g1",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g2",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g3",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g4",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g5",
             "AttributeType": "S"
           }
         ],
@@ -25,7 +45,7 @@
             "IndexName": "gsi0",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g0",
                 "KeyType": "HASH"
               }
             ],
@@ -59,7 +79,7 @@
             "IndexName": "gsi1",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g1",
                 "KeyType": "HASH"
               }
             ],
@@ -93,7 +113,7 @@
             "IndexName": "gsi2",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g2",
                 "KeyType": "HASH"
               }
             ],
@@ -127,7 +147,7 @@
             "IndexName": "gsi3",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g3",
                 "KeyType": "HASH"
               }
             ],
@@ -161,7 +181,7 @@
             "IndexName": "gsi4",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g4",
                 "KeyType": "HASH"
               }
             ],
@@ -195,33 +215,14 @@
             "IndexName": "gsi5",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g5",
                 "KeyType": "HASH"
               }
             ],
             "Projection": {
               "ProjectionType": "INCLUDE",
               "NonKeyAttributes": [
-                "a5_0",
-                "a5_1",
-                "a5_2",
-                "a5_3",
-                "a5_4",
-                "a5_5",
-                "a5_6",
-                "a5_7",
-                "a5_8",
-                "a5_9",
-                "a5_10",
-                "a5_11",
-                "a5_12",
-                "a5_13",
-                "a5_14",
-                "a5_15",
-                "a5_16",
-                "a5_17",
-                "a5_18",
-                "a5_19"
+                "a5_0"
               ]
             }
           }
