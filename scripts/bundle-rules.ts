@@ -139,38 +139,64 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   // 「何を数えた値か」まで見る。数えた対象が配列なら要素数と、文字列なら長さと突き合わせる
   // ——どちらか決められないときだけ両方見る（偶然の一致を許すが、見当違いのプールで
   // 誤検出するよりましなので）。
-  // `n := _pf_x_n(g, k)` のように、数えているのがヘルパー越しのこともある。定義側
-  // （`_pf_x_n(g, k) := count([...])`）も拾って、呼び出しを本体まで辿る。
-  const assigned = new Map(
-    [...rego.matchAll(/([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/g)].map((m) => [m[1], m[2]] as const),
-  );
-  const deref = (expr: string): string => {
-    let cur = expr.trim();
-    for (let i = 0; i < 3; i++) {
-      const call = /^([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)$/.exec(cur);
-      const body = call && assigned.get(call[1]);
-      if (!body) return cur;
-      cur = body.trim();
+  //
+  // 代入はルール本体ごとに見る。1 つのモジュールの中で `n` が別の本体では別のものを
+  // 指すのはふつうにあり、まとめて 1 つの表にすると片方が上書きされて見当違いの
+  // プールと突き合わせてしまう（誤検出も見逃しも出る）。トップレベルの定義だけは
+  // どの本体からも呼べるので全体で共有する。
+  const blocks: string[] = [];
+  let cur = '';
+  let depth = 0;
+  for (const line of rego.split('\n')) {
+    cur += line + '\n';
+    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+    if (depth <= 0 && line.trimEnd() === '}') {
+      blocks.push(cur);
+      cur = '';
+      depth = 0;
     }
-    return cur;
+  }
+  if (cur.trim()) blocks.push(cur);
+
+  const ASSIGN = /([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/g;
+  // `_pf_x_n(g, k) := count([...])` のようなトップレベル定義。呼び出しを本体まで辿るのに使う
+  const shared = new Map([...rego.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/gm)].map((m) => [m[1], m[2]] as const));
+
+  const ARRAYISH = /flatten_list\(|(?:^|[^A-Za-z0-9_)\]])\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
+
+  type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number };
+  const thresholdsOf = (block: string): Threshold[] => {
+    const assigned = new Map(shared);
+    for (const m of block.matchAll(ASSIGN)) assigned.set(m[1], m[2]);
+    const deref = (expr: string): string => {
+      let e = expr.trim();
+      for (let i = 0; i < 4; i++) {
+        const call = /^([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)$/.exec(e);
+        const body = call && assigned.get(call[1]);
+        if (!body) return e;
+        e = body.trim();
+      }
+      return e;
+    };
+    // `count(split(arn, ":")) >= 6` は ARN の形が壊れていないかのガードで、順序のある制約ではない。
+    // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
+    const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
+      const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
+      const src = deref(assigned.get(inner.trim()) ?? inner);
+      if (/\bsplit\(/.test(src)) return 'shape';
+      if (ARRAYISH.test(src)) return 'array';
+      if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
+      return 'both';
+    };
+    return [...block.matchAll(THRESHOLD)]
+      .map((m) => {
+        const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
+        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
+      })
+      .filter((t): t is Threshold => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   };
-  const ARRAYISH = /flatten_list\(|\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
-  // `count(split(arn, ":")) >= 6` は ARN の形が壊れていないかのガードで、順序のある制約ではない。
-  // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
-  const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
-    const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
-    const src = assigned.get(inner.trim()) ?? inner;
-    if (/\bsplit\(/.test(src)) return 'shape';
-    if (ARRAYISH.test(src)) return 'array';
-    if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
-    return 'both';
-  };
-  const thresholds = [...rego.matchAll(THRESHOLD)]
-    .map((m) => {
-      const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
-      return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
-    })
-    .filter((t) => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
+
+  const thresholds = blocks.flatMap(thresholdsOf);
   if (thresholds.length === 0) return undefined;
   const pools = { fail: fixturePools(fail), pass: fixturePools(pass) };
   const problems: string[] = [];

@@ -28,11 +28,43 @@
                 "TextTransformations": [
                   {
                     "Priority": 0,
-                    "Type": "LOWERCASE"
+                    "Type": "NONE"
                   },
                   {
                     "Priority": 1,
+                    "Type": "LOWERCASE"
+                  },
+                  {
+                    "Priority": 2,
                     "Type": "URL_DECODE"
+                  },
+                  {
+                    "Priority": 3,
+                    "Type": "HTML_ENTITY_DECODE"
+                  },
+                  {
+                    "Priority": 4,
+                    "Type": "COMPRESS_WHITE_SPACE"
+                  },
+                  {
+                    "Priority": 5,
+                    "Type": "CMD_LINE"
+                  },
+                  {
+                    "Priority": 6,
+                    "Type": "BASE64_DECODE"
+                  },
+                  {
+                    "Priority": 7,
+                    "Type": "HEX_DECODE"
+                  },
+                  {
+                    "Priority": 8,
+                    "Type": "MD5"
+                  },
+                  {
+                    "Priority": 9,
+                    "Type": "REPLACE_COMMENTS"
                   }
                 ]
               }

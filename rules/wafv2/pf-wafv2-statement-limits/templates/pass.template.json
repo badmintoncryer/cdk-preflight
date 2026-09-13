@@ -1,6 +1,17 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
+    "IP": {
+      "Type": "AWS::WAFv2::IPSet",
+      "Properties": {
+        "Name": "cdkpf-ip-statementlimits",
+        "Scope": "REGIONAL",
+        "IPAddressVersion": "IPV4",
+        "Addresses": [
+          "10.0.0.0/8"
+        ]
+      }
+    },
     "W": {
       "Type": "AWS::WAFv2::WebACL",
       "Properties": {
@@ -16,13 +27,61 @@
         },
         "Rules": [
           {
-            "Name": "r1",
+            "Name": "geo",
             "Priority": 1,
             "Statement": {
               "GeoMatchStatement": {
                 "CountryCodes": [
+                  "AF",
+                  "AX",
+                  "AL",
+                  "DZ",
+                  "AS",
+                  "AD",
+                  "AO",
+                  "AI",
                   "AQ",
-                  "BV"
+                  "AG",
+                  "AR",
+                  "AM",
+                  "AW",
+                  "AU",
+                  "AT",
+                  "AZ",
+                  "BS",
+                  "BH",
+                  "BD",
+                  "BB",
+                  "BY",
+                  "BE",
+                  "BZ",
+                  "BJ",
+                  "BM",
+                  "BT",
+                  "BO",
+                  "BQ",
+                  "BA",
+                  "BW",
+                  "BV",
+                  "BR",
+                  "IO",
+                  "BN",
+                  "BG",
+                  "BF",
+                  "BI",
+                  "KH",
+                  "CM",
+                  "CA",
+                  "CV",
+                  "KY",
+                  "CF",
+                  "TD",
+                  "CL",
+                  "CN",
+                  "CX",
+                  "CC",
+                  "CO",
+                  "KM"
                 ]
               }
             },
@@ -32,7 +91,1167 @@
             "VisibilityConfig": {
               "SampledRequestsEnabled": false,
               "CloudWatchMetricsEnabled": false,
-              "MetricName": "r1"
+              "MetricName": "geo"
+            }
+          },
+          {
+            "Name": "qarg",
+            "Priority": 2,
+            "Statement": {
+              "ByteMatchStatement": {
+                "FieldToMatch": {
+                  "SingleQueryArgument": {
+                    "Name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                  }
+                },
+                "PositionalConstraint": "CONTAINS",
+                "SearchString": "bad",
+                "TextTransformations": [
+                  {
+                    "Priority": 0,
+                    "Type": "NONE"
+                  }
+                ]
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "qarg"
+            }
+          },
+          {
+            "Name": "rate",
+            "Priority": 3,
+            "Statement": {
+              "RateBasedStatement": {
+                "Limit": 100,
+                "AggregateKeyType": "CUSTOM_KEYS",
+                "CustomKeys": [
+                  {
+                    "QueryArgument": {
+                      "Name": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                      "TextTransformations": [
+                        {
+                          "Priority": 0,
+                          "Type": "NONE"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "Action": {
+              "Block": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "rate"
+            }
+          },
+          {
+            "Name": "ref0",
+            "Priority": 10,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref0"
+            }
+          },
+          {
+            "Name": "ref1",
+            "Priority": 11,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref1"
+            }
+          },
+          {
+            "Name": "ref2",
+            "Priority": 12,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref2"
+            }
+          },
+          {
+            "Name": "ref3",
+            "Priority": 13,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref3"
+            }
+          },
+          {
+            "Name": "ref4",
+            "Priority": 14,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref4"
+            }
+          },
+          {
+            "Name": "ref5",
+            "Priority": 15,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref5"
+            }
+          },
+          {
+            "Name": "ref6",
+            "Priority": 16,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref6"
+            }
+          },
+          {
+            "Name": "ref7",
+            "Priority": 17,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref7"
+            }
+          },
+          {
+            "Name": "ref8",
+            "Priority": 18,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref8"
+            }
+          },
+          {
+            "Name": "ref9",
+            "Priority": 19,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref9"
+            }
+          },
+          {
+            "Name": "ref10",
+            "Priority": 20,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref10"
+            }
+          },
+          {
+            "Name": "ref11",
+            "Priority": 21,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref11"
+            }
+          },
+          {
+            "Name": "ref12",
+            "Priority": 22,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref12"
+            }
+          },
+          {
+            "Name": "ref13",
+            "Priority": 23,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref13"
+            }
+          },
+          {
+            "Name": "ref14",
+            "Priority": 24,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref14"
+            }
+          },
+          {
+            "Name": "ref15",
+            "Priority": 25,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref15"
+            }
+          },
+          {
+            "Name": "ref16",
+            "Priority": 26,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref16"
+            }
+          },
+          {
+            "Name": "ref17",
+            "Priority": 27,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref17"
+            }
+          },
+          {
+            "Name": "ref18",
+            "Priority": 28,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref18"
+            }
+          },
+          {
+            "Name": "ref19",
+            "Priority": 29,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref19"
+            }
+          },
+          {
+            "Name": "ref20",
+            "Priority": 30,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref20"
+            }
+          },
+          {
+            "Name": "ref21",
+            "Priority": 31,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref21"
+            }
+          },
+          {
+            "Name": "ref22",
+            "Priority": 32,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref22"
+            }
+          },
+          {
+            "Name": "ref23",
+            "Priority": 33,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref23"
+            }
+          },
+          {
+            "Name": "ref24",
+            "Priority": 34,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref24"
+            }
+          },
+          {
+            "Name": "ref25",
+            "Priority": 35,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref25"
+            }
+          },
+          {
+            "Name": "ref26",
+            "Priority": 36,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref26"
+            }
+          },
+          {
+            "Name": "ref27",
+            "Priority": 37,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref27"
+            }
+          },
+          {
+            "Name": "ref28",
+            "Priority": 38,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref28"
+            }
+          },
+          {
+            "Name": "ref29",
+            "Priority": 39,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref29"
+            }
+          },
+          {
+            "Name": "ref30",
+            "Priority": 40,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref30"
+            }
+          },
+          {
+            "Name": "ref31",
+            "Priority": 41,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref31"
+            }
+          },
+          {
+            "Name": "ref32",
+            "Priority": 42,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref32"
+            }
+          },
+          {
+            "Name": "ref33",
+            "Priority": 43,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref33"
+            }
+          },
+          {
+            "Name": "ref34",
+            "Priority": 44,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref34"
+            }
+          },
+          {
+            "Name": "ref35",
+            "Priority": 45,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref35"
+            }
+          },
+          {
+            "Name": "ref36",
+            "Priority": 46,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref36"
+            }
+          },
+          {
+            "Name": "ref37",
+            "Priority": 47,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref37"
+            }
+          },
+          {
+            "Name": "ref38",
+            "Priority": 48,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref38"
+            }
+          },
+          {
+            "Name": "ref39",
+            "Priority": 49,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref39"
+            }
+          },
+          {
+            "Name": "ref40",
+            "Priority": 50,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref40"
+            }
+          },
+          {
+            "Name": "ref41",
+            "Priority": 51,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref41"
+            }
+          },
+          {
+            "Name": "ref42",
+            "Priority": 52,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref42"
+            }
+          },
+          {
+            "Name": "ref43",
+            "Priority": 53,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref43"
+            }
+          },
+          {
+            "Name": "ref44",
+            "Priority": 54,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref44"
+            }
+          },
+          {
+            "Name": "ref45",
+            "Priority": 55,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref45"
+            }
+          },
+          {
+            "Name": "ref46",
+            "Priority": 56,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref46"
+            }
+          },
+          {
+            "Name": "ref47",
+            "Priority": 57,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref47"
+            }
+          },
+          {
+            "Name": "ref48",
+            "Priority": 58,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref48"
+            }
+          },
+          {
+            "Name": "ref49",
+            "Priority": 59,
+            "Statement": {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": [
+                    "IP",
+                    "Arn"
+                  ]
+                }
+              }
+            },
+            "Action": {
+              "Count": {}
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "ref49"
             }
           }
         ]

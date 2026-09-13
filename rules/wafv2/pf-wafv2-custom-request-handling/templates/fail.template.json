@@ -16,6 +16,74 @@
         },
         "Rules": [
           {
+            "Name": "r0",
+            "Priority": 0,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h0-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h0-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r0"
+            }
+          },
+          {
             "Name": "r1",
             "Priority": 1,
             "Statement": {
@@ -30,12 +98,48 @@
                 "CustomRequestHandling": {
                   "InsertHeaders": [
                     {
-                      "Name": "a",
-                      "Value": "1"
+                      "Name": "h1-0",
+                      "Value": "v"
                     },
                     {
-                      "Name": "a",
-                      "Value": "2"
+                      "Name": "h1-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h1-10",
+                      "Value": "v"
                     }
                   ]
                 }
@@ -45,6 +149,514 @@
               "SampledRequestsEnabled": false,
               "CloudWatchMetricsEnabled": false,
               "MetricName": "r1"
+            }
+          },
+          {
+            "Name": "r2",
+            "Priority": 2,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h2-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h2-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r2"
+            }
+          },
+          {
+            "Name": "r3",
+            "Priority": 3,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h3-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h3-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r3"
+            }
+          },
+          {
+            "Name": "r4",
+            "Priority": 4,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h4-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h4-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r4"
+            }
+          },
+          {
+            "Name": "r5",
+            "Priority": 5,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h5-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h5-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r5"
+            }
+          },
+          {
+            "Name": "r6",
+            "Priority": 6,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h6-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h6-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r6"
+            }
+          },
+          {
+            "Name": "r7",
+            "Priority": 7,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h7-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h7-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r7"
+            }
+          },
+          {
+            "Name": "r8",
+            "Priority": 8,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "h8-0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "h8-10",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r8"
+            }
+          },
+          {
+            "Name": "r9",
+            "Priority": 9,
+            "Statement": {
+              "GeoMatchStatement": {
+                "CountryCodes": [
+                  "AQ"
+                ]
+              }
+            },
+            "Action": {
+              "Count": {
+                "CustomRequestHandling": {
+                  "InsertHeaders": [
+                    {
+                      "Name": "t0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "t1",
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            },
+            "VisibilityConfig": {
+              "SampledRequestsEnabled": false,
+              "CloudWatchMetricsEnabled": false,
+              "MetricName": "r9"
             }
           }
         ]

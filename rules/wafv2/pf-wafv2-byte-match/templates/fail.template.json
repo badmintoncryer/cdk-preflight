@@ -24,14 +24,13 @@
                   "UriPath": {}
                 },
                 "PositionalConstraint": "CONTAINS",
-                "SearchString": "bad",
+                "SearchString": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "TextTransformations": [
                   {
                     "Priority": 0,
                     "Type": "NONE"
                   }
-                ],
-                "SearchStringBase64": "YmFk"
+                ]
               }
             },
             "Action": {

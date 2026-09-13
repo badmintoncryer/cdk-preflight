@@ -8,6 +8,7 @@
         "Scope": "REGIONAL",
         "IPAddressVersion": "IPV4",
         "Addresses": [
+          "255.255.255.0/24",
           "10.0.0.0/8",
           "192.0.2.44/32"
         ]

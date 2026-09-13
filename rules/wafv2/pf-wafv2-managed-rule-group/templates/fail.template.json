@@ -21,7 +21,40 @@
             "Statement": {
               "ManagedRuleGroupStatement": {
                 "VendorName": "AWS",
-                "Name": "AWSManagedRulesATPRuleSet"
+                "Name": "AWSManagedRulesAntiDDoSRuleSet",
+                "ManagedRuleGroupConfigs": [
+                  {
+                    "AWSManagedRulesAntiDDoSRuleSet": {
+                      "ClientSideActionConfig": {
+                        "Challenge": {
+                          "UsageOfAction": "ENABLED",
+                          "Sensitivity": "HIGH",
+                          "ExemptUriRegularExpressions": [
+                            {
+                              "RegexString": "/health0"
+                            },
+                            {
+                              "RegexString": "/health1"
+                            },
+                            {
+                              "RegexString": "/health2"
+                            },
+                            {
+                              "RegexString": "/health3"
+                            },
+                            {
+                              "RegexString": "/health4"
+                            },
+                            {
+                              "RegexString": "/health5"
+                            }
+                          ]
+                        }
+                      },
+                      "SensitivityToBlock": "LOW"
+                    }
+                  }
+                ]
               }
             },
             "OverrideAction": {

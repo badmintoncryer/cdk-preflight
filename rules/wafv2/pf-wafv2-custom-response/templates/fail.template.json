@@ -29,7 +29,53 @@
               "Block": {
                 "CustomResponse": {
                   "ResponseCode": 403,
-                  "CustomResponseBodyKey": "nope"
+                  "CustomResponseBodyKey": "b0",
+                  "ResponseHeaders": [
+                    {
+                      "Name": "x-h0",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h1",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h2",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h3",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h4",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h5",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h6",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h7",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h8",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h9",
+                      "Value": "v"
+                    },
+                    {
+                      "Name": "x-h10",
+                      "Value": "v"
+                    }
+                  ]
                 }
               }
             },
@@ -42,6 +88,206 @@
         ],
         "CustomResponseBodies": {
           "b0": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "b1": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b2": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b3": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b4": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b5": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b6": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b7": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b8": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b9": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b10": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b11": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b12": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b13": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b14": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b15": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b16": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b17": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b18": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b19": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b20": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b21": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b22": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b23": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b24": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b25": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b26": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b27": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b28": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b29": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b30": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b31": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b32": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b33": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b34": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b35": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b36": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b37": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b38": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b39": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b40": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b41": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b42": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b43": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b44": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b45": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b46": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b47": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b48": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b49": {
+            "ContentType": "TEXT_PLAIN",
+            "Content": "blocked"
+          },
+          "b50": {
             "ContentType": "TEXT_PLAIN",
             "Content": "blocked"
           }
