@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReferen
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"ActionsSuppressor must be a valid CloudWatch Alarm ARN or an Alarm name\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutCompositeAlarm with ActionsSuppressor \"arn:aws:sns:us-east-1:...:pf-topic\" -> \"ActionsSuppressor must be a valid CloudWatch Alarm ARN or an Alarm name\" - the format check runs before the alarm is looked up. Bare engine clean."
+  evidence: "bench 2026-09-13 us-east-1: ActionsSuppressor \"arn:aws:sns:us-east-1:123456789012:pf-topic\" -> \"ActionsSuppressor must be a valid CloudWatch Alarm ARN or an Alarm name\" ROLLBACK_COMPLETE; pass (the Arn of an alarm in the same template) -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1 PutCompositeAlarm gave the same message. The constraint is a shape, not an ordered limit - there is no boundary to sit on."
 addedOn: 2026-09-08

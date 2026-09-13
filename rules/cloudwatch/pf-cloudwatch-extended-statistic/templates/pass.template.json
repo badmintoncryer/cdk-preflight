@@ -4,13 +4,26 @@
       "Type": "AWS::CloudWatch::Alarm",
       "Properties": {
         "ComparisonOperator": "GreaterThanThreshold",
-        "EvaluationPeriods": 1,
+        "Threshold": 80,
         "MetricName": "CPUUtilization",
         "Namespace": "AWS/EC2",
-        "ExtendedStatistic": "p99.9",
+        "ExtendedStatistic": "p100",
         "Period": 60,
-        "Threshold": 80
+        "EvaluationPeriods": 1
       }
+    },
+    "B": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": 80,
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "ExtendedStatistic": "p100.99",
+        "Period": 60,
+        "EvaluationPeriods": 1
+      },
+      "DependsOn": "A"
     }
   }
 }

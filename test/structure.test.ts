@@ -243,6 +243,25 @@ test('boundaryProblem follows a helper call to what it counts', () => {
   expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
 });
 
+test('boundaryProblem ignores comparisons written in comments', () => {
+  // 「x <= 23 と width <= 24 だけを主張する」のような覚書はロジックではない。拾うと
+  // ルールに無いしきい値を要求する。文字列の中の `#`（URL のフラグメント）は巻き込まない
+  const rego = [
+    '# Only the two benched maxima are claimed (x <= 23, width <= 24).',
+    '_pf_x_max := {"x": 23}',
+    '',
+    'violation contains make_diag_full("x", "ERROR", name, "p", "m", "f",',
+    '\t"https://example.com/doc.html#Percentiles") if {',
+    '\tv := to_number(resolve(name, "Properties.V"))',
+    '\tv > 100',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (v: number) => JSON.stringify({ Resources: { R: { Type: 'A::B::C', Properties: { V: v } } } });
+  expect(boundaryProblem(rego, fx(101), fx(100))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(200), fx(100))).toMatch(/fail template has no 101/);
+});
+
 test('boundaryProblem ignores comparisons written in the diagnostic text', () => {
   // 修正案の文面に書いた `>= 31` はロジックではない。拾うとルールに存在しない
   // しきい値を要求してしまう
