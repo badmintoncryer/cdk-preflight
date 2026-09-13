@@ -103,6 +103,115 @@
 | `pf-apigwv2-websocket-no-cors` | AWS::ApiGatewayV2::Api | WebSocket APIs take no CORS configuration | ERROR | none |
 | `pf-apigwv2-websocket-payload-version` | AWS::ApiGatewayV2::Integration | WebSocket AWS_PROXY integrations reject payload format 2.0 | ERROR | none |
 | `pf-apigwv2-websocket-route-selection` | AWS::ApiGatewayV2::Api | WebSocket APIs need RouteSelectionExpression | ERROR | none |
+| `pf-appsync-api-additional-auth-duplicate-primary` | AWS::AppSync::GraphQLApi | An additional authentication provider may not repeat another mode | ERROR | none |
+| `pf-appsync-api-cognito-requires-userpool-config` | AWS::AppSync::GraphQLApi | AMAZON_COGNITO_USER_POOLS authentication needs UserPoolConfig | ERROR | none |
+| `pf-appsync-api-enhanced-metrics-values` | AWS::AppSync::GraphQLApi | DataSourceLevelMetricsBehavior takes one of two values | ERROR | pending-engine |
+| `pf-appsync-api-env-var-count-max` | AWS::AppSync::GraphQLApi | An API carries at most 50 environment variables | ERROR | none |
+| `pf-appsync-api-env-var-key-max-length` | AWS::AppSync::GraphQLApi | Environment variable keys are at most 64 characters | ERROR | none |
+| `pf-appsync-api-env-var-key-min-length` | AWS::AppSync::GraphQLApi | Environment variable keys are at least 2 characters | ERROR | none |
+| `pf-appsync-api-env-var-value-max-length` | AWS::AppSync::GraphQLApi | Environment variable values are at most 512 characters | ERROR | none |
+| `pf-appsync-api-introspection-config-value` | AWS::AppSync::GraphQLApi | IntrospectionConfig takes one of ENABLED / DISABLED | ERROR | pending-engine |
+| `pf-appsync-api-key-expires-max` | AWS::AppSync::ApiKey | An API key expires at most 365 days out | ERROR | none |
+| `pf-appsync-api-key-expires-past` | AWS::AppSync::ApiKey | An API key expiry is an absolute Unix timestamp in seconds | ERROR | none |
+| `pf-appsync-api-lambda-auth-requires-config` | AWS::AppSync::GraphQLApi | AWS_LAMBDA authentication needs LambdaAuthorizerConfig | ERROR | none |
+| `pf-appsync-api-merged-requires-execution-role` | AWS::AppSync::GraphQLApi | A MERGED API needs MergedApiExecutionRoleArn | ERROR | none |
+| `pf-appsync-api-oidc-issuer-scheme` | AWS::AppSync::GraphQLApi | The OIDC issuer is an https URL | ERROR | none |
+| `pf-appsync-api-oidc-requires-openid-config` | AWS::AppSync::GraphQLApi | OPENID_CONNECT authentication needs OpenIDConnectConfig | ERROR | none |
+| `pf-appsync-api-single-lambda-authorizer` | AWS::AppSync::GraphQLApi | An API can have only one Lambda authorizer | ERROR | none |
+| `pf-appsync-api-type-value` | AWS::AppSync::GraphQLApi | ApiType takes one of GRAPHQL / MERGED | ERROR | pending-engine |
+| `pf-appsync-api-userpool-default-action-with-additional` | AWS::AppSync::GraphQLApi | DefaultAction must be ALLOW when additional providers are configured | ERROR | none |
+| `pf-appsync-api-visibility-value` | AWS::AppSync::GraphQLApi | Visibility takes one of GLOBAL / PRIVATE | ERROR | pending-engine |
+| `pf-appsync-cache-behavior-value` | AWS::AppSync::ApiCache | ApiCachingBehavior takes one of FULL_REQUEST_CACHING / PER_RESOLVER_CACHING / OPERATION_LEVEL_CACHING | ERROR | none |
+| `pf-appsync-cache-health-metrics-value` | AWS::AppSync::ApiCache | HealthMetricsConfig takes one of ENABLED / DISABLED | ERROR | none |
+| `pf-appsync-cache-ttl-range` | AWS::AppSync::ApiCache | ApiCache TTL is between 1 and 3600 seconds | ERROR | none |
+| `pf-appsync-cache-type-deprecated-instance` | AWS::AppSync::ApiCache | The T2 and R4 cache instance types are retired | ERROR | none |
+| `pf-appsync-code-no-async` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support async functions | ERROR | none |
+| `pf-appsync-code-no-class` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support class declarations | ERROR | none |
+| `pf-appsync-code-no-continue` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support continue statements | ERROR | none |
+| `pf-appsync-code-no-generator` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support generator functions | ERROR | none |
+| `pf-appsync-code-no-increment-operator` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support ++ and -- | ERROR | none |
+| `pf-appsync-code-no-instanceof` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support the instanceof operator | ERROR | none |
+| `pf-appsync-code-no-promise` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support Promise | ERROR | none |
+| `pf-appsync-code-no-regex-literal` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support regular expression literals | ERROR | none |
+| `pf-appsync-code-no-this` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support this expressions | ERROR | none |
+| `pf-appsync-code-no-try` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support try statements | ERROR | none |
+| `pf-appsync-code-no-while` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | APPSYNC_JS does not support while loops | ERROR | none |
+| `pf-appsync-code-request-response-exports-required` | AWS::AppSync::FunctionConfiguration<br>AWS::AppSync::Resolver | An APPSYNC_JS handler exports request and response | ERROR | none |
+| `pf-appsync-domain-cert-region` | AWS::AppSync::DomainName | The custom domain certificate lives in us-east-1 | ERROR | none |
+| `pf-appsync-ds-config-matches-type` | AWS::AppSync::DataSource | Only the configuration block matching Type may be set | ERROR | none |
+| `pf-appsync-ds-delta-sync-requires-versioned` | AWS::AppSync::DataSource | DeltaSyncConfig needs a versioned table | ERROR | none |
+| `pf-appsync-ds-dynamodb-region-mismatch` | AWS::AppSync::DataSource | DynamoDBConfig.AwsRegion must be a region name | ERROR | none |
+| `pf-appsync-ds-dynamodb-requires-config` | AWS::AppSync::DataSource | A AMAZON_DYNAMODB data source needs DynamoDBConfig | ERROR | none |
+| `pf-appsync-ds-eventbridge-requires-config` | AWS::AppSync::DataSource | A AMAZON_EVENTBRIDGE data source needs EventBridgeConfig | ERROR | none |
+| `pf-appsync-ds-http-auth-type-value` | AWS::AppSync::DataSource | AuthorizationType takes AWS_IAM | ERROR | pending-engine |
+| `pf-appsync-ds-http-endpoint-scheme` | AWS::AppSync::DataSource | An HTTP endpoint is an http or https URL | ERROR | none |
+| `pf-appsync-ds-http-requires-config` | AWS::AppSync::DataSource | A HTTP data source needs HttpConfig | ERROR | none |
+| `pf-appsync-ds-lambda-requires-config` | AWS::AppSync::DataSource | A AWS_LAMBDA data source needs LambdaConfig | ERROR | none |
+| `pf-appsync-ds-lambda-requires-service-role` | AWS::AppSync::DataSource | A data source that reaches another service needs ServiceRoleArn | ERROR | none |
+| `pf-appsync-ds-metrics-config-value` | AWS::AppSync::DataSource | MetricsConfig takes ENABLED / DISABLED | ERROR | pending-engine |
+| `pf-appsync-ds-none-forbids-config` | AWS::AppSync::DataSource | A NONE data source takes no configuration block | ERROR | none |
+| `pf-appsync-ds-opensearch-requires-config` | AWS::AppSync::DataSource | A AMAZON_OPENSEARCH_SERVICE data source needs OpenSearchServiceConfig | ERROR | none |
+| `pf-appsync-ds-rds-requires-config` | AWS::AppSync::DataSource | A RELATIONAL_DATABASE data source needs RelationalDatabaseConfig | ERROR | none |
+| `pf-appsync-ds-rds-source-type-value` | AWS::AppSync::DataSource | RelationalDatabaseSourceType takes RDS_HTTP_ENDPOINT | ERROR | pending-engine |
+| `pf-appsync-ev-auth-provider-cognito-requires-config` | AWS::AppSync::Api | An AMAZON_COGNITO_USER_POOLS auth provider needs CognitoConfig | ERROR | none |
+| `pf-appsync-ev-auth-provider-duplicate-type` | AWS::AppSync::Api | Each auth type appears once in AuthProviders | ERROR | none |
+| `pf-appsync-ev-auth-provider-lambda-requires-config` | AWS::AppSync::Api | An AWS_LAMBDA auth provider needs LambdaAuthorizerConfig | ERROR | none |
+| `pf-appsync-ev-auth-provider-oidc-requires-config` | AWS::AppSync::Api | An OPENID_CONNECT auth provider needs OpenIDConnectConfig | ERROR | none |
+| `pf-appsync-ev-connection-auth-mode-in-providers` | AWS::AppSync::Api | ConnectionAuthModes may only use configured auth providers | ERROR | none |
+| `pf-appsync-ev-publish-auth-mode-in-providers` | AWS::AppSync::Api | DefaultPublishAuthModes may only use configured auth providers | ERROR | none |
+| `pf-appsync-ev-subscribe-auth-mode-in-providers` | AWS::AppSync::Api | DefaultSubscribeAuthModes may only use configured auth providers | ERROR | none |
+| `pf-appsync-fn-code-and-mapping-template-exclusive` | AWS::AppSync::FunctionConfiguration | Code and mapping templates are exclusive | ERROR | none |
+| `pf-appsync-fn-code-and-s3-location-exclusive` | AWS::AppSync::FunctionConfiguration | Code and CodeS3Location are exclusive | ERROR | none |
+| `pf-appsync-fn-code-requires-runtime` | AWS::AppSync::FunctionConfiguration | Code needs a Runtime | ERROR | none |
+| `pf-appsync-fn-data-source-exists` | AWS::AppSync::FunctionConfiguration | DataSourceName names a data source on the same API | ERROR | none |
+| `pf-appsync-fn-function-version-value` | AWS::AppSync::FunctionConfiguration | FunctionVersion is 2018-05-29 | ERROR | none |
+| `pf-appsync-fn-max-batch-size-requires-lambda-ds` | AWS::AppSync::FunctionConfiguration | MaxBatchSize only applies to a Lambda data source | ERROR | none |
+| `pf-appsync-fn-runtime-name-value` | AWS::AppSync::FunctionConfiguration | Runtime.Name takes APPSYNC_JS | ERROR | pending-engine |
+| `pf-appsync-fn-runtime-requires-code` | AWS::AppSync::FunctionConfiguration | A Runtime needs Code | ERROR | none |
+| `pf-appsync-fn-runtime-version-value` | AWS::AppSync::FunctionConfiguration | The APPSYNC_JS runtime version is 1.0.0 | ERROR | none |
+| `pf-appsync-fn-sync-conflict-detection-none-with-handler` | AWS::AppSync::FunctionConfiguration | ConflictDetection NONE takes no ConflictHandler | ERROR | none |
+| `pf-appsync-fn-sync-conflict-handler-lambda-requires-config` | AWS::AppSync::FunctionConfiguration | A LAMBDA conflict handler needs LambdaConflictHandlerConfig | ERROR | none |
+| `pf-appsync-fn-vtl-requires-function-version` | AWS::AppSync::FunctionConfiguration | A VTL function needs FunctionVersion | ERROR | none |
+| `pf-appsync-ns-auth-mode-in-api-providers` | AWS::AppSync::ChannelNamespace | A namespace may only use auth modes its API configures | ERROR | none |
+| `pf-appsync-ns-code-handlers-s3-exclusive` | AWS::AppSync::ChannelNamespace | CodeHandlers and CodeS3Location are exclusive | ERROR | none |
+| `pf-appsync-ns-handler-code-requires-code-handlers` | AWS::AppSync::ChannelNamespace | A CODE handler needs handler code | ERROR | none |
+| `pf-appsync-ns-handler-lambda-requires-config` | AWS::AppSync::ChannelNamespace | A DIRECT handler needs LambdaConfig | ERROR | none |
+| `pf-appsync-ns-integration-data-source-exists` | AWS::AppSync::ChannelNamespace | A handler integration names a data source on the same API | ERROR | none |
+| `pf-appsync-res-caching-ttl-range` | AWS::AppSync::Resolver | CachingConfig.Ttl is between 1 and 3600 seconds | ERROR | none |
+| `pf-appsync-res-code-and-mapping-template-exclusive` | AWS::AppSync::Resolver | Code and mapping templates are exclusive | ERROR | none |
+| `pf-appsync-res-code-and-s3-location-exclusive` | AWS::AppSync::Resolver | Code and CodeS3Location are exclusive | ERROR | none |
+| `pf-appsync-res-code-requires-runtime` | AWS::AppSync::Resolver | Code needs a Runtime | ERROR | none |
+| `pf-appsync-res-data-source-exists` | AWS::AppSync::Resolver | DataSourceName names a data source on the same API | ERROR | none |
+| `pf-appsync-res-field-in-schema` | AWS::AppSync::Resolver | FieldName must exist on the type | ERROR | none |
+| `pf-appsync-res-kind-value` | AWS::AppSync::Resolver | Kind takes UNIT / PIPELINE | ERROR | pending-engine |
+| `pf-appsync-res-max-batch-size-requires-lambda-ds` | AWS::AppSync::Resolver | MaxBatchSize only applies to a Lambda data source | ERROR | none |
+| `pf-appsync-res-metrics-config-value` | AWS::AppSync::Resolver | MetricsConfig takes ENABLED / DISABLED | ERROR | pending-engine |
+| `pf-appsync-res-pipeline-forbids-data-source` | AWS::AppSync::Resolver | A PIPELINE resolver takes no DataSourceName | ERROR | none |
+| `pf-appsync-res-pipeline-functions-max` | AWS::AppSync::Resolver | A pipeline runs at most 10 functions | ERROR | none |
+| `pf-appsync-res-pipeline-requires-functions` | AWS::AppSync::Resolver | A PIPELINE resolver needs PipelineConfig.Functions | ERROR | none |
+| `pf-appsync-res-runtime-name-value` | AWS::AppSync::Resolver | Runtime.Name takes APPSYNC_JS | ERROR | pending-engine |
+| `pf-appsync-res-runtime-requires-code` | AWS::AppSync::Resolver | A Runtime needs Code | ERROR | none |
+| `pf-appsync-res-runtime-version-value` | AWS::AppSync::Resolver | The APPSYNC_JS runtime version is 1.0.0 | ERROR | none |
+| `pf-appsync-res-sync-conflict-detection-none-with-handler` | AWS::AppSync::Resolver | ConflictDetection NONE takes no ConflictHandler | ERROR | none |
+| `pf-appsync-res-sync-conflict-handler-lambda-requires-config` | AWS::AppSync::Resolver | A LAMBDA conflict handler needs LambdaConflictHandlerConfig | ERROR | none |
+| `pf-appsync-res-type-field-in-schema` | AWS::AppSync::Resolver | TypeName must exist in the schema | ERROR | none |
+| `pf-appsync-res-unit-forbids-pipeline-config` | AWS::AppSync::Resolver | A UNIT resolver takes no PipelineConfig | ERROR | none |
+| `pf-appsync-res-unit-requires-data-source` | AWS::AppSync::Resolver | A UNIT resolver needs DataSourceName | ERROR | none |
+| `pf-appsync-schema-definition-or-s3-required` | AWS::AppSync::GraphQLSchema | A schema needs Definition or DefinitionS3Location | ERROR | none |
+| `pf-appsync-schema-definition-s3-exclusive` | AWS::AppSync::GraphQLSchema | Definition and DefinitionS3Location are exclusive | ERROR | none |
+| `pf-appsync-schema-duplicate-field` | AWS::AppSync::GraphQLSchema | A field name may only appear once per type | ERROR | none |
+| `pf-appsync-schema-duplicate-schema-keyword` | AWS::AppSync::GraphQLSchema | A schema declares the schema block once | ERROR | none |
+| `pf-appsync-schema-duplicate-type` | AWS::AppSync::GraphQLSchema | A type may only be declared once | ERROR | none |
+| `pf-appsync-schema-input-type-as-output` | AWS::AppSync::GraphQLSchema | An input type cannot be a field type | ERROR | none |
+| `pf-appsync-schema-interface-not-implemented` | AWS::AppSync::GraphQLSchema | A type must declare every field of the interfaces it implements | ERROR | none |
+| `pf-appsync-schema-object-as-argument` | AWS::AppSync::GraphQLSchema | An argument type must be an input type | ERROR | none |
+| `pf-appsync-schema-requires-query-root` | AWS::AppSync::GraphQLSchema | A schema needs a query root type | ERROR | none |
+| `pf-appsync-schema-root-type-missing` | AWS::AppSync::GraphQLSchema | The schema block may only name declared types | ERROR | none |
+| `pf-appsync-schema-undefined-type-reference` | AWS::AppSync::GraphQLSchema | Every field type must be declared in the schema | ERROR | none |
+| `pf-appsync-schema-unknown-scalar` | AWS::AppSync::GraphQLSchema | Only AppSync's own AWS scalars exist | ERROR | none |
+| `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | pending-engine |
+| `pf-appsync-source-api-merged-not-source` | AWS::AppSync::SourceApiAssociation | A merged API cannot be a source API | ERROR | none |
+| `pf-appsync-source-api-not-merged-target` | AWS::AppSync::SourceApiAssociation | The association target must be a MERGED API | ERROR | none |
 | `pf-asg-az-xor-azid` | AWS::AutoScaling::AutoScalingGroup | A group names zones by name or by id, not both | ERROR | none |
 | `pf-asg-capacity-reservation-none-target-exclusive` | AWS::AutoScaling::AutoScalingGroup | A capacity reservation target needs the capacity-reservations-only preference | ERROR | none |
 | `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | ERROR | none |

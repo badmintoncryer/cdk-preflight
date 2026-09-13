@@ -1,0 +1,12 @@
+id: pf-appsync-schema-interface-not-implemented
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLSchema]
+benchRegion: us-east-1
+severity: ERROR
+title: A type must declare every field of the interfaces it implements
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-your-schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema:"
+addedOn: 2026-09-12

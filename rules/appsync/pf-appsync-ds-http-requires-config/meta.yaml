@@ -1,0 +1,12 @@
+id: pf-appsync-ds-http-requires-config
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: A HTTP data source needs HttpConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Missing HTTP data source config (Service: AppSync, Status Code: 400, Request ID: 2f8f4dda-b421-43c1-992e-6937693dd30f) (SDK Attempt Count: 1)\" (RequestToken: 3b97735b-491e-57fb-5591-0db9cf0bf016, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

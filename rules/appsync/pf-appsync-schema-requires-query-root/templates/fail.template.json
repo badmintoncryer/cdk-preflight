@@ -1,0 +1,23 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "type Foo { a: String }\n"
+   }
+  }
+ }
+}

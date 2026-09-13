@@ -1,0 +1,12 @@
+id: pf-appsync-res-code-and-mapping-template-exclusive
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: Code and mapping templates are exclusive
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Request and Response mapping templates can not be supplied with provided resolver runtime.\" (RequestToken: a1dc1814-e1cd-9033-8f36-ac5a97e02f5b, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

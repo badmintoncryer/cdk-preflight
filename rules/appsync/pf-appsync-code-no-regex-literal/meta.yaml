@@ -1,0 +1,12 @@
+id: pf-appsync-code-no-regex-literal
+service: appsync
+resourceTypes: [AWS::AppSync::FunctionConfiguration, AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: APPSYNC_JS does not support regular expression literals
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"The code contains one or more errors. (Service: AppSync, Status Code: 400, Request ID: 8cfa1a74-7cdc-4d0a-a11d-c05c2ea4021b) (SDK Attempt Count: 1)\" (RequestToken: 9ad271ef-db87-19e7-870c-c2170acf9cd7, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

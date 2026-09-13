@@ -1,0 +1,12 @@
+id: pf-appsync-ds-delta-sync-requires-versioned
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: DeltaSyncConfig needs a versioned table
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"DynamoDB datasource must be versioned when configuring Delta Sync. (Service: AppSync, Status Code: 400, Request ID: ff667bbb-314d-483c-ba1d-10b59891ea6a) (SDK Attempt Count: 1)\" (RequestToken: 53c75366-0f7d-85d0-3c18-c908ba04df14, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

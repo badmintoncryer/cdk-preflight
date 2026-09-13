@@ -1,0 +1,12 @@
+id: pf-appsync-cache-ttl-range
+service: appsync
+resourceTypes: [AWS::AppSync::ApiCache]
+benchRegion: us-east-1
+severity: ERROR
+title: ApiCache TTL is between 1 and 3600 seconds
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"TTL value cannot be smaller than 1 second and larger than 3600 seconds. (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: b0fad3ca-2451-420c-b838-3b61f787ce53; Proxy: null)\" (RequestToken: 83336a2a-d96c-4aff-b600-790c3b9a64a7)"
+addedOn: 2026-09-12

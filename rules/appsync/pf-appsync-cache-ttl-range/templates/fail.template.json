@@ -1,0 +1,25 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::ApiCache",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "ApiCachingBehavior": "FULL_REQUEST_CACHING",
+    "Ttl": 3601,
+    "Type": "SMALL"
+   }
+  }
+ }
+}

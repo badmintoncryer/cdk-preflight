@@ -1,0 +1,12 @@
+id: pf-appsync-ds-eventbridge-requires-config
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: A AMAZON_EVENTBRIDGE data source needs EventBridgeConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Missing EventBridge data source config (Service: AppSync, Status Code: 400, Request ID: 358f8684-2f1d-4c44-a64d-60ba5cadb4b5) (SDK Attempt Count: 1)\" (RequestToken: e5f0b595-b7a9-f282-906b-5bfbb68242f9, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

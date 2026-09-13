@@ -1,0 +1,12 @@
+id: pf-appsync-source-api-merged-not-source
+service: appsync
+resourceTypes: [AWS::AppSync::SourceApiAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: A merged API cannot be a source API
+constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/merged-api.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid request provided: Invalid API type, expected api to be type GRAPHQL for api : wjtrkg4pzredzmbxa7hdynzljy (Service: AppSync, Status Code: 400, Request ID: 25b3786b-9f63-4475-be73-42c6c5fa683b) (SDK Attempt Count: 1)\" (RequestToken: 24b3685e-cc60-b6ef-8654-310779e7545d, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

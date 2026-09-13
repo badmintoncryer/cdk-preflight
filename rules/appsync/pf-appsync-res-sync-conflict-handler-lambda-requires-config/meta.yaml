@@ -1,0 +1,12 @@
+id: pf-appsync-res-sync-conflict-handler-lambda-requires-config
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: A LAMBDA conflict handler needs LambdaConflictHandlerConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"SyncConfig can only be specified for a resolver attached to a DynamoDB data source. (Service: AppSync, Status Code: 400, Request ID: 4152a1d3-96a2-4470-ace8-54b7447b9933) (SDK Attempt Count: 1)\" (RequestToken: 25c94720-90bd-7ffc-2c82-bf543c0a3ad7, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

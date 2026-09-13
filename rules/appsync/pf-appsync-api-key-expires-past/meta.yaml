@@ -1,0 +1,12 @@
+id: pf-appsync-api-key-expires-past
+service: appsync
+resourceTypes: [AWS::AppSync::ApiKey]
+benchRegion: us-east-1
+severity: ERROR
+title: An API key expiry is an absolute Unix timestamp in seconds
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiKey.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"API key must be valid for a minimum of 1 days. (Service: AWSAppSync; Status Code: 400; Error Code: ApiKeyValidityOutOfBoundsException; Request ID: f7edae8c-955d-4451-ad47-185653759547; Proxy: null)\" (RequestToken: 04aa1c77-438d-42b6-b492-fde41f0aa914)"
+addedOn: 2026-09-12

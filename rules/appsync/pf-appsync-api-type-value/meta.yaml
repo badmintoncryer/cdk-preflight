@@ -1,0 +1,12 @@
+id: pf-appsync-api-type-value
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLApi]
+benchRegion: us-east-1
+severity: ERROR
+title: ApiType takes one of GRAPHQL / MERGED
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-appsync-graphqlapi.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/ApiType} does not match pattern {(GRAPHQL|MERGED)}]"
+addedOn: 2026-09-12

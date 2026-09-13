@@ -1,0 +1,12 @@
+id: pf-appsync-res-kind-value
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: Kind takes UNIT / PIPELINE
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Unsupported resolver type.\" (RequestToken: cabd080c-1a2a-7776-7b8e-6e158fd0f87e, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

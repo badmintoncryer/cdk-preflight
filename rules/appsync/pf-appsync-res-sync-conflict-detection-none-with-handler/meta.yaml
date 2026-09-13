@@ -1,0 +1,12 @@
+id: pf-appsync-res-sync-conflict-detection-none-with-handler
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: ConflictDetection NONE takes no ConflictHandler
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"SyncConfig can only be specified for a resolver attached to a DynamoDB data source. (Service: AppSync, Status Code: 400, Request ID: 2f20db37-6ea8-4dea-97f4-d500d5871b01) (SDK Attempt Count: 1)\" (RequestToken: b153b801-cfe6-ad13-9c5a-59dc92311f16, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

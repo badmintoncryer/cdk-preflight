@@ -1,0 +1,12 @@
+id: pf-appsync-cache-health-metrics-value
+service: appsync
+resourceTypes: [AWS::AppSync::ApiCache]
+benchRegion: us-east-1
+severity: ERROR
+title: HealthMetricsConfig takes one of ENABLED / DISABLED
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/HealthMetricsConfig} does not match pattern {(ENABLED|DISABLED)}]"
+addedOn: 2026-09-12

@@ -1,0 +1,12 @@
+id: pf-appsync-fn-vtl-requires-function-version
+service: appsync
+resourceTypes: [AWS::AppSync::FunctionConfiguration]
+benchRegion: us-east-1
+severity: ERROR
+title: A VTL function needs FunctionVersion
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-functionconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid request provided: The FunctionVersion can not be null to create a function.\" (RequestToken: 293fd4f1-4aad-d2c1-468e-31da48f32c26, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

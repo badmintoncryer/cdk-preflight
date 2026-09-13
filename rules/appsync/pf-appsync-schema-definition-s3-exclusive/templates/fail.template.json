@@ -1,0 +1,24 @@
+{
+ "Resources": {
+  "Api": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "Name": "api1",
+    "AuthenticationType": "API_KEY"
+   }
+  },
+  "Target": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "Api",
+      "ApiId"
+     ]
+    },
+    "Definition": "schema { query: Query }\ntype Query { hi: String }\n",
+    "DefinitionS3Location": "s3://b/schema.graphql"
+   }
+  }
+ }
+}

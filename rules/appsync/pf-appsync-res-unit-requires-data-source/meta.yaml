@@ -1,0 +1,12 @@
+id: pf-appsync-res-unit-requires-data-source
+service: appsync
+resourceTypes: [AWS::AppSync::Resolver]
+benchRegion: us-east-1
+severity: ERROR
+title: A UNIT resolver needs DataSourceName
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"DataSourceName is required for UNIT resolver.\" (RequestToken: 0a87165f-a5f2-a7ad-8f3d-ac20d986c2de, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

@@ -1,0 +1,12 @@
+id: pf-appsync-ds-opensearch-requires-config
+service: appsync
+resourceTypes: [AWS::AppSync::DataSource]
+benchRegion: us-east-1
+severity: ERROR
+title: A AMAZON_OPENSEARCH_SERVICE data source needs OpenSearchServiceConfig
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-datasource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Missing OpenSearch Service data source config (Service: AppSync, Status Code: 400, Request ID: 8893994c-bc86-41b3-978b-0d14561cd4b3) (SDK Attempt Count: 1)\" (RequestToken: d385af57-f79d-5a4c-8673-06e827b4428a, HandlerErrorCode: InvalidRequest)"
+addedOn: 2026-09-12

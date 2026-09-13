@@ -1,0 +1,12 @@
+id: pf-appsync-api-env-var-key-min-length
+service: appsync
+resourceTypes: [AWS::AppSync::GraphQLApi]
+benchRegion: us-east-1
+severity: ERROR
+title: Environment variable keys are at least 2 characters
+constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_PutGraphqlApiEnvironmentVariables.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"1 validation error detected: Value '{A=v}' at 'environmentVariables' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less than or equal to 64, Member must have length greater than or equal to 2, Member must satisfy regular expression pattern: ^[A-Za-z]+\\w*$] (Service: AmazonDeepdish; Status Code: 400; Error Code: BadReque"
+addedOn: 2026-09-12
