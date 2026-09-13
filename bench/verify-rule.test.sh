@@ -68,6 +68,10 @@ got=$(CDKPF_STUB_PSTATUS=CREATE_COMPLETE \
       run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
 expect 0 "$got" "a clean pass stack still verifies"
 
+# pass が本当にデプロイされて CREATE_COMPLETE 以外で終わったなら exit 3 のまま（下の 4 と別物）
+got=$(run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
+expect 3 "$got" "a pass stack that deployed and rolled back is an unclean fixture, not INCONCLUSIVE"
+
 # pass テンプレートが API に弾かれた場合: スタックは一度も作られないので poll は GONE を返す。
 # それを「デプロイしたが CREATE_COMPLETE で終わらなかった」(exit 3) と同じ扱いにすると、
 # 本当の理由（ここでは templateBody の 51200 バイト上限）がログを開くまで見えない。
