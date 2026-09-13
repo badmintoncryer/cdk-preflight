@@ -37,15 +37,8 @@ pf-cloudwatch-dashboard-widget-position  pending #178
 pf-cloudwatch-extended-statistic  pending #178
 pf-cloudwatch-insight-rule-keys-max  pending #178
 pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
-pf-dynamodb-global-table-gsi-count  pending #178
-pf-dynamodb-global-table-key-schema-shape  pending #178
-pf-dynamodb-global-table-lsi-count  pending #178
-pf-dynamodb-global-table-name-length  pending #178
-pf-dynamodb-gsi-count  pending #178
-pf-dynamodb-lsi-count  pending #178
-pf-dynamodb-projection-nonkey-total  pending #178
-pf-dynamodb-resource-policy-size  pending #178
-pf-dynamodb-warm-throughput-minimum  pending #178
+pf-dynamodb-projection-nonkey-total  しきい値と突き合わせるのは INCLUDE インデックスをまたいだ投影属性数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 に乗せてある（1 インデックス 20 本の上限は pf-dynamodb-projection-nonkey-limit 側で境界に乗っている）
+pf-dynamodb-resource-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（解決後の形で 20481 / 20480 ちょうどに乗せてある）
 pf-ec2-sg-icmp-type-code  pending #178
 pf-ec2-sg-port-range  pending #178
 pf-ec2-sg-source-exclusive  pending #178

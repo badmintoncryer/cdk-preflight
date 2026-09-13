@@ -24,7 +24,7 @@
             "Region": "us-east-1"
           }
         ],
-        "TableName": "cdkpf-gt-name-length"
+        "TableName": "gtn"
       }
     }
   }
