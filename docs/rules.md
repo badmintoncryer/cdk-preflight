@@ -903,7 +903,6 @@
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | ERROR | none |
 | `pf-dynamodb-duplicate-index-name` | AWS::DynamoDB::Table | Secondary index names must be unique | ERROR | none |
 | `pf-dynamodb-global-table-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable AttributeDefinitions must match the key schemas exactly | ERROR | none |
-| `pf-dynamodb-global-table-gsi-count` | AWS::DynamoDB::GlobalTable | A global table can carry at most 20 global secondary indexes | ERROR | none |
 | `pf-dynamodb-global-table-gsi-provisioned-write-settings` | AWS::DynamoDB::GlobalTable | Each GSI of a PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings | ERROR | none |
 | `pf-dynamodb-global-table-key-schema-shape` | AWS::DynamoDB::GlobalTable | GlobalTable KeySchema must be [HASH] or [HASH, RANGE] | ERROR | none |
 | `pf-dynamodb-global-table-lsi-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable LSI key attributes must be defined in AttributeDefinitions | ERROR | none |
@@ -929,7 +928,6 @@
 | `pf-dynamodb-global-table-witness-requires-mrsc` | AWS::DynamoDB::GlobalTable | GlobalTableWitnesses only exists for MRSC global tables | ERROR | none |
 | `pf-dynamodb-global-table-write-provisioned-with-ppr` | AWS::DynamoDB::GlobalTable | WriteProvisionedThroughputSettings cannot be used with PAY_PER_REQUEST | ERROR | none |
 | `pf-dynamodb-gsi-billing-throughput` | AWS::DynamoDB::Table | GSI ProvisionedThroughput must match the table BillingMode | ERROR | none |
-| `pf-dynamodb-gsi-count` | AWS::DynamoDB::Table | A table can carry at most 20 global secondary indexes | ERROR | none |
 | `pf-dynamodb-gsi-projection-nonkey` | AWS::DynamoDB::Table | NonKeyAttributes goes with INCLUDE, and only with INCLUDE | ERROR | none |
 | `pf-dynamodb-import-csv-delimiter` | AWS::DynamoDB::Table | A CSV import delimiter is a single character from , ; : | tab space | ERROR | none |
 | `pf-dynamodb-import-format-options` | AWS::DynamoDB::Table | InputFormatOptions only applies to CSV imports | ERROR | none |

@@ -11,6 +11,10 @@
           {
             "AttributeName": "sk",
             "AttributeType": "S"
+          },
+          {
+            "AttributeName": "x",
+            "AttributeType": "S"
           }
         ],
         "KeySchema": [
@@ -21,6 +25,10 @@
           {
             "AttributeName": "pk",
             "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "x",
+            "KeyType": "RANGE"
           }
         ],
         "BillingMode": "PAY_PER_REQUEST",

@@ -9,7 +9,23 @@
             "AttributeType": "S"
           },
           {
-            "AttributeName": "gk",
+            "AttributeName": "g0",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g1",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g2",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g3",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "g4",
             "AttributeType": "S"
           }
         ],
@@ -25,7 +41,7 @@
             "IndexName": "gsi0",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g0",
                 "KeyType": "HASH"
               }
             ],
@@ -59,7 +75,7 @@
             "IndexName": "gsi1",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g1",
                 "KeyType": "HASH"
               }
             ],
@@ -93,7 +109,7 @@
             "IndexName": "gsi2",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g2",
                 "KeyType": "HASH"
               }
             ],
@@ -127,7 +143,7 @@
             "IndexName": "gsi3",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g3",
                 "KeyType": "HASH"
               }
             ],
@@ -161,7 +177,7 @@
             "IndexName": "gsi4",
             "KeySchema": [
               {
-                "AttributeName": "gk",
+                "AttributeName": "g4",
                 "KeyType": "HASH"
               }
             ],
