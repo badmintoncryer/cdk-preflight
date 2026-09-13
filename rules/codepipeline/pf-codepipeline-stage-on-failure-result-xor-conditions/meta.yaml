@@ -1,0 +1,12 @@
+id: pf-codepipeline-stage-on-failure-result-xor-conditions
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A stage's OnFailure takes either Result or Conditions, not both"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: OnFailure with both Result and Conditions -> \"InvalidStageDeclarationException: The following stage cannot have a failure exit gate configured with both top level result and conditions: 'Deploy\" (ROLLBACK_COMPLETE); pass with Conditions only -> CREATE_COMPLETE"
+addedOn: 2026-09-14

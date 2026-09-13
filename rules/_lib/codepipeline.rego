@@ -141,3 +141,45 @@ _pf_cplib_queryable_ok(secret, required) if {
 	secret == false
 	required == true
 }
+
+# ---- C2 (stage / trigger / V1-V2 / webhook) ----------------------------------
+
+# PipelineType is optional and defaults to V1, so an absent key is a real V1
+# pipeline. A Ref resolves to a logical id rather than a literal and is left alone.
+_pf_cplib_v1(name) if {
+	t := object.get(_pf_cplib_props(name), "PipelineType", "V1")
+	_pf_cplib_lit(t)
+	t == "V1"
+}
+
+# Names of the pipeline's CodeStarSourceConnection source actions.
+_pf_cplib_connection_actions(name) := {an |
+	some st in _pf_cplib_stages(name)
+	some a in _pf_cplib_actions(st)
+	_pf_cplib_plain(a)
+	p := _pf_cplib_get(_pf_cplib_tid(a), "Provider")
+	_pf_cplib_lit(p)
+	p == "CodeStarSourceConnection"
+	an := object.get(a, "Name", "")
+}
+
+# A name the preprocessor could not reduce to a literal makes the set above
+# incomplete, so the trigger rule stays quiet on that pipeline.
+_pf_cplib_dynamic_action_name(name) if {
+	some st in _pf_cplib_stages(name)
+	some a in _pf_cplib_actions(st)
+	not _pf_cplib_lit(object.get(a, "Name", null))
+}
+
+# Action providers that CreatePipeline refuses on a V1 pipeline
+# (api-probe 2026-09-14 us-east-1: "<Provider> Action can only be used with V2
+# pipelines."). EC2 is absent on purpose - its probe never reached the V1 check.
+_pf_cplib_v2_only_providers := {"Commands", "ECRBuildAndPublish", "EKS"}
+
+# The single AuthenticationConfiguration property each webhook Authentication
+# mode takes; UNAUTHENTICATED takes none.
+_pf_cplib_webhook_auth_key := {
+	"GITHUB_HMAC": "SecretToken",
+	"IP": "AllowedIPRange",
+	"UNAUTHENTICATED": "",
+}

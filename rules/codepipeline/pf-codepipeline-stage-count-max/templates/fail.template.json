@@ -1,0 +1,742 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodePipeline::Pipeline",
+   "Properties": {
+    "RoleArn": {
+     "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+    },
+    "ArtifactStore": {
+     "Type": "S3",
+     "Location": "cdkpf-codesuite-63"
+    },
+    "Stages": [
+     {
+      "Name": "Source",
+      "Actions": [
+       {
+        "Name": "Src",
+        "ActionTypeId": {
+         "Category": "Source",
+         "Owner": "AWS",
+         "Provider": "S3",
+         "Version": "1"
+        },
+        "Configuration": {
+         "S3Bucket": "cdkpf-codesuite-63",
+         "S3ObjectKey": "src.zip",
+         "PollForSourceChanges": "false"
+        },
+        "OutputArtifacts": [
+         {
+          "Name": "A"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "Name": "S0",
+      "Actions": [
+       {
+        "Name": "Ap0",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S1",
+      "Actions": [
+       {
+        "Name": "Ap1",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S2",
+      "Actions": [
+       {
+        "Name": "Ap2",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S3",
+      "Actions": [
+       {
+        "Name": "Ap3",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S4",
+      "Actions": [
+       {
+        "Name": "Ap4",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S5",
+      "Actions": [
+       {
+        "Name": "Ap5",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S6",
+      "Actions": [
+       {
+        "Name": "Ap6",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S7",
+      "Actions": [
+       {
+        "Name": "Ap7",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S8",
+      "Actions": [
+       {
+        "Name": "Ap8",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S9",
+      "Actions": [
+       {
+        "Name": "Ap9",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S10",
+      "Actions": [
+       {
+        "Name": "Ap10",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S11",
+      "Actions": [
+       {
+        "Name": "Ap11",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S12",
+      "Actions": [
+       {
+        "Name": "Ap12",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S13",
+      "Actions": [
+       {
+        "Name": "Ap13",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S14",
+      "Actions": [
+       {
+        "Name": "Ap14",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S15",
+      "Actions": [
+       {
+        "Name": "Ap15",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S16",
+      "Actions": [
+       {
+        "Name": "Ap16",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S17",
+      "Actions": [
+       {
+        "Name": "Ap17",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S18",
+      "Actions": [
+       {
+        "Name": "Ap18",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S19",
+      "Actions": [
+       {
+        "Name": "Ap19",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S20",
+      "Actions": [
+       {
+        "Name": "Ap20",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S21",
+      "Actions": [
+       {
+        "Name": "Ap21",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S22",
+      "Actions": [
+       {
+        "Name": "Ap22",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S23",
+      "Actions": [
+       {
+        "Name": "Ap23",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S24",
+      "Actions": [
+       {
+        "Name": "Ap24",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S25",
+      "Actions": [
+       {
+        "Name": "Ap25",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S26",
+      "Actions": [
+       {
+        "Name": "Ap26",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S27",
+      "Actions": [
+       {
+        "Name": "Ap27",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S28",
+      "Actions": [
+       {
+        "Name": "Ap28",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S29",
+      "Actions": [
+       {
+        "Name": "Ap29",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S30",
+      "Actions": [
+       {
+        "Name": "Ap30",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S31",
+      "Actions": [
+       {
+        "Name": "Ap31",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S32",
+      "Actions": [
+       {
+        "Name": "Ap32",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S33",
+      "Actions": [
+       {
+        "Name": "Ap33",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S34",
+      "Actions": [
+       {
+        "Name": "Ap34",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S35",
+      "Actions": [
+       {
+        "Name": "Ap35",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S36",
+      "Actions": [
+       {
+        "Name": "Ap36",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S37",
+      "Actions": [
+       {
+        "Name": "Ap37",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S38",
+      "Actions": [
+       {
+        "Name": "Ap38",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S39",
+      "Actions": [
+       {
+        "Name": "Ap39",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S40",
+      "Actions": [
+       {
+        "Name": "Ap40",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S41",
+      "Actions": [
+       {
+        "Name": "Ap41",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S42",
+      "Actions": [
+       {
+        "Name": "Ap42",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S43",
+      "Actions": [
+       {
+        "Name": "Ap43",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S44",
+      "Actions": [
+       {
+        "Name": "Ap44",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S45",
+      "Actions": [
+       {
+        "Name": "Ap45",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S46",
+      "Actions": [
+       {
+        "Name": "Ap46",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S47",
+      "Actions": [
+       {
+        "Name": "Ap47",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S48",
+      "Actions": [
+       {
+        "Name": "Ap48",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     },
+     {
+      "Name": "S49",
+      "Actions": [
+       {
+        "Name": "Ap49",
+        "ActionTypeId": {
+         "Category": "Approval",
+         "Owner": "AWS",
+         "Provider": "Manual",
+         "Version": "1"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}
