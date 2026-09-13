@@ -1,0 +1,12 @@
+id: pf-glue-job-glue-version-eol
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: Glue versions 0.9, 1.0 and 2.0 are end of life and cannot be used for new jobs
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/glue-version-support-policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (GlueVersion 2.0, the newest end-of-life version) -> \"The Glue version selected for the job is no longer available. Select a newer Glue version.\" (ROLLBACK_COMPLETE); pass template (GlueVersion 3.0, the oldest supported version) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

@@ -7,8 +7,8 @@
         "ReplicationGroupDescription": "cdk-preflight bench",
         "CacheNodeType": "cache.t4g.micro",
         "Engine": "redis",
-        "NumCacheClusters": 1,
-        "AutomaticFailoverEnabled": false
+        "NumCacheClusters": 2,
+        "AutomaticFailoverEnabled": true
       }
     }
   }

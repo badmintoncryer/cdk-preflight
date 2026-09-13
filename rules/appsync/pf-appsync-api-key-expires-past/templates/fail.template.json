@@ -1,23 +1,23 @@
 {
- "Resources": {
-  "Api": {
-   "Type": "AWS::AppSync::GraphQLApi",
-   "Properties": {
-    "Name": "api1",
-    "AuthenticationType": "API_KEY"
-   }
-  },
-  "Target": {
-   "Type": "AWS::AppSync::ApiKey",
-   "Properties": {
-    "ApiId": {
-     "Fn::GetAtt": [
-      "Api",
-      "ApiId"
-     ]
+  "Resources": {
+    "Api": {
+      "Type": "AWS::AppSync::GraphQLApi",
+      "Properties": {
+        "Name": "api1",
+        "AuthenticationType": "API_KEY"
+      }
     },
-    "Expires": 1
-   }
+    "Target": {
+      "Type": "AWS::AppSync::ApiKey",
+      "Properties": {
+        "ApiId": {
+          "Fn::GetAtt": [
+            "Api",
+            "ApiId"
+          ]
+        },
+        "Expires": 999999999
+      }
+    }
   }
- }
 }

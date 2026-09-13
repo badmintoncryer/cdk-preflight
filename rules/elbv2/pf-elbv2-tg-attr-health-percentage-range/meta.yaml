@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'target_group_health.dns_failover.minimum_healthy_targets.percentage' must be 'off' or an integer from 1 to 100 inclusive\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: target_group_health.dns_failover.minimum_healthy_targets.percentage 101 rolled back with \"'target_group_health.dns_failover.minimum_healthy_targets.percentage' must be 'off' or an integer from 1 to 100 inclusive\"; the 0 on the second target group is masked by the DependsOn order and answers \"must be 'off' or a positive integer\". Each threshold sits on its own target group because dns_failover must stay at or above unhealthy_state_routing. The pass template carries 100 and 1 and reached CREATE_COMPLETE."
 addedOn: 2026-09-08

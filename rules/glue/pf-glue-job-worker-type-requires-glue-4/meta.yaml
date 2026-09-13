@@ -1,0 +1,12 @@
+id: pf-glue-job-worker-type-requires-glue-4
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: The large and memory-optimised worker types require Glue 4.0 or later
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/worker-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (two jobs on GlueVersion 3.0, one with WorkerType G.12X and one with R.1X) -> \"Worker type R.1X is not supported for Glue Version 3.0\" (ROLLBACK_COMPLETE; the stack surfaces the resource that failed first); pass template (GlueVersion 4.0, same two worker types) -> CREATE_COMPLETE. A CreateJob probe the same day rejected G.12X, G.16X and R.8X on 3.0 with the same wording and accepted all four on 4.0."
+addedOn: 2026-09-13

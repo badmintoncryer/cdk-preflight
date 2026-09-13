@@ -1,0 +1,12 @@
+id: pf-glue-schema-compatibility
+service: glue
+resourceTypes: [AWS::Glue::Schema]
+benchRegion: us-east-1
+severity: ERROR
+title: Schema Compatibility must be one of the seven documented modes
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Compatibility BACKWARDS) -> ROLLBACK_COMPLETE at CloudFormation's early property validation (\"Validation failed with 1 error(s)\", the registry schema carries the enum); pass template (BACKWARD) -> CREATE_COMPLETE. The service sentence was measured with CreateSchema the same day: BACKWARDS -> \"Compatibility is not valid.\", and NONE, DISABLED, FULL and FULL_ALL are all accepted (FULL_ALL is missing from the API reference list)."
+addedOn: 2026-09-14

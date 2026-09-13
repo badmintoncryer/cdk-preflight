@@ -6,7 +6,23 @@
         "ServiceEnvironmentType": "SAGEMAKER_TRAINING",
         "CapacityLimits": [
           {
-            "CapacityUnit": "NUM_INSTANCES",
+            "CapacityUnit": "ml.m6i.xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.2xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.4xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.8xlarge",
+            "MaxCapacity": 1
+          },
+          {
+            "CapacityUnit": "ml.m6i.12xlarge",
             "MaxCapacity": 1
           }
         ]

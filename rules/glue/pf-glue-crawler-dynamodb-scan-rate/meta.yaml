@@ -1,0 +1,12 @@
+id: pf-glue-crawler-dynamodb-scan-rate
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: A DynamoDB target scan rate must be between 0.1 and 1.5
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (two DynamoDB targets, ScanRate 0.09 and 1.51) -> \"Invalid scan rate value. Valid values are between 0.1 to 1.5\" (ROLLBACK_COMPLETE); pass template (an S3 crawler, no DynamoDB target) -> CREATE_COMPLETE. A CreateCrawler probe the same day put both ends on the boundary: 0.09 and 1.51 were rejected with that message while 0.1 and 1.5 got past the scan-rate check and only then failed on dynamodb:DescribeTable for the probe table, which is why the pass fixture cannot carry a DynamoDB target (the bench crawler role holds AWSGlueServiceRole only)."
+addedOn: 2026-09-14

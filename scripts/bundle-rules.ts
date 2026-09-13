@@ -120,6 +120,27 @@ function fixturePools(raw: string) {
 
 // count(...) の引数は 1 段だけ入れ子を許す。`count(split(v, \":\")) < 6` のような書き方は
 // `[^)]*` だと最初の \")\" で止まって比較ごと取り逃がす（＝緩いペアが黙って通る）。
+function stripRegoComments(src: string): string {
+  const out = [...src];
+  let quote: string | null = null;
+  for (let i = 0; i < out.length; i++) {
+    const c = out[i];
+    if (quote) {
+      if (c === '\\' && quote === '"') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === '`') {
+      quote = c;
+      continue;
+    }
+    if (c === '#') {
+      while (i < out.length && out[i] !== '\n') out[i++] = ' ';
+    }
+  }
+  return out.join('');
+}
+
 const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
 
 /**
@@ -135,6 +156,10 @@ const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<
  * 順序の無い制約として除外するものは rules/_boundary-exceptions.txt に理由付きで書く。
  */
 export function boundaryProblem(rego: string, fail: string, pass: string): string | undefined {
+  // 行コメントはロジックではない。`# x <= 23` と書いてあるだけの値をしきい値として
+  // 要求してしまうので、走査の前に落とす。文字列の中の `#`（URL のフラグメント）を
+  // 巻き込まないよう引用符の外だけを見て、長さは保って位置をずらさない。
+  rego = stripRegoComments(rego);
   // `n := count(x)` と置いてから `n > 50` と書くのがこのリポジトリの標準形なので、代入を辿って
   // 「何を数えた値か」まで見る。数えた対象が配列なら要素数と、文字列なら長さと突き合わせる
   // ——どちらか決められないときだけ両方見る（偶然の一致を許すが、見当違いのプールで
@@ -162,7 +187,17 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   // `_pf_x_n(g, k) := count([...])` のようなトップレベル定義。呼び出しを本体まで辿るのに使う
   const shared = new Map([...rego.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/gm)].map((m) => [m[1], m[2]] as const));
 
-  const ARRAYISH = /flatten_list\(|(?:^|[^A-Za-z0-9_)\]])\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
+  const ARRAYISH = /flatten_list\(|(?:^|[^A-Za-z0-9_)\]])\[|object\.keys\(|resources_of_type\(|\{[a-z]/;
+  // object.get(x, "k", d) が返すものは d が教えてくれる: [] なら配列、"" なら文字列。
+  // それ以外（"__pf_absent" のような番兵）は決められないので両方見る。
+  const GET_ARRAY = /object\.get\([^()]*,\s*(?:\[\]|\{\})\s*\)/;
+  const GET_STRING = /object\.get\([^()]*,\s*""\s*\)/;
+
+  // `_pf_x_ok(v) if { n <= 100 }` を `not _pf_x_ok(...)` で使うのが、この直接比較と並ぶ
+  // もう 1 つの標準形。守れている向きに書かれた比較なので、境界を出す前に裏返す。
+  // そのままだと fail に 100、pass に 101 を要求してしまう（向きが逆）。
+  const negated = new Set([...rego.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
+  const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
 
   type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number };
   const thresholdsOf = (block: string): Threshold[] => {
@@ -182,16 +217,33 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
     const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
       const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
-      const src = deref(assigned.get(inner.trim()) ?? inner);
+      const v = inner.trim();
+      // rego が型を宣言していればそれが答え。`ev := resolve(...)` のあとに `is_object(ev)` と
+      // 書いてあるなら、数えているのはマップの要素数であって文字列長ではない。resolve() は
+      // 文字列も配列もマップも返すので、この宣言が無いときだけ下の推測に回す
+      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(v)) {
+        if (new RegExp(`\\bis_string\\(${v}\\)`).test(block)) return 'string';
+        if (new RegExp(`\\bis_(?:object|array)\\(${v}\\)`).test(block)) return 'array';
+      }
+      const src = deref(assigned.get(v) ?? inner);
       if (/\bsplit\(/.test(src)) return 'shape';
-      if (ARRAYISH.test(src)) return 'array';
+      if (GET_STRING.test(src)) return 'string';
+      if (GET_ARRAY.test(src) || ARRAYISH.test(src)) return 'array';
       if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
       return 'both';
     };
-    return [...block.matchAll(THRESHOLD)]
+    // 診断メッセージや修正案の文面にも `>= 31` のような比較が出てくる。文字列の中は
+    // ロジックではないので、しきい値を探す前に落とす（長さを保って位置はずらさない）。
+    const code = block.replace(/"(?:[^"\\\n]|\\.)*"|`[^`]*`/g, (m) => ' '.repeat(m.length));
+    // どの定義の中の比較かは、その位置より前にある一番近い行頭の識別子で決まる。1 行の
+    // 述語は閉じ括弧を持たないので次のブロックにくっついて切られる——ブロックの先頭では決められない。
+    const owners = [...code.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)/gm)].map((m) => [m.index ?? 0, m[1]] as const);
+    const ownerAt = (i: number) => owners.filter(([at]) => at <= i).pop()?.[1] ?? '';
+    return [...code.matchAll(THRESHOLD)]
       .map((m) => {
         const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
-        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
+        const op = negated.has(ownerAt(m.index ?? 0)) ? FLIP[m[2]] : m[2];
+        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op, n: Number(m[3]) };
       })
       .filter((t): t is Threshold => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   };
@@ -371,6 +423,58 @@ export function renderDocs(rules: BundledRule[]): string {
   ].join('\n');
 }
 
+const SUPPORTED_START = '<!-- supported-resources:start -->';
+const SUPPORTED_END = '<!-- supported-resources:end -->';
+
+/**
+ * README の「対応リソースタイプ」節。275 型あるので <details> で畳む。
+ * AWS::<Service>::<Resource> の Service でまとめ、型ごとのルール数を添える。
+ */
+export function renderSupported(rules: BundledRule[]): string {
+  const byService = new Map<string, Map<string, number>>();
+  for (const rule of rules) {
+    for (const type of rule.resourceTypes) {
+      const parts = type.split('::');
+      const [service, resource] = parts.length === 3 ? [parts[1], parts[2]] : ['(any resource type)', type];
+      const types = byService.get(service) ?? new Map<string, number>();
+      types.set(resource, (types.get(resource) ?? 0) + 1);
+      byService.set(service, types);
+    }
+  }
+  const services = [...byService.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const typeCount = services.reduce((n, [, types]) => n + types.size, 0);
+  const rows = services.map(([service, types]) => {
+    const list = [...types.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([resource, count]) => `\`${resource}\` (${count})`)
+      .join(', ');
+    return `| **${service}** | ${list} |`;
+  });
+  return [
+    SUPPORTED_START,
+    '<details>',
+    `<summary><b>${typeCount} resource types across ${services.length} services</b> — click to expand</summary>`,
+    '',
+    'Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.',
+    '',
+    '| Service | Resource types |',
+    '|---|---|',
+    ...rows,
+    '',
+    '</details>',
+    SUPPORTED_END,
+  ].join('\n');
+}
+
+function withSupported(readme: string, rules: BundledRule[]): string {
+  const start = readme.indexOf(SUPPORTED_START);
+  const end = readme.indexOf(SUPPORTED_END);
+  if (start < 0 || end < 0) {
+    throw new Error(`README.md is missing the ${SUPPORTED_START} / ${SUPPORTED_END} markers`);
+  }
+  return readme.slice(0, start) + renderSupported(rules) + readme.slice(end + SUPPORTED_END.length);
+}
+
 if (require.main === module) {
   const root = path.join(__dirname, '..');
   const rules = collectRules(root);
@@ -384,9 +488,9 @@ if (require.main === module) {
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'rules.md'), renderDocs(rules));
   const readme = path.join(root, 'README.md');
-  fs.writeFileSync(readme, fs.readFileSync(readme, 'utf8')
+  fs.writeFileSync(readme, withSupported(fs.readFileSync(readme, 'utf8')
     .replace(/badge\/rules-\d+-/, `badge/rules-${rules.length}-`)
-    .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`));
+    .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`), rules));
   // eslint-disable-next-line no-console
-  console.log(`bundled ${rules.length} rules -> src/rules.generated.ts, docs/rules.md`);
+  console.log(`bundled ${rules.length} rules -> src/rules.generated.ts, docs/rules.md, README.md`);
 }

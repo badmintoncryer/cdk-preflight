@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 ap-northeast-1 (w10): ExtendedStatistic p101 -> \"The value p101 for parameter ExtendedStatistic is not supported.\" ROLLBACK_COMPLETE. pN form only; tm/wm/tc grammars not measured."
+  evidence: "bench 2026-09-13 us-east-1: ExtendedStatistic p101 -> \"The value p101 for parameter ExtendedStatistic is not supported.\" ROLLBACK_COMPLETE; pass p100 and p100.99 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutMetricAlarm: p101, p101.0, p102.5, p1000.0 and p-1 are rejected while p100, p100.0, p100.5, p100.99 and p100.9999999 are all accepted - what the service rejects is an integer part above 100, not a value above 100, so the rule compares floor(n) and the tightest violating value is p101. pN form only; tm/wm/tc grammars not measured."
 addedOn: 2026-09-02

@@ -1,15 +1,62 @@
 {
+  "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
-    "Vpc": { "Type": "AWS::EC2::VPC", "Properties": { "CidrBlock": "10.0.0.0/16" } },
-    "TG": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "TGNeg": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
         "Port": 80,
         "Protocol": "HTTP",
-        "TargetType": "instance",
-        "VpcId": { "Ref": "Vpc" },
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
         "TargetGroupAttributes": [
-          { "Key": "slow_start.duration_seconds", "Value": "10" }
+          {
+            "Key": "slow_start.duration_seconds",
+            "Value": "-1"
+          }
+        ]
+      },
+      "DependsOn": "TGUnder"
+    },
+    "TGUnder": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "slow_start.duration_seconds",
+            "Value": "29"
+          }
+        ]
+      },
+      "DependsOn": "TGOver"
+    },
+    "TGOver": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "slow_start.duration_seconds",
+            "Value": "901"
+          }
         ]
       }
     }

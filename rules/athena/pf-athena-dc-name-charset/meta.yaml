@@ -1,0 +1,12 @@
+id: pf-athena-dc-name-charset
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::DataCatalog]
+severity: ERROR
+title: "A data catalog name may use only letters, digits, underscore, at sign and hyphen"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: DataCatalog name pf.catalog is invalid.\"; bench 2026-09-13 us-east-1: fail -> \"DataCatalog name cdkpf.dc.charset is invalid.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-09 us-east-1: Internal error reported from downstream service during operation ''(Service: CloudFront, Status Code: 413, Request ID: c9905d5f-d366-4ccc-bf61-87c8ec7914f7) (SDK Attempt Count: 1)''.'
+  evidence: "bench 2026-09-13 us-east-1: FunctionCode of 10241 bytes -> \"Internal error reported from downstream service during operation '(Service: CloudFront, Status Code: 413)'\" ROLLBACK_COMPLETE; pass 10240 bytes -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateFunction: 10241 bytes -> FunctionSizeLimitExceeded, 10240 bytes accepted. Service Quotas lists no quota for the function size, adjustable or not (principle 6)."
 addedOn: 2026-09-08
 benchRegion: us-east-1

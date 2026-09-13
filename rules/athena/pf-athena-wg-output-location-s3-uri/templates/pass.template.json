@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::WorkGroup",
+      "Properties": {
+        "Name": "cdkpf-wg-loc",
+        "WorkGroupConfiguration": {
+          "ResultConfiguration": {
+            "OutputLocation": "s3://cdkpf-athena-probe/res/"
+          }
+        }
+      }
+    }
+  }
+}

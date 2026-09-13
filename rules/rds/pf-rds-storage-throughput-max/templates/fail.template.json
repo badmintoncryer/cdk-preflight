@@ -11,7 +11,7 @@
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
         "StorageType": "gp3",
-        "Iops": 12000,
+        "Iops": 16000,
         "StorageThroughput": 4001
       }
     }

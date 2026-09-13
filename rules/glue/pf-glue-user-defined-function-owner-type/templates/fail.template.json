@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Db": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}"
+          }
+        }
+      }
+    },
+    "Missing": {
+      "Type": "AWS::Glue::UserDefinedFunction",
+      "Properties": {
+        "DatabaseName": {
+          "Ref": "Db"
+        },
+        "FunctionName": {
+          "Fn::Sub": "${AWS::StackName}-f"
+        },
+        "ClassName": "C",
+        "OwnerName": "o"
+      }
+    }
+  }
+}

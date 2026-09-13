@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSL
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> Profile exceeded max associations to firewall rule groups limit. (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-13 us-east-1: six rule groups associated to one profile -> \"Profile exceeded max associations to firewall rule groups limit.\" ROLLBACK_COMPLETE; pass five -> CREATE_COMPLETE. The quota (L-F8A07EF1 \"DNS Firewall rule groups associations to a Route 53 Profile\", 5) is not adjustable, so the five is a hard limit (principle 6)."
 addedOn: 2026-09-10

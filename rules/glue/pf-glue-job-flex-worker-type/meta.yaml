@@ -1,0 +1,12 @@
+id: pf-glue-job-flex-worker-type
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A FLEX job runs only on G.1X or G.2X workers
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/add-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (ExecutionClass FLEX, WorkerType G.4X) -> \"Worker type cannot be null and only [G.1X, G.2X] worker types are supported for Flex jobs.\" (ROLLBACK_COMPLETE); pass template (FLEX, WorkerType G.2X) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

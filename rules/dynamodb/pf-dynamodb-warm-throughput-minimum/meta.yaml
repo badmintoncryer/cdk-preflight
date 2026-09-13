@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developergui
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: Requested ReadUnitsPerSecond for WarmThroughput for table is lower than initial throughput for OnDemand. See: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode.html#on-demand-capacity-mode-initial\"; pass -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: WarmThroughput 11999 read / 3999 write rolled back with \"One or more parameter values were invalid: Requested ReadUnitsPerSecond for WarmThroughput for table is lower than initial throughput for OnDemand\"; the write end is masked because the read end is reported first, and 12000/3999 answers \"Requested WriteUnitsPerSecond ... is lower than initial throughput\" on its own. The pass template sits on 12000/4000, which is the default and therefore not billed as pre-warming."
 addedOn: 2026-09-08

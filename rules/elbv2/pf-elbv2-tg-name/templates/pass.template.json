@@ -1,4 +1,5 @@
 {
+  "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
     "Vpc": {
       "Type": "AWS::EC2::VPC",
@@ -6,15 +7,16 @@
         "CidrBlock": "10.0.0.0/16"
       }
     },
-    "Tg": {
+    "TG": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "Name": "cdkpf-targets",
         "Port": 80,
         "Protocol": "HTTP",
+        "TargetType": "ip",
         "VpcId": {
           "Ref": "Vpc"
-        }
+        },
+        "Name": "cdkpf-tg-name-boundary-32-chars1"
       }
     }
   }

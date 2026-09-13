@@ -1,0 +1,12 @@
+id: pf-glue-job-flex-command-name
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: ExecutionClass FLEX is only available for Spark ETL jobs
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-glue-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (gluestreaming, ExecutionClass FLEX) -> \"Flex job is supported for ETL jobs only\" (ROLLBACK_COMPLETE); pass template (glueetl, ExecutionClass FLEX) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

@@ -1,0 +1,12 @@
+id: pf-athena-wg-name-charset
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::WorkGroup]
+severity: ERROR
+title: "A workgroup name may use only letters, digits, period, underscore and hyphen"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateWorkGroup.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: 1 validation error detected: Value at 'name' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9._-]{1,128}\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: 1 validation error detected: Value at 'name' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9._-]{1,128}\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

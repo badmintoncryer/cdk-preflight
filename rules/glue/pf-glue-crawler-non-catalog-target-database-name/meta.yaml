@@ -1,0 +1,12 @@
+id: pf-glue-crawler-non-catalog-target-database-name
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: A crawler with non-catalog targets needs a DatabaseName
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (S3 target crawler with no DatabaseName) -> \"You must provide the DatabaseName parameter when you specify a non-catalog targeted crawler. Specify the parameter.\" (ROLLBACK_COMPLETE); pass template (the same crawler with DatabaseName) -> CREATE_COMPLETE. CreateCrawler the same day accepts a catalog-target crawler with no DatabaseName, which is why only the other target kinds are judged."
+addedOn: 2026-09-14

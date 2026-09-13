@@ -1,0 +1,12 @@
+id: pf-glue-crawler-configuration-version-type
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: The crawler Configuration Version has to be a JSON number
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/crawler-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Configuration {\"Version\":\"1.0\"}) -> \"Crawler configuration not valid: Version type invalid: expected Double, received String.\" (ROLLBACK_COMPLETE); pass template (Configuration {\"Version\":1.0}) -> CREATE_COMPLETE. The neighbouring rule only sees the key being absent, which is a different sentence."
+addedOn: 2026-09-14

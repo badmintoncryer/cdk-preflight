@@ -17,6 +17,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import * as YAML from 'yaml';
 import { deployEnvironmentModule, loadEngine } from '../src/private/enforce';
 
 interface Diagnostic {
@@ -36,9 +37,9 @@ if (!engine) throw new Error('engine not resolvable (needs aws-cdk-lib >= 2.267.
 const blockers = (ds: Diagnostic[]) =>
   ds.filter((d) => d.source !== 'CUSTOM' && (d.severity === 'ERROR' || d.severity === 'FATAL'));
 
-function evaluate(inst: any, file: string): Diagnostic[] {
+function evaluate(inst: any, file: string, region: string = REGION): Diagnostic[] {
   const report = inst.validateDetailed(new engine.TemplateFile(file), {
-    pseudoParameterOverrides: { accountId: ACCOUNT, region: REGION },
+    pseudoParameterOverrides: { accountId: ACCOUNT, region },
   });
   return (report.diagnostics ?? []) as Diagnostic[];
 }
@@ -74,7 +75,7 @@ function guard(paths: string[]): number {
   return 0;
 }
 
-interface RuleDir { id: string; service: string; dir: string; rego: string }
+interface RuleDir { id: string; service: string; dir: string; rego: string; fixtureRegion?: string }
 
 function collect(filters: string[]): RuleDir[] {
   const rulesDir = path.join(ROOT, 'rules');
@@ -86,7 +87,12 @@ function collect(filters: string[]): RuleDir[] {
       const dir = path.join(sdir, id);
       const rego = path.join(dir, 'rule.rego');
       if (!fs.existsSync(rego)) continue;
-      out.push({ id, service, dir, rego: fs.readFileSync(rego, 'utf8') });
+      // meta.yaml はまだ無いことがある（evidence 前の実装途中でも回せるのがこのコマンドの趣旨）。
+      const metaPath = path.join(dir, 'meta.yaml');
+      const fixtureRegion: string | undefined = fs.existsSync(metaPath)
+        ? YAML.parse(fs.readFileSync(metaPath, 'utf8'))?.fixtureRegion
+        : undefined;
+      out.push({ id, service, dir, rego: fs.readFileSync(rego, 'utf8'), fixtureRegion });
     }
   }
   if (filters.length === 0) return out;
@@ -103,23 +109,37 @@ function check(filters: string[]): number {
       .map((f) => ({ name: `_lib/${f.replace(/\.rego$/, '')}`, content: fs.readFileSync(path.join(ROOT, 'rules', '_lib', f), 'utf8') }))
     : [];
   const all = collect([]);
-  const inst = new engine.RegoEngine({
-    customRules: [...libs, ...all.map((r) => ({ name: r.id, content: r.rego })), deployEnvironmentModule(REGION, ACCOUNT)],
-  });
+  // deploy_region はエンジンにモジュールとして焼き込むので、リージョンごとに 1 エンジン要る。
+  // 対象に fixtureRegion 付きルールが無ければ 1 本しか作らない（初期化が重い）。
+  const engines = new Map<string, any>();
+  const engineFor = (region: string) => {
+    if (!engines.has(region)) {
+      engines.set(region, new engine.RegoEngine({
+        customRules: [...libs, ...all.map((r) => ({ name: r.id, content: r.rego })), deployEnvironmentModule(region, ACCOUNT)],
+      }));
+    }
+    return engines.get(region);
+  };
   let bad = 0;
   for (const rule of collect(filters)) {
+    // meta.fixtureRegion: リージョンそのものを見るルール（「CLOUDFRONT scope は us-east-1 だけ」等）は
+    // ハーネス既定のリージョンでは fail フィクスチャが鳴らない。test/rules.test.ts と同じく
+    // PF_REGION より強い——そのルールはそのリージョンでしか成立しないため。
+    const region = rule.fixtureRegion ?? REGION;
+    const inst = engineFor(region);
     const problems: string[] = [];
     for (const kind of ['fail', 'pass'] as const) {
       const file = path.join(rule.dir, 'templates', `${kind}.template.json`);
       if (!fs.existsSync(file)) { problems.push(`no ${kind} template`); continue; }
-      const ds = evaluate(inst, file);
+      const ds = evaluate(inst, file, region);
       const custom = ds.filter((d) => d.source === 'CUSTOM');
       const b = blockers(ds);
       if (b.length > 0) problems.push(`${kind}: engine ${b.map((d) => `${d.ruleId}/${d.severity}`).join(' ')}`);
       if (kind === 'fail' && !custom.some((d) => d.ruleId === rule.id)) problems.push('fail: own rule silent');
       if (kind === 'pass' && custom.length > 0) problems.push(`pass: ${[...new Set(custom.map((d) => d.ruleId))].join(' ')} fired`);
     }
-    if (problems.length > 0) { bad++; console.log(`NG  ${rule.id}  ${problems.join('; ')}`); } else console.log(`ok  ${rule.id}`);
+    const note = rule.fixtureRegion ? `  (fixtureRegion ${rule.fixtureRegion})` : '';
+    if (problems.length > 0) { bad++; console.log(`NG  ${rule.id}${note}  ${problems.join('; ')}`); } else console.log(`ok  ${rule.id}${note}`);
   }
   console.log(`-- ${collect(filters).length} rules checked (${all.length} loaded), ${bad} NG, region ${REGION}`);
   return bad === 0 ? 0 : 1;

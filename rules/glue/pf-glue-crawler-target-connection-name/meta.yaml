@@ -1,0 +1,12 @@
+id: pf-glue-crawler-target-connection-name
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: JDBC and MongoDB crawl targets need a connection name
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCrawler.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (a JDBC target and a MongoDB target, neither with ConnectionName) -> \"Connection name cannot be equal to null or empty.\" (ROLLBACK_COMPLETE); pass template (the same two targets pointing at a JDBC and a MONGODB connection the stack creates) -> CREATE_COMPLETE. A CreateCrawler probe the same day showed the type has to match: a MongoDB target on a JDBC connection answers \"Invalid MongoDB Connection Type: JDBC\"."
+addedOn: 2026-09-14

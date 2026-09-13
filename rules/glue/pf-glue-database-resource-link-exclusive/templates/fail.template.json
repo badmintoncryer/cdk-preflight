@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}"
+          },
+          "TargetDatabase": {
+            "CatalogId": {
+              "Ref": "AWS::AccountId"
+            },
+            "DatabaseName": "pfcrawldb"
+          },
+          "LocationUri": "s3://cdkpf-glue-probe-214794239830/db/"
+        }
+      }
+    }
+  }
+}

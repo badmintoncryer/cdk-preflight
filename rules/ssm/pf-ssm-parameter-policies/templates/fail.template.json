@@ -5,10 +5,32 @@
       "Properties": {
         "Type": "String",
         "Value": "v",
-        "Name": "/cdkpf/policies-fail",
+        "Name": "/cdkpf/policies-fail-count",
         "Tier": "Advanced",
-        "Policies": "[{\"Type\":\"Foo\",\"Version\":\"1.0\",\"Attributes\":{}}]"
+        "Policies": "[{\"Type\": \"Expiration\", \"Version\": \"1.0\", \"Attributes\": {\"Timestamp\": \"2027-01-01T00:00:00.000Z\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"1\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"2\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"3\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"4\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"5\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"6\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"7\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"8\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"9\", \"Unit\": \"Days\"}}, {\"Type\": \"ExpirationNotification\", \"Version\": \"1.0\", \"Attributes\": {\"Before\": \"10\", \"Unit\": \"Days\"}}]"
       }
+    },
+    "P2": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": "v",
+        "Name": "/cdkpf/policies-fail-type",
+        "Tier": "Advanced",
+        "Policies": "[{\"Type\": \"Foo\", \"Version\": \"1.0\", \"Attributes\": {}}]"
+      },
+      "DependsOn": "P"
+    },
+    "P3": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Value": "v",
+        "Name": "/cdkpf/policies-fail-shape",
+        "Tier": "Advanced",
+        "Policies": "{}"
+      },
+      "DependsOn": "P2"
     }
   }
 }

@@ -9,7 +9,7 @@
         "Engine": "redis",
         "NumCacheClusters": 1,
         "AutomaticFailoverEnabled": false,
-        "SnapshotRetentionLimit": 5
+        "SnapshotRetentionLimit": 35
       }
     }
   }

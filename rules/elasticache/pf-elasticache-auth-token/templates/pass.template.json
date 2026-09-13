@@ -3,12 +3,88 @@
     "RG": {
       "Type": "AWS::ElastiCache::ReplicationGroup",
       "Properties": {
-        "ReplicationGroupId": "cdkpf-authtoken",
+        "ReplicationGroupId": "cdkpf-authtoken-a",
         "ReplicationGroupDescription": "cdk-preflight bench",
         "CacheNodeType": "cache.t4g.micro",
         "Engine": "redis",
         "NumCacheClusters": 1,
-        "AutomaticFailoverEnabled": false
+        "AutomaticFailoverEnabled": false,
+        "CacheSubnetGroupName": {
+          "Ref": "SubnetGroup"
+        },
+        "AuthToken": "cdkpfBenchPwxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "TransitEncryptionEnabled": true
+      }
+    },
+    "RG2": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-authtoken-b",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumCacheClusters": 1,
+        "AutomaticFailoverEnabled": false,
+        "CacheSubnetGroupName": {
+          "Ref": "SubnetGroup"
+        },
+        "AuthToken": "cdkpfBenchPwxxxx",
+        "TransitEncryptionEnabled": true
+      },
+      "DependsOn": "RG"
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SubnetGroup": {
+      "Type": "AWS::ElastiCache::SubnetGroup",
+      "Properties": {
+        "Description": "cdk-preflight bench",
+        "SubnetIds": [
+          {
+            "Ref": "SubnetA"
+          },
+          {
+            "Ref": "SubnetB"
+          }
+        ]
       }
     }
   }

@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReferen
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: width 25 (dw05) -> PutDashboard \"Should be <= 24\" at /widgets/0/width; x 24 (dw08) -> \"Should be <= 23\" at /widgets/0/x. Both ROLLBACK_COMPLETE. y/height bounds unbenched, not claimed. Bare engine clean."
+  evidence: "bench 2026-09-13 us-east-1: a body with one widget at x 24 and another of width 25 -> \"The dashboard body is invalid, there are 2 validation errors\" naming /widgets/0/x (\"Should be <= 23\") and /widgets/1/width (\"Should be <= 24\") ROLLBACK_COMPLETE; pass x 23 and width 24 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutDashboard: x 24 and width 25 are rejected, x 23 and width 24 are accepted. y and height bounds are unbenched and not claimed. Bare engine clean."
 addedOn: 2026-09-03

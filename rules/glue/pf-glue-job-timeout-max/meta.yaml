@@ -1,0 +1,12 @@
+id: pf-glue-job-timeout-max
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A job timeout cannot exceed 10080 minutes (7 days)
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (Timeout 10081) -> \"Timeout should be less than or equal to 10080 minutes.\" (ROLLBACK_COMPLETE); pass template (Timeout 10080) -> CREATE_COMPLETE. A CreateJob probe the same day rejected 10081 on pythonshell and gluestreaming too, so the cap is not per command (the streaming message adds \"leave the timeout value as null to run it longer than 10080 minutes\")."
+addedOn: 2026-09-13

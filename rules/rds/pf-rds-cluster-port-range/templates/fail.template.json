@@ -1,6 +1,6 @@
 {
   "Resources": {
-    "R": {
+    "RLo": {
       "Type": "AWS::RDS::DBCluster",
       "DeletionPolicy": "Delete",
       "UpdateReplacePolicy": "Delete",
@@ -8,7 +8,18 @@
         "Engine": "aurora-postgresql",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
-        "Port": 100
+        "Port": 1149
+      }
+    },
+    "RHi": {
+      "Type": "AWS::RDS::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "aurora-postgresql",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "Port": 65536
       }
     }
   }

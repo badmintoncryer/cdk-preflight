@@ -25,7 +25,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    - `walk` ビルトインは無い。`to_number`/`object.get`/`flatten_list`/`resolve` で明示的に書く
    - fail テンプレートはこのルール**だけ**に違反、pass テンプレートは完全クリーン
    - **数値・長さ・個数の制約は境界ちょうどで書く**。fail は「違反する値のうち限界に最も近いもの」、pass は「限界そのもの」— 20 文字下限なら fail=19 文字 / pass=20 文字であって、fail=5 文字 / pass=26 文字ではない。緩いペアはルールの向きしか証明しない（`count(v) < 20` は fail が 5 文字なら定数が `< 10` でも鳴り、pass が 26 文字なら `< 25` でも黙る）ので、定数も比較演算子も固定できないし、実機ゲートの証拠も弱くなる（19 文字が CREATE に失敗して初めて下限 20 が実証される）。ルールが両端を見ているレンジは fail に両端を置く（fail の判定は「自分のルールの診断が 1 件以上」なので、違反リソースを 2 つ並べてよい）。エンジンのスキーマが既に持っている側の端は入れない — ルールもそこは見ていない（原則 1）し、重複ガードが赤くなる。順序の無い制約（プロパティ欠落、enum の値違い、リソース間の不整合）には境界が無いので対象外
-4. **ローカルゲート**: まず `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>...` を回す。`rules/` を直接読んで 1 エンジンに全ルールを載せ、fail が自分のルールで鳴るか / pass が全ルール無音か / どちらも組み込みエンジンに止められないかを返す（`bundle-rules` も meta.yaml の evidence も要らないので、実機ゲート前の直しはここで回す。80 本で数秒）。全部 `ok` になってから `npx projen bundle-rules && npx jest test/rules.test.ts test/structure.test.ts`。`structure.test.ts` は手順 3 の境界値を機械で見る（rego のしきい値ごとに fail へ「限界に最も近い違反値」、pass へ「限界そのもの」が現れるか）。しきい値の検出が意味を持たないルールだけ `rules/_boundary-exceptions.txt` に理由付きで逃がす。**jest は `-t` で対象を絞る**。フルスイートは PR 直前の 1 回だけでよく、実測では 401 回中 73 回がフル実行で合計 5.8 時間を溶かしている。
+4. **ローカルゲート**: まず `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>...` を回す。`rules/` を直接読んで 1 エンジンに全ルールを載せ、fail が自分のルールで鳴るか / pass が全ルール無音か / どちらも組み込みエンジンに止められないかを返す（`bundle-rules` も meta.yaml の evidence も要らないので、実機ゲート前の直しはここで回す。80 本で数秒）。全部 `ok` になってから `npx projen bundle-rules && npx jest test/rules.test.ts test/structure.test.ts`（`bundle-rules` は `src/rules.generated.ts` / `docs/rules.md` に加えて **README のルール数バッジと対応リソースタイプ一覧も書き換える**。手で直さない。古いままなら `structure.test.ts` が落ちる）。**`rules/<service>/` を新設したときは `npx projen` も回す** — `.github/workflows/monthly-verify.yml` のサービス行列はそこから生成されるので、`bundle-rules` だけでは更新されず PR の self-mutation チェックが赤くなる（2026-09-13、Athena 追加で踏んだ）。`structure.test.ts` は手順 3 の境界値を機械で見る（rego のしきい値ごとに fail へ「限界に最も近い違反値」、pass へ「限界そのもの」が現れるか）。しきい値の検出が意味を持たないルールだけ `rules/_boundary-exceptions.txt` に理由付きで逃がす。**jest は `-t` で対象を絞る**。フルスイートは PR 直前の 1 回だけでよく、実測では 401 回中 73 回がフル実行で合計 5.8 時間を溶かしている。
 5. **実機再現ゲート**: `bash bench/verify-rule.sh <rule-id>`（要 AWS 認証）。観測したエラーメッセージと日付を `meta.yaml#repro.evidence` に記録。
    - **evidence には実際にデプロイした値を書く**（`bench 2026-09-13 us-east-1: 19-char Value -> "...at least 20 characters" (ROLLBACK_COMPLETE); pass 20-char -> CREATE_COMPLETE`）。境界ちょうどのフィクスチャと組で、限界の位置そのものが meta.yaml から読める
    - fail テンプレートがデプロイに**成功**したら、それはドキュメント側の誤り（BROKEN-EXPECTATION）。ルールを削除し、証拠を issue に残して終了する。CloudFront では明文化された制約 9 件中 3 件がこれだった（2026-09-02）
@@ -34,6 +34,11 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
 6. **仕上げ**: `npx projen build` 全緑 → ブランチ作成 → conventional commit（`feat(rules): add <rule-id>`）→ PR 本文に: 制約の出典 / 重複チェック結果 / 実機再現ログ。
 
 ## セッションの切り方（コンテキスト予算）
+
+**`run-preflight-issue`（オーケストレーター）経由で走っている場合、⑤⑥⑦ は 1 スライス = 1 サブエージェントが丸ごと持つ。**
+`/clear` は要らず、スライスの切り方（20〜25 本・候補 id のプレフィックス境界・同一サービスは直列）と
+push / PR の承認待ちはオーケストレーター側の責務。**自分がそのサブエージェントである場合、さらにエージェントを spawn せず、
+実機で落ちたルールはその場で削って報告する。** このスキルを人間が直接使うときだけ、下の `/clear` 運用に従う。
 
 API コストは **`往復回数 × 平均コンテキスト長`** でほぼ決まる（実測 2026-09-08、全 16 セッション集計: cache_read が入力の 98%、平均 258k tok/往復。平均 372k のセッションはルール 1 本 $5.2、213k で切ったセッションは $1.7）。**1 サービスぶんを 1 セッションで通さない**。`find-preflight-rules` から `candidates.json` を受け取り、下の境界で `/clear` して scratchpad の `<service>/` 配下のファイルだけを引き継ぐ:
 

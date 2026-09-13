@@ -43,7 +43,7 @@
             "MetricName": "probe",
             "Namespace": "cdkpf",
             "Statistic": "Average",
-            "Period": 300
+            "Period": 120
           }
         }
       }

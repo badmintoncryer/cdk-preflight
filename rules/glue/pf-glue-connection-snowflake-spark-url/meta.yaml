@@ -1,0 +1,12 @@
+id: pf-glue-connection-snowflake-spark-url
+service: glue
+resourceTypes: [AWS::Glue::Connection]
+benchRegion: us-east-1
+severity: ERROR
+title: A SNOWFLAKE connection's sfUrl must be a Snowflake account URL
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/connection-properties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (SNOWFLAKE connection whose SparkProperties sfUrl is \"pfacct.snowflakecomputing.example.com\") -> \"SparkProperties.sfUrl: does not match the regex pattern .+[.]snowflakecomputing[.](com|cn)\" (ROLLBACK_COMPLETE); pass template (the same connection with sfUrl \"pfacct.snowflakecomputing.com\") -> CREATE_COMPLETE. CreateConnection probes the same day pinned the shape: the top-level SparkProperties / PythonProperties members of CreateConnection are ignored by the validator, so the settings have to sit inside ConnectionProperties as JSON strings, and secretId is not checked for existence (a placeholder secret ARN is accepted). The service pattern is unanchored - \"pfacct.snowflakecomputing.com:443\", \"https://pfacct.snowflakecomputing.com/x\" and \"pfacct.snowflakecomputing.com.example.org\" were all accepted - so the rule matches it verbatim rather than anchoring it, and the fail fixture violates it by putting the suffix in the wrong place (\"...snowflakecomputing.example.com\") rather than by trailing text."
+addedOn: 2026-09-14

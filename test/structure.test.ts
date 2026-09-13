@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { boundaryProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, severityProblem, topLevelNames } from '../scripts/bundle-rules';
+import { boundaryProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -30,6 +30,12 @@ test('docs/rules.md is up to date', () => {
   const expected = renderDocs(collectRules(root));
   const actual = fs.readFileSync(path.join(root, 'docs', 'rules.md'), 'utf8');
   expect(actual).toBe(expected);
+});
+
+test('the README resource-type list is up to date', () => {
+  const expected = renderSupported(collectRules(root));
+  const actual = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  expect(actual).toContain(expected);
 });
 
 test('every bundled rule declares the package cdk_preflight and rego.v1', () => {
@@ -235,6 +241,81 @@ test('boundaryProblem follows a helper call to what it counts', () => {
   const helper = '_pf_x_n(g) := count([1 |\n\tsome it in flatten_list(g, "Properties.V")\n])\n\nviolation contains 1 if {\n\tn := _pf_x_n(name)\n\tn > 50\n}\n';
   expect(boundaryProblem(helper, list(51), list(50))).toBeUndefined();
   expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
+});
+
+test('boundaryProblem believes the type guard the rego writes', () => {
+  // resolve() は文字列もマップも返す。`is_object(ev)` と書いてあるなら数えているのは
+  // マップの要素数で、文字列長のプールと突き合わせてはいけない
+  const rego = [
+    'violation contains 1 if {',
+    '\tev := resolve(name, "Properties.EnvironmentVariables")',
+    '\tis_object(ev)',
+    '\tcount(ev) > 2',
+    '}',
+    '',
+  ].join('\n');
+  const map = (n: number) => JSON.stringify({
+    Resources: { R: { Type: 'A::B::C', Properties: { EnvironmentVariables: Object.fromEntries([...Array(n)].map((_, i) => [`K${i}`, 'v'])) } } },
+  });
+  expect(boundaryProblem(rego, map(3), map(2))).toBeUndefined();
+  expect(boundaryProblem(rego, map(9), map(2))).toMatch(/fail template has no 3/);
+});
+
+test('boundaryProblem ignores comparisons written in comments', () => {
+  // 「x <= 23 と width <= 24 だけを主張する」のような覚書はロジックではない。拾うと
+  // ルールに無いしきい値を要求する。文字列の中の `#`（URL のフラグメント）は巻き込まない
+  const rego = [
+    '# Only the two benched maxima are claimed (x <= 23, width <= 24).',
+    '_pf_x_max := {"x": 23}',
+    '',
+    'violation contains make_diag_full("x", "ERROR", name, "p", "m", "f",',
+    '\t"https://example.com/doc.html#Percentiles") if {',
+    '\tv := to_number(resolve(name, "Properties.V"))',
+    '\tv > 100',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (v: number) => JSON.stringify({ Resources: { R: { Type: 'A::B::C', Properties: { V: v } } } });
+  expect(boundaryProblem(rego, fx(101), fx(100))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(200), fx(100))).toMatch(/fail template has no 101/);
+});
+
+test('boundaryProblem ignores comparisons written in the diagnostic text', () => {
+  // 修正案の文面に書いた `>= 31` はロジックではない。拾うとルールに存在しない
+  // しきい値を要求してしまう
+  const rego = [
+    'violation contains make_diag_full("x", "ERROR", name, "p",',
+    '\t"retention is below 31 days",',
+    '\t"Set PerformanceInsightsRetentionPeriod >= 31",',
+    '\t"https://example.com") if {',
+    '\tn := to_number(resolve(name, "Properties.R"))',
+    '\tn < 31',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { R: n } } } });
+  expect(boundaryProblem(rego, fx(30), fx(31))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(5), fx(31))).toMatch(/fail template has no 30/);
+});
+
+test('boundaryProblem flips a comparison the rule reads through not', () => {
+  // `_ok(v) if n <= 100` を `not _ok(...)` で使うと、書かれている比較は守れている向き。
+  // 裏返さずに読むと fail に 100、pass に 101 を要求してしまう（境界の反対側）
+  const rego = [
+    '_pf_ok(v) if {',
+    '\tn := to_number(v)',
+    '\tn <= 100',
+    '}',
+    '',
+    'violation contains 1 if {',
+    '\tv := resolve(name, "Properties.R")',
+    '\tnot _pf_ok(v)',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { R: n } } } });
+  expect(boundaryProblem(rego, fx(101), fx(100))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(100), fx(101))).toMatch(/fail template has no 101/);
 });
 
 test('boundaryProblem reads an index into an object as what it holds', () => {

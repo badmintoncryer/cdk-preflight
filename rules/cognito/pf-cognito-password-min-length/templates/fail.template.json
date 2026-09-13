@@ -1,12 +1,23 @@
 {
   "Resources": {
-    "UP": {
+    "UPLo": {
       "Type": "AWS::Cognito::UserPool",
       "Properties": {
         "UserPoolName": "p",
         "Policies": {
           "PasswordPolicy": {
-            "MinimumLength": 4
+            "MinimumLength": 5
+          }
+        }
+      }
+    },
+    "UPHi": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "p",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 100
           }
         }
       }

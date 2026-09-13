@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "DatabaseName": "pfcrawldb",
+        "Targets": {
+          "DynamoDBTargets": [
+            {
+              "Path": "pfddbtbl",
+              "ScanRate": 0.09
+            },
+            {
+              "Path": "pfddbtbl",
+              "ScanRate": 1.51
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-glue-job-maintenance-window-streaming-only
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: MaintenanceWindow is only accepted on streaming jobs
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-glue-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (glueetl with MaintenanceWindow Sun:23) -> \"Maintenance window should be provided only for glue streaming jobs\" (ROLLBACK_COMPLETE); pass template (gluestreaming with the same MaintenanceWindow) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

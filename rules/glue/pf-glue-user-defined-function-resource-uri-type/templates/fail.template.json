@@ -1,0 +1,37 @@
+{
+  "Resources": {
+    "Db": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}"
+          }
+        }
+      }
+    },
+    "Main": {
+      "Type": "AWS::Glue::UserDefinedFunction",
+      "Properties": {
+        "DatabaseName": {
+          "Ref": "Db"
+        },
+        "FunctionName": {
+          "Fn::Sub": "${AWS::StackName}-f"
+        },
+        "ClassName": "C",
+        "OwnerName": "o",
+        "OwnerType": "USER",
+        "ResourceUris": [
+          {
+            "ResourceType": "LIB",
+            "Uri": "s3://cdkpf-glue-probe-214794239830/u.jar"
+          }
+        ]
+      }
+    }
+  }
+}

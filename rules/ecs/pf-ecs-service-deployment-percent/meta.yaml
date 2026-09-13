@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: MinimumHealthyPercent 200 (sv08) -> CreateService \"minimumHealthyPercent must be at most 100\"; MaximumPercent 90 (sv08b) -> \"maximumPercent must be at least 100\". Registry schema has no bounds (bare engine clean). Both ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: MinimumHealthyPercent 101 -> \"minimumHealthyPercent must be at most 100\" ROLLBACK_COMPLETE (the chained second service carries MaximumPercent 99); pass MinimumHealthyPercent 100 with MaximumPercent 200, and MinimumHealthyPercent 50 with MaximumPercent 100 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateService: 101 and 99 are rejected, 100 is accepted on either end. The two ends cannot share one service: 100/100 is rejected by a separate check (\"Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block any deployment\"), which is why the pass uses two services."
 addedOn: 2026-09-03

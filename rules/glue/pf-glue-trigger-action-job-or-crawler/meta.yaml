@@ -1,0 +1,12 @@
+id: pf-glue-trigger-action-job-or-crawler
+service: glue
+resourceTypes: [AWS::Glue::Trigger]
+benchRegion: us-east-1
+severity: ERROR
+title: A trigger action names either a job or a crawler, not both
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (one action with both JobName and CrawlerName) -> \"Both JobName or CrawlerName cannot be set together in an action\" (ROLLBACK_COMPLETE); pass template (the same two names split over two actions) -> CREATE_COMPLETE"
+addedOn: 2026-09-14

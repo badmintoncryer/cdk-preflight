@@ -7,148 +7,55 @@
 #   それ以外       — 恒久的な例外。しきい値の検出がそのルールでは意味を持たない理由を具体的に
 #                    書く（ARN の断片数のようなガード、エンジンのスキーマが持っている側の端、
 #                    実機で作れない量など）
-pf-agentcore-runtime-env-var-count  pending #178
 pf-apigw-integration-timeout-range  下限 50 はエンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。上限 29001/29000 は境界に乗せてある
-pf-appsync-api-env-var-count-max  pending #178
-pf-appsync-api-env-var-key-max-length  pending #178
-pf-appsync-api-env-var-value-max-length  pending #178
-pf-appsync-api-key-expires-max  pending #178
-pf-appsync-api-key-expires-past  pending #178
-pf-appsync-res-pipeline-functions-max  pending #178
-pf-asg-instance-maintenance-policy-range-diff  pending #178
-pf-asg-lh-heartbeat-timeout-range  pending #178
-pf-asg-lifecycle-hook-heartbeat-timeout-range  pending #178
-pf-asg-max-instance-lifetime-range  pending #178
-pf-asg-ondemand-percentage-max  pending #178
-pf-asg-tt-period-max-60  pending #178
-pf-batch-ce-eks-namespace-format  pending #178
-pf-batch-jd-consumable-resource-list-max  pending #178
-pf-batch-jd-ecs-task-containers-max  pending #178
-pf-batch-jd-eks-annotation-value-length  pending #178
-pf-batch-jd-eks-label-value-format  pending #178
-pf-batch-jd-evaluate-on-exit-pattern-length  pending #178
-pf-batch-jd-memory-minimum  pending #178
-pf-batch-se-capacity-limits-max  pending #178
-pf-batch-sp-share-distribution-max  pending #178
-pf-batch-timeout-minimum  pending #178
-pf-bedrock-datasource-chunk-max-tokens  pending #178
-pf-cloudfront-function-code-size  pending #178
-pf-cloudfront-origin-http-port-range  pending #178
-pf-cloudfront-origin-https-port-range  pending #178
-pf-cloudfront-origin-keepalive-timeout-range  pending #178
-pf-cloudfront-origin-read-timeout-range  pending #178
-pf-cloudfront-rhp-content-security-policy-length  pending #178
-pf-cloudfront-vpc-origin-port-range  pending #178
-pf-cloudwatch-alarm-evaluation-window  pending #178
-pf-cloudwatch-alarm-expressions-max  pending #178
-pf-cloudwatch-composite-suppressor-format  pending #178
-pf-cloudwatch-dashboard-widget-height-max  pending #178
-pf-cloudwatch-dashboard-widget-position  pending #178
-pf-cloudwatch-extended-statistic  pending #178
-pf-cloudwatch-insight-rule-keys-max  pending #178
-pf-cognito-domain-prefix-length  pending #178
-pf-cognito-idp-provider-name-length  pending #178
-pf-cognito-password-history-size-range  pending #178
-pf-cognito-password-min-length  pending #178
-pf-cognito-role-mapping-rules-max  pending #178
-pf-cognito-schema-custom-name-length  pending #178
-pf-cognito-temporary-password-validity-range  pending #178
-pf-cognito-token-validity-range  pending #178
-pf-cognito-unused-account-validity-range  pending #178
-pf-cognito-verification-email-subject-length  pending #178
-pf-dynamodb-global-table-gsi-count  pending #178
-pf-dynamodb-global-table-key-schema-shape  pending #178
-pf-dynamodb-global-table-lsi-count  pending #178
-pf-dynamodb-global-table-name-length  pending #178
-pf-dynamodb-gsi-count  pending #178
-pf-dynamodb-lsi-count  pending #178
-pf-dynamodb-projection-nonkey-total  pending #178
-pf-dynamodb-resource-policy-size  pending #178
-pf-dynamodb-warm-throughput-minimum  pending #178
-pf-ec2-sg-icmp-type-code  pending #178
-pf-ec2-sg-port-range  pending #178
-pf-ec2-sg-source-exclusive  pending #178
-pf-ec2-subnet-cidr-size  pending #178
-pf-ec2-tgw-amazon-side-asn  pending #178
-pf-ec2-volume-iops  pending #178
-pf-ec2-vpc-cidr-block-size  pending #178
-pf-ec2-vpn-pre-shared-key  pending #178
-pf-ecr-lifecycle-policy-syntax  pending #178
-pf-ecr-lifecycle-tag-status  pending #178
-pf-ecs-ephemeral-storage-range  pending #178
-pf-ecs-fargate-windows-cpu-under-1vcpu  pending #178
-pf-ecs-service-deployment-percent  pending #178
-pf-ecs-svc-daemon-max-percent  pending #178
-pf-efs-mount-target-network  pending #178
-pf-efs-throughput-mode  pending #178
-pf-elasticache-auth-token  pending #178
-pf-elasticache-maintenance-window  pending #178
-pf-elasticache-replication-group-clusters  pending #178
-pf-elasticache-snapshot-retention  pending #178
-pf-elasticache-user-authentication  pending #178
-pf-elbv2-lb-attr-count-max  pending #178
-pf-elbv2-lb-idle-timeout-range  pending #178
-pf-elbv2-lb-name  pending #178
-pf-elbv2-rule-condition-values-max  pending #178
-pf-elbv2-tg-attr-health-percentage-range  pending #178
-pf-elbv2-tg-deregistration-delay-range  pending #178
-pf-elbv2-tg-hc-port-format  pending #178
-pf-elbv2-tg-name  pending #178
-pf-elbv2-tg-slow-start-range  pending #178
-pf-events-rule-pattern-size  pending #178
-pf-events-target-ecs-parameters  pending #178
-pf-firehose-dynamic-partitioning-buffer  pending #178
-pf-firehose-http-buffer-size  pending #178
-pf-firehose-prefix-length  pending #178
-pf-firehose-processor-buffer-interval-range  pending #178
-pf-firehose-processor-buffer-size-range  pending #178
-pf-firehose-processor-count  pending #178
-pf-firehose-processor-retries-range  pending #178
+pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」で、テンプレートに固定値としては書けない（エンジンに時計が無い）。ルールが見ている 100000000000（西暦 5138 年＝秒とミリ秒の取り違え）はどの日付でも違反になる部分集合で、pass をその値に乗せると 365 日を超えて実機に拒否される。fail は 100000000001 に乗せ、pass は Expires を省いて既定の 7 日にしてある
+pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
+pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
+pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
+pf-cloudwatch-alarm-evaluation-window  3600 は予算の段を選ぶ境目（Period >= 3600 なら 1 週間、未満なら 1 日）で、順序のある制約ではない。実際のしきい値 604800 / 86400 は Period x EvaluationPeriods の積なのでテンプレートに数値としては現れない。フィクスチャは 3600x169 / 3600x168 と 60x1441 / 60x1440 に乗せてある
+pf-cloudwatch-alarm-expressions-max  数えているのは Metrics のうち Expression を持つ要素だけを集めるヘルパーの戻り値で、Metrics 配列そのものの長さとは 1 ずれる。フィクスチャは 11 / 10 本に乗せてある
+pf-cloudwatch-composite-suppressor-format  count(parts) >= 7 は ActionsSuppressor を ARN として割った断片数のガードで、順序のある制約ではない
+pf-cloudwatch-insight-rule-keys-max  しきい値と突き合わせるのは RuleBody（JSON 文字列）の中の Contribution.Keys の長さで、テンプレートの構造には配列として現れない。フィクスチャは 5 / 4 本に乗せてある
+pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
+pf-dynamodb-projection-nonkey-total  しきい値と突き合わせるのは INCLUDE インデックスをまたいだ投影属性数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 に乗せてある（1 インデックス 20 本の上限は pf-dynamodb-projection-nonkey-limit 側で境界に乗っている）
+pf-dynamodb-resource-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（解決後の形で 20481 / 20480 ちょうどに乗せてある）
+pf-ec2-sg-port-range  順序チェックの本体にある t <= 65535 は「両方とも範囲内の値のときだけ前後関係を見る」ためのガードで、上限そのものは同じファイルの _pf_port_out(n) if n > 65535 が見ている。フィクスチャは 65536 / 65535 に乗せてあり、順序の違反も 65535:65534 で境界に乗っている（埋め込み ingress の順序は同梱エンジンの E9002 が持っているので、fail では単独リソース側に置いた）
+pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エントリに立っている source 系フィールドの本数（固定の 4 キーを数えたヘルパーの戻り値）で、どの配列長とも文字列長とも一致しない。フィクスチャは 2 / 1 本に乗せてある
+pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
+pf-ecr-lifecycle-tag-status  しきい値と突き合わせるのは tagPatternList の 1 エントリに含まれる `*` の個数で、テンプレートには数値として現れない（しかも LifecyclePolicyText は JSON 文字列）。フィクスチャは 5 個 / 4 個に乗せてある
+pf-ecs-fargate-windows-cpu-under-1vcpu  Fargate の Cpu は 256 / 512 / 1024 … という飛び飛びの集合なので 1023 は存在しない値。1024 未満で実際に指定できる最大は 512 で、fail はそこに乗せてある（2026-09-13 us-east-1 RegisterTaskDefinition: Windows + 512 CPU / 2048 memory は "No Fargate configuration exists for given values"、1024 は通る）
+pf-efs-throughput-mode  上限ちょうどの pass は作れない: プロビジョンドスループットは $6/MiBps-月なので 3414 MiBps は数分でも 7 ドル近くかかる（L-BFB6FB19 は Adjustable: false なのでハードリミットではある）。fail は 3415 に乗せ、pass は 1 MiBps にしてある
+pf-elasticache-auth-token  しきい値はヘルパー述語の引数（`_pf_ecauth_bad_length(n) if n < 16`）にあり、n が何を数えた値かは呼び出し側の別ブロックなので検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
+pf-elasticache-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウ（`ddd:hh24:mi-ddd:hh24:mi`）の長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
+pf-elasticache-user-authentication  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字、本数は 3 / 2 本に乗せてある
+pf-elbv2-rule-condition-values-max  しきい値と突き合わせるのは Conditions をまたいだ値の数の合計で、どの配列長とも一致しない。フィクスチャは 6 / 5 値に乗せてある（実機も 3+3 の分割で上限を返す）
+pf-elbv2-tg-name  count(n) <= 32 は長すぎる名前を書式のほうの本体に渡さないための排他ガードで、上限そのものは同じファイルの count(n) > 32 が見ている。フィクスチャは 33 / 32 に乗せてある
+pf-firehose-prefix-length  しきい値は展開後のプレフィックスの文字数で、テンプレートに数値としては現れない。数えているのも 2 つの count の和なので検出器は「何を数えたか」まで辿れない。フィクスチャは Prefix / ErrorOutputPrefix それぞれ 513 文字と、両方 512 文字ちょうどに乗せてある
+pf-firehose-processor-buffer-size-range  BufferSizeInMBs は小数を取るので、上限 3 の隣は整数の 4 ではない。fail は 3.1 と 0.19（実機は 3.01 / 0.199 も拒否するので丸めではない）、pass は 3 と 0.2 ちょうどに乗せてある
+pf-firehose-processor-count  しきい値と突き合わせるのは Processors 配列の要素数だが、数えているのはヘルパー述語の本体（_pf_fhpc_count）の中なので検出器は呼び出し側から辿れない。フィクスチャは 6 / 0 本と 5 / 1 本に乗せてある
 pf-iam-managed-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（6145/6144 ちょうどで撮ってある）
 pf-lambda-env-size  しきい値は環境変数をシリアライズしたバイト数の合計。テンプレートに数値としては現れない（4097/4096 ちょうどで撮ってある）
 pf-lambda-esm-on-failure-destination-api-max-length  上限 350 に届く有効な ARN が存在しない（SQS/S3 の名前長の上限より先に頭打ちになる）。fail は 351 文字ちょうど
 pf-lambda-esm-poller-group-esm-count  doc-only。fail の 101 本で既にテンプレートが 57KB あり CFN の 51,200 バイト上限を超える。pass の 100 本も同じ理由で作れない
 pf-lambda-layerperm-arn-length  上限 140 に届く有効なレイヤー ARN が存在しない（レイヤー名は 64 文字まで）。fail は 141 文字ちょうど
 pf-lambda-perm-policy-size  しきい値は SourceArn 長の合計。fail は既に合計 20480 ちょうど。pass（20479）は Permission が約 270 本必要で、CFN のテンプレート上限 51,200 バイトに入らない
-pf-memorydb-maintenance-window  pending #178
-pf-memorydb-replicas-per-shard  pending #178
-pf-memorydb-snapshot-retention  pending #178
-pf-memorydb-user-password  pending #178
-pf-rds-backtrack  pending #178
-pf-rds-backup-window-duration  pending #178
-pf-rds-cluster-port-range  pending #178
-pf-rds-database-insights-advanced  pending #178
-pf-rds-gp3-iops-storage-threshold  pending #178
-pf-rds-password-valid  pending #178
-pf-rds-pi-retention-period  pending #178
-pf-rds-port-range  pending #178
-pf-rds-proxy-idle-client-timeout  pending #178
-pf-rds-proxy-pool-percent  pending #178
-pf-rds-serverless-v2-capacity  pending #178
-pf-rds-storage-throughput-max  pending #178
+pf-memorydb-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウの長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
+pf-memorydb-user-password  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
+pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
+pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）
 pf-route53-healthcheck-alarm-high-resolution  CloudWatch の Period は 10/20/30 か 60 の倍数しか取れないので 31-59 は作れない。fail は作れる中で最大の 30、pass は 60 に乗せてある
 pf-route53-hostedzone-name-label-63  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
 pf-route53-record-name-label-length  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
 pf-route53-recordsetgroup-max-1000-elements  しきい値と突き合わせるのはレコードセットをまたいだ値の合計で、1 レコードセットは 400 値までなので 1001 要素の配列はテンプレートに存在しない。フィクスチャは 1001 / 1000 値に乗せてある
 pf-route53-recordsetgroup-max-32000-chars  しきい値は全値の文字数の合計で、どの配列長とも文字列長とも一致しない。フィクスチャは 32001 / 32000 文字に乗せてある
-pf-route53profiles-profileresourceassociation-rulegroups-max  pending #178
-pf-route53resolver-endpoint-ipaddresses-max-six  pending #178
-pf-route53resolver-firewalldomainlist-domains-max  pending #178
-pf-route53resolver-firewallrulegroup-rules-max  pending #178
-pf-route53resolver-firewallrulegroupassociation-max-per-vpc  pending #178
-pf-s3-metadata-record-expiration-days  pending #178
-pf-s3-storagelensgroup-match-any-max  pending #178
-pf-secretsmanager-generate-secret-string  pending #178
-pf-secretsmanager-rotation-rules  pending #178
-pf-sfn-asl-name-limits  pending #178
-pf-sns-fifo-only-attributes  pending #178
-pf-sqs-redrive-allow-policy  pending #178
-pf-sqs-redrive-policy  pending #178
-pf-ssm-association-schedule  pending #178
-pf-ssm-parameter-name  pending #178
-pf-ssm-parameter-policies  pending #178
-pf-ssm-parameter-tier  pending #178
+pf-route53profiles-profileresourceassociation-rulegroups-max  しきい値と突き合わせるのは「同じプロファイルに紐づいたルールグループの本数」で、リソースをまたいで数えた値なのでどの配列長とも一致しない。フィクスチャは 6 / 5 本に乗せてある（L-F8A07EF1「DNS Firewall rule groups associations to a Route 53 Profile」は Adjustable: false）
+pf-route53resolver-firewallrulegroupassociation-max-per-vpc  しきい値と突き合わせるのは「同じ VPC を指しているアソシエーションの本数」で、テンプレートのどの配列長とも一致しない（リソースをまたいで数えた値）。フィクスチャは 6 / 5 本に乗せてある
+pf-sfn-asl-name-limits  ステート名も Label も DefinitionString（JSON 文字列）の中にあるので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない（エスケープされた引用符は文字列の一部として読まれる）。フィクスチャは 81 / 80 文字と 41 / 40 文字に乗せてある
+pf-sns-fifo-only-attributes  上限ちょうどの pass は残せない: ArchivePolicy を持つトピックは削除できず（2026-09-13 us-east-1: "Cannot delete a topic with an ArchivePolicy"）、スタック削除が DELETE_FAILED になってトピックが毎回残る。fail に 366 日と 0 日を置いて両端を確認し、pass は ArchivePolicy を持たない FIFO トピックにしてある
+pf-sqs-redrive-allow-policy  しきい値はヘルパー述語の引数（`_pf_sqsrap_out(n) if n > 10`）にあり、n が何を数えた値かは呼び出し側の別ブロックにあるので検出器から辿れない。フィクスチャは 11 / 10 本に乗せてある
+pf-ssm-parameter-name  1011 は名前そのものではなく ARN 全体（arn:aws:ssm:<region>:<account>:parameter/ + 名前）の上限で、検出器が拾っているのは足し算の右辺。許される名前の長さはリージョン名の長さで変わるので固定の数値としてはテンプレートに現れない。フィクスチャは us-east-1 + 12 桁アカウントの端（素の名前 967 / 966）に乗せてある
+pf-ssm-parameter-policies  しきい値と突き合わせるのは Policies（JSON 文字列）の中の配列長で、テンプレートの構造には配列として現れない（CloudFormation の Policies は文字列型）。フィクスチャは 11 / 10 本に乗せてある
 pf-wafv2-custom-request-handling  コンテナ全体で 100 という上限は、CustomRequestHandling をまたいだヘッダ数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 本に乗せてある（1 オブジェクトあたりの 10 本は境界で検出できている）
 pf-wafv2-custom-response  コンテナ全体で 50 KB という上限は本文の文字数の合計。加えて上限ちょうどの pass は作れない: 本文 51,200 文字は CloudFormation のインラインテンプレート上限 51,200 バイトを超える。50 本 / 1 本 4,096 文字の 2 つは境界に乗せてある
 pf-wafv2-ipset-addresses  p <= 32 は IPv4 のプレフィックス長が範囲内かの形のガードで、順序のある制約ではない（33 は有効な値ですらない）

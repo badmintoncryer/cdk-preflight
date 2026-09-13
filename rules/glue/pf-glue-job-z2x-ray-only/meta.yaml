@@ -1,0 +1,12 @@
+id: pf-glue-job-z2x-ray-only
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: The Z.2X worker type is only available for Ray jobs
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/worker-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (glueetl, WorkerType Z.2X) -> \"Worker type can be null, empty or one of supported types [Standard, G.025X, G.1X, G.2X, G.4X, G.8X, G.12X, G.16X, R.1X, R.2X, R.4X, R.8X].\" (ROLLBACK_COMPLETE) — Z.2X is absent from the list CreateJob accepts for non-Ray commands; pass template (glueetl, WorkerType G.1X) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

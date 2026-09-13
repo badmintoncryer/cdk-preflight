@@ -110,7 +110,7 @@
             "Ref": "SB"
           }
         ],
-        "IdleClientTimeout": 1800
+        "IdleClientTimeout": 28800
       }
     }
   }

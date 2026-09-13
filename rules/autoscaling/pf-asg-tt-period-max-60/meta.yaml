@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: A metric period greater than 60 isn't supported. Specify a 'period' value less than or equal to 60 and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: TargetTrackingConfiguration.CustomizedMetricSpecification.Period 120 -> \"A metric period greater than 60 isn't supported. Specify a 'period' value less than or equal to 60 and try again.\" ROLLBACK_COMPLETE; pass 60 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutScalingPolicy: 120 and 180 give that message, 60 is accepted, and 61 and 90 are rejected as \"Invalid period value\" instead - a CloudWatch period has to be 10, 30, 60 or a multiple of 60, so the tightest value that actually reaches this limit is 120, not 61."
 addedOn: 2026-09-09

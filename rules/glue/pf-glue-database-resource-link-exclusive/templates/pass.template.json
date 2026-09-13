@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}"
+          },
+          "TargetDatabase": {
+            "CatalogId": {
+              "Ref": "AWS::AccountId"
+            },
+            "DatabaseName": "pfcrawldb"
+          }
+        }
+      }
+    }
+  }
+}

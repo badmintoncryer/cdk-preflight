@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/general/latest/gr/appsync.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"A resolver can only be composed of 10 functions. (Service: AppSync, Status Code: 400, Request ID: eff88c6d-a8b6-4500-b07d-4470f25ace1e) (SDK Attempt Count: 1)\" (RequestToken: 1afbfea8-cb6e-2ea6-6edc-49f0bcd63a41, HandlerErrorCode: InvalidRequest)"
+  evidence: "bench 2026-09-13 us-east-1: 11 functions -> \"A resolver can only be composed of 10 functions.\" ROLLBACK_COMPLETE; pass 10 real AWS::AppSync::FunctionConfiguration resources -> CREATE_COMPLETE. The count is checked before the function ids are resolved, which is why the fail template can list placeholder ids."
 addedOn: 2026-09-12

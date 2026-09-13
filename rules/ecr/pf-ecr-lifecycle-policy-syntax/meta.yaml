@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/userguide/lifecyc
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: object has missing required properties ([\"selection\"])\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: 51 lifecycle rules -> \"Lifecycle policy validation failure: array is too long: must have at most 50 elements but instance has 51 elements\" ROLLBACK_COMPLETE (the first rule of that policy also has no selection block, which is the other branch); pass 50 rules -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutLifecyclePolicy: 51 rules are rejected with that message and 50 are accepted. Fifty rules only pass when the selections differ - fifty untagged rules are rejected with \"Only one rule can select Untagged images\", so the pass template uses one untagged rule and 49 tagged ones with distinct tag patterns."
 addedOn: 2026-09-06

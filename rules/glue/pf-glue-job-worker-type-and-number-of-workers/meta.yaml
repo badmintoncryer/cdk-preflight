@@ -1,0 +1,12 @@
+id: pf-glue-job-worker-type-and-number-of-workers
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: WorkerType and NumberOfWorkers must be set together
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/add-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (one job with WorkerType G.1X and no NumberOfWorkers, a second with NumberOfWorkers 2 and no WorkerType) -> \"Please set both Worker Type and Number of Workers.\" (ROLLBACK_COMPLETE); pass template (both set) -> CREATE_COMPLETE. Both directions were rejected with that same message by a CreateJob probe the same day."
+addedOn: 2026-09-13

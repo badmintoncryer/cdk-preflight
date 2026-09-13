@@ -6,21 +6,34 @@
         "UserPoolName": "p"
       }
     },
-    "C": {
+    "CLo": {
       "Type": "AWS::Cognito::UserPoolClient",
       "Properties": {
         "UserPoolId": {
           "Ref": "UP"
         },
-        "ClientName": "c",
+        "ClientName": "c1",
         "TokenValidityUnits": {
-          "AccessToken": "hours",
-          "IdToken": "hours",
-          "RefreshToken": "days"
+          "AccessToken": "seconds",
+          "RefreshToken": "seconds"
         },
-        "AccessTokenValidity": 12,
-        "IdTokenValidity": 12,
-        "RefreshTokenValidity": 30
+        "AccessTokenValidity": 300,
+        "RefreshTokenValidity": 3600
+      }
+    },
+    "CHi": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "UP"
+        },
+        "ClientName": "c2",
+        "TokenValidityUnits": {
+          "AccessToken": "seconds",
+          "RefreshToken": "seconds"
+        },
+        "AccessTokenValidity": 86400,
+        "RefreshTokenValidity": 315360000
       }
     }
   }

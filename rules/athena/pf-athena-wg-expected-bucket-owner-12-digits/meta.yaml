@@ -1,0 +1,12 @@
+id: pf-athena-wg-expected-bucket-owner-12-digits
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::WorkGroup]
+severity: ERROR
+title: "ExpectedBucketOwner must be at least 12 characters (a 12-digit account ID)"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_ResultConfiguration.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"Parameter validation failed: Invalid length for parameter Configuration.ResultConfiguration.ExpectedBucketOwner, value: 4, valid min length: 12\"; bench 2026-09-13 us-east-1: 11-digit ExpectedBucketOwner fail -> \"Invalid request provided: 1 validation error detected: Value at 'configuration.resultConfiguration.expectedBucketOwner' failed to satisfy constraint: Member must have length greater than or equal to 12\" (ROLLBACK_COMPLETE); pass 12-digit -> CREATE_COMPLETE"
+addedOn: 2026-09-13

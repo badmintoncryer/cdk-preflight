@@ -6,6 +6,6 @@ title: Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPor
 constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html
 upstream: none
 repro:
-  method: research-case
-  evidence: cdk-validation-gap-research case14 (2026-09-01, "TCP/UDP (from) port (99999) out of range" at deploy)
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: AuthorizeSecurityGroupIngress tcp FromPort=65536 -> \"TCP/UDP (from) port (65536) out of range\", FromPort=-1 -> the same for (-1), 65535:65534 -> \"Invalid TCP/UDP port range(65535:65534)\"; 0-65535 and 65535:65535 accepted. A 3-entry list reports only the first entry. bench 2026-09-13 us-east-1: fail (embedded 65536/65536 and -1/80, standalone 65535/65534) -> ROLLBACK_COMPLETE \"TCP/UDP (from) port (65536) out of range\", which masks the other two branches; pass 0-65535 -> CREATE_COMPLETE. The ordering violation sits on the standalone resource because the engine's E9002 already owns FromPort>ToPort for an embedded ingress entry (but not for embedded egress or for the standalone resources)."
 addedOn: 2026-09-01

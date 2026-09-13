@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Trigger",
+      "Properties": {
+        "Type": "CONDITIONAL",
+        "StartOnCreation": false,
+        "Predicate": {
+          "Logical": "ANY",
+          "Conditions": [
+            {
+              "LogicalOperator": "EQUALS",
+              "JobName": "pfjob",
+              "State": "SUCCEEDED"
+            }
+          ]
+        },
+        "Actions": [
+          {
+            "JobName": "pfjob"
+          }
+        ]
+      }
+    }
+  }
+}

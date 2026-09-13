@@ -3,7 +3,8 @@
 # pass テンプレートがデプロイ成功することを AWS 実環境で確認する。
 # 使い方: bash bench/verify-rule.sh <rule-id> [--fail-only]
 # リージョン: CDKPF_REGION > meta.yaml の benchRegion > ap-northeast-1
-# exit: 0=verified / 2=BROKEN(fail が通った=制約ドリフト疑い) / 3=pass 不成立 / 4=INCONCLUSIVE(判定不能)
+# exit: 0=verified / 2=BROKEN(fail が通った=制約ドリフト疑い)
+#       3=pass 不成立（デプロイはされたが CREATE_COMPLETE 以外で終わった）/ 4=INCONCLUSIVE(判定不能)
 # スタックは cdkpf-* 命名で作成し、必ず削除する。コストは失敗スタックのみで実質ゼロ。
 set -u
 cd "$(dirname "$0")/.."
@@ -91,18 +92,30 @@ cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除
   fi
 }
 
+create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれたら理由を出して INCONCLUSIVE で抜ける
+  local out rc msg
+  out=$(aws cloudformation create-stack --stack-name "$1" --region "$REGION" \
+    --template-body "file://$2" \
+    --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text 2>&1)
+  rc=$?
+  echo "$out" >> "$LOG"
+  [ "$rc" -eq 0 ] && return 0
+  # ponytail: API レベルの拒否は throttle/認証エラーと本物の制約発火を区別できないので
+  # 一律 INCONCLUSIVE。毎月これに落ち続けるルールが出たら期待エラー文の白判定を個別に足す。
+  # 要約は 1 行に潰して両端を残す: templateBody の長さ超過はエラー文に弾かれたテンプレートが
+  # まるごと載って複数行 52KB になり（2026-09-13、pf-batch-sp-share-distribution-max の pass）、
+  # 頭だけ見ると型が、末尾だけ見ると "Member must have length less than or equal to 51200" が
+  # 落ちる。全文は $LOG にある。
+  msg=$(tr '\n' ' ' <<<"$out")
+  [ ${#msg} -gt 400 ] && msg="${msg:0:200} […] ${msg: -200}"
+  echo "!! INCONCLUSIVE: $3 create-stack API error: $msg" | tee -a "$LOG"
+  cleanup "$1"
+  exit 4
+}
+
 echo "=== $RULE: fail template ($REGION) ===" | tee -a "$LOG"
 FSTACK="cdkpf-$RULE-fail"
-if ! aws cloudformation create-stack --stack-name "$FSTACK" --region "$REGION" \
-  --template-body "file://$DIR/templates/fail.template.json" \
-  --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1; then
-  # ponytail: API レベルの拒否は throttle/認証エラーと本物の制約発火を区別できないので
-  # 一律 INCONCLUSIVE。毎月これに落ち続けるルールが出たら期待エラー文の白判定を個別に足す
-  APIERR=$(grep -iE 'error|denied|exception' "$LOG" | tail -1)
-  echo "!! INCONCLUSIVE: create-stack API error: $APIERR" | tee -a "$LOG"
-  cleanup "$FSTACK"
-  exit 4
-fi
+create_stack "$FSTACK" "$DIR/templates/fail.template.json" fail
 FSTATUS=$(poll_terminal "$FSTACK")
 REASON=$(reason_of "$FSTACK")
 FTYPE=$(failed_type "$FSTACK")
@@ -125,9 +138,7 @@ esac
 if [ "$FAIL_ONLY" != "--fail-only" ]; then
   echo "=== $RULE: pass template ($REGION) ===" | tee -a "$LOG"
   PSTACK="cdkpf-$RULE-pass"
-  aws cloudformation create-stack --stack-name "$PSTACK" --region "$REGION" \
-    --template-body "file://$DIR/templates/pass.template.json" \
-      --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text >> "$LOG" 2>&1
+  create_stack "$PSTACK" "$DIR/templates/pass.template.json" pass
   PSTATUS=$(poll_terminal "$PSTACK")
   PREASON=$(reason_of "$PSTACK")
   PTYPE=$(failed_type "$PSTACK")

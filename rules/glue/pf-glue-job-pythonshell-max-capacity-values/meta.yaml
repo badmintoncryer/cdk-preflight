@@ -1,0 +1,12 @@
+id: pf-glue-job-pythonshell-max-capacity-values
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A Python shell job can only allocate 0.0625 or 1 DPU
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/add-job-python.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (pythonshell, MaxCapacity 2) -> \"Max Capacity should be between 0.0 and 1.0 if present for pythonshell.\" (ROLLBACK_COMPLETE); pass template (MaxCapacity 1) -> CREATE_COMPLETE. CreateJob probe same day: 0.0625 and 0 accepted, 0.5 rejected with \"Max Capacity values with precision supported for pythonshell are [0.0625].\" — hence the allowed set {0, 0.0625, 1}."
+addedOn: 2026-09-13

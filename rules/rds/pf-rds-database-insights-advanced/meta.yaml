@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"You can't enable the Advanced mode of Database Insights until you enable Performance Insights and set the retention period for Performance Insights to at least 31 days.\" ROLLBACK_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: DatabaseInsightsMode advanced with Performance Insights on and a 30-day retention -> \"You can't enable the Advanced mode of Database Insights until you set the retention period for Performance Insights to at least 31 days.\" (ROLLBACK_COMPLETE); pass the same with 31 days -> CREATE_COMPLETE"
 addedOn: 2026-09-08

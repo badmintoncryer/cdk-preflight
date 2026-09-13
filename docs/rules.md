@@ -212,6 +212,20 @@
 | `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | pending-engine |
 | `pf-appsync-source-api-merged-not-source` | AWS::AppSync::SourceApiAssociation | A merged API cannot be a source API | ERROR | none |
 | `pf-appsync-source-api-not-merged-target` | AWS::AppSync::SourceApiAssociation | The association target must be a MERGED API | ERROR | none |
+| `pf-athena-dc-glue-requires-catalog-id` | AWS::Athena::DataCatalog | A GLUE data catalog requires the catalog-id parameter | ERROR | none |
+| `pf-athena-dc-hive-requires-metadata-function` | AWS::Athena::DataCatalog | A HIVE data catalog requires the metadata-function parameter | ERROR | none |
+| `pf-athena-dc-lambda-function-xor-split` | AWS::Athena::DataCatalog | A Lambda data catalog uses 'function' or the metadata/record pair, never both | ERROR | none |
+| `pf-athena-dc-lambda-record-requires-metadata` | AWS::Athena::DataCatalog | 'metadata-function' and 'record-function' must be set together | ERROR | none |
+| `pf-athena-dc-name-charset` | AWS::Athena::DataCatalog | A data catalog name may use only letters, digits, underscore, at sign and hyphen | ERROR | pending-engine |
+| `pf-athena-dc-name-max-128` | AWS::Athena::DataCatalog | A data catalog name may be at most 128 characters | ERROR | pending-engine |
+| `pf-athena-wg-cse-kms-requires-key` | AWS::Athena::WorkGroup | CSE_KMS result encryption requires a KmsKey | ERROR | none |
+| `pf-athena-wg-engine-version-enum` | AWS::Athena::WorkGroup | SelectedEngineVersion must be AUTO or a published engine version | ERROR | pending-engine |
+| `pf-athena-wg-expected-bucket-owner-12-digits` | AWS::Athena::WorkGroup | ExpectedBucketOwner must be at least 12 characters (a 12-digit account ID) | ERROR | pending-engine |
+| `pf-athena-wg-managed-storage-xor-output-location` | AWS::Athena::WorkGroup | Managed query results and a ResultConfiguration cannot both be set | ERROR | none |
+| `pf-athena-wg-name-charset` | AWS::Athena::WorkGroup | A workgroup name may use only letters, digits, period, underscore and hyphen | ERROR | pending-engine |
+| `pf-athena-wg-output-location-s3-uri` | AWS::Athena::WorkGroup | The query result OutputLocation must be an s3:// URI | ERROR | none |
+| `pf-athena-wg-spark-requires-execution-role` | AWS::Athena::WorkGroup | A PySpark workgroup must set an ExecutionRole | ERROR | none |
+| `pf-athena-wg-sse-kms-requires-key` | AWS::Athena::WorkGroup | SSE_KMS result encryption requires a KmsKey | ERROR | none |
 | `pf-asg-az-xor-azid` | AWS::AutoScaling::AutoScalingGroup | A group names zones by name or by id, not both | ERROR | none |
 | `pf-asg-capacity-reservation-none-target-exclusive` | AWS::AutoScaling::AutoScalingGroup | A capacity reservation target needs the capacity-reservations-only preference | ERROR | none |
 | `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | ERROR | none |
@@ -668,7 +682,6 @@
 | `pf-cloudfront-grpc-requires-http2` | AWS::CloudFront::Distribution | GrpcConfig requires an HTTP/2 capable HttpVersion | ERROR | none |
 | `pf-cloudfront-grpc-requires-post-method` | AWS::CloudFront::Distribution | GrpcConfig requires POST in AllowedMethods | ERROR | none |
 | `pf-cloudfront-http-version-enum` | AWS::CloudFront::Distribution | HttpVersion must be http1.1, http2, http2and3 or http3 | ERROR | pending-engine |
-| `pf-cloudfront-key-group-item-count` | AWS::CloudFront::KeyGroup | A key group holds at most 5 public keys | ERROR | none |
 | `pf-cloudfront-key-group-item-unique` | AWS::CloudFront::KeyGroup | A key group must not list the same public key twice | ERROR | none |
 | `pf-cloudfront-key-value-store-import-source-arn` | AWS::CloudFront::KeyValueStore | KeyValueStore ImportSource SourceArn must be an S3 object ARN | ERROR | none |
 | `pf-cloudfront-key-value-store-import-source-type` | AWS::CloudFront::KeyValueStore | KeyValueStore ImportSource SourceType must be S3 | ERROR | pending-engine |
@@ -690,7 +703,7 @@
 | `pf-cloudfront-origin-keepalive-timeout-range` | AWS::CloudFront::Distribution | OriginKeepaliveTimeout must be between 1 and 300 | ERROR | none |
 | `pf-cloudfront-origin-path-format` | AWS::CloudFront::Distribution | OriginPath must start with / and must not end with / | ERROR | none |
 | `pf-cloudfront-origin-protocol-policy-enum` | AWS::CloudFront::Distribution | OriginProtocolPolicy must be http-only, https-only or match-viewer | ERROR | none |
-| `pf-cloudfront-origin-read-timeout-range` | AWS::CloudFront::Distribution | OriginReadTimeout must be between 1 and 120 | ERROR | none |
+| `pf-cloudfront-origin-read-timeout-range` | AWS::CloudFront::Distribution | OriginReadTimeout must be at least 1 | ERROR | none |
 | `pf-cloudfront-origin-request-policy-cloudfront-headers` | AWS::CloudFront::OriginRequestPolicy | allViewerAndWhitelistCloudFront only accepts CloudFront-* headers | ERROR | none |
 | `pf-cloudfront-origin-request-policy-cookie-behavior-items` | AWS::CloudFront::OriginRequestPolicy | Origin request policy CookieBehavior whitelist / allExcept requires Cookies | ERROR | none |
 | `pf-cloudfront-origin-request-policy-excludes-forwarded-values` | AWS::CloudFront::Distribution | A cache behavior cannot set both OriginRequestPolicyId and ForwardedValues | ERROR | none |
@@ -705,7 +718,6 @@
 | `pf-cloudfront-realtime-log-endpoint-stream-type` | AWS::CloudFront::RealtimeLogConfig | Real-time log endpoints must have StreamType Kinesis | ERROR | none |
 | `pf-cloudfront-realtime-log-field-names` | AWS::CloudFront::RealtimeLogConfig | Real-time log Fields must name fields CloudFront defines | ERROR | none |
 | `pf-cloudfront-response-headers-policy-name-charset` | AWS::CloudFront::ResponseHeadersPolicy | Response headers policy names allow only alphanumerics, dash and underscore | ERROR | none |
-| `pf-cloudfront-rhp-content-security-policy-length` | AWS::CloudFront::ResponseHeadersPolicy | ContentSecurityPolicy is limited to 1783 characters | ERROR | none |
 | `pf-cloudfront-rhp-cors-allow-methods-enum` | AWS::CloudFront::ResponseHeadersPolicy | AccessControlAllowMethods accepts only the eight documented values | ERROR | pending-engine |
 | `pf-cloudfront-rhp-custom-header-blocklist` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig cannot carry headers CloudFront reserves | ERROR | none |
 | `pf-cloudfront-rhp-custom-header-unique` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig must not repeat a header name | ERROR | none |
@@ -723,7 +735,7 @@
 | `pf-cloudfront-viewer-certificate-vip-deprecated` | AWS::CloudFront::Distribution | SslSupportMethod vip cannot be used for new distributions | ERROR | none |
 | `pf-cloudfront-viewer-protocol-policy-enum` | AWS::CloudFront::Distribution | ViewerProtocolPolicy must be allow-all, https-only or redirect-to-https | ERROR | pending-engine |
 | `pf-cloudfront-vpc-origin-arn-type` | AWS::CloudFront::VpcOrigin | A VPC origin ARN must point at an ALB, NLB or EC2 instance | ERROR | none |
-| `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin HTTPPort and HTTPSPort must be between 1 and 65535 | ERROR | none |
+| `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin ports must be 80, 443 or 1024-65535 | ERROR | none |
 | `pf-cloudfront-vpc-origin-ssl-protocols-required` | AWS::CloudFront::VpcOrigin | An HTTPS-capable VPC origin must list OriginSSLProtocols | ERROR | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | ERROR | none |
 | `pf-cloudwatch-alarm-action-vendor` | AWS::CloudWatch::Alarm | Alarm actions accept only the CloudWatch action vendors | ERROR | none |
@@ -903,7 +915,6 @@
 | `pf-dynamodb-duplicate-attribute-definitions` | AWS::DynamoDB::Table | AttributeDefinitions must not define the same attribute twice | ERROR | none |
 | `pf-dynamodb-duplicate-index-name` | AWS::DynamoDB::Table | Secondary index names must be unique | ERROR | none |
 | `pf-dynamodb-global-table-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable AttributeDefinitions must match the key schemas exactly | ERROR | none |
-| `pf-dynamodb-global-table-gsi-count` | AWS::DynamoDB::GlobalTable | A global table can carry at most 20 global secondary indexes | ERROR | none |
 | `pf-dynamodb-global-table-gsi-provisioned-write-settings` | AWS::DynamoDB::GlobalTable | Each GSI of a PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings | ERROR | none |
 | `pf-dynamodb-global-table-key-schema-shape` | AWS::DynamoDB::GlobalTable | GlobalTable KeySchema must be [HASH] or [HASH, RANGE] | ERROR | none |
 | `pf-dynamodb-global-table-lsi-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable LSI key attributes must be defined in AttributeDefinitions | ERROR | none |
@@ -929,7 +940,6 @@
 | `pf-dynamodb-global-table-witness-requires-mrsc` | AWS::DynamoDB::GlobalTable | GlobalTableWitnesses only exists for MRSC global tables | ERROR | none |
 | `pf-dynamodb-global-table-write-provisioned-with-ppr` | AWS::DynamoDB::GlobalTable | WriteProvisionedThroughputSettings cannot be used with PAY_PER_REQUEST | ERROR | none |
 | `pf-dynamodb-gsi-billing-throughput` | AWS::DynamoDB::Table | GSI ProvisionedThroughput must match the table BillingMode | ERROR | none |
-| `pf-dynamodb-gsi-count` | AWS::DynamoDB::Table | A table can carry at most 20 global secondary indexes | ERROR | none |
 | `pf-dynamodb-gsi-projection-nonkey` | AWS::DynamoDB::Table | NonKeyAttributes goes with INCLUDE, and only with INCLUDE | ERROR | none |
 | `pf-dynamodb-import-csv-delimiter` | AWS::DynamoDB::Table | A CSV import delimiter is a single character from , ; : | tab space | ERROR | none |
 | `pf-dynamodb-import-format-options` | AWS::DynamoDB::Table | InputFormatOptions only applies to CSV imports | ERROR | none |
@@ -1355,7 +1365,6 @@
 | `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | ERROR | none |
 | `pf-events-rule-cron-fields` | AWS::Events::Rule | cron() fields must stay in range and keep | ERROR | none |
 | `pf-events-rule-name-duplicate` | AWS::Events::Rule | Two rules in one template may not share a name | ERROR | none |
-| `pf-events-rule-pattern-size` | AWS::Events::Rule | An event pattern may not exceed 2048 bytes | ERROR | none |
 | `pf-events-rule-schedule-default-bus` | AWS::Events::Rule | A scheduled rule only works on the default event bus | ERROR | none |
 | `pf-events-target-batch-parameters` | AWS::Events::Rule | Batch array size and retry attempts have service-stated bounds | ERROR | none |
 | `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | ERROR | none |
@@ -1440,6 +1449,69 @@
 | `pf-firehose-snowflake-user` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a user or a secret | ERROR | none |
 | `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
 | `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
+| `pf-glue-classifier-csv-custom-datatype` | AWS::Glue::Classifier | Custom CSV datatypes come from the supported set | ERROR | pending-engine |
+| `pf-glue-classifier-csv-custom-datatype-flag` | AWS::Glue::Classifier | ContainsCustomDatatype and CustomDatatypeConfigured travel together | ERROR | none |
+| `pf-glue-classifier-csv-quote-symbol` | AWS::Glue::Classifier | The CSV quote symbol differs from the delimiter | ERROR | none |
+| `pf-glue-classifier-csv-single-char` | AWS::Glue::Classifier | The CSV delimiter and quote symbol are one character each | ERROR | pending-engine |
+| `pf-glue-classifier-grok-pattern-names` | AWS::Glue::Classifier | A grok pattern only names built-in or custom patterns | ERROR | none |
+| `pf-glue-classifier-grok-pattern-single-line` | AWS::Glue::Classifier | A grok pattern holds no line break | ERROR | pending-engine |
+| `pf-glue-connection-jdbc-credentials` | AWS::Glue::Connection | A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID | ERROR | none |
+| `pf-glue-connection-network-physical-requirements` | AWS::Glue::Connection | A NETWORK connection needs PhysicalConnectionRequirements | ERROR | none |
+| `pf-glue-connection-required-properties` | AWS::Glue::Connection | Each connection type needs its own ConnectionProperties entries | ERROR | none |
+| `pf-glue-connection-snowflake-compute-properties` | AWS::Glue::Connection | A SNOWFLAKE connection needs SparkProperties or PythonProperties | ERROR | none |
+| `pf-glue-connection-snowflake-spark-url` | AWS::Glue::Connection | A SNOWFLAKE connection's sfUrl must be a Snowflake account URL | ERROR | none |
+| `pf-glue-crawler-configuration-json` | AWS::Glue::Crawler | The crawler Configuration must be well-formed JSON | ERROR | none |
+| `pf-glue-crawler-configuration-version` | AWS::Glue::Crawler | The crawler Configuration JSON must carry Version | ERROR | none |
+| `pf-glue-crawler-configuration-version-type` | AWS::Glue::Crawler | The crawler Configuration Version has to be a JSON number | ERROR | none |
+| `pf-glue-crawler-dynamodb-scan-rate` | AWS::Glue::Crawler | A DynamoDB target scan rate must be between 0.1 and 1.5 | ERROR | pending-engine |
+| `pf-glue-crawler-event-mode-requires-event-queue` | AWS::Glue::Crawler | CRAWL_EVENT_MODE needs an S3 target with EventQueueArn | ERROR | none |
+| `pf-glue-crawler-non-catalog-target-database-name` | AWS::Glue::Crawler | A crawler with non-catalog targets needs a DatabaseName | ERROR | none |
+| `pf-glue-crawler-recrawl-behavior-s3-only` | AWS::Glue::Crawler | CRAWL_EVENT_MODE and CRAWL_NEW_FOLDERS_ONLY apply to S3 targets only | ERROR | none |
+| `pf-glue-crawler-s3-target-path` | AWS::Glue::Crawler | An S3 crawl target path cannot start with a slash | ERROR | none |
+| `pf-glue-crawler-schedule-cron-only` | AWS::Glue::Crawler | A crawler schedule is a cron() expression | ERROR | pending-engine |
+| `pf-glue-crawler-schedule-day-of-month-or-week` | AWS::Glue::Crawler | A crawler cron needs ? in exactly one of day-of-month and day-of-week | ERROR | none |
+| `pf-glue-crawler-target-connection-name` | AWS::Glue::Crawler | JDBC and MongoDB crawl targets need a connection name | ERROR | none |
+| `pf-glue-custom-entity-type-regex-string-required` | AWS::Glue::CustomEntityType | A custom entity type needs a RegexString | ERROR | pending-engine |
+| `pf-glue-data-quality-ruleset-rules` | AWS::Glue::DataQualityRuleset | A DQDL ruleset needs a non-empty Rules list | ERROR | none |
+| `pf-glue-database-resource-link-exclusive` | AWS::Glue::Database | A database resource link cannot also carry a LocationUri | ERROR | none |
+| `pf-glue-job-flex-command-name` | AWS::Glue::Job | ExecutionClass FLEX is only available for Spark ETL jobs | ERROR | none |
+| `pf-glue-job-flex-worker-type` | AWS::Glue::Job | A FLEX job runs only on G.1X or G.2X workers | ERROR | none |
+| `pf-glue-job-g025x-streaming-only` | AWS::Glue::Job | The G.025X worker type is only available for streaming jobs | ERROR | none |
+| `pf-glue-job-glue-version-eol` | AWS::Glue::Job | Glue versions 0.9, 1.0 and 2.0 are end of life and cannot be used for new jobs | ERROR | none |
+| `pf-glue-job-maintenance-window-streaming-only` | AWS::Glue::Job | MaintenanceWindow is only accepted on streaming jobs | ERROR | none |
+| `pf-glue-job-max-capacity-fractional` | AWS::Glue::Job | A Spark job cannot take a fractional DPU allocation | ERROR | none |
+| `pf-glue-job-max-capacity-with-worker-type` | AWS::Glue::Job | A job sizes with MaxCapacity or with WorkerType + NumberOfWorkers, never both | ERROR | none |
+| `pf-glue-job-number-of-workers-min` | AWS::Glue::Job | A job needs at least 2 workers | ERROR | none |
+| `pf-glue-job-pythonshell-max-capacity-values` | AWS::Glue::Job | A Python shell job can only allocate 0.0625 or 1 DPU | ERROR | none |
+| `pf-glue-job-pythonshell-worker-type` | AWS::Glue::Job | A Python shell job cannot be sized with WorkerType | ERROR | none |
+| `pf-glue-job-runtime-ray-only` | AWS::Glue::Job | Command.Runtime is only accepted on Ray jobs | ERROR | none |
+| `pf-glue-job-timeout-max` | AWS::Glue::Job | A job timeout cannot exceed 10080 minutes (7 days) | ERROR | pending-engine |
+| `pf-glue-job-worker-type-and-number-of-workers` | AWS::Glue::Job | WorkerType and NumberOfWorkers must be set together | ERROR | none |
+| `pf-glue-job-worker-type-requires-glue-4` | AWS::Glue::Job | The large and memory-optimised worker types require Glue 4.0 or later | ERROR | none |
+| `pf-glue-job-z2x-ray-only` | AWS::Glue::Job | The Z.2X worker type is only available for Ray jobs | ERROR | none |
+| `pf-glue-ml-transform-find-matches-parameters` | AWS::Glue::MLTransform | A FIND_MATCHES transform needs FindMatchesParameters | ERROR | none |
+| `pf-glue-ml-transform-glue-version-eol` | AWS::Glue::MLTransform | MLTransform Glue versions below 2.0 are past end of life | ERROR | none |
+| `pf-glue-ml-transform-max-capacity-with-worker-type` | AWS::Glue::MLTransform | MLTransform MaxCapacity cannot be combined with WorkerType | ERROR | none |
+| `pf-glue-ml-transform-worker-type-and-number-of-workers` | AWS::Glue::MLTransform | MLTransform WorkerType and NumberOfWorkers have to be set together | ERROR | none |
+| `pf-glue-partition-values-match-partition-keys` | AWS::Glue::Partition | Partition Values must be as many as the table's PartitionKeys | ERROR | none |
+| `pf-glue-schema-compatibility` | AWS::Glue::Schema | Schema Compatibility must be one of the seven documented modes | ERROR | pending-engine |
+| `pf-glue-schema-definition-format` | AWS::Glue::Schema | SchemaDefinition must parse as the declared DataFormat | ERROR | none |
+| `pf-glue-schema-name-charset` | AWS::Glue::Schema | A schema name is limited to letters, digits and - _ $ | ERROR | pending-engine |
+| `pf-glue-security-configuration-kms-key` | AWS::Glue::SecurityConfiguration | KMS encryption modes need a KmsKeyArn | ERROR | none |
+| `pf-glue-table-iceberg-metadata-operation` | AWS::Glue::Table | An Iceberg table needs MetadataOperation in IcebergInput | ERROR | pending-engine |
+| `pf-glue-trigger-action-job-or-crawler` | AWS::Glue::Trigger | A trigger action names either a job or a crawler, not both | ERROR | none |
+| `pf-glue-trigger-condition-crawl-state` | AWS::Glue::Trigger | A crawler condition can only watch SUCCEEDED, FAILED or CANCELLED | ERROR | pending-engine |
+| `pf-glue-trigger-condition-job-state` | AWS::Glue::Trigger | A job condition can only watch SUCCEEDED, STOPPED, FAILED or TIMEOUT | ERROR | pending-engine |
+| `pf-glue-trigger-conditional-requires-predicate` | AWS::Glue::Trigger | A CONDITIONAL trigger must carry a Predicate | ERROR | none |
+| `pf-glue-trigger-event-requires-workflow` | AWS::Glue::Trigger | An EVENT trigger must belong to a workflow | ERROR | none |
+| `pf-glue-trigger-ondemand-start-on-creation` | AWS::Glue::Trigger | An ON_DEMAND trigger cannot be started on creation | ERROR | none |
+| `pf-glue-trigger-predicate-job-not-action-job` | AWS::Glue::Trigger | A conditional trigger cannot watch and start the same job | ERROR | none |
+| `pf-glue-trigger-predicate-logical-required` | AWS::Glue::Trigger | A predicate with more than one condition needs Logical | ERROR | none |
+| `pf-glue-trigger-schedule-day-of-month-or-week` | AWS::Glue::Trigger | A Glue cron expression must put ? in exactly one of day-of-month and day-of-week | ERROR | none |
+| `pf-glue-trigger-scheduled-requires-schedule` | AWS::Glue::Trigger | A SCHEDULED trigger must carry a Schedule | ERROR | none |
+| `pf-glue-user-defined-function-owner-type` | AWS::Glue::UserDefinedFunction | A user-defined function needs an OwnerType of USER, ROLE or GROUP | ERROR | pending-engine |
+| `pf-glue-user-defined-function-resource-uri-type` | AWS::Glue::UserDefinedFunction | A function ResourceUri needs a ResourceType of JAR, FILE or ARCHIVE | ERROR | pending-engine |
+| `pf-glue-workflow-max-concurrent-runs-min` | AWS::Glue::Workflow | A workflow needs at least one concurrent run | ERROR | pending-engine |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
 | `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | none |
@@ -2002,7 +2074,6 @@
 | `pf-route53resolver-endpoint-dohfips-inbound-only` | AWS::Route53Resolver::ResolverEndpoint | DoH-FIPS is only supported on inbound Resolver endpoints | ERROR | none |
 | `pf-route53resolver-endpoint-instance-type-requires-outpostarn` | AWS::Route53Resolver::ResolverEndpoint | PreferredInstanceType can only be set on an Outpost-local Resolver endpoint | ERROR | none |
 | `pf-route53resolver-endpoint-ip-format` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint IpAddresses[].Ip must be a valid IPv4 address | ERROR | none |
-| `pf-route53resolver-endpoint-ipaddresses-max-six` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint cannot have more than 6 IP addresses | ERROR | none |
 | `pf-route53resolver-endpoint-ipv6-internet-access-outbound-only` | AWS::Route53Resolver::ResolverEndpoint | Ipv6InternetAccessEnabled is only supported on outbound Resolver endpoints | ERROR | none |
 | `pf-route53resolver-endpoint-outpostarn-requires-instance-type` | AWS::Route53Resolver::ResolverEndpoint | An Outpost-local Resolver endpoint must also set PreferredInstanceType | ERROR | none |
 | `pf-route53resolver-endpoint-protocols-enum` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint protocol must be Do53, DoH or DoH-FIPS | ERROR | pending-engine |
@@ -2033,7 +2104,6 @@
 | `pf-route53resolver-firewallrule-ruletype-toplevel-exclusive` | AWS::Route53Resolver::FirewallRuleGroup | FirewallRuleType cannot be combined with FirewallDomainListId or DnsThreatProtection | ERROR | none |
 | `pf-route53resolver-firewallrule-threat-action-not-allow` | AWS::Route53Resolver::FirewallRuleGroup | A DnsThreatProtection rule cannot use Action ALLOW | ERROR | none |
 | `pf-route53resolver-firewallrule-threat-requires-confidence` | AWS::Route53Resolver::FirewallRuleGroup | DnsThreatProtection and ConfidenceThreshold must be set together | ERROR | none |
-| `pf-route53resolver-firewallrulegroup-rules-max` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule group cannot hold more than 100 rules | ERROR | none |
 | `pf-route53resolver-firewallrulegroupassociation-max-per-vpc` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A VPC cannot have more than 5 DNS Firewall rule groups associated | ERROR | none |
 | `pf-route53resolver-firewallrulegroupassociation-mutationprotection-enum` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A DNS Firewall rule group association MutationProtection must be ENABLED or DISABLED | ERROR | pending-engine |
 | `pf-route53resolver-firewallrulegroupassociation-priority-range` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A DNS Firewall rule group association Priority must be between 101 and 9899 | ERROR | none |

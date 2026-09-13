@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Classifier",
+      "Properties": {
+        "CsvClassifier": {
+          "Delimiter": ",",
+          "QuoteSymbol": "\"",
+          "CustomDatatypeConfigured": true,
+          "ContainsCustomDatatype": [
+            "UUID"
+          ],
+          "Name": {
+            "Fn::Sub": "${AWS::StackName}-csv"
+          }
+        }
+      }
+    }
+  }
+}

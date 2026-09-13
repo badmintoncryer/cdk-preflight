@@ -1,10 +1,31 @@
 {
   "Resources": {
-    "Tgw": {
+    "TgwLow16": {
       "Type": "AWS::EC2::TransitGateway",
       "Properties": {
-        "AmazonSideAsn": 1000
+        "AmazonSideAsn": 64511
       }
+    },
+    "TgwHigh16": {
+      "Type": "AWS::EC2::TransitGateway",
+      "Properties": {
+        "AmazonSideAsn": 65535
+      },
+      "DependsOn": "TgwLow16"
+    },
+    "TgwLow32": {
+      "Type": "AWS::EC2::TransitGateway",
+      "Properties": {
+        "AmazonSideAsn": 4199999999
+      },
+      "DependsOn": "TgwHigh16"
+    },
+    "TgwHigh32": {
+      "Type": "AWS::EC2::TransitGateway",
+      "Properties": {
+        "AmazonSideAsn": 4294967295
+      },
+      "DependsOn": "TgwLow32"
     }
   }
 }

@@ -1,0 +1,12 @@
+id: pf-athena-wg-engine-version-enum
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::WorkGroup]
+severity: ERROR
+title: "SelectedEngineVersion must be AUTO or a published engine version"
+constraintSource: https://docs.aws.amazon.com/athena/latest/ug/engine-versions-reference.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: The selected engine version is not valid.\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: The selected engine version is not valid.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-13

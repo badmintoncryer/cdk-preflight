@@ -1,0 +1,12 @@
+id: pf-glue-crawler-configuration-json
+service: glue
+resourceTypes: [AWS::Glue::Crawler]
+benchRegion: us-east-1
+severity: ERROR
+title: The crawler Configuration must be well-formed JSON
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/crawler-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Configuration \"{Version: 1.0\") -> \"Crawler configuration not valid: Error parsing JSON: Received JsonParseException: Unexpected character ('V' (code 86))...\" (ROLLBACK_COMPLETE); pass template (Configuration {\"Version\":1.0}) -> CREATE_COMPLETE"
+addedOn: 2026-09-14

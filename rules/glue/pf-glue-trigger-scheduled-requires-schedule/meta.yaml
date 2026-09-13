@@ -1,0 +1,12 @@
+id: pf-glue-trigger-scheduled-requires-schedule
+service: glue
+resourceTypes: [AWS::Glue::Trigger]
+benchRegion: us-east-1
+severity: ERROR
+title: A SCHEDULED trigger must carry a Schedule
+constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigger.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Type SCHEDULED, no Schedule) -> \"Schedule cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (same trigger with Schedule cron(0 10 1 * ? 2099), StartOnCreation false so it is created deactivated and never fires) -> CREATE_COMPLETE"
+addedOn: 2026-09-14
