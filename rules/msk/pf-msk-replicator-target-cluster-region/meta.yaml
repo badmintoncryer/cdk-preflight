@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-13 us-east-1: create-replicator with a target cluster ARN in eu-west-1 -> \"The target cluster must be from region us-east-1. Additional error details: InvalidParameter: targetKafkaClusterArn\"; bench 2026-09-13 us-east-1: fail template -> \"The target cluster must be from region us-east-1. 'targetKafkaClusterArn'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up)"
+  evidence: "api 2026-09-13 us-east-1: create-replicator with a target cluster ARN in eu-west-1 -> \"The target cluster must be from region us-east-1. Additional error details: InvalidParameter: targetKafkaClusterArn\"; bench 2026-09-13 us-east-1: fail template -> \"The target cluster must be from region us-east-1. 'targetKafkaClusterArn'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up) — the rule reads data.cdk_preflight.deploy_region, so it evaluates only in enforce mode with a concrete app region and is silent otherwise; fixtures assume the harness region us-east-1"
 addedOn: 2026-09-13
