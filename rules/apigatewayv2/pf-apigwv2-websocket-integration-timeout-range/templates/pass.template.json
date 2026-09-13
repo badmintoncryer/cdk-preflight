@@ -19,6 +19,18 @@
         "IntegrationUri": "https://example.com",
         "TimeoutInMillis": 29000
       }
+    },
+    "Y": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "HTTP_PROXY",
+        "IntegrationMethod": "GET",
+        "IntegrationUri": "https://example.com",
+        "TimeoutInMillis": 50
+      }
     }
   }
 }

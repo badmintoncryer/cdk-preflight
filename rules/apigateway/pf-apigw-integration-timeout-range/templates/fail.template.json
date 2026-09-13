@@ -22,7 +22,7 @@
         "AuthorizationType": "NONE",
         "Integration": {
           "Type": "MOCK",
-          "TimeoutInMillis": 40000
+          "TimeoutInMillis": 29001
         }
       }
     }

@@ -51,7 +51,7 @@
           {
             "ResourcePath": "/*",
             "HttpMethod": "*",
-            "CacheTtlInSeconds": 300
+            "CacheTtlInSeconds": 3600
           }
         ]
       }

@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: AuthorizerResultTtlInSeconds 7200 (a05) -> \"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\" ROLLBACK_COMPLETE. Registry schema carries no maximum (engine clean). Lower bound not claimed (negative values unmeasured; schema may floor them)."
+  evidence: "bench 2026-09-13 us-east-1: AuthorizerResultTtlInSeconds 3601 -> \"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\" (ROLLBACK_COMPLETE); pass 3600 -> CREATE_COMPLETE"
 addedOn: 2026-09-03
