@@ -32,7 +32,7 @@
             }
           },
           "InstancesDistribution": {
-            "OnDemandPercentageAboveBaseCapacity": 50
+            "OnDemandPercentageAboveBaseCapacity": 100
           }
         }
       }

@@ -36,9 +36,22 @@
         "AutoScalingGroupName": {
           "Ref": "G"
         },
+        "LifecycleHookName": "h1",
         "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
-        "HeartbeatTimeout": 10
+        "HeartbeatTimeout": 7201
       }
+    },
+    "R2": {
+      "Type": "AWS::AutoScaling::LifecycleHook",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Ref": "G"
+        },
+        "LifecycleHookName": "h2",
+        "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+        "HeartbeatTimeout": 29
+      },
+      "DependsOn": "R"
     }
   }
 }

@@ -30,7 +30,7 @@
         },
         "InstanceMaintenancePolicy": {
           "MinHealthyPercentage": 0,
-          "MaxHealthyPercentage": 200
+          "MaxHealthyPercentage": 101
         }
       }
     }
