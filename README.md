@@ -155,7 +155,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>273 resource types across 42 services</b> — click to expand</summary>
+<summary><b>275 resource types across 43 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -165,6 +165,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **ApiGateway** | `ApiKey` (1), `Authorizer` (5), `Deployment` (1), `DocumentationPart` (1), `DomainName` (4), `GatewayResponse` (1), `Method` (13), `Model` (3), `Resource` (1), `RestApi` (4), `Stage` (9), `UsagePlan` (5), `VpcLink` (1) |
 | **ApiGatewayV2** | `Api` (5), `Authorizer` (11), `DomainName` (3), `Integration` (15), `IntegrationResponse` (1), `Model` (2), `Route` (6), `RouteResponse` (2), `Stage` (4), `VpcLink` (1) |
 | **AppSync** | `Api` (7), `ApiCache` (4), `ApiKey` (2), `ChannelNamespace` (5), `DataSource` (15), `DomainName` (1), `FunctionConfiguration` (24), `GraphQLApi` (16), `GraphQLSchema` (12), `Resolver` (32), `SourceApiAssociation` (3) |
+| **Athena** | `DataCatalog` (6), `WorkGroup` (8) |
 | **AutoScaling** | `AutoScalingGroup` (38), `LifecycleHook` (8), `ScalingPolicy` (41), `ScheduledAction` (13), `WarmPool` (4) |
 | **Batch** | `ComputeEnvironment` (40), `ConsumableResource` (2), `JobDefinition` (109), `JobQueue` (18), `SchedulingPolicy` (8), `ServiceEnvironment` (6) |
 | **Bedrock** | `ApplicationInferenceProfile` (2), `AutomatedReasoningPolicy` (3), `Blueprint` (3), `DataAutomationProject` (8), `DataSource` (12), `Flow` (14), `Guardrail` (19), `IntelligentPromptRouter` (5), `KnowledgeBase` (18), `Prompt` (4) |
