@@ -11,7 +11,15 @@
               "DomainName": "example.com",
               "CustomOriginConfig": {
                 "OriginProtocolPolicy": "http-only",
-                "OriginKeepaliveTimeout": 60
+                "OriginKeepaliveTimeout": 300
+              }
+            },
+            {
+              "Id": "o2",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "http-only",
+                "OriginKeepaliveTimeout": 1
               }
             }
           ],
