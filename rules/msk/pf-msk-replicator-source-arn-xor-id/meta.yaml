@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-13 us-east-1: create-replicator with SourceKafkaClusterArn and SourceKafkaClusterId together -> \"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId. Use either sourceKafkaClusterArn if replicating from MSK clusters or sourceKafkaClusterId if replicating from Apache Kafka clusters. Additional error details: InvalidParameter: sourceKafkaClusterArn\""
+  evidence: "api 2026-09-13 us-east-1: create-replicator with SourceKafkaClusterArn and SourceKafkaClusterId together -> \"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId. Use either sourceKafkaClusterArn if replicating from MSK clusters or sourceKafkaClusterId if replicating from Apache Kafka clusters. Additional error details: InvalidParameter: sourceKafkaClusterArn\"; bench 2026-09-13 us-east-1: fail template -> \"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId. Use either sourceKafkaClusterArn if replicating from MSK clusters or sourceKafkaClusterId if replicating from Apache Kafka clusters. 'sourceKafkaClusterArn'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up)"
 addedOn: 2026-09-13
