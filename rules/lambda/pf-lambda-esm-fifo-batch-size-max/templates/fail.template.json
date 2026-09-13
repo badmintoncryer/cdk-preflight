@@ -10,7 +10,7 @@
         "EventSourceArn": {
           "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:q.fifo"
         },
-        "BatchSize": 100
+        "BatchSize": 11
       }
     },
     "F": {

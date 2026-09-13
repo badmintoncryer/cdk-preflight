@@ -17312,7 +17312,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::Lambda::Function"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リテラル文字列のキー/値だけを数える（トークンはスキップ）。合計が既に 4096 を超えて\n# いれば、実際のデプロイでも必ず失敗する（実サイズは推定以上にしかならない）。\n# NOTE: このエンジンの Rego パーサは内包表記内の 2 変数 some（some k, v in vars）を\n# 受け付けないため、object.keys 経由で書く。\n_pf_lenv_size(vars) := sum([s |\n\tsome k in object.keys(vars)\n\tis_string(vars[k])\n\ts := count(k) + count(vars[k])\n])\n\nviolation contains make_diag_full(\"pf-lambda-env-size\", \"ERROR\", name,\n\t\"Properties.Environment.Variables\",\n\tsprintf(\"Environment variables total at least %d bytes (literal keys and values), but Lambda limits the environment to 4096 bytes; CreateFunction fails at deploy time\", [total]),\n\t\"Move large values to SSM Parameter Store, Secrets Manager, or a bundled config file\",\n\t\"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tvars := resolve(name, \"Properties.Environment.Variables\")\n\tis_object(vars)\n\ttotal := _pf_lenv_size(vars)\n\ttotal > 4096\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# リテラル文字列のキー/値だけを数える（トークンはスキップ）。サービスが数えるのは\n# シリアライズ後のバイト数で、`{\"K\":\"V\"}` の引用符・コロン・カンマ・波括弧が変数ごとに\n# 6 バイト＋全体で 1 バイト乗る（2026-09-13 実測: 合計 4097 の 1 変数に対して\n# \"Measured size: 4104 bytes\"）。トークンの中身は数えられないので、この値は実サイズの\n# 下限にしかならない＝誤検出は出ない。\n# NOTE: このエンジンの Rego パーサは内包表記内の 2 変数 some（some k, v in vars）を\n# 受け付けないため、object.keys 経由で書く。\n_pf_lenv_size(vars) := sum([s |\n\tsome k in object.keys(vars)\n\tis_string(vars[k])\n\ts := count(k) + count(vars[k])\n])\n\nviolation contains make_diag_full(\"pf-lambda-env-size\", \"ERROR\", name,\n\t\"Properties.Environment.Variables\",\n\tsprintf(\"Environment variables serialize to at least %d bytes (literal keys and values), but Lambda limits the environment to 4096 bytes; CreateFunction fails at deploy time\", [total]),\n\t\"Move large values to SSM Parameter Store, Secrets Manager, or a bundled config file\",\n\t\"https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html\") if {\n\tsome name in resources_of_type(\"AWS::Lambda::Function\")\n\tvars := resolve(name, \"Properties.Environment.Variables\")\n\tis_object(vars)\n\ttotal := _pf_lenv_size(vars) + (6 * count(object.keys(vars))) + 1\n\ttotal > 4096\n}\n"
   },
   {
     "id": "pf-lambda-esm-batchsize-window",
@@ -18107,17 +18107,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Lambda::LayerVersionPermission"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llpo_fix := \"Use Principal \\\"*\\\" with OrganizationId, or drop OrganizationId and name the account\"\n\n_pf_llpo_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddLayerVersionPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layerperm-organization-id-needs-wildcard-principal\", \"ERROR\", name,\n\t\"Properties.OrganizationId\",\n\tsprintf(\"OrganizationId with principal '%v'; the organization only narrows the wildcard principal and does nothing next to a named account\", [p]),\n\t_pf_llpo_fix, _pf_llpo_url) if {\n\tsome name in _pf_lam_layerperm\n\t_pf_lam_has_key(_pf_lam_props(name), \"OrganizationId\")\n\tp := resolve(name, \"Properties.Principal\")\n\tp != \"*\"\n}\n"
-  },
-  {
-    "id": "pf-lambda-layerperm-policy-size",
-    "service": "lambda",
-    "severity": "ERROR",
-    "title": "A layer version policy has a size limit",
-    "upstream": "pending-engine",
-    "resourceTypes": [
-      "AWS::Lambda::LayerVersionPermission"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_llpp_fix := \"Share with an organization instead of listing accounts one by one\"\n\n_pf_llpp_url := \"https://docs.aws.amazon.com/lambda/latest/api/API_AddLayerVersionPermission.html\"\n\nviolation contains make_diag_full(\"pf-lambda-layerperm-policy-size\", \"ERROR\", name,\n\t\"Properties.Principal\",\n\tsprintf(\"%v permissions on one layer version; each is a statement in the same resource policy and the policy has a size cap\", [n]),\n\t_pf_llpp_fix, _pf_llpp_url) if {\n\tsome name in _pf_lam_layerperm\n\ttarget := resolve(name, \"Properties.LayerVersionArn\")\n\tn := count({p |\n\t\tsome p in _pf_lam_layerperm\n\t\tresolve(p, \"Properties.LayerVersionArn\") == target\n\t})\n\tn > 20\n}\n"
   },
   {
     "id": "pf-lambda-loggroup-no-aws-prefix",

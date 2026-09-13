@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: BatchSize 100 with no window on a FIFO queue (esm03) and on a standard queue (esm03b) -> both \"Invalid request provided: Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10\". ROLLBACK_COMPLETE. (The often-cited FIFO batch cap of 10 is unreachable at create: this check and the FIFO window ban fire first.)"
+  evidence: "bench 2026-09-13 ap-northeast-1: BatchSize 11 with no batching window -> \"Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10\" (ROLLBACK_COMPLETE); pass BatchSize 10 with no window -> CREATE_COMPLETE"
 addedOn: 2026-09-03

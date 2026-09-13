@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateFunctionUrlConfig (us-east-1, 2026-09-07): "Internal error occurred." CONFOUND: the service answers with an opaque internal error rather than naming the length limit.'
+  evidence: "bench 2026-09-13 us-east-1: a 65-character bare target name -> \"Internal error occurred.\" (ROLLBACK_COMPLETE). CONFOUND: the service answers with an opaque internal error rather than naming the length limit. pass a real function named with 64 characters -> CREATE_COMPLETE"
 addedOn: 2026-09-07

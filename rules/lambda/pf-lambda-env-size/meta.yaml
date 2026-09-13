@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-li
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (Lambda 400: environment variables ... exceeded the 4KB limit. Measured size: 5016 bytes), pass template CREATE_COMPLETE. Log: bench/logs/pf-lambda-env-size.log"
+  evidence: "bench 2026-09-13 us-east-1: environment variables serializing to 4097 bytes -> \"exceeded the 4KB limit. Measured size: 4097 bytes\" (ROLLBACK_COMPLETE); pass 4096 bytes -> CREATE_COMPLETE. The service counts the serialized map, so a 4096-byte sum of keys and values (4103 serialized) is already rejected"
 addedOn: 2026-09-01

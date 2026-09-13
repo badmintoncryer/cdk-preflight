@@ -133,9 +133,28 @@ const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<
  * 順序の無い制約として除外するものは rules/_boundary-exceptions.txt に理由付きで書く。
  */
 export function boundaryProblem(rego: string, fail: string, pass: string): string | undefined {
+  // `n := count(x)` と置いてから `n > 50` と書くのがこのリポジトリの標準形なので、代入を辿って
+  // 「何を数えた値か」まで見る。数えた対象が配列なら要素数と、文字列なら長さと突き合わせる
+  // ——どちらか決められないときだけ両方見る（偶然の一致を許すが、見当違いのプールで
+  // 誤検出するよりましなので）。
+  const assigned = new Map([...rego.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*:=\s*(.*)/g)].map((m) => [m[1], m[2]] as const));
+  const ARRAYISH = /flatten_list\(|\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
+  // `count(split(arn, ":")) >= 6` は ARN の形が壊れていないかのガードで、順序のある制約ではない。
+  // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
+  const kindOf = (expr: string): 'array' | 'string' | 'both' | 'shape' => {
+    const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
+    const src = assigned.get(inner.trim()) ?? inner;
+    if (/\bsplit\(/.test(src)) return 'shape';
+    if (ARRAYISH.test(src)) return 'array';
+    if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
+    return 'both';
+  };
   const thresholds = [...rego.matchAll(THRESHOLD)]
-    .map((m) => ({ counted: m[1].startsWith('count('), op: m[2], n: Number(m[3]) }))
-    .filter((t) => Number.isInteger(t.n) && Math.abs(t.n) >= 2);
+    .map((m) => {
+      const expr = m[1].startsWith('count(') ? m[1] : assigned.get(m[1]) ?? '';
+      return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
+    })
+    .filter((t) => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   if (thresholds.length === 0) return undefined;
   const pools = { fail: fixturePools(fail), pass: fixturePools(pass) };
   const problems: string[] = [];
@@ -143,7 +162,12 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     // 違反する中で限界に最も近い値 / 限界そのもの
     const tightest = t.op === '<' ? t.n - 1 : t.op === '<=' ? t.n : t.op === '>' ? t.n + 1 : t.n;
     const limit = t.op === '<' ? t.n : t.op === '<=' ? t.n + 1 : t.op === '>' ? t.n : t.n - 1;
-    const has = (p: ReturnType<typeof fixturePools>, v: number) => (t.counted ? p.lens.has(v) || p.sizes.has(v) : p.nums.has(v));
+    const has = (p: ReturnType<typeof fixturePools>, v: number) => {
+      if (!t.counted) return p.nums.has(v);
+      if (t.kind === 'array') return p.sizes.has(v);
+      if (t.kind === 'string') return p.lens.has(v);
+      return p.lens.has(v) || p.sizes.has(v);
+    };
     if (!has(pools.fail, tightest)) problems.push(`fail template has no ${tightest} for \`${t.op} ${t.n}\``);
     if (!has(pools.pass, limit)) problems.push(`pass template has no ${limit} for \`${t.op} ${t.n}\``);
   }

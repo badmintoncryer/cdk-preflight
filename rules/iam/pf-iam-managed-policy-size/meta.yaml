@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam
 upstream: none
 repro:
   method: research-case
-  evidence: cdk-validation-gap-research case08 (2026-09-01, "Cannot exceed quota for PolicySize 6144" at deploy)
+  evidence: "bench 2026-09-13 ap-northeast-1: a 6145-byte policy document -> \"Cannot exceed quota for PolicySize: 6144\" (ROLLBACK_COMPLETE); pass 6144 bytes -> CREATE_COMPLETE"
 addedOn: 2026-09-01

@@ -73,8 +73,7 @@
             "Arn"
           ]
         },
-        "BatchSize": 100,
-        "MaximumBatchingWindowInSeconds": 5
+        "BatchSize": 10
       }
     }
   }

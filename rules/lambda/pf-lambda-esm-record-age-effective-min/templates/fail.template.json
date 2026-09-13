@@ -14,7 +14,7 @@
           ]
         },
         "StartingPosition": "TRIM_HORIZON",
-        "MaximumRecordAgeInSeconds": 30
+        "MaximumRecordAgeInSeconds": 59
       }
     },
     "F": {
