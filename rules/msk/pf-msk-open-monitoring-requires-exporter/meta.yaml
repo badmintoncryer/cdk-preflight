@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: OpenMonitoring.Prometheus with neither exporter -> \"You must specify at least one type of exporter, either nodeExporter or jmxExporter. ... 'openMonitoring'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: OpenMonitoring.Prometheus with neither exporter -> \"You must specify at least one type of exporter, either nodeExporter or jmxExporter. ... 'openMonitoring'\" (ROLLBACK_COMPLETE); pass Prometheus with JmxExporter.EnabledInBroker true -> CREATE_COMPLETE"
 addedOn: 2026-09-14

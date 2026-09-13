@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-prov
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: VolumeThroughput 249 -> \"EBS volume throughput should be between 250 and 1000 MiB/s. ... 'volumeThroughput'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: VolumeThroughput 249 -> \"EBS volume throughput should be between 250 and 1000 MiB/s. ... 'volumeThroughput'\" (ROLLBACK_COMPLETE); pass VolumeThroughput 250 -> CREATE_COMPLETE"
 addedOn: 2026-09-14

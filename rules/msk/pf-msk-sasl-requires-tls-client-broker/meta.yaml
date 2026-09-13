@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: SASL/IAM with ClientBroker PLAINTEXT -> \"Client-broker encryption in transit must be set to either TLS or TLS_PLAINTEXT to enable client authentication. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: SASL/IAM with ClientBroker PLAINTEXT -> \"Client-broker encryption in transit must be set to either TLS or TLS_PLAINTEXT to enable client authentication. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE); pass the same cluster with ClientBroker TLS -> CREATE_COMPLETE"
 addedOn: 2026-09-14

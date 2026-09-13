@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-tier
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: StorageMode TIERED on kafka.t3.small -> \"Tiered storage is not supported for the specified broker type. ... 'instanceType'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: StorageMode TIERED on kafka.t3.small -> \"Tiered storage is not supported for the specified broker type. ... 'instanceType'\" (ROLLBACK_COMPLETE); pass the same StorageMode TIERED on kafka.m5.large -> CREATE_COMPLETE"
 addedOn: 2026-09-14

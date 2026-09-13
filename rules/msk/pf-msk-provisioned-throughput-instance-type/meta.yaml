@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-prov
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: ProvisionedThroughput enabled on kafka.m5.2xlarge -> \"Provisioned throughput is not supported for the specified broker type. ... 'provisionedThroughput'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: ProvisionedThroughput enabled on kafka.m5.2xlarge -> \"Provisioned throughput is not supported for the specified broker type. ... 'provisionedThroughput'\" (ROLLBACK_COMPLETE); pass the same ProvisionedThroughput on kafka.m7g.2xlarge, the smallest size the service accepts -> CREATE_COMPLETE"
 addedOn: 2026-09-14

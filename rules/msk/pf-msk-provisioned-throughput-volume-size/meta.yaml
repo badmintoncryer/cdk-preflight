@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-prov
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: VolumeSize 9 with ProvisionedThroughput enabled -> \"To enable ProvisionedThroughput, you must set volume size to a value that is greater than or equal to 10. ... 'volumeSize'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: VolumeSize 9 with ProvisionedThroughput enabled -> \"To enable ProvisionedThroughput, you must set volume size to a value that is greater than or equal to 10. ... 'volumeSize'\" (ROLLBACK_COMPLETE); pass VolumeSize 10 -> CREATE_COMPLETE"
 addedOn: 2026-09-14
