@@ -151,7 +151,10 @@ If you are a subagent running one of these phases, do not spawn further agents.
    - **Cheap screen for definition-level constraints**: some services expose their create-time validator as a free API (`aws stepfunctions validate-state-machine-definition --type STANDARD|EXPRESS` is the same validator CreateStateMachine runs). Use it to triage doc hypotheses before spending a CloudFormation deploy on each — 100 Step Functions hypotheses took minutes (2026-09-05). The real-deploy gate stays.
 3. `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>` while iterating: it reads `rules/` straight from disk into a single engine (no bundle, no meta validation, no jest) and reports, per rule, whether the fail template fires its own rule, the pass template is silent for every rule, and neither trips a built-in ERROR/FATAL. Then `npx projen bundle-rules` and `npx jest test/rules.test.ts test/structure.test.ts` — the duplication guard and fixture checks run there for real. Prefer `jest -t` while iterating; the full suite is 3,228 tests / ~2 min (measured 2026-09-08), so keep it for the pre-PR run.
 4. **Real-deploy gate**: `bash bench/verify-rule.sh <rule-id>` deploys the fail template (expects CREATE to fail; records the service error message) and, where cheap, the pass template (expects success, then deletes). Paste the observed error into `meta.yaml#repro.evidence` with the date. Only `doc-only` rules may skip this, with justification.
-5. Update nothing else by hand — `docs/rules.md` and `src/rules.generated.ts` are generated.
+5. Update nothing else by hand — `docs/rules.md`, `src/rules.generated.ts`, and the parts of `README.md` between the
+   `<!-- supported-resources:start -->` markers (plus the rule-count badge) are all written by `npx projen bundle-rules`.
+   `test/structure.test.ts` fails when any of them is stale, so adding a rule that touches a new resource type cannot
+   silently leave the README's supported-resource list behind.
 
 ## Commands
 

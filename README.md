@@ -151,7 +151,63 @@ cdk.Validations.of(errorFilter).acknowledge({
 
 ## Bundled rules
 
-See [docs/rules.md](docs/rules.md) for the generated rule table. Highlights:
+See [docs/rules.md](docs/rules.md) for the generated rule table.
+
+<!-- supported-resources:start -->
+<details>
+<summary><b>273 resource types across 42 services</b> — click to expand</summary>
+
+Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
+
+| Service | Resource types |
+|---|---|
+| **(any resource type)** | `*` (2) |
+| **ApiGateway** | `ApiKey` (1), `Authorizer` (5), `Deployment` (1), `DocumentationPart` (1), `DomainName` (4), `GatewayResponse` (1), `Method` (13), `Model` (3), `Resource` (1), `RestApi` (4), `Stage` (9), `UsagePlan` (5), `VpcLink` (1) |
+| **ApiGatewayV2** | `Api` (5), `Authorizer` (11), `DomainName` (3), `Integration` (15), `IntegrationResponse` (1), `Model` (2), `Route` (6), `RouteResponse` (2), `Stage` (4), `VpcLink` (1) |
+| **AppSync** | `Api` (7), `ApiCache` (4), `ApiKey` (2), `ChannelNamespace` (5), `DataSource` (15), `DomainName` (1), `FunctionConfiguration` (24), `GraphQLApi` (16), `GraphQLSchema` (12), `Resolver` (32), `SourceApiAssociation` (3) |
+| **AutoScaling** | `AutoScalingGroup` (38), `LifecycleHook` (8), `ScalingPolicy` (41), `ScheduledAction` (13), `WarmPool` (4) |
+| **Batch** | `ComputeEnvironment` (40), `ConsumableResource` (2), `JobDefinition` (109), `JobQueue` (18), `SchedulingPolicy` (8), `ServiceEnvironment` (6) |
+| **Bedrock** | `ApplicationInferenceProfile` (2), `AutomatedReasoningPolicy` (3), `Blueprint` (3), `DataAutomationProject` (8), `DataSource` (12), `Flow` (14), `Guardrail` (19), `IntelligentPromptRouter` (5), `KnowledgeBase` (18), `Prompt` (4) |
+| **BedrockAgentCore** | `ApiKeyCredentialProvider` (1), `BrowserCustom` (1), `CodeInterpreterCustom` (1), `ConfigurationBundle` (3), `Dataset` (3), `Evaluator` (4), `Gateway` (5), `GatewayRule` (3), `GatewayTarget` (9), `Harness` (2), `HarnessEndpoint` (2), `Memory` (6), `OAuth2CredentialProvider` (3), `OnlineEvaluationConfig` (3), `PaymentCredentialProvider` (1), `PaymentManager` (1), `Policy` (3), `ResourcePolicy` (1), `Runtime` (8), `RuntimeEndpoint` (1) |
+| **CloudFront** | `AnycastIpList` (1), `CachePolicy` (7), `ContinuousDeploymentPolicy` (5), `Distribution` (55), `Function` (4), `KeyGroup` (2), `KeyValueStore` (2), `OriginRequestPolicy` (5), `PublicKey` (1), `RealtimeLogConfig` (3), `ResponseHeadersPolicy` (9), `VpcOrigin` (3) |
+| **CloudWatch** | `Alarm` (21), `AnomalyDetector` (6), `CompositeAlarm` (6), `Dashboard` (14), `InsightRule` (7), `MetricStream` (6) |
+| **Cognito** | `IdentityPool` (3), `IdentityPoolRoleAttachment` (7), `LogDeliveryConfiguration` (3), `ManagedLoginBranding` (2), `UserPool` (52), `UserPoolClient` (21), `UserPoolDomain` (7), `UserPoolGroup` (1), `UserPoolIdentityProvider` (11), `UserPoolResourceServer` (4), `UserPoolRiskConfigurationAttachment` (6), `UserPoolUICustomizationAttachment` (2) |
+| **DynamoDB** | `GlobalTable` (26), `Table` (28) |
+| **EC2** | `ClientVpnAuthorizationRule` (1), `ClientVpnEndpoint` (6), `DHCPOptions` (2), `EIPAssociation` (1), `FlowLog` (4), `Instance` (10), `KeyPair` (1), `LaunchTemplate` (5), `NatGateway` (2), `NetworkAclEntry` (1), `NetworkInterface` (2), `PlacementGroup` (3), `PrefixList` (3), `Route` (1), `SecurityGroup` (6), `SecurityGroupEgress` (5), `SecurityGroupIngress` (5), `Subnet` (6), `TrafficMirrorTarget` (1), `TransitGateway` (2), `TransitGatewayRoute` (1), `Volume` (6), `VPC` (2), `VPCCidrBlock` (1), `VPCEndpoint` (4), `VPCGatewayAttachment` (1), `VPNConnection` (5) |
+| **ECR** | `PullThroughCacheRule` (3), `RegistryScanningConfiguration` (1), `ReplicationConfiguration` (1), `Repository` (7), `RepositoryCreationTemplate` (8), `SigningConfiguration` (1) |
+| **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (37), `TaskDefinition` (64), `TaskSet` (2) |
+| **EFS** | `AccessPoint` (1), `FileSystem` (7), `MountTarget` (4) |
+| **ElastiCache** | `CacheCluster` (9), `ReplicationGroup` (14), `User` (2), `UserGroup` (1) |
+| **ElasticLoadBalancingV2** | `Listener` (57), `ListenerCertificate` (2), `ListenerRule` (37), `LoadBalancer` (37), `TargetGroup` (58), `TrustStore` (1), `TrustStoreRevocation` (1) |
+| **Events** | `ApiDestination` (1), `Archive` (5), `Connection` (1), `Endpoint` (2), `EventBus` (2), `Rule` (24) |
+| **EventSchemas** | `Discoverer` (1), `Registry` (1), `RegistryPolicy` (1), `Schema` (1) |
+| **IAM** | `Group` (23), `GroupPolicy` (1), `InstanceProfile` (2), `ManagedPolicy` (31), `OIDCProvider` (2), `Policy` (29), `Role` (40), `RolePolicy` (1), `ServiceLinkedRole` (1), `User` (24), `UserPolicy` (1) |
+| **Kinesis** | `ResourcePolicy` (4), `Stream` (5), `StreamConsumer` (2) |
+| **KinesisAnalyticsV2** | `Application` (20), `ApplicationCloudWatchLoggingOption` (1), `ApplicationOutput` (1), `ApplicationReferenceDataSource` (1) |
+| **KinesisFirehose** | `DeliveryStream` (68) |
+| **KMS** | `Alias` (2), `Key` (12), `ReplicaKey` (4) |
+| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (46), `LayerVersion` (8), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
+| **Logs** | `AccountPolicy` (6), `DeliveryDestination` (3), `Destination` (1), `LogAnomalyDetector` (2), `LogGroup` (10), `MetricFilter` (7), `QueryDefinition` (1), `ResourcePolicy` (1), `SubscriptionFilter` (6), `Transformer` (3) |
+| **MemoryDB** | `Cluster` (8), `User` (1) |
+| **Pipes** | `Pipe` (9) |
+| **RDS** | `DBCluster` (19), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
+| **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (75), `RecordSetGroup` (76) |
+| **Route53Profiles** | `ProfileAssociation` (1), `ProfileResourceAssociation` (6) |
+| **Route53Resolver** | `FirewallDomainList` (3), `FirewallRuleGroup` (19), `FirewallRuleGroupAssociation` (4), `ResolverDNSSECConfig` (1), `ResolverEndpoint` (19), `ResolverQueryLoggingConfig` (1), `ResolverQueryLoggingConfigAssociation` (1), `ResolverRule` (15), `ResolverRuleAssociation` (1) |
+| **S3** | `AccessPoint` (1), `Bucket` (54), `BucketPolicy` (4), `StorageLens` (5), `StorageLensGroup` (3) |
+| **S3Express** | `AccessPoint` (3), `DirectoryBucket` (11) |
+| **Scheduler** | `Schedule` (10), `ScheduleGroup` (1) |
+| **SecretsManager** | `RotationSchedule` (4), `Secret` (5), `SecretTargetAttachment` (1) |
+| **SNS** | `Subscription` (9), `Topic` (12), `TopicPolicy` (1) |
+| **SQS** | `Queue` (9), `QueuePolicy` (1) |
+| **SSM** | `Association` (3), `Document` (3), `MaintenanceWindow` (2), `MaintenanceWindowTarget` (1), `MaintenanceWindowTask` (1), `Parameter` (5) |
+| **StepFunctions** | `Activity` (3), `StateMachine` (26) |
+| **WAFv2** | `IPSet` (3), `LoggingConfiguration` (3), `RegexPatternSet` (3), `RuleGroup` (18), `WebACL` (23), `WebACLAssociation` (2) |
+
+</details>
+<!-- supported-resources:end -->
+
+Highlights:
 
 - **ELBv2**: `idle_timeout` / `deregistration_delay` / `slow_start` attribute ranges (stringly-typed Key/Value attributes are invisible to schema validation)
 - **IAM**: managed (6,144 chars) and inline (role/group/user) policy document size limits

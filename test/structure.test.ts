@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { boundaryProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, severityProblem, topLevelNames } from '../scripts/bundle-rules';
+import { boundaryProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -30,6 +30,12 @@ test('docs/rules.md is up to date', () => {
   const expected = renderDocs(collectRules(root));
   const actual = fs.readFileSync(path.join(root, 'docs', 'rules.md'), 'utf8');
   expect(actual).toBe(expected);
+});
+
+test('the README resource-type list is up to date', () => {
+  const expected = renderSupported(collectRules(root));
+  const actual = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  expect(actual).toContain(expected);
 });
 
 test('every bundled rule declares the package cdk_preflight and rego.v1', () => {
