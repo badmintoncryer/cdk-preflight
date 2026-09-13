@@ -168,6 +168,12 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   const GET_ARRAY = /object\.get\([^()]*,\s*(?:\[\]|\{\})\s*\)/;
   const GET_STRING = /object\.get\([^()]*,\s*""\s*\)/;
 
+  // `_pf_x_ok(v) if { n <= 100 }` を `not _pf_x_ok(...)` で使うのが、この直接比較と並ぶ
+  // もう 1 つの標準形。守れている向きに書かれた比較なので、境界を出す前に裏返す。
+  // そのままだと fail に 100、pass に 101 を要求してしまう（向きが逆）。
+  const negated = new Set([...rego.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
+  const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
+
   type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number };
   const thresholdsOf = (block: string): Threshold[] => {
     const assigned = new Map(shared);
@@ -196,10 +202,15 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     // 診断メッセージや修正案の文面にも `>= 31` のような比較が出てくる。文字列の中は
     // ロジックではないので、しきい値を探す前に落とす（長さを保って位置はずらさない）。
     const code = block.replace(/"(?:[^"\\\n]|\\.)*"|`[^`]*`/g, (m) => ' '.repeat(m.length));
+    // どの定義の中の比較かは、その位置より前にある一番近い行頭の識別子で決まる。1 行の
+    // 述語は閉じ括弧を持たないので次のブロックにくっついて切られる——ブロックの先頭では決められない。
+    const owners = [...code.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)/gm)].map((m) => [m.index ?? 0, m[1]] as const);
+    const ownerAt = (i: number) => owners.filter(([at]) => at <= i).pop()?.[1] ?? '';
     return [...code.matchAll(THRESHOLD)]
       .map((m) => {
         const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
-        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
+        const op = negated.has(ownerAt(m.index ?? 0)) ? FLIP[m[2]] : m[2];
+        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op, n: Number(m[3]) };
       })
       .filter((t): t is Threshold => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   };

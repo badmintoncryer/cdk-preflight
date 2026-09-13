@@ -67,15 +67,8 @@ pf-elasticache-maintenance-window  pending #178
 pf-elasticache-replication-group-clusters  pending #178
 pf-elasticache-snapshot-retention  pending #178
 pf-elasticache-user-authentication  pending #178
-pf-elbv2-lb-attr-count-max  pending #178
-pf-elbv2-lb-idle-timeout-range  pending #178
-pf-elbv2-lb-name  pending #178
-pf-elbv2-rule-condition-values-max  pending #178
-pf-elbv2-tg-attr-health-percentage-range  pending #178
-pf-elbv2-tg-deregistration-delay-range  pending #178
-pf-elbv2-tg-hc-port-format  pending #178
-pf-elbv2-tg-name  pending #178
-pf-elbv2-tg-slow-start-range  pending #178
+pf-elbv2-rule-condition-values-max  しきい値と突き合わせるのは Conditions をまたいだ値の数の合計で、どの配列長とも一致しない。フィクスチャは 6 / 5 値に乗せてある（実機も 3+3 の分割で上限を返す）
+pf-elbv2-tg-name  count(n) <= 32 は長すぎる名前を書式のほうの本体に渡さないための排他ガードで、上限そのものは同じファイルの count(n) > 32 が見ている。フィクスチャは 33 / 32 に乗せてある
 pf-events-rule-pattern-size  pending #178
 pf-events-target-ecs-parameters  pending #178
 pf-firehose-dynamic-partitioning-buffer  pending #178
