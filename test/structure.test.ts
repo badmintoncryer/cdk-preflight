@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, severityProblem, topLevelNames } from '../scripts/bundle-rules';
+import { boundaryProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, severityProblem, topLevelNames } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -175,4 +175,58 @@ test('every doc-only rule ships as a warning', () => {
   const docOnly = collectRules(root).filter((r) => r.severity !== 'ERROR');
   expect(docOnly.length).toBeGreaterThan(0);
   for (const r of docOnly) expect(r.severity).toBe('WARN');
+});
+
+/**
+ * AGENTS.md 原則 2 の「両方のフィクスチャが境界に乗る」を機械で見る。検出はヒューリスティック
+ * （rego のしきい値とテンプレートに現れる量の突き合わせ）なので、意味を持たないルールは
+ * rules/_boundary-exceptions.txt に理由付きで逃がす。例外ファイルは残作業リストも兼ねていて、
+ * 直ったのに行が残っているとテストが落ちる——緩いまま寝かせる余地も、直したのに記録が
+ * 古いままになる余地も残さない。
+ */
+function boundaryExceptions(): Map<string, string> {
+  const raw = fs.readFileSync(path.join(root, 'rules', '_boundary-exceptions.txt'), 'utf8');
+  const out = new Map<string, string>();
+  for (const line of raw.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const [id, ...reason] = t.split(/\s\s+/);
+    out.set(id, reason.join(' '));
+  }
+  return out;
+}
+
+const fixture = (value: string) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { V: value } } } });
+
+test('boundaryProblem pins both the constant and the operator', () => {
+  const rego = 'violation contains 1 if {\n\tcount(v) < 20\n}\n';
+  expect(boundaryProblem(rego, fixture('x'.repeat(19)), fixture('x'.repeat(20)))).toBeUndefined();
+  expect(boundaryProblem(rego, fixture('short'), fixture('x'.repeat(20)))).toMatch(/fail template has no 19/);
+  expect(boundaryProblem(rego, fixture('x'.repeat(19)), fixture('x'.repeat(26)))).toMatch(/pass template has no 20/);
+  // 数値のしきい値はテンプレートを生で走査するので、文字列に包まれた数も拾う
+  const numeric = 'violation contains 1 if {\n\tto_number(v) > 300\n}\n';
+  expect(boundaryProblem(numeric, fixture('301'), fixture('300'))).toBeUndefined();
+  // 存在チェック（0/1）と小数のしきい値には隣の値が定義できないので見ない
+  expect(boundaryProblem('violation contains 1 if {\n\tcount(v) > 0\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
+  expect(boundaryProblem('violation contains 1 if {\n\tw > 0.15\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
+  // しきい値を持たないルールは対象外
+  expect(boundaryProblem('violation contains 1 if {\n\tnot p.Enabled\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
+});
+
+test('every fixture pair sits on the boundary, or is listed as an exception', () => {
+  const exceptions = boundaryExceptions();
+  const flagged = new Map<string, string>();
+  for (const r of collectRules(root)) {
+    const dir = path.join(root, 'rules', r.service, r.id, 'templates');
+    const problem = boundaryProblem(
+      r.rego,
+      fs.readFileSync(path.join(dir, 'fail.template.json'), 'utf8'),
+      fs.readFileSync(path.join(dir, 'pass.template.json'), 'utf8'),
+    );
+    if (problem) flagged.set(r.id, problem);
+  }
+  // 新しく緩いペアが入ってきたら、直すか例外ファイルに理由を書くまで赤いまま
+  expect([...flagged].filter(([id]) => !exceptions.has(id)).map(([id, p]) => `${id}: ${p}`)).toEqual([]);
+  // 直ったルールの行は残さない（#178 の残作業カウントを嘘にしないため）
+  expect([...exceptions.keys()].filter((id) => !flagged.has(id))).toEqual([]);
 });
