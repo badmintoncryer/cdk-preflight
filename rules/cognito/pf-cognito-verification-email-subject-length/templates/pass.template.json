@@ -6,7 +6,7 @@
         "UserPoolName": "pfprobe",
         "VerificationMessageTemplate": {
           "DefaultEmailOption": "CONFIRM_WITH_CODE",
-          "EmailSubject": "Verify your account",
+          "EmailSubject": "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
           "EmailMessage": "Code {####}"
         }
       }

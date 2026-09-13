@@ -8,7 +8,7 @@
         "Policies": {
           "PasswordPolicy": {
             "MinimumLength": 8,
-            "PasswordHistorySize": 12
+            "PasswordHistorySize": 24
           }
         }
       }

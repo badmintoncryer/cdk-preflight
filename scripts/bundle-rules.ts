@@ -162,7 +162,11 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   // `_pf_x_n(g, k) := count([...])` のようなトップレベル定義。呼び出しを本体まで辿るのに使う
   const shared = new Map([...rego.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/gm)].map((m) => [m[1], m[2]] as const));
 
-  const ARRAYISH = /flatten_list\(|(?:^|[^A-Za-z0-9_)\]])\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
+  const ARRAYISH = /flatten_list\(|(?:^|[^A-Za-z0-9_)\]])\[|object\.keys\(|resources_of_type\(|\{[a-z]/;
+  // object.get(x, "k", d) が返すものは d が教えてくれる: [] なら配列、"" なら文字列。
+  // それ以外（"__pf_absent" のような番兵）は決められないので両方見る。
+  const GET_ARRAY = /object\.get\([^()]*,\s*(?:\[\]|\{\})\s*\)/;
+  const GET_STRING = /object\.get\([^()]*,\s*""\s*\)/;
 
   type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number };
   const thresholdsOf = (block: string): Threshold[] => {
@@ -184,7 +188,8 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
       const inner = /^count\((.*)\)$/.exec(expr.trim())?.[1] ?? expr;
       const src = deref(assigned.get(inner.trim()) ?? inner);
       if (/\bsplit\(/.test(src)) return 'shape';
-      if (ARRAYISH.test(src)) return 'array';
+      if (GET_STRING.test(src)) return 'string';
+      if (GET_ARRAY.test(src) || ARRAYISH.test(src)) return 'array';
       if (/resolve\(|json\.marshal\(|sprintf\(/.test(src)) return 'string';
       return 'both';
     };

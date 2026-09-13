@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value 'aaaaaaaaaaaaaaaaaaaaa' at 'schema.1.member.name' failed to satisfy constraint: Member must have length less than or equal to 20\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: a 21-character schema attribute name -> \"Value 'aaaaaaaaaaaaaaaaaaaaa' at 'schema.1.member.name' failed to satisfy constraint: Member must have length less than or equal to 20\" (ROLLBACK_COMPLETE); pass 20 characters -> CREATE_COMPLETE"
 addedOn: 2026-09-08
