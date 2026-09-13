@@ -1960,7 +1960,6 @@
 | `pf-route53resolver-endpoint-dohfips-inbound-only` | AWS::Route53Resolver::ResolverEndpoint | DoH-FIPS is only supported on inbound Resolver endpoints | ERROR | none |
 | `pf-route53resolver-endpoint-instance-type-requires-outpostarn` | AWS::Route53Resolver::ResolverEndpoint | PreferredInstanceType can only be set on an Outpost-local Resolver endpoint | ERROR | none |
 | `pf-route53resolver-endpoint-ip-format` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint IpAddresses[].Ip must be a valid IPv4 address | ERROR | none |
-| `pf-route53resolver-endpoint-ipaddresses-max-six` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint cannot have more than 6 IP addresses | ERROR | none |
 | `pf-route53resolver-endpoint-ipv6-internet-access-outbound-only` | AWS::Route53Resolver::ResolverEndpoint | Ipv6InternetAccessEnabled is only supported on outbound Resolver endpoints | ERROR | none |
 | `pf-route53resolver-endpoint-outpostarn-requires-instance-type` | AWS::Route53Resolver::ResolverEndpoint | An Outpost-local Resolver endpoint must also set PreferredInstanceType | ERROR | none |
 | `pf-route53resolver-endpoint-protocols-enum` | AWS::Route53Resolver::ResolverEndpoint | A Resolver endpoint protocol must be Do53, DoH or DoH-FIPS | ERROR | pending-engine |
@@ -1991,7 +1990,6 @@
 | `pf-route53resolver-firewallrule-ruletype-toplevel-exclusive` | AWS::Route53Resolver::FirewallRuleGroup | FirewallRuleType cannot be combined with FirewallDomainListId or DnsThreatProtection | ERROR | none |
 | `pf-route53resolver-firewallrule-threat-action-not-allow` | AWS::Route53Resolver::FirewallRuleGroup | A DnsThreatProtection rule cannot use Action ALLOW | ERROR | none |
 | `pf-route53resolver-firewallrule-threat-requires-confidence` | AWS::Route53Resolver::FirewallRuleGroup | DnsThreatProtection and ConfidenceThreshold must be set together | ERROR | none |
-| `pf-route53resolver-firewallrulegroup-rules-max` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule group cannot hold more than 100 rules | ERROR | none |
 | `pf-route53resolver-firewallrulegroupassociation-max-per-vpc` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A VPC cannot have more than 5 DNS Firewall rule groups associated | ERROR | none |
 | `pf-route53resolver-firewallrulegroupassociation-mutationprotection-enum` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A DNS Firewall rule group association MutationProtection must be ENABLED or DISABLED | ERROR | pending-engine |
 | `pf-route53resolver-firewallrulegroupassociation-priority-range` | AWS::Route53Resolver::FirewallRuleGroupAssociation | A DNS Firewall rule group association Priority must be between 101 and 9899 | ERROR | none |

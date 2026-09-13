@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2207-blue" alt="2207 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2205-blue" alt="2205 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -194,7 +194,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **RDS** | `DBCluster` (19), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
 | **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (75), `RecordSetGroup` (76) |
 | **Route53Profiles** | `ProfileAssociation` (1), `ProfileResourceAssociation` (6) |
-| **Route53Resolver** | `FirewallDomainList` (3), `FirewallRuleGroup` (19), `FirewallRuleGroupAssociation` (4), `ResolverDNSSECConfig` (1), `ResolverEndpoint` (19), `ResolverQueryLoggingConfig` (1), `ResolverQueryLoggingConfigAssociation` (1), `ResolverRule` (15), `ResolverRuleAssociation` (1) |
+| **Route53Resolver** | `FirewallDomainList` (3), `FirewallRuleGroup` (18), `FirewallRuleGroupAssociation` (4), `ResolverDNSSECConfig` (1), `ResolverEndpoint` (18), `ResolverQueryLoggingConfig` (1), `ResolverQueryLoggingConfigAssociation` (1), `ResolverRule` (15), `ResolverRuleAssociation` (1) |
 | **S3** | `AccessPoint` (1), `Bucket` (54), `BucketPolicy` (4), `StorageLens` (5), `StorageLensGroup` (3) |
 | **S3Express** | `AccessPoint` (3), `DirectoryBucket` (11) |
 | **Scheduler** | `Schedule` (10), `ScheduleGroup` (1) |

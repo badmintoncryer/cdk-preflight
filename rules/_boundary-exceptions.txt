@@ -58,10 +58,7 @@ pf-route53-record-name-label-length  ラベルは Name の一部分なので、�
 pf-route53-recordsetgroup-max-1000-elements  しきい値と突き合わせるのはレコードセットをまたいだ値の合計で、1 レコードセットは 400 値までなので 1001 要素の配列はテンプレートに存在しない。フィクスチャは 1001 / 1000 値に乗せてある
 pf-route53-recordsetgroup-max-32000-chars  しきい値は全値の文字数の合計で、どの配列長とも文字列長とも一致しない。フィクスチャは 32001 / 32000 文字に乗せてある
 pf-route53profiles-profileresourceassociation-rulegroups-max  pending #178
-pf-route53resolver-endpoint-ipaddresses-max-six  pending #178
-pf-route53resolver-firewalldomainlist-domains-max  pending #178
-pf-route53resolver-firewallrulegroup-rules-max  pending #178
-pf-route53resolver-firewallrulegroupassociation-max-per-vpc  pending #178
+pf-route53resolver-firewallrulegroupassociation-max-per-vpc  しきい値と突き合わせるのは「同じ VPC を指しているアソシエーションの本数」で、テンプレートのどの配列長とも一致しない（リソースをまたいで数えた値）。フィクスチャは 6 / 5 本に乗せてある
 pf-s3-metadata-record-expiration-days  pending #178
 pf-s3-storagelensgroup-match-any-max  pending #178
 pf-secretsmanager-generate-secret-string  pending #178
