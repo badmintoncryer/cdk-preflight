@@ -9,8 +9,21 @@
         "Engine": "redis",
         "NumCacheClusters": 1,
         "AutomaticFailoverEnabled": false,
-        "PreferredMaintenanceWindow": "sun:23:00-sun:23:30"
+        "PreferredMaintenanceWindow": "sun:23:00-sun:23:59"
       }
+    },
+    "RG2": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-maintwindow-fmt",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumCacheClusters": 1,
+        "AutomaticFailoverEnabled": false,
+        "PreferredMaintenanceWindow": "sun:23:00-sun:2"
+      },
+      "DependsOn": "RG"
     }
   }
 }

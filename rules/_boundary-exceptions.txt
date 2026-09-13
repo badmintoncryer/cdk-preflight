@@ -25,11 +25,9 @@ pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最�
 pf-ecr-lifecycle-tag-status  しきい値と突き合わせるのは tagPatternList の 1 エントリに含まれる `*` の個数で、テンプレートには数値として現れない（しかも LifecyclePolicyText は JSON 文字列）。フィクスチャは 5 個 / 4 個に乗せてある
 pf-ecs-fargate-windows-cpu-under-1vcpu  Fargate の Cpu は 256 / 512 / 1024 … という飛び飛びの集合なので 1023 は存在しない値。1024 未満で実際に指定できる最大は 512 で、fail はそこに乗せてある（2026-09-13 us-east-1 RegisterTaskDefinition: Windows + 512 CPU / 2048 memory は "No Fargate configuration exists for given values"、1024 は通る）
 pf-efs-throughput-mode  上限ちょうどの pass は作れない: プロビジョンドスループットは $6/MiBps-月なので 3414 MiBps は数分でも 7 ドル近くかかる（L-BFB6FB19 は Adjustable: false なのでハードリミットではある）。fail は 3415 に乗せ、pass は 1 MiBps にしてある
-pf-elasticache-auth-token  pending #178
-pf-elasticache-maintenance-window  pending #178
-pf-elasticache-replication-group-clusters  pending #178
-pf-elasticache-snapshot-retention  pending #178
-pf-elasticache-user-authentication  pending #178
+pf-elasticache-auth-token  しきい値はヘルパー述語の引数（`_pf_ecauth_bad_length(n) if n < 16`）にあり、n が何を数えた値かは呼び出し側の別ブロックなので検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
+pf-elasticache-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウ（`ddd:hh24:mi-ddd:hh24:mi`）の長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
+pf-elasticache-user-authentication  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字、本数は 3 / 2 本に乗せてある
 pf-elbv2-rule-condition-values-max  しきい値と突き合わせるのは Conditions をまたいだ値の数の合計で、どの配列長とも一致しない。フィクスチャは 6 / 5 値に乗せてある（実機も 3+3 の分割で上限を返す）
 pf-elbv2-tg-name  count(n) <= 32 は長すぎる名前を書式のほうの本体に渡さないための排他ガードで、上限そのものは同じファイルの count(n) > 32 が見ている。フィクスチャは 33 / 32 に乗せてある
 pf-firehose-prefix-length  しきい値は展開後のプレフィックスの文字数で、テンプレートに数値としては現れない。数えているのも 2 つの count の和なので検出器は「何を数えたか」まで辿れない。フィクスチャは Prefix / ErrorOutputPrefix それぞれ 513 文字と、両方 512 文字ちょうどに乗せてある
@@ -41,10 +39,8 @@ pf-lambda-esm-on-failure-destination-api-max-length  上限 350 に届く有効�
 pf-lambda-esm-poller-group-esm-count  doc-only。fail の 101 本で既にテンプレートが 57KB あり CFN の 51,200 バイト上限を超える。pass の 100 本も同じ理由で作れない
 pf-lambda-layerperm-arn-length  上限 140 に届く有効なレイヤー ARN が存在しない（レイヤー名は 64 文字まで）。fail は 141 文字ちょうど
 pf-lambda-perm-policy-size  しきい値は SourceArn 長の合計。fail は既に合計 20480 ちょうど。pass（20479）は Permission が約 270 本必要で、CFN のテンプレート上限 51,200 バイトに入らない
-pf-memorydb-maintenance-window  pending #178
-pf-memorydb-replicas-per-shard  pending #178
-pf-memorydb-snapshot-retention  pending #178
-pf-memorydb-user-password  pending #178
+pf-memorydb-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウの長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
+pf-memorydb-user-password  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
 pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
 pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）

@@ -4,14 +4,55 @@
       "Type": "AWS::ElastiCache::User",
       "Properties": {
         "Engine": "redis",
-        "UserId": "cdkpf-u-userauthentication",
+        "UserId": "cdkpf-u-ua-a",
         "UserName": "cdkpfu",
+        "AccessString": "on ~* +@all",
+        "Passwords": [
+          "cdkpfBenchPwxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        ]
+      }
+    },
+    "U2": {
+      "Type": "AWS::ElastiCache::User",
+      "Properties": {
+        "Engine": "redis",
+        "UserId": "cdkpf-u-ua-b",
+        "UserName": "cdkpfu",
+        "AccessString": "on ~* +@all",
+        "Passwords": [
+          "cdkpfBenchPwxxx"
+        ]
+      },
+      "DependsOn": "U"
+    },
+    "U3": {
+      "Type": "AWS::ElastiCache::User",
+      "Properties": {
+        "Engine": "redis",
+        "UserId": "cdkpf-u-ua-c",
+        "UserName": "cdkpfu",
+        "AccessString": "on ~* +@all",
+        "Passwords": [
+          "cdkpfBenchPwxxxx",
+          "cdkpfBenchPwxxxxx",
+          "cdkpfBenchPwxxxxxx"
+        ]
+      },
+      "DependsOn": "U2"
+    },
+    "U4": {
+      "Type": "AWS::ElastiCache::User",
+      "Properties": {
+        "Engine": "redis",
+        "UserId": "cdkpf-u-ua-d",
+        "UserName": "cdkpfu",
+        "AccessString": "on ~* +@all",
         "NoPasswordRequired": true,
         "Passwords": [
-          "cdkpfBenchPassword1"
-        ],
-        "AccessString": "on ~* +@all"
-      }
+          "cdkpfBenchPwxxxx"
+        ]
+      },
+      "DependsOn": "U3"
     }
   }
 }
