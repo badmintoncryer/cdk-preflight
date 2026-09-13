@@ -23,13 +23,6 @@ pf-asg-ondemand-percentage-max  pending #178
 pf-asg-tt-period-max-60  pending #178
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
 pf-bedrock-datasource-chunk-max-tokens  pending #178
-pf-cloudfront-function-code-size  pending #178
-pf-cloudfront-origin-http-port-range  pending #178
-pf-cloudfront-origin-https-port-range  pending #178
-pf-cloudfront-origin-keepalive-timeout-range  pending #178
-pf-cloudfront-origin-read-timeout-range  pending #178
-pf-cloudfront-rhp-content-security-policy-length  pending #178
-pf-cloudfront-vpc-origin-port-range  pending #178
 pf-cloudwatch-alarm-evaluation-window  pending #178
 pf-cloudwatch-alarm-expressions-max  pending #178
 pf-cloudwatch-composite-suppressor-format  pending #178

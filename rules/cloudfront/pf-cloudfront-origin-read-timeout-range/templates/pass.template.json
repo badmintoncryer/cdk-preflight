@@ -11,7 +11,7 @@
               "DomainName": "example.com",
               "CustomOriginConfig": {
                 "OriginProtocolPolicy": "http-only",
-                "OriginReadTimeout": 60
+                "OriginReadTimeout": 1
               }
             }
           ],

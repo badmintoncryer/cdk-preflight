@@ -11,7 +11,15 @@
               "DomainName": "example.com",
               "CustomOriginConfig": {
                 "OriginProtocolPolicy": "http-only",
-                "HTTPSPort": 8443
+                "HTTPSPort": 1024
+              }
+            },
+            {
+              "Id": "o2",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "http-only",
+                "HTTPSPort": 65535
               }
             }
           ],

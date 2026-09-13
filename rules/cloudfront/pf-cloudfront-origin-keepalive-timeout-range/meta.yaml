@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: Your request of setting originKeepaliveTimeout is not within the valid range. (Service: CloudFront, Status Code: 400, Request ID: 9f91b373-9389-4882-92bf-41741130cb58) (SDK Attempt Count: 1)" (RequestToken: ddcb54a3-eca4-8fa9-7b75-116f7e00f4b4, HandlerErrorCode: InvalidRequest)'
+  evidence: "bench 2026-09-13 us-east-1: OriginKeepaliveTimeout 301 -> \"Your request of setting originKeepaliveTimeout is not within the valid range.\" ROLLBACK_COMPLETE (the same template carries a second origin at 0); pass 300 and 1 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDistribution: 0 and 301 are rejected, 300 is accepted. Service Quotas lists \"Keep-alive timeout for a custom origin\" (L-7429AF8A) as 120 and adjustable, but the service accepts 121 on an account sitting at that default, so 300 is a hard limit rather than the quota (principle 6)."
 addedOn: 2026-09-08
 benchRegion: us-east-1

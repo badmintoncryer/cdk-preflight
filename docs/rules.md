@@ -682,7 +682,6 @@
 | `pf-cloudfront-grpc-requires-http2` | AWS::CloudFront::Distribution | GrpcConfig requires an HTTP/2 capable HttpVersion | ERROR | none |
 | `pf-cloudfront-grpc-requires-post-method` | AWS::CloudFront::Distribution | GrpcConfig requires POST in AllowedMethods | ERROR | none |
 | `pf-cloudfront-http-version-enum` | AWS::CloudFront::Distribution | HttpVersion must be http1.1, http2, http2and3 or http3 | ERROR | pending-engine |
-| `pf-cloudfront-key-group-item-count` | AWS::CloudFront::KeyGroup | A key group holds at most 5 public keys | ERROR | none |
 | `pf-cloudfront-key-group-item-unique` | AWS::CloudFront::KeyGroup | A key group must not list the same public key twice | ERROR | none |
 | `pf-cloudfront-key-value-store-import-source-arn` | AWS::CloudFront::KeyValueStore | KeyValueStore ImportSource SourceArn must be an S3 object ARN | ERROR | none |
 | `pf-cloudfront-key-value-store-import-source-type` | AWS::CloudFront::KeyValueStore | KeyValueStore ImportSource SourceType must be S3 | ERROR | pending-engine |
@@ -704,7 +703,7 @@
 | `pf-cloudfront-origin-keepalive-timeout-range` | AWS::CloudFront::Distribution | OriginKeepaliveTimeout must be between 1 and 300 | ERROR | none |
 | `pf-cloudfront-origin-path-format` | AWS::CloudFront::Distribution | OriginPath must start with / and must not end with / | ERROR | none |
 | `pf-cloudfront-origin-protocol-policy-enum` | AWS::CloudFront::Distribution | OriginProtocolPolicy must be http-only, https-only or match-viewer | ERROR | none |
-| `pf-cloudfront-origin-read-timeout-range` | AWS::CloudFront::Distribution | OriginReadTimeout must be between 1 and 120 | ERROR | none |
+| `pf-cloudfront-origin-read-timeout-range` | AWS::CloudFront::Distribution | OriginReadTimeout must be at least 1 | ERROR | none |
 | `pf-cloudfront-origin-request-policy-cloudfront-headers` | AWS::CloudFront::OriginRequestPolicy | allViewerAndWhitelistCloudFront only accepts CloudFront-* headers | ERROR | none |
 | `pf-cloudfront-origin-request-policy-cookie-behavior-items` | AWS::CloudFront::OriginRequestPolicy | Origin request policy CookieBehavior whitelist / allExcept requires Cookies | ERROR | none |
 | `pf-cloudfront-origin-request-policy-excludes-forwarded-values` | AWS::CloudFront::Distribution | A cache behavior cannot set both OriginRequestPolicyId and ForwardedValues | ERROR | none |
@@ -719,7 +718,6 @@
 | `pf-cloudfront-realtime-log-endpoint-stream-type` | AWS::CloudFront::RealtimeLogConfig | Real-time log endpoints must have StreamType Kinesis | ERROR | none |
 | `pf-cloudfront-realtime-log-field-names` | AWS::CloudFront::RealtimeLogConfig | Real-time log Fields must name fields CloudFront defines | ERROR | none |
 | `pf-cloudfront-response-headers-policy-name-charset` | AWS::CloudFront::ResponseHeadersPolicy | Response headers policy names allow only alphanumerics, dash and underscore | ERROR | none |
-| `pf-cloudfront-rhp-content-security-policy-length` | AWS::CloudFront::ResponseHeadersPolicy | ContentSecurityPolicy is limited to 1783 characters | ERROR | none |
 | `pf-cloudfront-rhp-cors-allow-methods-enum` | AWS::CloudFront::ResponseHeadersPolicy | AccessControlAllowMethods accepts only the eight documented values | ERROR | pending-engine |
 | `pf-cloudfront-rhp-custom-header-blocklist` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig cannot carry headers CloudFront reserves | ERROR | none |
 | `pf-cloudfront-rhp-custom-header-unique` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig must not repeat a header name | ERROR | none |
@@ -737,7 +735,7 @@
 | `pf-cloudfront-viewer-certificate-vip-deprecated` | AWS::CloudFront::Distribution | SslSupportMethod vip cannot be used for new distributions | ERROR | none |
 | `pf-cloudfront-viewer-protocol-policy-enum` | AWS::CloudFront::Distribution | ViewerProtocolPolicy must be allow-all, https-only or redirect-to-https | ERROR | pending-engine |
 | `pf-cloudfront-vpc-origin-arn-type` | AWS::CloudFront::VpcOrigin | A VPC origin ARN must point at an ALB, NLB or EC2 instance | ERROR | none |
-| `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin HTTPPort and HTTPSPort must be between 1 and 65535 | ERROR | none |
+| `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin ports must be 80, 443 or 1024-65535 | ERROR | none |
 | `pf-cloudfront-vpc-origin-ssl-protocols-required` | AWS::CloudFront::VpcOrigin | An HTTPS-capable VPC origin must list OriginSSLProtocols | ERROR | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | ERROR | none |
 | `pf-cloudwatch-alarm-action-vendor` | AWS::CloudWatch::Alarm | Alarm actions accept only the CloudWatch action vendors | ERROR | none |

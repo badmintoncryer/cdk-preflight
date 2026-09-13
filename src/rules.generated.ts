@@ -7505,17 +7505,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_http_version_enum_fix := \"Use http1.1, http2, http2and3 or http3\"\n\n_pf_cf_http_version_enum_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-distributionconfig.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-http-version-enum\", \"ERROR\", name, \"Properties.DistributionConfig\",\n\tsprintf(\"HttpVersion %v is not a valid value\", [hv]),\n\t_pf_cf_http_version_enum_fix, _pf_cf_http_version_enum_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tcfg := _pf_cflib_config(name)\n\thv := object.get(cfg, \"HttpVersion\", null)\n\tis_string(hv)\n\tnot hv in {\"http1.1\", \"http2\", \"http2and3\", \"http3\"}\n}\n"
   },
   {
-    "id": "pf-cloudfront-key-group-item-count",
-    "service": "cloudfront",
-    "severity": "ERROR",
-    "title": "A key group holds at most 5 public keys",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::CloudFront::KeyGroup"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_key_group_item_count_fix := \"Split the keys across multiple key groups\"\n\n_pf_cf_key_group_item_count_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-keygroup.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-key-group-item-count\", \"ERROR\", name, \"Properties.KeyGroupConfig\",\n\tsprintf(\"the key group lists %v public keys; the limit is 5\", [count(its)]),\n\t_pf_cf_key_group_item_count_fix, _pf_cf_key_group_item_count_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::KeyGroup\")\n\tcfgv := _pf_cflib_props(name, \"KeyGroupConfig\")\n\tits := object.get(cfgv, \"Items\", [])\n\tcount(its) > 5\n}\n"
-  },
-  {
     "id": "pf-cloudfront-key-group-item-unique",
     "service": "cloudfront",
     "severity": "ERROR",
@@ -7750,12 +7739,12 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-cloudfront-origin-read-timeout-range",
     "service": "cloudfront",
     "severity": "ERROR",
-    "title": "OriginReadTimeout must be between 1 and 120",
+    "title": "OriginReadTimeout must be at least 1",
     "upstream": "none",
     "resourceTypes": [
       "AWS::CloudFront::Distribution"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_read_timeout_range_fix := \"Use a value between 1 and 120 for OriginReadTimeout\"\n\n_pf_cf_origin_read_timeout_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-read-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginReadTimeout %v is less than 1\", [v]),\n\t_pf_cf_origin_read_timeout_range_fix, _pf_cf_origin_read_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginReadTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-origin-read-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginReadTimeout %v is greater than 120\", [v]),\n\t_pf_cf_origin_read_timeout_range_fix, _pf_cf_origin_read_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginReadTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv > 120\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_origin_read_timeout_range_fix := \"Set OriginReadTimeout to at least 1 second\"\n\n_pf_cf_origin_read_timeout_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-origin.html\"\n\n# 上限は見ない: 120 秒は引き上げ可能なクォータ（L-AECE9FA7 \"Response timeout per origin\"、\n# Adjustable）で、引き上げたアカウントでは 121 が通る。テンプレートからはどちらの\n# アカウントか分からないので、弾くと誤検出になる（原則 6）。下限 1 はクォータではない\n# （2026-09-13 us-east-1 CreateDistribution: originReadTimeout 0 は\n# InvalidOriginReadTimeout で拒否、120 は既定のクォータのまま作成できる）。\nviolation contains make_diag_full(\"pf-cloudfront-origin-read-timeout-range\", \"ERROR\", name, o.path,\n\tsprintf(\"OriginReadTimeout %v is less than 1\", [v]),\n\t_pf_cf_origin_read_timeout_range_fix, _pf_cf_origin_read_timeout_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::Distribution\")\n\tsome o in _pf_cflib_origins(name)\n\toc := object.get(o.value, \"CustomOriginConfig\", null)\n\tis_object(oc)\n\tvraw := object.get(oc, \"OriginReadTimeout\", \"__pf_absent\")\n\tvraw != \"__pf_absent\"\n\tv := to_number(vraw)\n\tv < 1\n}\n"
   },
   {
     "id": "pf-cloudfront-origin-request-policy-cloudfront-headers",
@@ -7910,17 +7899,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CloudFront::ResponseHeadersPolicy"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_response_headers_policy_name_charset_fix := \"Use only A-Z, a-z, 0-9, - and _ in the policy name\"\n\n_pf_cf_response_headers_policy_name_charset_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-response-headers-policy-name-charset\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.Name\",\n\tsprintf(\"ResponseHeadersPolicyConfig.Name '%s' is rejected by the service: alphanumerics, dash and underscore\", [v]),\n\t_pf_cf_response_headers_policy_name_charset_fix, _pf_cf_response_headers_policy_name_charset_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tv := object.get(cfgv, \"Name\", null)\n\tis_string(v)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, v)\n}\n"
-  },
-  {
-    "id": "pf-cloudfront-rhp-content-security-policy-length",
-    "service": "cloudfront",
-    "severity": "ERROR",
-    "title": "ContentSecurityPolicy is limited to 1783 characters",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::CloudFront::ResponseHeadersPolicy"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_rhp_content_security_policy_length_fix := \"Shorten the Content-Security-Policy value to 1783 characters or fewer\"\n\n_pf_cf_rhp_content_security_policy_length_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-responseheaderspolicy.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-rhp-content-security-policy-length\", \"ERROR\", name, \"Properties.ResponseHeadersPolicyConfig.SecurityHeadersConfig.ContentSecurityPolicy\",\n\tsprintf(\"ContentSecurityPolicy is %v characters, over the 1783 limit\", [count(v)]),\n\t_pf_cf_rhp_content_security_policy_length_fix, _pf_cf_rhp_content_security_policy_length_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::ResponseHeadersPolicy\")\n\tcfgv := _pf_cflib_props(name, \"ResponseHeadersPolicyConfig\")\n\tsh := object.get(cfgv, \"SecurityHeadersConfig\", null)\n\tis_object(sh)\n\tcsp := object.get(sh, \"ContentSecurityPolicy\", null)\n\tis_object(csp)\n\tv := object.get(csp, \"ContentSecurityPolicy\", null)\n\tis_string(v)\n\tcount(v) > 1783\n}\n"
   },
   {
     "id": "pf-cloudfront-rhp-cors-allow-methods-enum",
@@ -8113,12 +8091,12 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-cloudfront-vpc-origin-port-range",
     "service": "cloudfront",
     "severity": "ERROR",
-    "title": "VPC origin HTTPPort and HTTPSPort must be between 1 and 65535",
+    "title": "VPC origin ports must be 80, 443 or 1024-65535",
     "upstream": "none",
     "resourceTypes": [
       "AWS::CloudFront::VpcOrigin"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_vpc_origin_port_range_fix := \"Use a port in 1-65535\"\n\n_pf_cf_vpc_origin_port_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html\"\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-port-range\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"%v %v is below 1\", [k, p]),\n\t_pf_cf_vpc_origin_port_range_fix, _pf_cf_vpc_origin_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tsome k in [\"HTTPPort\", \"HTTPSPort\"]\n\traw := object.get(cfgv, k, \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tp := to_number(raw)\n\tp < 1\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-port-range\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"%v %v is above 65535\", [k, p]),\n\t_pf_cf_vpc_origin_port_range_fix, _pf_cf_vpc_origin_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tsome k in [\"HTTPPort\", \"HTTPSPort\"]\n\traw := object.get(cfgv, k, \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tp := to_number(raw)\n\tp > 65535\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cf_vpc_origin_port_range_fix := \"Use 80, 443, or a port in 1024-65535\"\n\n_pf_cf_vpc_origin_port_range_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-vpcorigin.html\"\n\n# 許される値はカスタムオリジンと同じで 80 / 443 / 1024-65535。1-1023 も拒否される\n# （2026-09-13 us-east-1 CreateVpcOrigin: 0 / 1 / 79 / 1023 / 65536 はいずれも\n# \"The parameter origin port is not within allowed range.\"、80 / 443 / 1024 / 65535 は\n# ポートの検査を抜けて Arn の検査まで進む）。\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-port-range\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"%v %v is below the allowed range (80, 443 or 1024-65535)\", [k, p]),\n\t_pf_cf_vpc_origin_port_range_fix, _pf_cf_vpc_origin_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tsome k in [\"HTTPPort\", \"HTTPSPort\"]\n\traw := object.get(cfgv, k, \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tp := to_number(raw)\n\tp != 80\n\tp != 443\n\tp < 1024\n}\n\nviolation contains make_diag_full(\"pf-cloudfront-vpc-origin-port-range\", \"ERROR\", name, \"Properties.VpcOriginEndpointConfig\",\n\tsprintf(\"%v %v is above the allowed range (80, 443 or 1024-65535)\", [k, p]),\n\t_pf_cf_vpc_origin_port_range_fix, _pf_cf_vpc_origin_port_range_url) if {\n\tsome name in resources_of_type(\"AWS::CloudFront::VpcOrigin\")\n\tcfgv := _pf_cflib_props(name, \"VpcOriginEndpointConfig\")\n\tsome k in [\"HTTPPort\", \"HTTPSPort\"]\n\traw := object.get(cfgv, k, \"__pf_absent\")\n\traw != \"__pf_absent\"\n\tp := to_number(raw)\n\tp > 65535\n}\n"
   },
   {
     "id": "pf-cloudfront-vpc-origin-ssl-protocols-required",

@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter origin port is not within allowed range. (Service: CloudFront, Status Code: 400, Request ID: fa77aa0b-51b1-4267-b08a-1d2a41948b8d) (SDK Attempt Count: 1)" (RequestToken: 9a6e2eb6-08a6-0531-e0d1-f8fed556557c, HandlerErrorCode: InvalidRequest)'
+  evidence: "bench 2026-09-13 us-east-1: HTTPPort 1023 -> \"The parameter origin port is not within allowed range.\" ROLLBACK_COMPLETE (the same template carries a second origin at 65536); pass 1024 and 65535 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDistribution: 1023 and 65536 are both rejected with that message. 80 and 443 stay valid below 1024."
 addedOn: 2026-09-08
 benchRegion: us-east-1
