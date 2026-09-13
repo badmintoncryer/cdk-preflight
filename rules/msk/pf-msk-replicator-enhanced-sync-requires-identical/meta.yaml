@@ -1,0 +1,12 @@
+id: pf-msk-replicator-enhanced-sync-requires-identical
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Replicator]
+severity: ERROR
+title: "ENHANCED consumer-group offset sync needs IDENTICAL topic names"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: create-replicator with ConsumerGroupOffsetSyncMode ENHANCED and TopicNameConfiguration.Type PREFIXED_WITH_SOURCE_CLUSTER_ALIAS -> \"The consumerGroupOffsetSyncMode value ENHANCED is only supported when topicNameConfiguration type is IDENTICAL. ... Additional error details: InvalidParameter: consumerGroupOffsetSyncMode\""
+addedOn: 2026-09-13

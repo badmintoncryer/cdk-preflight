@@ -1,0 +1,12 @@
+id: pf-msk-replicator-source-target-differ
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Replicator]
+severity: ERROR
+title: "A replicator's two KafkaClusters entries must be different clusters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: create-replicator with the same cluster ARN in both KafkaClusters entries -> \"Kafka cluster list contains duplicate cluster ARNs. Please ensure all the cluster ARNs are unique. Additional error details: InvalidParameter: kafkaClusters\""
+addedOn: 2026-09-13

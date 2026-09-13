@@ -19038,6 +19038,116 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
+    "id": "pf-msk-replicator-apache-kafka-cluster-requires-auth",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An Apache Kafka cluster entry must declare ClientAuthentication",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A self-managed Apache Kafka source has no MSK-side auth to inherit, so the\n# entry has to spell out how the replicator authenticates to it.\nviolation contains make_diag_full(\"pf-msk-replicator-apache-kafka-cluster-requires-auth\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d]\", [it.index]),\n\t\"an ApacheKafkaCluster entry has no ClientAuthentication; the replicator create fails with \\\"Apache Kafka clusters require authentication configuration. Specify the clientAuthentication parameter.\\\"\",\n\t\"Add ClientAuthentication (and EncryptionInTransit) to the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"ClientAuthentication\", null) == null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-arns-match-kafka-clusters",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ReplicationInfoList ARNs must be the ones listed in KafkaClusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ReplicationInfoList repeats the ARNs that KafkaClusters declares. A third\n# ARN (or a typo in one of the two) is rejected at create time.\n# The rule only judges when every AmazonMskCluster entry handed over a literal\n# ARN - a Ref / GetAtt wired cluster surfaces as a marker object and is skipped.\n_pf_mskram_arns(name) := arns if {\n\tarns := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := it.value.AmazonMskCluster.MskClusterArn\n\t\tis_string(a)\n\t}\n}\n\n_pf_mskram_msk_entries(name) := n if {\n\tn := count([1 |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\tis_object(it.value)\n\t\tobject.get(it.value, \"AmazonMskCluster\", null) != null\n\t])\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-arns-match-kafka-clusters\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d].%s\", [it.index, key]),\n\tsprintf(\"%s '%s' is not one of the cluster ARNs in KafkaClusters; the replicator create fails with \\\"Source and target Kafka cluster ARNs must be present in kafkaClusters\\\"\", [key, arn]),\n\t\"Repeat the KafkaClusters ARNs verbatim in ReplicationInfoList\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tarns := _pf_mskram_arns(name)\n\tcount(arns) > 0\n\tcount(arns) == _pf_mskram_msk_entries(name)\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tsome key in [\"SourceKafkaClusterArn\", \"TargetKafkaClusterArn\"]\n\tarn := object.get(it.value, key, null)\n\tis_string(arn)\n\tnot arn in arns\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-clusters-same-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator's source and target clusters must be in one account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Replicator does not replicate across accounts: both cluster ARNs must\n# carry the same account id. The deploy-time failure never names the rule --\n# the service simply cannot read the other account's cluster.\n_pf_mskrsa_account(e) := acct if {\n\tarn := e.AmazonMskCluster.MskClusterArn\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kafka\"\n\tacct := parts[4]\n\tacct != \"\"\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-clusters-same-account\", \"ERROR\", name,\n\t\"Properties.KafkaClusters\",\n\tsprintf(\"the cluster ARNs name %d different accounts (%s); the replicator create fails with an AccessDenied on kafka:GetBootstrapBrokers against the other account's cluster\", [count(accounts), joined]),\n\t\"Replicate between clusters in one account - MSK Replicator does not support cross-account replication\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-replicator-supported-configs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\taccounts := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := _pf_mskrsa_account(it.value)\n\t}\n\tcount(accounts) > 1\n\tjoined := concat(\", \", sort(accounts))\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-enhanced-sync-requires-identical",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ENHANCED consumer-group offset sync needs IDENTICAL topic names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ENHANCED offset sync tracks the same topic name on both sides, so it is\n# only accepted when TopicNameConfiguration.Type is IDENTICAL. The rule judges\n# an explicitly declared Type only - whether the documented default\n# (PREFIXED_WITH_SOURCE_CLUSTER_ALIAS) is rejected the same way is unmeasured.\nviolation contains make_diag_full(\"pf-msk-replicator-enhanced-sync-requires-identical\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d].ConsumerGroupReplication.ConsumerGroupOffsetSyncMode\", [it.index]),\n\tsprintf(\"ConsumerGroupOffsetSyncMode ENHANCED is combined with TopicNameConfiguration.Type '%s'; the replicator create fails with \\\"The consumerGroupOffsetSyncMode value ENHANCED is only supported when topicNameConfiguration type is IDENTICAL\\\"\", [t]),\n\t\"Set TopicNameConfiguration.Type to IDENTICAL, or use the LEGACY offset sync mode\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tobject.get(it.value, [\"ConsumerGroupReplication\", \"ConsumerGroupOffsetSyncMode\"], null) == \"ENHANCED\"\n\tt := object.get(it.value, [\"TopicReplication\", \"TopicNameConfiguration\", \"Type\"], null)\n\tis_string(t)\n\tt != \"IDENTICAL\"\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-kafka-cluster-exactly-one-kind",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A KafkaClusters entry names either an MSK cluster or an Apache Kafka cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One entry describes one cluster: AmazonMskCluster for an MSK cluster,\n# ApacheKafkaCluster for a self-managed one. Both together is rejected.\nviolation contains make_diag_full(\"pf-msk-replicator-kafka-cluster-exactly-one-kind\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d]\", [it.index]),\n\t\"the entry carries both AmazonMskCluster and ApacheKafkaCluster; the replicator create fails with \\\"Cannot specify both AmazonMskCluster and ApacheKafkaCluster in a kafkaCluster object\\\"\",\n\t\"Keep one cluster kind per KafkaClusters entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"AmazonMskCluster\", null) != null\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-service-role-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "The service execution role must live in the clusters' account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The replicator, its ServiceExecutionRoleArn and its clusters all live in one\n# account: CreateReplicator refuses to pass a role from another account. The\n# check is against the cluster ARNs rather than deploy_account so that it also\n# fires in region/account-agnostic apps, where deploy_account is not injected.\n_pf_mskrsr_account(arn, service) := acct if {\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == service\n\tacct := parts[4]\n\tacct != \"\"\n}\n\n_pf_mskrsr_clusters(name) := accounts if {\n\taccounts := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := _pf_mskrsr_account(it.value.AmazonMskCluster.MskClusterArn, \"kafka\")\n\t}\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-service-role-account\", \"ERROR\", name,\n\t\"Properties.ServiceExecutionRoleArn\",\n\tsprintf(\"the service execution role is in account %s while the clusters are in %s; the replicator create fails with \\\"Cross-account pass role is not allowed.\\\"\", [roleAcct, clusterAcct]),\n\t\"Use a role from the account that owns the clusters and the replicator\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\troleAcct := _pf_mskrsr_account(resolve(name, \"Properties.ServiceExecutionRoleArn\"), \"iam\")\n\taccounts := _pf_mskrsr_clusters(name)\n\tcount(accounts) == 1\n\tsome clusterAcct in accounts\n\troleAcct != clusterAcct\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-source-arn-xor-id",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A ReplicationInfo names the source cluster by ARN or by id, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SourceKafkaClusterArn addresses an MSK cluster, SourceKafkaClusterId a\n# self-managed Apache Kafka cluster. Both in one ReplicationInfo is rejected.\nviolation contains make_diag_full(\"pf-msk-replicator-source-arn-xor-id\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d]\", [it.index]),\n\t\"the entry carries both SourceKafkaClusterArn and SourceKafkaClusterId; the replicator create fails with \\\"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId\\\"\",\n\t\"Use SourceKafkaClusterArn for an MSK source, SourceKafkaClusterId for an Apache Kafka source\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tobject.get(it.value, \"SourceKafkaClusterArn\", null) != null\n\tobject.get(it.value, \"SourceKafkaClusterId\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-source-target-differ",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator's two KafkaClusters entries must be different clusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# KafkaClusters carries the source and the target; naming the same cluster\n# twice (a copy-paste of the ARN) is rejected outright.\n_pf_mskrstd_arns(name) := arns if {\n\tarns := [a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := it.value.AmazonMskCluster.MskClusterArn\n\t\tis_string(a)\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-source-target-differ\", \"ERROR\", name,\n\t\"Properties.KafkaClusters\",\n\tsprintf(\"KafkaClusters lists %d cluster ARNs but only %d distinct one(s); the replicator create fails with \\\"Kafka cluster list contains duplicate cluster ARNs\\\"\", [count(arns), count(uniq)]),\n\t\"Point the source and the target at two different MSK clusters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tarns := _pf_mskrstd_arns(name)\n\tcount(arns) > 1\n\tuniq := {a | some a in arns}\n\tcount(uniq) < count(arns)\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-target-cluster-region",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator must be created in its target cluster's region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The source cluster may be remote; the target cluster may not. The service\n# names the deploy region in the rejection, so the check is against\n# data.cdk_preflight.deploy_region (enforce mode with a concrete env only).\nviolation contains make_diag_full(\"pf-msk-replicator-target-cluster-region\", \"ERROR\", name,\n\t\"Properties.ReplicationInfoList\",\n\tsprintf(\"the target cluster is in '%s' but the replicator deploys to '%s'; the replicator create fails with \\\"The target cluster must be from region %s\\\"\", [tgtRegion, region, region]),\n\t\"Create the replicator in the target cluster's region (only the source cluster may be in another region)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tarn := it.value.TargetKafkaClusterArn\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kafka\"\n\ttgtRegion := parts[3]\n\ttgtRegion != \"\"\n\ttgtRegion != region\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-vpc-config-only-for-msk-cluster",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VpcConfig describes how the replicator reaches an MSK cluster. An entry that\n# describes a self-managed Apache Kafka cluster must not carry one.\n# An entry with both cluster kinds is pf-msk-replicator-kafka-cluster-exactly-one-kind's\n# business, so this rule stays out of it.\nviolation contains make_diag_full(\"pf-msk-replicator-vpc-config-only-for-msk-cluster\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d].VpcConfig\", [it.index]),\n\t\"an ApacheKafkaCluster entry carries VpcConfig; the replicator create fails with \\\"The vpcConfig parameter is only supported for AmazonMskCluster\\\"\",\n\t\"Drop VpcConfig from the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"VpcConfig\", null) != null\n}\n"
+  },
+  {
     "id": "pf-pipes-batch-size-target-limit",
     "service": "pipes",
     "severity": "ERROR",

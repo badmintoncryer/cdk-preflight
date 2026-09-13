@@ -1713,6 +1713,16 @@
 | `pf-memorydb-snapshot-retention` | AWS::MemoryDB::Cluster | SnapshotRetentionLimit is 0-35 days | ERROR | none |
 | `pf-memorydb-snapshot-window` | AWS::MemoryDB::Cluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | ERROR | none |
 | `pf-memorydb-user-password` | AWS::MemoryDB::User | A password user needs passwords of 16-128 characters | ERROR | none |
+| `pf-msk-replicator-apache-kafka-cluster-requires-auth` | AWS::MSK::Replicator | An Apache Kafka cluster entry must declare ClientAuthentication | ERROR | none |
+| `pf-msk-replicator-arns-match-kafka-clusters` | AWS::MSK::Replicator | ReplicationInfoList ARNs must be the ones listed in KafkaClusters | ERROR | none |
+| `pf-msk-replicator-clusters-same-account` | AWS::MSK::Replicator | A replicator's source and target clusters must be in one account | ERROR | none |
+| `pf-msk-replicator-enhanced-sync-requires-identical` | AWS::MSK::Replicator | ENHANCED consumer-group offset sync needs IDENTICAL topic names | ERROR | none |
+| `pf-msk-replicator-kafka-cluster-exactly-one-kind` | AWS::MSK::Replicator | A KafkaClusters entry names either an MSK cluster or an Apache Kafka cluster | ERROR | none |
+| `pf-msk-replicator-service-role-account` | AWS::MSK::Replicator | The service execution role must live in the clusters' account | ERROR | none |
+| `pf-msk-replicator-source-arn-xor-id` | AWS::MSK::Replicator | A ReplicationInfo names the source cluster by ARN or by id, never both | ERROR | none |
+| `pf-msk-replicator-source-target-differ` | AWS::MSK::Replicator | A replicator's two KafkaClusters entries must be different clusters | ERROR | none |
+| `pf-msk-replicator-target-cluster-region` | AWS::MSK::Replicator | A replicator must be created in its target cluster's region | ERROR | none |
+| `pf-msk-replicator-vpc-config-only-for-msk-cluster` | AWS::MSK::Replicator | VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one | ERROR | none |
 | `pf-pipes-batch-size-target-limit` | AWS::Pipes::Pipe | Source BatchSize is capped by what the target accepts per call | ERROR | none |
 | `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | ERROR | none |
 | `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | ERROR | none |
