@@ -1,0 +1,12 @@
+id: pf-glue-job-max-capacity-with-worker-type
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A job sizes with MaxCapacity or with WorkerType + NumberOfWorkers, never both
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (MaxCapacity 10 alongside WorkerType G.1X / NumberOfWorkers 2) -> \"Please do not set Max Capacity if using Worker Type and Number of Workers.\" (ROLLBACK_COMPLETE); pass template (WorkerType + NumberOfWorkers, no MaxCapacity) -> CREATE_COMPLETE."
+addedOn: 2026-09-13

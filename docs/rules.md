@@ -1449,6 +1449,22 @@
 | `pf-firehose-snowflake-user` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a user or a secret | ERROR | none |
 | `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
 | `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
+| `pf-glue-job-flex-command-name` | AWS::Glue::Job | ExecutionClass FLEX is only available for Spark ETL jobs | ERROR | none |
+| `pf-glue-job-flex-worker-type` | AWS::Glue::Job | A FLEX job runs only on G.1X or G.2X workers | ERROR | none |
+| `pf-glue-job-g025x-streaming-only` | AWS::Glue::Job | The G.025X worker type is only available for streaming jobs | ERROR | none |
+| `pf-glue-job-glue-version-eol` | AWS::Glue::Job | Glue versions 0.9, 1.0 and 2.0 are end of life and cannot be used for new jobs | ERROR | none |
+| `pf-glue-job-maintenance-window-streaming-only` | AWS::Glue::Job | MaintenanceWindow is only accepted on streaming jobs | ERROR | none |
+| `pf-glue-job-max-capacity-fractional` | AWS::Glue::Job | A Spark job cannot take a fractional DPU allocation | ERROR | none |
+| `pf-glue-job-max-capacity-with-worker-type` | AWS::Glue::Job | A job sizes with MaxCapacity or with WorkerType + NumberOfWorkers, never both | ERROR | none |
+| `pf-glue-job-number-of-workers-min` | AWS::Glue::Job | A job needs at least 2 workers | ERROR | none |
+| `pf-glue-job-pythonshell-max-capacity-values` | AWS::Glue::Job | A Python shell job can only allocate 0.0625 or 1 DPU | ERROR | none |
+| `pf-glue-job-pythonshell-worker-type` | AWS::Glue::Job | A Python shell job cannot be sized with WorkerType | ERROR | none |
+| `pf-glue-job-ray-worker-type` | AWS::Glue::Job | A Ray job must use the Z.2X worker type | ERROR | none |
+| `pf-glue-job-runtime-ray-only` | AWS::Glue::Job | Command.Runtime is only accepted on Ray jobs | ERROR | none |
+| `pf-glue-job-timeout-max` | AWS::Glue::Job | A job timeout cannot exceed 10080 minutes (7 days) | ERROR | pending-engine |
+| `pf-glue-job-worker-type-and-number-of-workers` | AWS::Glue::Job | WorkerType and NumberOfWorkers must be set together | ERROR | none |
+| `pf-glue-job-worker-type-requires-glue-4` | AWS::Glue::Job | The large and memory-optimised worker types require Glue 4.0 or later | ERROR | none |
+| `pf-glue-job-z2x-ray-only` | AWS::Glue::Job | The Z.2X worker type is only available for Ray jobs | ERROR | none |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
 | `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | none |

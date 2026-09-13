@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "Command": {
+          "Name": "pythonshell",
+          "ScriptLocation": "s3://cdkpf-glue-probe-214794239830/s.py",
+          "PythonVersion": "3.9"
+        },
+        "MaxCapacity": 1
+      }
+    }
+  }
+}

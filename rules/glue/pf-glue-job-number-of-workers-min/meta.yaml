@@ -1,0 +1,12 @@
+id: pf-glue-job-number-of-workers-min
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A job needs at least 2 workers
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/add-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (WorkerType G.1X, NumberOfWorkers 1) -> \"To use Worker Type G.1X, minimum allowed value of Number of Workers is 2.\" (ROLLBACK_COMPLETE); pass template (NumberOfWorkers 2) -> CREATE_COMPLETE. A CreateJob probe the same day rejected NumberOfWorkers 1 for G.2X and G.025X with the same wording, so the floor is not specific to G.1X."
+addedOn: 2026-09-13

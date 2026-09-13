@@ -1,0 +1,12 @@
+id: pf-glue-job-ray-worker-type
+service: glue
+resourceTypes: [AWS::Glue::Job]
+benchRegion: us-east-1
+severity: ERROR
+title: A Ray job must use the Z.2X worker type
+constraintSource: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: fail template (glueray with Runtime Ray2.4, WorkerType G.1X) -> \"Worker type cannot be null and only [Z.2X] worker types are supported for glueray jobs.\" (ROLLBACK_COMPLETE) — the worker-type check runs before the Ray deprecation check; pass template (glueetl, WorkerType G.1X) -> CREATE_COMPLETE. The rule cannot have a glueray pass fixture: glueray + Z.2X now fails with \"Account not allowed to submit Glue Ray job Post Deprecation\" (CreateJob probe, same day), so the pass side proves silence rather than a working Ray job."
+addedOn: 2026-09-13

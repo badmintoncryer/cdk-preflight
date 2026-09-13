@@ -16014,6 +16014,182 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-firehose-splunk-hec-endpoint-https\", \"ERROR\", name,\n\t\"Properties.SplunkDestinationConfiguration.HECEndpoint\",\n\tsprintf(\"HECEndpoint '%s' is not an HTTPS URL; the stream create fails with \\\"Invalid HECEndpoint. Supported endpoint format is https://<domain>:<port>.\\\"\", [u]),\n\t\"Write the endpoint as https://<domain>:<port>\",\n\t\"https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html\") if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpath == \"Properties.SplunkDestinationConfiguration\"\n\tu := object.get(c, \"HECEndpoint\", null)\n\t_pf_fhlib_lit(u)\n\tnot startswith(u, \"https://\")\n}\n"
   },
   {
+    "id": "pf-glue-job-flex-command-name",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "ExecutionClass FLEX is only available for Spark ETL jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Streaming, Python shell and Ray jobs all reject FLEX.\nviolation contains make_diag_full(\"pf-glue-job-flex-command-name\", \"ERROR\", name,\n\t\"Properties.ExecutionClass\",\n\tsprintf(\"ExecutionClass FLEX on a %v job; flexible execution is supported for glueetl jobs only\", [cmd]),\n\t\"Use ExecutionClass STANDARD, or change Command.Name to glueetl\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-glue-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_str(name, \"Properties.ExecutionClass\") == \"FLEX\"\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"glueetl\"\n}\n"
+  },
+  {
+    "id": "pf-glue-job-flex-worker-type",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A FLEX job runs only on G.1X or G.2X workers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The same CreateJob message also rejects a FLEX job with no WorkerType at\n# all; that half is not covered here because a MaxCapacity-sized FLEX job\n# was not measured on a real stack.\nviolation contains make_diag_full(\"pf-glue-job-flex-worker-type\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType %v on a FLEX job; flexible execution supports G.1X and G.2X only\", [wt]),\n\t\"Use G.1X or G.2X, or set ExecutionClass to STANDARD\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_str(name, \"Properties.ExecutionClass\") == \"FLEX\"\n\twt := _pf_gluelib_worker_type(name)\n\tnot wt in {\"G.1X\", \"G.2X\"}\n}\n"
+  },
+  {
+    "id": "pf-glue-job-g025x-streaming-only",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The G.025X worker type is only available for streaming jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# G.025X is the low-volume streaming worker; batch ETL rejects it.\nviolation contains make_diag_full(\"pf-glue-job-g025x-streaming-only\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType G.025X on a %v job; the quarter-DPU worker is for gluestreaming jobs only\", [cmd]),\n\t\"Use G.1X or larger, or change Command.Name to gluestreaming\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/worker-types.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_worker_type(name) == \"G.025X\"\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"gluestreaming\"\n}\n"
+  },
+  {
+    "id": "pf-glue-job-glue-version-eol",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "Glue versions 0.9, 1.0 and 2.0 are end of life and cannot be used for new jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Not a schema enum: these values were valid until the support policy\n# retired them (0.9/1.0/2.0 on 2026-04-01). The set grows over time, so it\n# lists what CreateJob rejects today rather than what it accepts.\n_pf_gluejobeol_versions := {\"0.9\", \"1.0\", \"2.0\"}\n\nviolation contains make_diag_full(\"pf-glue-job-glue-version-eol\", \"ERROR\", name,\n\t\"Properties.GlueVersion\",\n\tsprintf(\"GlueVersion %v reached end of life; CreateJob no longer accepts it\", [gv]),\n\t\"Move the job to GlueVersion 3.0 or later\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/glue-version-support-policy.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tgv := _pf_gluelib_glue_version(name)\n\tgv in _pf_gluejobeol_versions\n}\n"
+  },
+  {
+    "id": "pf-glue-job-maintenance-window-streaming-only",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "MaintenanceWindow is only accepted on streaming jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Streaming jobs run indefinitely, so only they have a restart window.\nviolation contains make_diag_full(\"pf-glue-job-maintenance-window-streaming-only\", \"ERROR\", name,\n\t\"Properties.MaintenanceWindow\",\n\tsprintf(\"MaintenanceWindow %v on a %v job; the window only applies to gluestreaming jobs\", [mw, cmd]),\n\t\"Remove MaintenanceWindow, or change Command.Name to gluestreaming\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-glue-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tmw := _pf_gluelib_get(name, \"MaintenanceWindow\")\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"gluestreaming\"\n}\n"
+  },
+  {
+    "id": "pf-glue-job-max-capacity-fractional",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A Spark job cannot take a fractional DPU allocation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only pythonshell takes a fractional allocation (0.0625). glueetl and\n# gluestreaming reject anything with a decimal part, at any magnitude.\nviolation contains make_diag_full(\"pf-glue-job-max-capacity-fractional\", \"ERROR\", name,\n\t\"Properties.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v on a %v job; Spark jobs take whole DPUs only\", [mc, cmd]),\n\t\"Round MaxCapacity up to a whole number of DPUs\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd in {\"glueetl\", \"gluestreaming\"}\n\tmc := _pf_gluelib_num(name, \"Properties.MaxCapacity\")\n\tmc != floor(mc)\n}\n"
+  },
+  {
+    "id": "pf-glue-job-max-capacity-with-worker-type",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A job sizes with MaxCapacity or with WorkerType + NumberOfWorkers, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateJob rejects the two allocation models together. Only the full pair\n# trips it; one half alone is a different error (see\n# pf-glue-job-worker-type-and-number-of-workers).\nviolation contains make_diag_full(\"pf-glue-job-max-capacity-with-worker-type\", \"ERROR\", name,\n\t\"Properties.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v is set alongside WorkerType and NumberOfWorkers; CreateJob accepts one allocation model, not both\", [mc]),\n\t\"Drop MaxCapacity and keep WorkerType + NumberOfWorkers, or drop those two and keep MaxCapacity\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tmc := _pf_gluelib_get(name, \"MaxCapacity\")\n\t_pf_gluelib_has(name, \"WorkerType\")\n\t_pf_gluelib_has(name, \"NumberOfWorkers\")\n}\n"
+  },
+  {
+    "id": "pf-glue-job-number-of-workers-min",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A job needs at least 2 workers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The floor is per worker type in the service message but 2 everywhere it\n# was measured (G.1X, G.2X, G.025X); the bundled schema has no minimum.\nviolation contains make_diag_full(\"pf-glue-job-number-of-workers-min\", \"ERROR\", name,\n\t\"Properties.NumberOfWorkers\",\n\tsprintf(\"NumberOfWorkers %v; a job needs at least 2 workers\", [nw]),\n\t\"Set NumberOfWorkers to 2 or more\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tnw := _pf_gluelib_num(name, \"Properties.NumberOfWorkers\")\n\tnw < 2\n}\n"
+  },
+  {
+    "id": "pf-glue-job-pythonshell-max-capacity-values",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A Python shell job can only allocate 0.0625 or 1 DPU",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Two separate CreateJob checks sit behind this: values above 1.0 and\n# fractional values other than 0.0625. 0 is accepted (the service reads it\n# as unset), so it stays out of the violation set.\nviolation contains make_diag_full(\"pf-glue-job-pythonshell-max-capacity-values\", \"ERROR\", name,\n\t\"Properties.MaxCapacity\",\n\tsprintf(\"MaxCapacity %v on a pythonshell job; only 0.0625 or 1 DPU are accepted\", [mc]),\n\t\"Set MaxCapacity to 0.0625 or 1\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job-python.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_command_name(name) == \"pythonshell\"\n\tmc := _pf_gluelib_num(name, \"Properties.MaxCapacity\")\n\tnot mc in {0, 0.0625, 1}\n}\n"
+  },
+  {
+    "id": "pf-glue-job-pythonshell-worker-type",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A Python shell job cannot be sized with WorkerType",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Worker types belong to the Spark allocation model; pythonshell has none.\nviolation contains make_diag_full(\"pf-glue-job-pythonshell-worker-type\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType %v on a pythonshell job; Python shell jobs are sized with MaxCapacity\", [wt]),\n\t\"Remove WorkerType and NumberOfWorkers, and set MaxCapacity to 0.0625 or 1\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job-python.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_command_name(name) == \"pythonshell\"\n\twt := _pf_gluelib_worker_type(name)\n}\n"
+  },
+  {
+    "id": "pf-glue-job-ray-worker-type",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A Ray job must use the Z.2X worker type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Kept for the message it produces, not because a Ray job can still be\n# created: CreateJob checks the worker type first and names it, which is\n# the more useful diagnostic of the two failures a glueray job now hits.\nviolation contains make_diag_full(\"pf-glue-job-ray-worker-type\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType %v on a glueray job; Ray runs on Z.2X workers only\", [wt]),\n\t\"Set WorkerType to Z.2X (note that Glue Ray is deprecated and new Ray jobs are rejected)\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_command_name(name) == \"glueray\"\n\twt := _pf_gluelib_worker_type(name)\n\twt != \"Z.2X\"\n}\n"
+  },
+  {
+    "id": "pf-glue-job-runtime-ray-only",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "Command.Runtime is only accepted on Ray jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Runtime is not ignored when it does not apply — CreateJob rejects it.\nviolation contains make_diag_full(\"pf-glue-job-runtime-ray-only\", \"ERROR\", name,\n\t\"Properties.Command.Runtime\",\n\tsprintf(\"Command.Runtime %v on a %v job; Runtime names the Ray environment and is rejected for every other command\", [rt, cmd]),\n\t\"Remove Command.Runtime\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\trt := _pf_gluelib_str(name, \"Properties.Command.Runtime\")\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"glueray\"\n}\n"
+  },
+  {
+    "id": "pf-glue-job-timeout-max",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "A job timeout cannot exceed 10080 minutes (7 days)",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bundled registry schema carries no maximum for Timeout.\nviolation contains make_diag_full(\"pf-glue-job-timeout-max\", \"ERROR\", name,\n\t\"Properties.Timeout\",\n\tsprintf(\"Timeout %v minutes; CreateJob caps a job at 10080 minutes (7 days)\", [t]),\n\t\"Set Timeout to 10080 or less\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tt := _pf_gluelib_num(name, \"Properties.Timeout\")\n\tt > 10080\n}\n"
+  },
+  {
+    "id": "pf-glue-job-worker-type-and-number-of-workers",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "WorkerType and NumberOfWorkers must be set together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateJob rejects either half on its own with one message, so both\n# directions are checked. Absence is read off the raw document: resolve() is\n# also undefined for a present-but-unresolvable value.\nviolation contains make_diag_full(\"pf-glue-job-worker-type-and-number-of-workers\", \"ERROR\", name,\n\t\"Properties.NumberOfWorkers\",\n\tsprintf(\"WorkerType %v is set but NumberOfWorkers is missing; CreateJob needs both\", [wt]),\n\t\"Add NumberOfWorkers (at least 2), or size the job with MaxCapacity instead\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\twt := _pf_gluelib_get(name, \"WorkerType\")\n\t_pf_gluelib_absent(name, \"NumberOfWorkers\")\n}\n\nviolation contains make_diag_full(\"pf-glue-job-worker-type-and-number-of-workers\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"NumberOfWorkers %v is set but WorkerType is missing; CreateJob needs both\", [nw]),\n\t\"Add WorkerType, or size the job with MaxCapacity instead\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/add-job.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\tnw := _pf_gluelib_get(name, \"NumberOfWorkers\")\n\t_pf_gluelib_absent(name, \"WorkerType\")\n}\n"
+  },
+  {
+    "id": "pf-glue-job-worker-type-requires-glue-4",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The large and memory-optimised worker types require Glue 4.0 or later",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# G.12X/G.16X and the whole R family arrived with Glue 4.0. The older set is\n# spelled out rather than compared numerically so that a future 5.x version\n# never has to be added here; 0.9-2.0 are already end of life\n# (pf-glue-job-glue-version-eol) but stay listed for a precise message.\n_pf_gluejob4_types := {\"G.12X\", \"G.16X\", \"R.1X\", \"R.2X\", \"R.4X\", \"R.8X\"}\n\n_pf_gluejob4_older := {\"0.9\", \"1.0\", \"2.0\", \"3.0\"}\n\nviolation contains make_diag_full(\"pf-glue-job-worker-type-requires-glue-4\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType %v with GlueVersion %v; this worker type needs Glue 4.0 or later\", [wt, gv]),\n\t\"Set GlueVersion to 4.0 or later, or pick a worker type the version supports\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/worker-types.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\twt := _pf_gluelib_worker_type(name)\n\twt in _pf_gluejob4_types\n\tgv := _pf_gluelib_glue_version(name)\n\tgv in _pf_gluejob4_older\n}\n"
+  },
+  {
+    "id": "pf-glue-job-z2x-ray-only",
+    "service": "glue",
+    "severity": "ERROR",
+    "title": "The Z.2X worker type is only available for Ray jobs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::Glue::Job"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Glue Ray is deprecated, so glueray + Z.2X is itself rejected now (the\n# account-level message, not this one). This rule stays scoped to the\n# non-Ray commands, where the worker-type list is the reason for the\n# failure.\nviolation contains make_diag_full(\"pf-glue-job-z2x-ray-only\", \"ERROR\", name,\n\t\"Properties.WorkerType\",\n\tsprintf(\"WorkerType Z.2X on a %v job; Z.2X exists only for Ray (glueray) jobs\", [cmd]),\n\t\"Pick a worker type the command supports (G.1X and up for Spark)\",\n\t\"https://docs.aws.amazon.com/glue/latest/dg/worker-types.html\") if {\n\tsome name in resources_of_type(\"AWS::Glue::Job\")\n\t_pf_gluelib_worker_type(name) == \"Z.2X\"\n\tcmd := _pf_gluelib_command_name(name)\n\tcmd != \"glueray\"\n}\n"
+  },
+  {
     "id": "pf-iam-identity-policy-no-principal",
     "service": "iam",
     "severity": "ERROR",
@@ -24678,6 +24854,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/firehose",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared traversal for AWS::KinesisFirehose::DeliveryStream. Every rule in\n# rules/firehose reads the delivery stream through these helpers: the\n# destination blocks are ten sibling keys with near-identical inner shapes,\n# and the interesting constraints live in the S3 prefix DSL and in the\n# processor list, neither of which any schema layer can express.\n#\n# Rego has no recursion, so nesting is expanded explicitly. The prefix\n# carriers are two levels deep (destination, then S3Configuration /\n# S3BackupConfiguration) and that is the whole tree - no deeper case exists\n# in the resource schema.\n\n_pf_fhlib_dest_keys := {\n\t\"S3DestinationConfiguration\",\n\t\"ExtendedS3DestinationConfiguration\",\n\t\"RedshiftDestinationConfiguration\",\n\t\"ElasticsearchDestinationConfiguration\",\n\t\"AmazonopensearchserviceDestinationConfiguration\",\n\t\"AmazonOpenSearchServerlessDestinationConfiguration\",\n\t\"SplunkDestinationConfiguration\",\n\t\"HttpEndpointDestinationConfiguration\",\n\t\"SnowflakeDestinationConfiguration\",\n\t\"IcebergDestinationConfiguration\",\n}\n\n_pf_fhlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# [logical id, property path, destination configuration]\n_pf_fhlib_dests contains [name, path, c] if {\n\tsome name in resources_of_type(\"AWS::KinesisFirehose::DeliveryStream\")\n\tp := _pf_fhlib_props(name)\n\tsome k in _pf_fhlib_dest_keys\n\tc := object.get(p, k, null)\n\tis_object(c)\n\tpath := sprintf(\"Properties.%s\", [k])\n}\n\n# Blocks that carry a Prefix / ErrorOutputPrefix pair: the destination\n# itself and its nested S3 configurations.\n_pf_fhlib_prefixed contains [name, path, c] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n}\n\n_pf_fhlib_prefixed contains [name, sub, s] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tsome k in {\"S3Configuration\", \"S3BackupConfiguration\"}\n\ts := object.get(c, k, null)\n\tis_object(s)\n\tsub := sprintf(\"%s.%s\", [path, k])\n}\n\n# [logical id, destination path, index, type, raw processor object]\n_pf_fhlib_procs contains [name, path, i, t, pr] if {\n\tsome [name, path, c] in _pf_fhlib_dests\n\tpc := object.get(c, \"ProcessingConfiguration\", null)\n\tis_object(pc)\n\tps := object.get(pc, \"Processors\", null)\n\tis_array(ps)\n\tsome i, pr in ps\n\tis_object(pr)\n\tt := object.get(pr, \"Type\", null)\n}\n\n# All values given for one processor parameter name (empty when absent).\n_pf_fhlib_params(pr, k) := vs if {\n\tps := object.get(pr, \"Parameters\", [])\n\tis_array(ps)\n\tvs := [v |\n\t\tsome p in ps\n\t\tis_object(p)\n\t\tobject.get(p, \"ParameterName\", null) == k\n\t\tv := object.get(p, \"ParameterValue\", null)\n\t]\n}\n\n_pf_fhlib_has_param(pr, k) if count(_pf_fhlib_params(pr, k)) > 0\n\n# ---- the !{namespace:value} prefix DSL ----------------------------------\n\n_pf_fhlib_exprs(s) := regex.find_n(`!\\{[^{}]*\\}`, s, -1)\n\n_pf_fhlib_ns(e) := ns if {\n\ti := indexof(e, \":\")\n\ti > 2\n\tns := substring(e, 2, i - 2)\n}\n\n_pf_fhlib_val(e) := v if {\n\ti := indexof(e, \":\")\n\ti > 2\n\tv := substring(e, i + 1, (count(e) - i) - 2)\n}\n\n# A \"!{\" that is not part of a well formed expression.\n_pf_fhlib_stray(s) if {\n\trest := regex.replace(s, `!\\{[a-zA-Z]+:[^{}]*\\}`, \"\")\n\tcontains(rest, \"!{\")\n}\n\n_pf_fhlib_namespaces := {\"timestamp\", \"firehose\", \"partitionKeyFromQuery\", \"partitionKeyFromLambda\"}\n\n# Joda pattern letters the service rejects with \"Invalid conversion\n# character\" (measured 2026-09-10 over all 52 ASCII letters).\n_pf_fhlib_ts_bad := {\"C\", \"I\", \"J\", \"P\", \"R\", \"T\", \"U\", \"V\", \"b\", \"f\", \"i\", \"j\", \"l\", \"o\", \"p\", \"r\", \"t\"}\n\n_pf_fhlib_dp_enabled(name, path) if {\n\tsome [nm, p, c] in _pf_fhlib_dests\n\tnm == name\n\tp == path\n\tdp := object.get(c, \"DynamicPartitioningConfiguration\", null)\n\tis_object(dp)\n\tcoerce_to_bool(object.get(dp, \"Enabled\", false)) == true\n}\n\n# A user-written literal, not an intrinsic (those arrive as marker objects).\n_pf_fhlib_lit(v) if {\n\tis_string(v)\n\tnot startswith(v, \"__pf\")\n}\n"
+  },
+  {
+    "name": "_lib/glue",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the AWS Glue rules. Absence is proven against the raw\n# document (resolve() cannot tell \"absent\" from \"unresolvable\"), string values\n# are guarded so a Ref/GetAtt resolved to a logical id is never compared against\n# a literal, and numbers go through to_number so tokens skip instead of firing.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_gluelib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n# Absent-safe object access; undefined when the key is missing.\n_pf_gluelib_get(name, k) := v if {\n\tp := _pf_gluelib_props(name)\n\tv := object.get(p, k, \"__pf_absent\")\n\tv != \"__pf_absent\"\n}\n\n_pf_gluelib_has(name, k) if {\n\t_pf_gluelib_get(name, k)\n}\n\n_pf_gluelib_absent(name, k) if {\n\tp := _pf_gluelib_props(name)\n\tobject.get(p, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_gluelib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_gluelib_str(name, path) := v if {\n\tv := resolve(name, path)\n\t_pf_gluelib_lit(v)\n}\n\n_pf_gluelib_num(name, path) := n if {\n\tn := to_number(resolve(name, path))\n}\n\n# The job flavour every combination rule keys on.\n_pf_gluelib_command_name(name) := _pf_gluelib_str(name, \"Properties.Command.Name\")\n\n_pf_gluelib_worker_type(name) := _pf_gluelib_str(name, \"Properties.WorkerType\")\n\n_pf_gluelib_glue_version(name) := _pf_gluelib_str(name, \"Properties.GlueVersion\")\n"
   },
   {
     "name": "_lib/iam",

@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "GlueVersion": "4.0",
+        "Command": {
+          "Name": "glueray",
+          "ScriptLocation": "s3://cdkpf-glue-probe-214794239830/s.py",
+          "PythonVersion": "3.9",
+          "Runtime": "Ray2.4"
+        },
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 2
+      }
+    }
+  }
+}
