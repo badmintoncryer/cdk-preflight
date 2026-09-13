@@ -9,17 +9,39 @@
         "NetworkMode": "awsvpc",
         "Cpu": "256",
         "Memory": "512",
-        "EphemeralStorage": {
-          "SizeInGiB": 50
-        },
         "ContainerDefinitions": [
           {
             "Name": "app",
             "Image": "public.ecr.aws/nginx/nginx:latest",
             "Essential": true
           }
-        ]
+        ],
+        "EphemeralStorage": {
+          "SizeInGiB": 21
+        }
       }
+    },
+    "TD2": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "NetworkMode": "awsvpc",
+        "Cpu": "256",
+        "Memory": "512",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": true
+          }
+        ],
+        "EphemeralStorage": {
+          "SizeInGiB": 200
+        }
+      },
+      "DependsOn": "TD"
     }
   }
 }

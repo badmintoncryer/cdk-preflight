@@ -1,5 +1,23 @@
 {
   "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {}
+    },
+    "TaskDef": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "NetworkMode": "bridge",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "public.ecr.aws/nginx/nginx:latest",
+            "Essential": true,
+            "Memory": 512
+          }
+        ]
+      }
+    },
     "Svc": {
       "Type": "AWS::ECS::Service",
       "Properties": {
@@ -7,37 +25,15 @@
           "Ref": "Cluster"
         },
         "TaskDefinition": {
-          "Ref": "TD"
+          "Ref": "TaskDef"
         },
         "LaunchType": "EC2",
-        "SchedulingStrategy": "DAEMON",
         "DeploymentConfiguration": {
-          "MaximumPercent": 100,
-          "MinimumHealthyPercent": 50
-        }
+          "MinimumHealthyPercent": 50,
+          "MaximumPercent": 100
+        },
+        "SchedulingStrategy": "DAEMON"
       }
-    },
-    "TD": {
-      "Type": "AWS::ECS::TaskDefinition",
-      "Properties": {
-        "Family": "pfsvcdaemonmaxpercent",
-        "NetworkMode": "bridge",
-        "RequiresCompatibilities": [
-          "EC2"
-        ],
-        "ContainerDefinitions": [
-          {
-            "Name": "app",
-            "Image": "public.ecr.aws/nginx/nginx:latest",
-            "Memory": 512,
-            "Essential": true
-          }
-        ]
-      }
-    },
-    "Cluster": {
-      "Type": "AWS::ECS::Cluster",
-      "Properties": {}
     }
   }
 }
