@@ -21835,17 +21835,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-ip-format\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\tsprintf(\"IpAddresses contains Ip '%s', which is not a valid IPv4 address\", [v]),\n\t\"Use a dotted-quad IPv4 address inside the subnet CIDR\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53resolver-resolverendpoint.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tsome ip in _pf_r53r_ips(p)\n\tv := _pf_r53r_str(ip, \"Ip\")\n\tnot _pf_r53r_ipv4(v)\n}\n"
   },
   {
-    "id": "pf-route53resolver-endpoint-ipaddresses-max-six",
-    "service": "route53resolver",
-    "severity": "ERROR",
-    "title": "A Resolver endpoint cannot have more than 6 IP addresses",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Route53Resolver::ResolverEndpoint"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-endpoint-ipaddresses-max-six\", \"ERROR\", name,\n\t\"Properties.IpAddresses\",\n\tsprintf(\"the endpoint declares %d IP addresses; Route 53 Resolver allows at most 6 per endpoint\", [n]),\n\t\"Keep at most 6 entries in IpAddresses, or split across endpoints\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::ResolverEndpoint\")\n\tp := _pf_r53r_props(name)\n\tn := count(_pf_r53r_ips(p))\n\tn > 6\n}\n"
-  },
-  {
     "id": "pf-route53resolver-endpoint-ipv6-internet-access-outbound-only",
     "service": "route53resolver",
     "severity": "ERROR",
@@ -22176,17 +22165,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::Route53Resolver::FirewallRuleGroup"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrule-threat-requires-confidence\", \"ERROR\", name,\n\tsprintf(\"Properties.FirewallRules[%d]\", [i]),\n\t\"DnsThreatProtection and ConfidenceThreshold must be present together\",\n\t\"Set both, or neither\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tsome i, r in _pf_r53r_frules(name)\n\tcount({k | some k in {\"DnsThreatProtection\", \"ConfidenceThreshold\"}; _pf_r53r_has(r, k)}) == 1\n}\n"
-  },
-  {
-    "id": "pf-route53resolver-firewallrulegroup-rules-max",
-    "service": "route53resolver",
-    "severity": "ERROR",
-    "title": "A DNS Firewall rule group cannot hold more than 100 rules",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Route53Resolver::FirewallRuleGroup"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53resolver-firewallrulegroup-rules-max\", \"ERROR\", name,\n\t\"Properties.FirewallRules\",\n\tsprintf(\"the rule group declares %d rules; DNS Firewall allows at most 100\", [n]),\n\t\"Split the rules across several rule groups\",\n\t\"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSLimitations.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53Resolver::FirewallRuleGroup\")\n\tn := count(_pf_r53r_frules(name))\n\tn > 100\n}\n"
   },
   {
     "id": "pf-route53resolver-firewallrulegroupassociation-max-per-vpc",
