@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: BrokerLogs.S3.Enabled true with no Bucket -> \"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket. ... 'brokerLogs'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: BrokerLogs.S3.Enabled true with no Bucket -> \"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket. ... 'brokerLogs'\" (ROLLBACK_COMPLETE); pass BrokerLogs.S3.Enabled false -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
 addedOn: 2026-09-14

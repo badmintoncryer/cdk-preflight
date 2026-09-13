@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-brok
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: express.m7g.large with 2 client subnets -> \"Clusters with Express instance types require 3 subnets. ... 'brokerNodeGroupInfo'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: express.m7g.large with 2 client subnets -> \"Clusters with Express instance types require 3 subnets. ... 'brokerNodeGroupInfo'\" (ROLLBACK_COMPLETE); pass express.m7g.large with 3 client subnets -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
 addedOn: 2026-09-14

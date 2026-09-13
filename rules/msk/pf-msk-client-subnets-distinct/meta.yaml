@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: the same subnet id twice -> \"The list provided contains duplicate items. ... 'clientSubnets'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: the same subnet id twice -> \"The list provided contains duplicate items. ... 'clientSubnets'\" (ROLLBACK_COMPLETE); pass 2 distinct client subnets -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
 addedOn: 2026-09-14
