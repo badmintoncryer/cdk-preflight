@@ -101,7 +101,9 @@ export function docOnlyProblem(repro: { method: string }, severity: string): str
  */
 function fixturePools(raw: string) {
   const nums = new Set<number>([...raw.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => Number(m[0])));
-  const lens = new Set<number>([...raw.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1].length));
+  // JSON のエスケープを戻してから数える。rego の count(v) が見るのは解けた後の文字列なので、
+  // 生のテキストのまま数えると TXT レコードのような `\"` を含む値でプールがずれる。
+  const lens = new Set<number>([...raw.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => JSON.parse(`"${m[1]}"`).length));
   const sizes = new Set<number>();
   const walk = (v: unknown): void => {
     if (Array.isArray(v)) {
@@ -137,7 +139,21 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   // 「何を数えた値か」まで見る。数えた対象が配列なら要素数と、文字列なら長さと突き合わせる
   // ——どちらか決められないときだけ両方見る（偶然の一致を許すが、見当違いのプールで
   // 誤検出するよりましなので）。
-  const assigned = new Map([...rego.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*:=\s*(.*)/g)].map((m) => [m[1], m[2]] as const));
+  // `n := _pf_x_n(g, k)` のように、数えているのがヘルパー越しのこともある。定義側
+  // （`_pf_x_n(g, k) := count([...])`）も拾って、呼び出しを本体まで辿る。
+  const assigned = new Map(
+    [...rego.matchAll(/([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*:=\s*(.*)/g)].map((m) => [m[1], m[2]] as const),
+  );
+  const deref = (expr: string): string => {
+    let cur = expr.trim();
+    for (let i = 0; i < 3; i++) {
+      const call = /^([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)$/.exec(cur);
+      const body = call && assigned.get(call[1]);
+      if (!body) return cur;
+      cur = body.trim();
+    }
+    return cur;
+  };
   const ARRAYISH = /flatten_list\(|\[|object\.keys\(|object\.get\(|resources_of_type\(|\{[a-z]/;
   // `count(split(arn, ":")) >= 6` は ARN の形が壊れていないかのガードで、順序のある制約ではない。
   // 数えているのが split の結果なら、そのしきい値は境界の対象から外す。
@@ -151,7 +167,7 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   };
   const thresholds = [...rego.matchAll(THRESHOLD)]
     .map((m) => {
-      const expr = m[1].startsWith('count(') ? m[1] : assigned.get(m[1]) ?? '';
+      const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
       return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op: m[2], n: Number(m[3]) };
     })
     .filter((t) => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
