@@ -237,6 +237,24 @@ test('boundaryProblem follows a helper call to what it counts', () => {
   expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
 });
 
+test('boundaryProblem ignores comparisons written in the diagnostic text', () => {
+  // 修正案の文面に書いた `>= 31` はロジックではない。拾うとルールに存在しない
+  // しきい値を要求してしまう
+  const rego = [
+    'violation contains make_diag_full("x", "ERROR", name, "p",',
+    '\t"retention is below 31 days",',
+    '\t"Set PerformanceInsightsRetentionPeriod >= 31",',
+    '\t"https://example.com") if {',
+    '\tn := to_number(resolve(name, "Properties.R"))',
+    '\tn < 31',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { R: n } } } });
+  expect(boundaryProblem(rego, fx(30), fx(31))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(5), fx(31))).toMatch(/fail template has no 30/);
+});
+
 test('boundaryProblem reads an index into an object as what it holds', () => {
   const fx = (n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { B: { k: { Content: 'x'.repeat(n) } } } } } });
   // `b[k].Content` は配列ではなく、その中の文字列。角括弧だけで配列と読むと
