@@ -18,11 +18,18 @@ mkdir -p bench/logs
 LOG="bench/logs/$RULE.log"
 : > "$LOG"
 
+POLL_BUDGET_SECONDS=3600
+
 poll_terminal() { # stack -> echo final status
   local stack=$1
-  # 30 分。ElastiCache / MemoryDB のクラスタは作成にも削除にも 10-25 分かかるので、
-  # 15 分では pass テンプレートが TIMEOUT=INCONCLUSIVE になる（2026-09-06 実測）。
-  for _ in $(seq 1 180); do
+  # 60 分。ElastiCache / MemoryDB のクラスタは作成にも削除にも 10-25 分かかるので 15 分では足りず
+  # （2026-09-06 実測）、MSK の Provisioned クラスタは最小構成（kafka.t3.small × 2）でも
+  # CREATE_COMPLETE まで 31m34s かかった（2026-09-13 実測）。
+  # 予算は回数ではなく実時間で切る。1 周は sleep 10 に describe-stacks の往復が乗って実測 11 秒あり、
+  # 旧実装の「180 回」は名目 30 分に対して実際は約 33 分だった。回数指定は API のレイテンシで
+  # 予算がずれるうえ、ずれる方向がコメントと逆（名目より長い）なので当てにできない。
+  local deadline=$(( $(date +%s) + POLL_BUDGET_SECONDS ))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
     st=$(aws cloudformation describe-stacks --stack-name "$stack" --region "$REGION" \
       --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo GONE)
     case "$st" in
