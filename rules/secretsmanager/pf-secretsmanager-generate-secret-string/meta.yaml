@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/secretsmanager/latest/apireference
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Password length is too short based on the required types.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: PasswordLength 4097 -> \"1 validation error detected: Value '4097' at 'passwordLength' failed to satisfy constraint: Member must have value less than or equal to 4096\" ROLLBACK_COMPLETE (the chained secrets carry a 4097 character ExcludeCharacters and a PasswordLength of 3 with four required character types); pass 4096 and a 4096 character ExcludeCharacters -> CREATE_COMPLETE. api 2026-09-13 us-east-1 GetRandomPassword: 4097 and a 4097 character ExcludeCharacters are both rejected, 4096 is accepted for both."
 addedOn: 2026-09-05

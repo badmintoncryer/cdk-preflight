@@ -15090,17 +15090,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Two rules in one template cannot claim the same name: the second create\n# fails because the rule already exists. Only explicit names collide — a rule\n# without Name gets a generated one. Measured 2026-09-07 (bench, us-east-1).\nviolation contains make_diag_full(\"pf-events-rule-name-duplicate\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"Rule name '%s' is used by more than one rule in this template; the second create fails because the rule already exists\", [n]),\n\t\"Give each rule its own Name, or leave Name unset and let CloudFormation generate one\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-rule.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnames := [x |\n\t\tsome other in resources_of_type(\"AWS::Events::Rule\")\n\t\tx := resolve(other, \"Properties.Name\")\n\t\tis_string(x)\n\t]\n\tcount([x | some x in names; x == n]) > 1\n}\n"
   },
   {
-    "id": "pf-events-rule-pattern-size",
-    "service": "events",
-    "severity": "ERROR",
-    "title": "An event pattern may not exceed 2048 bytes",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::Events::Rule"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"Parameter EventPattern for rule <name> exceeds limit of 2048.\" Measured\n# 2026-09-07, events:PutRule, us-east-1: 2015 bytes deploy and 2107 do not.\n# The CloudFormation schema says Maximum 4096 and the quota page says 2,048 —\n# the quota page is right, and above 4096 the request model rejects it first.\nviolation contains make_diag_full(\"pf-events-rule-pattern-size\", \"ERROR\", name,\n\t\"Properties.EventPattern\",\n\tsprintf(\"The event pattern serialises to %d bytes; PutRule fails with \\\"Parameter EventPattern for rule ... exceeds limit of 2048\\\" (the CloudFormation schema's 4096 is wrong)\", [n]),\n\t\"Shorten the pattern, or split the rule\",\n\t\"https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-quota.html\") if {\n\tsome name in resources_of_type(\"AWS::Events::Rule\")\n\tep := _pf_evlib_pattern(name, \"Properties.EventPattern\")\n\tn := count(json.marshal(ep))\n\tn > 2048\n}\n"
-  },
-  {
     "id": "pf-events-rule-schedule-default-bus",
     "service": "events",
     "severity": "ERROR",

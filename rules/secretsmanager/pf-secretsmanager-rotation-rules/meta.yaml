@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/secretsmanager/latest/userguide/ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Rate in hour should be least 4 and less than 24.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: cron(0 1 ? * SUN *) with Duration 24h (1 + 24 = 25 hours) -> \"Starting hour and duration must be within a day.\" ROLLBACK_COMPLETE (the chained secrets carry Duration 25h and rate(3 hours)); pass cron(0 0 ? * SUN *) with Duration 24h (exactly 24) and rate(4 hours) -> CREATE_COMPLETE. The window and the hourly rate each have their own floor and ceiling, so the fail template carries one secret per end."
 addedOn: 2026-09-05

@@ -112,7 +112,7 @@
           "ChunkingConfiguration": {
             "ChunkingStrategy": "FIXED_SIZE",
             "FixedSizeChunkingConfiguration": {
-              "MaxTokens": 9000,
+              "MaxTokens": 8193,
               "OverlapPercentage": 20
             }
           }

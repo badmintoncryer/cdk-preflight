@@ -26,7 +26,7 @@
             "Arn"
           ]
         },
-        "DefinitionString": "{\"StartAt\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"States\":{\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\":{\"Type\":\"Pass\",\"End\":true}}}"
+        "DefinitionString": "{\"StartAt\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\", \"States\": {\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\": {\"Type\": \"Map\", \"Label\": \"LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\", \"ItemProcessor\": {\"ProcessorConfig\": {\"Mode\": \"INLINE\"}, \"StartAt\": \"Inner\", \"States\": {\"Inner\": {\"Type\": \"Pass\", \"End\": true}}}, \"End\": true}}}"
       }
     }
   }
