@@ -1,0 +1,12 @@
+id: pf-athena-dc-name-max-128
+service: athena
+benchRegion: us-east-1
+resourceTypes: [AWS::Athena::DataCatalog]
+severity: ERROR
+title: "A data catalog name may be at most 128 characters"
+constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_CreateDataCatalog.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: DataCatalog name ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd is invalid.\"; bench 2026-09-13 us-east-1: 129-char Name fail -> \"DataCatalog name ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd is invalid.\" (ROLLBACK_COMPLETE); pass 128-char Name -> CREATE_COMPLETE"
+addedOn: 2026-09-13

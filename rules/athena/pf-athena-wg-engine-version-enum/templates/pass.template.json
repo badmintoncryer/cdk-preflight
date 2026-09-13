@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::WorkGroup",
+      "Properties": {
+        "Name": "cdkpf-wg-engine",
+        "WorkGroupConfiguration": {
+          "ResultConfiguration": {
+            "OutputLocation": "s3://cdkpf-athena-probe/res/"
+          },
+          "EngineVersion": {
+            "SelectedEngineVersion": "Athena engine version 3"
+          }
+        }
+      }
+    }
+  }
+}

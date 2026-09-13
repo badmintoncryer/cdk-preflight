@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::Athena::DataCatalog",
+      "Properties": {
+        "Name": "cdkpf-dc-charset",
+        "Type": "LAMBDA",
+        "Parameters": {
+          "function": {
+            "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf-athena-probe"
+          }
+        }
+      }
+    }
+  }
+}

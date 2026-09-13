@@ -212,6 +212,20 @@
 | `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | pending-engine |
 | `pf-appsync-source-api-merged-not-source` | AWS::AppSync::SourceApiAssociation | A merged API cannot be a source API | ERROR | none |
 | `pf-appsync-source-api-not-merged-target` | AWS::AppSync::SourceApiAssociation | The association target must be a MERGED API | ERROR | none |
+| `pf-athena-dc-glue-requires-catalog-id` | AWS::Athena::DataCatalog | A GLUE data catalog requires the catalog-id parameter | ERROR | none |
+| `pf-athena-dc-hive-requires-metadata-function` | AWS::Athena::DataCatalog | A HIVE data catalog requires the metadata-function parameter | ERROR | none |
+| `pf-athena-dc-lambda-function-xor-split` | AWS::Athena::DataCatalog | A Lambda data catalog uses 'function' or the metadata/record pair, never both | ERROR | none |
+| `pf-athena-dc-lambda-record-requires-metadata` | AWS::Athena::DataCatalog | 'metadata-function' and 'record-function' must be set together | ERROR | none |
+| `pf-athena-dc-name-charset` | AWS::Athena::DataCatalog | A data catalog name may use only letters, digits, underscore, at sign and hyphen | ERROR | pending-engine |
+| `pf-athena-dc-name-max-128` | AWS::Athena::DataCatalog | A data catalog name may be at most 128 characters | ERROR | pending-engine |
+| `pf-athena-wg-cse-kms-requires-key` | AWS::Athena::WorkGroup | CSE_KMS result encryption requires a KmsKey | ERROR | none |
+| `pf-athena-wg-engine-version-enum` | AWS::Athena::WorkGroup | SelectedEngineVersion must be AUTO or a published engine version | ERROR | pending-engine |
+| `pf-athena-wg-expected-bucket-owner-12-digits` | AWS::Athena::WorkGroup | ExpectedBucketOwner must be at least 12 characters (a 12-digit account ID) | ERROR | pending-engine |
+| `pf-athena-wg-managed-storage-xor-output-location` | AWS::Athena::WorkGroup | Managed query results and a ResultConfiguration cannot both be set | ERROR | none |
+| `pf-athena-wg-name-charset` | AWS::Athena::WorkGroup | A workgroup name may use only letters, digits, period, underscore and hyphen | ERROR | pending-engine |
+| `pf-athena-wg-output-location-s3-uri` | AWS::Athena::WorkGroup | The query result OutputLocation must be an s3:// URI | ERROR | none |
+| `pf-athena-wg-spark-requires-execution-role` | AWS::Athena::WorkGroup | A PySpark workgroup must set an ExecutionRole | ERROR | none |
+| `pf-athena-wg-sse-kms-requires-key` | AWS::Athena::WorkGroup | SSE_KMS result encryption requires a KmsKey | ERROR | none |
 | `pf-asg-az-xor-azid` | AWS::AutoScaling::AutoScalingGroup | A group names zones by name or by id, not both | ERROR | none |
 | `pf-asg-capacity-reservation-none-target-exclusive` | AWS::AutoScaling::AutoScalingGroup | A capacity reservation target needs the capacity-reservations-only preference | ERROR | none |
 | `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | ERROR | none |
