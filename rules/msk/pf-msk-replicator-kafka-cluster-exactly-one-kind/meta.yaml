@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-13 us-east-1: create-replicator with AmazonMskCluster and ApacheKafkaCluster in one entry -> \"Cannot specify both AmazonMskCluster and ApacheKafkaCluster in a kafkaCluster object. Choose one cluster type. Additional error details: InvalidParameter: kafkaClusters\""
+  evidence: "api 2026-09-13 us-east-1: create-replicator with AmazonMskCluster and ApacheKafkaCluster in one entry -> \"Cannot specify both AmazonMskCluster and ApacheKafkaCluster in a kafkaCluster object. Choose one cluster type. Additional error details: InvalidParameter: kafkaClusters\"; bench 2026-09-13 us-east-1: fail template -> \"Cannot specify both AmazonMskCluster and ApacheKafkaCluster in a kafkaCluster object. Choose one cluster type. 'kafkaClusters'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up)"
 addedOn: 2026-09-13
