@@ -1,0 +1,12 @@
+id: pf-codepipeline-first-stage-source-only
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "The first stage of a pipeline may contain source actions only"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with an Approval action in the first stage -> \"InvalidStructureException: Pipeline should start with a stage that only contains source actions\"; bench 2026-09-14 us-east-1: fail -> \"Pipeline should start with a stage that only contains source actions\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

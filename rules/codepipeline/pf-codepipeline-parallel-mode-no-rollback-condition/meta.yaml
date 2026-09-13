@@ -1,0 +1,12 @@
+id: pf-codepipeline-parallel-mode-no-rollback-condition
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A PARALLEL pipeline cannot have a stage that exits failure with ROLLBACK"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline ExecutionMode PARALLEL with a stage OnFailure.Result ROLLBACK -> \"InvalidStageDeclarationException: Failure conditions with rollback result type cannot be added to a PARALLEL pipeline.\"; the same pipeline with ExecutionMode QUEUED was accepted; bench 2026-09-14 us-east-1: fail -> \"Failure conditions with rollback result type cannot be added to a PARALLEL pipeline.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14
