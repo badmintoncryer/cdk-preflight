@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Shar
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"ShareDistribution size cannot be greater than 500.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-13 us-east-1: 501 ShareDistribution entries -> \"ShareDistribution size cannot be greater than 500.\" (ROLLBACK_COMPLETE); pass 500 -> CREATE_COMPLETE. Both fixtures are written without whitespace: 500 entries pretty-printed come to 52 KB, over CloudFormation's 51,200-byte inline template limit."
 addedOn: 2026-09-12

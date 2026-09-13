@@ -16,7 +16,96 @@
               "Value": "2048"
             }
           ]
+        },
+        "ConsumableResourceProperties": {
+          "ConsumableResourceList": [
+            {
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr1",
+                  "ConsumableResourceArn"
+                ]
+              },
+              "Quantity": 1
+            },
+            {
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr2",
+                  "ConsumableResourceArn"
+                ]
+              },
+              "Quantity": 1
+            },
+            {
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr3",
+                  "ConsumableResourceArn"
+                ]
+              },
+              "Quantity": 1
+            },
+            {
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr4",
+                  "ConsumableResourceArn"
+                ]
+              },
+              "Quantity": 1
+            },
+            {
+              "ConsumableResource": {
+                "Fn::GetAtt": [
+                  "Cr5",
+                  "ConsumableResourceArn"
+                ]
+              },
+              "Quantity": 1
+            }
+          ]
         }
+      }
+    },
+    "Cr1": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-1",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr2": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-2",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr3": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-3",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr4": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-4",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
+      }
+    },
+    "Cr5": {
+      "Type": "AWS::Batch::ConsumableResource",
+      "Properties": {
+        "ConsumableResourceName": "pf-crmax-5",
+        "ResourceType": "REPLENISHABLE",
+        "TotalQuantity": 10
       }
     }
   }

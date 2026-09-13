@@ -7,7 +7,7 @@
         "ContainerProperties": {
           "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
           "Vcpus": 1,
-          "Memory": 2
+          "Memory": 3
         }
       }
     }
