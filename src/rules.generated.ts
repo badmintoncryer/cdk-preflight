@@ -19038,6 +19038,94 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
+    "id": "pf-msk-broker-count-multiple-of-az",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "The MSK broker count must be a multiple of the number of client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One Availability Zone per client subnet, and the brokers are spread evenly over them, so\n# NumberOfBrokerNodes has to divide by the number of subnets. CreateCluster answers with \"The\n# target number of broker nodes must be a multiple of the number of Availability Zones in the\n# Client subnets parameter ... InvalidParameter: numberOfBrokerNodes\".\nviolation contains make_diag_full(\"pf-msk-broker-count-multiple-of-az\", \"ERROR\", name,\n\t\"Properties.NumberOfBrokerNodes\",\n\tsprintf(\"%d broker nodes over %d client subnets is not a whole number per Availability Zone; the create fails with \\\"The target number of broker nodes must be a multiple of the number of Availability Zones in the Client subnets parameter\\\"\", [n, s]),\n\t\"Set NumberOfBrokerNodes to a multiple of the number of client subnets\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\ts := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\ts > 0\n\tn := to_number(resolve(name, \"Properties.NumberOfBrokerNodes\"))\n\tfloor(n / s) * s != n\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-any-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "LoggingInfo.BrokerLogs must name at least one log destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every member of BrokerLogs is optional in the schema, so an empty object passes every earlier\n# layer and the create fails with \"You must define one or more of the following broker log types:\n# CloudWatch Logs, Kinesis Data Firehose, Amazon S3. ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-any-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs\",\n\t\"BrokerLogs names no destination; the create fails with \\\"You must define one or more of the following broker log types: CloudWatch Logs, Kinesis Data Firehose, Amazon S3\\\"\",\n\t\"Declare S3, Firehose or CloudWatchLogs under BrokerLogs, or drop LoggingInfo altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tlogs := object.get(props, [\"LoggingInfo\", \"BrokerLogs\"], null)\n\tis_object(logs)\n\tnamed := [k | some k in object.keys(logs); k in {\"S3\", \"Firehose\", \"CloudWatchLogs\"}]\n\tcount(named) == 0\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-cloudwatch-loggroup-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling CloudWatch Logs broker logs requires the LogGroup to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# LogGroup is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use CloudWatch Logs as a destination for broker logs, you must specify a CloudWatch log group.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-cloudwatch-loggroup-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.CloudWatchLogs.LogGroup\",\n\t\"CloudWatch Logs broker logs are enabled without a LogGroup; the create fails with \\\"To use CloudWatch Logs as a destination for broker logs, you must specify a CloudWatch log group\\\"\",\n\t\"Name the LogGroup, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"CloudWatchLogs\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"LogGroup\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-firehose-stream-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling Kinesis Data Firehose broker logs requires the DeliveryStream to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DeliveryStream is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-firehose-stream-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.Firehose.DeliveryStream\",\n\t\"Kinesis Data Firehose broker logs are enabled without a DeliveryStream; the create fails with \\\"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream\\\"\",\n\t\"Name the DeliveryStream, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"Firehose\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"DeliveryStream\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-s3-bucket-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling Amazon S3 broker logs requires the Bucket to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Bucket is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-s3-bucket-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.S3.Bucket\",\n\t\"Amazon S3 broker logs are enabled without a Bucket; the create fails with \\\"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket\\\"\",\n\t\"Name the Bucket, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"S3\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"Bucket\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-client-subnets-count",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster needs exactly two or three client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A provisioned cluster spans two or three Availability Zones - one client subnet each. Both ends\n# are rejected by CreateCluster with \"Specify either two or three client subnets. ...\n# InvalidParameter: brokerNodeGroupInfo\"; the engine's schema carries no minItems/maxItems here.\nviolation contains make_diag_full(\"pf-msk-client-subnets-count\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"only %d client subnet(s); the create fails with \\\"Specify either two or three client subnets\\\"\", [n]),\n\t\"List two or three client subnets, each in its own Availability Zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 0\n\tn < 2\n}\n\nviolation contains make_diag_full(\"pf-msk-client-subnets-count\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"%d client subnets; the create fails with \\\"Specify either two or three client subnets\\\"\", [n]),\n\t\"List two or three client subnets, each in its own Availability Zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 3\n}\n"
+  },
+  {
+    "id": "pf-msk-client-subnets-distinct",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "MSK client subnets must all be different",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One subnet per Availability Zone: repeating a subnet id is rejected with \"The list provided\n# contains duplicate items. ... InvalidParameter: clientSubnets\". The property carries no\n# uniqueItems in the engine's schema, so nothing earlier sees the repeat.\nviolation contains make_diag_full(\"pf-msk-client-subnets-distinct\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"%d client subnets but only %d distinct ones; the create fails with \\\"The list provided contains duplicate items\\\"\", [n, u]),\n\t\"Give each Availability Zone its own subnet - no repeats\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tsubnets := [it.value | some it in flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"); is_string(it.value)]\n\tn := count(subnets)\n\tu := count({s | some s in subnets})\n\tu != n\n}\n"
+  },
+  {
+    "id": "pf-msk-cluster-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ClusterName matches ^[0-9A-Za-z][0-9A-Za-z-]*$ - no underscores, no dots, no leading hyphen.\n# The engine's schema carries the 64-character maximum (F3033) but no pattern, and CreateCluster\n# answers with \"The parameter value contains one or more characters that are not valid. ...\n# InvalidParameter: clusterName\" without repeating the pattern.\nviolation contains make_diag_full(\"pf-msk-cluster-name-pattern\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"cluster name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := resolve(name, \"Properties.ClusterName\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
     "id": "pf-msk-clusterpolicy-resource-matches-cluster",
     "service": "msk",
     "severity": "ERROR",
@@ -19091,6 +19179,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::MSK::Configuration"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Amazon MSK does not accept arbitrary Apache Kafka broker properties. CreateConfiguration checks\n# every key in ServerProperties against a fixed allow-list (the \"Custom Amazon MSK configurations\"\n# table) and rejects anything else -- a read-only broker property (advertised.listeners), a\n# per-broker property (broker.id), or a line that is not key=value at all -- with\n# \"Key '<k>' is not supported by at least one Apache Kafka version\".\n# The list is static: passing KafkaVersionsList does not widen it.\n_pf_mskspk_allowed := {\n\t\"allow.everyone.if.no.acl.found\",\n\t\"auto.create.topics.enable\",\n\t\"compression.type\",\n\t\"connections.max.idle.ms\",\n\t\"custom.advertised.listeners\",\n\t\"default.replication.factor\",\n\t\"delete.topic.enable\",\n\t\"group.initial.rebalance.delay.ms\",\n\t\"group.max.session.timeout.ms\",\n\t\"group.min.session.timeout.ms\",\n\t\"leader.imbalance.per.broker.percentage\",\n\t\"log.cleaner.delete.retention.ms\",\n\t\"log.cleaner.min.cleanable.ratio\",\n\t\"log.cleanup.policy\",\n\t\"log.flush.interval.messages\",\n\t\"log.flush.interval.ms\",\n\t\"log.message.timestamp.difference.max.ms\",\n\t\"log.message.timestamp.type\",\n\t\"log.retention.bytes\",\n\t\"log.retention.hours\",\n\t\"log.retention.minutes\",\n\t\"log.retention.ms\",\n\t\"log.roll.ms\",\n\t\"log.segment.bytes\",\n\t\"max.incremental.fetch.session.cache.slots\",\n\t\"message.max.bytes\",\n\t\"min.insync.replicas\",\n\t\"num.io.threads\",\n\t\"num.network.threads\",\n\t\"num.partitions\",\n\t\"num.recovery.threads.per.data.dir\",\n\t\"num.replica.fetchers\",\n\t\"offsets.retention.minutes\",\n\t\"offsets.topic.replication.factor\",\n\t\"replica.fetch.max.bytes\",\n\t\"replica.fetch.response.max.bytes\",\n\t\"replica.lag.time.max.ms\",\n\t\"replica.selector.class\",\n\t\"replica.socket.receive.buffer.bytes\",\n\t\"socket.receive.buffer.bytes\",\n\t\"socket.request.max.bytes\",\n\t\"socket.send.buffer.bytes\",\n\t\"transaction.max.timeout.ms\",\n\t\"transaction.state.log.min.isr\",\n\t\"transaction.state.log.replication.factor\",\n\t\"transactional.id.expiration.ms\",\n\t\"unclean.leader.election.enable\",\n\t\"zookeeper.connection.timeout.ms\",\n\t\"zookeeper.session.timeout.ms\",\n}\n\n# A properties line is \"key=value\"; a line with no '=' is a key with an empty value, which is how a\n# JSON blob or stray prose lands here. ponytail: no support for backslash line continuations --\n# a continued line is skipped, so the rule misses rather than false-fires.\n_pf_mskspk_key(line) := k if {\n\ti := indexof(line, \"=\")\n\ti > 0\n\tk := trim_space(substring(line, 0, i))\n}\n\n_pf_mskspk_key(line) := line if {\n\tindexof(line, \"=\") <= 0\n}\n\n_pf_mskspk_bad(name) := ks if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tks := [k |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\tt != \"\"\n\t\tnot startswith(t, \"#\")\n\t\tnot startswith(t, \"!\")\n\t\tk := _pf_mskspk_key(t)\n\t\tnot k in _pf_mskspk_allowed\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-server-properties-allowed-keys\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"ServerProperties sets %s, which Amazon MSK does not allow in a custom configuration; the create fails with \\\"Key '%s' is not supported by at least one Apache Kafka version\\\"\", [concat(\", \", bad), bad[0]]),\n\t\"Keep ServerProperties to the properties listed under \\\"Custom Amazon MSK configurations\\\" (read-only and per-broker Kafka properties cannot be set)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tbad := _pf_mskspk_bad(name)\n\tcount(bad) > 0\n}\n"
+  },
+  {
+    "id": "pf-msk-express-kafka-version",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Express brokers do not run every Apache Kafka version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers support a subset of the ACTIVE Apache Kafka versions (3.6, 3.8, 3.9 and 4.2 as\n# of 2026-09-14) - 3.7.x is perfectly valid for Standard brokers and rejected here with \"Express\n# instance types are not supported for Kafka version 3.7.x\". This is a deny list on purpose: an\n# allow list would turn every version AWS adds into a false positive.\nviolation contains make_diag_full(\"pf-msk-express-kafka-version\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Express instance type '%s' with Apache Kafka %s; the create fails with \\\"Express instance types are not supported for Kafka version %s\\\"\", [itype, v, v]),\n\t\"Run Express brokers on an Apache Kafka version they support (3.6, 3.8, 3.9 or 4.2)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskekv_not_on_express\n}\n\n# ACTIVE versions (aws kafka list-kafka-versions) that Express brokers do not run.\n_pf_mskekv_not_on_express := {\"3.7.x\", \"3.7.x.kraft\", \"4.0.x.kraft\", \"4.1.x.kraft\"}\n"
+  },
+  {
+    "id": "pf-msk-express-no-ebs-storage",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers may not declare StorageInfo",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers manage their own storage, so the create rejects any StorageInfo: \"The\n# storageInfo parameter is not supported for Express instance types. ... InvalidParameter:\n# brokerNodeGroupInfo\". Standard brokers require it, so the property cannot be schema-forbidden.\nviolation contains make_diag_full(\"pf-msk-express-no-ebs-storage\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo\",\n\tsprintf(\"Express instance type '%s' with StorageInfo; the create fails with \\\"The storageInfo parameter is not supported for Express instance types\\\"\", [itype]),\n\t\"Drop StorageInfo - Express brokers size their own storage\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\"], \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-express-no-storage-mode",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers may not declare StorageMode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Tiered storage is a Standard broker feature; on Express the create fails with \"The storageMode\n# parameter is not supported for Express instance types. ... InvalidParameter: storageMode\".\nviolation contains make_diag_full(\"pf-msk-express-no-storage-mode\", \"ERROR\", name,\n\t\"Properties.StorageMode\",\n\tsprintf(\"Express instance type '%s' with StorageMode '%s'; the create fails with \\\"The storageMode parameter is not supported for Express instance types\\\"\", [itype, mode]),\n\t\"Drop StorageMode - Express brokers have no tiered-storage switch\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tmode := resolve(name, \"Properties.StorageMode\")\n\tis_string(mode)\n}\n"
+  },
+  {
+    "id": "pf-msk-express-requires-three-subnets",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers needs exactly three client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers only come in a three Availability Zone shape: \"Clusters with Express instance\n# types require 3 subnets. ... InvalidParameter: brokerNodeGroupInfo\". Standard brokers accept\n# two, so nothing generic can carry this check.\nviolation contains make_diag_full(\"pf-msk-express-requires-three-subnets\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"Express instance type '%s' with %d client subnets; the create fails with \\\"Clusters with Express instance types require 3 subnets\\\"\", [itype, n]),\n\t\"Give an Express cluster three client subnets, one per Availability Zone\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 0\n\tn != 3\n}\n"
+  },
+  {
+    "id": "pf-msk-kafka-version-deprecated",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A deprecated Apache Kafka version cannot be used for a new MSK cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK keeps deprecated versions readable in list-kafka-versions but refuses to create with them:\n# \"Standard instance types are not supported for Kafka version 2.8.1. Valid values: [...] ...\n# InvalidParameter: kafkaVersion\". The set below is every version whose only status was\n# DEPRECATED on 2026-09-14 (aws kafka list-kafka-versions, us-east-1); 3.9.x and 4.2.x.kraft are\n# listed twice by the API and stay out because their other row is ACTIVE.\nviolation contains make_diag_full(\"pf-msk-kafka-version-deprecated\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Apache Kafka %s is deprecated; the create fails with \\\"Standard instance types are not supported for Kafka version %s\\\"\", [v, v]),\n\t\"Pick a version that aws kafka list-kafka-versions still reports as ACTIVE\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskkvd_deprecated\n}\n\n_pf_mskkvd_deprecated := {\n\t\"1.1.1\", \"2.1.0\", \"2.2.1\", \"2.3.1\", \"2.4.1\", \"2.4.1.1\",\n\t\"2.5.1\", \"2.6.0\", \"2.6.1\", \"2.6.2\", \"2.6.3\",\n\t\"2.7.0\", \"2.7.1\", \"2.7.2\", \"2.8.0\", \"2.8.1\", \"2.8.2.tiered\",\n\t\"3.1.1\", \"3.2.0\", \"3.3.1\", \"3.3.2\", \"3.4.0\", \"3.5.1\",\n\t\"3.6.0.1\", \"3.8.link\",\n}\n"
   },
   {
     "id": "pf-msk-replicator-apache-kafka-cluster-requires-auth",

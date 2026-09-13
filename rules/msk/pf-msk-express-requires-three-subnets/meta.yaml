@@ -1,0 +1,12 @@
+id: pf-msk-express-requires-three-subnets
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "An MSK cluster with Express brokers needs exactly three client subnets"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: express.m7g.large with 2 client subnets -> \"Clusters with Express instance types require 3 subnets. ... 'brokerNodeGroupInfo'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

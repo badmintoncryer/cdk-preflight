@@ -1,0 +1,12 @@
+id: pf-msk-express-no-ebs-storage
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "An MSK cluster with Express brokers may not declare StorageInfo"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: express.m7g.large with StorageInfo.EBSStorageInfo.VolumeSize 1 -> \"The storageInfo parameter is not supported for Express instance types. ... 'brokerNodeGroupInfo'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

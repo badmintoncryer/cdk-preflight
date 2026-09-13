@@ -1,0 +1,12 @@
+id: pf-msk-kafka-version-deprecated
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "A deprecated Apache Kafka version cannot be used for a new MSK cluster"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: KafkaVersion 2.8.1 -> \"Standard instance types are not supported for Kafka version 2.8.1. Valid values: [3.6.0, 3.7.x, 3.7.x.kraft, 3.8.x, 3.8.x.kraft, 3.9.x, 3.9.x.kraft, 4.0.x.kraft, 4.1.x.kraft] ... 'kafkaVersion'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

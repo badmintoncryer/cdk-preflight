@@ -1713,11 +1713,24 @@
 | `pf-memorydb-snapshot-retention` | AWS::MemoryDB::Cluster | SnapshotRetentionLimit is 0-35 days | ERROR | none |
 | `pf-memorydb-snapshot-window` | AWS::MemoryDB::Cluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | ERROR | none |
 | `pf-memorydb-user-password` | AWS::MemoryDB::User | A password user needs passwords of 16-128 characters | ERROR | none |
+| `pf-msk-broker-count-multiple-of-az` | AWS::MSK::Cluster | The MSK broker count must be a multiple of the number of client subnets | ERROR | none |
+| `pf-msk-broker-logs-any-required` | AWS::MSK::Cluster | LoggingInfo.BrokerLogs must name at least one log destination | ERROR | none |
+| `pf-msk-broker-logs-cloudwatch-loggroup-required` | AWS::MSK::Cluster | Enabling CloudWatch Logs broker logs requires the LogGroup to be named | ERROR | none |
+| `pf-msk-broker-logs-firehose-stream-required` | AWS::MSK::Cluster | Enabling Kinesis Data Firehose broker logs requires the DeliveryStream to be named | ERROR | none |
+| `pf-msk-broker-logs-s3-bucket-required` | AWS::MSK::Cluster | Enabling Amazon S3 broker logs requires the Bucket to be named | ERROR | none |
+| `pf-msk-client-subnets-count` | AWS::MSK::Cluster | An MSK cluster needs exactly two or three client subnets | ERROR | none |
+| `pf-msk-client-subnets-distinct` | AWS::MSK::Cluster | MSK client subnets must all be different | ERROR | none |
+| `pf-msk-cluster-name-pattern` | AWS::MSK::Cluster | An MSK cluster name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
 | `pf-msk-clusterpolicy-resource-matches-cluster` | AWS::MSK::ClusterPolicy | A cluster policy's Resource must be the cluster the policy is attached to | ERROR | none |
 | `pf-msk-config-custom-advertised-listeners-format` | AWS::MSK::Configuration | custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form | ERROR | none |
 | `pf-msk-config-kafka-versions-unknown` | AWS::MSK::Configuration | KafkaVersionsList must name Apache Kafka versions Amazon MSK knows | ERROR | none |
 | `pf-msk-config-name-pattern` | AWS::MSK::Configuration | An MSK configuration name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
 | `pf-msk-config-server-properties-allowed-keys` | AWS::MSK::Configuration | An MSK configuration may only set Amazon MSK's supported Apache Kafka properties | ERROR | none |
+| `pf-msk-express-kafka-version` | AWS::MSK::Cluster | Express brokers do not run every Apache Kafka version | ERROR | none |
+| `pf-msk-express-no-ebs-storage` | AWS::MSK::Cluster | An MSK cluster with Express brokers may not declare StorageInfo | ERROR | none |
+| `pf-msk-express-no-storage-mode` | AWS::MSK::Cluster | An MSK cluster with Express brokers may not declare StorageMode | ERROR | none |
+| `pf-msk-express-requires-three-subnets` | AWS::MSK::Cluster | An MSK cluster with Express brokers needs exactly three client subnets | ERROR | none |
+| `pf-msk-kafka-version-deprecated` | AWS::MSK::Cluster | A deprecated Apache Kafka version cannot be used for a new MSK cluster | ERROR | none |
 | `pf-msk-replicator-apache-kafka-cluster-requires-auth` | AWS::MSK::Replicator | An Apache Kafka cluster entry must declare ClientAuthentication | ERROR | none |
 | `pf-msk-replicator-arns-match-kafka-clusters` | AWS::MSK::Replicator | ReplicationInfoList ARNs must be the ones listed in KafkaClusters | ERROR | none |
 | `pf-msk-replicator-clusters-same-account` | AWS::MSK::Replicator | A replicator's source and target clusters must be in one account | ERROR | none |

@@ -1,0 +1,12 @@
+id: pf-msk-cluster-name-pattern
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "An MSK cluster name must be alphanumeric and may only contain hyphens after the first character"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: ClusterName cdkpf_msk_cnp_fail -> \"The parameter value contains one or more characters that are not valid. ... 'clusterName'\" (ROLLBACK_COMPLETE)"
+addedOn: 2026-09-14

@@ -1,0 +1,12 @@
+id: pf-msk-express-kafka-version
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Express brokers do not run every Apache Kafka version"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: express.m7g.large with KafkaVersion 3.7.x -> \"Express instance types are not supported for Kafka version 3.7.x. Valid values: [3.8.x, 3.9.x.kraft, 4.2.x.kraft] ... 'kafkaVersion'\" (ROLLBACK_COMPLETE). The deny set is the ACTIVE versions that both that list and the Express support table (3.6, 3.8, 3.9, 4.2) leave out; 3.6.0 / 3.8.x.kraft / 3.9.x are in the table but not in the list, so they stay out of the rule"
+addedOn: 2026-09-14
