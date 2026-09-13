@@ -21,16 +21,7 @@ pf-asg-lifecycle-hook-heartbeat-timeout-range  pending #178
 pf-asg-max-instance-lifetime-range  pending #178
 pf-asg-ondemand-percentage-max  pending #178
 pf-asg-tt-period-max-60  pending #178
-pf-batch-ce-eks-namespace-format  pending #178
-pf-batch-jd-consumable-resource-list-max  pending #178
-pf-batch-jd-ecs-task-containers-max  pending #178
-pf-batch-jd-eks-annotation-value-length  pending #178
-pf-batch-jd-eks-label-value-format  pending #178
-pf-batch-jd-evaluate-on-exit-pattern-length  pending #178
-pf-batch-jd-memory-minimum  pending #178
-pf-batch-se-capacity-limits-max  pending #178
-pf-batch-sp-share-distribution-max  pending #178
-pf-batch-timeout-minimum  pending #178
+pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
 pf-bedrock-datasource-chunk-max-tokens  pending #178
 pf-cloudfront-function-code-size  pending #178
 pf-cloudfront-origin-http-port-range  pending #178
