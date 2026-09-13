@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIRe
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Value {\"redrivePermission\":\"byQueue\"} for parameter RedriveAllowPolicy is invalid. Reason: Amazon SQS can't create the redrive allow policy. When you specify the byQueue permission type, you must also specify one or more sourceQueueArns values.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: 11 sourceQueueArns -> \"Value {...} for parameter RedriveAllowPolicy is invalid.\" ROLLBACK_COMPLETE (the chained second queue sets redrivePermission byQueue with no sourceQueueArns at all); pass 10 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 SetQueueAttributes: 11 ARNs are rejected and 10 are accepted, and the ARNs do not have to point at existing queues."
 addedOn: 2026-09-05

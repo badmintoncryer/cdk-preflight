@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonECR/latest/userguide/lifecyc
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: Must specify tagPrefixList or tagPatternList when tagStatus=TAGGED.'\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: a tagged rule with no tagPatternList -> \"Must specify tagPrefixList or tagPatternList when tagStatus=TAGGED.\" ROLLBACK_COMPLETE (the same policy carries a second rule whose tag pattern has five wildcards); pass a four-wildcard pattern -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutLifecyclePolicy: a pattern with five * is rejected with \"Invalid tag pattern provided. Total number of * must not exceed 4\" and four is accepted."
 addedOn: 2026-09-06

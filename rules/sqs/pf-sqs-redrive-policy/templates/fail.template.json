@@ -1,6 +1,24 @@
 {
   "Resources": {
+    "DLQ": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {}
+    },
     "Q": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "DLQ",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 1001
+        }
+      }
+    },
+    "Q2": {
       "Type": "AWS::SQS::Queue",
       "Properties": {
         "RedrivePolicy": {
@@ -12,11 +30,8 @@
           },
           "maxReceiveCount": 0
         }
-      }
-    },
-    "DLQ": {
-      "Type": "AWS::SQS::Queue",
-      "Properties": {}
+      },
+      "DependsOn": "Q"
     }
   }
 }

@@ -4,10 +4,18 @@
       "Type": "AWS::SNS::Topic",
       "Properties": {
         "FifoTopic": true,
-        "TopicName": "cdkpf-fifo-attrs.fifo",
-        "ContentBasedDeduplication": true,
-        "FifoThroughputScope": "MessageGroup"
+        "TopicName": "cdkpf-fifo-attrs-a.fifo",
+        "ContentBasedDeduplication": true
       }
+    },
+    "T2": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "FifoTopic": true,
+        "TopicName": "cdkpf-fifo-attrs-b.fifo",
+        "ContentBasedDeduplication": true
+      },
+      "DependsOn": "T"
     }
   }
 }

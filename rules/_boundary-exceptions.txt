@@ -23,10 +23,9 @@ pf-dynamodb-resource-policy-size  しきい値は json.marshal したポリシ�
 pf-ec2-sg-port-range  順序チェックの本体にある t <= 65535 は「両方とも範囲内の値のときだけ前後関係を見る」ためのガードで、上限そのものは同じファイルの _pf_port_out(n) if n > 65535 が見ている。フィクスチャは 65536 / 65535 に乗せてあり、順序の違反も 65535:65534 で境界に乗っている（埋め込み ingress の順序は同梱エンジンの E9002 が持っているので、fail では単独リソース側に置いた）
 pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エントリに立っている source 系フィールドの本数（固定の 4 キーを数えたヘルパーの戻り値）で、どの配列長とも文字列長とも一致しない。フィクスチャは 2 / 1 本に乗せてある
 pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
-pf-ecr-lifecycle-policy-syntax  pending #178
-pf-ecr-lifecycle-tag-status  pending #178
+pf-ecr-lifecycle-tag-status  しきい値と突き合わせるのは tagPatternList の 1 エントリに含まれる `*` の個数で、テンプレートには数値として現れない（しかも LifecyclePolicyText は JSON 文字列）。フィクスチャは 5 個 / 4 個に乗せてある
 pf-ecs-fargate-windows-cpu-under-1vcpu  Fargate の Cpu は 256 / 512 / 1024 … という飛び飛びの集合なので 1023 は存在しない値。1024 未満で実際に指定できる最大は 512 で、fail はそこに乗せてある（2026-09-13 us-east-1 RegisterTaskDefinition: Windows + 512 CPU / 2048 memory は "No Fargate configuration exists for given values"、1024 は通る）
-pf-efs-throughput-mode  pending #178
+pf-efs-throughput-mode  上限ちょうどの pass は作れない: プロビジョンドスループットは $6/MiBps-月なので 3414 MiBps は数分でも 7 ドル近くかかる（L-BFB6FB19 は Adjustable: false なのでハードリミットではある）。fail は 3415 に乗せ、pass は 1 MiBps にしてある
 pf-elasticache-auth-token  pending #178
 pf-elasticache-maintenance-window  pending #178
 pf-elasticache-replication-group-clusters  pending #178
@@ -59,14 +58,11 @@ pf-route53-recordsetgroup-max-1000-elements  しきい値と突き合わせる�
 pf-route53-recordsetgroup-max-32000-chars  しきい値は全値の文字数の合計で、どの配列長とも文字列長とも一致しない。フィクスチャは 32001 / 32000 文字に乗せてある
 pf-route53profiles-profileresourceassociation-rulegroups-max  pending #178
 pf-route53resolver-firewallrulegroupassociation-max-per-vpc  しきい値と突き合わせるのは「同じ VPC を指しているアソシエーションの本数」で、テンプレートのどの配列長とも一致しない（リソースをまたいで数えた値）。フィクスチャは 6 / 5 本に乗せてある
-pf-s3-metadata-record-expiration-days  pending #178
-pf-s3-storagelensgroup-match-any-max  pending #178
 pf-secretsmanager-generate-secret-string  pending #178
 pf-secretsmanager-rotation-rules  pending #178
 pf-sfn-asl-name-limits  pending #178
-pf-sns-fifo-only-attributes  pending #178
-pf-sqs-redrive-allow-policy  pending #178
-pf-sqs-redrive-policy  pending #178
+pf-sns-fifo-only-attributes  上限ちょうどの pass は残せない: ArchivePolicy を持つトピックは削除できず（2026-09-13 us-east-1: "Cannot delete a topic with an ArchivePolicy"）、スタック削除が DELETE_FAILED になってトピックが毎回残る。fail に 366 日と 0 日を置いて両端を確認し、pass は ArchivePolicy を持たない FIFO トピックにしてある
+pf-sqs-redrive-allow-policy  しきい値はヘルパー述語の引数（`_pf_sqsrap_out(n) if n > 10`）にあり、n が何を数えた値かは呼び出し側の別ブロックにあるので検出器から辿れない。フィクスチャは 11 / 10 本に乗せてある
 pf-ssm-parameter-name  1011 は名前そのものではなく ARN 全体（arn:aws:ssm:<region>:<account>:parameter/ + 名前）の上限で、検出器が拾っているのは足し算の右辺。許される名前の長さはリージョン名の長さで変わるので固定の数値としてはテンプレートに現れない。フィクスチャは us-east-1 + 12 桁アカウントの端（素の名前 967 / 966）に乗せてある
 pf-ssm-parameter-policies  しきい値と突き合わせるのは Policies（JSON 文字列）の中の配列長で、テンプレートの構造には配列として現れない（CloudFormation の Policies は文字列型）。フィクスチャは 11 / 10 本に乗せてある
 pf-wafv2-custom-request-handling  コンテナ全体で 100 という上限は、CustomRequestHandling をまたいだヘッダ数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 本に乗せてある（1 オブジェクトあたりの 10 本は境界で検出できている）

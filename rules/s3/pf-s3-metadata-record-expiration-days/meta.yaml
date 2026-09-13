@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"When RecordExpiration is set to ENABLED, the Days value must be specified. This value must be a whole number from 7 to 2147483647. Specify a valid Days value, and then try again.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-13 us-east-1: RecordExpiration Days 6 -> \"When RecordExpiration is set to ENABLED, the Days value must be specified. This value must be a whole number from 7 to 2147483647.\" ROLLBACK_COMPLETE; pass 7 -> CREATE_COMPLETE."
 addedOn: 2026-09-06
