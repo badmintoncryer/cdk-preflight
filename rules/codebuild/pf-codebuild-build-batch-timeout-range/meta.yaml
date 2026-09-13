@@ -1,0 +1,12 @@
+id: pf-codebuild-build-batch-timeout-range
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: The batch build timeout stays between 5 and 2160 minutes
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectbuildbatchconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (BuildBatchConfig.TimeoutInMins 4 and 2161) -> \"TimeoutInMins must be between 5 and 2160\" (ROLLBACK_COMPLETE; CreateProject returns that same message for either end); pass template (5 and 2160) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

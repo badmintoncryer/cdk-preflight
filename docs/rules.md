@@ -795,6 +795,21 @@
 | `pf-cloudwatch-metric-stream-role-account` | AWS::CloudWatch::MetricStream | RoleArn must be in the stack's own account | ERROR | none |
 | `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | ERROR | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | ERROR | none |
+| `pf-codebuild-artifacts-encryption-disabled-s3-only` | AWS::CodeBuild::Project | Artifacts.EncryptionDisabled is only set for S3 artifacts | ERROR | none |
+| `pf-codebuild-artifacts-no-artifacts-no-location` | AWS::CodeBuild::Project | NO_ARTIFACTS carries no Location | ERROR | none |
+| `pf-codebuild-artifacts-s3-location-required` | AWS::CodeBuild::Project | S3 artifacts carry a Location | ERROR | none |
+| `pf-codebuild-badge-not-supported-for-s3-source` | AWS::CodeBuild::Project | Build badges are not enabled on an S3 or source-less project | ERROR | none |
+| `pf-codebuild-badge-not-with-codepipeline-source` | AWS::CodeBuild::Project | Build badges are not enabled on a CODEPIPELINE project | ERROR | none |
+| `pf-codebuild-build-batch-timeout-range` | AWS::CodeBuild::Project | The batch build timeout stays between 5 and 2160 minutes | ERROR | none |
+| `pf-codebuild-cache-docker-layer-linux-only` | AWS::CodeBuild::Project | PrivilegedMode is not set on a Windows environment | ERROR | none |
+| `pf-codebuild-cache-local-requires-modes` | AWS::CodeBuild::Project | A LOCAL cache names its modes | ERROR | none |
+| `pf-codebuild-cache-location-ignored-for-local` | AWS::CodeBuild::Project | LOCAL_SOURCE_CACHE goes with a project that has a source | ERROR | none |
+| `pf-codebuild-cache-s3-requires-location` | AWS::CodeBuild::Project | An S3 cache names the bucket and prefix | ERROR | none |
+| `pf-codebuild-compute-type-environment-type` | AWS::CodeBuild::Project | The Lambda compute types go with a Lambda environment type | ERROR | none |
+| `pf-codebuild-concurrent-build-limit-range` | AWS::CodeBuild::Project | The per-project concurrent build limit is at least 1 | ERROR | none |
+| `pf-codebuild-curated-image-requires-codebuild-credentials` | AWS::CodeBuild::Project | A CodeBuild curated image is pulled with CODEBUILD credentials | ERROR | none |
+| `pf-codebuild-encryption-key-region` | AWS::CodeBuild::Project | The build output encryption key lives in the project's Region | ERROR | none |
+| `pf-codebuild-source-codepipeline-requires-artifacts-codepipeline` | AWS::CodeBuild::Project | The CODEPIPELINE source and artifact types are set together | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
 | `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | ERROR | none |

@@ -1,0 +1,12 @@
+id: pf-codebuild-cache-docker-layer-linux-only
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: PrivilegedMode is not set on a Windows environment
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Environment.PrivilegedMode true on WINDOWS_SERVER_2022_CONTAINER and on WINDOWS_SERVER_2019_CONTAINER) -> \"PrivilegedMode is not supported for WINDOWS_SERVER_2022_CONTAINER projects\" (ROLLBACK_COMPLETE; CreateProject names the 2019 environment the same way); pass template (the same Windows environment without PrivilegedMode) -> CREATE_COMPLETE. PrivilegedMode is what starts the Docker daemon LOCAL_DOCKER_LAYER_CACHE needs, so the Linux-only limit lands on PrivilegedMode itself."
+addedOn: 2026-09-14

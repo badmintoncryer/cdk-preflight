@@ -1,0 +1,12 @@
+id: pf-codebuild-curated-image-requires-codebuild-credentials
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: A CodeBuild curated image is pulled with CODEBUILD credentials
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Image aws/codebuild/amazonlinux2-x86_64-standard:5.0 with ImagePullCredentialsType SERVICE_ROLE) -> \"Invalid input: cannot use a CodeBuild curated image with imagePullCredentialsType SERVICE_ROLE\" (ROLLBACK_COMPLETE); pass template (the same image with ImagePullCredentialsType CODEBUILD) -> CREATE_COMPLETE."
+addedOn: 2026-09-14
