@@ -1,14 +1,44 @@
 {
   "Resources": {
-    "Vpc": { "Type": "AWS::EC2::VPC", "Properties": { "CidrBlock": "10.0.0.0/16" } },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
     "SG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "cdk-preflight port range fixture",
-        "VpcId": { "Ref": "Vpc" },
+        "VpcId": {
+          "Ref": "Vpc"
+        },
         "SecurityGroupIngress": [
-          { "IpProtocol": "tcp", "FromPort": 99999, "ToPort": 99999, "CidrIp": "10.0.0.0/8" }
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 65536,
+            "ToPort": 65536,
+            "CidrIp": "10.10.0.0/16"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": -1,
+            "ToPort": 80,
+            "CidrIp": "10.12.0.0/16"
+          }
         ]
+      }
+    },
+    "Order": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "SG"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 65535,
+        "ToPort": 65534,
+        "CidrIp": "10.11.0.0/16"
       }
     }
   }

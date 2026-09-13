@@ -22,15 +22,19 @@
           "Ref": "Cgw"
         },
         "StaticRoutesOnly": true,
-        "VpnTunnelOptionsSpecifications": [
-          {
-            "PreSharedKey": "cdkpf.PassKey123",
-            "TunnelInsideCidr": "169.254.100.0/30"
-          }
-        ],
         "VpnGatewayId": {
           "Ref": "Vgw"
-        }
+        },
+        "VpnTunnelOptionsSpecifications": [
+          {
+            "PreSharedKey": "cdkpfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "TunnelInsideCidr": "169.254.100.0/30"
+          },
+          {
+            "PreSharedKey": "cdkpfAb1",
+            "TunnelInsideCidr": "169.254.101.0/30"
+          }
+        ]
       }
     }
   }

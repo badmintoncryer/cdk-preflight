@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-08 ap-northeast-1: AuthorizeSecurityGroupIngress icmp FromPort=300 -> \"ICMP type (300) out of range\"; ToPort=300 -> \"ICMP code (300) out of range\"; type 8 / code 0 succeeded. bench 2026-09-08 ap-northeast-1: FromPort 300 on an icmp ingress rule -> ROLLBACK_COMPLETE; type 8 / code 0 -> CREATE_COMPLETE."
+  evidence: "api 2026-09-13 us-east-1: AuthorizeSecurityGroupIngress icmp FromPort=256 -> \"ICMP type (256) out of range\"; ToPort=-2 -> \"ICMP code (-2) out of range\"; type 255 / code 255 and type -1 / code -1 both accepted. bench 2026-09-13 us-east-1: FromPort 256 / ToPort 0 -> ROLLBACK_COMPLETE \"ICMP type (256) out of range\"; FromPort 255 / ToPort 255 -> CREATE_COMPLETE. The low end is not the rule's: the bundled engine stops -2 with F3034 (minimum -1), so only the 256 side reaches EC2."
 addedOn: 2026-09-08
