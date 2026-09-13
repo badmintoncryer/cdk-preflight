@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Configuration": {
+      "Type": "AWS::MSK::Configuration",
+      "Properties": {
+        "Name": "cdkpf-kvu-fail",
+        "ServerProperties": "auto.create.topics.enable=true\nnum.partitions=1",
+        "KafkaVersionsList": [
+          "9.9.9"
+        ]
+      }
+    }
+  }
+}

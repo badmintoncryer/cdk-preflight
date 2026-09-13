@@ -1713,6 +1713,11 @@
 | `pf-memorydb-snapshot-retention` | AWS::MemoryDB::Cluster | SnapshotRetentionLimit is 0-35 days | ERROR | none |
 | `pf-memorydb-snapshot-window` | AWS::MemoryDB::Cluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | ERROR | none |
 | `pf-memorydb-user-password` | AWS::MemoryDB::User | A password user needs passwords of 16-128 characters | ERROR | none |
+| `pf-msk-clusterpolicy-resource-matches-cluster` | AWS::MSK::ClusterPolicy | A cluster policy's Resource must be the cluster the policy is attached to | ERROR | none |
+| `pf-msk-config-custom-advertised-listeners-format` | AWS::MSK::Configuration | custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form | ERROR | none |
+| `pf-msk-config-kafka-versions-unknown` | AWS::MSK::Configuration | KafkaVersionsList must name Apache Kafka versions Amazon MSK knows | ERROR | none |
+| `pf-msk-config-name-pattern` | AWS::MSK::Configuration | An MSK configuration name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
+| `pf-msk-config-server-properties-allowed-keys` | AWS::MSK::Configuration | An MSK configuration may only set Amazon MSK's supported Apache Kafka properties | ERROR | none |
 | `pf-msk-replicator-apache-kafka-cluster-requires-auth` | AWS::MSK::Replicator | An Apache Kafka cluster entry must declare ClientAuthentication | ERROR | none |
 | `pf-msk-replicator-arns-match-kafka-clusters` | AWS::MSK::Replicator | ReplicationInfoList ARNs must be the ones listed in KafkaClusters | ERROR | none |
 | `pf-msk-replicator-clusters-same-account` | AWS::MSK::Replicator | A replicator's source and target clusters must be in one account | ERROR | none |
@@ -1723,6 +1728,12 @@
 | `pf-msk-replicator-source-target-differ` | AWS::MSK::Replicator | A replicator's two KafkaClusters entries must be different clusters | ERROR | none |
 | `pf-msk-replicator-target-cluster-region` | AWS::MSK::Replicator | A replicator must be created in its target cluster's region | ERROR | none |
 | `pf-msk-replicator-vpc-config-only-for-msk-cluster` | AWS::MSK::Replicator | VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one | ERROR | none |
+| `pf-msk-scram-secret-account` | AWS::MSK::BatchScramSecret | SCRAM secrets must live in the same account as the MSK cluster | ERROR | none |
+| `pf-msk-scram-secret-list-unique` | AWS::MSK::BatchScramSecret | SecretArnList must not repeat a secret ARN | ERROR | none |
+| `pf-msk-serverless-name-pattern` | AWS::MSK::ServerlessCluster | A serverless MSK cluster name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
+| `pf-msk-serverless-sasl-iam-enabled` | AWS::MSK::ServerlessCluster | A serverless MSK cluster must keep SASL/IAM authentication enabled | ERROR | none |
+| `pf-msk-serverless-subnets-count` | AWS::MSK::ServerlessCluster | Each serverless MSK VPC configuration needs between 2 and 6 subnets | ERROR | none |
+| `pf-msk-serverless-vpc-configs-max` | AWS::MSK::ServerlessCluster | A serverless MSK cluster can span at most 5 VPCs | ERROR | none |
 | `pf-pipes-batch-size-target-limit` | AWS::Pipes::Pipe | Source BatchSize is capped by what the target accepts per call | ERROR | none |
 | `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | ERROR | none |
 | `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | ERROR | none |

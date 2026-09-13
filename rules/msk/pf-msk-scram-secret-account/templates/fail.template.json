@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Scram": {
+      "Type": "AWS::MSK::BatchScramSecret",
+      "Properties": {
+        "ClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/pfcluster/11111111-2222-3333-4444-555555555555-1",
+        "SecretArnList": [
+          "arn:aws:secretsmanager:us-east-1:999999999999:secret:AmazonMSK_cdkpf-a1b2c3"
+        ]
+      }
+    }
+  }
+}

@@ -19038,6 +19038,61 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
+    "id": "pf-msk-clusterpolicy-resource-matches-cluster",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster policy's Resource must be the cluster the policy is attached to",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ClusterPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PutClusterPolicy refuses a policy whose statements name a different cluster: \"The cluster policy\n# is not valid. Invalid cluster arn: \\\"<arn>\\\" ... InvalidParameter: policy\". The realistic mistake\n# is copying a policy between two clusters and forgetting the Resource.\n# Only fully literal kafka ARNs are compared -- a Ref/GetAtt is a marker object (is_string is\n# false) and a wildcard is left alone.\n_pf_mskcprm_res(name) := rs if {\n\trs := [r |\n\t\tsome st in flatten_list(name, \"Properties.Policy.Statement\")\n\t\tr := _pf_mskcprm_one(st.value)\n\t]\n}\n\n_pf_mskcprm_one(st) := r if {\n\tis_string(st.Resource)\n\tr := st.Resource\n}\n\nviolation contains make_diag_full(\"pf-msk-clusterpolicy-resource-matches-cluster\", \"ERROR\", name,\n\t\"Properties.Policy.Statement\",\n\tsprintf(\"the policy grants access to '%s' but is attached to '%s'; PutClusterPolicy fails with \\\"The cluster policy is not valid. Invalid cluster arn\\\"\", [r, carn]),\n\t\"Point every statement's Resource at the same cluster the policy is attached to\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ClusterPolicy\")\n\tcarn := resolve(name, \"Properties.ClusterArn\")\n\tstartswith(carn, \"arn:\")\n\tsome r in _pf_mskcprm_res(name)\n\tstartswith(r, \"arn:\")\n\tstartswith(r, \"arn:aws\")\n\tcontains(r, \":kafka:\")\n\tnot contains(r, \"*\")\n\tr != carn\n}\n"
+  },
+  {
+    "id": "pf-msk-config-custom-advertised-listeners-format",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# custom.advertised.listeners is per-broker, so Amazon MSK requires the +{broker_id} suffix that\n# tells it how to vary the advertised port per broker. CreateConfiguration rejects any other shape\n# with \"Invalid custom.advertised.listeners format. Expected:\n# LISTENER_NAME://host:port+{broker_id} (comma-separated for multiple).\"\n_pf_mskcal_entries(name) := es if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tes := [e |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\ti := indexof(t, \"=\")\n\t\ti > 0\n\t\ttrim_space(substring(t, 0, i)) == \"custom.advertised.listeners\"\n\t\tsome raw in split(substring(t, i + 1, count(t) - i - 1), \",\")\n\t\te := trim_space(raw)\n\t\te != \"\"\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-custom-advertised-listeners-format\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"custom.advertised.listeners entry '%s' is not of the form LISTENER_NAME://host:port+{broker_id}; the configuration create fails with \\\"Invalid custom.advertised.listeners format\\\"\", [bad]),\n\t\"Write each listener as LISTENER_NAME://host:port+{broker_id} (comma-separated for several), e.g. CLIENT://b-{broker_id}.example.com:9092+{broker_id}\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tsome bad in _pf_mskcal_entries(name)\n\tnot regex.match(`^[A-Za-z0-9_]+://[^,]+:[0-9]+\\+\\{broker_id\\}$`, bad)\n}\n"
+  },
+  {
+    "id": "pf-msk-config-kafka-versions-unknown",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "KafkaVersionsList must name Apache Kafka versions Amazon MSK knows",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateConfiguration rejects a version string it does not know with \"Unsupported KafkaVersion [x].\n# Valid values: [...]\". Deprecated versions are still valid values here, so the list below is every\n# version `aws kafka list-kafka-versions` reports, ACTIVE and DEPRECATED alike (2026-09-13), which\n# is exactly the list the service prints.\n# ponytail: a static list goes stale the day AWS ships a new version -- refresh it from\n# list-kafka-versions when the monthly bench or a user reports a false positive.\n_pf_mskkvu_known := {\n\t\"1.1.1\",\n\t\"2.1.0\",\n\t\"2.2.1\",\n\t\"2.3.1\",\n\t\"2.4.1\",\n\t\"2.4.1.1\",\n\t\"2.5.1\",\n\t\"2.6.0\",\n\t\"2.6.1\",\n\t\"2.6.2\",\n\t\"2.6.3\",\n\t\"2.7.0\",\n\t\"2.7.1\",\n\t\"2.7.2\",\n\t\"2.8.0\",\n\t\"2.8.1\",\n\t\"2.8.2.tiered\",\n\t\"3.1.1\",\n\t\"3.2.0\",\n\t\"3.3.1\",\n\t\"3.3.2\",\n\t\"3.4.0\",\n\t\"3.5.1\",\n\t\"3.6.0\",\n\t\"3.6.0.1\",\n\t\"3.7.x\",\n\t\"3.7.x.kraft\",\n\t\"3.8.x\",\n\t\"3.8.x.kraft\",\n\t\"3.8.link\",\n\t\"3.9.x\",\n\t\"3.9.x.kraft\",\n\t\"4.0.x.kraft\",\n\t\"4.1.x.kraft\",\n\t\"4.2.x.kraft\",\n}\n\nviolation contains make_diag_full(\"pf-msk-config-kafka-versions-unknown\", \"ERROR\", name,\n\t\"Properties.KafkaVersionsList\",\n\tsprintf(\"KafkaVersionsList contains '%s', which is not an Amazon MSK Kafka version; the create fails with \\\"Unsupported KafkaVersion [%s]\\\"\", [v, v]),\n\t\"Use a version reported by `aws kafka list-kafka-versions` (for example 3.9.x or 3.9.x.kraft)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tsome it in flatten_list(name, \"Properties.KafkaVersionsList\")\n\tv := it.value\n\tis_string(v)\n\tnot v in _pf_mskkvu_known\n}\n"
+  },
+  {
+    "id": "pf-msk-config-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK configuration name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Name must match ^[0-9A-Za-z][0-9A-Za-z-]{0,}$ -- no underscores, dots or leading hyphen. The\n# engine's schema carries no pattern for this property, and CreateConfiguration answers with a\n# message that does not repeat the pattern (\"The parameter value contains one or more characters\n# that are not valid. ... InvalidParameter: name\").\nviolation contains make_diag_full(\"pf-msk-config-name-pattern\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"configuration name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-config-server-properties-allowed-keys",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK configuration may only set Amazon MSK's supported Apache Kafka properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Amazon MSK does not accept arbitrary Apache Kafka broker properties. CreateConfiguration checks\n# every key in ServerProperties against a fixed allow-list (the \"Custom Amazon MSK configurations\"\n# table) and rejects anything else -- a read-only broker property (advertised.listeners), a\n# per-broker property (broker.id), or a line that is not key=value at all -- with\n# \"Key '<k>' is not supported by at least one Apache Kafka version\".\n# The list is static: passing KafkaVersionsList does not widen it.\n_pf_mskspk_allowed := {\n\t\"allow.everyone.if.no.acl.found\",\n\t\"auto.create.topics.enable\",\n\t\"compression.type\",\n\t\"connections.max.idle.ms\",\n\t\"custom.advertised.listeners\",\n\t\"default.replication.factor\",\n\t\"delete.topic.enable\",\n\t\"group.initial.rebalance.delay.ms\",\n\t\"group.max.session.timeout.ms\",\n\t\"group.min.session.timeout.ms\",\n\t\"leader.imbalance.per.broker.percentage\",\n\t\"log.cleaner.delete.retention.ms\",\n\t\"log.cleaner.min.cleanable.ratio\",\n\t\"log.cleanup.policy\",\n\t\"log.flush.interval.messages\",\n\t\"log.flush.interval.ms\",\n\t\"log.message.timestamp.difference.max.ms\",\n\t\"log.message.timestamp.type\",\n\t\"log.retention.bytes\",\n\t\"log.retention.hours\",\n\t\"log.retention.minutes\",\n\t\"log.retention.ms\",\n\t\"log.roll.ms\",\n\t\"log.segment.bytes\",\n\t\"max.incremental.fetch.session.cache.slots\",\n\t\"message.max.bytes\",\n\t\"min.insync.replicas\",\n\t\"num.io.threads\",\n\t\"num.network.threads\",\n\t\"num.partitions\",\n\t\"num.recovery.threads.per.data.dir\",\n\t\"num.replica.fetchers\",\n\t\"offsets.retention.minutes\",\n\t\"offsets.topic.replication.factor\",\n\t\"replica.fetch.max.bytes\",\n\t\"replica.fetch.response.max.bytes\",\n\t\"replica.lag.time.max.ms\",\n\t\"replica.selector.class\",\n\t\"replica.socket.receive.buffer.bytes\",\n\t\"socket.receive.buffer.bytes\",\n\t\"socket.request.max.bytes\",\n\t\"socket.send.buffer.bytes\",\n\t\"transaction.max.timeout.ms\",\n\t\"transaction.state.log.min.isr\",\n\t\"transaction.state.log.replication.factor\",\n\t\"transactional.id.expiration.ms\",\n\t\"unclean.leader.election.enable\",\n\t\"zookeeper.connection.timeout.ms\",\n\t\"zookeeper.session.timeout.ms\",\n}\n\n# A properties line is \"key=value\"; a line with no '=' is a key with an empty value, which is how a\n# JSON blob or stray prose lands here. ponytail: no support for backslash line continuations --\n# a continued line is skipped, so the rule misses rather than false-fires.\n_pf_mskspk_key(line) := k if {\n\ti := indexof(line, \"=\")\n\ti > 0\n\tk := trim_space(substring(line, 0, i))\n}\n\n_pf_mskspk_key(line) := line if {\n\tindexof(line, \"=\") <= 0\n}\n\n_pf_mskspk_bad(name) := ks if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tks := [k |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\tt != \"\"\n\t\tnot startswith(t, \"#\")\n\t\tnot startswith(t, \"!\")\n\t\tk := _pf_mskspk_key(t)\n\t\tnot k in _pf_mskspk_allowed\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-server-properties-allowed-keys\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"ServerProperties sets %s, which Amazon MSK does not allow in a custom configuration; the create fails with \\\"Key '%s' is not supported by at least one Apache Kafka version\\\"\", [concat(\", \", bad), bad[0]]),\n\t\"Keep ServerProperties to the properties listed under \\\"Custom Amazon MSK configurations\\\" (read-only and per-broker Kafka properties cannot be set)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tbad := _pf_mskspk_bad(name)\n\tcount(bad) > 0\n}\n"
+  },
+  {
     "id": "pf-msk-replicator-apache-kafka-cluster-requires-auth",
     "service": "msk",
     "severity": "ERROR",
@@ -19146,6 +19201,72 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::MSK::Replicator"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VpcConfig describes how the replicator reaches an MSK cluster. An entry that\n# describes a self-managed Apache Kafka cluster must not carry one.\n# An entry with both cluster kinds is pf-msk-replicator-kafka-cluster-exactly-one-kind's\n# business, so this rule stays out of it.\nviolation contains make_diag_full(\"pf-msk-replicator-vpc-config-only-for-msk-cluster\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d].VpcConfig\", [it.index]),\n\t\"an ApacheKafkaCluster entry carries VpcConfig; the replicator create fails with \\\"The vpcConfig parameter is only supported for AmazonMskCluster\\\"\",\n\t\"Drop VpcConfig from the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"VpcConfig\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-scram-secret-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "SCRAM secrets must live in the same account as the MSK cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::BatchScramSecret"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BatchAssociateScramSecret only accepts secrets owned by the cluster's account; a foreign-account\n# secret ARN is rejected with \"The provided secret ARN is invalid. ... InvalidParameter:\n# secretArnList\" before the cluster is even looked up.\n# The comparison is between the two ARNs written in the template, never against\n# data.cdk_preflight.deploy_account -- fixtures and real apps both use literal bench-account ARNs.\n_pf_msksa_acct(arn) := a if {\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\ta := parts[4]\n\ta != \"\"\n}\n\nviolation contains make_diag_full(\"pf-msk-scram-secret-account\", \"ERROR\", name,\n\t\"Properties.SecretArnList\",\n\tsprintf(\"secret '%s' is in account %s but the cluster is in account %s; the association fails with \\\"The provided secret ARN is invalid\\\"\", [sarn, sacct, cacct]),\n\t\"Create the SCRAM secret in the same account as the cluster\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::BatchScramSecret\")\n\tcacct := _pf_msksa_acct(resolve(name, \"Properties.ClusterArn\"))\n\tsome it in flatten_list(name, \"Properties.SecretArnList\")\n\tsarn := it.value\n\tstartswith(sarn, \"arn:\")\n\tsacct := _pf_msksa_acct(sarn)\n\tsacct != cacct\n}\n"
+  },
+  {
+    "id": "pf-msk-scram-secret-list-unique",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "SecretArnList must not repeat a secret ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::BatchScramSecret"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BatchAssociateScramSecret rejects a repeated ARN outright with \"The list provided contains\n# duplicate items. ... InvalidParameter: secretArnList\" -- the realistic shape is a copy-pasted\n# entry in a list that is otherwise correct. The schema does not mark SecretArnList uniqueItems.\n_pf_msksu_arns(name) := arns if {\n\tarns := [a |\n\t\tsome it in flatten_list(name, \"Properties.SecretArnList\")\n\t\ta := it.value\n\t\tis_string(a)\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-scram-secret-list-unique\", \"ERROR\", name,\n\t\"Properties.SecretArnList\",\n\tsprintf(\"SecretArnList has %d entries but only %d distinct ARN(s); the association fails with \\\"The list provided contains duplicate items\\\"\", [count(arns), count(uniq)]),\n\t\"List each SCRAM secret once\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::BatchScramSecret\")\n\tarns := _pf_msksu_arns(name)\n\tcount(arns) > 1\n\tuniq := {a | some a in arns}\n\tcount(uniq) < count(arns)\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same name pattern as every other MSK entity: ^[0-9A-Za-z][0-9A-Za-z-]{0,}$. Underscores are the\n# realistic mistake (they are legal in Kafka topic names and in CDK ids). The schema has no pattern\n# for this property; CreateClusterV2 answers \"The parameter value contains one or more characters\n# that are not valid. ... InvalidParameter: clusterName\".\nviolation contains make_diag_full(\"pf-msk-serverless-name-pattern\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"cluster name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tn := resolve(name, \"Properties.ClusterName\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-sasl-iam-enabled",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster must keep SASL/IAM authentication enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# IAM access control is the only client authentication MSK Serverless has. The CloudFormation\n# schema makes ClientAuthentication.Sasl.Iam.Enabled required, so the reachable mistake is setting\n# it to false -- which the schema happily accepts and CreateClusterV2 rejects with \"A serverless\n# cluster must use SASL/IAM authentication\".\nviolation contains make_diag_full(\"pf-msk-serverless-sasl-iam-enabled\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Sasl.Iam.Enabled\",\n\t\"SASL/IAM authentication is disabled; a serverless cluster has no other client authentication and the create fails with \\\"A serverless cluster must use SASL/IAM authentication\\\"\",\n\t\"Set ClientAuthentication.Sasl.Iam.Enabled to true\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tresolve(name, \"Properties.ClientAuthentication.Sasl.Iam.Enabled\") == false\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-subnets-count",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Each serverless MSK VPC configuration needs between 2 and 6 subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless spreads a VPC connection over 2 to 6 subnets, each in its own Availability Zone.\n# CreateClusterV2 rejects both ends with \"The size of list should be between 2 and 6. ...\n# InvalidParameter: subnetIds\".\nviolation contains make_diag_full(\"pf-msk-serverless-subnets-count\", \"ERROR\", name,\n\tsprintf(\"Properties.VpcConfigs[%d].SubnetIds\", [it.index]),\n\tsprintf(\"VpcConfigs[%d] lists %d subnet(s); the create fails with \\\"The size of list should be between 2 and 6\\\"\", [it.index, n]),\n\t\"Give each VPC configuration between 2 and 6 subnets, one per Availability Zone\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tsome it in flatten_list(name, \"Properties.VpcConfigs\")\n\tids := it.value.SubnetIds\n\tis_array(ids)\n\tn := count(ids)\n\t_pf_mskssc_out(n)\n}\n\n_pf_mskssc_out(n) if n < 2\n\n_pf_mskssc_out(n) if n > 6\n"
+  },
+  {
+    "id": "pf-msk-serverless-vpc-configs-max",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster can span at most 5 VPCs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless attaches to at most 5 VPCs. CreateClusterV2 rejects a sixth with \"The size of list\n# should be between 1 and 5. ... InvalidParameter: vpcConfigs\". (The lower end is the schema's job.)\nviolation contains make_diag_full(\"pf-msk-serverless-vpc-configs-max\", \"ERROR\", name,\n\t\"Properties.VpcConfigs\",\n\tsprintf(\"VpcConfigs lists %d VPC configurations; the create fails with \\\"The size of list should be between 1 and 5\\\"\", [n]),\n\t\"Attach the serverless cluster to at most 5 VPCs\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tcfgs := flatten_list(name, \"Properties.VpcConfigs\")\n\tn := count(cfgs)\n\tn > 5\n}\n"
   },
   {
     "id": "pf-pipes-batch-size-target-limit",

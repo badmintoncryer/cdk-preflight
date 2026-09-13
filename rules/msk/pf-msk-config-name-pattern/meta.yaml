@@ -1,0 +1,12 @@
+id: pf-msk-config-name-pattern
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Configuration]
+severity: ERROR
+title: "An MSK configuration name must be alphanumeric and may only contain hyphens after the first character"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: Name \"cdkpf_confname_fail\" -> \"The parameter value contains one or more characters that are not valid. (Service: Kafka, Status Code: 400)\" (ROLLBACK_COMPLETE); pass \"cdkpf-confname-pass\" -> CREATE_COMPLETE. The service does not repeat the pattern in the message; the pattern comes from the CloudFormation reference"
+addedOn: 2026-09-13

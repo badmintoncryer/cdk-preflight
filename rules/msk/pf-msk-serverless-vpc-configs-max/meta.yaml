@@ -1,0 +1,12 @@
+id: pf-msk-serverless-vpc-configs-max
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::ServerlessCluster]
+severity: ERROR
+title: "A serverless MSK cluster can span at most 5 VPCs"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: 6 VpcConfigs -> \"The size of list should be between 1 and 5. ... 'vpcConfigs'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a 5-VPC pass fixture would take half the account's 10-VPC quota, which other services' bench runs share). The list-size check runs before the subnet lookup, so fake subnet ids reach it"
+addedOn: 2026-09-13

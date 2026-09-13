@@ -1,0 +1,12 @@
+id: pf-msk-scram-secret-account
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::BatchScramSecret]
+severity: ERROR
+title: "SCRAM secrets must live in the same account as the MSK cluster"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: BatchAssociateScramSecret with a secret in account 999999999999 -> \"The provided secret ARN is invalid. Additional error details: InvalidParameter: secretArnList\" (a same-account secret in the same request shape gets past that check). CONFOUND: the CloudFormation repro cannot name the constraint. bench 2026-09-13 us-east-1 -> \"Resource of type 'AWS::MSK::BatchScramSecret' with identifier 'arn:aws:kafka:us-east-1:214794239830:cluster/pfcluster/1111...-1' was not found\" (ROLLBACK_COMPLETE), because the handler resolves ClusterArn first and the rule compares the two ARNs written in the template, so the fixture cannot carry a literal ARN of a cluster that really exists. In a real app ClusterArn does resolve and the API message above is what the stack event shows"
+addedOn: 2026-09-13

@@ -1,0 +1,12 @@
+id: pf-msk-config-custom-advertised-listeners-format
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Configuration]
+severity: ERROR
+title: "custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: custom.advertised.listeners=CLIENT://b-{broker_id}.example.com:9092 -> \"Invalid custom.advertised.listeners format. Expected: LISTENER_NAME://host:port+{broker_id} (comma-separated for multiple).\" (ROLLBACK_COMPLETE); pass with the same entry plus the +{broker_id} suffix -> CREATE_COMPLETE"
+addedOn: 2026-09-13

@@ -154,3 +154,4 @@ pf-wafv2-custom-response  コンテナ全体で 50 KB という上限は本文�
 pf-wafv2-ipset-addresses  p <= 32 は IPv4 のプレフィックス長が範囲内かの形のガードで、順序のある制約ではない（33 は有効な値ですらない）
 pf-wafv2-logging-destination  count(parts) >= 7 は ARN を割った断片数のガード。parts が some で束縛されているので split の検出に引っかからない
 pf-wafv2-managed-rule-group  ExemptUriRegularExpressions の 1..5 はヘルパー述語（_pf_wafmrg_bad_count(n) if n > 5）の引数で、検出器は呼び出し側の値まで辿れない。フィクスチャは 6 / 5 本に乗せてある
+pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある
