@@ -1,0 +1,12 @@
+id: pf-codepipeline-source-action-first-stage-only
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "Source actions may appear in the first stage only"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: a source action in stage 3 -> \"InvalidStructureException: Source actions can only be included in the first stage of the pipeline\" (ROLLBACK_COMPLETE); pass with both source actions in stage 1 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

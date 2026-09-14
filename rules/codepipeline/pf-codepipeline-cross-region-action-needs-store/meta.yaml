@@ -1,0 +1,12 @@
+id: pf-codepipeline-cross-region-action-needs-store
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A cross-region action needs the plural ArtifactStores, not a single ArtifactStore"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with a single artifactStore and a Deploy action in us-west-2 -> \"ValidationException: Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' ...\"; the same action with Region us-east-1 was accepted; bench 2026-09-14 us-east-1: fail -> \"Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' to declare an artifact store, such as an artifact bucket, for each region where you have an action.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

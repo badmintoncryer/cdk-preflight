@@ -1,0 +1,12 @@
+id: pf-msk-broker-count-multiple-of-az
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "The MSK broker count must be a multiple of the number of client subnets"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: NumberOfBrokerNodes 3 over 2 client subnets -> \"The target number of broker nodes must be a multiple of the number of Availability Zones in the Client subnets parameter. For example, for a cluster with subnets in 2 Availability Zones, the target number of brokers must be a multiple of 2. ... 'numberOfBrokerNodes'\" (ROLLBACK_COMPLETE); pass 2 brokers over 2 client subnets -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
+addedOn: 2026-09-14

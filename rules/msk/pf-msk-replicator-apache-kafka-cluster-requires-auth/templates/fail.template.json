@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "Replicator": {
+      "Type": "AWS::MSK::Replicator",
+      "Properties": {
+        "ReplicatorName": "cdkpf-repl-apache-auth-fail",
+        "ServiceExecutionRoleArn": "arn:aws:iam::214794239830:role/cdkpf-msk-probe",
+        "KafkaClusters": [
+          {
+            "ApacheKafkaCluster": {
+              "ApacheKafkaClusterId": "cdkpfsrc",
+              "BootstrapBrokerString": "b-1.example.com:9094"
+            }
+          },
+          {
+            "AmazonMskCluster": {
+              "MskClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+            },
+            "VpcConfig": {
+              "SubnetIds": [
+                "subnet-11111111111111111",
+                "subnet-22222222222222222"
+              ],
+              "SecurityGroupIds": [
+                "sg-11111111111111111"
+              ]
+            }
+          }
+        ],
+        "ReplicationInfoList": [
+          {
+            "TargetKafkaClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2",
+            "TargetCompressionType": "NONE",
+            "TopicReplication": {
+              "TopicsToReplicate": [
+                ".*"
+              ]
+            },
+            "ConsumerGroupReplication": {
+              "ConsumerGroupsToReplicate": [
+                ".*"
+              ]
+            },
+            "SourceKafkaClusterId": "cdkpfsrc"
+          }
+        ]
+      }
+    }
+  }
+}

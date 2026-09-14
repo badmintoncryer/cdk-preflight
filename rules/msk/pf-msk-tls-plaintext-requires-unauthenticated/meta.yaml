@@ -1,0 +1,12 @@
+id: pf-msk-tls-plaintext-requires-unauthenticated
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "A TLS_PLAINTEXT listener has to enable unauthenticated traffic"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: SASL/IAM over ClientBroker TLS_PLAINTEXT with no Unauthenticated -> \"You must enable unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE); pass the same TLS_PLAINTEXT cluster with Unauthenticated.Enabled true -> CREATE_COMPLETE"
+addedOn: 2026-09-14

@@ -1,0 +1,12 @@
+id: pf-msk-zookeeper-access-not-at-create
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "ZookeeperAccess cannot be set while the cluster is created"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-zookeeperaccess.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: ZookeeperAccess.Enabled true -> \"Zookeeper Access cannot be configured during cluster creation. 'ZookeeperAccess'\" (ROLLBACK_COMPLETE; the resource handler rejects this before it calls Kafka, whatever the Apache Kafka version); pass the same cluster with no ZookeeperAccess -> CREATE_COMPLETE"
+addedOn: 2026-09-14

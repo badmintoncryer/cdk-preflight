@@ -1,0 +1,12 @@
+id: pf-msk-broker-logs-firehose-stream-required
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Enabling Kinesis Data Firehose broker logs requires the DeliveryStream to be named"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: BrokerLogs.Firehose.Enabled true with no DeliveryStream -> \"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream. ... 'brokerLogs'\" (ROLLBACK_COMPLETE); pass BrokerLogs.Firehose.Enabled false -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
+addedOn: 2026-09-14

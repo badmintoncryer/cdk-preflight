@@ -1,0 +1,12 @@
+id: pf-msk-serverless-name-pattern
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::ServerlessCluster]
+severity: ERROR
+title: "A serverless MSK cluster name must be alphanumeric and may only contain hyphens after the first character"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: ClusterName \"cdkpf_slsname_fail\" -> \"The parameter value contains one or more characters that are not valid. ... 'clusterName'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a serverless pass needs a VPC with real subnets, and the bench account shares a 10-VPC quota with other services running in parallel)"
+addedOn: 2026-09-13

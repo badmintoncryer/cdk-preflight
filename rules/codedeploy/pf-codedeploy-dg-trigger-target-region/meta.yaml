@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-trigger-target-region
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "A trigger's SNS topic must live in the deployment group's own Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: a trigger pointing at an SNS ARN in eu-west-1 while the stack deploys to us-east-1 -> \"Topic ARN arn:aws:sns:eu-west-1:214794239830:cdkpf-codedeploy-region is not valid\" (ROLLBACK_COMPLETE); pass a trigger pointing at a topic the same stack creates -> CREATE_COMPLETE. The refusal is about the Region, not about the topic being missing: a topic that really exists in eu-west-1 is refused with the same \"is not valid\" (probe B11, 2026-09-14 us-east-1), while a missing topic in the same Region as the deployment group is refused with a different message, \"Topic ARN ... does not exist due to: Topic does not exist\" (probe B3). The fail fixture creates no topic anywhere."
+addedOn: 2026-09-14

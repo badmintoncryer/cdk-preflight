@@ -1,0 +1,12 @@
+id: pf-msk-replicator-arns-match-kafka-clusters
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Replicator]
+severity: ERROR
+title: "ReplicationInfoList ARNs must be the ones listed in KafkaClusters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: create-replicator whose ReplicationInfoList target ARN is absent from KafkaClusters -> \"Source and target Kafka cluster ARNs must be present in kafkaClusters. Additional error details: InvalidParameter: targetKafkaClusterArn\"; bench 2026-09-13 us-east-1: fail template -> \"Source and target Kafka cluster ARNs must be present in kafkaClusters. 'targetKafkaClusterArn'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up)"
+addedOn: 2026-09-13

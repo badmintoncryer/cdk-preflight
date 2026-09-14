@@ -1,0 +1,12 @@
+id: pf-msk-config-server-properties-allowed-keys
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Configuration]
+severity: ERROR
+title: "An MSK configuration may only set Amazon MSK's supported Apache Kafka properties"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: ServerProperties \"auto.create.topics.enable=true\nbroker.id=1\" -> \"Key 'broker.id' is not supported by at least one Apache Kafka version. Key checked against versions: [3.7.x.kraft, 4.1.x.kraft, 3.9.x, 3.6.0, 3.8.x.kraft, 3.9.x.kraft, 3.7.x, 3.8.x, 4.2.x, 3.8.x, 3.9.x, 4.0.x.kraft]\" (ROLLBACK_COMPLETE); pass setting all 48 of the documented keys except custom.advertised.listeners (which its own rule covers) -> CREATE_COMPLETE, so every key in the allow-list is confirmed accepted, zookeeper.* included. The check does not depend on KafkaVersionsList: MSK validates against its ACTIVE versions either way"
+addedOn: 2026-09-13

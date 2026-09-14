@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Server"
+      }
+    }
+  }
+}

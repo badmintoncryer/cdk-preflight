@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Lambda",
+        "TrafficRoutingConfig": {
+          "Type": "TimeBasedCanary",
+          "TimeBasedCanary": {
+            "CanaryInterval": 2881,
+            "CanaryPercentage": 10
+          }
+        }
+      }
+    },
+    "R2": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Lambda",
+        "TrafficRoutingConfig": {
+          "Type": "TimeBasedLinear",
+          "TimeBasedLinear": {
+            "LinearInterval": 2881,
+            "LinearPercentage": 99
+          }
+        }
+      }
+    },
+    "R3": {
+      "Type": "AWS::CodeDeploy::DeploymentConfig",
+      "Properties": {
+        "ComputePlatform": "Lambda",
+        "TrafficRoutingConfig": {
+          "Type": "TimeBasedLinear",
+          "TimeBasedLinear": {
+            "LinearInterval": 1441,
+            "LinearPercentage": 50
+          }
+        }
+      }
+    }
+  }
+}

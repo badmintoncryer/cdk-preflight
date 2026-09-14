@@ -1,0 +1,12 @@
+id: pf-msk-replicator-clusters-same-account
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Replicator]
+severity: ERROR
+title: "A replicator's source and target clusters must be in one account"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-replicator-supported-configs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: create-replicator with a target cluster ARN in 999999999999 -> \"User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: kafka:GetBootstrapBrokers on resource: arn:aws:kafka:us-east-1:999999999999:cluster/... because no resource-based policy allows the kafka:GetBootstrapBrokers action\"; bench 2026-09-13 us-east-1: fail template -> \"User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: kafka:GetBootstrapBrokers on resource: arn:aws:kafka:us-east-1:999999999999:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2 because no resource-based policy allows the kafka:GetBootstrapBrokers action\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up) — confound: the service never names the same-account rule; the observed failure IS the failure mode (it cannot read the other account cluster)"
+addedOn: 2026-09-13

@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-autorollback-enabled-requires-events
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "An enabled AutoRollbackConfiguration needs at least one event"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-autorollbackconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: AutoRollbackConfiguration Enabled true with no Events -> \"Deployment Groups need to have at least one event specified when auto rollback is enabled\" (ROLLBACK_COMPLETE); pass Enabled true with Events [DEPLOYMENT_FAILURE] -> CREATE_COMPLETE."
+addedOn: 2026-09-14

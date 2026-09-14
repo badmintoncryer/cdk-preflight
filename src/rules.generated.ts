@@ -9210,6 +9210,849 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-vpc-subnets-max-16\", \"ERROR\", name,\n\t\"Properties.VpcConfig.Subnets\",\n\tsprintf(\"%d subnets are named; CreateProject fails with \\\"Invalid vpc config: the maximum number of subnets is 16\\\"\", [n]),\n\t\"Keep VpcConfig.Subnets to 16 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.VpcConfig.Subnets\"))\n\tn > 16\n}\n"
   },
   {
+    "id": "pf-codecommit-code-branch-name-valid",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Code.BranchName must be a valid Git branch name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Code is applied by the CloudFormation handler, not by CreateRepository,\n# so nothing upstream sees the branch name.\nviolation contains make_diag_full(\"pf-codecommit-code-branch-name-valid\", \"ERROR\", name,\n\t\"Properties.Code.BranchName\",\n\tsprintf(\"Code.BranchName %v is not a valid Git ref name, so the initial commit the handler makes cannot name a branch\", [b]),\n\t\"Use a valid Git branch name: no spaces, no '..', '//' or '@{', none of ~^:?*[\\\\, no leading or trailing '/' or '.', and no '.lock' suffix\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codecommit-repository-code.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tb := resolve(name, \"Properties.Code.BranchName\")\n\t_pf_cclib_bad_ref(b)\n}\n"
+  },
+  {
+    "id": "pf-codecommit-kms-key-region",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "KmsKeyId must name a KMS key in the repository's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The ARN shape is all the schema checks; which region it names is only\n# resolvable against the stack's own region.\nviolation contains make_diag_full(\"pf-codecommit-kms-key-region\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\tsprintf(\"The KMS key is in '%s' but the repository deploys to '%s'; CreateRepository looks the key up in its own region and fails with \\\"KMS key %s is not found\\\"\", [kr, region, k]),\n\t\"Reference a KMS key in the deploy region, or drop KmsKeyId to use the AWS managed key\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_CreateRepository.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tk := resolve(name, \"Properties.KmsKeyId\")\n\tparts := _pf_cclib_arn(k)\n\tparts[2] == \"kms\"\n\tkr := parts[3]\n\tkr != \"\"\n\tkr != region\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-branch-name-valid",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Trigger branch names must be valid Git branch names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-branch-name-valid\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Branches.%d\", [i, j]),\n\tsprintf(\"Branch %v is not a valid Git ref name; the handler's PutRepositoryTriggers fails with InvalidRepositoryTriggerBranchNameException\", [b]),\n\t\"Use a valid Git branch name: no spaces, no '..', '//' or '@{', none of ~^:?*[\\\\, no leading or trailing '/' or '.', and no '.lock' suffix\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tbr := object.get(t, \"Branches\", [])\n\tis_array(br)\n\tsome j, b in br\n\t_pf_cclib_bad_ref(b)\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-branches-max-10",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger may list at most 10 branches",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-branches-max-10\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Branches\", [i]),\n\tsprintf(\"The trigger lists %d branches; the handler's PutRepositoryTriggers fails with \\\"A repository trigger cannot have more than 10 branches.\\\"\", [count(br)]),\n\t\"List at most 10 branches on a trigger, or list none to watch every branch\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tbr := object.get(t, \"Branches\", [])\n\tis_array(br)\n\tcount(br) > 10\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-custom-data-max-1000",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Trigger CustomData is limited to 1000 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-custom-data-max-1000\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.CustomData\", [i]),\n\tsprintf(\"Trigger CustomData is %d characters; the handler's PutRepositoryTriggers fails with \\\"Repository trigger custom data cannot exceed 1000 characters\\\"\", [count(cd)]),\n\t\"Shorten CustomData to 1000 characters or fewer\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tcd := object.get(t, \"CustomData\", \"\")\n\t_pf_cclib_lit(cd)\n\tcount(cd) > 1000\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-destination-region",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger's DestinationArn must be in the repository's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-destination-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.DestinationArn\", [i]),\n\tsprintf(\"The trigger destination is in '%s' but the repository deploys to '%s'; the handler's PutRepositoryTriggers fails with \\\"Repository trigger destination arn must be for the same region as your repository\\\"\", [dr, region]),\n\t\"Point the trigger at a topic or function in the deploy region\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tparts := _pf_cclib_arn(object.get(t, \"DestinationArn\", \"\"))\n\tdr := parts[3]\n\tdr != \"\"\n\tdr != region\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-destination-service",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger's DestinationArn must be an SNS topic or a Lambda function",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-destination-service\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.DestinationArn\", [i]),\n\tsprintf(\"The trigger destination is a %s ARN; the handler's PutRepositoryTriggers fails with \\\"Unexpected service name in arn: %s\\\"\", [svc, svc]),\n\t\"Point the trigger at an SNS topic or a Lambda function\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tparts := _pf_cclib_arn(object.get(t, \"DestinationArn\", \"\"))\n\tsvc := parts[2]\n\tnot svc in {\"sns\", \"lambda\"}\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-events-all-exclusive",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "The trigger event 'all' cannot be combined with another event",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-events-all-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Events\", [i]),\n\t\"The trigger lists \\\"all\\\" alongside another event; the handler's PutRepositoryTriggers fails with \\\"Repository trigger events cannot contain 'all' and additional event types simultaneously\\\"\",\n\t\"Use 'all' on its own, or list the individual events without it\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tev := object.get(t, \"Events\", [])\n\tis_array(ev)\n\t\"all\" in ev\n\tcount(ev) > 1\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-events-required",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger must specify at least one event",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-events-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Events\", [i]),\n\t\"The trigger lists no events; the handler's PutRepositoryTriggers fails with \\\"Repository trigger events list cannot be empty\\\"\",\n\t\"List at least one event, or use 'all'\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tev := object.get(t, \"Events\", [])\n\tis_array(ev)\n\tcount(ev) == 0\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-name-unique",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Trigger names must be unique within a repository",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-name-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Name\", [j]),\n\tsprintf(\"Two triggers are both named %v; the handler's PutRepositoryTriggers fails with \\\"Duplicate repository trigger names are not allowed\\\"\", [n]),\n\t\"Give every trigger on the repository its own name\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tts := _pf_cclib_triggers(name)\n\tsome i, t in ts\n\tsome j, u in ts\n\ti < j\n\tis_object(t)\n\tis_object(u)\n\tn := object.get(t, \"Name\", \"\")\n\t_pf_cclib_lit(n)\n\tn != \"\"\n\tn == object.get(u, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codecommit-triggers-max-10",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A repository may declare at most 10 triggers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-triggers-max-10\", \"ERROR\", name,\n\t\"Properties.Triggers\",\n\tsprintf(\"The repository declares %d triggers; the handler's PutRepositoryTriggers fails with \\\"Trigger limit for a particular repository is 10\\\"\", [count(ts)]),\n\t\"Declare at most 10 triggers on a repository\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tts := _pf_cclib_triggers(name)\n\tcount(ts) > 10\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-app-compute-platform-value",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Application ComputePlatform must be Server, Lambda, ECS or Kubernetes",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bundled engine knows this enum but lists only ECS/Lambda/Server and\n# reports the miss as W3030, which does not block a synth; the service takes a\n# fourth value (Kubernetes) the engine has never heard of.\nviolation contains make_diag_full(\"pf-codedeploy-app-compute-platform-value\", \"ERROR\", name,\n\t\"Properties.ComputePlatform\",\n\tsprintf(\"ComputePlatform '%v' is not a CodeDeploy compute platform; the application create fails with \\\"ComputePlatform '%v' is not valid. Valid values are [Server, Lambda, ECS, Kubernetes]\\\"\", [cp, cp]),\n\t\"Use Server, Lambda, ECS or Kubernetes - EC2 and on-premises deployments are the Server platform\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateApplication.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::Application\")\n\tcp := resolve(name, \"Properties.ComputePlatform\")\n\t_pf_codedeploylib_lit(cp)\n\tnot cp in {\"Server\", \"Lambda\", \"ECS\", \"Kubernetes\"}\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-fleet-percent-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "MinimumHealthyHosts FLEET_PERCENT must be below 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 100% healthy would leave nothing to deploy to, so the ceiling is exclusive.\n# There is no floor: 0 is accepted despite the \"should be positive\" wording.\nviolation contains make_diag_full(\"pf-codedeploy-config-fleet-percent-range\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts.Value\",\n\tsprintf(\"MinimumHealthyHosts is FLEET_PERCENT %v; the deployment configuration create fails with \\\"The value for the minimum healthy hosts with type of FLEET_PERCENT should be positive and less than 100\\\"\", [v]),\n\t\"Use a FLEET_PERCENT value of 99 or less, or switch Type to HOST_COUNT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-minimumhealthyhosts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tresolve(name, \"Properties.MinimumHealthyHosts.Type\") == \"FLEET_PERCENT\"\n\tv := _pf_codedeploylib_num(resolve(name, \"Properties.MinimumHealthyHosts.Value\"))\n\tv > 99\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "MinimumHealthyHosts is only valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MinimumHealthyHosts counts instances, which the Lambda and ECS platforms do\n# not have. Both reject it; the message names the platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts\",\n\tsprintf(\"MinimumHealthyHosts is set on a %v deployment configuration; the create fails with \\\"minimum healthy hosts should be null for %v deployment configuration\\\"\", [p, p]),\n\t\"Drop MinimumHealthyHosts - only the Server (EC2/on-premises) platform takes it; Lambda and ECS use TrafficRoutingConfig\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp in {\"Lambda\", \"ECS\"}\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"MinimumHealthyHosts\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-lambda-requires-traffic-routing",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Lambda or ECS deployment configuration must set TrafficRoutingConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Lambda and ECS platforms shift traffic rather than count healthy hosts, so\n# the routing block is the whole configuration and the service has no default.\nviolation contains make_diag_full(\"pf-codedeploy-config-lambda-requires-traffic-routing\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig\",\n\tsprintf(\"A %v deployment configuration has no TrafficRoutingConfig; the create fails with \\\"Traffic routing configuration cannot be null nor empty for deployment configurations on this platform.\\\"\", [p]),\n\t\"Add TrafficRoutingConfig with a Type (AllAtOnce, TimeBasedCanary or TimeBasedLinear)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp in {\"Lambda\", \"ECS\"}\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-name-reserved-prefix",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A custom deployment configuration may not use the CodeDeployDefault. prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The prefix is reserved for the predefined configurations. Only the dot makes\n# it reserved: \"CodeDeployDefaultFoo\" is accepted, and the match is case\n# sensitive (\"codedeploydefault.\" is accepted too).\nviolation contains make_diag_full(\"pf-codedeploy-config-name-reserved-prefix\", \"ERROR\", name,\n\t\"Properties.DeploymentConfigName\",\n\tsprintf(\"DeploymentConfigName '%v' uses the reserved CodeDeployDefault. prefix; the deployment configuration create fails with \\\"The prefix CodeDeployDefault. is reserved for predefined configuration names\\\"\", [n]),\n\t\"Name the custom deployment configuration something that does not start with \\\"CodeDeployDefault.\\\"\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tn := resolve(name, \"Properties.DeploymentConfigName\")\n\t_pf_codedeploylib_lit(n)\n\tstartswith(n, \"CodeDeployDefault.\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-server-forbids-traffic-routing",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TrafficRoutingConfig is not valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An in-place EC2/on-premises deployment has no traffic to shift. An absent\n# ComputePlatform is Server, so the same rejection applies to a configuration\n# that never names a platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-server-forbids-traffic-routing\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig\",\n\t\"TrafficRoutingConfig is set on a Server deployment configuration; the create fails with \\\"Traffic routing configuration should be null for Server deployment configuration\\\"\",\n\t\"Drop TrafficRoutingConfig, or set ComputePlatform to Lambda or ECS (an absent ComputePlatform is Server)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\t_pf_codedeploylib_platform(name) == \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-server-requires-minimum-healthy-hosts",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Server deployment configuration must set MinimumHealthyHosts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MinimumHealthyHosts is what a Server deployment configuration configures; the\n# service has no default for it. An absent ComputePlatform is Server, so the same\n# rejection applies to a configuration that never names a platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-server-requires-minimum-healthy-hosts\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts\",\n\t\"A Server deployment configuration has no MinimumHealthyHosts; the create fails with \\\"minimum healthy hosts argument is missing\\\"\",\n\t\"Add MinimumHealthyHosts with a Type (HOST_COUNT or FLEET_PERCENT) and a Value\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\t_pf_codedeploylib_platform(name) == \"Server\"\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"MinimumHealthyHosts\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-routing-block-matches-type",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TrafficRoutingConfig must carry exactly the sub-block its Type names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Type picks the sub-block: the one it names has to be there and the other one\n# has to be absent. AllAtOnce names neither, so it takes neither.\n_pf_cdtrb_cfg(name) := trc if {\n\ttrc := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-block-matches-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [blk]),\n\tsprintf(\"TrafficRoutingConfig.Type is %v but %v is also set; the deployment configuration create fails with \\\"%vConfiguration should be null for %v type\\\"\", [t, blk, blk, t]),\n\tsprintf(\"Drop %v, or set Type to %v\", [blk, blk]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-trafficroutingconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\ttrc := _pf_cdtrb_cfg(name)\n\tt := object.get(trc, \"Type\", null)\n\t_pf_codedeploylib_lit(t)\n\tsome blk in [\"TimeBasedCanary\", \"TimeBasedLinear\"]\n\tblk != t\n\t_pf_codedeploylib_has(trc, blk)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-block-matches-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [t]),\n\tsprintf(\"TrafficRoutingConfig.Type is %v but there is no %v block; the deployment configuration create fails with \\\"%vConfiguration should not be null for %v type\\\"\", [t, t, t, t]),\n\tsprintf(\"Add the %v block with its interval and percentage, or use Type AllAtOnce\", [t]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-trafficroutingconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\ttrc := _pf_cdtrb_cfg(name)\n\tt := object.get(trc, \"Type\", null)\n\tt in {\"TimeBasedCanary\", \"TimeBasedLinear\"}\n\tnot _pf_codedeploylib_has(trc, t)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-routing-percentage-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Traffic routing percentage must be between 1 and 99",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One check covers both blocks: the canary and the linear percentage go through\n# the same validation and come back with the same message.\n_pf_cdtrpct_bad(p) if p > 99\n\n_pf_cdtrpct_bad(p) if p < 1\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-percentage-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [blk]),\n\tsprintf(\"%v is %v; the deployment configuration create fails with \\\"Valid traffic routing percentage is from 1 to 99\\\"\", [blk, p]),\n\t\"Shift between 1 and 99 percent of the traffic per step (100 percent at once is Type AllAtOnce)\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tsome blk in [\"TimeBasedCanary.CanaryPercentage\", \"TimeBasedLinear.LinearPercentage\"]\n\tp := _pf_codedeploylib_num(resolve(name, sprintf(\"Properties.TrafficRoutingConfig.%v\", [blk])))\n\t_pf_cdtrpct_bad(p)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-shift-interval-max",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A traffic shift may not take more than 2880 minutes end to end",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The cap is on the whole shift, not on one wait. A canary waits once, so its\n# ceiling is the interval itself. A linear configuration waits\n# floor(100 / LinearPercentage) times, so the interval that fits shrinks as the\n# step does - measured 2026-09-14 us-east-1: 2880x99%, 1440x50%, 960x33%,\n# 288x10% and 28x1% are accepted and one minute more on any of them is not.\n_pf_cdtsi_shifts(pct) := floor(100 / pct)\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-shift-interval-max\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig.TimeBasedCanary.CanaryInterval\",\n\tsprintf(\"CanaryInterval is %v minutes; the deployment configuration create fails with \\\"Canary interval must be between 1 and 2880 minutes (2 days)\\\"\", [civ]),\n\t\"Wait at most 2880 minutes (2 days) before shifting the rest of the traffic\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tciv := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedCanary.CanaryInterval\"))\n\tciv > 2880\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-shift-interval-max\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearInterval\",\n\tsprintf(\"Shifting %v percent every %v minutes takes %v minutes end to end; the deployment configuration create fails with \\\"Total Traffic shifting intervals must be positive integers up to 2880 minutes (2 days)\\\"\", [pct, liv, total]),\n\t\"Keep LinearInterval x floor(100 / LinearPercentage) at or below 2880 minutes (2 days)\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tliv := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearInterval\"))\n\tpct := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearPercentage\"))\n\tpct > 0\n\ttotal := liv * _pf_cdtsi_shifts(pct)\n\ttotal > 2880\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-zonal-minimum-healthy-per-zone-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ZonalConfig MinimumHealthyHostsPerZone FLEET_PERCENT must be below 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The per-zone minimum has the same exclusive ceiling as the fleet-wide one,\n# but its own exception type and message.\nviolation contains make_diag_full(\"pf-codedeploy-config-zonal-minimum-healthy-per-zone-range\", \"ERROR\", name,\n\t\"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Value\",\n\tsprintf(\"MinimumHealthyHostsPerZone is FLEET_PERCENT %v; the deployment configuration create fails with \\\"The value of the 'Minimum health hosts per zone' setting when configured with a 'Type' value of 'FLEET_PERCENT' must be positive and less than 100.\\\"\", [v]),\n\t\"Use a FLEET_PERCENT value of 99 or less, or switch MinimumHealthyHostsPerZone.Type to HOST_COUNT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-zonalconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tresolve(name, \"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Type\") == \"FLEET_PERCENT\"\n\tv := _pf_codedeploylib_num(resolve(name, \"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Value\"))\n\tv > 99\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-zonal-server-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ZonalConfig is only supported on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Zonal deployments roll through Availability Zones one at a time, which only\n# the EC2/on-premises platform does.\nviolation contains make_diag_full(\"pf-codedeploy-config-zonal-server-only\", \"ERROR\", name,\n\t\"Properties.ZonalConfig\",\n\tsprintf(\"ZonalConfig is set on a %v deployment configuration; the create fails with \\\"Zonal deployments are only supported with EC2 deployments.\\\"\", [p]),\n\t\"Drop ZonalConfig - it exists only for the Server (EC2/on-premises) platform\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations-create.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp != \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ZonalConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "An enabled AlarmConfiguration needs at least one alarm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Enabled means \"gate the deployment on these alarms\", so the list has to name\n# one. An absent list and an empty list are both refused, with two messages.\n_pf_cdalarm_one(ac) if {\n\ta := object.get(ac, \"Alarms\", null)\n\tis_array(a)\n\tcount(a) > 0\n}\n\n# A token in place of the list: unknowable, so the rule stays quiet.\n_pf_cdalarm_one(ac) if {\n\ta := object.get(ac, \"Alarms\", null)\n\ta != null\n\tnot is_array(a)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms\", \"ERROR\", name,\n\t\"Properties.AlarmConfiguration.Alarms\",\n\t\"AlarmConfiguration.Enabled is true but no alarm is listed; the deployment group create fails with \\\"Deployment Groups need to have at least one alarms attached if they are monitored.\\\"\",\n\t\"List at least one CloudWatch alarm in AlarmConfiguration.Alarms, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-alarmconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tac := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"AlarmConfiguration\")\n\tobject.get(ac, \"Enabled\", false) == true\n\tnot _pf_cdalarm_one(ac)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-autorollback-enabled-requires-events",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "An enabled AutoRollbackConfiguration needs at least one event",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Enabled with no Events is a rollback that can never trigger, and the service\n# refuses it rather than picking a default.\n_pf_cdroll_one(rc) if {\n\te := object.get(rc, \"Events\", null)\n\tis_array(e)\n\tcount(e) > 0\n}\n\n_pf_cdroll_one(rc) if {\n\te := object.get(rc, \"Events\", null)\n\te != null\n\tnot is_array(e)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-autorollback-enabled-requires-events\", \"ERROR\", name,\n\t\"Properties.AutoRollbackConfiguration.Events\",\n\t\"AutoRollbackConfiguration.Enabled is true but no event is listed; the deployment group create fails with \\\"Deployment Groups need to have at least one event specified when auto rollback is enabled\\\"\",\n\t\"List at least one event (DEPLOYMENT_FAILURE, DEPLOYMENT_STOP_ON_ALARM, DEPLOYMENT_STOP_ON_REQUEST), or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-autorollbackconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\trc := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"AutoRollbackConfiguration\")\n\tobject.get(rc, \"Enabled\", false) == true\n\tnot _pf_cdroll_one(rc)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-blue-green-config-required-members",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "BlueGreenDeploymentConfiguration must carry DeploymentReadyOption and TerminateBlueInstancesOnDeploymentSuccess",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members are optional in the schema and neither gets a default: writing the\n# block at all commits you to both. The trigger is the block, not DeploymentStyle -\n# the service refuses these on a group that never says BLUE_GREEN (measured\n# 2026-09-14 us-east-1), which is also why the candidate's \"a BLUE_GREEN deployment\n# group must set ...\" wording is narrower than the check.\nviolation contains make_diag_full(\"pf-codedeploy-dg-blue-green-config-required-members\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.DeploymentReadyOption\",\n\t\"BlueGreenDeploymentConfiguration has no DeploymentReadyOption; the deployment group create fails with \\\"Deployment ready option cannot be null for blue green deployment\\\"\",\n\t\"Add DeploymentReadyOption with an ActionOnTimeout, or drop BlueGreenDeploymentConfiguration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tnot _pf_codedeploylib_has(bg, \"DeploymentReadyOption\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-blue-green-config-required-members\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.TerminateBlueInstancesOnDeploymentSuccess\",\n\t\"BlueGreenDeploymentConfiguration has no TerminateBlueInstancesOnDeploymentSuccess; the deployment group create fails with \\\"Terminate blue instances on deployment success behaviour cannot be set to null for Blue Green deployments\\\"\",\n\t\"Add TerminateBlueInstancesOnDeploymentSuccess with an Action (TERMINATE or KEEP_ALIVE)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tnot _pf_codedeploylib_has(bg, \"TerminateBlueInstancesOnDeploymentSuccess\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-bluegreen-requires-traffic-control",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A BLUE_GREEN deployment style requires WITH_TRAFFIC_CONTROL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Blue/green swaps traffic between two fleets, so there is no such thing as a\n# blue/green deployment that does not reroute traffic. A Lambda group gets a\n# different message for the same shape (\"For LAMBDA deployment, ...\") and is left\n# to pf-codedeploy-dg-lambda-requires-blue-green-traffic-control; the guard is\n# written as a negation so a group naming an application outside the template -\n# where the platform is unknowable - is still checked.\n_pf_cdbgtc_lambda(name) if {\n\t_pf_codedeploylib_dg_platform(name) == \"Lambda\"\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-bluegreen-requires-traffic-control\", \"ERROR\", name,\n\t\"Properties.DeploymentStyle.DeploymentOption\",\n\t\"DeploymentStyle is BLUE_GREEN with WITHOUT_TRAFFIC_CONTROL; the deployment group create fails with \\\"BLUE_GREEN deployment type not supported with WITHOUT_TRAFFIC_CONTROL option\\\"\",\n\t\"Set DeploymentOption to WITH_TRAFFIC_CONTROL (and give the group a LoadBalancerInfo), or use DeploymentType IN_PLACE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentstyle.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tnot _pf_cdbgtc_lambda(name)\n\tds := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"DeploymentStyle\")\n\tobject.get(ds, \"DeploymentType\", null) == \"BLUE_GREEN\"\n\tobject.get(ds, \"DeploymentOption\", null) == \"WITHOUT_TRAFFIC_CONTROL\"\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-copy-asg-requires-asg",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "COPY_AUTO_SCALING_GROUP needs exactly one Auto Scaling group on the deployment group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The green fleet is a copy of the blue one, so there has to be exactly one blue\n# Auto Scaling group to copy. Zero groups and two groups are refused with the\n# same message.\n_pf_cdcasg_one(name) if {\n\ta := object.get(_pf_codedeploylib_props(name), \"AutoScalingGroups\", null)\n\tis_array(a)\n\tcount(a) == 1\n}\n\n_pf_cdcasg_one(name) if {\n\ta := object.get(_pf_codedeploylib_props(name), \"AutoScalingGroups\", null)\n\ta != null\n\tnot is_array(a)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-copy-asg-requires-asg\", \"ERROR\", name,\n\t\"Properties.AutoScalingGroups\",\n\t\"GreenFleetProvisioningOption.Action is COPY_AUTO_SCALING_GROUP but AutoScalingGroups does not name exactly one group; the deployment group create fails with \\\"Exactly one AutoScaling group must be specified when selecting the COPY_AUTO_SCALING_GROUP green fleet provisioning option.\\\"\",\n\t\"Name exactly one Auto Scaling group in AutoScalingGroups, or use GreenFleetProvisioningOption DISCOVER_EXISTING\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-greenfleetprovisioningoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tgf := _pf_codedeploylib_obj(bg, \"GreenFleetProvisioningOption\")\n\tobject.get(gf, \"Action\", null) == \"COPY_AUTO_SCALING_GROUP\"\n\tnot _pf_cdcasg_one(name)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-deployment-config-platform-match",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "DeploymentConfigName must belong to the application's compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application",
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A deployment configuration carries its own compute platform, and the service\n# refuses one that does not match the application's. Two ways to know it from the\n# template: a predefined CodeDeployDefault.* name spells the platform out, and a\n# custom configuration in the same template carries ComputePlatform. Any other\n# literal names a configuration created elsewhere, and the rule stays quiet.\n_pf_cdpm_predef(n) := \"Lambda\" if startswith(n, \"CodeDeployDefault.Lambda\")\n\n_pf_cdpm_predef(n) := \"ECS\" if startswith(n, \"CodeDeployDefault.ECS\")\n\n_pf_cdpm_predef(n) := \"Server\" if {\n\tn in {\"CodeDeployDefault.AllAtOnce\", \"CodeDeployDefault.HalfAtATime\", \"CodeDeployDefault.OneAtATime\"}\n}\n\n_pf_cdpm_cfg(name) := p if {\n\tc := resolve(name, \"Properties.DeploymentConfigName\")\n\tinput.resources[c].resourceType == \"AWS::CodeDeploy::DeploymentConfig\"\n\tp := _pf_codedeploylib_platform(c)\n}\n\n_pf_cdpm_cfg(name) := p if {\n\tc := resolve(name, \"Properties.DeploymentConfigName\")\n\t_pf_codedeploylib_lit(c)\n\tp := _pf_cdpm_predef(c)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-deployment-config-platform-match\", \"ERROR\", name,\n\t\"Properties.DeploymentConfigName\",\n\tsprintf(\"The deployment configuration is for the %v compute platform but the application is %v; the deployment group create fails with \\\"Compute platform of deployment config ... does not match expected compute platform, correct compute platform should be %v.\\\"\", [cp, ap, ap]),\n\tsprintf(\"Name a deployment configuration whose compute platform is %v\", [ap]),\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tap := _pf_codedeploylib_dg_platform(name)\n\tcp := _pf_cdpm_cfg(name)\n\tcp != ap\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-deployment-ready-continue-no-wait-time",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "CONTINUE_DEPLOYMENT does not take a WaitTimeInMinutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CONTINUE_DEPLOYMENT means \"reroute as soon as the green fleet is ready\", so\n# there is no timeout to wait out. Zero is accepted (it is the same as no wait);\n# anything above it is refused.\nviolation contains make_diag_full(\"pf-codedeploy-dg-deployment-ready-continue-no-wait-time\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.DeploymentReadyOption.WaitTimeInMinutes\",\n\tsprintf(\"DeploymentReadyOption.ActionOnTimeout is CONTINUE_DEPLOYMENT with WaitTimeInMinutes %v; the deployment group create fails with \\\"Deployment ready action cannot be set to 'CONTINUE_DEPLOYMENT' when timeout is specified\\\"\", [w]),\n\t\"Drop WaitTimeInMinutes (or set it to 0), or use ActionOnTimeout STOP_DEPLOYMENT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentreadyoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tdro := _pf_codedeploylib_obj(bg, \"DeploymentReadyOption\")\n\tobject.get(dro, \"ActionOnTimeout\", null) == \"CONTINUE_DEPLOYMENT\"\n\tw := _pf_codedeploylib_num(object.get(dro, \"WaitTimeInMinutes\", null))\n\tw > 0\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-deployment-ready-stop-requires-wait-time",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "STOP_DEPLOYMENT needs a WaitTimeInMinutes above zero",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# STOP_DEPLOYMENT stops the deployment when the timeout expires, so a timeout of\n# zero (written, or left out and defaulted) would stop it before it began.\n_pf_cdstop_wait(dro) := w if {\n\tw := _pf_codedeploylib_num(object.get(dro, \"WaitTimeInMinutes\", null))\n}\n\n_pf_cdstop_wait(dro) := 0 if {\n\tnot _pf_codedeploylib_has(dro, \"WaitTimeInMinutes\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-deployment-ready-stop-requires-wait-time\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.DeploymentReadyOption.WaitTimeInMinutes\",\n\t\"DeploymentReadyOption.ActionOnTimeout is STOP_DEPLOYMENT with a wait time of 0 minutes; the deployment group create fails with \\\"Deployment ready action cannot be set to STOP_DEPLOYMENT when timeout is set to 0 minutes.\\\"\",\n\t\"Set WaitTimeInMinutes to the number of minutes to wait before stopping, or use ActionOnTimeout CONTINUE_DEPLOYMENT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentreadyoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tdro := _pf_codedeploylib_obj(bg, \"DeploymentReadyOption\")\n\tobject.get(dro, \"ActionOnTimeout\", null) == \"STOP_DEPLOYMENT\"\n\t_pf_cdstop_wait(dro) == 0\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-ec2-filters-server-platform-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Instance tag filters are only valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Tag filters pick EC2 or on-premises instances to deploy to, which the Lambda\n# and ECS platforms do not have. All four targeting properties are refused, each\n# with its own exception but the same sentence.\nviolation contains make_diag_full(\"pf-codedeploy-dg-ec2-filters-server-platform-only\", \"ERROR\", name,\n\tsprintf(\"Properties.%v\", [k]),\n\tsprintf(\"%v is set on a deployment group whose application is the %v compute platform; the create fails with \\\"For %v deployment group, %v%v can not be specified\\\"\", [k, p, p, lower(substring(k, 0, 1)), substring(k, 1, -1)]),\n\tsprintf(\"Drop %v - only the Server (EC2/on-premises) platform selects instances by tag\", [k]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_dg_platform(name)\n\tp != \"Server\"\n\tsome k in [\"Ec2TagFilters\", \"Ec2TagSet\", \"OnPremisesInstanceTagFilters\", \"OnPremisesTagSet\"]\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), k)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-ec2-tag-filters-xor-tag-set",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Ec2TagFilters and Ec2TagSet cannot both be specified",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The two express the same selection differently (a flat OR-list versus groups\n# ANDed together), and the service will not merge them.\nviolation contains make_diag_full(\"pf-codedeploy-dg-ec2-tag-filters-xor-tag-set\", \"ERROR\", name,\n\t\"Properties.Ec2TagSet\",\n\t\"Ec2TagFilters and Ec2TagSet are both set; the deployment group create fails with \\\"The request specified both Ec2TagFilters and Ec2TagSet, but only one of these data types can be used in a single call.\\\"\",\n\t\"Keep one: Ec2TagFilters for a flat OR of tags, Ec2TagSet for groups that must all match\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_props(name)\n\t_pf_codedeploylib_has(p, \"Ec2TagFilters\")\n\t_pf_codedeploylib_has(p, \"Ec2TagSet\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-ecs-services-requires-ecs-platform",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ECSServices is only valid on the ECS compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An EC2/on-premises deployment group has no ECS services to name.\n# TargetGroupPairInfoList is in the same sentence of the service error but is NOT\n# in the same check: the service accepts it on a Server group (measured\n# 2026-09-14 us-east-1), so this rule does not claim it.\nviolation contains make_diag_full(\"pf-codedeploy-dg-ecs-services-requires-ecs-platform\", \"ERROR\", name,\n\t\"Properties.ECSServices\",\n\t\"ECSServices is set on a deployment group whose application is the Server compute platform; the create fails with \\\"Server Deployment Groups should not define a value for ecsServices, eksClusters, or targetGroupPairInfoList\\\"\",\n\t\"Drop ECSServices, or point ApplicationName at an application whose ComputePlatform is ECS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ECSServices\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-lambda-forbids-blue-green-config",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "BlueGreenDeploymentConfiguration is not valid on the Lambda compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Lambda deployment group is always blue/green, and the shift is described by\n# its deployment configuration rather than by this block, which talks about\n# instances and Auto Scaling groups. ECS is the opposite - there the block is\n# mandatory - so this one names Lambda only.\nviolation contains make_diag_full(\"pf-codedeploy-dg-lambda-forbids-blue-green-config\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration\",\n\t\"BlueGreenDeploymentConfiguration is set on a deployment group whose application is the Lambda compute platform; the create fails with \\\"For Lambda deployment group, blueGreenDeploymentConfiguration can not be specified\\\"\",\n\t\"Drop BlueGreenDeploymentConfiguration - a Lambda deployment group shifts traffic through its DeploymentConfigName\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Lambda\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-lambda-requires-blue-green-traffic-control",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Lambda deployment group must be BLUE_GREEN with WITH_TRAFFIC_CONTROL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Lambda deployment always shifts an alias between two versions, so it has\n# exactly one legal deployment style. Only a written-out value is judged: an\n# absent DeploymentStyle is left to CloudFormation's handler, which supplies one.\n# That handler also sends ec2TagFilters for any DeploymentType other than\n# BLUE_GREEN, so an IN_PLACE Lambda group is refused for the tag filters before\n# the style is ever looked at (measured 2026-09-14 us-east-1) - the deploy still\n# fails, just with the other sentence.\n_pf_cdlbg_bad(ds) if {\n\tdt := object.get(ds, \"DeploymentType\", null)\n\t_pf_codedeploylib_lit(dt)\n\tdt != \"BLUE_GREEN\"\n}\n\n_pf_cdlbg_bad(ds) if {\n\to := object.get(ds, \"DeploymentOption\", null)\n\t_pf_codedeploylib_lit(o)\n\to != \"WITH_TRAFFIC_CONTROL\"\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-lambda-requires-blue-green-traffic-control\", \"ERROR\", name,\n\t\"Properties.DeploymentStyle\",\n\t\"The application is the Lambda compute platform, so the deployment group create fails with \\\"For LAMBDA deployment, the deployment type must be BLUE_GREEN, and deployment option must be WITH_TRAFFIC_CONTROL.\\\"\",\n\t\"Set DeploymentStyle to DeploymentType BLUE_GREEN with DeploymentOption WITH_TRAFFIC_CONTROL\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateDeploymentGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Lambda\"\n\tds := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"DeploymentStyle\")\n\t_pf_cdlbg_bad(ds)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-onprem-tag-filters-xor-tag-set",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "OnPremisesInstanceTagFilters and OnPremisesTagSet cannot both be specified",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same exclusivity as the EC2 pair, enforced by its own exception.\nviolation contains make_diag_full(\"pf-codedeploy-dg-onprem-tag-filters-xor-tag-set\", \"ERROR\", name,\n\t\"Properties.OnPremisesTagSet\",\n\t\"OnPremisesInstanceTagFilters and OnPremisesTagSet are both set; the deployment group create fails with \\\"The request specified both OnPremisesTagFilters and OnPremisesTagSet, but only one of these data types can be used in a single call.\\\"\",\n\t\"Keep one: OnPremisesInstanceTagFilters for a flat OR of tags, OnPremisesTagSet for groups that must all match\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_props(name)\n\t_pf_codedeploylib_has(p, \"OnPremisesInstanceTagFilters\")\n\t_pf_codedeploylib_has(p, \"OnPremisesTagSet\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-revision-bundle-type-server",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "An EC2/On-Premises revision bundle is a tar, tgz or zip archive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Deployment property makes CloudFormation start a deployment, and on the\n# EC2/On-Premises platform the revision bundle has to be an archive. YAML and\n# JSON are the AppSpec forms of the Lambda and ECS platforms and are refused\n# here. lower() keeps the rule off a spelling the service might still take.\nviolation contains make_diag_full(\"pf-codedeploy-dg-revision-bundle-type-server\", \"ERROR\", name,\n\t\"Properties.Deployment.Revision.S3Location.BundleType\",\n\tsprintf(\"the deployment group is on the EC2/On-Premises platform but its revision bundle type is \\\"%s\\\"; the deployment fails with \\\"BundleType must be either tar, zip or tgz\\\"\", [bt]),\n\t\"Bundle the revision as tar, tgz or zip\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-s3location.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Server\"\n\tbt := resolve(name, \"Properties.Deployment.Revision.S3Location.BundleType\")\n\t_pf_codedeploylib_lit(bt)\n\tnot lower(bt) in [\"tar\", \"tgz\", \"zip\"]\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-revision-github-server-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A GitHub revision can only be deployed on the EC2/On-Premises platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation creates the deployment group and then starts the deployment the\n# Deployment property describes. A GitHub revision is only a thing on the\n# EC2/On-Premises platform; on Lambda or ECS the CreateDeployment behind the\n# property is refused and the stack rolls back.\n_pf_cdrgh_github(name) if resolve(name, \"Properties.Deployment.Revision.RevisionType\") == \"GitHub\"\n\n_pf_cdrgh_github(name) if {\n\td := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"Deployment\")\n\tr := _pf_codedeploylib_obj(d, \"Revision\")\n\t_pf_codedeploylib_has(r, \"GitHubLocation\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-revision-github-server-only\", \"ERROR\", name,\n\t\"Properties.Deployment.Revision\",\n\tsprintf(\"the deployment group is on the %s compute platform but its Deployment names a GitHub revision; the deployment fails with \\\"Revision type: GitHub is not supported under compute platform: %s\\\"\", [p, upper(p)]),\n\t\"Deploy the revision from Amazon S3, or move the deployment group to the EC2/On-Premises platform\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-githublocation.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_dg_platform(name)\n\tp in [\"Lambda\", \"ECS\"]\n\t_pf_cdrgh_github(name)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-tag-filter-type-value-consistency",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A KEY_ONLY tag filter carries no Value and a VALUE_ONLY tag filter carries no Key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The filter Type says which halves of the tag are matched; the half that is not\n# matched must not be supplied. Applies to every place a tag filter can sit: the\n# two flat lists and the two tag sets.\n_pf_cdtfc_flat(name) := [{\"path\": sprintf(\"Properties.%s.%d\", [k, it.index]), \"value\": it.value} |\n\tsome k in [\"Ec2TagFilters\", \"OnPremisesInstanceTagFilters\"]\n\tsome it in flatten_list(name, sprintf(\"Properties.%s\", [k]))\n]\n\n_pf_cdtfc_set(name, prop, list, group) := [{\"path\": sprintf(\"Properties.%s.%s.%d.%s.%d\", [prop, list, g.index, group, it.index]), \"value\": it.value} |\n\tsome g in flatten_list(name, sprintf(\"Properties.%s.%s\", [prop, list]))\n\tsome it in flatten_list(name, sprintf(\"Properties.%s.%s.%d.%s\", [prop, list, g.index, group]))\n]\n\n_pf_cdtfc_items(name) := array.concat(\n\t_pf_cdtfc_flat(name),\n\tarray.concat(\n\t\t_pf_cdtfc_set(name, \"Ec2TagSet\", \"Ec2TagSetList\", \"Ec2TagGroup\"),\n\t\t_pf_cdtfc_set(name, \"OnPremisesTagSet\", \"OnPremisesTagSetList\", \"OnPremisesTagGroup\"),\n\t),\n)\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-tag-filter-type-value-consistency\", \"ERROR\", name,\n\tit.path,\n\t\"the tag filter Type is KEY_ONLY but a Value is supplied; the deployment group create fails with \\\"Values must not be provided for key-only filters.\\\"\",\n\t\"Drop Value, or use KEY_AND_VALUE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-ec2tagfilter.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome it in _pf_cdtfc_items(name)\n\tis_object(it.value)\n\tobject.get(it.value, \"Type\", null) == \"KEY_ONLY\"\n\t_pf_codedeploylib_has(it.value, \"Value\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-tag-filter-type-value-consistency\", \"ERROR\", name,\n\tit.path,\n\t\"the tag filter Type is VALUE_ONLY but a Key is supplied; the deployment group create fails with \\\"Keys must not be provided for value-only filters.\\\"\",\n\t\"Drop Key, or use KEY_AND_VALUE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-ec2tagfilter.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome it in _pf_cdtfc_items(name)\n\tis_object(it.value)\n\tobject.get(it.value, \"Type\", null) == \"VALUE_ONLY\"\n\t_pf_codedeploylib_has(it.value, \"Key\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-target-group-name-max-32",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A TargetGroupInfo Name is a target group name of at most 32 characters, never an ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# TargetGroupInfo.Name is the target group's NAME, and a target group name is at\n# most 32 characters. Writing its ARN there is the same mistake seen from the\n# service side: the ARN is over 32 characters, so it is refused by this one check.\n# Measured with and without DeploymentStyle - the length is checked either way.\nviolation contains make_diag_full(\"pf-codedeploy-dg-target-group-name-max-32\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerInfo.TargetGroupInfoList.%d.Name\", [it.index]),\n\tsprintf(\"the target group name is %d characters; the deployment group create fails with \\\"The target group name ... specified in targetGroupInfoList exceeds the maximum allowed length of 32 characters.\\\"\", [count(n)]),\n\t\"Name the target group (at most 32 characters), not its ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-targetgroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome it in flatten_list(name, \"Properties.LoadBalancerInfo.TargetGroupInfoList\")\n\tis_object(it.value)\n\tn := object.get(it.value, \"Name\", null)\n\t_pf_codedeploylib_lit(n)\n\tcount(n) > 32\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-termination-wait-max",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TerminationWaitTimeInMinutes may not exceed 2880 (two days)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The wait before the original instances are terminated is capped at two days.\n# _pf_codedeploylib_num keeps a Ref or an absent key out of the comparison -\n# to_number(resolve(...)) would read an absent key as 0.\nviolation contains make_diag_full(\"pf-codedeploy-dg-termination-wait-max\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.TerminateBlueInstancesOnDeploymentSuccess.TerminationWaitTimeInMinutes\",\n\tsprintf(\"TerminationWaitTimeInMinutes is %d; the deployment group create fails with \\\"Timeout for instance termination cannot be more than 2 days\\\"\", [w]),\n\t\"Wait at most 2880 minutes before terminating the original instances\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-blueinstanceterminationoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tt := _pf_codedeploylib_obj(bg, \"TerminateBlueInstancesOnDeploymentSuccess\")\n\tw := _pf_codedeploylib_num(object.get(t, \"TerminationWaitTimeInMinutes\", null))\n\tw > 2880\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-traffic-control-requires-load-balancer",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Server deployment group routing traffic needs a load balancer or target group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# WITH_TRAFFIC_CONTROL means CodeDeploy moves instances in and out of a load\n# balancer, so on the EC2/On-Premises platform it needs one to move them in and\n# out of. Lambda also uses WITH_TRAFFIC_CONTROL and carries no LoadBalancerInfo,\n# so the rule only speaks when the application it names is a Server one.\n_pf_cdtcrlb_lists := [\"ElbInfoList\", \"TargetGroupInfoList\", \"TargetGroupPairInfoList\"]\n\n_pf_cdtcrlb_has_lb(name) if {\n\tsome k in _pf_cdtcrlb_lists\n\tcount(flatten_list(name, sprintf(\"Properties.LoadBalancerInfo.%s\", [k]))) > 0\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-traffic-control-requires-load-balancer\", \"ERROR\", name,\n\t\"Properties.LoadBalancerInfo\",\n\t\"DeploymentStyle.DeploymentOption is WITH_TRAFFIC_CONTROL but LoadBalancerInfo names no load balancer or target group; the deployment group create fails with \\\"The deploymentOption value is set to WITH_TRAFFIC_CONTROL, but no load balancer or target group has been specified in loadBalancerInfo.\\\"\",\n\t\"Name a load balancer in LoadBalancerInfo, or use WITHOUT_TRAFFIC_CONTROL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-loadbalancerinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Server\"\n\tresolve(name, \"Properties.DeploymentStyle.DeploymentOption\") == \"WITH_TRAFFIC_CONTROL\"\n\tnot _pf_cdtcrlb_has_lb(name)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-trigger-name-and-target-unique",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Trigger names and trigger target ARNs are each unique within a deployment group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cdtu_vals(name, key) := [v |\n\tsome it in flatten_list(name, \"Properties.TriggerConfigurations\")\n\tv := resolve(name, sprintf(\"Properties.TriggerConfigurations.%d.%s\", [it.index, key]))\n]\n\n_pf_cdtu_dup(name, key) := [v |\n\tvs := _pf_cdtu_vals(name, key)\n\tsome v in vs\n\tcount([y | some y in vs; y == v]) > 1\n]\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-trigger-name-and-target-unique\", \"ERROR\", name,\n\t\"Properties.TriggerConfigurations\",\n\tsprintf(\"two triggers share the name \\\"%s\\\"; the deployment group create fails with \\\"Duplicate Trigger target name detected\\\"\", [v]),\n\t\"Give every trigger its own TriggerName\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome v in _pf_cdtu_dup(name, \"TriggerName\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-trigger-name-and-target-unique\", \"ERROR\", name,\n\t\"Properties.TriggerConfigurations\",\n\t\"two triggers point at the same topic; the deployment group create fails with \\\"Duplicate Trigger target arn detected\\\"\",\n\t\"Point every trigger at its own topic, and put all the events one topic needs on a single trigger\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome _ in _pf_cdtu_dup(name, \"TriggerTargetArn\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-trigger-target-region",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A trigger's SNS topic must live in the deployment group's own Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CodeDeploy resolves the trigger topic in its own Region only: a topic ARN whose\n# Region field is another one is refused out of hand, whether or not the topic\n# really exists there. Needs data.cdk_preflight.deploy_region, so the rule is\n# silent unless the engine was given a concrete region.\nviolation contains make_diag_full(\"pf-codedeploy-dg-trigger-target-region\", \"ERROR\", name,\n\tsprintf(\"Properties.TriggerConfigurations.%d.TriggerTargetArn\", [it.index]),\n\tsprintf(\"the trigger topic is in %s but the deployment group deploys to %s; the create fails with \\\"Topic ARN ... is not valid\\\"\", [r, region]),\n\t\"Point the trigger at a topic in the deployment group's own Region (build the ARN with ${AWS::Region})\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome it in flatten_list(name, \"Properties.TriggerConfigurations\")\n\tarn := resolve(name, sprintf(\"Properties.TriggerConfigurations.%d.TriggerTargetArn\", [it.index]))\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"sns\"\n\tr := parts[3]\n\tr != \"\"\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-triggers-max-10",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A deployment group may carry at most 10 notification triggers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-triggers-max-10\", \"ERROR\", name,\n\t\"Properties.TriggerConfigurations\",\n\tsprintf(\"the deployment group declares %d notification triggers; the create fails with \\\"Deployment Groups cannot contain more than 10 TriggerTargets.\\\"\", [n]),\n\t\"Declare at most 10 triggers on the deployment group\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tn := count(flatten_list(name, \"Properties.TriggerConfigurations\"))\n\tn > 10\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-action-config-required-keys",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An action's Configuration must carry the keys its provider requires",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Each AWS-owned action provider publishes a set of Configuration keys it\n# requires; CreatePipeline rejects the pipeline when one is missing. The table\n# lives in rules/_lib/codepipeline.rego and names only providers whose required\n# set was confirmed against the service, so an unlisted provider is never judged.\nviolation contains make_diag_full(\"pf-codepipeline-action-config-required-keys\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.Configuration\", [si, ai]),\n\tsprintf(\"the %v action '%v' has no Configuration.%v; CreatePipeline fails with \\\"Action configuration for action '%v' is missing required configuration '%v'\\\"\", [key, an, req, an, req]),\n\tsprintf(\"Add %v to the action's Configuration\", [req]),\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\ttid := _pf_cplib_tid(a)\n\tobject.get(tid, \"Owner\", \"AWS\") == \"AWS\"\n\tkey := sprintf(\"%v/%v\", [_pf_cplib_category(a), object.get(tid, \"Provider\", \"\")])\n\tsome req in _pf_cplib_required_config[key]\n\tcfg := object.get(a, \"Configuration\", {})\n\t_pf_cplib_plain(cfg)\n\t_pf_cplib_absent(cfg, req)\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-action-type-id-combination",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An action's Category, Owner and Provider must be a published combination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Category x Owner x Provider must be a published combination. Providers absent\n# from _pf_cplib_aws_providers are never judged, so a newly published provider\n# costs a miss rather than a false positive; Owner \"Custom\" is skipped entirely\n# because its provider name is chosen by the user.\nviolation contains make_diag_full(\"pf-codepipeline-action-type-id-combination\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId\", [si, ai]),\n\tsprintf(\"action '%v' pairs Category '%v' with the AWS provider '%v', which is published under %v; CreatePipeline fails with \\\"ActionType (Category: '%v', Provider: '%v', Owner: 'AWS', Version: '1') in action '%v' is not available in region\\\"\", [an, cat, prov, ok, cat, prov, an]),\n\tsprintf(\"Set Category to one of %v, or pick the provider that serves this category\", [ok]),\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-valid-providers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\ttid := _pf_cplib_tid(a)\n\tobject.get(tid, \"Owner\", \"AWS\") == \"AWS\"\n\tprov := object.get(tid, \"Provider\", \"\")\n\tcats := _pf_cplib_aws_providers[prov]\n\tcat := _pf_cplib_category(a)\n\tnot cat in cats\n\tok := concat(\", \", sort(cats))\n\tan := object.get(a, \"Name\", \"\")\n}\n\n# The mirror case: an AWS provider name declared under Owner ThirdParty.\nviolation contains make_diag_full(\"pf-codepipeline-action-type-id-combination\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId.Owner\", [si, ai]),\n\tsprintf(\"action '%v' declares Owner 'ThirdParty' for '%v', which is an AWS-provided action provider; CreatePipeline fails with \\\"ActionType (Category: '%v', Provider: '%v', Owner: 'ThirdParty', Version: '1') in action '%v' is not available in region\\\"\", [an, prov, cat, prov, an]),\n\t\"Set Owner to AWS for an AWS-provided action provider\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-valid-providers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\ttid := _pf_cplib_tid(a)\n\tobject.get(tid, \"Owner\", \"AWS\") == \"ThirdParty\"\n\tprov := object.get(tid, \"Provider\", \"\")\n\t_pf_cplib_aws_providers[prov]\n\tcat := _pf_cplib_category(a)\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-artifact-name-charset",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An artifact name is at most 100 characters of letters, digits, underscore and hyphen",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An artifact name is at most 100 characters.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.%v.%v.Name\", [si, ai, kind, ii]),\n\tsprintf(\"the artifact name is %d characters; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 100\\\"\", [count(n)]),\n\t\"Shorten the artifact name to 100 characters or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Artifact.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tsome kind in [\"InputArtifacts\", \"OutputArtifacts\"]\n\tsome ii, art in object.get(a, kind, [])\n\tn := _pf_cplib_get(art, \"Name\")\n\t_pf_cplib_lit(n)\n\tcount(n) > 100\n}\n\n# ... and is restricted to letters, digits, underscore and hyphen.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.%v.%v.Name\", [si, ai, kind, ii]),\n\tsprintf(\"artifact name '%v' has characters outside [a-zA-Z0-9_-]; CreatePipeline fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_\\\\-]+\\\"\", [n]),\n\t\"Use only letters, digits, underscore and hyphen in the artifact name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Artifact.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tsome kind in [\"InputArtifacts\", \"OutputArtifacts\"]\n\tsome ii, art in object.get(a, kind, [])\n\tn := _pf_cplib_get(art, \"Name\")\n\t_pf_cplib_lit(n)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-artifact-store-encryption-key-kms",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An artifact store's EncryptionKey.Type must be the literal KMS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# KMS is the only encryption key type an artifact store accepts, and the enum is case-sensitive.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-store-encryption-key-kms\", \"ERROR\", name,\n\t\"Properties.ArtifactStore.EncryptionKey.Type\",\n\tsprintf(\"the artifact store EncryptionKey.Type is '%v'; CreatePipeline fails with \\\"Member must satisfy enum value set: [KMS]\\\"\", [v]),\n\t\"Set ArtifactStore.EncryptionKey.Type to KMS\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tv := _pf_cplib_storekeytype(_pf_cplib_props(name))\n\tv != \"KMS\"\n}\n\n# The cross-region form carries one store per region; the same enum applies.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-store-encryption-key-kms\", \"ERROR\", name,\n\tsprintf(\"Properties.ArtifactStores.%v.ArtifactStore.EncryptionKey.Type\", [i]),\n\tsprintf(\"the artifact store for region '%v' has EncryptionKey.Type '%v'; CreatePipeline fails with \\\"Member must satisfy enum value set: [KMS]\\\"\", [object.get(e, \"Region\", \"\"), v]),\n\t\"Set ArtifactStore.EncryptionKey.Type to KMS\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome i, e in object.get(_pf_cplib_props(name), \"ArtifactStores\", [])\n\tv := _pf_cplib_storekeytype(e)\n\tv != \"KMS\"\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-artifact-stores-region-of-pipeline",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "The cross-region ArtifactStores list must include the pipeline's own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Actions that carry no Region run in the pipeline's own region, so the\n# cross-region ArtifactStores list must always include an entry for it.\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise, and skips a list whose regions are\n# all tokens.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-stores-region-of-pipeline\", \"ERROR\", name,\n\t\"Properties.ArtifactStores\",\n\tsprintf(\"ArtifactStores covers %v but the pipeline deploys to '%v'; CreatePipeline fails with \\\"Your pipeline must have an artifact store, such as an artifact bucket, for each region where you have an action. The following region is missing in 'pipeline.artifactStores': %v.\\\"\", [concat(\", \", sort(regions)), region, region]),\n\tsprintf(\"Add an ArtifactStores entry whose Region is %v\", [region]),\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tstores := object.get(_pf_cplib_props(name), \"ArtifactStores\", [])\n\tregions := {r | some e in stores; r := object.get(e, \"Region\", \"\"); _pf_cplib_lit(r)}\n\tcount(regions) == count(stores)\n\tcount(regions) > 0\n\tnot region in regions\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cat-artifact-min-le-max",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A custom action type's MinimumCount must not exceed its MaximumCount",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::CustomActionType"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A custom action type's artifact counts must not invert.\nviolation contains make_diag_full(\"pf-codepipeline-cat-artifact-min-le-max\", \"ERROR\", name,\n\tsprintf(\"Properties.%v.MinimumCount\", [kind]),\n\tsprintf(\"%v has MinimumCount %d and MaximumCount %d; CreateCustomActionType fails with \\\"Maximum Number of Artifacts (%d) has to be greater than or equal to minimum (%d).\\\"\", [kind, mn, mx, mx, mn]),\n\t\"Raise MaximumCount, or lower MinimumCount to at most MaximumCount\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_CreateCustomActionType.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::CustomActionType\")\n\tsome kind in [\"InputArtifactDetails\", \"OutputArtifactDetails\"]\n\td := object.get(_pf_cplib_props(name), kind, {})\n\t_pf_cplib_plain(d)\n\tmn := to_number(_pf_cplib_get(d, \"MinimumCount\"))\n\tmx := to_number(_pf_cplib_get(d, \"MaximumCount\"))\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cat-queryable-max-1",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "At most one configuration property of a custom action type may be Queryable",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::CustomActionType"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only one configuration property of a custom action type may be queryable.\nviolation contains make_diag_full(\"pf-codepipeline-cat-queryable-max-1\", \"ERROR\", name,\n\t\"Properties.ConfigurationProperties\",\n\tsprintf(\"%d configuration properties are Queryable (%v); CreateCustomActionType fails with \\\"Multiple queryable configuration properties found with names '%v'. Up to one queryable property may be specified.\\\"\", [count(q), concat(\", \", sort(q)), concat(\", \", sort(q))]),\n\t\"Leave Queryable true on at most one configuration property\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionConfigurationProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::CustomActionType\")\n\tprops := object.get(_pf_cplib_props(name), \"ConfigurationProperties\", [])\n\tq := {n | some p in props; _pf_cplib_plain(p); object.get(p, \"Queryable\", false) == true; n := object.get(p, \"Name\", \"\")}\n\tcount(q) > 1\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cat-queryable-not-secret",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Queryable configuration property must be Required and not Secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::CustomActionType"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A queryable configuration property is polled by the job worker, so it must be\n# required and must not be a secret. One service check covers both halves.\nviolation contains make_diag_full(\"pf-codepipeline-cat-queryable-not-secret\", \"ERROR\", name,\n\tsprintf(\"Properties.ConfigurationProperties.%v\", [i]),\n\tsprintf(\"configuration property '%v' is Queryable with Secret %v and Required %v; CreateCustomActionType fails with \\\"Invalid queryable property '%v'. Queryable configuration properties must be required and non-secret.\\\"\", [pn, secret, required, pn]),\n\t\"Set Secret to false and Required to true on the queryable property\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionConfigurationProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::CustomActionType\")\n\tsome i, p in object.get(_pf_cplib_props(name), \"ConfigurationProperties\", [])\n\t_pf_cplib_plain(p)\n\tobject.get(p, \"Queryable\", false) == true\n\tsecret := object.get(p, \"Secret\", false)\n\trequired := object.get(p, \"Required\", false)\n\tnot _pf_cplib_queryable_ok(secret, required)\n\tpn := object.get(p, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cross-region-action-needs-store",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A cross-region action needs the plural ArtifactStores, not a single ArtifactStore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An action whose Region differs from the pipeline's own needs one artifact\n# store per region, which is what the plural ArtifactStores is for. The singular\n# ArtifactStore cannot express it. data.cdk_preflight.deploy_region is injected\n# only in enforce mode with a concrete region; the rule skips otherwise, and a\n# Region equal to the deploy region is not cross-region at all.\nviolation contains make_diag_full(\"pf-codepipeline-cross-region-action-needs-store\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.Region\", [si, ai]),\n\tsprintf(\"action '%v' runs in '%v' but the pipeline deploys to '%v' with a single ArtifactStore; CreatePipeline fails with \\\"Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' to declare an artifact store, such as an artifact bucket, for each region where you have an action.\\\"\", [an, r, region]),\n\t\"Replace ArtifactStore with an ArtifactStores entry for each region the pipeline's actions run in\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tprops := _pf_cplib_props(name)\n\t_pf_cplib_plain(object.get(props, \"ArtifactStore\", null))\n\t_pf_cplib_absent(props, \"ArtifactStores\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr := _pf_cplib_get(a, \"Region\")\n\t_pf_cplib_lit(r)\n\tr != region\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-first-stage-source-only",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "The first stage of a pipeline may contain source actions only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bare engine's E3700 asks that the first stage hold a source action; the\n# service also refuses anything else in it.\nviolation contains make_diag_full(\"pf-codepipeline-first-stage-source-only\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.0.Actions.%v.ActionTypeId.Category\", [ai]),\n\tsprintf(\"the first stage holds action '%v' of category '%v'; CreatePipeline fails with \\\"InvalidStructureException: Pipeline should start with a stage that only contains source actions\\\"\", [an, cat]),\n\t\"Move the non-source action to a later stage\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tst := _pf_cplib_stages(name)[0]\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tcat := _pf_cplib_category(a)\n\tcat != \"Source\"\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-non-source-stage-required",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A pipeline needs at least one action whose category is not Source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A pipeline made only of source actions has nothing to run.\nviolation contains make_diag_full(\"pf-codepipeline-non-source-stage-required\", \"ERROR\", name,\n\t\"Properties.Stages\",\n\t\"every action in the pipeline has category Source; CreatePipeline fails with \\\"InvalidStructureException: Pipeline should contain at least 1 action whose category is not Source\\\"\",\n\t\"Add a Build, Test, Deploy, Approval, Invoke or Compute action to a later stage\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tstages := _pf_cplib_stages(name)\n\tcats := {c | some st in stages; some a in _pf_cplib_actions(st); c := _pf_cplib_category(a)}\n\tcount(cats) > 0\n\tevery c in cats {c == \"Source\"}\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-parallel-mode-no-rollback-condition",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A PARALLEL pipeline cannot have a stage that exits failure with ROLLBACK",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A PARALLEL pipeline runs every execution independently, so there is no\n# previous execution to roll back to.\nviolation contains make_diag_full(\"pf-codepipeline-parallel-mode-no-rollback-condition\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.OnFailure.Result\", [si]),\n\tsprintf(\"stage '%v' exits failure with ROLLBACK while the pipeline's ExecutionMode is PARALLEL; CreatePipeline fails with \\\"InvalidStageDeclarationException: Failure conditions with rollback result type cannot be added to a PARALLEL pipeline.\\\"\", [object.get(st, \"Name\", \"\")]),\n\t\"Switch ExecutionMode to QUEUED or SUPERSEDED, or drop the ROLLBACK result\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tprops := _pf_cplib_props(name)\n\tobject.get(props, \"ExecutionMode\", \"\") == \"PARALLEL\"\n\tsome si, st in _pf_cplib_stages(name)\n\tof := object.get(st, \"OnFailure\", {})\n\t_pf_cplib_plain(of)\n\tobject.get(of, \"Result\", \"\") == \"ROLLBACK\"\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-run-order-range",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An action's RunOrder must be between 1 and 999",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RunOrder is a 1-based position within the stage and tops out at 999.\nviolation contains make_diag_full(\"pf-codepipeline-run-order-range\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.RunOrder\", [si, ai]),\n\tsprintf(\"RunOrder is %v; CreatePipeline fails with \\\"Value at 'pipeline.stages.N.member.actions.N.member.runOrder' failed to satisfy constraint: Member must have value greater than or equal to 1\\\"\", [ro]),\n\t\"Number the actions in the stage from 1\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionDeclaration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tro := to_number(object.get(a, \"RunOrder\", 1))\n\tro < 1\n}\n\nviolation contains make_diag_full(\"pf-codepipeline-run-order-range\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.RunOrder\", [si, ai]),\n\tsprintf(\"RunOrder is %v; CreatePipeline fails with \\\"Value at 'pipeline.stages.N.member.actions.N.member.runOrder' failed to satisfy constraint: Member must have value less than or equal to 999\\\"\", [ro]),\n\t\"Keep RunOrder at 999 or below\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionDeclaration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tro := to_number(object.get(a, \"RunOrder\", 1))\n\tro > 999\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-source-action-first-stage-only",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Source actions may appear in the first stage only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A source action outside stage 0 is refused even when stage 0 has one too.\nviolation contains make_diag_full(\"pf-codepipeline-source-action-first-stage-only\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId.Category\", [si, ai]),\n\tsprintf(\"stage '%v' is not the first stage but holds source action '%v'; CreatePipeline fails with \\\"InvalidStructureException: Source actions can only be included in the first stage of the pipeline\\\"\", [sn, an]),\n\t\"Move the source action into the first stage\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsi > 0\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\t_pf_cplib_category(a) == \"Source\"\n\tan := object.get(a, \"Name\", \"\")\n\tsn := object.get(st, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-count-max",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A pipeline may hold at most 50 stages",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 50 stages per pipeline (Service Quotas: Total stages per pipeline, Adjustable: false).\nviolation contains make_diag_full(\"pf-codepipeline-stage-count-max\", \"ERROR\", name,\n\t\"Properties.Stages\",\n\tsprintf(\"the pipeline declares %d stages; CreatePipeline fails with \\\"InvalidStructureException: Pipeline has too many stages. There can only be up to 50 stages in a pipeline\\\"\", [n]),\n\t\"Split the work across pipelines so no pipeline exceeds 50 stages\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tn := count(_pf_cplib_stages(name))\n\tn > 50\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-name-charset",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A stage name is at most 100 characters of [A-Za-z0-9.@_-]",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A stage name is at most 100 characters ...\nviolation contains make_diag_full(\"pf-codepipeline-stage-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Name\", [si]),\n\tsprintf(\"the stage name is %d characters; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 100\\\"\", [count(sn)]),\n\t\"Shorten the stage name to 100 characters or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_CreatePipeline.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsn := _pf_cplib_get(st, \"Name\")\n\t_pf_cplib_lit(sn)\n\tcount(sn) > 100\n}\n\n# ... and is restricted to letters, digits, dot, at-sign, hyphen and underscore.\nviolation contains make_diag_full(\"pf-codepipeline-stage-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Name\", [si]),\n\tsprintf(\"stage name '%v' has characters outside [A-Za-z0-9.@_-]; CreatePipeline fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: [A-Za-z0-9.@\\\\-_]+\\\"\", [sn]),\n\t\"Use only letters, digits, dot, at-sign, hyphen and underscore in the stage name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_CreatePipeline.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsn := _pf_cplib_get(st, \"Name\")\n\t_pf_cplib_lit(sn)\n\tnot regex.match(`^[A-Za-z0-9.@_-]+$`, sn)\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-names-unique",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Stage names must be unique within a pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's F3037 catches duplicate action names inside one stage; duplicate\n# stage names are a different check and only the service makes it.\nviolation contains make_diag_full(\"pf-codepipeline-stage-names-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Name\", [sj]),\n\tsprintf(\"stage name '%v' is used by stages %d and %d; CreatePipeline fails with \\\"InvalidStageDeclarationException: Stage name '%v' is used more than once\\\"\", [sn, si, sj, sn]),\n\t\"Give every stage a distinct name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome sj, st2 in _pf_cplib_stages(name)\n\tsi < sj\n\tsn := _pf_cplib_get(st, \"Name\")\n\t_pf_cplib_lit(sn)\n\tsn == _pf_cplib_get(st2, \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-on-failure-result-xor-conditions",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A stage's OnFailure takes either Result or Conditions, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The failure exit gate is configured one way or the other.\nviolation contains make_diag_full(\"pf-codepipeline-stage-on-failure-result-xor-conditions\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.OnFailure\", [si]),\n\tsprintf(\"stage '%v' sets both OnFailure.Result and OnFailure.Conditions; CreatePipeline fails with \\\"InvalidStageDeclarationException: The following stage cannot have a failure exit gate configured with both top level result and conditions: '%v\\\"\", [sn, sn]),\n\t\"Keep either OnFailure.Result or OnFailure.Conditions, not both\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tof := object.get(st, \"OnFailure\", null)\n\t_pf_cplib_plain(of)\n\tnot _pf_cplib_absent(of, \"Result\")\n\tnot _pf_cplib_absent(of, \"Conditions\")\n\tsn := object.get(st, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-trigger-filter-patterns-max-8",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Git trigger filter accepts at most 8 include and 8 exclude patterns",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every Includes/Excludes list under a push or pull-request filter caps at 8.\nviolation contains make_diag_full(\"pf-codepipeline-trigger-filter-patterns-max-8\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%v.GitConfiguration.%v.%v.%v.%v\", [ti, kind, fi, scope, side]),\n\tsprintf(\"the %v list holds %d patterns; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 8\\\"\", [side, n]),\n\t\"Keep each Includes/Excludes list to 8 patterns or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_GitConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome ti, t in object.get(_pf_cplib_props(name), \"Triggers\", [])\n\tg := _pf_cplib_get(t, \"GitConfiguration\")\n\t_pf_cplib_plain(g)\n\tsome kind in [\"Push\", \"PullRequest\"]\n\tsome fi, f in object.get(g, kind, [])\n\t_pf_cplib_plain(f)\n\tsome scope in [\"Branches\", \"FilePaths\", \"Tags\"]\n\ts := object.get(f, scope, {})\n\t_pf_cplib_plain(s)\n\tsome side in [\"Includes\", \"Excludes\"]\n\tn := count(object.get(s, side, []))\n\tn > 8\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-trigger-filters-max-3",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Git trigger accepts at most 3 push and 3 pull-request filters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both the Push and the PullRequest filter lists cap at 3 entries.\nviolation contains make_diag_full(\"pf-codepipeline-trigger-filters-max-3\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%v.GitConfiguration.%v\", [ti, kind]),\n\tsprintf(\"the %v filter list holds %d entries; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 3\\\"\", [kind, n]),\n\t\"Keep the Push and PullRequest filter lists to 3 entries or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_GitConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome ti, t in object.get(_pf_cplib_props(name), \"Triggers\", [])\n\tg := _pf_cplib_get(t, \"GitConfiguration\")\n\t_pf_cplib_plain(g)\n\tsome kind in [\"Push\", \"PullRequest\"]\n\tn := count(object.get(g, kind, []))\n\tn > 3\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-trigger-source-action-is-connection",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Git trigger must name a CodeStarSourceConnection source action of the pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One service check covers both halves: the named action has to exist and it has\n# to be a CodeStarSourceConnection source.\nviolation contains make_diag_full(\"pf-codepipeline-trigger-source-action-is-connection\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%v.GitConfiguration.SourceActionName\", [ti]),\n\tsprintf(\"SourceActionName '%v' is not a CodeStarSourceConnection source action of this pipeline; CreatePipeline fails with \\\"InvalidStructureException: Triggers for connections must reference a CodeStarSourceConnection action.\\\"\", [san]),\n\t\"Point SourceActionName at a CodeStarSourceConnection source action in the pipeline\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tnot _pf_cplib_dynamic_action_name(name)\n\tsome ti, t in object.get(_pf_cplib_props(name), \"Triggers\", [])\n\tg := _pf_cplib_get(t, \"GitConfiguration\")\n\t_pf_cplib_plain(g)\n\tsan := _pf_cplib_get(g, \"SourceActionName\")\n\t_pf_cplib_lit(san)\n\tnot _pf_cplib_connection_actions(name)[san]\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-action-provider",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "The Commands, ECRBuildAndPublish and EKS action providers need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Providers published after V2 shipped. The table lists only providers measured\n# against CreatePipeline, so a newer V2-only provider costs a miss, not a false positive.\nviolation contains make_diag_full(\"pf-codepipeline-v1-action-provider\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId.Provider\", [si, ai]),\n\tsprintf(\"action '%v' uses the %v provider but the pipeline is V1; CreatePipeline fails with \\\"InvalidActionDeclarationException: %v Action can only be used with V2 pipelines.\\\"\", [an, prov, prov]),\n\t\"Set PipelineType to V2\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tprov := _pf_cplib_get(_pf_cplib_tid(a), \"Provider\")\n\t_pf_cplib_lit(prov)\n\tprov in _pf_cplib_v2_only_providers\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-execution-mode",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "ExecutionMode QUEUED and PARALLEL need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PipelineType defaults to V1, and a V1 pipeline only runs in SUPERSEDED mode.\nviolation contains make_diag_full(\"pf-codepipeline-v1-execution-mode\", \"ERROR\", name,\n\t\"Properties.ExecutionMode\",\n\tsprintf(\"ExecutionMode '%v' needs PipelineType V2 but the pipeline is V1; CreatePipeline fails with \\\"InvalidStructureException: QUEUED or PARALLEL mode can only be used with V2 pipelines\\\"\", [m]),\n\t\"Set PipelineType to V2, or leave ExecutionMode at SUPERSEDED\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tm := _pf_cplib_get(_pf_cplib_props(name), \"ExecutionMode\")\n\t_pf_cplib_lit(m)\n\tm in {\"QUEUED\", \"PARALLEL\"}\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-stage-conditions",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Stage conditions need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BeforeEntry / OnSuccess / OnFailure on a stage are V2-only.\nviolation contains make_diag_full(\"pf-codepipeline-v1-stage-conditions\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.%v\", [si, gate]),\n\tsprintf(\"stage '%v' declares %v but the pipeline is V1; CreatePipeline fails with \\\"InvalidStageDeclarationException: Stage level conditions can only be used with V2 pipelines.\\\"\", [sn, gate]),\n\t\"Set PipelineType to V2, or drop the stage condition\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tsome si, st in _pf_cplib_stages(name)\n\tsome gate in [\"BeforeEntry\", \"OnSuccess\", \"OnFailure\"]\n\t_pf_cplib_plain(object.get(st, gate, null))\n\tsn := object.get(st, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-triggers",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Git triggers need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Triggers are V2-only; a V1 pipeline polls or uses a webhook instead.\nviolation contains make_diag_full(\"pf-codepipeline-v1-triggers\", \"ERROR\", name,\n\t\"Properties.Triggers\",\n\tsprintf(\"the pipeline declares %d trigger(s) but is V1; CreatePipeline fails with \\\"InvalidStructureException: Triggers on tag can only be used with V2 pipelines\\\"\", [n]),\n\t\"Set PipelineType to V2, or replace the trigger with a webhook\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tn := count(object.get(_pf_cplib_props(name), \"Triggers\", []))\n\tn > 0\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-variables",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Pipeline-level variables need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Pipeline variables are V2-only.\nviolation contains make_diag_full(\"pf-codepipeline-v1-variables\", \"ERROR\", name,\n\t\"Properties.Variables\",\n\tsprintf(\"the pipeline declares %d variable(s) but is V1; CreatePipeline fails with \\\"InvalidStructureException: Pipeline variable can only be used with V2 pipelines\\\"\", [n]),\n\t\"Set PipelineType to V2, or drop the pipeline variables\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tn := count(object.get(_pf_cplib_props(name), \"Variables\", []))\n\tn > 0\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-variable-names-unique",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Pipeline-level variable names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's F3037 dedupes whole list elements; two variables that share a name\n# but differ in DefaultValue are distinct elements, so only the service sees it.\nviolation contains make_diag_full(\"pf-codepipeline-variable-names-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Variables.%v.Name\", [vj]),\n\tsprintf(\"variable name '%v' is used by entries %d and %d; CreatePipeline fails with \\\"InvalidStructureException: Variable names must be unique. The following variable name is already in use: %v\\\"\", [vn, vi, vj, vn]),\n\t\"Give every pipeline variable a distinct name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tvars := object.get(_pf_cplib_props(name), \"Variables\", [])\n\tsome vi, v in vars\n\tsome vj, v2 in vars\n\tvi < vj\n\tvn := _pf_cplib_get(v, \"Name\")\n\t_pf_cplib_lit(vn)\n\tvn == _pf_cplib_get(v2, \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-variables-max-50",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A pipeline may declare at most 50 pipeline-level variables",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 50 pipeline variables. Service Quotas lists no adjustable quota for this limit.\nviolation contains make_diag_full(\"pf-codepipeline-variables-max-50\", \"ERROR\", name,\n\t\"Properties.Variables\",\n\tsprintf(\"the pipeline declares %d variables; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 50\\\"\", [n]),\n\t\"Keep the pipeline to 50 variables or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tn := count(object.get(_pf_cplib_props(name), \"Variables\", []))\n\tn > 50\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-webhook-authentication-configuration",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "AuthenticationConfiguration must carry exactly the property the Authentication mode takes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Webhook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One service check, three messages: GITHUB_HMAC takes only SecretToken, IP takes\n# only AllowedIPRange, UNAUTHENTICATED takes neither.\nviolation contains make_diag_full(\"pf-codepipeline-webhook-authentication-configuration\", \"ERROR\", name,\n\t\"Properties.AuthenticationConfiguration\",\n\tsprintf(\"Authentication %v takes only '%v' but AuthenticationConfiguration also sets '%v'; PutWebhook fails with \\\"InvalidWebhookAuthenticationParametersException: Optional['authenticationConfig' should contain only one property: '%v']\\\"\", [auth, want, extra, want]),\n\t\"Set only the AuthenticationConfiguration property the Authentication mode takes\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Webhook\")\n\tp := _pf_cplib_props(name)\n\tauth := _pf_cplib_get(p, \"Authentication\")\n\t_pf_cplib_lit(auth)\n\twant := _pf_cplib_webhook_auth_key[auth]\n\tcfg := object.get(p, \"AuthenticationConfiguration\", {})\n\t_pf_cplib_plain(cfg)\n\tsome extra, _ in cfg\n\textra != want\n}\n\n# ... and the property it does take is mandatory.\nviolation contains make_diag_full(\"pf-codepipeline-webhook-authentication-configuration\", \"ERROR\", name,\n\t\"Properties.AuthenticationConfiguration\",\n\tsprintf(\"Authentication %v requires AuthenticationConfiguration.%v; PutWebhook fails with \\\"InvalidWebhookAuthenticationParametersException: Optional['authenticationConfig' should contain only one property: '%v']\\\"\", [auth, want, want]),\n\t\"Set the AuthenticationConfiguration property the Authentication mode requires\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Webhook\")\n\tp := _pf_cplib_props(name)\n\tauth := _pf_cplib_get(p, \"Authentication\")\n\t_pf_cplib_lit(auth)\n\twant := _pf_cplib_webhook_auth_key[auth]\n\twant != \"\"\n\tcfg := object.get(p, \"AuthenticationConfiguration\", {})\n\t_pf_cplib_plain(cfg)\n\t_pf_cplib_absent(cfg, want)\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-webhook-filters-max-5",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A webhook may declare at most 5 filters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Webhook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 5 filters per webhook. The raw CloudFormation schema carries no maxItems here,\n# so the stack reaches PutWebhook and the service names the limit.\nviolation contains make_diag_full(\"pf-codepipeline-webhook-filters-max-5\", \"ERROR\", name,\n\t\"Properties.Filters\",\n\tsprintf(\"the webhook declares %d filters; PutWebhook fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 5\\\"\", [n]),\n\t\"Keep the webhook to 5 filters or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Webhook\")\n\tn := count(object.get(_pf_cplib_props(name), \"Filters\", []))\n\tn > 5\n}\n"
+  },
+  {
     "id": "pf-cognito-alias-username-exclusive",
     "service": "cognito",
     "severity": "ERROR",
@@ -20292,6 +21135,578 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
+    "id": "pf-msk-broker-count-multiple-of-az",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "The MSK broker count must be a multiple of the number of client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One Availability Zone per client subnet, and the brokers are spread evenly over them, so\n# NumberOfBrokerNodes has to divide by the number of subnets. CreateCluster answers with \"The\n# target number of broker nodes must be a multiple of the number of Availability Zones in the\n# Client subnets parameter ... InvalidParameter: numberOfBrokerNodes\".\nviolation contains make_diag_full(\"pf-msk-broker-count-multiple-of-az\", \"ERROR\", name,\n\t\"Properties.NumberOfBrokerNodes\",\n\tsprintf(\"%d broker nodes over %d client subnets is not a whole number per Availability Zone; the create fails with \\\"The target number of broker nodes must be a multiple of the number of Availability Zones in the Client subnets parameter\\\"\", [n, s]),\n\t\"Set NumberOfBrokerNodes to a multiple of the number of client subnets\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\ts := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\ts > 0\n\tn := to_number(resolve(name, \"Properties.NumberOfBrokerNodes\"))\n\tfloor(n / s) * s != n\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-any-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "LoggingInfo.BrokerLogs must name at least one log destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every member of BrokerLogs is optional in the schema, so an empty object passes every earlier\n# layer and the create fails with \"You must define one or more of the following broker log types:\n# CloudWatch Logs, Kinesis Data Firehose, Amazon S3. ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-any-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs\",\n\t\"BrokerLogs names no destination; the create fails with \\\"You must define one or more of the following broker log types: CloudWatch Logs, Kinesis Data Firehose, Amazon S3\\\"\",\n\t\"Declare S3, Firehose or CloudWatchLogs under BrokerLogs, or drop LoggingInfo altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tlogs := object.get(props, [\"LoggingInfo\", \"BrokerLogs\"], null)\n\tis_object(logs)\n\tnamed := [k | some k in object.keys(logs); k in {\"S3\", \"Firehose\", \"CloudWatchLogs\"}]\n\tcount(named) == 0\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-cloudwatch-loggroup-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling CloudWatch Logs broker logs requires the LogGroup to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# LogGroup is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use CloudWatch Logs as a destination for broker logs, you must specify a CloudWatch log group.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-cloudwatch-loggroup-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.CloudWatchLogs.LogGroup\",\n\t\"CloudWatch Logs broker logs are enabled without a LogGroup; the create fails with \\\"To use CloudWatch Logs as a destination for broker logs, you must specify a CloudWatch log group\\\"\",\n\t\"Name the LogGroup, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"CloudWatchLogs\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"LogGroup\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-firehose-stream-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling Kinesis Data Firehose broker logs requires the DeliveryStream to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DeliveryStream is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-firehose-stream-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.Firehose.DeliveryStream\",\n\t\"Kinesis Data Firehose broker logs are enabled without a DeliveryStream; the create fails with \\\"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream\\\"\",\n\t\"Name the DeliveryStream, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"Firehose\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"DeliveryStream\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-s3-bucket-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling Amazon S3 broker logs requires the Bucket to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Bucket is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-s3-bucket-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.S3.Bucket\",\n\t\"Amazon S3 broker logs are enabled without a Bucket; the create fails with \\\"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket\\\"\",\n\t\"Name the Bucket, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"S3\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"Bucket\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-client-subnets-count",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster needs exactly two or three client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A provisioned cluster spans two or three Availability Zones - one client subnet each. Both ends\n# are rejected by CreateCluster with \"Specify either two or three client subnets. ...\n# InvalidParameter: brokerNodeGroupInfo\"; the engine's schema carries no minItems/maxItems here.\nviolation contains make_diag_full(\"pf-msk-client-subnets-count\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"only %d client subnet(s); the create fails with \\\"Specify either two or three client subnets\\\"\", [n]),\n\t\"List two or three client subnets, each in its own Availability Zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 0\n\tn < 2\n}\n\nviolation contains make_diag_full(\"pf-msk-client-subnets-count\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"%d client subnets; the create fails with \\\"Specify either two or three client subnets\\\"\", [n]),\n\t\"List two or three client subnets, each in its own Availability Zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 3\n}\n"
+  },
+  {
+    "id": "pf-msk-client-subnets-distinct",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "MSK client subnets must all be different",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One subnet per Availability Zone: repeating a subnet id is rejected with \"The list provided\n# contains duplicate items. ... InvalidParameter: clientSubnets\". The property carries no\n# uniqueItems in the engine's schema, so nothing earlier sees the repeat.\nviolation contains make_diag_full(\"pf-msk-client-subnets-distinct\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"%d client subnets but only %d distinct ones; the create fails with \\\"The list provided contains duplicate items\\\"\", [n, u]),\n\t\"Give each Availability Zone its own subnet - no repeats\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tsubnets := [it.value | some it in flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"); is_string(it.value)]\n\tn := count(subnets)\n\tu := count({s | some s in subnets})\n\tu != n\n}\n"
+  },
+  {
+    "id": "pf-msk-cluster-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ClusterName matches ^[0-9A-Za-z][0-9A-Za-z-]*$ - no underscores, no dots, no leading hyphen.\n# The engine's schema carries the 64-character maximum (F3033) but no pattern, and CreateCluster\n# answers with \"The parameter value contains one or more characters that are not valid. ...\n# InvalidParameter: clusterName\" without repeating the pattern.\nviolation contains make_diag_full(\"pf-msk-cluster-name-pattern\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"cluster name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := resolve(name, \"Properties.ClusterName\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-clusterpolicy-resource-matches-cluster",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster policy's Resource must be the cluster the policy is attached to",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ClusterPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PutClusterPolicy refuses a policy whose statements name a different cluster: \"The cluster policy\n# is not valid. Invalid cluster arn: \\\"<arn>\\\" ... InvalidParameter: policy\". The realistic mistake\n# is copying a policy between two clusters and forgetting the Resource.\n# Only fully literal kafka ARNs are compared -- a Ref/GetAtt is a marker object (is_string is\n# false) and a wildcard is left alone.\n_pf_mskcprm_res(name) := rs if {\n\trs := [r |\n\t\tsome st in flatten_list(name, \"Properties.Policy.Statement\")\n\t\tr := _pf_mskcprm_one(st.value)\n\t]\n}\n\n_pf_mskcprm_one(st) := r if {\n\tis_string(st.Resource)\n\tr := st.Resource\n}\n\nviolation contains make_diag_full(\"pf-msk-clusterpolicy-resource-matches-cluster\", \"ERROR\", name,\n\t\"Properties.Policy.Statement\",\n\tsprintf(\"the policy grants access to '%s' but is attached to '%s'; PutClusterPolicy fails with \\\"The cluster policy is not valid. Invalid cluster arn\\\"\", [r, carn]),\n\t\"Point every statement's Resource at the same cluster the policy is attached to\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ClusterPolicy\")\n\tcarn := resolve(name, \"Properties.ClusterArn\")\n\tstartswith(carn, \"arn:\")\n\tsome r in _pf_mskcprm_res(name)\n\tstartswith(r, \"arn:\")\n\tstartswith(r, \"arn:aws\")\n\tcontains(r, \":kafka:\")\n\tnot contains(r, \"*\")\n\tr != carn\n}\n"
+  },
+  {
+    "id": "pf-msk-config-custom-advertised-listeners-format",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# custom.advertised.listeners is per-broker, so Amazon MSK requires the +{broker_id} suffix that\n# tells it how to vary the advertised port per broker. CreateConfiguration rejects any other shape\n# with \"Invalid custom.advertised.listeners format. Expected:\n# LISTENER_NAME://host:port+{broker_id} (comma-separated for multiple).\"\n_pf_mskcal_entries(name) := es if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tes := [e |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\ti := indexof(t, \"=\")\n\t\ti > 0\n\t\ttrim_space(substring(t, 0, i)) == \"custom.advertised.listeners\"\n\t\tsome raw in split(substring(t, i + 1, count(t) - i - 1), \",\")\n\t\te := trim_space(raw)\n\t\te != \"\"\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-custom-advertised-listeners-format\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"custom.advertised.listeners entry '%s' is not of the form LISTENER_NAME://host:port+{broker_id}; the configuration create fails with \\\"Invalid custom.advertised.listeners format\\\"\", [bad]),\n\t\"Write each listener as LISTENER_NAME://host:port+{broker_id} (comma-separated for several), e.g. CLIENT://b-{broker_id}.example.com:9092+{broker_id}\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tsome bad in _pf_mskcal_entries(name)\n\tnot regex.match(`^[A-Za-z0-9_]+://[^,]+:[0-9]+\\+\\{broker_id\\}$`, bad)\n}\n"
+  },
+  {
+    "id": "pf-msk-config-kafka-versions-unknown",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "KafkaVersionsList must name Apache Kafka versions Amazon MSK knows",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateConfiguration rejects a version string it does not know with \"Unsupported KafkaVersion [x].\n# Valid values: [...]\". Deprecated versions are still valid values here, so the list below is every\n# version `aws kafka list-kafka-versions` reports, ACTIVE and DEPRECATED alike (2026-09-13), which\n# is exactly the list the service prints.\n# ponytail: a static list goes stale the day AWS ships a new version -- refresh it from\n# list-kafka-versions when the monthly bench or a user reports a false positive.\n_pf_mskkvu_known := {\n\t\"1.1.1\",\n\t\"2.1.0\",\n\t\"2.2.1\",\n\t\"2.3.1\",\n\t\"2.4.1\",\n\t\"2.4.1.1\",\n\t\"2.5.1\",\n\t\"2.6.0\",\n\t\"2.6.1\",\n\t\"2.6.2\",\n\t\"2.6.3\",\n\t\"2.7.0\",\n\t\"2.7.1\",\n\t\"2.7.2\",\n\t\"2.8.0\",\n\t\"2.8.1\",\n\t\"2.8.2.tiered\",\n\t\"3.1.1\",\n\t\"3.2.0\",\n\t\"3.3.1\",\n\t\"3.3.2\",\n\t\"3.4.0\",\n\t\"3.5.1\",\n\t\"3.6.0\",\n\t\"3.6.0.1\",\n\t\"3.7.x\",\n\t\"3.7.x.kraft\",\n\t\"3.8.x\",\n\t\"3.8.x.kraft\",\n\t\"3.8.link\",\n\t\"3.9.x\",\n\t\"3.9.x.kraft\",\n\t\"4.0.x.kraft\",\n\t\"4.1.x.kraft\",\n\t\"4.2.x.kraft\",\n}\n\nviolation contains make_diag_full(\"pf-msk-config-kafka-versions-unknown\", \"ERROR\", name,\n\t\"Properties.KafkaVersionsList\",\n\tsprintf(\"KafkaVersionsList contains '%s', which is not an Amazon MSK Kafka version; the create fails with \\\"Unsupported KafkaVersion [%s]\\\"\", [v, v]),\n\t\"Use a version reported by `aws kafka list-kafka-versions` (for example 3.9.x or 3.9.x.kraft)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tsome it in flatten_list(name, \"Properties.KafkaVersionsList\")\n\tv := it.value\n\tis_string(v)\n\tnot v in _pf_mskkvu_known\n}\n"
+  },
+  {
+    "id": "pf-msk-config-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK configuration name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Name must match ^[0-9A-Za-z][0-9A-Za-z-]{0,}$ -- no underscores, dots or leading hyphen. The\n# engine's schema carries no pattern for this property, and CreateConfiguration answers with a\n# message that does not repeat the pattern (\"The parameter value contains one or more characters\n# that are not valid. ... InvalidParameter: name\").\nviolation contains make_diag_full(\"pf-msk-config-name-pattern\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"configuration name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-config-server-properties-allowed-keys",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK configuration may only set Amazon MSK's supported Apache Kafka properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Amazon MSK does not accept arbitrary Apache Kafka broker properties. CreateConfiguration checks\n# every key in ServerProperties against a fixed allow-list (the \"Custom Amazon MSK configurations\"\n# table) and rejects anything else -- a read-only broker property (advertised.listeners), a\n# per-broker property (broker.id), or a line that is not key=value at all -- with\n# \"Key '<k>' is not supported by at least one Apache Kafka version\".\n# The list is static: passing KafkaVersionsList does not widen it.\n_pf_mskspk_allowed := {\n\t\"allow.everyone.if.no.acl.found\",\n\t\"auto.create.topics.enable\",\n\t\"compression.type\",\n\t\"connections.max.idle.ms\",\n\t\"custom.advertised.listeners\",\n\t\"default.replication.factor\",\n\t\"delete.topic.enable\",\n\t\"group.initial.rebalance.delay.ms\",\n\t\"group.max.session.timeout.ms\",\n\t\"group.min.session.timeout.ms\",\n\t\"leader.imbalance.per.broker.percentage\",\n\t\"log.cleaner.delete.retention.ms\",\n\t\"log.cleaner.min.cleanable.ratio\",\n\t\"log.cleanup.policy\",\n\t\"log.flush.interval.messages\",\n\t\"log.flush.interval.ms\",\n\t\"log.message.timestamp.difference.max.ms\",\n\t\"log.message.timestamp.type\",\n\t\"log.retention.bytes\",\n\t\"log.retention.hours\",\n\t\"log.retention.minutes\",\n\t\"log.retention.ms\",\n\t\"log.roll.ms\",\n\t\"log.segment.bytes\",\n\t\"max.incremental.fetch.session.cache.slots\",\n\t\"message.max.bytes\",\n\t\"min.insync.replicas\",\n\t\"num.io.threads\",\n\t\"num.network.threads\",\n\t\"num.partitions\",\n\t\"num.recovery.threads.per.data.dir\",\n\t\"num.replica.fetchers\",\n\t\"offsets.retention.minutes\",\n\t\"offsets.topic.replication.factor\",\n\t\"replica.fetch.max.bytes\",\n\t\"replica.fetch.response.max.bytes\",\n\t\"replica.lag.time.max.ms\",\n\t\"replica.selector.class\",\n\t\"replica.socket.receive.buffer.bytes\",\n\t\"socket.receive.buffer.bytes\",\n\t\"socket.request.max.bytes\",\n\t\"socket.send.buffer.bytes\",\n\t\"transaction.max.timeout.ms\",\n\t\"transaction.state.log.min.isr\",\n\t\"transaction.state.log.replication.factor\",\n\t\"transactional.id.expiration.ms\",\n\t\"unclean.leader.election.enable\",\n\t\"zookeeper.connection.timeout.ms\",\n\t\"zookeeper.session.timeout.ms\",\n}\n\n# A properties line is \"key=value\"; a line with no '=' is a key with an empty value, which is how a\n# JSON blob or stray prose lands here. ponytail: no support for backslash line continuations --\n# a continued line is skipped, so the rule misses rather than false-fires.\n_pf_mskspk_key(line) := k if {\n\ti := indexof(line, \"=\")\n\ti > 0\n\tk := trim_space(substring(line, 0, i))\n}\n\n_pf_mskspk_key(line) := line if {\n\tindexof(line, \"=\") <= 0\n}\n\n_pf_mskspk_bad(name) := ks if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tks := [k |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\tt != \"\"\n\t\tnot startswith(t, \"#\")\n\t\tnot startswith(t, \"!\")\n\t\tk := _pf_mskspk_key(t)\n\t\tnot k in _pf_mskspk_allowed\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-server-properties-allowed-keys\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"ServerProperties sets %s, which Amazon MSK does not allow in a custom configuration; the create fails with \\\"Key '%s' is not supported by at least one Apache Kafka version\\\"\", [concat(\", \", bad), bad[0]]),\n\t\"Keep ServerProperties to the properties listed under \\\"Custom Amazon MSK configurations\\\" (read-only and per-broker Kafka properties cannot be set)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tbad := _pf_mskspk_bad(name)\n\tcount(bad) > 0\n}\n"
+  },
+  {
+    "id": "pf-msk-express-kafka-version",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Express brokers do not run every Apache Kafka version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers run a subset of the ACTIVE Apache Kafka versions: CreateClusterV2 answered\n# \"Valid values: [3.8.x, 3.9.x.kraft, 4.2.x.kraft]\" on 2026-09-14, which is narrower than the\n# support table in the user guide (3.6, 3.8, 3.9 and 4.2). 3.7.x is perfectly valid for Standard\n# brokers and rejected here. This is a deny list on purpose - the two sources disagree, and an\n# allow list would turn both that disagreement and every version AWS adds into a false positive.\nviolation contains make_diag_full(\"pf-msk-express-kafka-version\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Express instance type '%s' with Apache Kafka %s; the create fails with \\\"Express instance types are not supported for Kafka version %s\\\"\", [itype, v, v]),\n\t\"Pick a version the service lists for Express brokers (3.8.x, 3.9.x.kraft or 4.2.x.kraft as of 2026-09-14)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskekv_not_on_express\n}\n\n# ACTIVE versions (aws kafka list-kafka-versions) that Express brokers do not run.\n_pf_mskekv_not_on_express := {\"3.7.x\", \"3.7.x.kraft\", \"4.0.x.kraft\", \"4.1.x.kraft\"}\n"
+  },
+  {
+    "id": "pf-msk-express-no-ebs-storage",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers may not declare StorageInfo",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers manage their own storage, so the create rejects any StorageInfo: \"The\n# storageInfo parameter is not supported for Express instance types. ... InvalidParameter:\n# brokerNodeGroupInfo\". Standard brokers require it, so the property cannot be schema-forbidden.\nviolation contains make_diag_full(\"pf-msk-express-no-ebs-storage\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo\",\n\tsprintf(\"Express instance type '%s' with StorageInfo; the create fails with \\\"The storageInfo parameter is not supported for Express instance types\\\"\", [itype]),\n\t\"Drop StorageInfo - Express brokers size their own storage\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\"], \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-express-no-storage-mode",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers may not declare StorageMode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Tiered storage is a Standard broker feature; on Express the create fails with \"The storageMode\n# parameter is not supported for Express instance types. ... InvalidParameter: storageMode\".\nviolation contains make_diag_full(\"pf-msk-express-no-storage-mode\", \"ERROR\", name,\n\t\"Properties.StorageMode\",\n\tsprintf(\"Express instance type '%s' with StorageMode '%s'; the create fails with \\\"The storageMode parameter is not supported for Express instance types\\\"\", [itype, mode]),\n\t\"Drop StorageMode - Express brokers have no tiered-storage switch\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tmode := resolve(name, \"Properties.StorageMode\")\n\tis_string(mode)\n}\n"
+  },
+  {
+    "id": "pf-msk-express-requires-three-subnets",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers needs exactly three client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers only come in a three Availability Zone shape: \"Clusters with Express instance\n# types require 3 subnets. ... InvalidParameter: brokerNodeGroupInfo\". Standard brokers accept\n# two, so nothing generic can carry this check.\nviolation contains make_diag_full(\"pf-msk-express-requires-three-subnets\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"Express instance type '%s' with %d client subnets; the create fails with \\\"Clusters with Express instance types require 3 subnets\\\"\", [itype, n]),\n\t\"Give an Express cluster three client subnets, one per Availability Zone\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 0\n\tn != 3\n}\n"
+  },
+  {
+    "id": "pf-msk-kafka-version-deprecated",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A deprecated Apache Kafka version cannot be used for a new MSK cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK keeps deprecated versions readable in list-kafka-versions but refuses to create with them:\n# \"Standard instance types are not supported for Kafka version 2.8.1. Valid values: [...] ...\n# InvalidParameter: kafkaVersion\". The set below is every version whose only status was\n# DEPRECATED on 2026-09-14 (aws kafka list-kafka-versions, us-east-1); 3.9.x and 4.2.x.kraft are\n# listed twice by the API and stay out because their other row is ACTIVE.\nviolation contains make_diag_full(\"pf-msk-kafka-version-deprecated\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Apache Kafka %s is deprecated; the create fails with \\\"Standard instance types are not supported for Kafka version %s\\\"\", [v, v]),\n\t\"Pick a version that aws kafka list-kafka-versions still reports as ACTIVE\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskkvd_deprecated\n}\n\n_pf_mskkvd_deprecated := {\n\t\"1.1.1\", \"2.1.0\", \"2.2.1\", \"2.3.1\", \"2.4.1\", \"2.4.1.1\",\n\t\"2.5.1\", \"2.6.0\", \"2.6.1\", \"2.6.2\", \"2.6.3\",\n\t\"2.7.0\", \"2.7.1\", \"2.7.2\", \"2.8.0\", \"2.8.1\", \"2.8.2.tiered\",\n\t\"3.1.1\", \"3.2.0\", \"3.3.1\", \"3.3.2\", \"3.4.0\", \"3.5.1\",\n\t\"3.6.0.1\", \"3.8.link\",\n}\n"
+  },
+  {
+    "id": "pf-msk-network-type-ipv4-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster is created IPv4-only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema lists IPV4 | DUAL, but DUAL is reachable only by updating an existing cluster: the\n# create fails with \"Invalid NetworkType value in ConnectivityInfo. When creating a cluster, only\n# IPV4 is supported. ... InvalidParameter: networkType\".\nviolation contains make_diag_full(\"pf-msk-network-type-ipv4-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType\",\n\tsprintf(\"NetworkType '%s'; the create fails with \\\"When creating a cluster, only IPV4 is supported\\\"\", [t]),\n\t\"Create the cluster as IPV4 and switch it to DUAL in a later update\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/mskp-choose-cluster-network-type.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tt := resolve(name, \"Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType\")\n\tis_string(t)\n\tt != \"IPV4\"\n}\n"
+  },
+  {
+    "id": "pf-msk-open-monitoring-requires-exporter",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Prometheus open monitoring needs an exporter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both exporters are Required: No, so an empty Prometheus block is schema-valid and turns\n# monitoring on with nothing to scrape; the create fails with \"You must specify at least one type\n# of exporter, either nodeExporter or jmxExporter. ... InvalidParameter: openMonitoring\".\nviolation contains make_diag_full(\"pf-msk-open-monitoring-requires-exporter\", \"ERROR\", name,\n\t\"Properties.OpenMonitoring.Prometheus\",\n\t\"OpenMonitoring.Prometheus names no exporter; the create fails with \\\"You must specify at least one type of exporter, either nodeExporter or jmxExporter\\\"\",\n\t\"Declare JmxExporter or NodeExporter under Prometheus, or drop OpenMonitoring altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-prometheus.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprom := object.get(props, [\"OpenMonitoring\", \"Prometheus\"], null)\n\tis_object(prom)\n\tnamed := [k | some k in object.keys(prom); k in {\"JmxExporter\", \"NodeExporter\"}]\n\tcount(named) == 0\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-instance-type",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput needs kafka.m5.4xlarge / kafka.m7g.2xlarge or larger",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"To provision storage throughput, you must choose broker size kafka.m5.4xlarge or larger (or\n# kafka.m7g.2xlarge or larger)\" - the create fails on anything below with \"Provisioned throughput\n# is not supported for the specified broker type. ... InvalidParameter: provisionedThroughput\".\n# Written as a deny list of the sizes below the floor: an allow list would turn every broker size\n# AWS adds into a false positive.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-instance-type\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.InstanceType\",\n\tsprintf(\"ProvisionedThroughput is enabled on '%s'; the create fails with \\\"Provisioned throughput is not supported for the specified broker type\\\"\", [itype]),\n\t\"Move to kafka.m5.4xlarge or kafka.m7g.2xlarge (or larger), or turn ProvisionedThroughput off\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\", \"Enabled\"], false) == true\n\titype := object.get(props, [\"BrokerNodeGroupInfo\", \"InstanceType\"], \"\")\n\titype in _pf_mskptit_too_small\n}\n\n# Standard broker sizes below the provisioned-throughput floor.\n_pf_mskptit_too_small := {\n\t\"kafka.t3.small\",\n\t\"kafka.m5.large\", \"kafka.m5.xlarge\", \"kafka.m5.2xlarge\",\n\t\"kafka.m7g.large\", \"kafka.m7g.xlarge\",\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-max-per-instance",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput has a per-broker-size ceiling",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The 1000 MiB/s top of the range is only reachable on the largest brokers - every size carries\n# its own ceiling (user guide table), and the create fails with \"For brokers of type m5.4xlarge,\n# the maximum value for VolumeThroughput cannot exceed 593.75 MiB/s. ... InvalidParameter:\n# volumeThroughput\". VolumeThroughput is an Integer, so the table holds the largest integer the\n# service accepts for each size.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-max-per-instance\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.VolumeThroughput\",\n\tsprintf(\"VolumeThroughput %d MiB/s on '%s', which tops out at %d MiB/s; the create fails with \\\"the maximum value for VolumeThroughput cannot exceed\\\"\", [t, itype, cap]),\n\t\"Lower VolumeThroughput to the ceiling for this broker size, or move to a larger broker\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], {})\n\tobject.get(prov, \"Enabled\", false) == true\n\titype := object.get(props, [\"BrokerNodeGroupInfo\", \"InstanceType\"], \"\")\n\tcap := object.get(_pf_mskptmax_caps, itype, null)\n\tcap != null\n\tv := object.get(prov, \"VolumeThroughput\", null)\n\tv != null\n\tt := to_number(v)\n\tt > cap\n}\n\n# Maximum storage throughput per broker size (user guide table, 2026-09-14), floored to the\n# largest integer VolumeThroughput accepts. Sizes the table does not list are not checked.\n_pf_mskptmax_caps := {\n\t\"kafka.m5.4xlarge\": 593,\n\t\"kafka.m5.8xlarge\": 850,\n\t\"kafka.m5.12xlarge\": 1000,\n\t\"kafka.m5.16xlarge\": 1000,\n\t\"kafka.m5.24xlarge\": 1000,\n\t\"kafka.m7g.2xlarge\": 312,\n\t\"kafka.m7g.4xlarge\": 625,\n\t\"kafka.m7g.8xlarge\": 1000,\n\t\"kafka.m7g.12xlarge\": 1000,\n\t\"kafka.m7g.16xlarge\": 1000,\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-min",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput starts at 250 MiB/s",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VolumeThroughput is a plain Integer in the schema; the service floor is 250 MiB/s and the\n# create fails with \"EBS volume throughput should be between 250 and 1000 MiB/s. ...\n# InvalidParameter: volumeThroughput\". The per-broker-size ceiling is pf-msk-provisioned-throughput-max-per-instance.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-min\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.VolumeThroughput\",\n\tsprintf(\"VolumeThroughput %d MiB/s; the create fails with \\\"EBS volume throughput should be between 250 and 1000 MiB/s\\\"\", [t]),\n\t\"Ask for at least 250 MiB/s, or turn ProvisionedThroughput off to keep the baseline throughput\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], {})\n\tobject.get(prov, \"Enabled\", false) == true\n\tv := object.get(prov, \"VolumeThroughput\", null)\n\tv != null\n\tt := to_number(v)\n\tt < 250\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-volume-size",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput needs a volume of at least 10 GiB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VolumeSize accepts 1..16384 in the schema; provisioned throughput narrows the floor to 10 GiB.\n# The create fails with \"To enable ProvisionedThroughput, you must set volume size to a value that\n# is greater than or equal to 10. ... InvalidParameter: volumeSize\".\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-volume-size\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.VolumeSize\",\n\tsprintf(\"ProvisionedThroughput is enabled on a %d GiB volume; the create fails with \\\"you must set volume size to a value that is greater than or equal to 10\\\"\", [s]),\n\t\"Give the broker volume at least 10 GiB, or turn ProvisionedThroughput off\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tebs := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\"], {})\n\tobject.get(ebs, [\"ProvisionedThroughput\", \"Enabled\"], false) == true\n\tv := object.get(ebs, \"VolumeSize\", null)\n\tv != null\n\ts := to_number(v)\n\ts < 10\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-without-enabled",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "VolumeThroughput only counts when ProvisionedThroughput is enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members of ProvisionedThroughput are Required: No, so naming a throughput without the\n# switch passes every earlier layer; the create fails with \"To specify a value for\n# VolumeThroughput, you must enable ProvisionedThroughput. ... InvalidParameter: volumeThroughput\".\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-without-enabled\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.Enabled\",\n\t\"VolumeThroughput is set while ProvisionedThroughput.Enabled is not true; the create fails with \\\"To specify a value for VolumeThroughput, you must enable ProvisionedThroughput\\\"\",\n\t\"Set ProvisionedThroughput.Enabled to true, or drop VolumeThroughput\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-provisionedthroughput.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], null)\n\tis_object(prov)\n\tobject.get(prov, \"VolumeThroughput\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(prov, \"Enabled\", false) != true\n}\n"
+  },
+  {
+    "id": "pf-msk-public-access-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Public access cannot be turned on while the cluster is created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PublicAccess.Type is a free String of 7..23 characters in the schema, so SERVICE_PROVIDED_EIPS\n# passes every earlier layer - but public access is an update-only switch and the create fails\n# with \"When creating a cluster, the only valid value for the Type parameter in PublicAccess is\n# DISABLED. ... InvalidParameter: publicAccess\".\nviolation contains make_diag_full(\"pf-msk-public-access-not-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type\",\n\tsprintf(\"PublicAccess.Type is '%s'; the create fails with \\\"When creating a cluster, the only valid value for the Type parameter in PublicAccess is DISABLED\\\"\", [t]),\n\t\"Create the cluster with DISABLED (or no PublicAccess at all) and turn public access on afterwards\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tt := resolve(name, \"Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type\")\n\tis_string(t)\n\tt != \"DISABLED\"\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-apache-kafka-cluster-requires-auth",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An Apache Kafka cluster entry must declare ClientAuthentication",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A self-managed Apache Kafka source has no MSK-side auth to inherit, so the\n# entry has to spell out how the replicator authenticates to it.\nviolation contains make_diag_full(\"pf-msk-replicator-apache-kafka-cluster-requires-auth\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d]\", [it.index]),\n\t\"an ApacheKafkaCluster entry has no ClientAuthentication; the replicator create fails with \\\"Apache Kafka clusters require authentication configuration. Specify the clientAuthentication parameter.\\\"\",\n\t\"Add ClientAuthentication (and EncryptionInTransit) to the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"ClientAuthentication\", null) == null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-arns-match-kafka-clusters",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ReplicationInfoList ARNs must be the ones listed in KafkaClusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ReplicationInfoList repeats the ARNs that KafkaClusters declares. A third\n# ARN (or a typo in one of the two) is rejected at create time.\n# The rule only judges when every AmazonMskCluster entry handed over a literal\n# ARN - a Ref / GetAtt wired cluster surfaces as a marker object and is skipped.\n_pf_mskram_arns(name) := arns if {\n\tarns := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := it.value.AmazonMskCluster.MskClusterArn\n\t\tis_string(a)\n\t}\n}\n\n_pf_mskram_msk_entries(name) := n if {\n\tn := count([1 |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\tis_object(it.value)\n\t\tobject.get(it.value, \"AmazonMskCluster\", null) != null\n\t])\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-arns-match-kafka-clusters\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d].%s\", [it.index, key]),\n\tsprintf(\"%s '%s' is not one of the cluster ARNs in KafkaClusters; the replicator create fails with \\\"Source and target Kafka cluster ARNs must be present in kafkaClusters\\\"\", [key, arn]),\n\t\"Repeat the KafkaClusters ARNs verbatim in ReplicationInfoList\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tarns := _pf_mskram_arns(name)\n\tcount(arns) > 0\n\tcount(arns) == _pf_mskram_msk_entries(name)\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tsome key in [\"SourceKafkaClusterArn\", \"TargetKafkaClusterArn\"]\n\tarn := object.get(it.value, key, null)\n\tis_string(arn)\n\tnot arn in arns\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-clusters-same-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator's source and target clusters must be in one account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Replicator does not replicate across accounts: both cluster ARNs must\n# carry the same account id. The deploy-time failure never names the rule --\n# the service simply cannot read the other account's cluster.\n_pf_mskrsa_account(e) := acct if {\n\tarn := e.AmazonMskCluster.MskClusterArn\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kafka\"\n\tacct := parts[4]\n\tacct != \"\"\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-clusters-same-account\", \"ERROR\", name,\n\t\"Properties.KafkaClusters\",\n\tsprintf(\"the cluster ARNs name %d different accounts (%s); the replicator create fails with an AccessDenied on kafka:GetBootstrapBrokers against the other account's cluster\", [count(accounts), joined]),\n\t\"Replicate between clusters in one account - MSK Replicator does not support cross-account replication\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-replicator-supported-configs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\taccounts := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := _pf_mskrsa_account(it.value)\n\t}\n\tcount(accounts) > 1\n\tjoined := concat(\", \", sort(accounts))\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-enhanced-sync-requires-identical",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ENHANCED consumer-group offset sync needs IDENTICAL topic names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ENHANCED offset sync tracks the same topic name on both sides, so it is\n# only accepted when TopicNameConfiguration.Type is IDENTICAL. The rule judges\n# an explicitly declared Type only - whether the documented default\n# (PREFIXED_WITH_SOURCE_CLUSTER_ALIAS) is rejected the same way is unmeasured.\nviolation contains make_diag_full(\"pf-msk-replicator-enhanced-sync-requires-identical\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d].ConsumerGroupReplication.ConsumerGroupOffsetSyncMode\", [it.index]),\n\tsprintf(\"ConsumerGroupOffsetSyncMode ENHANCED is combined with TopicNameConfiguration.Type '%s'; the replicator create fails with \\\"The consumerGroupOffsetSyncMode value ENHANCED is only supported when topicNameConfiguration type is IDENTICAL\\\"\", [t]),\n\t\"Set TopicNameConfiguration.Type to IDENTICAL, or use the LEGACY offset sync mode\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tobject.get(it.value, [\"ConsumerGroupReplication\", \"ConsumerGroupOffsetSyncMode\"], null) == \"ENHANCED\"\n\tt := object.get(it.value, [\"TopicReplication\", \"TopicNameConfiguration\", \"Type\"], null)\n\tis_string(t)\n\tt != \"IDENTICAL\"\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-kafka-cluster-exactly-one-kind",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A KafkaClusters entry names either an MSK cluster or an Apache Kafka cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One entry describes one cluster: AmazonMskCluster for an MSK cluster,\n# ApacheKafkaCluster for a self-managed one. Both together is rejected.\nviolation contains make_diag_full(\"pf-msk-replicator-kafka-cluster-exactly-one-kind\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d]\", [it.index]),\n\t\"the entry carries both AmazonMskCluster and ApacheKafkaCluster; the replicator create fails with \\\"Cannot specify both AmazonMskCluster and ApacheKafkaCluster in a kafkaCluster object\\\"\",\n\t\"Keep one cluster kind per KafkaClusters entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"AmazonMskCluster\", null) != null\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-service-role-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "The service execution role must live in the clusters' account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The replicator, its ServiceExecutionRoleArn and its clusters all live in one\n# account: CreateReplicator refuses to pass a role from another account. The\n# check is against the cluster ARNs rather than deploy_account so that it also\n# fires in region/account-agnostic apps, where deploy_account is not injected.\n_pf_mskrsr_account(arn, service) := acct if {\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == service\n\tacct := parts[4]\n\tacct != \"\"\n}\n\n_pf_mskrsr_clusters(name) := accounts if {\n\taccounts := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := _pf_mskrsr_account(it.value.AmazonMskCluster.MskClusterArn, \"kafka\")\n\t}\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-service-role-account\", \"ERROR\", name,\n\t\"Properties.ServiceExecutionRoleArn\",\n\tsprintf(\"the service execution role is in account %s while the clusters are in %s; the replicator create fails with \\\"Cross-account pass role is not allowed.\\\"\", [roleAcct, clusterAcct]),\n\t\"Use a role from the account that owns the clusters and the replicator\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\troleAcct := _pf_mskrsr_account(resolve(name, \"Properties.ServiceExecutionRoleArn\"), \"iam\")\n\taccounts := _pf_mskrsr_clusters(name)\n\tcount(accounts) == 1\n\tsome clusterAcct in accounts\n\troleAcct != clusterAcct\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-source-arn-xor-id",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A ReplicationInfo names the source cluster by ARN or by id, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SourceKafkaClusterArn addresses an MSK cluster, SourceKafkaClusterId a\n# self-managed Apache Kafka cluster. Both in one ReplicationInfo is rejected.\nviolation contains make_diag_full(\"pf-msk-replicator-source-arn-xor-id\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d]\", [it.index]),\n\t\"the entry carries both SourceKafkaClusterArn and SourceKafkaClusterId; the replicator create fails with \\\"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId\\\"\",\n\t\"Use SourceKafkaClusterArn for an MSK source, SourceKafkaClusterId for an Apache Kafka source\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tobject.get(it.value, \"SourceKafkaClusterArn\", null) != null\n\tobject.get(it.value, \"SourceKafkaClusterId\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-source-target-differ",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator's two KafkaClusters entries must be different clusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# KafkaClusters carries the source and the target; naming the same cluster\n# twice (a copy-paste of the ARN) is rejected outright.\n_pf_mskrstd_arns(name) := arns if {\n\tarns := [a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := it.value.AmazonMskCluster.MskClusterArn\n\t\tis_string(a)\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-source-target-differ\", \"ERROR\", name,\n\t\"Properties.KafkaClusters\",\n\tsprintf(\"KafkaClusters lists %d cluster ARNs but only %d distinct one(s); the replicator create fails with \\\"Kafka cluster list contains duplicate cluster ARNs\\\"\", [count(arns), count(uniq)]),\n\t\"Point the source and the target at two different MSK clusters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tarns := _pf_mskrstd_arns(name)\n\tcount(arns) > 1\n\tuniq := {a | some a in arns}\n\tcount(uniq) < count(arns)\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-target-cluster-region",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator must be created in its target cluster's region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The source cluster may be remote; the target cluster may not. The service\n# names the deploy region in the rejection, so the check is against\n# data.cdk_preflight.deploy_region (enforce mode with a concrete env only).\nviolation contains make_diag_full(\"pf-msk-replicator-target-cluster-region\", \"ERROR\", name,\n\t\"Properties.ReplicationInfoList\",\n\tsprintf(\"the target cluster is in '%s' but the replicator deploys to '%s'; the replicator create fails with \\\"The target cluster must be from region %s\\\"\", [tgtRegion, region, region]),\n\t\"Create the replicator in the target cluster's region (only the source cluster may be in another region)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tarn := it.value.TargetKafkaClusterArn\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kafka\"\n\ttgtRegion := parts[3]\n\ttgtRegion != \"\"\n\ttgtRegion != region\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-vpc-config-only-for-msk-cluster",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VpcConfig describes how the replicator reaches an MSK cluster. An entry that\n# describes a self-managed Apache Kafka cluster must not carry one.\n# An entry with both cluster kinds is pf-msk-replicator-kafka-cluster-exactly-one-kind's\n# business, so this rule stays out of it.\nviolation contains make_diag_full(\"pf-msk-replicator-vpc-config-only-for-msk-cluster\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d].VpcConfig\", [it.index]),\n\t\"an ApacheKafkaCluster entry carries VpcConfig; the replicator create fails with \\\"The vpcConfig parameter is only supported for AmazonMskCluster\\\"\",\n\t\"Drop VpcConfig from the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"VpcConfig\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-sasl-requires-in-cluster-encryption",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Client authentication needs in-cluster encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"To turn on SASL, you must also turn on EncryptionInTransit by setting inCluster to true.\"\n# InCluster defaults to true, so only an explicit false is a problem, and the create then fails\n# with \"To turn on client authentication, you must also turn on in-cluster encryption. ...\n# InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-sasl-requires-in-cluster-encryption\", \"ERROR\", name,\n\t\"Properties.EncryptionInfo.EncryptionInTransit.InCluster\",\n\t\"client authentication is turned on with InCluster false; the create fails with \\\"To turn on client authentication, you must also turn on in-cluster encryption\\\"\",\n\t\"Set InCluster to true (its default), or turn client authentication off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\t_pf_msksrice_authenticated(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"InCluster\"], true) == false\n}\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-sasl-requires-tls-client-broker",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Client authentication needs client-broker encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"You must set clientBroker to either TLS or TLS_PLAINTEXT\" - a cluster that authenticates its\n# clients over a plaintext listener is rejected with \"Client-broker encryption in transit must be\n# set to either TLS or TLS_PLAINTEXT to enable client authentication. ... InvalidParameter:\n# clientAuthentication\". Both members are independently valid, so nothing earlier sees the pair.\nviolation contains make_diag_full(\"pf-msk-sasl-requires-tls-client-broker\", \"ERROR\", name,\n\t\"Properties.EncryptionInfo.EncryptionInTransit.ClientBroker\",\n\t\"client authentication is turned on with ClientBroker PLAINTEXT; the create fails with \\\"Client-broker encryption in transit must be set to either TLS or TLS_PLAINTEXT to enable client authentication\\\"\",\n\t\"Set ClientBroker to TLS (or TLS_PLAINTEXT), or turn client authentication off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\t_pf_msksrtcb_authenticated(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"ClientBroker\"], \"TLS\") == \"PLAINTEXT\"\n}\n\n# Any client authentication mechanism explicitly switched on.\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-scram-secret-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "SCRAM secrets must live in the same account as the MSK cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::BatchScramSecret"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BatchAssociateScramSecret only accepts secrets owned by the cluster's account; a foreign-account\n# secret ARN is rejected with \"The provided secret ARN is invalid. ... InvalidParameter:\n# secretArnList\" before the cluster is even looked up.\n# The comparison is between the two ARNs written in the template, never against\n# data.cdk_preflight.deploy_account -- fixtures and real apps both use literal bench-account ARNs.\n_pf_msksa_acct(arn) := a if {\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\ta := parts[4]\n\ta != \"\"\n}\n\nviolation contains make_diag_full(\"pf-msk-scram-secret-account\", \"ERROR\", name,\n\t\"Properties.SecretArnList\",\n\tsprintf(\"secret '%s' is in account %s but the cluster is in account %s; the association fails with \\\"The provided secret ARN is invalid\\\"\", [sarn, sacct, cacct]),\n\t\"Create the SCRAM secret in the same account as the cluster\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::BatchScramSecret\")\n\tcacct := _pf_msksa_acct(resolve(name, \"Properties.ClusterArn\"))\n\tsome it in flatten_list(name, \"Properties.SecretArnList\")\n\tsarn := it.value\n\tstartswith(sarn, \"arn:\")\n\tsacct := _pf_msksa_acct(sarn)\n\tsacct != cacct\n}\n"
+  },
+  {
+    "id": "pf-msk-scram-secret-list-unique",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "SecretArnList must not repeat a secret ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::BatchScramSecret"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BatchAssociateScramSecret rejects a repeated ARN outright with \"The list provided contains\n# duplicate items. ... InvalidParameter: secretArnList\" -- the realistic shape is a copy-pasted\n# entry in a list that is otherwise correct. The schema does not mark SecretArnList uniqueItems.\n_pf_msksu_arns(name) := arns if {\n\tarns := [a |\n\t\tsome it in flatten_list(name, \"Properties.SecretArnList\")\n\t\ta := it.value\n\t\tis_string(a)\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-scram-secret-list-unique\", \"ERROR\", name,\n\t\"Properties.SecretArnList\",\n\tsprintf(\"SecretArnList has %d entries but only %d distinct ARN(s); the association fails with \\\"The list provided contains duplicate items\\\"\", [count(arns), count(uniq)]),\n\t\"List each SCRAM secret once\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::BatchScramSecret\")\n\tarns := _pf_msksu_arns(name)\n\tcount(arns) > 1\n\tuniq := {a | some a in arns}\n\tcount(uniq) < count(arns)\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same name pattern as every other MSK entity: ^[0-9A-Za-z][0-9A-Za-z-]{0,}$. Underscores are the\n# realistic mistake (they are legal in Kafka topic names and in CDK ids). The schema has no pattern\n# for this property; CreateClusterV2 answers \"The parameter value contains one or more characters\n# that are not valid. ... InvalidParameter: clusterName\".\nviolation contains make_diag_full(\"pf-msk-serverless-name-pattern\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"cluster name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tn := resolve(name, \"Properties.ClusterName\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-sasl-iam-enabled",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster must keep SASL/IAM authentication enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# IAM access control is the only client authentication MSK Serverless has. The CloudFormation\n# schema makes ClientAuthentication.Sasl.Iam.Enabled required, so the reachable mistake is setting\n# it to false -- which the schema happily accepts and CreateClusterV2 rejects with \"A serverless\n# cluster must use SASL/IAM authentication\".\nviolation contains make_diag_full(\"pf-msk-serverless-sasl-iam-enabled\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Sasl.Iam.Enabled\",\n\t\"SASL/IAM authentication is disabled; a serverless cluster has no other client authentication and the create fails with \\\"A serverless cluster must use SASL/IAM authentication\\\"\",\n\t\"Set ClientAuthentication.Sasl.Iam.Enabled to true\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tresolve(name, \"Properties.ClientAuthentication.Sasl.Iam.Enabled\") == false\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-subnets-count",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Each serverless MSK VPC configuration needs between 2 and 6 subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless spreads a VPC connection over 2 to 6 subnets, each in its own Availability Zone.\n# CreateClusterV2 rejects both ends with \"The size of list should be between 2 and 6. ...\n# InvalidParameter: subnetIds\".\nviolation contains make_diag_full(\"pf-msk-serverless-subnets-count\", \"ERROR\", name,\n\tsprintf(\"Properties.VpcConfigs[%d].SubnetIds\", [it.index]),\n\tsprintf(\"VpcConfigs[%d] lists %d subnet(s); the create fails with \\\"The size of list should be between 2 and 6\\\"\", [it.index, n]),\n\t\"Give each VPC configuration between 2 and 6 subnets, one per Availability Zone\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tsome it in flatten_list(name, \"Properties.VpcConfigs\")\n\tids := it.value.SubnetIds\n\tis_array(ids)\n\tn := count(ids)\n\t_pf_mskssc_out(n)\n}\n\n_pf_mskssc_out(n) if n < 2\n\n_pf_mskssc_out(n) if n > 6\n"
+  },
+  {
+    "id": "pf-msk-serverless-vpc-configs-max",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster can span at most 5 VPCs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless attaches to at most 5 VPCs. CreateClusterV2 rejects a sixth with \"The size of list\n# should be between 1 and 5. ... InvalidParameter: vpcConfigs\". (The lower end is the schema's job.)\nviolation contains make_diag_full(\"pf-msk-serverless-vpc-configs-max\", \"ERROR\", name,\n\t\"Properties.VpcConfigs\",\n\tsprintf(\"VpcConfigs lists %d VPC configurations; the create fails with \\\"The size of list should be between 1 and 5\\\"\", [n]),\n\t\"Attach the serverless cluster to at most 5 VPCs\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tcfgs := flatten_list(name, \"Properties.VpcConfigs\")\n\tn := count(cfgs)\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-msk-t3-small-not-kraft",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "kafka.t3.small does not run KRaft metadata mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The .kraft Apache Kafka versions drop the smallest Standard broker: CreateClusterV2 answers\n# \"Unsupported InstanceType specified. Valid values: [...]\" with a list that holds every other\n# broker size but not kafka.t3.small. The same instance type is perfectly valid on 3.9.x, so no\n# layer that looks at either property alone can see this.\nviolation contains make_diag_full(\"pf-msk-t3-small-not-kraft\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.InstanceType\",\n\tsprintf(\"kafka.t3.small with Apache Kafka %s; the create fails with \\\"Unsupported InstanceType specified\\\" because KRaft mode has no t3 broker\", [v]),\n\t\"Move to kafka.m5.large or larger, or pick a ZooKeeper-mode version such as 3.9.x\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tresolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\") == \"kafka.t3.small\"\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tis_string(v)\n\tendswith(v, \".kraft\")\n}\n"
+  },
+  {
+    "id": "pf-msk-tiered-storage-instance-type",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Tiered storage is not available on kafka.t3.small brokers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The smallest Standard broker has no tiered tier: \"Tiered storage doesn't support broker size\n# t3.small\" (user guide), and CreateClusterV2 answers \"Tiered storage is not supported for the\n# specified broker type. ... InvalidParameter: instanceType\". Express brokers reject StorageMode\n# for a different reason and are covered by pf-msk-express-no-storage-mode.\nviolation contains make_diag_full(\"pf-msk-tiered-storage-instance-type\", \"ERROR\", name,\n\t\"Properties.StorageMode\",\n\t\"StorageMode TIERED on a kafka.t3.small broker; the create fails with \\\"Tiered storage is not supported for the specified broker type\\\"\",\n\t\"Move to kafka.m5.large or larger, or drop StorageMode\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-tiered-storage.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tresolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\") == \"kafka.t3.small\"\n\tresolve(name, \"Properties.StorageMode\") == \"TIERED\"\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-cert-authority-arn-format",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "CertificateAuthorityArnList holds AWS Private CA ARNs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The list is typed Array of String with no pattern, so an ACM certificate ARN - the neighbouring\n# service, and the one an author reaches for first - passes every earlier layer. The create fails\n# with \"One or more of the certificate authority ARNs provided in the request are invalid. ...\n# InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-tls-cert-authority-arn-format\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\",\n\tsprintf(\"'%s' is a %s ARN, not an AWS Private CA one; the create fails with \\\"One or more of the certificate authority ARNs provided in the request are invalid\\\"\", [arn, svc]),\n\t\"List AWS Private CA authorities (arn:<partition>:acm-pca:<region>:<account>:certificate-authority/<id>)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tsome item in flatten_list(name, \"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\")\n\tarn := item.value\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 5\n\tsvc := parts[2]\n\tsvc != \"acm-pca\"\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-enabled-requires-ca-list",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A Tls block needs both Enabled and CertificateAuthorityArnList",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members of Tls are Required: No, so half a block is schema-valid; the resource handler\n# rejects it before it ever calls Kafka - \"Enabled and CertificateAuthorityArnList fields must\n# both be defined for TLS. 'TLS'\". The requirement is symmetric: neither half stands on its own.\nviolation contains make_diag_full(\"pf-msk-tls-enabled-requires-ca-list\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Tls\",\n\t\"the Tls block defines only one of Enabled and CertificateAuthorityArnList; the create fails with \\\"Enabled and CertificateAuthorityArnList fields must both be defined for TLS\\\"\",\n\t\"Write both fields, or drop the Tls block altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttls := object.get(props, [\"ClientAuthentication\", \"Tls\"], null)\n\tis_object(tls)\n\tnot _pf_msktercl_complete(name, tls)\n}\n\n_pf_msktercl_complete(name, tls) if {\n\tobject.get(tls, \"Enabled\", \"__pf_absent\") != \"__pf_absent\"\n\tcount(flatten_list(name, \"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-plaintext-requires-unauthenticated",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A TLS_PLAINTEXT listener has to enable unauthenticated traffic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"If you choose TLS_PLAINTEXT, then you must also set unauthenticated to true\" - the plaintext\n# half of the listener has no authentication to offer, so the create fails with \"You must enable\n# unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT.\n# ... InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-tls-plaintext-requires-unauthenticated\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Unauthenticated.Enabled\",\n\t\"ClientBroker TLS_PLAINTEXT with client authentication but without Unauthenticated.Enabled; the create fails with \\\"You must enable unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT\\\"\",\n\t\"Set ClientAuthentication.Unauthenticated.Enabled to true, or move ClientBroker to TLS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"ClientBroker\"], \"TLS\") == \"TLS_PLAINTEXT\"\n\t_pf_msktpru_authenticated(props)\n\tobject.get(props, [\"ClientAuthentication\", \"Unauthenticated\", \"Enabled\"], false) != true\n}\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-unauthenticated-only-requires-no-tls-only",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster has to accept some kind of client",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every member of ClientAuthentication is optional and each Enabled is an independent Boolean,\n# so \"all of them false\" is a perfectly well-formed template that no client could ever reach. The\n# create fails with \"Unauthenticated cannot be set to false without enabling any authentication\n# mechanisms. ... InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-unauthenticated-only-requires-no-tls-only\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication\",\n\t\"Unauthenticated is false and no authentication mechanism is enabled; the create fails with \\\"Unauthenticated cannot be set to false without enabling any authentication mechanisms\\\"\",\n\t\"Enable SASL/IAM, SASL/SCRAM or TLS client authentication, or let unauthenticated traffic in\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"ClientAuthentication\", \"Unauthenticated\", \"Enabled\"], true) == false\n\tnot _pf_mskuorn_authenticated(props)\n}\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-vpc-connectivity-auth-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Multi-VPC connectivity auth schemes cannot be enabled at create time",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every VpcConnectivity auth switch is an ordinary Boolean in the schema, but the service only\n# accepts them on an existing cluster: \"When creating a cluster, all vpcConnectivity auth schemes\n# must be disabled ('enabled' : false). You can enable auth schemes after the cluster is created.\n# ... InvalidParameter: vpcConnectivity.clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-vpc-connectivity-auth-not-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.VpcConnectivity.ClientAuthentication\",\n\t\"a VpcConnectivity authentication scheme is enabled; the create fails with \\\"When creating a cluster, all vpcConnectivity auth schemes must be disabled\\\"\",\n\t\"Create the cluster with every VpcConnectivity auth scheme false and enable them in a later update\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tauth := object.get(props, [\"BrokerNodeGroupInfo\", \"ConnectivityInfo\", \"VpcConnectivity\", \"ClientAuthentication\"], {})\n\tsome path in [[\"Sasl\", \"Iam\", \"Enabled\"], [\"Sasl\", \"Scram\", \"Enabled\"], [\"Tls\", \"Enabled\"]]\n\tobject.get(auth, path, false) == true\n}\n"
+  },
+  {
+    "id": "pf-msk-zookeeper-access-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ZookeeperAccess cannot be set while the cluster is created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ZookeeperAccess exists only in CloudFormation - CreateClusterV2 has no such parameter - and\n# its documentation page carries no description at all, so nothing says it is an update-only\n# switch. The resource handler rejects it outright: \"Zookeeper Access cannot be configured during\n# cluster creation. 'ZookeeperAccess'\".\nviolation contains make_diag_full(\"pf-msk-zookeeper-access-not-at-create\", \"ERROR\", name,\n\t\"Properties.ZookeeperAccess\",\n\t\"ZookeeperAccess is set on a cluster being created; the create fails with \\\"Zookeeper Access cannot be configured during cluster creation\\\"\",\n\t\"Drop ZookeeperAccess from the template and set it in a later update\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-zookeeperaccess.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tis_object(object.get(props, \"ZookeeperAccess\", null))\n}\n"
+  },
+  {
     "id": "pf-pipes-batch-size-target-limit",
     "service": "pipes",
     "severity": "ERROR",
@@ -25801,6 +27216,18 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/codebuild",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeBuild rules. The raw (preprocessed) document is the\n# only place where \"the key is absent\" can be told apart from \"the value is a\n# token\", and most of these rules turn on absence, so every accessor here reads\n# input.resources[...].properties rather than resolve().\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_codebuildlib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_codebuildlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_codebuildlib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_codebuildlib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A literal string member of a block; undefined for tokens and non-strings.\n_pf_codebuildlib_str(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\t_pf_codebuildlib_lit(v)\n}\n\n# CloudFormation accepts both the JSON boolean and the string, and templates\n# synthesized from YAML carry either, so \"== true\" alone misses half the cases.\n_pf_codebuildlib_true(v) if v == true\n\n_pf_codebuildlib_true(v) if {\n\tis_string(v)\n\tlower(v) == \"true\"\n}\n\n# to_number(null) is 0 in the engine's Rego build, so the value has to be\n# narrowed to a number or a numeric string first.\n_pf_codebuildlib_num(v) := v if is_number(v)\n\n_pf_codebuildlib_num(v) := n if {\n\tis_string(v)\n\tn := to_number(v)\n}\n\n# ---- the four blocks every CodeBuild rule reads -----------------------------\n\n_pf_codebuildlib_env(name) := e if e := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Environment\")\n\n_pf_codebuildlib_source(name) := s if s := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Source\")\n\n_pf_codebuildlib_artifacts(name) := a if a := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Artifacts\")\n\n_pf_codebuildlib_cache(name) := c if c := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Cache\")\n\n_pf_codebuildlib_batch(name) := b if b := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"BuildBatchConfig\")\n\n_pf_codebuildlib_env_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_env(name), \"Type\")\n\n_pf_codebuildlib_compute_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_env(name), \"ComputeType\")\n\n_pf_codebuildlib_source_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_source(name), \"Type\")\n\n_pf_codebuildlib_artifacts_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_artifacts(name), \"Type\")\n\n_pf_codebuildlib_cache_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_cache(name), \"Type\")\n\n# ---- ARNs ------------------------------------------------------------------\n\n_pf_codebuildlib_arn_part(v, i) := p if {\n\t_pf_codebuildlib_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\tp := parts[i]\n\tp != \"\"\n}\n\n_pf_codebuildlib_arn_service(v) := s if s := _pf_codebuildlib_arn_part(v, 2)\n\n_pf_codebuildlib_arn_region(v) := r if r := _pf_codebuildlib_arn_part(v, 3)\n\n# The ARN's own region, but only when it differs from the deployment region.\n_pf_codebuildlib_region_mismatch(v) := r if {\n\tr := _pf_codebuildlib_arn_region(v)\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr != region\n}\n"
+  },
+  {
+    "name": "_lib/codecommit",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeCommit rules.\n#\n# AWS::CodeCommit::Repository.Triggers is applied by the CloudFormation handler\n# with PutRepositoryTriggers after the repository exists, so every trigger\n# constraint surfaces as a CREATE_FAILED on the repository itself. Triggers are\n# read off the raw document: resolve() cannot prove a key absent, and the list\n# has to keep its index so a diagnostic can point at one trigger.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_cclib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_cclib_triggers(name) := t if {\n\tt := object.get(_pf_cclib_props(name), \"Triggers\", [])\n\tis_array(t)\n}\n\n# A user-written literal string. Ref/GetAtt resolve to a logical id in the\n# template, and an unresolved intrinsic stays a marker object.\n_pf_cclib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# The parts of a literal ARN, guarded so a token never reaches a rule.\n_pf_cclib_arn(v) := parts if {\n\t_pf_cclib_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n\n# Git ref names CodeCommit rejects. Measured against PutRepositoryTriggers\n# (2026-09-14, us-east-1): a space or a tab, \"..\", \"//\", \"@{\", any of ~^:?*[\\,\n# a leading \"/\" or \".\", a trailing \"/\" or \".\", and a \".lock\" suffix all raise\n# InvalidRepositoryTriggerBranchNameException. Accepted in the same run, so\n# deliberately not encoded: ; , ' ( ) & % # ! + = < | \" ` , a leading \"-\", a\n# bare \"@\", non-ASCII, and a 255-character name.\n_pf_cclib_bad_ref(b) if {\n\t_pf_cclib_lit(b)\n\tregex.match(`[ \\t~^:?*\\[\\\\]|\\.\\.|//|@\\{|^[./]|[/.]$|\\.lock$`, b)\n}\n"
+  },
+  {
+    "name": "_lib/codedeploy",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeDeploy rules: traversal of the raw document\n# (resolve() cannot prove a key absent), literal/number guards, and the compute\n# platform that decides which half of a deployment configuration is legal.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_codedeploylib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# Raw properties of a resource. The preprocessed document is the only place\n# where \"the key is absent\" can be told apart from \"the value is a token\".\n_pf_codedeploylib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_codedeploylib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_codedeploylib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n# A number written as a literal - a JSON number, or the string CloudFormation\n# also accepts for a numeric property. A Ref and an absent key both yield\n# nothing, so a caller checking a lower bound is not fooled by to_number(null),\n# which is 0.\n_pf_codedeploylib_num(v) := v if is_number(v)\n\n_pf_codedeploylib_num(v) := n if {\n\tis_string(v)\n\tregex.match(`^-?[0-9]+$`, v)\n\tn := to_number(v)\n}\n\n# ComputePlatform of a resource that carries its own - AWS::CodeDeploy::Application\n# and AWS::CodeDeploy::DeploymentConfig. An absent property is Server: the\n# service applies that default and then enforces the Server rules against it\n# (measured 2026-09-14 us-east-1: CreateDeploymentConfig with no computePlatform\n# and a trafficRoutingConfig fails with \"should be null for Server deployment\n# configuration\"). A Ref or token yields nothing, so a rule built on this helper\n# stays silent rather than guessing.\n#\n# A deployment group does NOT carry one: its platform comes from the application\n# it names, which is a cross-resource hop this helper deliberately does not make.\n_pf_codedeploylib_platform(name) := p if {\n\tp := resolve(name, \"Properties.ComputePlatform\")\n\t_pf_codedeploylib_lit(p)\n}\n\n_pf_codedeploylib_platform(name) := \"Server\" if {\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ComputePlatform\")\n}\n\n\n# Compute platform of a deployment group. It carries none of its own: the platform\n# is the one on the AWS::CodeDeploy::Application that ApplicationName points at.\n# Only a Ref to an application in the same template can answer - a literal name\n# refers to an application created elsewhere, whose platform the template does not\n# know, so the helper yields nothing and every rule built on it stays silent\n# rather than assuming Server.\n_pf_codedeploylib_dg_platform(name) := p if {\n\ta := resolve(name, \"Properties.ApplicationName\")\n\tinput.resources[a].resourceType == \"AWS::CodeDeploy::Application\"\n\tp := _pf_codedeploylib_platform(a)\n}\n"
+  },
+  {
+    "name": "_lib/codepipeline",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodePipeline rules: traversal of the raw document\n# (resolve() cannot prove a key absent, and the stage/action nesting is deeper\n# than a dotted path can iterate) plus the two provider tables the action rules\n# read. Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_cplib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# A plain object, not an intrinsic that the preprocessor turned into a marker.\n_pf_cplib_plain(o) if {\n\tis_object(o)\n\tobject.get(o, \"__kind\", \"_\") == \"_\"\n\tobject.get(o, \"__ref\", \"_\") == \"_\"\n\tobject.get(o, \"__dynamic\", \"_\") == \"_\"\n}\n\n_pf_cplib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_cplib_absent(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# object.get() with a default cannot tell \"absent\" from \"written as that value\",\n# and an absent key defaulting to \"\" reads as a user literal. Every rule that\n# judges a value the user wrote reads it through here instead.\n_pf_cplib_get(o, k) := v if {\n\tis_object(o)\n\tnot _pf_cplib_absent(o, k)\n\tv := object.get(o, k, null)\n}\n\n# Stages / Actions read from the preprocessed document. An absent list reads as\n# empty so the callers only have to guard the shapes they actually compare.\n_pf_cplib_stages(name) := s if {\n\ts := object.get(_pf_cplib_props(name), \"Stages\", [])\n\tis_array(s)\n}\n\n_pf_cplib_actions(stage) := a if {\n\t_pf_cplib_plain(stage)\n\ta := object.get(stage, \"Actions\", [])\n\tis_array(a)\n}\n\n_pf_cplib_tid(action) := t if {\n\t_pf_cplib_plain(action)\n\tt := object.get(action, \"ActionTypeId\", {})\n\t_pf_cplib_plain(t)\n}\n\n_pf_cplib_category(action) := c if {\n\tc := _pf_cplib_get(_pf_cplib_tid(action), \"Category\")\n\t_pf_cplib_lit(c)\n}\n\n# The action categories each AWS-owned provider is published under.\n# Source: \"Valid action providers in CodePipeline\" (userguide/actions-valid-providers.html).\n# A provider missing from this table is never judged, so a newly published\n# provider costs a miss rather than a false positive.\n_pf_cplib_aws_providers := {\n\t\"S3\": {\"Source\", \"Deploy\"},\n\t\"ECR\": {\"Source\"},\n\t\"CodeCommit\": {\"Source\"},\n\t\"CodeStarSourceConnection\": {\"Source\"},\n\t\"CodeBuild\": {\"Build\", \"Test\"},\n\t\"ECRBuildAndPublish\": {\"Build\"},\n\t\"Commands\": {\"Compute\", \"Build\"},\n\t\"DeviceFarm\": {\"Test\"},\n\t\"CloudFormation\": {\"Deploy\"},\n\t\"CloudFormationStackSet\": {\"Deploy\"},\n\t\"CloudFormationStackInstances\": {\"Deploy\"},\n\t\"CodeDeploy\": {\"Deploy\"},\n\t\"CodeDeployToECS\": {\"Deploy\"},\n\t\"EC2\": {\"Deploy\"},\n\t\"ECS\": {\"Deploy\"},\n\t\"EKS\": {\"Deploy\"},\n\t\"ElasticBeanstalk\": {\"Deploy\"},\n\t\"AppConfig\": {\"Deploy\"},\n\t\"OpsWorks\": {\"Deploy\"},\n\t\"ServiceCatalog\": {\"Deploy\"},\n\t\"Manual\": {\"Approval\"},\n\t\"CodePipeline\": {\"Invoke\"},\n\t\"Lambda\": {\"Invoke\", \"Deploy\"},\n\t\"StepFunctions\": {\"Invoke\"},\n\t\"InspectorScan\": {\"Invoke\"},\n}\n\n# Configuration keys each AWS-owned action provider requires, keyed\n# \"<Category>/<Provider>\". Every entry was confirmed against CreatePipeline\n# (api-probe 2026-09-14 us-east-1: dropping the key returns \"Action\n# configuration for action 'X' is missing required configuration '<key>'\").\n_pf_cplib_required_config := {\n\t\"Source/S3\": {\"S3Bucket\", \"S3ObjectKey\"},\n\t\"Source/ECR\": {\"RepositoryName\"},\n\t\"Source/CodeCommit\": {\"RepositoryName\", \"BranchName\"},\n\t\"Deploy/S3\": {\"BucketName\", \"Extract\"},\n\t\"Deploy/CodeDeploy\": {\"ApplicationName\", \"DeploymentGroupName\"},\n\t\"Deploy/CloudFormation\": {\"ActionMode\", \"StackName\"},\n\t\"Deploy/ECS\": {\"ClusterName\", \"ServiceName\"},\n\t\"Deploy/ElasticBeanstalk\": {\"ApplicationName\", \"EnvironmentName\"},\n\t\"Build/CodeBuild\": {\"ProjectName\"},\n\t\"Test/CodeBuild\": {\"ProjectName\"},\n\t\"Invoke/Lambda\": {\"FunctionName\"},\n\t\"Invoke/StepFunctions\": {\"StateMachineArn\"},\n\t\"Invoke/CodePipeline\": {\"PipelineName\"},\n}\n\n# The two artifact-store enums. The singular ArtifactStore and one entry of the\n# cross-region ArtifactStores list nest the store under the same key, so both\n# rules take the parent object and read through it.\n_pf_cplib_storetype(parent) := v if {\n\ts := _pf_cplib_get(parent, \"ArtifactStore\")\n\t_pf_cplib_plain(s)\n\tv := _pf_cplib_get(s, \"Type\")\n\t_pf_cplib_lit(v)\n}\n\n_pf_cplib_storekeytype(parent) := v if {\n\ts := _pf_cplib_get(parent, \"ArtifactStore\")\n\t_pf_cplib_plain(s)\n\tk := _pf_cplib_get(s, \"EncryptionKey\")\n\t_pf_cplib_plain(k)\n\tv := _pf_cplib_get(k, \"Type\")\n\t_pf_cplib_lit(v)\n}\n\n# A queryable configuration property must be required and non-secret; the\n# service reports both halves as one check.\n_pf_cplib_queryable_ok(secret, required) if {\n\tsecret == false\n\trequired == true\n}\n\n# ---- C2 (stage / trigger / V1-V2 / webhook) ----------------------------------\n\n# PipelineType is optional and defaults to V1, so an absent key is a real V1\n# pipeline. A Ref resolves to a logical id rather than a literal and is left alone.\n_pf_cplib_v1(name) if {\n\tt := object.get(_pf_cplib_props(name), \"PipelineType\", \"V1\")\n\t_pf_cplib_lit(t)\n\tt == \"V1\"\n}\n\n# Names of the pipeline's CodeStarSourceConnection source actions.\n_pf_cplib_connection_actions(name) := {an |\n\tsome st in _pf_cplib_stages(name)\n\tsome a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tp := _pf_cplib_get(_pf_cplib_tid(a), \"Provider\")\n\t_pf_cplib_lit(p)\n\tp == \"CodeStarSourceConnection\"\n\tan := object.get(a, \"Name\", \"\")\n}\n\n# A name the preprocessor could not reduce to a literal makes the set above\n# incomplete, so the trigger rule stays quiet on that pipeline.\n_pf_cplib_dynamic_action_name(name) if {\n\tsome st in _pf_cplib_stages(name)\n\tsome a in _pf_cplib_actions(st)\n\tnot _pf_cplib_lit(object.get(a, \"Name\", null))\n}\n\n# Action providers that CreatePipeline refuses on a V1 pipeline\n# (api-probe 2026-09-14 us-east-1: \"<Provider> Action can only be used with V2\n# pipelines.\"). EC2 is absent on purpose - its probe never reached the V1 check.\n_pf_cplib_v2_only_providers := {\"Commands\", \"ECRBuildAndPublish\", \"EKS\"}\n\n# The single AuthenticationConfiguration property each webhook Authentication\n# mode takes; UNAUTHENTICATED takes none.\n_pf_cplib_webhook_auth_key := {\n\t\"GITHUB_HMAC\": \"SecretToken\",\n\t\"IP\": \"AllowedIPRange\",\n\t\"UNAUTHENTICATED\": \"\",\n}\n"
   },
   {
     "name": "_lib/cognito",

@@ -1,0 +1,12 @@
+id: pf-codepipeline-v1-execution-mode
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "ExecutionMode QUEUED and PARALLEL need a V2 pipeline"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: PipelineType V1 with ExecutionMode PARALLEL -> \"InvalidStructureException: QUEUED or PARALLEL mode can only be used with V2 pipelines\" (ROLLBACK_COMPLETE); pass V2 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

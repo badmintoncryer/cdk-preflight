@@ -1,0 +1,12 @@
+id: pf-msk-t3-small-not-kraft
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "kafka.t3.small does not run KRaft metadata mode"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: kafka.t3.small on Apache Kafka 3.9.x.kraft -> \"Unsupported InstanceType specified. Valid values: [express.m7g.large ... kafka.m7g.xlarge]\" - a list of 22 broker sizes with no t3 entry (ROLLBACK_COMPLETE); pass the same kafka.t3.small cluster on 3.9.x -> CREATE_COMPLETE, so the .kraft suffix is the only difference between the two"
+addedOn: 2026-09-14

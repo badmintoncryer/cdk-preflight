@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-traffic-control-requires-load-balancer
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "A Server deployment group routing traffic needs a load balancer or target group"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentstyle.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: a Server deployment group with DeploymentStyle WITH_TRAFFIC_CONTROL and no LoadBalancerInfo -> \"The specification for load balancing in the deployment group is invalid. The deploymentOption value is set to WITH_TRAFFIC_CONTROL, but no load balancer or target group has been specified in loadBalancerInfo.\" (ROLLBACK_COMPLETE); pass the same group naming one classic load balancer -> CREATE_COMPLETE. The load balancer need not exist - the pass names cdkpf-nope and no load balancer is created anywhere (probe A7, 2026-09-14). Scoped to Server because a Lambda deployment group is required to use WITH_TRAFFIC_CONTROL and carries no LoadBalancerInfo."
+addedOn: 2026-09-14

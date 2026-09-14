@@ -1,0 +1,12 @@
+id: pf-msk-public-access-not-at-create
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Public access cannot be turned on while the cluster is created"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: PublicAccess.Type SERVICE_PROVIDED_EIPS -> \"When creating a cluster, the only valid value for the Type parameter in PublicAccess is DISABLED. ... 'publicAccess'\" (ROLLBACK_COMPLETE); pass PublicAccess.Type DISABLED -> CREATE_COMPLETE"
+addedOn: 2026-09-14

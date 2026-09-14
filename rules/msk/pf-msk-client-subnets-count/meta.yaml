@@ -1,0 +1,12 @@
+id: pf-msk-client-subnets-count
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "An MSK cluster needs exactly two or three client subnets"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: one cluster with 1 client subnet and one with 4 -> \"Specify either two or three client subnets. ... 'brokerNodeGroupInfo'\" (ROLLBACK_COMPLETE); pass one cluster with 2 client subnets and one with 3 -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
+addedOn: 2026-09-14

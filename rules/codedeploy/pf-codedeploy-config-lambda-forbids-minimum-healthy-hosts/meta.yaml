@@ -1,0 +1,12 @@
+id: pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentConfig]
+severity: ERROR
+title: "MinimumHealthyHosts is only valid on the Server compute platform"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: ComputePlatform Lambda + MinimumHealthyHosts FLEET_PERCENT 75 -> \"minimum healthy hosts should be null for Lambda deployment configuration\" (ROLLBACK_COMPLETE); pass the same configuration without MinimumHealthyHosts -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: ECS is rejected the same way (\"minimum healthy hosts should be null for ECS deployment configuration\")."
+addedOn: 2026-09-14

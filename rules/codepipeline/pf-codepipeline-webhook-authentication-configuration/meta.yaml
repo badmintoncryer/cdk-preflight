@@ -1,0 +1,12 @@
+id: pf-codepipeline-webhook-authentication-configuration
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Webhook]
+severity: ERROR
+title: "AuthenticationConfiguration must carry exactly the property the Authentication mode takes"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: the fail stack declares all three violations and rolled back on Authentication IP with an empty AuthenticationConfiguration -> \"Optional['authenticationConfig' should contain only one property: 'AllowedIPRange']\" (ROLLBACK_COMPLETE); api-probe 2026-09-14 us-east-1 covers the other two: GITHUB_HMAC with SecretToken+AllowedIPRange -> \"...only one property: 'SecretToken'\", UNAUTHENTICATED with SecretToken -> \"...should be empty\"; pass with the matching property on each of the three modes -> CREATE_COMPLETE"
+addedOn: 2026-09-14

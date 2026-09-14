@@ -1,0 +1,12 @@
+id: pf-codecommit-kms-key-region
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "KmsKeyId must name a KMS key in the repository's Region"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_CreateRepository.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail KmsKeyId arn:aws:kms:eu-west-1:214794239830:key/1234abcd-12ab-34cd-56ef-1234567890ab -> \"KMS key arn:aws:kms:eu-west-1:214794239830:key/1234abcd-12ab-34cd-56ef-1234567890ab is not found\" (ROLLBACK_COMPLETE); pass with no KmsKeyId (AWS managed key) -> CREATE_COMPLETE. Confound: the service says the key is not found rather than naming the region, and the key id in the fail fixture is fabricated on purpose so no CMK is created; from us-east-1 a key in another region is exactly what 'not found' looks like."
+addedOn: 2026-09-14
