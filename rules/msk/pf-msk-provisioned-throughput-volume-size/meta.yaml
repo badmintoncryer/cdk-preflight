@@ -1,0 +1,12 @@
+id: pf-msk-provisioned-throughput-volume-size
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Provisioned storage throughput needs a volume of at least 10 GiB"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: VolumeSize 9 with ProvisionedThroughput enabled -> \"To enable ProvisionedThroughput, you must set volume size to a value that is greater than or equal to 10. ... 'volumeSize'\" (ROLLBACK_COMPLETE); pass VolumeSize 10 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

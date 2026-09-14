@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::MSK::ServerlessCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-slssub-pass",
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "VpcConfigs": [
+          {
+            "SubnetIds": [
+              "subnet-00000000000000001",
+              "subnet-00000000000000002"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          },
+          {
+            "SubnetIds": [
+              "subnet-00000000000000101",
+              "subnet-00000000000000102",
+              "subnet-00000000000000103",
+              "subnet-00000000000000104",
+              "subnet-00000000000000105",
+              "subnet-00000000000000106"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

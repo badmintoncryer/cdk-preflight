@@ -1,0 +1,12 @@
+id: pf-msk-scram-secret-list-unique
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::BatchScramSecret]
+severity: ERROR
+title: "SecretArnList must not repeat a secret ARN"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: SecretArnList with the same secret ARN twice, against a real SASL/SCRAM cluster created in the same stack -> \"The list provided contains duplicate items. (Service: Kafka, Status Code: 400)\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: the pass needs the same 31-minute cluster and two real secrets). The in-stack cluster is required: with a literal nonexistent ClusterArn the CloudFormation handler answers \"Resource of type 'AWS::MSK::BatchScramSecret' with identifier '...' was not found\" and never reaches the duplicate check, even though the BatchAssociateScramSecret API validates the list first"
+addedOn: 2026-09-13

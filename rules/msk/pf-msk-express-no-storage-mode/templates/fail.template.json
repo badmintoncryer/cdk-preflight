@@ -1,0 +1,37 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::MSK::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-msk-ensm-fail",
+        "KafkaVersion": "3.9.x.kraft",
+        "NumberOfBrokerNodes": 3,
+        "BrokerNodeGroupInfo": {
+          "InstanceType": "express.m7g.large",
+          "ClientSubnets": [
+            "subnet-00000000000000001",
+            "subnet-00000000000000002",
+            "subnet-00000000000000003"
+          ],
+          "SecurityGroups": [
+            "sg-00000000000000001"
+          ]
+        },
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "EncryptionInfo": {
+          "EncryptionInTransit": {
+            "ClientBroker": "TLS",
+            "InCluster": true
+          }
+        },
+        "StorageMode": "TIERED"
+      }
+    }
+  }
+}

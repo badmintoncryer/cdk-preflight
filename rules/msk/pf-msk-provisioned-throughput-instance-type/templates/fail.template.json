@@ -1,0 +1,85 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::MSK::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-msk-ptit-fail",
+        "KafkaVersion": "3.9.x",
+        "NumberOfBrokerNodes": 2,
+        "BrokerNodeGroupInfo": {
+          "InstanceType": "kafka.m5.2xlarge",
+          "ClientSubnets": [
+            {
+              "Ref": "SubnetA"
+            },
+            {
+              "Ref": "SubnetB"
+            }
+          ],
+          "SecurityGroups": [
+            {
+              "Ref": "Sg"
+            }
+          ],
+          "StorageInfo": {
+            "EBSStorageInfo": {
+              "VolumeSize": 100,
+              "ProvisionedThroughput": {
+                "VolumeThroughput": 250,
+                "Enabled": true
+              }
+            }
+          }
+        },
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "EncryptionInfo": {
+          "EncryptionInTransit": {
+            "ClientBroker": "TLS",
+            "InCluster": true
+          }
+        }
+      }
+    },
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": "us-east-1a"
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": "us-east-1b"
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdk-preflight fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  }
+}

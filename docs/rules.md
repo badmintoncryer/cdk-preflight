@@ -1814,6 +1814,58 @@
 | `pf-memorydb-snapshot-retention` | AWS::MemoryDB::Cluster | SnapshotRetentionLimit is 0-35 days | ERROR | none |
 | `pf-memorydb-snapshot-window` | AWS::MemoryDB::Cluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | ERROR | none |
 | `pf-memorydb-user-password` | AWS::MemoryDB::User | A password user needs passwords of 16-128 characters | ERROR | none |
+| `pf-msk-broker-count-multiple-of-az` | AWS::MSK::Cluster | The MSK broker count must be a multiple of the number of client subnets | ERROR | none |
+| `pf-msk-broker-logs-any-required` | AWS::MSK::Cluster | LoggingInfo.BrokerLogs must name at least one log destination | ERROR | none |
+| `pf-msk-broker-logs-cloudwatch-loggroup-required` | AWS::MSK::Cluster | Enabling CloudWatch Logs broker logs requires the LogGroup to be named | ERROR | none |
+| `pf-msk-broker-logs-firehose-stream-required` | AWS::MSK::Cluster | Enabling Kinesis Data Firehose broker logs requires the DeliveryStream to be named | ERROR | none |
+| `pf-msk-broker-logs-s3-bucket-required` | AWS::MSK::Cluster | Enabling Amazon S3 broker logs requires the Bucket to be named | ERROR | none |
+| `pf-msk-client-subnets-count` | AWS::MSK::Cluster | An MSK cluster needs exactly two or three client subnets | ERROR | none |
+| `pf-msk-client-subnets-distinct` | AWS::MSK::Cluster | MSK client subnets must all be different | ERROR | none |
+| `pf-msk-cluster-name-pattern` | AWS::MSK::Cluster | An MSK cluster name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
+| `pf-msk-clusterpolicy-resource-matches-cluster` | AWS::MSK::ClusterPolicy | A cluster policy's Resource must be the cluster the policy is attached to | ERROR | none |
+| `pf-msk-config-custom-advertised-listeners-format` | AWS::MSK::Configuration | custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form | ERROR | none |
+| `pf-msk-config-kafka-versions-unknown` | AWS::MSK::Configuration | KafkaVersionsList must name Apache Kafka versions Amazon MSK knows | ERROR | none |
+| `pf-msk-config-name-pattern` | AWS::MSK::Configuration | An MSK configuration name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
+| `pf-msk-config-server-properties-allowed-keys` | AWS::MSK::Configuration | An MSK configuration may only set Amazon MSK's supported Apache Kafka properties | ERROR | none |
+| `pf-msk-express-kafka-version` | AWS::MSK::Cluster | Express brokers do not run every Apache Kafka version | ERROR | none |
+| `pf-msk-express-no-ebs-storage` | AWS::MSK::Cluster | An MSK cluster with Express brokers may not declare StorageInfo | ERROR | none |
+| `pf-msk-express-no-storage-mode` | AWS::MSK::Cluster | An MSK cluster with Express brokers may not declare StorageMode | ERROR | none |
+| `pf-msk-express-requires-three-subnets` | AWS::MSK::Cluster | An MSK cluster with Express brokers needs exactly three client subnets | ERROR | none |
+| `pf-msk-kafka-version-deprecated` | AWS::MSK::Cluster | A deprecated Apache Kafka version cannot be used for a new MSK cluster | ERROR | none |
+| `pf-msk-network-type-ipv4-at-create` | AWS::MSK::Cluster | A cluster is created IPv4-only | ERROR | none |
+| `pf-msk-open-monitoring-requires-exporter` | AWS::MSK::Cluster | Prometheus open monitoring needs an exporter | ERROR | none |
+| `pf-msk-provisioned-throughput-instance-type` | AWS::MSK::Cluster | Provisioned storage throughput needs kafka.m5.4xlarge / kafka.m7g.2xlarge or larger | ERROR | none |
+| `pf-msk-provisioned-throughput-max-per-instance` | AWS::MSK::Cluster | Provisioned storage throughput has a per-broker-size ceiling | ERROR | none |
+| `pf-msk-provisioned-throughput-min` | AWS::MSK::Cluster | Provisioned storage throughput starts at 250 MiB/s | ERROR | none |
+| `pf-msk-provisioned-throughput-volume-size` | AWS::MSK::Cluster | Provisioned storage throughput needs a volume of at least 10 GiB | ERROR | none |
+| `pf-msk-provisioned-throughput-without-enabled` | AWS::MSK::Cluster | VolumeThroughput only counts when ProvisionedThroughput is enabled | ERROR | none |
+| `pf-msk-public-access-not-at-create` | AWS::MSK::Cluster | Public access cannot be turned on while the cluster is created | ERROR | none |
+| `pf-msk-replicator-apache-kafka-cluster-requires-auth` | AWS::MSK::Replicator | An Apache Kafka cluster entry must declare ClientAuthentication | ERROR | none |
+| `pf-msk-replicator-arns-match-kafka-clusters` | AWS::MSK::Replicator | ReplicationInfoList ARNs must be the ones listed in KafkaClusters | ERROR | none |
+| `pf-msk-replicator-clusters-same-account` | AWS::MSK::Replicator | A replicator's source and target clusters must be in one account | ERROR | none |
+| `pf-msk-replicator-enhanced-sync-requires-identical` | AWS::MSK::Replicator | ENHANCED consumer-group offset sync needs IDENTICAL topic names | ERROR | none |
+| `pf-msk-replicator-kafka-cluster-exactly-one-kind` | AWS::MSK::Replicator | A KafkaClusters entry names either an MSK cluster or an Apache Kafka cluster | ERROR | none |
+| `pf-msk-replicator-service-role-account` | AWS::MSK::Replicator | The service execution role must live in the clusters' account | ERROR | none |
+| `pf-msk-replicator-source-arn-xor-id` | AWS::MSK::Replicator | A ReplicationInfo names the source cluster by ARN or by id, never both | ERROR | none |
+| `pf-msk-replicator-source-target-differ` | AWS::MSK::Replicator | A replicator's two KafkaClusters entries must be different clusters | ERROR | none |
+| `pf-msk-replicator-target-cluster-region` | AWS::MSK::Replicator | A replicator must be created in its target cluster's region | ERROR | none |
+| `pf-msk-replicator-vpc-config-only-for-msk-cluster` | AWS::MSK::Replicator | VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one | ERROR | none |
+| `pf-msk-sasl-requires-in-cluster-encryption` | AWS::MSK::Cluster | Client authentication needs in-cluster encryption | ERROR | none |
+| `pf-msk-sasl-requires-tls-client-broker` | AWS::MSK::Cluster | Client authentication needs client-broker encryption | ERROR | none |
+| `pf-msk-scram-secret-account` | AWS::MSK::BatchScramSecret | SCRAM secrets must live in the same account as the MSK cluster | ERROR | none |
+| `pf-msk-scram-secret-list-unique` | AWS::MSK::BatchScramSecret | SecretArnList must not repeat a secret ARN | ERROR | none |
+| `pf-msk-serverless-name-pattern` | AWS::MSK::ServerlessCluster | A serverless MSK cluster name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
+| `pf-msk-serverless-sasl-iam-enabled` | AWS::MSK::ServerlessCluster | A serverless MSK cluster must keep SASL/IAM authentication enabled | ERROR | none |
+| `pf-msk-serverless-subnets-count` | AWS::MSK::ServerlessCluster | Each serverless MSK VPC configuration needs between 2 and 6 subnets | ERROR | none |
+| `pf-msk-serverless-vpc-configs-max` | AWS::MSK::ServerlessCluster | A serverless MSK cluster can span at most 5 VPCs | ERROR | none |
+| `pf-msk-t3-small-not-kraft` | AWS::MSK::Cluster | kafka.t3.small does not run KRaft metadata mode | ERROR | none |
+| `pf-msk-tiered-storage-instance-type` | AWS::MSK::Cluster | Tiered storage is not available on kafka.t3.small brokers | ERROR | none |
+| `pf-msk-tls-cert-authority-arn-format` | AWS::MSK::Cluster | CertificateAuthorityArnList holds AWS Private CA ARNs | ERROR | none |
+| `pf-msk-tls-enabled-requires-ca-list` | AWS::MSK::Cluster | A Tls block needs both Enabled and CertificateAuthorityArnList | ERROR | none |
+| `pf-msk-tls-plaintext-requires-unauthenticated` | AWS::MSK::Cluster | A TLS_PLAINTEXT listener has to enable unauthenticated traffic | ERROR | none |
+| `pf-msk-unauthenticated-only-requires-no-tls-only` | AWS::MSK::Cluster | A cluster has to accept some kind of client | ERROR | none |
+| `pf-msk-vpc-connectivity-auth-not-at-create` | AWS::MSK::Cluster | Multi-VPC connectivity auth schemes cannot be enabled at create time | ERROR | none |
+| `pf-msk-zookeeper-access-not-at-create` | AWS::MSK::Cluster | ZookeeperAccess cannot be set while the cluster is created | ERROR | none |
 | `pf-pipes-batch-size-target-limit` | AWS::Pipes::Pipe | Source BatchSize is capped by what the target accepts per call | ERROR | none |
 | `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | ERROR | none |
 | `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | ERROR | none |

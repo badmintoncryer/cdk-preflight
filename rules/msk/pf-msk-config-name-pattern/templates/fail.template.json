@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Configuration": {
+      "Type": "AWS::MSK::Configuration",
+      "Properties": {
+        "Name": "cdkpf_confname_fail",
+        "ServerProperties": "auto.create.topics.enable=true\nnum.partitions=1"
+      }
+    }
+  }
+}

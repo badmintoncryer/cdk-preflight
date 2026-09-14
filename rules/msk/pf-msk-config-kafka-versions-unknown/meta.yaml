@@ -1,0 +1,12 @@
+id: pf-msk-config-kafka-versions-unknown
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Configuration]
+severity: ERROR
+title: "KafkaVersionsList must name Apache Kafka versions Amazon MSK knows"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: KafkaVersionsList [\"9.9.9\"] -> \"Unsupported KafkaVersion [9.9.9]. Valid values: [4.2.x.kraft, 4.1.x.kraft, 2.8.2.tiered, 3.8.link, 4.0.x.kraft, 2.4.1.1, ... 1.1.1]\" (ROLLBACK_COMPLETE); pass [\"3.9.x\"] -> CREATE_COMPLETE. The allow-list in the rego is `aws kafka list-kafka-versions --region us-east-1` on 2026-09-13, which is the same 35 strings the service prints; DEPRECATED versions are valid here too (api, B phase: [\"2.8.1\"] was accepted and really created a configuration). Refresh it from that call when AWS ships a new version"
+addedOn: 2026-09-13

@@ -20149,6 +20149,578 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_mdbup_url := \"https://docs.aws.amazon.com/memorydb/latest/APIReference/API_CreateUser.html\"\n\n_pf_mdbup_fix := \"Give AuthenticationMode Type password one or two passwords of 16-128 characters, or use Type iam\"\n\n_pf_mdbup_mode(name) := m if {\n\tm := object.get(input.resources[name].properties, \"AuthenticationMode\", null)\n\tis_object(m)\n}\n\n_pf_mdbup_passwords(name) := ps if {\n\tps := object.get(_pf_mdbup_mode(name), \"Passwords\", null)\n\tis_array(ps)\n}\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode.Passwords\",\n\tsprintf(\"a password is %d characters; CreateUser fails with \\\"Passwords length must be between 16-128 characters.\\\"\", [count(p)]),\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tsome p in _pf_mdbup_passwords(name)\n\t_pf_cachelib_lit(p)\n\t_pf_mdbup_bad_length(count(p))\n}\n\n_pf_mdbup_bad_length(n) if n < 16\n\n_pf_mdbup_bad_length(n) if n > 128\n\nviolation contains make_diag_full(\"pf-memorydb-user-password\", \"ERROR\", name,\n\t\"Properties.AuthenticationMode\",\n\t\"AuthenticationMode Type is password but no Passwords are given; CreateUser needs at least one password of 16-128 characters\",\n\t_pf_mdbup_fix, _pf_mdbup_url) if {\n\tsome name in resources_of_type(\"AWS::MemoryDB::User\")\n\tmode := _pf_mdbup_mode(name)\n\tlower(object.get(mode, \"Type\", \"\")) == \"password\"\n\tcount(object.get(mode, \"Passwords\", [])) == 0\n}\n"
   },
   {
+    "id": "pf-msk-broker-count-multiple-of-az",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "The MSK broker count must be a multiple of the number of client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One Availability Zone per client subnet, and the brokers are spread evenly over them, so\n# NumberOfBrokerNodes has to divide by the number of subnets. CreateCluster answers with \"The\n# target number of broker nodes must be a multiple of the number of Availability Zones in the\n# Client subnets parameter ... InvalidParameter: numberOfBrokerNodes\".\nviolation contains make_diag_full(\"pf-msk-broker-count-multiple-of-az\", \"ERROR\", name,\n\t\"Properties.NumberOfBrokerNodes\",\n\tsprintf(\"%d broker nodes over %d client subnets is not a whole number per Availability Zone; the create fails with \\\"The target number of broker nodes must be a multiple of the number of Availability Zones in the Client subnets parameter\\\"\", [n, s]),\n\t\"Set NumberOfBrokerNodes to a multiple of the number of client subnets\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\ts := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\ts > 0\n\tn := to_number(resolve(name, \"Properties.NumberOfBrokerNodes\"))\n\tfloor(n / s) * s != n\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-any-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "LoggingInfo.BrokerLogs must name at least one log destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every member of BrokerLogs is optional in the schema, so an empty object passes every earlier\n# layer and the create fails with \"You must define one or more of the following broker log types:\n# CloudWatch Logs, Kinesis Data Firehose, Amazon S3. ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-any-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs\",\n\t\"BrokerLogs names no destination; the create fails with \\\"You must define one or more of the following broker log types: CloudWatch Logs, Kinesis Data Firehose, Amazon S3\\\"\",\n\t\"Declare S3, Firehose or CloudWatchLogs under BrokerLogs, or drop LoggingInfo altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tlogs := object.get(props, [\"LoggingInfo\", \"BrokerLogs\"], null)\n\tis_object(logs)\n\tnamed := [k | some k in object.keys(logs); k in {\"S3\", \"Firehose\", \"CloudWatchLogs\"}]\n\tcount(named) == 0\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-cloudwatch-loggroup-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling CloudWatch Logs broker logs requires the LogGroup to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# LogGroup is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use CloudWatch Logs as a destination for broker logs, you must specify a CloudWatch log group.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-cloudwatch-loggroup-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.CloudWatchLogs.LogGroup\",\n\t\"CloudWatch Logs broker logs are enabled without a LogGroup; the create fails with \\\"To use CloudWatch Logs as a destination for broker logs, you must specify a CloudWatch log group\\\"\",\n\t\"Name the LogGroup, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"CloudWatchLogs\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"LogGroup\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-firehose-stream-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling Kinesis Data Firehose broker logs requires the DeliveryStream to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# DeliveryStream is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-firehose-stream-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.Firehose.DeliveryStream\",\n\t\"Kinesis Data Firehose broker logs are enabled without a DeliveryStream; the create fails with \\\"To use Kinesis Data Firehose as a destination for broker logs, you must specify a delivery stream\\\"\",\n\t\"Name the DeliveryStream, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"Firehose\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"DeliveryStream\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-broker-logs-s3-bucket-required",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Enabling Amazon S3 broker logs requires the Bucket to be named",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Bucket is Required: No in the schema because the destination is only needed when the log type is\n# enabled - the create then fails with \"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket.\n# ... InvalidParameter: brokerLogs\".\nviolation contains make_diag_full(\"pf-msk-broker-logs-s3-bucket-required\", \"ERROR\", name,\n\t\"Properties.LoggingInfo.BrokerLogs.S3.Bucket\",\n\t\"Amazon S3 broker logs are enabled without a Bucket; the create fails with \\\"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket\\\"\",\n\t\"Name the Bucket, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tdest := object.get(props, [\"LoggingInfo\", \"BrokerLogs\", \"S3\"], null)\n\tis_object(dest)\n\tobject.get(dest, \"Enabled\", false) == true\n\tobject.get(dest, \"Bucket\", \"__pf_absent\") == \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-client-subnets-count",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster needs exactly two or three client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A provisioned cluster spans two or three Availability Zones - one client subnet each. Both ends\n# are rejected by CreateCluster with \"Specify either two or three client subnets. ...\n# InvalidParameter: brokerNodeGroupInfo\"; the engine's schema carries no minItems/maxItems here.\nviolation contains make_diag_full(\"pf-msk-client-subnets-count\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"only %d client subnet(s); the create fails with \\\"Specify either two or three client subnets\\\"\", [n]),\n\t\"List two or three client subnets, each in its own Availability Zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 0\n\tn < 2\n}\n\nviolation contains make_diag_full(\"pf-msk-client-subnets-count\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"%d client subnets; the create fails with \\\"Specify either two or three client subnets\\\"\", [n]),\n\t\"List two or three client subnets, each in its own Availability Zone\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 3\n}\n"
+  },
+  {
+    "id": "pf-msk-client-subnets-distinct",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "MSK client subnets must all be different",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One subnet per Availability Zone: repeating a subnet id is rejected with \"The list provided\n# contains duplicate items. ... InvalidParameter: clientSubnets\". The property carries no\n# uniqueItems in the engine's schema, so nothing earlier sees the repeat.\nviolation contains make_diag_full(\"pf-msk-client-subnets-distinct\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"%d client subnets but only %d distinct ones; the create fails with \\\"The list provided contains duplicate items\\\"\", [n, u]),\n\t\"Give each Availability Zone its own subnet - no repeats\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tsubnets := [it.value | some it in flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"); is_string(it.value)]\n\tn := count(subnets)\n\tu := count({s | some s in subnets})\n\tu != n\n}\n"
+  },
+  {
+    "id": "pf-msk-cluster-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ClusterName matches ^[0-9A-Za-z][0-9A-Za-z-]*$ - no underscores, no dots, no leading hyphen.\n# The engine's schema carries the 64-character maximum (F3033) but no pattern, and CreateCluster\n# answers with \"The parameter value contains one or more characters that are not valid. ...\n# InvalidParameter: clusterName\" without repeating the pattern.\nviolation contains make_diag_full(\"pf-msk-cluster-name-pattern\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"cluster name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tn := resolve(name, \"Properties.ClusterName\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-clusterpolicy-resource-matches-cluster",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster policy's Resource must be the cluster the policy is attached to",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ClusterPolicy"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PutClusterPolicy refuses a policy whose statements name a different cluster: \"The cluster policy\n# is not valid. Invalid cluster arn: \\\"<arn>\\\" ... InvalidParameter: policy\". The realistic mistake\n# is copying a policy between two clusters and forgetting the Resource.\n# Only fully literal kafka ARNs are compared -- a Ref/GetAtt is a marker object (is_string is\n# false) and a wildcard is left alone.\n_pf_mskcprm_res(name) := rs if {\n\trs := [r |\n\t\tsome st in flatten_list(name, \"Properties.Policy.Statement\")\n\t\tr := _pf_mskcprm_one(st.value)\n\t]\n}\n\n_pf_mskcprm_one(st) := r if {\n\tis_string(st.Resource)\n\tr := st.Resource\n}\n\nviolation contains make_diag_full(\"pf-msk-clusterpolicy-resource-matches-cluster\", \"ERROR\", name,\n\t\"Properties.Policy.Statement\",\n\tsprintf(\"the policy grants access to '%s' but is attached to '%s'; PutClusterPolicy fails with \\\"The cluster policy is not valid. Invalid cluster arn\\\"\", [r, carn]),\n\t\"Point every statement's Resource at the same cluster the policy is attached to\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ClusterPolicy\")\n\tcarn := resolve(name, \"Properties.ClusterArn\")\n\tstartswith(carn, \"arn:\")\n\tsome r in _pf_mskcprm_res(name)\n\tstartswith(r, \"arn:\")\n\tstartswith(r, \"arn:aws\")\n\tcontains(r, \":kafka:\")\n\tnot contains(r, \"*\")\n\tr != carn\n}\n"
+  },
+  {
+    "id": "pf-msk-config-custom-advertised-listeners-format",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# custom.advertised.listeners is per-broker, so Amazon MSK requires the +{broker_id} suffix that\n# tells it how to vary the advertised port per broker. CreateConfiguration rejects any other shape\n# with \"Invalid custom.advertised.listeners format. Expected:\n# LISTENER_NAME://host:port+{broker_id} (comma-separated for multiple).\"\n_pf_mskcal_entries(name) := es if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tes := [e |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\ti := indexof(t, \"=\")\n\t\ti > 0\n\t\ttrim_space(substring(t, 0, i)) == \"custom.advertised.listeners\"\n\t\tsome raw in split(substring(t, i + 1, count(t) - i - 1), \",\")\n\t\te := trim_space(raw)\n\t\te != \"\"\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-custom-advertised-listeners-format\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"custom.advertised.listeners entry '%s' is not of the form LISTENER_NAME://host:port+{broker_id}; the configuration create fails with \\\"Invalid custom.advertised.listeners format\\\"\", [bad]),\n\t\"Write each listener as LISTENER_NAME://host:port+{broker_id} (comma-separated for several), e.g. CLIENT://b-{broker_id}.example.com:9092+{broker_id}\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tsome bad in _pf_mskcal_entries(name)\n\tnot regex.match(`^[A-Za-z0-9_]+://[^,]+:[0-9]+\\+\\{broker_id\\}$`, bad)\n}\n"
+  },
+  {
+    "id": "pf-msk-config-kafka-versions-unknown",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "KafkaVersionsList must name Apache Kafka versions Amazon MSK knows",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CreateConfiguration rejects a version string it does not know with \"Unsupported KafkaVersion [x].\n# Valid values: [...]\". Deprecated versions are still valid values here, so the list below is every\n# version `aws kafka list-kafka-versions` reports, ACTIVE and DEPRECATED alike (2026-09-13), which\n# is exactly the list the service prints.\n# ponytail: a static list goes stale the day AWS ships a new version -- refresh it from\n# list-kafka-versions when the monthly bench or a user reports a false positive.\n_pf_mskkvu_known := {\n\t\"1.1.1\",\n\t\"2.1.0\",\n\t\"2.2.1\",\n\t\"2.3.1\",\n\t\"2.4.1\",\n\t\"2.4.1.1\",\n\t\"2.5.1\",\n\t\"2.6.0\",\n\t\"2.6.1\",\n\t\"2.6.2\",\n\t\"2.6.3\",\n\t\"2.7.0\",\n\t\"2.7.1\",\n\t\"2.7.2\",\n\t\"2.8.0\",\n\t\"2.8.1\",\n\t\"2.8.2.tiered\",\n\t\"3.1.1\",\n\t\"3.2.0\",\n\t\"3.3.1\",\n\t\"3.3.2\",\n\t\"3.4.0\",\n\t\"3.5.1\",\n\t\"3.6.0\",\n\t\"3.6.0.1\",\n\t\"3.7.x\",\n\t\"3.7.x.kraft\",\n\t\"3.8.x\",\n\t\"3.8.x.kraft\",\n\t\"3.8.link\",\n\t\"3.9.x\",\n\t\"3.9.x.kraft\",\n\t\"4.0.x.kraft\",\n\t\"4.1.x.kraft\",\n\t\"4.2.x.kraft\",\n}\n\nviolation contains make_diag_full(\"pf-msk-config-kafka-versions-unknown\", \"ERROR\", name,\n\t\"Properties.KafkaVersionsList\",\n\tsprintf(\"KafkaVersionsList contains '%s', which is not an Amazon MSK Kafka version; the create fails with \\\"Unsupported KafkaVersion [%s]\\\"\", [v, v]),\n\t\"Use a version reported by `aws kafka list-kafka-versions` (for example 3.9.x or 3.9.x.kraft)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tsome it in flatten_list(name, \"Properties.KafkaVersionsList\")\n\tv := it.value\n\tis_string(v)\n\tnot v in _pf_mskkvu_known\n}\n"
+  },
+  {
+    "id": "pf-msk-config-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK configuration name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Name must match ^[0-9A-Za-z][0-9A-Za-z-]{0,}$ -- no underscores, dots or leading hyphen. The\n# engine's schema carries no pattern for this property, and CreateConfiguration answers with a\n# message that does not repeat the pattern (\"The parameter value contains one or more characters\n# that are not valid. ... InvalidParameter: name\").\nviolation contains make_diag_full(\"pf-msk-config-name-pattern\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"configuration name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tn := resolve(name, \"Properties.Name\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-config-server-properties-allowed-keys",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK configuration may only set Amazon MSK's supported Apache Kafka properties",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Configuration"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Amazon MSK does not accept arbitrary Apache Kafka broker properties. CreateConfiguration checks\n# every key in ServerProperties against a fixed allow-list (the \"Custom Amazon MSK configurations\"\n# table) and rejects anything else -- a read-only broker property (advertised.listeners), a\n# per-broker property (broker.id), or a line that is not key=value at all -- with\n# \"Key '<k>' is not supported by at least one Apache Kafka version\".\n# The list is static: passing KafkaVersionsList does not widen it.\n_pf_mskspk_allowed := {\n\t\"allow.everyone.if.no.acl.found\",\n\t\"auto.create.topics.enable\",\n\t\"compression.type\",\n\t\"connections.max.idle.ms\",\n\t\"custom.advertised.listeners\",\n\t\"default.replication.factor\",\n\t\"delete.topic.enable\",\n\t\"group.initial.rebalance.delay.ms\",\n\t\"group.max.session.timeout.ms\",\n\t\"group.min.session.timeout.ms\",\n\t\"leader.imbalance.per.broker.percentage\",\n\t\"log.cleaner.delete.retention.ms\",\n\t\"log.cleaner.min.cleanable.ratio\",\n\t\"log.cleanup.policy\",\n\t\"log.flush.interval.messages\",\n\t\"log.flush.interval.ms\",\n\t\"log.message.timestamp.difference.max.ms\",\n\t\"log.message.timestamp.type\",\n\t\"log.retention.bytes\",\n\t\"log.retention.hours\",\n\t\"log.retention.minutes\",\n\t\"log.retention.ms\",\n\t\"log.roll.ms\",\n\t\"log.segment.bytes\",\n\t\"max.incremental.fetch.session.cache.slots\",\n\t\"message.max.bytes\",\n\t\"min.insync.replicas\",\n\t\"num.io.threads\",\n\t\"num.network.threads\",\n\t\"num.partitions\",\n\t\"num.recovery.threads.per.data.dir\",\n\t\"num.replica.fetchers\",\n\t\"offsets.retention.minutes\",\n\t\"offsets.topic.replication.factor\",\n\t\"replica.fetch.max.bytes\",\n\t\"replica.fetch.response.max.bytes\",\n\t\"replica.lag.time.max.ms\",\n\t\"replica.selector.class\",\n\t\"replica.socket.receive.buffer.bytes\",\n\t\"socket.receive.buffer.bytes\",\n\t\"socket.request.max.bytes\",\n\t\"socket.send.buffer.bytes\",\n\t\"transaction.max.timeout.ms\",\n\t\"transaction.state.log.min.isr\",\n\t\"transaction.state.log.replication.factor\",\n\t\"transactional.id.expiration.ms\",\n\t\"unclean.leader.election.enable\",\n\t\"zookeeper.connection.timeout.ms\",\n\t\"zookeeper.session.timeout.ms\",\n}\n\n# A properties line is \"key=value\"; a line with no '=' is a key with an empty value, which is how a\n# JSON blob or stray prose lands here. ponytail: no support for backslash line continuations --\n# a continued line is skipped, so the rule misses rather than false-fires.\n_pf_mskspk_key(line) := k if {\n\ti := indexof(line, \"=\")\n\ti > 0\n\tk := trim_space(substring(line, 0, i))\n}\n\n_pf_mskspk_key(line) := line if {\n\tindexof(line, \"=\") <= 0\n}\n\n_pf_mskspk_bad(name) := ks if {\n\ts := resolve(name, \"Properties.ServerProperties\")\n\tis_string(s)\n\tks := [k |\n\t\tsome ln in split(s, \"\\n\")\n\t\tt := trim_space(ln)\n\t\tt != \"\"\n\t\tnot startswith(t, \"#\")\n\t\tnot startswith(t, \"!\")\n\t\tk := _pf_mskspk_key(t)\n\t\tnot k in _pf_mskspk_allowed\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-config-server-properties-allowed-keys\", \"ERROR\", name,\n\t\"Properties.ServerProperties\",\n\tsprintf(\"ServerProperties sets %s, which Amazon MSK does not allow in a custom configuration; the create fails with \\\"Key '%s' is not supported by at least one Apache Kafka version\\\"\", [concat(\", \", bad), bad[0]]),\n\t\"Keep ServerProperties to the properties listed under \\\"Custom Amazon MSK configurations\\\" (read-only and per-broker Kafka properties cannot be set)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Configuration\")\n\tbad := _pf_mskspk_bad(name)\n\tcount(bad) > 0\n}\n"
+  },
+  {
+    "id": "pf-msk-express-kafka-version",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Express brokers do not run every Apache Kafka version",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers run a subset of the ACTIVE Apache Kafka versions: CreateClusterV2 answered\n# \"Valid values: [3.8.x, 3.9.x.kraft, 4.2.x.kraft]\" on 2026-09-14, which is narrower than the\n# support table in the user guide (3.6, 3.8, 3.9 and 4.2). 3.7.x is perfectly valid for Standard\n# brokers and rejected here. This is a deny list on purpose - the two sources disagree, and an\n# allow list would turn both that disagreement and every version AWS adds into a false positive.\nviolation contains make_diag_full(\"pf-msk-express-kafka-version\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Express instance type '%s' with Apache Kafka %s; the create fails with \\\"Express instance types are not supported for Kafka version %s\\\"\", [itype, v, v]),\n\t\"Pick a version the service lists for Express brokers (3.8.x, 3.9.x.kraft or 4.2.x.kraft as of 2026-09-14)\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskekv_not_on_express\n}\n\n# ACTIVE versions (aws kafka list-kafka-versions) that Express brokers do not run.\n_pf_mskekv_not_on_express := {\"3.7.x\", \"3.7.x.kraft\", \"4.0.x.kraft\", \"4.1.x.kraft\"}\n"
+  },
+  {
+    "id": "pf-msk-express-no-ebs-storage",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers may not declare StorageInfo",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers manage their own storage, so the create rejects any StorageInfo: \"The\n# storageInfo parameter is not supported for Express instance types. ... InvalidParameter:\n# brokerNodeGroupInfo\". Standard brokers require it, so the property cannot be schema-forbidden.\nviolation contains make_diag_full(\"pf-msk-express-no-ebs-storage\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo\",\n\tsprintf(\"Express instance type '%s' with StorageInfo; the create fails with \\\"The storageInfo parameter is not supported for Express instance types\\\"\", [itype]),\n\t\"Drop StorageInfo - Express brokers size their own storage\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\"], \"__pf_absent\") != \"__pf_absent\"\n}\n"
+  },
+  {
+    "id": "pf-msk-express-no-storage-mode",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers may not declare StorageMode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Tiered storage is a Standard broker feature; on Express the create fails with \"The storageMode\n# parameter is not supported for Express instance types. ... InvalidParameter: storageMode\".\nviolation contains make_diag_full(\"pf-msk-express-no-storage-mode\", \"ERROR\", name,\n\t\"Properties.StorageMode\",\n\tsprintf(\"Express instance type '%s' with StorageMode '%s'; the create fails with \\\"The storageMode parameter is not supported for Express instance types\\\"\", [itype, mode]),\n\t\"Drop StorageMode - Express brokers have no tiered-storage switch\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tmode := resolve(name, \"Properties.StorageMode\")\n\tis_string(mode)\n}\n"
+  },
+  {
+    "id": "pf-msk-express-requires-three-subnets",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An MSK cluster with Express brokers needs exactly three client subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Express brokers only come in a three Availability Zone shape: \"Clusters with Express instance\n# types require 3 subnets. ... InvalidParameter: brokerNodeGroupInfo\". Standard brokers accept\n# two, so nothing generic can carry this check.\nviolation contains make_diag_full(\"pf-msk-express-requires-three-subnets\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ClientSubnets\",\n\tsprintf(\"Express instance type '%s' with %d client subnets; the create fails with \\\"Clusters with Express instance types require 3 subnets\\\"\", [itype, n]),\n\t\"Give an Express cluster three client subnets, one per Availability Zone\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-broker-types-express.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\titype := resolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\")\n\tis_string(itype)\n\tstartswith(itype, \"express.\")\n\tn := count(flatten_list(name, \"Properties.BrokerNodeGroupInfo.ClientSubnets\"))\n\tn > 0\n\tn != 3\n}\n"
+  },
+  {
+    "id": "pf-msk-kafka-version-deprecated",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A deprecated Apache Kafka version cannot be used for a new MSK cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK keeps deprecated versions readable in list-kafka-versions but refuses to create with them:\n# \"Standard instance types are not supported for Kafka version 2.8.1. Valid values: [...] ...\n# InvalidParameter: kafkaVersion\". The set below is every version whose only status was\n# DEPRECATED on 2026-09-14 (aws kafka list-kafka-versions, us-east-1); 3.9.x and 4.2.x.kraft are\n# listed twice by the API and stay out because their other row is ACTIVE.\nviolation contains make_diag_full(\"pf-msk-kafka-version-deprecated\", \"ERROR\", name,\n\t\"Properties.KafkaVersion\",\n\tsprintf(\"Apache Kafka %s is deprecated; the create fails with \\\"Standard instance types are not supported for Kafka version %s\\\"\", [v, v]),\n\t\"Pick a version that aws kafka list-kafka-versions still reports as ACTIVE\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tv in _pf_mskkvd_deprecated\n}\n\n_pf_mskkvd_deprecated := {\n\t\"1.1.1\", \"2.1.0\", \"2.2.1\", \"2.3.1\", \"2.4.1\", \"2.4.1.1\",\n\t\"2.5.1\", \"2.6.0\", \"2.6.1\", \"2.6.2\", \"2.6.3\",\n\t\"2.7.0\", \"2.7.1\", \"2.7.2\", \"2.8.0\", \"2.8.1\", \"2.8.2.tiered\",\n\t\"3.1.1\", \"3.2.0\", \"3.3.1\", \"3.3.2\", \"3.4.0\", \"3.5.1\",\n\t\"3.6.0.1\", \"3.8.link\",\n}\n"
+  },
+  {
+    "id": "pf-msk-network-type-ipv4-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster is created IPv4-only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The schema lists IPV4 | DUAL, but DUAL is reachable only by updating an existing cluster: the\n# create fails with \"Invalid NetworkType value in ConnectivityInfo. When creating a cluster, only\n# IPV4 is supported. ... InvalidParameter: networkType\".\nviolation contains make_diag_full(\"pf-msk-network-type-ipv4-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType\",\n\tsprintf(\"NetworkType '%s'; the create fails with \\\"When creating a cluster, only IPV4 is supported\\\"\", [t]),\n\t\"Create the cluster as IPV4 and switch it to DUAL in a later update\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/mskp-choose-cluster-network-type.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tt := resolve(name, \"Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType\")\n\tis_string(t)\n\tt != \"IPV4\"\n}\n"
+  },
+  {
+    "id": "pf-msk-open-monitoring-requires-exporter",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Prometheus open monitoring needs an exporter",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both exporters are Required: No, so an empty Prometheus block is schema-valid and turns\n# monitoring on with nothing to scrape; the create fails with \"You must specify at least one type\n# of exporter, either nodeExporter or jmxExporter. ... InvalidParameter: openMonitoring\".\nviolation contains make_diag_full(\"pf-msk-open-monitoring-requires-exporter\", \"ERROR\", name,\n\t\"Properties.OpenMonitoring.Prometheus\",\n\t\"OpenMonitoring.Prometheus names no exporter; the create fails with \\\"You must specify at least one type of exporter, either nodeExporter or jmxExporter\\\"\",\n\t\"Declare JmxExporter or NodeExporter under Prometheus, or drop OpenMonitoring altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-prometheus.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprom := object.get(props, [\"OpenMonitoring\", \"Prometheus\"], null)\n\tis_object(prom)\n\tnamed := [k | some k in object.keys(prom); k in {\"JmxExporter\", \"NodeExporter\"}]\n\tcount(named) == 0\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-instance-type",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput needs kafka.m5.4xlarge / kafka.m7g.2xlarge or larger",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"To provision storage throughput, you must choose broker size kafka.m5.4xlarge or larger (or\n# kafka.m7g.2xlarge or larger)\" - the create fails on anything below with \"Provisioned throughput\n# is not supported for the specified broker type. ... InvalidParameter: provisionedThroughput\".\n# Written as a deny list of the sizes below the floor: an allow list would turn every broker size\n# AWS adds into a false positive.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-instance-type\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.InstanceType\",\n\tsprintf(\"ProvisionedThroughput is enabled on '%s'; the create fails with \\\"Provisioned throughput is not supported for the specified broker type\\\"\", [itype]),\n\t\"Move to kafka.m5.4xlarge or kafka.m7g.2xlarge (or larger), or turn ProvisionedThroughput off\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\", \"Enabled\"], false) == true\n\titype := object.get(props, [\"BrokerNodeGroupInfo\", \"InstanceType\"], \"\")\n\titype in _pf_mskptit_too_small\n}\n\n# Standard broker sizes below the provisioned-throughput floor.\n_pf_mskptit_too_small := {\n\t\"kafka.t3.small\",\n\t\"kafka.m5.large\", \"kafka.m5.xlarge\", \"kafka.m5.2xlarge\",\n\t\"kafka.m7g.large\", \"kafka.m7g.xlarge\",\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-max-per-instance",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput has a per-broker-size ceiling",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The 1000 MiB/s top of the range is only reachable on the largest brokers - every size carries\n# its own ceiling (user guide table), and the create fails with \"For brokers of type m5.4xlarge,\n# the maximum value for VolumeThroughput cannot exceed 593.75 MiB/s. ... InvalidParameter:\n# volumeThroughput\". VolumeThroughput is an Integer, so the table holds the largest integer the\n# service accepts for each size.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-max-per-instance\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.VolumeThroughput\",\n\tsprintf(\"VolumeThroughput %d MiB/s on '%s', which tops out at %d MiB/s; the create fails with \\\"the maximum value for VolumeThroughput cannot exceed\\\"\", [t, itype, cap]),\n\t\"Lower VolumeThroughput to the ceiling for this broker size, or move to a larger broker\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], {})\n\tobject.get(prov, \"Enabled\", false) == true\n\titype := object.get(props, [\"BrokerNodeGroupInfo\", \"InstanceType\"], \"\")\n\tcap := object.get(_pf_mskptmax_caps, itype, null)\n\tcap != null\n\tv := object.get(prov, \"VolumeThroughput\", null)\n\tv != null\n\tt := to_number(v)\n\tt > cap\n}\n\n# Maximum storage throughput per broker size (user guide table, 2026-09-14), floored to the\n# largest integer VolumeThroughput accepts. Sizes the table does not list are not checked.\n_pf_mskptmax_caps := {\n\t\"kafka.m5.4xlarge\": 593,\n\t\"kafka.m5.8xlarge\": 850,\n\t\"kafka.m5.12xlarge\": 1000,\n\t\"kafka.m5.16xlarge\": 1000,\n\t\"kafka.m5.24xlarge\": 1000,\n\t\"kafka.m7g.2xlarge\": 312,\n\t\"kafka.m7g.4xlarge\": 625,\n\t\"kafka.m7g.8xlarge\": 1000,\n\t\"kafka.m7g.12xlarge\": 1000,\n\t\"kafka.m7g.16xlarge\": 1000,\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-min",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput starts at 250 MiB/s",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VolumeThroughput is a plain Integer in the schema; the service floor is 250 MiB/s and the\n# create fails with \"EBS volume throughput should be between 250 and 1000 MiB/s. ...\n# InvalidParameter: volumeThroughput\". The per-broker-size ceiling is pf-msk-provisioned-throughput-max-per-instance.\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-min\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.VolumeThroughput\",\n\tsprintf(\"VolumeThroughput %d MiB/s; the create fails with \\\"EBS volume throughput should be between 250 and 1000 MiB/s\\\"\", [t]),\n\t\"Ask for at least 250 MiB/s, or turn ProvisionedThroughput off to keep the baseline throughput\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], {})\n\tobject.get(prov, \"Enabled\", false) == true\n\tv := object.get(prov, \"VolumeThroughput\", null)\n\tv != null\n\tt := to_number(v)\n\tt < 250\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-volume-size",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Provisioned storage throughput needs a volume of at least 10 GiB",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VolumeSize accepts 1..16384 in the schema; provisioned throughput narrows the floor to 10 GiB.\n# The create fails with \"To enable ProvisionedThroughput, you must set volume size to a value that\n# is greater than or equal to 10. ... InvalidParameter: volumeSize\".\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-volume-size\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.VolumeSize\",\n\tsprintf(\"ProvisionedThroughput is enabled on a %d GiB volume; the create fails with \\\"you must set volume size to a value that is greater than or equal to 10\\\"\", [s]),\n\t\"Give the broker volume at least 10 GiB, or turn ProvisionedThroughput off\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tebs := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\"], {})\n\tobject.get(ebs, [\"ProvisionedThroughput\", \"Enabled\"], false) == true\n\tv := object.get(ebs, \"VolumeSize\", null)\n\tv != null\n\ts := to_number(v)\n\ts < 10\n}\n"
+  },
+  {
+    "id": "pf-msk-provisioned-throughput-without-enabled",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "VolumeThroughput only counts when ProvisionedThroughput is enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members of ProvisionedThroughput are Required: No, so naming a throughput without the\n# switch passes every earlier layer; the create fails with \"To specify a value for\n# VolumeThroughput, you must enable ProvisionedThroughput. ... InvalidParameter: volumeThroughput\".\nviolation contains make_diag_full(\"pf-msk-provisioned-throughput-without-enabled\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.StorageInfo.EBSStorageInfo.ProvisionedThroughput.Enabled\",\n\t\"VolumeThroughput is set while ProvisionedThroughput.Enabled is not true; the create fails with \\\"To specify a value for VolumeThroughput, you must enable ProvisionedThroughput\\\"\",\n\t\"Set ProvisionedThroughput.Enabled to true, or drop VolumeThroughput\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-provisionedthroughput.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tprov := object.get(props, [\"BrokerNodeGroupInfo\", \"StorageInfo\", \"EBSStorageInfo\", \"ProvisionedThroughput\"], null)\n\tis_object(prov)\n\tobject.get(prov, \"VolumeThroughput\", \"__pf_absent\") != \"__pf_absent\"\n\tobject.get(prov, \"Enabled\", false) != true\n}\n"
+  },
+  {
+    "id": "pf-msk-public-access-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Public access cannot be turned on while the cluster is created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PublicAccess.Type is a free String of 7..23 characters in the schema, so SERVICE_PROVIDED_EIPS\n# passes every earlier layer - but public access is an update-only switch and the create fails\n# with \"When creating a cluster, the only valid value for the Type parameter in PublicAccess is\n# DISABLED. ... InvalidParameter: publicAccess\".\nviolation contains make_diag_full(\"pf-msk-public-access-not-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type\",\n\tsprintf(\"PublicAccess.Type is '%s'; the create fails with \\\"When creating a cluster, the only valid value for the Type parameter in PublicAccess is DISABLED\\\"\", [t]),\n\t\"Create the cluster with DISABLED (or no PublicAccess at all) and turn public access on afterwards\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tt := resolve(name, \"Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type\")\n\tis_string(t)\n\tt != \"DISABLED\"\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-apache-kafka-cluster-requires-auth",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "An Apache Kafka cluster entry must declare ClientAuthentication",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A self-managed Apache Kafka source has no MSK-side auth to inherit, so the\n# entry has to spell out how the replicator authenticates to it.\nviolation contains make_diag_full(\"pf-msk-replicator-apache-kafka-cluster-requires-auth\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d]\", [it.index]),\n\t\"an ApacheKafkaCluster entry has no ClientAuthentication; the replicator create fails with \\\"Apache Kafka clusters require authentication configuration. Specify the clientAuthentication parameter.\\\"\",\n\t\"Add ClientAuthentication (and EncryptionInTransit) to the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"ClientAuthentication\", null) == null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-arns-match-kafka-clusters",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ReplicationInfoList ARNs must be the ones listed in KafkaClusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ReplicationInfoList repeats the ARNs that KafkaClusters declares. A third\n# ARN (or a typo in one of the two) is rejected at create time.\n# The rule only judges when every AmazonMskCluster entry handed over a literal\n# ARN - a Ref / GetAtt wired cluster surfaces as a marker object and is skipped.\n_pf_mskram_arns(name) := arns if {\n\tarns := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := it.value.AmazonMskCluster.MskClusterArn\n\t\tis_string(a)\n\t}\n}\n\n_pf_mskram_msk_entries(name) := n if {\n\tn := count([1 |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\tis_object(it.value)\n\t\tobject.get(it.value, \"AmazonMskCluster\", null) != null\n\t])\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-arns-match-kafka-clusters\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d].%s\", [it.index, key]),\n\tsprintf(\"%s '%s' is not one of the cluster ARNs in KafkaClusters; the replicator create fails with \\\"Source and target Kafka cluster ARNs must be present in kafkaClusters\\\"\", [key, arn]),\n\t\"Repeat the KafkaClusters ARNs verbatim in ReplicationInfoList\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tarns := _pf_mskram_arns(name)\n\tcount(arns) > 0\n\tcount(arns) == _pf_mskram_msk_entries(name)\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tsome key in [\"SourceKafkaClusterArn\", \"TargetKafkaClusterArn\"]\n\tarn := object.get(it.value, key, null)\n\tis_string(arn)\n\tnot arn in arns\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-clusters-same-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator's source and target clusters must be in one account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Replicator does not replicate across accounts: both cluster ARNs must\n# carry the same account id. The deploy-time failure never names the rule --\n# the service simply cannot read the other account's cluster.\n_pf_mskrsa_account(e) := acct if {\n\tarn := e.AmazonMskCluster.MskClusterArn\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kafka\"\n\tacct := parts[4]\n\tacct != \"\"\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-clusters-same-account\", \"ERROR\", name,\n\t\"Properties.KafkaClusters\",\n\tsprintf(\"the cluster ARNs name %d different accounts (%s); the replicator create fails with an AccessDenied on kafka:GetBootstrapBrokers against the other account's cluster\", [count(accounts), joined]),\n\t\"Replicate between clusters in one account - MSK Replicator does not support cross-account replication\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-replicator-supported-configs.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\taccounts := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := _pf_mskrsa_account(it.value)\n\t}\n\tcount(accounts) > 1\n\tjoined := concat(\", \", sort(accounts))\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-enhanced-sync-requires-identical",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ENHANCED consumer-group offset sync needs IDENTICAL topic names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ENHANCED offset sync tracks the same topic name on both sides, so it is\n# only accepted when TopicNameConfiguration.Type is IDENTICAL. The rule judges\n# an explicitly declared Type only - whether the documented default\n# (PREFIXED_WITH_SOURCE_CLUSTER_ALIAS) is rejected the same way is unmeasured.\nviolation contains make_diag_full(\"pf-msk-replicator-enhanced-sync-requires-identical\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d].ConsumerGroupReplication.ConsumerGroupOffsetSyncMode\", [it.index]),\n\tsprintf(\"ConsumerGroupOffsetSyncMode ENHANCED is combined with TopicNameConfiguration.Type '%s'; the replicator create fails with \\\"The consumerGroupOffsetSyncMode value ENHANCED is only supported when topicNameConfiguration type is IDENTICAL\\\"\", [t]),\n\t\"Set TopicNameConfiguration.Type to IDENTICAL, or use the LEGACY offset sync mode\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tobject.get(it.value, [\"ConsumerGroupReplication\", \"ConsumerGroupOffsetSyncMode\"], null) == \"ENHANCED\"\n\tt := object.get(it.value, [\"TopicReplication\", \"TopicNameConfiguration\", \"Type\"], null)\n\tis_string(t)\n\tt != \"IDENTICAL\"\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-kafka-cluster-exactly-one-kind",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A KafkaClusters entry names either an MSK cluster or an Apache Kafka cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One entry describes one cluster: AmazonMskCluster for an MSK cluster,\n# ApacheKafkaCluster for a self-managed one. Both together is rejected.\nviolation contains make_diag_full(\"pf-msk-replicator-kafka-cluster-exactly-one-kind\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d]\", [it.index]),\n\t\"the entry carries both AmazonMskCluster and ApacheKafkaCluster; the replicator create fails with \\\"Cannot specify both AmazonMskCluster and ApacheKafkaCluster in a kafkaCluster object\\\"\",\n\t\"Keep one cluster kind per KafkaClusters entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"AmazonMskCluster\", null) != null\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-service-role-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "The service execution role must live in the clusters' account",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The replicator, its ServiceExecutionRoleArn and its clusters all live in one\n# account: CreateReplicator refuses to pass a role from another account. The\n# check is against the cluster ARNs rather than deploy_account so that it also\n# fires in region/account-agnostic apps, where deploy_account is not injected.\n_pf_mskrsr_account(arn, service) := acct if {\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == service\n\tacct := parts[4]\n\tacct != \"\"\n}\n\n_pf_mskrsr_clusters(name) := accounts if {\n\taccounts := {a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := _pf_mskrsr_account(it.value.AmazonMskCluster.MskClusterArn, \"kafka\")\n\t}\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-service-role-account\", \"ERROR\", name,\n\t\"Properties.ServiceExecutionRoleArn\",\n\tsprintf(\"the service execution role is in account %s while the clusters are in %s; the replicator create fails with \\\"Cross-account pass role is not allowed.\\\"\", [roleAcct, clusterAcct]),\n\t\"Use a role from the account that owns the clusters and the replicator\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\troleAcct := _pf_mskrsr_account(resolve(name, \"Properties.ServiceExecutionRoleArn\"), \"iam\")\n\taccounts := _pf_mskrsr_clusters(name)\n\tcount(accounts) == 1\n\tsome clusterAcct in accounts\n\troleAcct != clusterAcct\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-source-arn-xor-id",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A ReplicationInfo names the source cluster by ARN or by id, never both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# SourceKafkaClusterArn addresses an MSK cluster, SourceKafkaClusterId a\n# self-managed Apache Kafka cluster. Both in one ReplicationInfo is rejected.\nviolation contains make_diag_full(\"pf-msk-replicator-source-arn-xor-id\", \"ERROR\", name,\n\tsprintf(\"Properties.ReplicationInfoList[%d]\", [it.index]),\n\t\"the entry carries both SourceKafkaClusterArn and SourceKafkaClusterId; the replicator create fails with \\\"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId\\\"\",\n\t\"Use SourceKafkaClusterArn for an MSK source, SourceKafkaClusterId for an Apache Kafka source\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tis_object(it.value)\n\tobject.get(it.value, \"SourceKafkaClusterArn\", null) != null\n\tobject.get(it.value, \"SourceKafkaClusterId\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-source-target-differ",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator's two KafkaClusters entries must be different clusters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# KafkaClusters carries the source and the target; naming the same cluster\n# twice (a copy-paste of the ARN) is rejected outright.\n_pf_mskrstd_arns(name) := arns if {\n\tarns := [a |\n\t\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\t\ta := it.value.AmazonMskCluster.MskClusterArn\n\t\tis_string(a)\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-replicator-source-target-differ\", \"ERROR\", name,\n\t\"Properties.KafkaClusters\",\n\tsprintf(\"KafkaClusters lists %d cluster ARNs but only %d distinct one(s); the replicator create fails with \\\"Kafka cluster list contains duplicate cluster ARNs\\\"\", [count(arns), count(uniq)]),\n\t\"Point the source and the target at two different MSK clusters\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tarns := _pf_mskrstd_arns(name)\n\tcount(arns) > 1\n\tuniq := {a | some a in arns}\n\tcount(uniq) < count(arns)\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-target-cluster-region",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A replicator must be created in its target cluster's region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The source cluster may be remote; the target cluster may not. The service\n# names the deploy region in the rejection, so the check is against\n# data.cdk_preflight.deploy_region (enforce mode with a concrete env only).\nviolation contains make_diag_full(\"pf-msk-replicator-target-cluster-region\", \"ERROR\", name,\n\t\"Properties.ReplicationInfoList\",\n\tsprintf(\"the target cluster is in '%s' but the replicator deploys to '%s'; the replicator create fails with \\\"The target cluster must be from region %s\\\"\", [tgtRegion, region, region]),\n\t\"Create the replicator in the target cluster's region (only the source cluster may be in another region)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-replicator.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome it in flatten_list(name, \"Properties.ReplicationInfoList\")\n\tarn := it.value.TargetKafkaClusterArn\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\tparts[2] == \"kafka\"\n\ttgtRegion := parts[3]\n\ttgtRegion != \"\"\n\ttgtRegion != region\n}\n"
+  },
+  {
+    "id": "pf-msk-replicator-vpc-config-only-for-msk-cluster",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Replicator"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# VpcConfig describes how the replicator reaches an MSK cluster. An entry that\n# describes a self-managed Apache Kafka cluster must not carry one.\n# An entry with both cluster kinds is pf-msk-replicator-kafka-cluster-exactly-one-kind's\n# business, so this rule stays out of it.\nviolation contains make_diag_full(\"pf-msk-replicator-vpc-config-only-for-msk-cluster\", \"ERROR\", name,\n\tsprintf(\"Properties.KafkaClusters[%d].VpcConfig\", [it.index]),\n\t\"an ApacheKafkaCluster entry carries VpcConfig; the replicator create fails with \\\"The vpcConfig parameter is only supported for AmazonMskCluster\\\"\",\n\t\"Drop VpcConfig from the Apache Kafka cluster entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Replicator\")\n\tsome it in flatten_list(name, \"Properties.KafkaClusters\")\n\tis_object(it.value)\n\tobject.get(it.value, \"ApacheKafkaCluster\", null) != null\n\tobject.get(it.value, \"AmazonMskCluster\", null) == null\n\tobject.get(it.value, \"VpcConfig\", null) != null\n}\n"
+  },
+  {
+    "id": "pf-msk-sasl-requires-in-cluster-encryption",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Client authentication needs in-cluster encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"To turn on SASL, you must also turn on EncryptionInTransit by setting inCluster to true.\"\n# InCluster defaults to true, so only an explicit false is a problem, and the create then fails\n# with \"To turn on client authentication, you must also turn on in-cluster encryption. ...\n# InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-sasl-requires-in-cluster-encryption\", \"ERROR\", name,\n\t\"Properties.EncryptionInfo.EncryptionInTransit.InCluster\",\n\t\"client authentication is turned on with InCluster false; the create fails with \\\"To turn on client authentication, you must also turn on in-cluster encryption\\\"\",\n\t\"Set InCluster to true (its default), or turn client authentication off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\t_pf_msksrice_authenticated(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"InCluster\"], true) == false\n}\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msksrice_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-sasl-requires-tls-client-broker",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Client authentication needs client-broker encryption",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"You must set clientBroker to either TLS or TLS_PLAINTEXT\" - a cluster that authenticates its\n# clients over a plaintext listener is rejected with \"Client-broker encryption in transit must be\n# set to either TLS or TLS_PLAINTEXT to enable client authentication. ... InvalidParameter:\n# clientAuthentication\". Both members are independently valid, so nothing earlier sees the pair.\nviolation contains make_diag_full(\"pf-msk-sasl-requires-tls-client-broker\", \"ERROR\", name,\n\t\"Properties.EncryptionInfo.EncryptionInTransit.ClientBroker\",\n\t\"client authentication is turned on with ClientBroker PLAINTEXT; the create fails with \\\"Client-broker encryption in transit must be set to either TLS or TLS_PLAINTEXT to enable client authentication\\\"\",\n\t\"Set ClientBroker to TLS (or TLS_PLAINTEXT), or turn client authentication off\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\t_pf_msksrtcb_authenticated(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"ClientBroker\"], \"TLS\") == \"PLAINTEXT\"\n}\n\n# Any client authentication mechanism explicitly switched on.\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msksrtcb_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-scram-secret-account",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "SCRAM secrets must live in the same account as the MSK cluster",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::BatchScramSecret"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BatchAssociateScramSecret only accepts secrets owned by the cluster's account; a foreign-account\n# secret ARN is rejected with \"The provided secret ARN is invalid. ... InvalidParameter:\n# secretArnList\" before the cluster is even looked up.\n# The comparison is between the two ARNs written in the template, never against\n# data.cdk_preflight.deploy_account -- fixtures and real apps both use literal bench-account ARNs.\n_pf_msksa_acct(arn) := a if {\n\tis_string(arn)\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[0] == \"arn\"\n\ta := parts[4]\n\ta != \"\"\n}\n\nviolation contains make_diag_full(\"pf-msk-scram-secret-account\", \"ERROR\", name,\n\t\"Properties.SecretArnList\",\n\tsprintf(\"secret '%s' is in account %s but the cluster is in account %s; the association fails with \\\"The provided secret ARN is invalid\\\"\", [sarn, sacct, cacct]),\n\t\"Create the SCRAM secret in the same account as the cluster\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::BatchScramSecret\")\n\tcacct := _pf_msksa_acct(resolve(name, \"Properties.ClusterArn\"))\n\tsome it in flatten_list(name, \"Properties.SecretArnList\")\n\tsarn := it.value\n\tstartswith(sarn, \"arn:\")\n\tsacct := _pf_msksa_acct(sarn)\n\tsacct != cacct\n}\n"
+  },
+  {
+    "id": "pf-msk-scram-secret-list-unique",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "SecretArnList must not repeat a secret ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::BatchScramSecret"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BatchAssociateScramSecret rejects a repeated ARN outright with \"The list provided contains\n# duplicate items. ... InvalidParameter: secretArnList\" -- the realistic shape is a copy-pasted\n# entry in a list that is otherwise correct. The schema does not mark SecretArnList uniqueItems.\n_pf_msksu_arns(name) := arns if {\n\tarns := [a |\n\t\tsome it in flatten_list(name, \"Properties.SecretArnList\")\n\t\ta := it.value\n\t\tis_string(a)\n\t]\n}\n\nviolation contains make_diag_full(\"pf-msk-scram-secret-list-unique\", \"ERROR\", name,\n\t\"Properties.SecretArnList\",\n\tsprintf(\"SecretArnList has %d entries but only %d distinct ARN(s); the association fails with \\\"The list provided contains duplicate items\\\"\", [count(arns), count(uniq)]),\n\t\"List each SCRAM secret once\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::BatchScramSecret\")\n\tarns := _pf_msksu_arns(name)\n\tcount(arns) > 1\n\tuniq := {a | some a in arns}\n\tcount(uniq) < count(arns)\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-name-pattern",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster name must be alphanumeric and may only contain hyphens after the first character",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same name pattern as every other MSK entity: ^[0-9A-Za-z][0-9A-Za-z-]{0,}$. Underscores are the\n# realistic mistake (they are legal in Kafka topic names and in CDK ids). The schema has no pattern\n# for this property; CreateClusterV2 answers \"The parameter value contains one or more characters\n# that are not valid. ... InvalidParameter: clusterName\".\nviolation contains make_diag_full(\"pf-msk-serverless-name-pattern\", \"ERROR\", name,\n\t\"Properties.ClusterName\",\n\tsprintf(\"cluster name '%s' is not alphanumeric-with-hyphens; the create fails with \\\"The parameter value contains one or more characters that are not valid\\\"\", [n]),\n\t\"Use only A-Z, a-z and 0-9, plus hyphens after the first character\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tn := resolve(name, \"Properties.ClusterName\")\n\tis_string(n)\n\tnot regex.match(`^[0-9A-Za-z][0-9A-Za-z-]*$`, n)\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-sasl-iam-enabled",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster must keep SASL/IAM authentication enabled",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# IAM access control is the only client authentication MSK Serverless has. The CloudFormation\n# schema makes ClientAuthentication.Sasl.Iam.Enabled required, so the reachable mistake is setting\n# it to false -- which the schema happily accepts and CreateClusterV2 rejects with \"A serverless\n# cluster must use SASL/IAM authentication\".\nviolation contains make_diag_full(\"pf-msk-serverless-sasl-iam-enabled\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Sasl.Iam.Enabled\",\n\t\"SASL/IAM authentication is disabled; a serverless cluster has no other client authentication and the create fails with \\\"A serverless cluster must use SASL/IAM authentication\\\"\",\n\t\"Set ClientAuthentication.Sasl.Iam.Enabled to true\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tresolve(name, \"Properties.ClientAuthentication.Sasl.Iam.Enabled\") == false\n}\n"
+  },
+  {
+    "id": "pf-msk-serverless-subnets-count",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Each serverless MSK VPC configuration needs between 2 and 6 subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless spreads a VPC connection over 2 to 6 subnets, each in its own Availability Zone.\n# CreateClusterV2 rejects both ends with \"The size of list should be between 2 and 6. ...\n# InvalidParameter: subnetIds\".\nviolation contains make_diag_full(\"pf-msk-serverless-subnets-count\", \"ERROR\", name,\n\tsprintf(\"Properties.VpcConfigs[%d].SubnetIds\", [it.index]),\n\tsprintf(\"VpcConfigs[%d] lists %d subnet(s); the create fails with \\\"The size of list should be between 2 and 6\\\"\", [it.index, n]),\n\t\"Give each VPC configuration between 2 and 6 subnets, one per Availability Zone\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tsome it in flatten_list(name, \"Properties.VpcConfigs\")\n\tids := it.value.SubnetIds\n\tis_array(ids)\n\tn := count(ids)\n\t_pf_mskssc_out(n)\n}\n\n_pf_mskssc_out(n) if n < 2\n\n_pf_mskssc_out(n) if n > 6\n"
+  },
+  {
+    "id": "pf-msk-serverless-vpc-configs-max",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A serverless MSK cluster can span at most 5 VPCs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::ServerlessCluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MSK Serverless attaches to at most 5 VPCs. CreateClusterV2 rejects a sixth with \"The size of list\n# should be between 1 and 5. ... InvalidParameter: vpcConfigs\". (The lower end is the schema's job.)\nviolation contains make_diag_full(\"pf-msk-serverless-vpc-configs-max\", \"ERROR\", name,\n\t\"Properties.VpcConfigs\",\n\tsprintf(\"VpcConfigs lists %d VPC configurations; the create fails with \\\"The size of list should be between 1 and 5\\\"\", [n]),\n\t\"Attach the serverless cluster to at most 5 VPCs\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::ServerlessCluster\")\n\tcfgs := flatten_list(name, \"Properties.VpcConfigs\")\n\tn := count(cfgs)\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-msk-t3-small-not-kraft",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "kafka.t3.small does not run KRaft metadata mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The .kraft Apache Kafka versions drop the smallest Standard broker: CreateClusterV2 answers\n# \"Unsupported InstanceType specified. Valid values: [...]\" with a list that holds every other\n# broker size but not kafka.t3.small. The same instance type is perfectly valid on 3.9.x, so no\n# layer that looks at either property alone can see this.\nviolation contains make_diag_full(\"pf-msk-t3-small-not-kraft\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.InstanceType\",\n\tsprintf(\"kafka.t3.small with Apache Kafka %s; the create fails with \\\"Unsupported InstanceType specified\\\" because KRaft mode has no t3 broker\", [v]),\n\t\"Move to kafka.m5.large or larger, or pick a ZooKeeper-mode version such as 3.9.x\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tresolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\") == \"kafka.t3.small\"\n\tv := resolve(name, \"Properties.KafkaVersion\")\n\tis_string(v)\n\tendswith(v, \".kraft\")\n}\n"
+  },
+  {
+    "id": "pf-msk-tiered-storage-instance-type",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Tiered storage is not available on kafka.t3.small brokers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The smallest Standard broker has no tiered tier: \"Tiered storage doesn't support broker size\n# t3.small\" (user guide), and CreateClusterV2 answers \"Tiered storage is not supported for the\n# specified broker type. ... InvalidParameter: instanceType\". Express brokers reject StorageMode\n# for a different reason and are covered by pf-msk-express-no-storage-mode.\nviolation contains make_diag_full(\"pf-msk-tiered-storage-instance-type\", \"ERROR\", name,\n\t\"Properties.StorageMode\",\n\t\"StorageMode TIERED on a kafka.t3.small broker; the create fails with \\\"Tiered storage is not supported for the specified broker type\\\"\",\n\t\"Move to kafka.m5.large or larger, or drop StorageMode\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/msk-tiered-storage.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tresolve(name, \"Properties.BrokerNodeGroupInfo.InstanceType\") == \"kafka.t3.small\"\n\tresolve(name, \"Properties.StorageMode\") == \"TIERED\"\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-cert-authority-arn-format",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "CertificateAuthorityArnList holds AWS Private CA ARNs",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The list is typed Array of String with no pattern, so an ACM certificate ARN - the neighbouring\n# service, and the one an author reaches for first - passes every earlier layer. The create fails\n# with \"One or more of the certificate authority ARNs provided in the request are invalid. ...\n# InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-tls-cert-authority-arn-format\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\",\n\tsprintf(\"'%s' is a %s ARN, not an AWS Private CA one; the create fails with \\\"One or more of the certificate authority ARNs provided in the request are invalid\\\"\", [arn, svc]),\n\t\"List AWS Private CA authorities (arn:<partition>:acm-pca:<region>:<account>:certificate-authority/<id>)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tsome item in flatten_list(name, \"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\")\n\tarn := item.value\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) > 5\n\tsvc := parts[2]\n\tsvc != \"acm-pca\"\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-enabled-requires-ca-list",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A Tls block needs both Enabled and CertificateAuthorityArnList",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members of Tls are Required: No, so half a block is schema-valid; the resource handler\n# rejects it before it ever calls Kafka - \"Enabled and CertificateAuthorityArnList fields must\n# both be defined for TLS. 'TLS'\". The requirement is symmetric: neither half stands on its own.\nviolation contains make_diag_full(\"pf-msk-tls-enabled-requires-ca-list\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Tls\",\n\t\"the Tls block defines only one of Enabled and CertificateAuthorityArnList; the create fails with \\\"Enabled and CertificateAuthorityArnList fields must both be defined for TLS\\\"\",\n\t\"Write both fields, or drop the Tls block altogether\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-tls.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\ttls := object.get(props, [\"ClientAuthentication\", \"Tls\"], null)\n\tis_object(tls)\n\tnot _pf_msktercl_complete(name, tls)\n}\n\n_pf_msktercl_complete(name, tls) if {\n\tobject.get(tls, \"Enabled\", \"__pf_absent\") != \"__pf_absent\"\n\tcount(flatten_list(name, \"Properties.ClientAuthentication.Tls.CertificateAuthorityArnList\")) > 0\n}\n"
+  },
+  {
+    "id": "pf-msk-tls-plaintext-requires-unauthenticated",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A TLS_PLAINTEXT listener has to enable unauthenticated traffic",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# \"If you choose TLS_PLAINTEXT, then you must also set unauthenticated to true\" - the plaintext\n# half of the listener has no authentication to offer, so the create fails with \"You must enable\n# unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT.\n# ... InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-tls-plaintext-requires-unauthenticated\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication.Unauthenticated.Enabled\",\n\t\"ClientBroker TLS_PLAINTEXT with client authentication but without Unauthenticated.Enabled; the create fails with \\\"You must enable unauthenticated traffic explicitly to use client-authentication using SASL over TLS_PLAINTEXT\\\"\",\n\t\"Set ClientAuthentication.Unauthenticated.Enabled to true, or move ClientBroker to TLS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"EncryptionInfo\", \"EncryptionInTransit\", \"ClientBroker\"], \"TLS\") == \"TLS_PLAINTEXT\"\n\t_pf_msktpru_authenticated(props)\n\tobject.get(props, [\"ClientAuthentication\", \"Unauthenticated\", \"Enabled\"], false) != true\n}\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_msktpru_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-unauthenticated-only-requires-no-tls-only",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "A cluster has to accept some kind of client",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every member of ClientAuthentication is optional and each Enabled is an independent Boolean,\n# so \"all of them false\" is a perfectly well-formed template that no client could ever reach. The\n# create fails with \"Unauthenticated cannot be set to false without enabling any authentication\n# mechanisms. ... InvalidParameter: clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-unauthenticated-only-requires-no-tls-only\", \"ERROR\", name,\n\t\"Properties.ClientAuthentication\",\n\t\"Unauthenticated is false and no authentication mechanism is enabled; the create fails with \\\"Unauthenticated cannot be set to false without enabling any authentication mechanisms\\\"\",\n\t\"Enable SASL/IAM, SASL/SCRAM or TLS client authentication, or let unauthenticated traffic in\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, [\"ClientAuthentication\", \"Unauthenticated\", \"Enabled\"], true) == false\n\tnot _pf_mskuorn_authenticated(props)\n}\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Iam\", \"Enabled\"], false) == true\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Sasl\", \"Scram\", \"Enabled\"], false) == true\n\n_pf_mskuorn_authenticated(props) if object.get(props, [\"ClientAuthentication\", \"Tls\", \"Enabled\"], false) == true\n"
+  },
+  {
+    "id": "pf-msk-vpc-connectivity-auth-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "Multi-VPC connectivity auth schemes cannot be enabled at create time",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every VpcConnectivity auth switch is an ordinary Boolean in the schema, but the service only\n# accepts them on an existing cluster: \"When creating a cluster, all vpcConnectivity auth schemes\n# must be disabled ('enabled' : false). You can enable auth schemes after the cluster is created.\n# ... InvalidParameter: vpcConnectivity.clientAuthentication\".\nviolation contains make_diag_full(\"pf-msk-vpc-connectivity-auth-not-at-create\", \"ERROR\", name,\n\t\"Properties.BrokerNodeGroupInfo.ConnectivityInfo.VpcConnectivity.ClientAuthentication\",\n\t\"a VpcConnectivity authentication scheme is enabled; the create fails with \\\"When creating a cluster, all vpcConnectivity auth schemes must be disabled\\\"\",\n\t\"Create the cluster with every VpcConnectivity auth scheme false and enable them in a later update\",\n\t\"https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tauth := object.get(props, [\"BrokerNodeGroupInfo\", \"ConnectivityInfo\", \"VpcConnectivity\", \"ClientAuthentication\"], {})\n\tsome path in [[\"Sasl\", \"Iam\", \"Enabled\"], [\"Sasl\", \"Scram\", \"Enabled\"], [\"Tls\", \"Enabled\"]]\n\tobject.get(auth, path, false) == true\n}\n"
+  },
+  {
+    "id": "pf-msk-zookeeper-access-not-at-create",
+    "service": "msk",
+    "severity": "ERROR",
+    "title": "ZookeeperAccess cannot be set while the cluster is created",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::MSK::Cluster"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# ZookeeperAccess exists only in CloudFormation - CreateClusterV2 has no such parameter - and\n# its documentation page carries no description at all, so nothing says it is an update-only\n# switch. The resource handler rejects it outright: \"Zookeeper Access cannot be configured during\n# cluster creation. 'ZookeeperAccess'\".\nviolation contains make_diag_full(\"pf-msk-zookeeper-access-not-at-create\", \"ERROR\", name,\n\t\"Properties.ZookeeperAccess\",\n\t\"ZookeeperAccess is set on a cluster being created; the create fails with \\\"Zookeeper Access cannot be configured during cluster creation\\\"\",\n\t\"Drop ZookeeperAccess from the template and set it in a later update\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-zookeeperaccess.html\") if {\n\tsome name in resources_of_type(\"AWS::MSK::Cluster\")\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tis_object(object.get(props, \"ZookeeperAccess\", null))\n}\n"
+  },
+  {
     "id": "pf-pipes-batch-size-target-limit",
     "service": "pipes",
     "severity": "ERROR",

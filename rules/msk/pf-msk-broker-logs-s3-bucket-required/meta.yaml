@@ -1,0 +1,12 @@
+id: pf-msk-broker-logs-s3-bucket-required
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Enabling Amazon S3 broker logs requires the Bucket to be named"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokerlogs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: BrokerLogs.S3.Enabled true with no Bucket -> \"To use Amazon S3 as a destination for broker logs, you must specify an S3 bucket. ... 'brokerLogs'\" (ROLLBACK_COMPLETE); pass BrokerLogs.S3.Enabled false -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
+addedOn: 2026-09-14

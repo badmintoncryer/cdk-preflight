@@ -1,0 +1,12 @@
+id: pf-msk-network-type-ipv4-at-create
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "A cluster is created IPv4-only"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/mskp-choose-cluster-network-type.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: NetworkType DUAL -> \"Invalid NetworkType value in ConnectivityInfo. When creating a cluster, only IPV4 is supported. ... 'networkType'\" (ROLLBACK_COMPLETE); pass NetworkType IPV4 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

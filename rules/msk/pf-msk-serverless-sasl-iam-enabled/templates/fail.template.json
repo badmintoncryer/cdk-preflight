@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::MSK::ServerlessCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-slsiam-fail",
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": false
+            }
+          }
+        },
+        "VpcConfigs": [
+          {
+            "SubnetIds": [
+              "subnet-00000000000000001",
+              "subnet-00000000000000002"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
