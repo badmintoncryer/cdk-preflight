@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Node
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Main node index is out of range, must be less than numNodes.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: MainNode 2 with NumNodes 2 -> \"Main node index is out of range, must be less than numNodes.\" (ROLLBACK_COMPLETE — the index is zero-based, so equal is the closest violating value); pass MainNode 1 with NumNodes 2 -> CREATE_COMPLETE."
 addedOn: 2026-09-12

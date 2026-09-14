@@ -6,8 +6,8 @@
         "CachePolicyConfig": {
           "Name": "p1",
           "MinTTL": 10,
-          "DefaultTTL": 50,
-          "MaxTTL": 100,
+          "DefaultTTL": 10,
+          "MaxTTL": 10,
           "ParametersInCacheKeyAndForwardedToOrigin": {
             "EnableAcceptEncodingGzip": false,
             "HeadersConfig": {

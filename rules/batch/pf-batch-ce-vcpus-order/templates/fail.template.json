@@ -17,7 +17,7 @@
               "Ref": "Sg"
             }
           ],
-          "MinvCpus": 8,
+          "MinvCpus": 5,
           "InstanceTypes": [
             "optimal"
           ],

@@ -34,7 +34,7 @@
               {
                 "InstanceRequirements": {
                   "VCpuCount": {
-                    "Min": 8,
+                    "Min": 3,
                     "Max": 2
                   },
                   "MemoryMiB": {

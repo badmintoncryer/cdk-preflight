@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperG
 upstream: none
 repro:
   method: research-case
-  evidence: cdk-validation-gap-research case10 (2026-09-01, "MinTTL, MaxTTL and DefaultTTL..." at deploy)
+  evidence: "bench 2026-09-14 us-east-1: two cache behaviours, one at MinTTL 100 / DefaultTTL 99 / MaxTTL 99 and one at DefaultTTL 100 / MaxTTL 99, so each of the three comparisons sits one second inside its boundary (a single behaviour cannot: Min-to-Max would be two apart) -> \"MinTTL, MaxTTL and DefaultTTL should follow order MinTTL less than or equal to DefaultTTL less than or equal to MaxTTL\" (ROLLBACK_COMPLETE); pass with all three at 86400 -> CREATE_COMPLETE."
 addedOn: 2026-09-01

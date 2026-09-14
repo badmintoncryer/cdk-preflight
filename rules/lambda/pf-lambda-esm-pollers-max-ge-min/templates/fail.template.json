@@ -15,7 +15,7 @@
         },
         "ProvisionedPollerConfig": {
           "MinimumPollers": 10,
-          "MaximumPollers": 5
+          "MaximumPollers": 9
         }
       }
     },

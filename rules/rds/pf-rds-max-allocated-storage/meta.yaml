@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Max storage size must be greater than storage size\" ROLLBACK_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: MaxAllocatedStorage 99 against AllocatedStorage 100 -> \"Max storage size must be greater than storage size\" (ROLLBACK_COMPLETE); pass MaxAllocatedStorage 100 against AllocatedStorage 100 -> CREATE_COMPLETE. Equal deploys, so the rule fires only below — it read `<=` until 2026-09-14 and would have failed a template RDS accepts."
 addedOn: 2026-09-08

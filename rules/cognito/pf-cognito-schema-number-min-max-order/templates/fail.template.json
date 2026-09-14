@@ -9,7 +9,7 @@
             "Name": "n2",
             "AttributeDataType": "Number",
             "NumberAttributeConstraints": {
-              "MinValue": "10",
+              "MinValue": "2",
               "MaxValue": "1"
             }
           }

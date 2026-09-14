@@ -9,15 +9,33 @@
             "TargetOriginId": "origin1",
             "ViewerProtocolPolicy": "allow-all",
             "MinTTL": 100,
-            "DefaultTTL": 50,
-            "MaxTTL": 10,
-            "ForwardedValues": { "QueryString": false }
+            "DefaultTTL": 99,
+            "MaxTTL": 99,
+            "ForwardedValues": {
+              "QueryString": false
+            }
           },
-          "Origins": [{
-            "Id": "origin1",
-            "DomainName": "example.com",
-            "CustomOriginConfig": { "OriginProtocolPolicy": "https-only" }
-          }]
+          "Origins": [
+            {
+              "Id": "origin1",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "https-only"
+              }
+            }
+          ],
+          "CacheBehaviors": [
+            {
+              "TargetOriginId": "origin1",
+              "ViewerProtocolPolicy": "allow-all",
+              "DefaultTTL": 100,
+              "MaxTTL": 99,
+              "ForwardedValues": {
+                "QueryString": false
+              },
+              "PathPattern": "/b2"
+            }
+          ]
         }
       }
     }

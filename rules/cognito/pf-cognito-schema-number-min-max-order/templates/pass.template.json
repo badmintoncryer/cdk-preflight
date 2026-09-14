@@ -10,7 +10,7 @@
             "AttributeDataType": "Number",
             "NumberAttributeConstraints": {
               "MinValue": "1",
-              "MaxValue": "10"
+              "MaxValue": "1"
             }
           }
         ]

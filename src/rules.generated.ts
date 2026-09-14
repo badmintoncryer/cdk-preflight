@@ -22156,7 +22156,7 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "resourceTypes": [
       "AWS::RDS::DBInstance"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-max-allocated-storage\", \"ERROR\", name,\n\t\"Properties.MaxAllocatedStorage\",\n\tsprintf(\"MaxAllocatedStorage %v is not greater than AllocatedStorage %v (\\\"Max storage size must be greater than storage size\\\")\", [mx, al]),\n\t\"Raise MaxAllocatedStorage above AllocatedStorage\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tmx := to_number(resolve(name, \"Properties.MaxAllocatedStorage\"))\n\tal := to_number(resolve(name, \"Properties.AllocatedStorage\"))\n\tmx <= al\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-rds-max-allocated-storage\", \"ERROR\", name,\n\t\"Properties.MaxAllocatedStorage\",\n\tsprintf(\"MaxAllocatedStorage %v is below AllocatedStorage %v (\\\"Max storage size must be greater than storage size\\\")\", [mx, al]),\n\t\"Raise MaxAllocatedStorage above AllocatedStorage\",\n\t\"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html\") if {\n\tsome name in resources_of_type(\"AWS::RDS::DBInstance\")\n\tmx := to_number(resolve(name, \"Properties.MaxAllocatedStorage\"))\n\tal := to_number(resolve(name, \"Properties.AllocatedStorage\"))\n\t# 同値は実機で通る（2026-09-14 us-east-1: 100/100 が CREATE_COMPLETE）ので、弾くのは下回ったときだけ\n\tmx < al\n}\n"
   },
   {
     "id": "pf-rds-monitoring-interval-values",

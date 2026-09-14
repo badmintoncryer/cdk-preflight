@@ -5,7 +5,7 @@
       "Properties": {
         "Type": "multinode",
         "NodeProperties": {
-          "MainNode": 5,
+          "MainNode": 2,
           "NumNodes": 2,
           "NodeRangeProperties": [
             {

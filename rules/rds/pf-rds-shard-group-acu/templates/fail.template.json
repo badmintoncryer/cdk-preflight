@@ -6,7 +6,7 @@
       "UpdateReplacePolicy": "Delete",
       "Properties": {
         "DBClusterIdentifier": "cdkpf-limitless",
-        "MaxACU": 10,
+        "MaxACU": 19,
         "MinACU": 20
       }
     }

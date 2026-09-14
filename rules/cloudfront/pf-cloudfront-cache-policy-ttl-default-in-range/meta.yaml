@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::CachePolicy: MinTTL, MaxTTL and DefaultTTL should follow order MinTTL less than or equal to DefaultTTL less than or equal to MaxTTL (Service: CloudFront, Status Code: 400, Request ID: 91132cb7-0c62-4cb5-87b2-804c3e7bc7c1) (SDK Attempt Count: 1)" (RequestToken: 549ebc32-3603-1d02-6b59-43f906901890, HandlerErrorCode: Inva'
+  evidence: "bench 2026-09-14 us-east-1: two cache policies, DefaultTTL 9 under MinTTL 10 and DefaultTTL 101 over MaxTTL 100 -> \"MinTTL, MaxTTL and DefaultTTL should follow order MinTTL less than or equal to DefaultTTL less than or equal to MaxTTL\" (ROLLBACK_COMPLETE); pass with all three at 10 -> CREATE_COMPLETE, which puts the pass on both limits at once."
 addedOn: 2026-09-08
 benchRegion: us-east-1

@@ -17,24 +17,14 @@
 pf-agentcore-runtime-lifecycle-timeout-order  pending #225
 pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」で、テンプレートに固定値としては書けない（エンジンに時計が無い）。ルールが見ている 100000000000（西暦 5138 年＝秒とミリ秒の取り違え）はどの日付でも違反になる部分集合で、pass をその値に乗せると 365 日を超えて実機に拒否される。fail は 100000000001 に乗せ、pass は Expires を省いて既定の 7 日にしてある
 pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
-pf-asg-desired-capacity-range  pending #225
-pf-asg-instance-requirements-vcpu-min-max  pending #225
-pf-asg-sched-capacity-fields-ordering  pending #225
+pf-asg-desired-capacity-range  ルールが持つ 3 つ目の比較 `MinSize <= MaxSize` は違反条件ではなく、DesiredCapacity を見る前の前提ガード。同値の fail も 1 差の pass も意味を持たない。DesiredCapacity の両端はフィクスチャを境界に置いてある（fail 3/max 2 と 1/min 2、pass 2==max と 0==min）
 pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
-pf-batch-ce-vcpus-order  pending #225
-pf-batch-jd-eks-cpu-limits-ge-requests  pending #225
-pf-batch-jd-node-main-node-lt-num  pending #225
-pf-cloudfront-cache-policy-ttl-default-in-range  pending #225
-pf-cloudfront-continuous-deployment-session-ttl-order  pending #225
-pf-cloudfront-ttl-order  pending #225
 pf-cloudwatch-alarm-evaluation-window  3600 は予算の段を選ぶ境目（Period >= 3600 なら 1 週間、未満なら 1 日）で、順序のある制約ではない。実際のしきい値 604800 / 86400 は Period x EvaluationPeriods の積なのでテンプレートに数値としては現れない。フィクスチャは 3600x169 / 3600x168 と 60x1441 / 60x1440 に乗せてある
 pf-cloudwatch-alarm-expressions-max  数えているのは Metrics のうち Expression を持つ要素だけを集めるヘルパーの戻り値で、Metrics 配列そのものの長さとは 1 ずれる。フィクスチャは 11 / 10 本に乗せてある
 pf-cloudwatch-composite-suppressor-format  count(parts) >= 7 は ActionsSuppressor を ARN として割った断片数のガードで、順序のある制約ではない
 pf-cloudwatch-datapoints-evaluation  pending #225
 pf-cloudwatch-insight-rule-keys-max  しきい値と突き合わせるのは RuleBody（JSON 文字列）の中の Contribution.Keys の長さで、テンプレートの構造には配列として現れない。フィクスチャは 5 / 4 本に乗せてある
-pf-cognito-schema-attr-length-order  pending #225
-pf-cognito-schema-number-min-max-order  pending #225
 pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
 pf-dynamodb-projection-nonkey-total  しきい値と突き合わせるのは INCLUDE インデックスをまたいだ投影属性数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 に乗せてある（1 インデックス 20 本の上限は pf-dynamodb-projection-nonkey-limit 側で境界に乗っている）
 pf-dynamodb-resource-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（解決後の形で 20481 / 20480 ちょうどに乗せてある）
@@ -57,20 +47,16 @@ pf-firehose-processor-buffer-size-range  BufferSizeInMBs は小数を取るの�
 pf-firehose-processor-count  しきい値と突き合わせるのは Processors 配列の要素数だが、数えているのはヘルパー述語の本体（_pf_fhpc_count）の中なので検出器は呼び出し側から辿れない。フィクスチャは 6 / 0 本と 5 / 1 本に乗せてある
 pf-iam-managed-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（6145/6144 ちょうどで撮ってある）
 pf-lambda-env-size  しきい値は環境変数をシリアライズしたバイト数の合計。テンプレートに数値としては現れない（4097/4096 ちょうどで撮ってある）
-pf-lambda-esm-max-concurrency-vs-reserved  pending #225
 pf-lambda-esm-on-failure-destination-api-max-length  上限 350 に届く有効な ARN が存在しない（SQS/S3 の名前長の上限より先に頭打ちになる）。fail は 351 文字ちょうど
 pf-lambda-esm-poller-group-esm-count  doc-only。fail の 101 本で既にテンプレートが 57KB あり CFN の 51,200 バイト上限を超える。pass の 100 本も同じ理由で作れない
-pf-lambda-esm-pollers-max-ge-min  pending #225
 pf-lambda-layerperm-arn-length  上限 140 に届く有効なレイヤー ARN が存在しない（レイヤー名は 64 文字まで）。fail は 141 文字ちょうど
 pf-lambda-perm-policy-size  しきい値は SourceArn 長の合計。fail は既に合計 20480 ちょうど。pass（20479）は Permission が約 270 本必要で、CFN のテンプレート上限 51,200 バイトに入らない
 pf-memorydb-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウの長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
 pf-memorydb-user-password  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
 pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある
-pf-rds-max-allocated-storage  pending #225
 pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
 pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
-pf-rds-serverless-v2-capacity  pending #225
-pf-rds-shard-group-acu  pending #225
+pf-rds-serverless-v2-capacity  MinCapacity / MaxCapacity は 0.5 ACU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 1.5/1 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 0.5/0.5 で限界そのものに乗っている
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）
 pf-route53-coordinates-latitude-range  XSD が 90 ちょうどか 0-89 の 2 桁小数までしか許さないので最も近い違反値は 90.01。機械チェックは整数の 91 を要求する（pass の 90 は境界に乗っている）
 pf-route53-coordinates-longitude-range  同じ XSD の形で、最も近い違反値は 180.01。機械チェックは整数の 181 を要求する（pass の 180 は境界に乗っている）

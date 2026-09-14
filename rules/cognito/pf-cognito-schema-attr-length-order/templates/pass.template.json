@@ -10,7 +10,7 @@
             "AttributeDataType": "String",
             "StringAttributeConstraints": {
               "MinLength": "1",
-              "MaxLength": "64"
+              "MaxLength": "1"
             }
           }
         ]
