@@ -7,7 +7,7 @@
         "Name": "cdkpf-s3sga",
         "Filter": {
           "MatchObjectAge": {
-            "DaysGreaterThan": 90,
+            "DaysGreaterThan": 30,
             "DaysLessThan": 30
           }
         }

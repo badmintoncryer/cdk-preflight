@@ -87,13 +87,7 @@ pf-route53-recordsetgroup-max-1000-elements  しきい値と突き合わせる�
 pf-route53-recordsetgroup-max-32000-chars  しきい値は全値の文字数の合計で、どの配列長とも文字列長とも一致しない。フィクスチャは 32001 / 32000 文字に乗せてある
 pf-route53profiles-profileresourceassociation-rulegroups-max  しきい値と突き合わせるのは「同じプロファイルに紐づいたルールグループの本数」で、リソースをまたいで数えた値なのでどの配列長とも一致しない。フィクスチャは 6 / 5 本に乗せてある（L-F8A07EF1「DNS Firewall rule groups associations to a Route 53 Profile」は Adjustable: false）
 pf-route53resolver-firewallrulegroupassociation-max-per-vpc  しきい値と突き合わせるのは「同じ VPC を指しているアソシエーションの本数」で、テンプレートのどの配列長とも一致しない（リソースをまたいで数えた値）。フィクスチャは 6 / 5 本に乗せてある
-pf-s3-intelligent-tiering-archive-before-deep  pending #225
-pf-s3-lifecycle-days-order  pending #225
-pf-s3-lifecycle-object-size-order  pending #225
-pf-s3-lifecycle-transition-waterfall-order  pending #225
-pf-s3-storagelensgroup-object-age-order  pending #225
-pf-s3-storagelensgroup-object-size-order  pending #225
-pf-s3express-lifecycle-object-size-order  pending #225
+pf-s3-lifecycle-transition-waterfall-order  pass を限界そのもの（2 つの遷移を同じ日に置く）にはできない。S3 は後ろのクラスを厳密に後の日付に置くことを要求し、さらに IA からアーカイブへは 30 日以上空ける必要があるので、同値のテンプレートはデプロイできない。fail は 1 日差（GLACIER 89 / STANDARD_IA 90）に乗せてある
 pf-sfn-asl-name-limits  ステート名も Label も DefinitionString（JSON 文字列）の中にあるので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない（エスケープされた引用符は文字列の一部として読まれる）。フィクスチャは 81 / 80 文字と 41 / 40 文字に乗せてある
 pf-sns-delivery-policy  pending #225
 pf-sns-fifo-only-attributes  上限ちょうどの pass は残せない: ArchivePolicy を持つトピックは削除できず（2026-09-13 us-east-1: "Cannot delete a topic with an ArchivePolicy"）、スタック削除が DELETE_FAILED になってトピックが毎回残る。fail に 366 日と 0 日を置いて両端を確認し、pass は ArchivePolicy を持たない FIFO トピックにしてある

@@ -13,7 +13,7 @@
               "Id": "r1",
               "Status": "Enabled",
               "ExpirationInDays": 30,
-              "ObjectSizeGreaterThan": "5000",
+              "ObjectSizeGreaterThan": "1000",
               "ObjectSizeLessThan": "1000"
             }
           ]

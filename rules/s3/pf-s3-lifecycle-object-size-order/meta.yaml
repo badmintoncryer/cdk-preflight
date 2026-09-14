@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-li
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'ObjectSizeLessThan' has to be a value greater than 'ObjectSizeGreaterThan'.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: ObjectSizeGreaterThan 1000 with ObjectSizeLessThan 1000 -> \"'ObjectSizeLessThan' has to be a value greater than 'ObjectSizeGreaterThan'.\" (ROLLBACK_COMPLETE); pass 999 / 1000 -> CREATE_COMPLETE. Equal is the closest violating pair because the rule fires at `>=`."
 addedOn: 2026-09-06

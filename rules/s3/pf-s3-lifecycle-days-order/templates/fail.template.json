@@ -9,9 +9,16 @@
               "Id": "tiering",
               "Status": "Enabled",
               "Transitions": [
-                { "StorageClass": "STANDARD_IA", "TransitionInDays": 30 },
-                { "StorageClass": "GLACIER", "TransitionInDays": 40 }
-              ]
+                {
+                  "StorageClass": "STANDARD_IA",
+                  "TransitionInDays": 30
+                },
+                {
+                  "StorageClass": "GLACIER",
+                  "TransitionInDays": 59
+                }
+              ],
+              "ExpirationInDays": 59
             }
           ]
         }

@@ -7,8 +7,8 @@
         "Name": "cdkpf-s3sgs",
         "Filter": {
           "MatchObjectSize": {
-            "BytesGreaterThan": 1000,
-            "BytesLessThan": 5000
+            "BytesGreaterThan": 999,
+            "BytesLessThan": 1000
           }
         }
       }
