@@ -1,0 +1,12 @@
+id: pf-codecommit-triggers-max-10
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "A repository may declare at most 10 triggers"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/userguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail 11 triggers -> \"Trigger limit for a particular repository is 10\" (ROLLBACK_COMPLETE); pass 10 triggers -> CREATE_COMPLETE"
+addedOn: 2026-09-14

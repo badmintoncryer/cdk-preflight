@@ -8737,6 +8737,127 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matching means Id equality AND effective ReturnData true (default true,\n# bench w04b); w12 proved an Id match with ReturnData false does not count.\n# Only n == 0 fires - the duplicate-match side is unbenched. Queries with\n# unresolvable Id/ReturnData make the count unknowable, so the rule skips.\n_pf_cwtmi_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwtmi_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwtmi_matches(q, tmid) if {\n\tobject.get(q, \"Id\", null) == tmid\n\tobject.get(q, \"ReturnData\", true) == true\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-threshold-metric-id\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"No metric query with Id '%s' returns data; PutMetricAlarm fails with \\\"Metrics list must contain exactly one metric matching the ThresholdMetricId parameter\\\"\", [tmid]),\n\t\"Point ThresholdMetricId at a query whose ReturnData is true\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ttmid := resolve(name, \"Properties.ThresholdMetricId\")\n\tis_string(tmid)\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\tis_string(object.get(q.value, \"Id\", null))\n\t\t_pf_cwtmi_countable(q.value)\n\t}\n\tcount([q | some q in items; _pf_cwtmi_matches(q.value, tmid)]) == 0\n}\n"
   },
   {
+    "id": "pf-codecommit-code-branch-name-valid",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Code.BranchName must be a valid Git branch name",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Code is applied by the CloudFormation handler, not by CreateRepository,\n# so nothing upstream sees the branch name.\nviolation contains make_diag_full(\"pf-codecommit-code-branch-name-valid\", \"ERROR\", name,\n\t\"Properties.Code.BranchName\",\n\tsprintf(\"Code.BranchName %v is not a valid Git ref name, so the initial commit the handler makes cannot name a branch\", [b]),\n\t\"Use a valid Git branch name: no spaces, no '..', '//' or '@{', none of ~^:?*[\\\\, no leading or trailing '/' or '.', and no '.lock' suffix\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codecommit-repository-code.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tb := resolve(name, \"Properties.Code.BranchName\")\n\t_pf_cclib_bad_ref(b)\n}\n"
+  },
+  {
+    "id": "pf-codecommit-kms-key-region",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "KmsKeyId must name a KMS key in the repository's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The ARN shape is all the schema checks; which region it names is only\n# resolvable against the stack's own region.\nviolation contains make_diag_full(\"pf-codecommit-kms-key-region\", \"ERROR\", name,\n\t\"Properties.KmsKeyId\",\n\tsprintf(\"The KMS key is in '%s' but the repository deploys to '%s'; CreateRepository looks the key up in its own region and fails with \\\"KMS key %s is not found\\\"\", [kr, region, k]),\n\t\"Reference a KMS key in the deploy region, or drop KmsKeyId to use the AWS managed key\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_CreateRepository.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tk := resolve(name, \"Properties.KmsKeyId\")\n\tparts := _pf_cclib_arn(k)\n\tparts[2] == \"kms\"\n\tkr := parts[3]\n\tkr != \"\"\n\tkr != region\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-branch-name-valid",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Trigger branch names must be valid Git branch names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-branch-name-valid\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Branches.%d\", [i, j]),\n\tsprintf(\"Branch %v is not a valid Git ref name; the handler's PutRepositoryTriggers fails with InvalidRepositoryTriggerBranchNameException\", [b]),\n\t\"Use a valid Git branch name: no spaces, no '..', '//' or '@{', none of ~^:?*[\\\\, no leading or trailing '/' or '.', and no '.lock' suffix\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tbr := object.get(t, \"Branches\", [])\n\tis_array(br)\n\tsome j, b in br\n\t_pf_cclib_bad_ref(b)\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-branches-max-10",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger may list at most 10 branches",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-branches-max-10\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Branches\", [i]),\n\tsprintf(\"The trigger lists %d branches; the handler's PutRepositoryTriggers fails with \\\"A repository trigger cannot have more than 10 branches.\\\"\", [count(br)]),\n\t\"List at most 10 branches on a trigger, or list none to watch every branch\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tbr := object.get(t, \"Branches\", [])\n\tis_array(br)\n\tcount(br) > 10\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-custom-data-max-1000",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Trigger CustomData is limited to 1000 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-custom-data-max-1000\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.CustomData\", [i]),\n\tsprintf(\"Trigger CustomData is %d characters; the handler's PutRepositoryTriggers fails with \\\"Repository trigger custom data cannot exceed 1000 characters\\\"\", [count(cd)]),\n\t\"Shorten CustomData to 1000 characters or fewer\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tcd := object.get(t, \"CustomData\", \"\")\n\t_pf_cclib_lit(cd)\n\tcount(cd) > 1000\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-destination-region",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger's DestinationArn must be in the repository's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-destination-region\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.DestinationArn\", [i]),\n\tsprintf(\"The trigger destination is in '%s' but the repository deploys to '%s'; the handler's PutRepositoryTriggers fails with \\\"Repository trigger destination arn must be for the same region as your repository\\\"\", [dr, region]),\n\t\"Point the trigger at a topic or function in the deploy region\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tparts := _pf_cclib_arn(object.get(t, \"DestinationArn\", \"\"))\n\tdr := parts[3]\n\tdr != \"\"\n\tdr != region\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-destination-service",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger's DestinationArn must be an SNS topic or a Lambda function",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-destination-service\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.DestinationArn\", [i]),\n\tsprintf(\"The trigger destination is a %s ARN; the handler's PutRepositoryTriggers fails with \\\"Unexpected service name in arn: %s\\\"\", [svc, svc]),\n\t\"Point the trigger at an SNS topic or a Lambda function\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tparts := _pf_cclib_arn(object.get(t, \"DestinationArn\", \"\"))\n\tsvc := parts[2]\n\tnot svc in {\"sns\", \"lambda\"}\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-events-all-exclusive",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "The trigger event 'all' cannot be combined with another event",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-events-all-exclusive\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Events\", [i]),\n\t\"The trigger lists \\\"all\\\" alongside another event; the handler's PutRepositoryTriggers fails with \\\"Repository trigger events cannot contain 'all' and additional event types simultaneously\\\"\",\n\t\"Use 'all' on its own, or list the individual events without it\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tev := object.get(t, \"Events\", [])\n\tis_array(ev)\n\t\"all\" in ev\n\tcount(ev) > 1\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-events-required",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A trigger must specify at least one event",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-events-required\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Events\", [i]),\n\t\"The trigger lists no events; the handler's PutRepositoryTriggers fails with \\\"Repository trigger events list cannot be empty\\\"\",\n\t\"List at least one event, or use 'all'\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tsome i, t in _pf_cclib_triggers(name)\n\tis_object(t)\n\tev := object.get(t, \"Events\", [])\n\tis_array(ev)\n\tcount(ev) == 0\n}\n"
+  },
+  {
+    "id": "pf-codecommit-trigger-name-unique",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "Trigger names must be unique within a repository",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-trigger-name-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%d.Name\", [j]),\n\tsprintf(\"Two triggers are both named %v; the handler's PutRepositoryTriggers fails with \\\"Duplicate repository trigger names are not allowed\\\"\", [n]),\n\t\"Give every trigger on the repository its own name\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tts := _pf_cclib_triggers(name)\n\tsome i, t in ts\n\tsome j, u in ts\n\ti < j\n\tis_object(t)\n\tis_object(u)\n\tn := object.get(t, \"Name\", \"\")\n\t_pf_cclib_lit(n)\n\tn != \"\"\n\tn == object.get(u, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codecommit-triggers-max-10",
+    "service": "codecommit",
+    "severity": "ERROR",
+    "title": "A repository may declare at most 10 triggers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeCommit::Repository"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-triggers-max-10\", \"ERROR\", name,\n\t\"Properties.Triggers\",\n\tsprintf(\"The repository declares %d triggers; the handler's PutRepositoryTriggers fails with \\\"Trigger limit for a particular repository is 10\\\"\", [count(ts)]),\n\t\"Declare at most 10 triggers on a repository\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tts := _pf_cclib_triggers(name)\n\tcount(ts) > 10\n}\n"
+  },
+  {
     "id": "pf-codepipeline-action-config-required-keys",
     "service": "codepipeline",
     "severity": "ERROR",
@@ -26226,6 +26347,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cloudwatch",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch rules.\n\n# True absence needs the preprocessed document (see AGENTS.md); resolve() is\n# undefined for a missing key, so \"resolve(...) != x\" never fires on one.\n_pf_cwlib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The statistic grammar CloudWatch accepts wherever a statistic is a string:\n# MetricStat.Stat, a dashboard widget's \"stat\", PutAnomalyDetector's Stat and\n# a metric stream's AdditionalStatistics. Percentiles stop at 100, which is\n# why the numeric part is spelled out instead of [0-9.]+ (p101 is rejected by\n# the service with \"Unsupported statistic p101\").\n# ponytail: the trimmed-mean interval forms (TM(10%:90%)) are matched loosely;\n# a malformed interval passes the rule and is caught by the service.\n_pf_cwlib_stat_re := `^(SampleCount|Average|Sum|Minimum|Maximum|IQM|[pP](100|[0-9]{1,2}(\\.[0-9]{1,2})?)|(TM|TC|TS|WM|tm|tc|ts|wm)((100|[0-9]{1,2}(\\.[0-9]{1,2})?)%?|\\([0-9.%:]*\\))|PR\\([0-9.:]*\\))$`\n\n_pf_cwlib_stat_ok(s) if regex.match(_pf_cwlib_stat_re, s)\n\n# DashboardBody is an opaque JSON string; every dashboard rule reads it here.\n_pf_cwlib_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwlib_wprops(w) := p if {\n\tis_object(w)\n\tp := object.get(w, \"properties\", null)\n\tis_object(p)\n}\n\n_pf_cwlib_wtype(w, t) if {\n\tis_object(w)\n\tobject.get(w, \"type\", null) == t\n}\n\n# InsightRule RuleBody is the other opaque JSON DSL on this service.\n_pf_cwlib_rulebody(name) := obj if {\n\tb := resolve(name, \"Properties.RuleBody\")\n\tis_string(b)\n\tjson.is_valid(b)\n\tobj := json.unmarshal(b)\n\tis_object(obj)\n}\n\n# The three alarm action lists, shared by the action rules.\n_pf_cwlib_action_keys := {\"AlarmActions\", \"OKActions\", \"InsufficientDataActions\"}\n\n# Metric queries of one kind (MetricStat / Expression) on an alarm.\n_pf_cwlib_queries(name, key) := qs if {\n\tqs := [q |\n\t\tsome item in flatten_list(name, \"Properties.Metrics\")\n\t\tq := item.value\n\t\tis_object(q)\n\t\tobject.get(q, key, null) != null\n\t]\n}\n\n# A literal ARN split into its six-plus segments. Refs and GetAtts resolve to a\n# logical id, which has no \"arn:\" prefix, so they skip.\n_pf_cwlib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n"
+  },
+  {
+    "name": "_lib/codecommit",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeCommit rules.\n#\n# AWS::CodeCommit::Repository.Triggers is applied by the CloudFormation handler\n# with PutRepositoryTriggers after the repository exists, so every trigger\n# constraint surfaces as a CREATE_FAILED on the repository itself. Triggers are\n# read off the raw document: resolve() cannot prove a key absent, and the list\n# has to keep its index so a diagnostic can point at one trigger.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_cclib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_cclib_triggers(name) := t if {\n\tt := object.get(_pf_cclib_props(name), \"Triggers\", [])\n\tis_array(t)\n}\n\n# A user-written literal string. Ref/GetAtt resolve to a logical id in the\n# template, and an unresolved intrinsic stays a marker object.\n_pf_cclib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# The parts of a literal ARN, guarded so a token never reaches a rule.\n_pf_cclib_arn(v) := parts if {\n\t_pf_cclib_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n\n# Git ref names CodeCommit rejects. Measured against PutRepositoryTriggers\n# (2026-09-14, us-east-1): a space or a tab, \"..\", \"//\", \"@{\", any of ~^:?*[\\,\n# a leading \"/\" or \".\", a trailing \"/\" or \".\", and a \".lock\" suffix all raise\n# InvalidRepositoryTriggerBranchNameException. Accepted in the same run, so\n# deliberately not encoded: ; , ' ( ) & % # ! + = < | \" ` , a leading \"-\", a\n# bare \"@\", non-ASCII, and a 255-character name.\n_pf_cclib_bad_ref(b) if {\n\t_pf_cclib_lit(b)\n\tregex.match(`[ \\t~^:?*\\[\\\\]|\\.\\.|//|@\\{|^[./]|[/.]$|\\.lock$`, b)\n}\n"
   },
   {
     "name": "_lib/codepipeline",

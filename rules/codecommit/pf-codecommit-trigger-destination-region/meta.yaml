@@ -1,0 +1,12 @@
+id: pf-codecommit-trigger-destination-region
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "A trigger's DestinationArn must be in the repository's Region"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail DestinationArn arn:aws:sns:eu-west-1:214794239830:cdkpf-codesuite -> \"Repository trigger destination arn must be for the same region as your repository\" (ROLLBACK_COMPLETE); pass the same topic in us-east-1 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

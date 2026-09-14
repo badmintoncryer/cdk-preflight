@@ -1,0 +1,12 @@
+id: pf-codecommit-trigger-branches-max-10
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "A trigger may list at most 10 branches"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_RepositoryTrigger.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail one trigger with 11 branches -> \"A repository trigger cannot have more than 10 branches.\" (ROLLBACK_COMPLETE); pass 10 branches -> CREATE_COMPLETE"
+addedOn: 2026-09-14

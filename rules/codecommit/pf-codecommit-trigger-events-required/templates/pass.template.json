@@ -1,0 +1,22 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodeCommit::Repository",
+   "Properties": {
+    "RepositoryName": "cdkpf-cc-ter-p",
+    "Triggers": [
+     {
+      "Name": "t",
+      "DestinationArn": "arn:aws:sns:us-east-1:214794239830:cdkpf-codesuite",
+      "Events": [
+       "all"
+      ],
+      "Branches": [
+       "main"
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

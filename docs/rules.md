@@ -794,6 +794,17 @@
 | `pf-cloudwatch-metric-stream-role-account` | AWS::CloudWatch::MetricStream | RoleArn must be in the stack's own account | ERROR | none |
 | `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | ERROR | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | ERROR | none |
+| `pf-codecommit-code-branch-name-valid` | AWS::CodeCommit::Repository | Code.BranchName must be a valid Git branch name | ERROR | none |
+| `pf-codecommit-kms-key-region` | AWS::CodeCommit::Repository | KmsKeyId must name a KMS key in the repository's Region | ERROR | none |
+| `pf-codecommit-trigger-branch-name-valid` | AWS::CodeCommit::Repository | Trigger branch names must be valid Git branch names | ERROR | none |
+| `pf-codecommit-trigger-branches-max-10` | AWS::CodeCommit::Repository | A trigger may list at most 10 branches | ERROR | none |
+| `pf-codecommit-trigger-custom-data-max-1000` | AWS::CodeCommit::Repository | Trigger CustomData is limited to 1000 characters | ERROR | none |
+| `pf-codecommit-trigger-destination-region` | AWS::CodeCommit::Repository | A trigger's DestinationArn must be in the repository's Region | ERROR | none |
+| `pf-codecommit-trigger-destination-service` | AWS::CodeCommit::Repository | A trigger's DestinationArn must be an SNS topic or a Lambda function | ERROR | none |
+| `pf-codecommit-trigger-events-all-exclusive` | AWS::CodeCommit::Repository | The trigger event 'all' cannot be combined with another event | ERROR | none |
+| `pf-codecommit-trigger-events-required` | AWS::CodeCommit::Repository | A trigger must specify at least one event | ERROR | none |
+| `pf-codecommit-trigger-name-unique` | AWS::CodeCommit::Repository | Trigger names must be unique within a repository | ERROR | none |
+| `pf-codecommit-triggers-max-10` | AWS::CodeCommit::Repository | A repository may declare at most 10 triggers | ERROR | none |
 | `pf-codepipeline-action-config-required-keys` | AWS::CodePipeline::Pipeline | An action's Configuration must carry the keys its provider requires | ERROR | none |
 | `pf-codepipeline-action-type-id-combination` | AWS::CodePipeline::Pipeline | An action's Category, Owner and Provider must be a published combination | ERROR | none |
 | `pf-codepipeline-artifact-name-charset` | AWS::CodePipeline::Pipeline | An artifact name is at most 100 characters of letters, digits, underscore and hyphen | ERROR | none |

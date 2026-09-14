@@ -1,0 +1,32 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodeCommit::Repository",
+   "Properties": {
+    "RepositoryName": "cdkpf-cc-tbmax-f",
+    "Triggers": [
+     {
+      "Name": "t",
+      "DestinationArn": "arn:aws:sns:us-east-1:214794239830:cdkpf-codesuite",
+      "Events": [
+       "all"
+      ],
+      "Branches": [
+       "b0",
+       "b1",
+       "b2",
+       "b3",
+       "b4",
+       "b5",
+       "b6",
+       "b7",
+       "b8",
+       "b9",
+       "b10"
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

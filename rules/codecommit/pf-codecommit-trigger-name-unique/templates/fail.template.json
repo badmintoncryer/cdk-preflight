@@ -1,0 +1,32 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodeCommit::Repository",
+   "Properties": {
+    "RepositoryName": "cdkpf-cc-tnu-f",
+    "Triggers": [
+     {
+      "Name": "dup",
+      "DestinationArn": "arn:aws:sns:us-east-1:214794239830:cdkpf-codesuite",
+      "Events": [
+       "all"
+      ],
+      "Branches": [
+       "main"
+      ]
+     },
+     {
+      "Name": "dup",
+      "DestinationArn": "arn:aws:sns:us-east-1:214794239830:cdkpf-codesuite",
+      "Events": [
+       "updateReference"
+      ],
+      "Branches": [
+       "main"
+      ]
+     }
+    ]
+   }
+  }
+ }
+}
