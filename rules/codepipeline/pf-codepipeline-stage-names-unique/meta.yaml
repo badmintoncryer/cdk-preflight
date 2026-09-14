@@ -1,0 +1,12 @@
+id: pf-codepipeline-stage-names-unique
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "Stage names must be unique within a pipeline"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: two stages named \"Same\" -> \"InvalidStageDeclarationException: Stage name 'Same' is used more than once\" (ROLLBACK_COMPLETE); pass with distinct names -> CREATE_COMPLETE"
+addedOn: 2026-09-14

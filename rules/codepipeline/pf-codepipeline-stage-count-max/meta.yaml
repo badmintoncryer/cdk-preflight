@@ -1,0 +1,12 @@
+id: pf-codepipeline-stage-count-max
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A pipeline may hold at most 50 stages"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: 51 stages -> \"Pipeline has too many stages. There can only be up to 50 stages in a pipeline\" (ROLLBACK_COMPLETE); pass 50 stages -> CREATE_COMPLETE"
+addedOn: 2026-09-14

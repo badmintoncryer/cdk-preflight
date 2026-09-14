@@ -1,0 +1,269 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodePipeline::Pipeline",
+   "Properties": {
+    "RoleArn": {
+     "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+    },
+    "ArtifactStore": {
+     "Type": "S3",
+     "Location": "cdkpf-codesuite-63"
+    },
+    "Stages": [
+     {
+      "Name": "Source",
+      "Actions": [
+       {
+        "Name": "Src",
+        "ActionTypeId": {
+         "Category": "Source",
+         "Owner": "AWS",
+         "Provider": "S3",
+         "Version": "1"
+        },
+        "Configuration": {
+         "S3Bucket": "cdkpf-codesuite-63",
+         "S3ObjectKey": "src.zip",
+         "PollForSourceChanges": "false"
+        },
+        "OutputArtifacts": [
+         {
+          "Name": "A"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "Name": "Deploy",
+      "Actions": [
+       {
+        "Name": "Dep",
+        "ActionTypeId": {
+         "Category": "Deploy",
+         "Owner": "AWS",
+         "Provider": "S3",
+         "Version": "1"
+        },
+        "Configuration": {
+         "BucketName": "cdkpf-codesuite-63",
+         "Extract": "false",
+         "ObjectKey": "out.zip"
+        },
+        "InputArtifacts": [
+         {
+          "Name": "A"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "PipelineType": "V2",
+    "Variables": [
+     {
+      "Name": "v0",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v1",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v2",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v3",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v4",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v5",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v6",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v7",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v8",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v9",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v10",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v11",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v12",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v13",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v14",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v15",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v16",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v17",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v18",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v19",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v20",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v21",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v22",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v23",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v24",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v25",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v26",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v27",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v28",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v29",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v30",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v31",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v32",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v33",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v34",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v35",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v36",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v37",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v38",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v39",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v40",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v41",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v42",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v43",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v44",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v45",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v46",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v47",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v48",
+      "DefaultValue": "a"
+     },
+     {
+      "Name": "v49",
+      "DefaultValue": "a"
+     }
+    ]
+   }
+  }
+ }
+}

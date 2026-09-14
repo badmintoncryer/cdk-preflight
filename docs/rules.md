@@ -794,6 +794,36 @@
 | `pf-cloudwatch-metric-stream-role-account` | AWS::CloudWatch::MetricStream | RoleArn must be in the stack's own account | ERROR | none |
 | `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | ERROR | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | ERROR | none |
+| `pf-codepipeline-action-config-required-keys` | AWS::CodePipeline::Pipeline | An action's Configuration must carry the keys its provider requires | ERROR | none |
+| `pf-codepipeline-action-type-id-combination` | AWS::CodePipeline::Pipeline | An action's Category, Owner and Provider must be a published combination | ERROR | none |
+| `pf-codepipeline-artifact-name-charset` | AWS::CodePipeline::Pipeline | An artifact name is at most 100 characters of letters, digits, underscore and hyphen | ERROR | none |
+| `pf-codepipeline-artifact-store-encryption-key-kms` | AWS::CodePipeline::Pipeline | An artifact store's EncryptionKey.Type must be the literal KMS | ERROR | pending-engine |
+| `pf-codepipeline-artifact-stores-region-of-pipeline` | AWS::CodePipeline::Pipeline | The cross-region ArtifactStores list must include the pipeline's own region | ERROR | none |
+| `pf-codepipeline-cat-artifact-min-le-max` | AWS::CodePipeline::CustomActionType | A custom action type's MinimumCount must not exceed its MaximumCount | ERROR | none |
+| `pf-codepipeline-cat-queryable-max-1` | AWS::CodePipeline::CustomActionType | At most one configuration property of a custom action type may be Queryable | ERROR | none |
+| `pf-codepipeline-cat-queryable-not-secret` | AWS::CodePipeline::CustomActionType | A Queryable configuration property must be Required and not Secret | ERROR | none |
+| `pf-codepipeline-cross-region-action-needs-store` | AWS::CodePipeline::Pipeline | A cross-region action needs the plural ArtifactStores, not a single ArtifactStore | ERROR | none |
+| `pf-codepipeline-first-stage-source-only` | AWS::CodePipeline::Pipeline | The first stage of a pipeline may contain source actions only | ERROR | none |
+| `pf-codepipeline-non-source-stage-required` | AWS::CodePipeline::Pipeline | A pipeline needs at least one action whose category is not Source | ERROR | none |
+| `pf-codepipeline-parallel-mode-no-rollback-condition` | AWS::CodePipeline::Pipeline | A PARALLEL pipeline cannot have a stage that exits failure with ROLLBACK | ERROR | none |
+| `pf-codepipeline-run-order-range` | AWS::CodePipeline::Pipeline | An action's RunOrder must be between 1 and 999 | ERROR | none |
+| `pf-codepipeline-source-action-first-stage-only` | AWS::CodePipeline::Pipeline | Source actions may appear in the first stage only | ERROR | none |
+| `pf-codepipeline-stage-count-max` | AWS::CodePipeline::Pipeline | A pipeline may hold at most 50 stages | ERROR | none |
+| `pf-codepipeline-stage-name-charset` | AWS::CodePipeline::Pipeline | A stage name is at most 100 characters of [A-Za-z0-9.@_-] | ERROR | none |
+| `pf-codepipeline-stage-names-unique` | AWS::CodePipeline::Pipeline | Stage names must be unique within a pipeline | ERROR | none |
+| `pf-codepipeline-stage-on-failure-result-xor-conditions` | AWS::CodePipeline::Pipeline | A stage's OnFailure takes either Result or Conditions, not both | ERROR | none |
+| `pf-codepipeline-trigger-filter-patterns-max-8` | AWS::CodePipeline::Pipeline | A Git trigger filter accepts at most 8 include and 8 exclude patterns | ERROR | none |
+| `pf-codepipeline-trigger-filters-max-3` | AWS::CodePipeline::Pipeline | A Git trigger accepts at most 3 push and 3 pull-request filters | ERROR | none |
+| `pf-codepipeline-trigger-source-action-is-connection` | AWS::CodePipeline::Pipeline | A Git trigger must name a CodeStarSourceConnection source action of the pipeline | ERROR | none |
+| `pf-codepipeline-v1-action-provider` | AWS::CodePipeline::Pipeline | The Commands, ECRBuildAndPublish and EKS action providers need a V2 pipeline | ERROR | none |
+| `pf-codepipeline-v1-execution-mode` | AWS::CodePipeline::Pipeline | ExecutionMode QUEUED and PARALLEL need a V2 pipeline | ERROR | none |
+| `pf-codepipeline-v1-stage-conditions` | AWS::CodePipeline::Pipeline | Stage conditions need a V2 pipeline | ERROR | none |
+| `pf-codepipeline-v1-triggers` | AWS::CodePipeline::Pipeline | Git triggers need a V2 pipeline | ERROR | none |
+| `pf-codepipeline-v1-variables` | AWS::CodePipeline::Pipeline | Pipeline-level variables need a V2 pipeline | ERROR | none |
+| `pf-codepipeline-variable-names-unique` | AWS::CodePipeline::Pipeline | Pipeline-level variable names must be unique | ERROR | none |
+| `pf-codepipeline-variables-max-50` | AWS::CodePipeline::Pipeline | A pipeline may declare at most 50 pipeline-level variables | ERROR | none |
+| `pf-codepipeline-webhook-authentication-configuration` | AWS::CodePipeline::Webhook | AuthenticationConfiguration must carry exactly the property the Authentication mode takes | ERROR | none |
+| `pf-codepipeline-webhook-filters-max-5` | AWS::CodePipeline::Webhook | A webhook may declare at most 5 filters | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
 | `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | ERROR | none |
