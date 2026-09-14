@@ -18,7 +18,7 @@
         "SetIdentifier": "s1",
         "GeoProximityLocation": {
           "Coordinates": {
-            "Latitude": "45",
+            "Latitude": "90",
             "Longitude": "-90"
           }
         },

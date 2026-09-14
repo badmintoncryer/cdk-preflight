@@ -25,6 +25,14 @@
                 "Source": "y"
               }
             ]
+          },
+          "599": {
+            "ResponseParameters": [
+              {
+                "Destination": "append:header.x",
+                "Source": "y"
+              }
+            ]
           }
         }
       }

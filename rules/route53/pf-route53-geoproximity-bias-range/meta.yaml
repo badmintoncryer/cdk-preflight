@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/reso
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: CloudFormation stops it before provisioning (stack CREATE_FAILED, DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\"), so the message names no property; the same record put straight to the Route 53 API names the constraint: \"cvc-maxInclusive-valid: Value '150' is not facet-valid with respect to maxInclusive '99' for type 'Bias'\". The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine."
+  evidence: "bench 2026-09-14 us-east-1: Bias 100 -> CloudFormation stops it before provisioning (stack CREATE_FAILED, DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\"), so the message names no property; pass Bias 99 -> CREATE_COMPLETE. A 2026-09-10 probe of the same record straight to the Route 53 API names the constraint: \"cvc-maxInclusive-valid: Value '150' is not facet-valid with respect to maxInclusive '99' for type 'Bias'\". The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine."
 addedOn: 2026-09-10

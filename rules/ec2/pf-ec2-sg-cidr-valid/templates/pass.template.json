@@ -1,16 +1,24 @@
 {
   "Resources": {
+    "V": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
     "G": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "bench",
-        "VpcId": "vpc-11112222",
+        "VpcId": {
+          "Ref": "V"
+        },
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
             "FromPort": 80,
             "ToPort": 80,
-            "CidrIp": "10.0.0.0/32"
+            "CidrIp": "10.0.0.255/32"
           }
         ]
       }

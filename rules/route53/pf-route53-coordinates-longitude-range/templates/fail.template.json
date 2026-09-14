@@ -19,7 +19,7 @@
         "GeoProximityLocation": {
           "Coordinates": {
             "Latitude": "45",
-            "Longitude": "200"
+            "Longitude": "180.01"
           }
         },
         "HostedZoneId": {

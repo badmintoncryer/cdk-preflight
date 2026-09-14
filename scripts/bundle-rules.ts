@@ -120,6 +120,8 @@ function fixturePools(raw: string) {
 
 // count(...) の引数は 1 段だけ入れ子を許す。`count(split(v, \":\")) < 6` のような書き方は
 // `[^)]*` だと最初の \")\" で止まって比較ごと取り逃がす（＝緩いペアが黙って通る）。
+// 左辺は呼び出しなら何でも受ける。`to_number(k) > 599` や `abs(n) > 90` を count(...) だけに
+// 絞っていたときは、しきい値ごと存在しないことになって緩いペアが黙って通っていた。
 function stripRegoComments(src: string): string {
   const out = [...src];
   let quote: string | null = null;
@@ -141,7 +143,7 @@ function stripRegoComments(src: string): string {
   return out.join('');
 }
 
-const THRESHOLD = /(count\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
+const THRESHOLD = /([A-Za-z_][A-Za-z0-9_.]*\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
 
 /**
  * AGENTS.md 原則 2 の「両方のフィクスチャが境界に乗る」の機械チェック。rego のしきい値ごとに
