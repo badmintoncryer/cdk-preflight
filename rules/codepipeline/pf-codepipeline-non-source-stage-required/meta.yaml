@@ -1,0 +1,12 @@
+id: pf-codepipeline-non-source-stage-required
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A pipeline needs at least one action whose category is not Source"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with two stages of source actions -> \"InvalidStructureException: Pipeline should contain at least 1 action whose category is not Source\"; bench 2026-09-14 us-east-1: fail -> \"Pipeline should contain at least 1 action whose category is not Source\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

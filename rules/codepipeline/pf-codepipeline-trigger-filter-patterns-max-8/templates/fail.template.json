@@ -1,0 +1,95 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodePipeline::Pipeline",
+   "Properties": {
+    "RoleArn": {
+     "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+    },
+    "ArtifactStore": {
+     "Type": "S3",
+     "Location": "cdkpf-codesuite-63"
+    },
+    "Stages": [
+     {
+      "Name": "Source",
+      "Actions": [
+       {
+        "Name": "Src",
+        "ActionTypeId": {
+         "Category": "Source",
+         "Owner": "AWS",
+         "Provider": "CodeStarSourceConnection",
+         "Version": "1"
+        },
+        "Configuration": {
+         "ConnectionArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:codeconnections:${AWS::Region}:${AWS::AccountId}:connection/11111111-2222-3333-4444-555555555555"
+         },
+         "FullRepositoryId": "owner/repo",
+         "BranchName": "main",
+         "DetectChanges": "false"
+        },
+        "OutputArtifacts": [
+         {
+          "Name": "A"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "Name": "Deploy",
+      "Actions": [
+       {
+        "Name": "Dep",
+        "ActionTypeId": {
+         "Category": "Deploy",
+         "Owner": "AWS",
+         "Provider": "S3",
+         "Version": "1"
+        },
+        "Configuration": {
+         "BucketName": "cdkpf-codesuite-63",
+         "Extract": "false",
+         "ObjectKey": "out.zip"
+        },
+        "InputArtifacts": [
+         {
+          "Name": "A"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "PipelineType": "V2",
+    "Triggers": [
+     {
+      "ProviderType": "CodeStarSourceConnection",
+      "GitConfiguration": {
+       "SourceActionName": "Src",
+       "Push": [
+        {
+         "FilePaths": {
+          "Includes": [
+           "p0/**",
+           "p1/**",
+           "p2/**",
+           "p3/**",
+           "p4/**",
+           "p5/**",
+           "p6/**",
+           "p7/**",
+           "p8/**"
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+}

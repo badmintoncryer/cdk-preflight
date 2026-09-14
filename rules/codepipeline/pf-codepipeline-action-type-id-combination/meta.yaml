@@ -1,0 +1,12 @@
+id: pf-codepipeline-action-type-id-combination
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "An action's Category, Owner and Provider must be a published combination"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-valid-providers.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline Deploy/AWS/CodeBuild -> \"InvalidActionDeclarationException: ActionType (Category: 'Deploy', Provider: 'CodeBuild', Owner: 'AWS', Version: '1') in action 'Dep' is not available in region 'US_EAST_1'\"; Deploy/ThirdParty/S3 -> the same exception naming Owner 'ThirdParty'; bench 2026-09-14 us-east-1: fail -> \"ActionType (Category: 'Deploy', Provider: 'CodeBuild', Owner: 'AWS', Version: '1') in action 'Dep' is not available in region 'US_EAST_1'\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

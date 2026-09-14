@@ -1,0 +1,60 @@
+{
+ "Resources": {
+  "W0": {
+   "Type": "AWS::CodePipeline::Webhook",
+   "Properties": {
+    "Authentication": "GITHUB_HMAC",
+    "AuthenticationConfiguration": {
+     "SecretToken": "tok0123456789",
+     "AllowedIPRange": "10.0.0.0/8"
+    },
+    "Filters": [
+     {
+      "JsonPath": "$.ref",
+      "MatchEquals": "refs/heads/{Branch}"
+     }
+    ],
+    "TargetPipeline": "cdkpf-no-such-pipeline",
+    "TargetAction": "Src",
+    "TargetPipelineVersion": 1,
+    "RegisterWithThirdParty": false
+   }
+  },
+  "W1": {
+   "Type": "AWS::CodePipeline::Webhook",
+   "Properties": {
+    "Authentication": "IP",
+    "AuthenticationConfiguration": {},
+    "Filters": [
+     {
+      "JsonPath": "$.ref",
+      "MatchEquals": "refs/heads/{Branch}"
+     }
+    ],
+    "TargetPipeline": "cdkpf-no-such-pipeline",
+    "TargetAction": "Src",
+    "TargetPipelineVersion": 1,
+    "RegisterWithThirdParty": false
+   }
+  },
+  "W2": {
+   "Type": "AWS::CodePipeline::Webhook",
+   "Properties": {
+    "Authentication": "UNAUTHENTICATED",
+    "AuthenticationConfiguration": {
+     "SecretToken": "tok0123456789"
+    },
+    "Filters": [
+     {
+      "JsonPath": "$.ref",
+      "MatchEquals": "refs/heads/{Branch}"
+     }
+    ],
+    "TargetPipeline": "cdkpf-no-such-pipeline",
+    "TargetAction": "Src",
+    "TargetPipelineVersion": 1,
+    "RegisterWithThirdParty": false
+   }
+  }
+ }
+}

@@ -8737,6 +8737,336 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matching means Id equality AND effective ReturnData true (default true,\n# bench w04b); w12 proved an Id match with ReturnData false does not count.\n# Only n == 0 fires - the duplicate-match side is unbenched. Queries with\n# unresolvable Id/ReturnData make the count unknowable, so the rule skips.\n_pf_cwtmi_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwtmi_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwtmi_matches(q, tmid) if {\n\tobject.get(q, \"Id\", null) == tmid\n\tobject.get(q, \"ReturnData\", true) == true\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-threshold-metric-id\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"No metric query with Id '%s' returns data; PutMetricAlarm fails with \\\"Metrics list must contain exactly one metric matching the ThresholdMetricId parameter\\\"\", [tmid]),\n\t\"Point ThresholdMetricId at a query whose ReturnData is true\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ttmid := resolve(name, \"Properties.ThresholdMetricId\")\n\tis_string(tmid)\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\tis_string(object.get(q.value, \"Id\", null))\n\t\t_pf_cwtmi_countable(q.value)\n\t}\n\tcount([q | some q in items; _pf_cwtmi_matches(q.value, tmid)]) == 0\n}\n"
   },
   {
+    "id": "pf-codepipeline-action-config-required-keys",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An action's Configuration must carry the keys its provider requires",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Each AWS-owned action provider publishes a set of Configuration keys it\n# requires; CreatePipeline rejects the pipeline when one is missing. The table\n# lives in rules/_lib/codepipeline.rego and names only providers whose required\n# set was confirmed against the service, so an unlisted provider is never judged.\nviolation contains make_diag_full(\"pf-codepipeline-action-config-required-keys\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.Configuration\", [si, ai]),\n\tsprintf(\"the %v action '%v' has no Configuration.%v; CreatePipeline fails with \\\"Action configuration for action '%v' is missing required configuration '%v'\\\"\", [key, an, req, an, req]),\n\tsprintf(\"Add %v to the action's Configuration\", [req]),\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\ttid := _pf_cplib_tid(a)\n\tobject.get(tid, \"Owner\", \"AWS\") == \"AWS\"\n\tkey := sprintf(\"%v/%v\", [_pf_cplib_category(a), object.get(tid, \"Provider\", \"\")])\n\tsome req in _pf_cplib_required_config[key]\n\tcfg := object.get(a, \"Configuration\", {})\n\t_pf_cplib_plain(cfg)\n\t_pf_cplib_absent(cfg, req)\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-action-type-id-combination",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An action's Category, Owner and Provider must be a published combination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Category x Owner x Provider must be a published combination. Providers absent\n# from _pf_cplib_aws_providers are never judged, so a newly published provider\n# costs a miss rather than a false positive; Owner \"Custom\" is skipped entirely\n# because its provider name is chosen by the user.\nviolation contains make_diag_full(\"pf-codepipeline-action-type-id-combination\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId\", [si, ai]),\n\tsprintf(\"action '%v' pairs Category '%v' with the AWS provider '%v', which is published under %v; CreatePipeline fails with \\\"ActionType (Category: '%v', Provider: '%v', Owner: 'AWS', Version: '1') in action '%v' is not available in region\\\"\", [an, cat, prov, ok, cat, prov, an]),\n\tsprintf(\"Set Category to one of %v, or pick the provider that serves this category\", [ok]),\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-valid-providers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\ttid := _pf_cplib_tid(a)\n\tobject.get(tid, \"Owner\", \"AWS\") == \"AWS\"\n\tprov := object.get(tid, \"Provider\", \"\")\n\tcats := _pf_cplib_aws_providers[prov]\n\tcat := _pf_cplib_category(a)\n\tnot cat in cats\n\tok := concat(\", \", sort(cats))\n\tan := object.get(a, \"Name\", \"\")\n}\n\n# The mirror case: an AWS provider name declared under Owner ThirdParty.\nviolation contains make_diag_full(\"pf-codepipeline-action-type-id-combination\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId.Owner\", [si, ai]),\n\tsprintf(\"action '%v' declares Owner 'ThirdParty' for '%v', which is an AWS-provided action provider; CreatePipeline fails with \\\"ActionType (Category: '%v', Provider: '%v', Owner: 'ThirdParty', Version: '1') in action '%v' is not available in region\\\"\", [an, prov, cat, prov, an]),\n\t\"Set Owner to AWS for an AWS-provided action provider\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-valid-providers.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\ttid := _pf_cplib_tid(a)\n\tobject.get(tid, \"Owner\", \"AWS\") == \"ThirdParty\"\n\tprov := object.get(tid, \"Provider\", \"\")\n\t_pf_cplib_aws_providers[prov]\n\tcat := _pf_cplib_category(a)\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-artifact-name-charset",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An artifact name is at most 100 characters of letters, digits, underscore and hyphen",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An artifact name is at most 100 characters.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.%v.%v.Name\", [si, ai, kind, ii]),\n\tsprintf(\"the artifact name is %d characters; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 100\\\"\", [count(n)]),\n\t\"Shorten the artifact name to 100 characters or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Artifact.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tsome kind in [\"InputArtifacts\", \"OutputArtifacts\"]\n\tsome ii, art in object.get(a, kind, [])\n\tn := _pf_cplib_get(art, \"Name\")\n\t_pf_cplib_lit(n)\n\tcount(n) > 100\n}\n\n# ... and is restricted to letters, digits, underscore and hyphen.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.%v.%v.Name\", [si, ai, kind, ii]),\n\tsprintf(\"artifact name '%v' has characters outside [a-zA-Z0-9_-]; CreatePipeline fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z0-9_\\\\-]+\\\"\", [n]),\n\t\"Use only letters, digits, underscore and hyphen in the artifact name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_Artifact.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tsome kind in [\"InputArtifacts\", \"OutputArtifacts\"]\n\tsome ii, art in object.get(a, kind, [])\n\tn := _pf_cplib_get(art, \"Name\")\n\t_pf_cplib_lit(n)\n\tnot regex.match(`^[a-zA-Z0-9_-]+$`, n)\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-artifact-store-encryption-key-kms",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An artifact store's EncryptionKey.Type must be the literal KMS",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# KMS is the only encryption key type an artifact store accepts, and the enum is case-sensitive.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-store-encryption-key-kms\", \"ERROR\", name,\n\t\"Properties.ArtifactStore.EncryptionKey.Type\",\n\tsprintf(\"the artifact store EncryptionKey.Type is '%v'; CreatePipeline fails with \\\"Member must satisfy enum value set: [KMS]\\\"\", [v]),\n\t\"Set ArtifactStore.EncryptionKey.Type to KMS\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tv := _pf_cplib_storekeytype(_pf_cplib_props(name))\n\tv != \"KMS\"\n}\n\n# The cross-region form carries one store per region; the same enum applies.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-store-encryption-key-kms\", \"ERROR\", name,\n\tsprintf(\"Properties.ArtifactStores.%v.ArtifactStore.EncryptionKey.Type\", [i]),\n\tsprintf(\"the artifact store for region '%v' has EncryptionKey.Type '%v'; CreatePipeline fails with \\\"Member must satisfy enum value set: [KMS]\\\"\", [object.get(e, \"Region\", \"\"), v]),\n\t\"Set ArtifactStore.EncryptionKey.Type to KMS\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome i, e in object.get(_pf_cplib_props(name), \"ArtifactStores\", [])\n\tv := _pf_cplib_storekeytype(e)\n\tv != \"KMS\"\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-artifact-stores-region-of-pipeline",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "The cross-region ArtifactStores list must include the pipeline's own region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Actions that carry no Region run in the pipeline's own region, so the\n# cross-region ArtifactStores list must always include an entry for it.\n# data.cdk_preflight.deploy_region is injected only in enforce mode with a\n# concrete region; the rule skips otherwise, and skips a list whose regions are\n# all tokens.\nviolation contains make_diag_full(\"pf-codepipeline-artifact-stores-region-of-pipeline\", \"ERROR\", name,\n\t\"Properties.ArtifactStores\",\n\tsprintf(\"ArtifactStores covers %v but the pipeline deploys to '%v'; CreatePipeline fails with \\\"Your pipeline must have an artifact store, such as an artifact bucket, for each region where you have an action. The following region is missing in 'pipeline.artifactStores': %v.\\\"\", [concat(\", \", sort(regions)), region, region]),\n\tsprintf(\"Add an ArtifactStores entry whose Region is %v\", [region]),\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tstores := object.get(_pf_cplib_props(name), \"ArtifactStores\", [])\n\tregions := {r | some e in stores; r := object.get(e, \"Region\", \"\"); _pf_cplib_lit(r)}\n\tcount(regions) == count(stores)\n\tcount(regions) > 0\n\tnot region in regions\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cat-artifact-min-le-max",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A custom action type's MinimumCount must not exceed its MaximumCount",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::CustomActionType"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A custom action type's artifact counts must not invert.\nviolation contains make_diag_full(\"pf-codepipeline-cat-artifact-min-le-max\", \"ERROR\", name,\n\tsprintf(\"Properties.%v.MinimumCount\", [kind]),\n\tsprintf(\"%v has MinimumCount %d and MaximumCount %d; CreateCustomActionType fails with \\\"Maximum Number of Artifacts (%d) has to be greater than or equal to minimum (%d).\\\"\", [kind, mn, mx, mx, mn]),\n\t\"Raise MaximumCount, or lower MinimumCount to at most MaximumCount\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_CreateCustomActionType.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::CustomActionType\")\n\tsome kind in [\"InputArtifactDetails\", \"OutputArtifactDetails\"]\n\td := object.get(_pf_cplib_props(name), kind, {})\n\t_pf_cplib_plain(d)\n\tmn := to_number(_pf_cplib_get(d, \"MinimumCount\"))\n\tmx := to_number(_pf_cplib_get(d, \"MaximumCount\"))\n\tmn > mx\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cat-queryable-max-1",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "At most one configuration property of a custom action type may be Queryable",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::CustomActionType"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only one configuration property of a custom action type may be queryable.\nviolation contains make_diag_full(\"pf-codepipeline-cat-queryable-max-1\", \"ERROR\", name,\n\t\"Properties.ConfigurationProperties\",\n\tsprintf(\"%d configuration properties are Queryable (%v); CreateCustomActionType fails with \\\"Multiple queryable configuration properties found with names '%v'. Up to one queryable property may be specified.\\\"\", [count(q), concat(\", \", sort(q)), concat(\", \", sort(q))]),\n\t\"Leave Queryable true on at most one configuration property\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionConfigurationProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::CustomActionType\")\n\tprops := object.get(_pf_cplib_props(name), \"ConfigurationProperties\", [])\n\tq := {n | some p in props; _pf_cplib_plain(p); object.get(p, \"Queryable\", false) == true; n := object.get(p, \"Name\", \"\")}\n\tcount(q) > 1\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cat-queryable-not-secret",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Queryable configuration property must be Required and not Secret",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::CustomActionType"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A queryable configuration property is polled by the job worker, so it must be\n# required and must not be a secret. One service check covers both halves.\nviolation contains make_diag_full(\"pf-codepipeline-cat-queryable-not-secret\", \"ERROR\", name,\n\tsprintf(\"Properties.ConfigurationProperties.%v\", [i]),\n\tsprintf(\"configuration property '%v' is Queryable with Secret %v and Required %v; CreateCustomActionType fails with \\\"Invalid queryable property '%v'. Queryable configuration properties must be required and non-secret.\\\"\", [pn, secret, required, pn]),\n\t\"Set Secret to false and Required to true on the queryable property\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionConfigurationProperty.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::CustomActionType\")\n\tsome i, p in object.get(_pf_cplib_props(name), \"ConfigurationProperties\", [])\n\t_pf_cplib_plain(p)\n\tobject.get(p, \"Queryable\", false) == true\n\tsecret := object.get(p, \"Secret\", false)\n\trequired := object.get(p, \"Required\", false)\n\tnot _pf_cplib_queryable_ok(secret, required)\n\tpn := object.get(p, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-cross-region-action-needs-store",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A cross-region action needs the plural ArtifactStores, not a single ArtifactStore",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An action whose Region differs from the pipeline's own needs one artifact\n# store per region, which is what the plural ArtifactStores is for. The singular\n# ArtifactStore cannot express it. data.cdk_preflight.deploy_region is injected\n# only in enforce mode with a concrete region; the rule skips otherwise, and a\n# Region equal to the deploy region is not cross-region at all.\nviolation contains make_diag_full(\"pf-codepipeline-cross-region-action-needs-store\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.Region\", [si, ai]),\n\tsprintf(\"action '%v' runs in '%v' but the pipeline deploys to '%v' with a single ArtifactStore; CreatePipeline fails with \\\"Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' to declare an artifact store, such as an artifact bucket, for each region where you have an action.\\\"\", [an, r, region]),\n\t\"Replace ArtifactStore with an ArtifactStores entry for each region the pipeline's actions run in\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tprops := _pf_cplib_props(name)\n\t_pf_cplib_plain(object.get(props, \"ArtifactStore\", null))\n\t_pf_cplib_absent(props, \"ArtifactStores\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr := _pf_cplib_get(a, \"Region\")\n\t_pf_cplib_lit(r)\n\tr != region\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-first-stage-source-only",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "The first stage of a pipeline may contain source actions only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bare engine's E3700 asks that the first stage hold a source action; the\n# service also refuses anything else in it.\nviolation contains make_diag_full(\"pf-codepipeline-first-stage-source-only\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.0.Actions.%v.ActionTypeId.Category\", [ai]),\n\tsprintf(\"the first stage holds action '%v' of category '%v'; CreatePipeline fails with \\\"InvalidStructureException: Pipeline should start with a stage that only contains source actions\\\"\", [an, cat]),\n\t\"Move the non-source action to a later stage\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tst := _pf_cplib_stages(name)[0]\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tcat := _pf_cplib_category(a)\n\tcat != \"Source\"\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-non-source-stage-required",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A pipeline needs at least one action whose category is not Source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A pipeline made only of source actions has nothing to run.\nviolation contains make_diag_full(\"pf-codepipeline-non-source-stage-required\", \"ERROR\", name,\n\t\"Properties.Stages\",\n\t\"every action in the pipeline has category Source; CreatePipeline fails with \\\"InvalidStructureException: Pipeline should contain at least 1 action whose category is not Source\\\"\",\n\t\"Add a Build, Test, Deploy, Approval, Invoke or Compute action to a later stage\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tstages := _pf_cplib_stages(name)\n\tcats := {c | some st in stages; some a in _pf_cplib_actions(st); c := _pf_cplib_category(a)}\n\tcount(cats) > 0\n\tevery c in cats {c == \"Source\"}\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-parallel-mode-no-rollback-condition",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A PARALLEL pipeline cannot have a stage that exits failure with ROLLBACK",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A PARALLEL pipeline runs every execution independently, so there is no\n# previous execution to roll back to.\nviolation contains make_diag_full(\"pf-codepipeline-parallel-mode-no-rollback-condition\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.OnFailure.Result\", [si]),\n\tsprintf(\"stage '%v' exits failure with ROLLBACK while the pipeline's ExecutionMode is PARALLEL; CreatePipeline fails with \\\"InvalidStageDeclarationException: Failure conditions with rollback result type cannot be added to a PARALLEL pipeline.\\\"\", [object.get(st, \"Name\", \"\")]),\n\t\"Switch ExecutionMode to QUEUED or SUPERSEDED, or drop the ROLLBACK result\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tprops := _pf_cplib_props(name)\n\tobject.get(props, \"ExecutionMode\", \"\") == \"PARALLEL\"\n\tsome si, st in _pf_cplib_stages(name)\n\tof := object.get(st, \"OnFailure\", {})\n\t_pf_cplib_plain(of)\n\tobject.get(of, \"Result\", \"\") == \"ROLLBACK\"\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-run-order-range",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "An action's RunOrder must be between 1 and 999",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# RunOrder is a 1-based position within the stage and tops out at 999.\nviolation contains make_diag_full(\"pf-codepipeline-run-order-range\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.RunOrder\", [si, ai]),\n\tsprintf(\"RunOrder is %v; CreatePipeline fails with \\\"Value at 'pipeline.stages.N.member.actions.N.member.runOrder' failed to satisfy constraint: Member must have value greater than or equal to 1\\\"\", [ro]),\n\t\"Number the actions in the stage from 1\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionDeclaration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tro := to_number(object.get(a, \"RunOrder\", 1))\n\tro < 1\n}\n\nviolation contains make_diag_full(\"pf-codepipeline-run-order-range\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.RunOrder\", [si, ai]),\n\tsprintf(\"RunOrder is %v; CreatePipeline fails with \\\"Value at 'pipeline.stages.N.member.actions.N.member.runOrder' failed to satisfy constraint: Member must have value less than or equal to 999\\\"\", [ro]),\n\t\"Keep RunOrder at 999 or below\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionDeclaration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tro := to_number(object.get(a, \"RunOrder\", 1))\n\tro > 999\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-source-action-first-stage-only",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Source actions may appear in the first stage only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A source action outside stage 0 is refused even when stage 0 has one too.\nviolation contains make_diag_full(\"pf-codepipeline-source-action-first-stage-only\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId.Category\", [si, ai]),\n\tsprintf(\"stage '%v' is not the first stage but holds source action '%v'; CreatePipeline fails with \\\"InvalidStructureException: Source actions can only be included in the first stage of the pipeline\\\"\", [sn, an]),\n\t\"Move the source action into the first stage\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsi > 0\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\t_pf_cplib_category(a) == \"Source\"\n\tan := object.get(a, \"Name\", \"\")\n\tsn := object.get(st, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-count-max",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A pipeline may hold at most 50 stages",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 50 stages per pipeline (Service Quotas: Total stages per pipeline, Adjustable: false).\nviolation contains make_diag_full(\"pf-codepipeline-stage-count-max\", \"ERROR\", name,\n\t\"Properties.Stages\",\n\tsprintf(\"the pipeline declares %d stages; CreatePipeline fails with \\\"InvalidStructureException: Pipeline has too many stages. There can only be up to 50 stages in a pipeline\\\"\", [n]),\n\t\"Split the work across pipelines so no pipeline exceeds 50 stages\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tn := count(_pf_cplib_stages(name))\n\tn > 50\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-name-charset",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A stage name is at most 100 characters of [A-Za-z0-9.@_-]",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A stage name is at most 100 characters ...\nviolation contains make_diag_full(\"pf-codepipeline-stage-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Name\", [si]),\n\tsprintf(\"the stage name is %d characters; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 100\\\"\", [count(sn)]),\n\t\"Shorten the stage name to 100 characters or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_CreatePipeline.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsn := _pf_cplib_get(st, \"Name\")\n\t_pf_cplib_lit(sn)\n\tcount(sn) > 100\n}\n\n# ... and is restricted to letters, digits, dot, at-sign, hyphen and underscore.\nviolation contains make_diag_full(\"pf-codepipeline-stage-name-charset\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Name\", [si]),\n\tsprintf(\"stage name '%v' has characters outside [A-Za-z0-9.@_-]; CreatePipeline fails with \\\"failed to satisfy constraint: Member must satisfy regular expression pattern: [A-Za-z0-9.@\\\\-_]+\\\"\", [sn]),\n\t\"Use only letters, digits, dot, at-sign, hyphen and underscore in the stage name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_CreatePipeline.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsn := _pf_cplib_get(st, \"Name\")\n\t_pf_cplib_lit(sn)\n\tnot regex.match(`^[A-Za-z0-9.@_-]+$`, sn)\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-names-unique",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Stage names must be unique within a pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's F3037 catches duplicate action names inside one stage; duplicate\n# stage names are a different check and only the service makes it.\nviolation contains make_diag_full(\"pf-codepipeline-stage-names-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Name\", [sj]),\n\tsprintf(\"stage name '%v' is used by stages %d and %d; CreatePipeline fails with \\\"InvalidStageDeclarationException: Stage name '%v' is used more than once\\\"\", [sn, si, sj, sn]),\n\t\"Give every stage a distinct name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tsome sj, st2 in _pf_cplib_stages(name)\n\tsi < sj\n\tsn := _pf_cplib_get(st, \"Name\")\n\t_pf_cplib_lit(sn)\n\tsn == _pf_cplib_get(st2, \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-stage-on-failure-result-xor-conditions",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A stage's OnFailure takes either Result or Conditions, not both",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The failure exit gate is configured one way or the other.\nviolation contains make_diag_full(\"pf-codepipeline-stage-on-failure-result-xor-conditions\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.OnFailure\", [si]),\n\tsprintf(\"stage '%v' sets both OnFailure.Result and OnFailure.Conditions; CreatePipeline fails with \\\"InvalidStageDeclarationException: The following stage cannot have a failure exit gate configured with both top level result and conditions: '%v\\\"\", [sn, sn]),\n\t\"Keep either OnFailure.Result or OnFailure.Conditions, not both\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome si, st in _pf_cplib_stages(name)\n\tof := object.get(st, \"OnFailure\", null)\n\t_pf_cplib_plain(of)\n\tnot _pf_cplib_absent(of, \"Result\")\n\tnot _pf_cplib_absent(of, \"Conditions\")\n\tsn := object.get(st, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-trigger-filter-patterns-max-8",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Git trigger filter accepts at most 8 include and 8 exclude patterns",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Every Includes/Excludes list under a push or pull-request filter caps at 8.\nviolation contains make_diag_full(\"pf-codepipeline-trigger-filter-patterns-max-8\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%v.GitConfiguration.%v.%v.%v.%v\", [ti, kind, fi, scope, side]),\n\tsprintf(\"the %v list holds %d patterns; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 8\\\"\", [side, n]),\n\t\"Keep each Includes/Excludes list to 8 patterns or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_GitConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome ti, t in object.get(_pf_cplib_props(name), \"Triggers\", [])\n\tg := _pf_cplib_get(t, \"GitConfiguration\")\n\t_pf_cplib_plain(g)\n\tsome kind in [\"Push\", \"PullRequest\"]\n\tsome fi, f in object.get(g, kind, [])\n\t_pf_cplib_plain(f)\n\tsome scope in [\"Branches\", \"FilePaths\", \"Tags\"]\n\ts := object.get(f, scope, {})\n\t_pf_cplib_plain(s)\n\tsome side in [\"Includes\", \"Excludes\"]\n\tn := count(object.get(s, side, []))\n\tn > 8\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-trigger-filters-max-3",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Git trigger accepts at most 3 push and 3 pull-request filters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both the Push and the PullRequest filter lists cap at 3 entries.\nviolation contains make_diag_full(\"pf-codepipeline-trigger-filters-max-3\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%v.GitConfiguration.%v\", [ti, kind]),\n\tsprintf(\"the %v filter list holds %d entries; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 3\\\"\", [kind, n]),\n\t\"Keep the Push and PullRequest filter lists to 3 entries or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_GitConfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tsome ti, t in object.get(_pf_cplib_props(name), \"Triggers\", [])\n\tg := _pf_cplib_get(t, \"GitConfiguration\")\n\t_pf_cplib_plain(g)\n\tsome kind in [\"Push\", \"PullRequest\"]\n\tn := count(object.get(g, kind, []))\n\tn > 3\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-trigger-source-action-is-connection",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A Git trigger must name a CodeStarSourceConnection source action of the pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One service check covers both halves: the named action has to exist and it has\n# to be a CodeStarSourceConnection source.\nviolation contains make_diag_full(\"pf-codepipeline-trigger-source-action-is-connection\", \"ERROR\", name,\n\tsprintf(\"Properties.Triggers.%v.GitConfiguration.SourceActionName\", [ti]),\n\tsprintf(\"SourceActionName '%v' is not a CodeStarSourceConnection source action of this pipeline; CreatePipeline fails with \\\"InvalidStructureException: Triggers for connections must reference a CodeStarSourceConnection action.\\\"\", [san]),\n\t\"Point SourceActionName at a CodeStarSourceConnection source action in the pipeline\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tnot _pf_cplib_dynamic_action_name(name)\n\tsome ti, t in object.get(_pf_cplib_props(name), \"Triggers\", [])\n\tg := _pf_cplib_get(t, \"GitConfiguration\")\n\t_pf_cplib_plain(g)\n\tsan := _pf_cplib_get(g, \"SourceActionName\")\n\t_pf_cplib_lit(san)\n\tnot _pf_cplib_connection_actions(name)[san]\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-action-provider",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "The Commands, ECRBuildAndPublish and EKS action providers need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Providers published after V2 shipped. The table lists only providers measured\n# against CreatePipeline, so a newer V2-only provider costs a miss, not a false positive.\nviolation contains make_diag_full(\"pf-codepipeline-v1-action-provider\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.Actions.%v.ActionTypeId.Provider\", [si, ai]),\n\tsprintf(\"action '%v' uses the %v provider but the pipeline is V1; CreatePipeline fails with \\\"InvalidActionDeclarationException: %v Action can only be used with V2 pipelines.\\\"\", [an, prov, prov]),\n\t\"Set PipelineType to V2\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tsome si, st in _pf_cplib_stages(name)\n\tsome ai, a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tprov := _pf_cplib_get(_pf_cplib_tid(a), \"Provider\")\n\t_pf_cplib_lit(prov)\n\tprov in _pf_cplib_v2_only_providers\n\tan := object.get(a, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-execution-mode",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "ExecutionMode QUEUED and PARALLEL need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# PipelineType defaults to V1, and a V1 pipeline only runs in SUPERSEDED mode.\nviolation contains make_diag_full(\"pf-codepipeline-v1-execution-mode\", \"ERROR\", name,\n\t\"Properties.ExecutionMode\",\n\tsprintf(\"ExecutionMode '%v' needs PipelineType V2 but the pipeline is V1; CreatePipeline fails with \\\"InvalidStructureException: QUEUED or PARALLEL mode can only be used with V2 pipelines\\\"\", [m]),\n\t\"Set PipelineType to V2, or leave ExecutionMode at SUPERSEDED\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tm := _pf_cplib_get(_pf_cplib_props(name), \"ExecutionMode\")\n\t_pf_cplib_lit(m)\n\tm in {\"QUEUED\", \"PARALLEL\"}\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-stage-conditions",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Stage conditions need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# BeforeEntry / OnSuccess / OnFailure on a stage are V2-only.\nviolation contains make_diag_full(\"pf-codepipeline-v1-stage-conditions\", \"ERROR\", name,\n\tsprintf(\"Properties.Stages.%v.%v\", [si, gate]),\n\tsprintf(\"stage '%v' declares %v but the pipeline is V1; CreatePipeline fails with \\\"InvalidStageDeclarationException: Stage level conditions can only be used with V2 pipelines.\\\"\", [sn, gate]),\n\t\"Set PipelineType to V2, or drop the stage condition\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tsome si, st in _pf_cplib_stages(name)\n\tsome gate in [\"BeforeEntry\", \"OnSuccess\", \"OnFailure\"]\n\t_pf_cplib_plain(object.get(st, gate, null))\n\tsn := object.get(st, \"Name\", \"\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-triggers",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Git triggers need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Triggers are V2-only; a V1 pipeline polls or uses a webhook instead.\nviolation contains make_diag_full(\"pf-codepipeline-v1-triggers\", \"ERROR\", name,\n\t\"Properties.Triggers\",\n\tsprintf(\"the pipeline declares %d trigger(s) but is V1; CreatePipeline fails with \\\"InvalidStructureException: Triggers on tag can only be used with V2 pipelines\\\"\", [n]),\n\t\"Set PipelineType to V2, or replace the trigger with a webhook\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tn := count(object.get(_pf_cplib_props(name), \"Triggers\", []))\n\tn > 0\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-v1-variables",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Pipeline-level variables need a V2 pipeline",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Pipeline variables are V2-only.\nviolation contains make_diag_full(\"pf-codepipeline-v1-variables\", \"ERROR\", name,\n\t\"Properties.Variables\",\n\tsprintf(\"the pipeline declares %d variable(s) but is V1; CreatePipeline fails with \\\"InvalidStructureException: Pipeline variable can only be used with V2 pipelines\\\"\", [n]),\n\t\"Set PipelineType to V2, or drop the pipeline variables\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\t_pf_cplib_v1(name)\n\tn := count(object.get(_pf_cplib_props(name), \"Variables\", []))\n\tn > 0\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-variable-names-unique",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "Pipeline-level variable names must be unique",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The engine's F3037 dedupes whole list elements; two variables that share a name\n# but differ in DefaultValue are distinct elements, so only the service sees it.\nviolation contains make_diag_full(\"pf-codepipeline-variable-names-unique\", \"ERROR\", name,\n\tsprintf(\"Properties.Variables.%v.Name\", [vj]),\n\tsprintf(\"variable name '%v' is used by entries %d and %d; CreatePipeline fails with \\\"InvalidStructureException: Variable names must be unique. The following variable name is already in use: %v\\\"\", [vn, vi, vj, vn]),\n\t\"Give every pipeline variable a distinct name\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tvars := object.get(_pf_cplib_props(name), \"Variables\", [])\n\tsome vi, v in vars\n\tsome vj, v2 in vars\n\tvi < vj\n\tvn := _pf_cplib_get(v, \"Name\")\n\t_pf_cplib_lit(vn)\n\tvn == _pf_cplib_get(v2, \"Name\")\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-variables-max-50",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A pipeline may declare at most 50 pipeline-level variables",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Pipeline"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 50 pipeline variables. Service Quotas lists no adjustable quota for this limit.\nviolation contains make_diag_full(\"pf-codepipeline-variables-max-50\", \"ERROR\", name,\n\t\"Properties.Variables\",\n\tsprintf(\"the pipeline declares %d variables; CreatePipeline fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 50\\\"\", [n]),\n\t\"Keep the pipeline to 50 variables or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Pipeline\")\n\tn := count(object.get(_pf_cplib_props(name), \"Variables\", []))\n\tn > 50\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-webhook-authentication-configuration",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "AuthenticationConfiguration must carry exactly the property the Authentication mode takes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Webhook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One service check, three messages: GITHUB_HMAC takes only SecretToken, IP takes\n# only AllowedIPRange, UNAUTHENTICATED takes neither.\nviolation contains make_diag_full(\"pf-codepipeline-webhook-authentication-configuration\", \"ERROR\", name,\n\t\"Properties.AuthenticationConfiguration\",\n\tsprintf(\"Authentication %v takes only '%v' but AuthenticationConfiguration also sets '%v'; PutWebhook fails with \\\"InvalidWebhookAuthenticationParametersException: Optional['authenticationConfig' should contain only one property: '%v']\\\"\", [auth, want, extra, want]),\n\t\"Set only the AuthenticationConfiguration property the Authentication mode takes\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Webhook\")\n\tp := _pf_cplib_props(name)\n\tauth := _pf_cplib_get(p, \"Authentication\")\n\t_pf_cplib_lit(auth)\n\twant := _pf_cplib_webhook_auth_key[auth]\n\tcfg := object.get(p, \"AuthenticationConfiguration\", {})\n\t_pf_cplib_plain(cfg)\n\tsome extra, _ in cfg\n\textra != want\n}\n\n# ... and the property it does take is mandatory.\nviolation contains make_diag_full(\"pf-codepipeline-webhook-authentication-configuration\", \"ERROR\", name,\n\t\"Properties.AuthenticationConfiguration\",\n\tsprintf(\"Authentication %v requires AuthenticationConfiguration.%v; PutWebhook fails with \\\"InvalidWebhookAuthenticationParametersException: Optional['authenticationConfig' should contain only one property: '%v']\\\"\", [auth, want, want]),\n\t\"Set the AuthenticationConfiguration property the Authentication mode requires\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Webhook\")\n\tp := _pf_cplib_props(name)\n\tauth := _pf_cplib_get(p, \"Authentication\")\n\t_pf_cplib_lit(auth)\n\twant := _pf_cplib_webhook_auth_key[auth]\n\twant != \"\"\n\tcfg := object.get(p, \"AuthenticationConfiguration\", {})\n\t_pf_cplib_plain(cfg)\n\t_pf_cplib_absent(cfg, want)\n}\n"
+  },
+  {
+    "id": "pf-codepipeline-webhook-filters-max-5",
+    "service": "codepipeline",
+    "severity": "ERROR",
+    "title": "A webhook may declare at most 5 filters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodePipeline::Webhook"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 5 filters per webhook. The raw CloudFormation schema carries no maxItems here,\n# so the stack reaches PutWebhook and the service names the limit.\nviolation contains make_diag_full(\"pf-codepipeline-webhook-filters-max-5\", \"ERROR\", name,\n\t\"Properties.Filters\",\n\tsprintf(\"the webhook declares %d filters; PutWebhook fails with \\\"failed to satisfy constraint: Member must have length less than or equal to 5\\\"\", [n]),\n\t\"Keep the webhook to 5 filters or fewer\",\n\t\"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html\") if {\n\tsome name in resources_of_type(\"AWS::CodePipeline::Webhook\")\n\tn := count(object.get(_pf_cplib_props(name), \"Filters\", []))\n\tn > 5\n}\n"
+  },
+  {
     "id": "pf-cognito-alias-username-exclusive",
     "service": "cognito",
     "severity": "ERROR",
@@ -25896,6 +26226,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cloudwatch",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch rules.\n\n# True absence needs the preprocessed document (see AGENTS.md); resolve() is\n# undefined for a missing key, so \"resolve(...) != x\" never fires on one.\n_pf_cwlib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The statistic grammar CloudWatch accepts wherever a statistic is a string:\n# MetricStat.Stat, a dashboard widget's \"stat\", PutAnomalyDetector's Stat and\n# a metric stream's AdditionalStatistics. Percentiles stop at 100, which is\n# why the numeric part is spelled out instead of [0-9.]+ (p101 is rejected by\n# the service with \"Unsupported statistic p101\").\n# ponytail: the trimmed-mean interval forms (TM(10%:90%)) are matched loosely;\n# a malformed interval passes the rule and is caught by the service.\n_pf_cwlib_stat_re := `^(SampleCount|Average|Sum|Minimum|Maximum|IQM|[pP](100|[0-9]{1,2}(\\.[0-9]{1,2})?)|(TM|TC|TS|WM|tm|tc|ts|wm)((100|[0-9]{1,2}(\\.[0-9]{1,2})?)%?|\\([0-9.%:]*\\))|PR\\([0-9.:]*\\))$`\n\n_pf_cwlib_stat_ok(s) if regex.match(_pf_cwlib_stat_re, s)\n\n# DashboardBody is an opaque JSON string; every dashboard rule reads it here.\n_pf_cwlib_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwlib_wprops(w) := p if {\n\tis_object(w)\n\tp := object.get(w, \"properties\", null)\n\tis_object(p)\n}\n\n_pf_cwlib_wtype(w, t) if {\n\tis_object(w)\n\tobject.get(w, \"type\", null) == t\n}\n\n# InsightRule RuleBody is the other opaque JSON DSL on this service.\n_pf_cwlib_rulebody(name) := obj if {\n\tb := resolve(name, \"Properties.RuleBody\")\n\tis_string(b)\n\tjson.is_valid(b)\n\tobj := json.unmarshal(b)\n\tis_object(obj)\n}\n\n# The three alarm action lists, shared by the action rules.\n_pf_cwlib_action_keys := {\"AlarmActions\", \"OKActions\", \"InsufficientDataActions\"}\n\n# Metric queries of one kind (MetricStat / Expression) on an alarm.\n_pf_cwlib_queries(name, key) := qs if {\n\tqs := [q |\n\t\tsome item in flatten_list(name, \"Properties.Metrics\")\n\t\tq := item.value\n\t\tis_object(q)\n\t\tobject.get(q, key, null) != null\n\t]\n}\n\n# A literal ARN split into its six-plus segments. Refs and GetAtts resolve to a\n# logical id, which has no \"arn:\" prefix, so they skip.\n_pf_cwlib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n"
+  },
+  {
+    "name": "_lib/codepipeline",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodePipeline rules: traversal of the raw document\n# (resolve() cannot prove a key absent, and the stage/action nesting is deeper\n# than a dotted path can iterate) plus the two provider tables the action rules\n# read. Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_cplib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# A plain object, not an intrinsic that the preprocessor turned into a marker.\n_pf_cplib_plain(o) if {\n\tis_object(o)\n\tobject.get(o, \"__kind\", \"_\") == \"_\"\n\tobject.get(o, \"__ref\", \"_\") == \"_\"\n\tobject.get(o, \"__dynamic\", \"_\") == \"_\"\n}\n\n_pf_cplib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_cplib_absent(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# object.get() with a default cannot tell \"absent\" from \"written as that value\",\n# and an absent key defaulting to \"\" reads as a user literal. Every rule that\n# judges a value the user wrote reads it through here instead.\n_pf_cplib_get(o, k) := v if {\n\tis_object(o)\n\tnot _pf_cplib_absent(o, k)\n\tv := object.get(o, k, null)\n}\n\n# Stages / Actions read from the preprocessed document. An absent list reads as\n# empty so the callers only have to guard the shapes they actually compare.\n_pf_cplib_stages(name) := s if {\n\ts := object.get(_pf_cplib_props(name), \"Stages\", [])\n\tis_array(s)\n}\n\n_pf_cplib_actions(stage) := a if {\n\t_pf_cplib_plain(stage)\n\ta := object.get(stage, \"Actions\", [])\n\tis_array(a)\n}\n\n_pf_cplib_tid(action) := t if {\n\t_pf_cplib_plain(action)\n\tt := object.get(action, \"ActionTypeId\", {})\n\t_pf_cplib_plain(t)\n}\n\n_pf_cplib_category(action) := c if {\n\tc := _pf_cplib_get(_pf_cplib_tid(action), \"Category\")\n\t_pf_cplib_lit(c)\n}\n\n# The action categories each AWS-owned provider is published under.\n# Source: \"Valid action providers in CodePipeline\" (userguide/actions-valid-providers.html).\n# A provider missing from this table is never judged, so a newly published\n# provider costs a miss rather than a false positive.\n_pf_cplib_aws_providers := {\n\t\"S3\": {\"Source\", \"Deploy\"},\n\t\"ECR\": {\"Source\"},\n\t\"CodeCommit\": {\"Source\"},\n\t\"CodeStarSourceConnection\": {\"Source\"},\n\t\"CodeBuild\": {\"Build\", \"Test\"},\n\t\"ECRBuildAndPublish\": {\"Build\"},\n\t\"Commands\": {\"Compute\", \"Build\"},\n\t\"DeviceFarm\": {\"Test\"},\n\t\"CloudFormation\": {\"Deploy\"},\n\t\"CloudFormationStackSet\": {\"Deploy\"},\n\t\"CloudFormationStackInstances\": {\"Deploy\"},\n\t\"CodeDeploy\": {\"Deploy\"},\n\t\"CodeDeployToECS\": {\"Deploy\"},\n\t\"EC2\": {\"Deploy\"},\n\t\"ECS\": {\"Deploy\"},\n\t\"EKS\": {\"Deploy\"},\n\t\"ElasticBeanstalk\": {\"Deploy\"},\n\t\"AppConfig\": {\"Deploy\"},\n\t\"OpsWorks\": {\"Deploy\"},\n\t\"ServiceCatalog\": {\"Deploy\"},\n\t\"Manual\": {\"Approval\"},\n\t\"CodePipeline\": {\"Invoke\"},\n\t\"Lambda\": {\"Invoke\", \"Deploy\"},\n\t\"StepFunctions\": {\"Invoke\"},\n\t\"InspectorScan\": {\"Invoke\"},\n}\n\n# Configuration keys each AWS-owned action provider requires, keyed\n# \"<Category>/<Provider>\". Every entry was confirmed against CreatePipeline\n# (api-probe 2026-09-14 us-east-1: dropping the key returns \"Action\n# configuration for action 'X' is missing required configuration '<key>'\").\n_pf_cplib_required_config := {\n\t\"Source/S3\": {\"S3Bucket\", \"S3ObjectKey\"},\n\t\"Source/ECR\": {\"RepositoryName\"},\n\t\"Source/CodeCommit\": {\"RepositoryName\", \"BranchName\"},\n\t\"Deploy/S3\": {\"BucketName\", \"Extract\"},\n\t\"Deploy/CodeDeploy\": {\"ApplicationName\", \"DeploymentGroupName\"},\n\t\"Deploy/CloudFormation\": {\"ActionMode\", \"StackName\"},\n\t\"Deploy/ECS\": {\"ClusterName\", \"ServiceName\"},\n\t\"Deploy/ElasticBeanstalk\": {\"ApplicationName\", \"EnvironmentName\"},\n\t\"Build/CodeBuild\": {\"ProjectName\"},\n\t\"Test/CodeBuild\": {\"ProjectName\"},\n\t\"Invoke/Lambda\": {\"FunctionName\"},\n\t\"Invoke/StepFunctions\": {\"StateMachineArn\"},\n\t\"Invoke/CodePipeline\": {\"PipelineName\"},\n}\n\n# The two artifact-store enums. The singular ArtifactStore and one entry of the\n# cross-region ArtifactStores list nest the store under the same key, so both\n# rules take the parent object and read through it.\n_pf_cplib_storetype(parent) := v if {\n\ts := _pf_cplib_get(parent, \"ArtifactStore\")\n\t_pf_cplib_plain(s)\n\tv := _pf_cplib_get(s, \"Type\")\n\t_pf_cplib_lit(v)\n}\n\n_pf_cplib_storekeytype(parent) := v if {\n\ts := _pf_cplib_get(parent, \"ArtifactStore\")\n\t_pf_cplib_plain(s)\n\tk := _pf_cplib_get(s, \"EncryptionKey\")\n\t_pf_cplib_plain(k)\n\tv := _pf_cplib_get(k, \"Type\")\n\t_pf_cplib_lit(v)\n}\n\n# A queryable configuration property must be required and non-secret; the\n# service reports both halves as one check.\n_pf_cplib_queryable_ok(secret, required) if {\n\tsecret == false\n\trequired == true\n}\n\n# ---- C2 (stage / trigger / V1-V2 / webhook) ----------------------------------\n\n# PipelineType is optional and defaults to V1, so an absent key is a real V1\n# pipeline. A Ref resolves to a logical id rather than a literal and is left alone.\n_pf_cplib_v1(name) if {\n\tt := object.get(_pf_cplib_props(name), \"PipelineType\", \"V1\")\n\t_pf_cplib_lit(t)\n\tt == \"V1\"\n}\n\n# Names of the pipeline's CodeStarSourceConnection source actions.\n_pf_cplib_connection_actions(name) := {an |\n\tsome st in _pf_cplib_stages(name)\n\tsome a in _pf_cplib_actions(st)\n\t_pf_cplib_plain(a)\n\tp := _pf_cplib_get(_pf_cplib_tid(a), \"Provider\")\n\t_pf_cplib_lit(p)\n\tp == \"CodeStarSourceConnection\"\n\tan := object.get(a, \"Name\", \"\")\n}\n\n# A name the preprocessor could not reduce to a literal makes the set above\n# incomplete, so the trigger rule stays quiet on that pipeline.\n_pf_cplib_dynamic_action_name(name) if {\n\tsome st in _pf_cplib_stages(name)\n\tsome a in _pf_cplib_actions(st)\n\tnot _pf_cplib_lit(object.get(a, \"Name\", null))\n}\n\n# Action providers that CreatePipeline refuses on a V1 pipeline\n# (api-probe 2026-09-14 us-east-1: \"<Provider> Action can only be used with V2\n# pipelines.\"). EC2 is absent on purpose - its probe never reached the V1 check.\n_pf_cplib_v2_only_providers := {\"Commands\", \"ECRBuildAndPublish\", \"EKS\"}\n\n# The single AuthenticationConfiguration property each webhook Authentication\n# mode takes; UNAUTHENTICATED takes none.\n_pf_cplib_webhook_auth_key := {\n\t\"GITHUB_HMAC\": \"SecretToken\",\n\t\"IP\": \"AllowedIPRange\",\n\t\"UNAUTHENTICATED\": \"\",\n}\n"
   },
   {
     "name": "_lib/cognito",
