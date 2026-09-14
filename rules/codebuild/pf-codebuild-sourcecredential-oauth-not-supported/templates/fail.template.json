@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::SourceCredential",
+      "Properties": {
+        "ServerType": "GITHUB",
+        "AuthType": "OAUTH",
+        "Token": "cdkpf-not-a-real-token"
+      }
+    }
+  }
+}

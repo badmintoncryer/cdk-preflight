@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::SourceCredential",
+      "Properties": {
+        "ServerType": "BITBUCKET",
+        "AuthType": "BASIC_AUTH",
+        "Token": "cdkpf-not-a-real-token",
+        "Username": "cdkpf"
+      }
+    }
+  }
+}

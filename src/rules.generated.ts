@@ -9034,6 +9034,83 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-reportgroup-s3-export-requires-destination\", \"ERROR\", name,\n\t\"Properties.ExportConfig\",\n\t\"ExportConfigType is S3 but no S3Destination is set; CreateReportGroup fails with \\\"S3 export config is required when export config type is S3\\\"\",\n\t\"Set ExportConfig.S3Destination to the bucket the reports are exported to\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-reportgroup-reportexportconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::ReportGroup\")\n\tec := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"ExportConfig\")\n\t_pf_codebuildlib_str(ec, \"ExportConfigType\") == \"S3\"\n\tnot _pf_codebuildlib_has(ec, \"S3Destination\")\n}\n"
   },
   {
+    "id": "pf-codebuild-secondary-artifact-identifier-unique",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Secondary artifact identifiers are unique within a project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A pairing, not a threshold: count() would force the pass fixture down to a\n# single entry, which proves nothing about the duplicate.\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifact-identifier-unique\", \"ERROR\", name,\n\t\"Properties.SecondaryArtifacts\",\n\tsprintf(\"ArtifactIdentifier %s is used by more than one secondary artifact; CreateProject fails with \\\"Invalid input: artifactIdentifier cannot be duplicated\\\"\", [v]),\n\t\"Give each SecondaryArtifacts entry its own ArtifactIdentifier\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\titems := flatten_list(name, \"Properties.SecondaryArtifacts\")\n\tsome a in items\n\tsome b in items\n\ta.index < b.index\n\tv := a.value.ArtifactIdentifier\n\tis_string(v)\n\tb.value.ArtifactIdentifier == v\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifacts-identifier-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every secondary artifact carries an ArtifactIdentifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifacts-identifier-required\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondaryArtifacts[%d]\", [item.index]),\n\t\"A secondary artifact has no ArtifactIdentifier; CreateProject fails with \\\"Invalid input: artifactIdentifier is required for secondary artifacts\\\"\",\n\t\"Set ArtifactIdentifier on the entry; the buildspec names the artifact by it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondaryArtifacts\")\n\tnot _pf_codebuildlib_has(item.value, \"ArtifactIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifacts-max-12",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A project declares at most 12 secondary artifacts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifacts-max-12\", \"ERROR\", name,\n\t\"Properties.SecondaryArtifacts\",\n\tsprintf(\"%d secondary artifacts are declared; CreateProject fails with \\\"Invalid input: the maximum number of artifact definitions in secondaryArtifacts is 12\\\"\", [n]),\n\t\"Keep SecondaryArtifacts to 12 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.SecondaryArtifacts\"))\n\tn > 12\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifacts-no-codepipeline",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Secondary artifacts publish to S3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Measured deny-list rather than \"anything but S3\": these are the two types the\n# service names, and the message quotes the type back.\n_pf_cbsano_denied := {\"CODEPIPELINE\": true, \"NO_ARTIFACTS\": true}\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifacts-no-codepipeline\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondaryArtifacts[%d].Type\", [item.index]),\n\tsprintf(\"A secondary artifact has Type %s; CreateProject fails with \\\"Invalid input: artifactType %s is not allowed for secondaryArtifacts\\\"\", [t, t]),\n\t\"Publish secondary artifacts to S3, or drop the entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondaryArtifacts\")\n\tt := item.value.Type\n\t_pf_cbsano_denied[t]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-source-identifier-unique",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Secondary source identifiers are unique within a project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-source-identifier-unique\", \"ERROR\", name,\n\t\"Properties.SecondarySources\",\n\tsprintf(\"SourceIdentifier %s is used by more than one secondary source; CreateProject fails with \\\"Invalid input: sourceIdentifier cannot be duplicated\\\"\", [v]),\n\t\"Give each SecondarySources entry its own SourceIdentifier\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\titems := flatten_list(name, \"Properties.SecondarySources\")\n\tsome a in items\n\tsome b in items\n\ta.index < b.index\n\tv := a.value.SourceIdentifier\n\tis_string(v)\n\tb.value.SourceIdentifier == v\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-sources-identifier-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every secondary source carries a SourceIdentifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-sources-identifier-required\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondarySources[%d]\", [item.index]),\n\t\"A secondary source has no SourceIdentifier; CreateProject fails with \\\"Invalid input: sourceIdentifier is required for secondary sources\\\"\",\n\t\"Set SourceIdentifier on the entry; the buildspec and SecondarySourceVersions name the source by it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondarySources\")\n\tnot _pf_codebuildlib_has(item.value, \"SourceIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-sources-max-12",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A project declares at most 12 secondary sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-sources-max-12\", \"ERROR\", name,\n\t\"Properties.SecondarySources\",\n\tsprintf(\"%d secondary sources are declared; CreateProject fails with \\\"Invalid input: the maximum number of secondary sources is 12\\\"\", [n]),\n\t\"Keep SecondarySources to 12 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.SecondarySources\"))\n\tn > 12\n}\n"
+  },
+  {
     "id": "pf-codebuild-source-codepipeline-requires-artifacts-codepipeline",
     "service": "codebuild",
     "severity": "ERROR",
@@ -9043,6 +9120,105 @@ export const BUNDLED_RULES: BundledRuleData[] = [
       "AWS::CodeBuild::Project"
     ],
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbcpp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\"\n\n_pf_cbcpp_msg := \"CreateProject fails with \\\"Invalid input: when using CodePipeline both sourceType, and artifactType must be set to: CODEPIPELINE\\\"\"\n\nviolation contains make_diag_full(\"pf-codebuild-source-codepipeline-requires-artifacts-codepipeline\", \"ERROR\", name,\n\t\"Properties.Artifacts.Type\",\n\tsprintf(\"Source.Type is CODEPIPELINE but Artifacts.Type is %s; %s\", [a, _pf_cbcpp_msg]),\n\t\"Set Artifacts.Type to CODEPIPELINE as well\", _pf_cbcpp_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_source_type(name) == \"CODEPIPELINE\"\n\ta := _pf_codebuildlib_artifacts_type(name)\n\ta != \"CODEPIPELINE\"\n}\n\nviolation contains make_diag_full(\"pf-codebuild-source-codepipeline-requires-artifacts-codepipeline\", \"ERROR\", name,\n\t\"Properties.Source.Type\",\n\tsprintf(\"Artifacts.Type is CODEPIPELINE but Source.Type is %s; %s\", [s, _pf_cbcpp_msg]),\n\t\"Set Source.Type to CODEPIPELINE as well\", _pf_cbcpp_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_artifacts_type(name) == \"CODEPIPELINE\"\n\ts := _pf_codebuildlib_source_type(name)\n\ts != \"CODEPIPELINE\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-location-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every source that lives outside CodeBuild carries a Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The same check runs over Source and every SecondarySources entry: both come\n# back with the bare \"Project source location is required\".\n_pf_cbsrcloc_no_location := {\"CODEPIPELINE\": true, \"NO_SOURCE\": true}\n\nviolation contains make_diag_full(\"pf-codebuild-source-location-required\", \"ERROR\", name,\n\t\"Properties.Source.Location\",\n\tsprintf(\"Source.Type is %s but no Location is set; CreateProject fails with \\\"Project source location is required\\\"\", [t]),\n\t\"Set Source.Location to the repository or bucket the build reads\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ts := _pf_codebuildlib_source(name)\n\tt := _pf_codebuildlib_str(s, \"Type\")\n\tnot _pf_cbsrcloc_no_location[t]\n\tnot _pf_codebuildlib_has(s, \"Location\")\n}\n\nviolation contains make_diag_full(\"pf-codebuild-source-location-required\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondarySources[%d].Location\", [item.index]),\n\tsprintf(\"A secondary source has Type %s but no Location; CreateProject fails with \\\"Project source location is required\\\"\", [t]),\n\t\"Set Location on the SecondarySources entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondarySources\")\n\tt := item.value.Type\n\tis_string(t)\n\tnot _pf_cbsrcloc_no_location[t]\n\tnot _pf_codebuildlib_has(item.value, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-no-source-no-location",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A NO_SOURCE project carries no Source.Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-source-no-source-no-location\", \"ERROR\", name,\n\t\"Properties.Source.Location\",\n\t\"Source.Type is NO_SOURCE but a Location is set; CreateProject fails with \\\"Invalid input: source location must be empty for source type NO_SOURCE\\\"\",\n\t\"Drop Source.Location, or name the source type the location belongs to\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ts := _pf_codebuildlib_source(name)\n\t_pf_codebuildlib_str(s, \"Type\") == \"NO_SOURCE\"\n\t_pf_codebuildlib_has(s, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-version-identifier-must-match-source",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every SecondarySourceVersions entry names a declared secondary source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only SecondarySources count: pointing the entry at the primary Source's own\n# SourceIdentifier is rejected the same way.\nviolation contains make_diag_full(\"pf-codebuild-source-version-identifier-must-match-source\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondarySourceVersions[%d].SourceIdentifier\", [item.index]),\n\tsprintf(\"SecondarySourceVersions names %s, which no SecondarySources entry declares; CreateProject fails with \\\"Invalid input: secondary source identifier does not exist\\\"\", [id]),\n\t\"Point the entry at a SecondarySources SourceIdentifier, or drop it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectsourceversion.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondarySourceVersions\")\n\tid := item.value.SourceIdentifier\n\tis_string(id)\n\tdeclared := {i |\n\t\tsome s in flatten_list(name, \"Properties.SecondarySources\")\n\t\ti := s.value.SourceIdentifier\n\t}\n\tnot declared[id]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-basic-auth-bitbucket-only",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "BASIC_AUTH source credentials are imported for Bitbucket only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-basic-auth-bitbucket-only\", \"ERROR\", name,\n\t\"Properties.AuthType\",\n\tsprintf(\"AuthType is BASIC_AUTH on a %s credential; ImportSourceCredentials fails with \\\"Invalid AuthType provided for ServerType %s\\\"\", [st, st]),\n\t\"Use PERSONAL_ACCESS_TOKEN, CODECONNECTIONS or SECRETS_MANAGER for this provider\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\tp := _pf_codebuildlib_props(name)\n\t_pf_codebuildlib_str(p, \"AuthType\") == \"BASIC_AUTH\"\n\tst := _pf_codebuildlib_str(p, \"ServerType\")\n\tst != \"BITBUCKET\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-codeconnections-arn",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A CODECONNECTIONS credential carries a connection ARN as its Token",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbccarn_services := {\"codeconnections\": true, \"codestar-connections\": true}\n\n_pf_cbccarn_connection(v) if _pf_cbccarn_services[_pf_codebuildlib_arn_service(v)]\n\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-codeconnections-arn\", \"ERROR\", name,\n\t\"Properties.Token\",\n\t\"AuthType is CODECONNECTIONS but Token is not a connection ARN; ImportSourceCredentials fails with \\\"Token must be a valid CodeConnections arn\\\"\",\n\t\"Set Token to the arn:aws:codeconnections:...:connection/... of the connection\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\tp := _pf_codebuildlib_props(name)\n\t_pf_codebuildlib_str(p, \"AuthType\") == \"CODECONNECTIONS\"\n\ttok := _pf_codebuildlib_str(p, \"Token\")\n\tnot _pf_cbccarn_connection(tok)\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-oauth-not-supported",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "OAUTH source credentials are not imported through CloudFormation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-oauth-not-supported\", \"ERROR\", name,\n\t\"Properties.AuthType\",\n\t\"AuthType is OAUTH; ImportSourceCredentials fails with \\\"OAUTH is not supported by the CodeBuild API. To connect to your account with OAUTH, use the AWS CodeBuild console.\\\"\",\n\t\"Connect the provider with OAUTH in the CodeBuild console, or import a PERSONAL_ACCESS_TOKEN credential instead\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\t_pf_codebuildlib_str(_pf_codebuildlib_props(name), \"AuthType\") == \"OAUTH\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-one-per-server-type",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "One source credential per server type per Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Also a pairing rather than a threshold: two resources naming the same\n# ServerType, found by logical id so the pair is reported once.\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-one-per-server-type\", \"ERROR\", b,\n\t\"Properties.ServerType\",\n\tsprintf(\"%s already imports a %s credential, and CodeBuild keeps one per server type per Region; the stack fails with \\\"Access token with server type %s already exists. Delete its source credential and try again.\\\"\", [a, st, st]),\n\t\"Keep one SourceCredential per server type, or split them across Regions\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome a in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\tsome b in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\ta < b\n\tst := _pf_codebuildlib_str(_pf_codebuildlib_props(a), \"ServerType\")\n\t_pf_codebuildlib_str(_pf_codebuildlib_props(b), \"ServerType\") == st\n}\n"
+  },
+  {
+    "id": "pf-codebuild-vpc-security-groups-max-5",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "VpcConfig names at most 5 security groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-vpc-security-groups-max-5\", \"ERROR\", name,\n\t\"Properties.VpcConfig.SecurityGroupIds\",\n\tsprintf(\"%d security groups are named; CreateProject fails with \\\"Invalid vpc config: the maximum number of security groups is 5\\\"\", [n]),\n\t\"Keep VpcConfig.SecurityGroupIds to 5 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.VpcConfig.SecurityGroupIds\"))\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-codebuild-vpc-subnets-max-16",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "VpcConfig names at most 16 subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-vpc-subnets-max-16\", \"ERROR\", name,\n\t\"Properties.VpcConfig.Subnets\",\n\tsprintf(\"%d subnets are named; CreateProject fails with \\\"Invalid vpc config: the maximum number of subnets is 16\\\"\", [n]),\n\t\"Keep VpcConfig.Subnets to 16 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.VpcConfig.Subnets\"))\n\tn > 16\n}\n"
   },
   {
     "id": "pf-cognito-alias-username-exclusive",

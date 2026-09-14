@@ -821,7 +821,23 @@
 | `pf-codebuild-report-build-status-provider` | AWS::CodeBuild::Project | ReportBuildStatus is only set on a source provider that reports status | ERROR | none |
 | `pf-codebuild-reportgroup-no-export-forbids-destination` | AWS::CodeBuild::ReportGroup | A NO_EXPORT report group carries no S3 destination | ERROR | none |
 | `pf-codebuild-reportgroup-s3-export-requires-destination` | AWS::CodeBuild::ReportGroup | An S3 report group names its destination | ERROR | none |
+| `pf-codebuild-secondary-artifact-identifier-unique` | AWS::CodeBuild::Project | Secondary artifact identifiers are unique within a project | ERROR | none |
+| `pf-codebuild-secondary-artifacts-identifier-required` | AWS::CodeBuild::Project | Every secondary artifact carries an ArtifactIdentifier | ERROR | none |
+| `pf-codebuild-secondary-artifacts-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary artifacts | ERROR | none |
+| `pf-codebuild-secondary-artifacts-no-codepipeline` | AWS::CodeBuild::Project | Secondary artifacts publish to S3 | ERROR | none |
+| `pf-codebuild-secondary-source-identifier-unique` | AWS::CodeBuild::Project | Secondary source identifiers are unique within a project | ERROR | none |
+| `pf-codebuild-secondary-sources-identifier-required` | AWS::CodeBuild::Project | Every secondary source carries a SourceIdentifier | ERROR | none |
+| `pf-codebuild-secondary-sources-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary sources | ERROR | none |
 | `pf-codebuild-source-codepipeline-requires-artifacts-codepipeline` | AWS::CodeBuild::Project | The CODEPIPELINE source and artifact types are set together | ERROR | none |
+| `pf-codebuild-source-location-required` | AWS::CodeBuild::Project | Every source that lives outside CodeBuild carries a Location | ERROR | none |
+| `pf-codebuild-source-no-source-no-location` | AWS::CodeBuild::Project | A NO_SOURCE project carries no Source.Location | ERROR | none |
+| `pf-codebuild-source-version-identifier-must-match-source` | AWS::CodeBuild::Project | Every SecondarySourceVersions entry names a declared secondary source | ERROR | none |
+| `pf-codebuild-sourcecredential-basic-auth-bitbucket-only` | AWS::CodeBuild::SourceCredential | BASIC_AUTH source credentials are imported for Bitbucket only | ERROR | none |
+| `pf-codebuild-sourcecredential-codeconnections-arn` | AWS::CodeBuild::SourceCredential | A CODECONNECTIONS credential carries a connection ARN as its Token | ERROR | none |
+| `pf-codebuild-sourcecredential-oauth-not-supported` | AWS::CodeBuild::SourceCredential | OAUTH source credentials are not imported through CloudFormation | ERROR | none |
+| `pf-codebuild-sourcecredential-one-per-server-type` | AWS::CodeBuild::SourceCredential | One source credential per server type per Region | ERROR | none |
+| `pf-codebuild-vpc-security-groups-max-5` | AWS::CodeBuild::Project | VpcConfig names at most 5 security groups | ERROR | none |
+| `pf-codebuild-vpc-subnets-max-16` | AWS::CodeBuild::Project | VpcConfig names at most 16 subnets | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
 | `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | ERROR | none |

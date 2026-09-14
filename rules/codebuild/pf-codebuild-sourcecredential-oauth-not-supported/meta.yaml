@@ -1,0 +1,12 @@
+id: pf-codebuild-sourcecredential-oauth-not-supported
+service: codebuild
+resourceTypes: [AWS::CodeBuild::SourceCredential]
+benchRegion: us-east-1
+severity: ERROR
+title: OAUTH source credentials are not imported through CloudFormation
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (AuthType OAUTH on a GITHUB credential) -> \"OAUTH is not supported by the CodeBuild API. To connect to your account with OAUTH, use the AWS CodeBuild console.\" (ROLLBACK_COMPLETE); pass template (the same credential with AuthType PERSONAL_ACCESS_TOKEN) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

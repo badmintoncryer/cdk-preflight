@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::SourceCredential",
+      "Properties": {
+        "ServerType": "GITHUB",
+        "AuthType": "CODECONNECTIONS",
+        "Token": "arn:aws:codeconnections:us-east-1:214794239830:connection/11111111-2222-3333-4444-555555555555"
+      }
+    }
+  }
+}
