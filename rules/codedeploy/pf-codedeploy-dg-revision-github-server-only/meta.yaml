@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-revision-github-server-only
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "A GitHub revision can only be deployed on the EC2/On-Premises platform"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-githublocation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: a Lambda deployment group whose Deployment names a GitHub revision -> \"Revision type: GitHub is not supported under compute platform: LAMBDA\" (ROLLBACK_COMPLETE); pass the same deployment group without the Deployment property -> CREATE_COMPLETE. The refusal is synchronous inside CreateDeployment, so no deployment is ever started and nothing is left behind. The pass cannot carry a legal Deployment instead: every revision CodeDeploy accepts starts a real deployment, and a deployment to a group with no instances ends Failed in about 6 seconds, which CloudFormation reports as \"Deployment d-... failed. Status=Failed\" and rolls back (measured 2026-09-14, stack cdkpf-c6m1)."
+addedOn: 2026-09-14

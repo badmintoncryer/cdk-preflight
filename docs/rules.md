@@ -821,6 +821,15 @@
 | `pf-codedeploy-dg-lambda-forbids-blue-green-config` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | BlueGreenDeploymentConfiguration is not valid on the Lambda compute platform | ERROR | none |
 | `pf-codedeploy-dg-lambda-requires-blue-green-traffic-control` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | A Lambda deployment group must be BLUE_GREEN with WITH_TRAFFIC_CONTROL | ERROR | none |
 | `pf-codedeploy-dg-onprem-tag-filters-xor-tag-set` | AWS::CodeDeploy::DeploymentGroup | OnPremisesInstanceTagFilters and OnPremisesTagSet cannot both be specified | ERROR | none |
+| `pf-codedeploy-dg-revision-bundle-type-server` | AWS::CodeDeploy::DeploymentGroup | An EC2/On-Premises revision bundle is a tar, tgz or zip archive | ERROR | none |
+| `pf-codedeploy-dg-revision-github-server-only` | AWS::CodeDeploy::DeploymentGroup | A GitHub revision can only be deployed on the EC2/On-Premises platform | ERROR | none |
+| `pf-codedeploy-dg-tag-filter-type-value-consistency` | AWS::CodeDeploy::DeploymentGroup | A KEY_ONLY tag filter carries no Value and a VALUE_ONLY tag filter carries no Key | ERROR | none |
+| `pf-codedeploy-dg-target-group-name-max-32` | AWS::CodeDeploy::DeploymentGroup | A TargetGroupInfo Name is a target group name of at most 32 characters, never an ARN | ERROR | none |
+| `pf-codedeploy-dg-termination-wait-max` | AWS::CodeDeploy::DeploymentGroup | TerminationWaitTimeInMinutes may not exceed 2880 (two days) | ERROR | none |
+| `pf-codedeploy-dg-traffic-control-requires-load-balancer` | AWS::CodeDeploy::DeploymentGroup | A Server deployment group routing traffic needs a load balancer or target group | ERROR | none |
+| `pf-codedeploy-dg-trigger-name-and-target-unique` | AWS::CodeDeploy::DeploymentGroup | Trigger names and trigger target ARNs are each unique within a deployment group | ERROR | none |
+| `pf-codedeploy-dg-trigger-target-region` | AWS::CodeDeploy::DeploymentGroup | A trigger's SNS topic must live in the deployment group's own Region | ERROR | none |
+| `pf-codedeploy-dg-triggers-max-10` | AWS::CodeDeploy::DeploymentGroup | A deployment group may carry at most 10 notification triggers | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
 | `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | ERROR | none |

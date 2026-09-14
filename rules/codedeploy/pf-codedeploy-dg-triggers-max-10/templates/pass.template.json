@@ -1,0 +1,150 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::Application",
+      "Properties": {
+        "ComputePlatform": "Server"
+      }
+    },
+    "T0": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T1": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T2": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T3": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T4": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T5": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T6": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T7": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T8": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "T9": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "R2": {
+      "Type": "AWS::CodeDeploy::DeploymentGroup",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "R1"
+        },
+        "ServiceRoleArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
+        "Ec2TagFilters": [
+          {
+            "Key": "cdkpf-matches-nothing",
+            "Value": "x",
+            "Type": "KEY_AND_VALUE"
+          }
+        ],
+        "TriggerConfigurations": [
+          {
+            "TriggerName": "t0",
+            "TriggerTargetArn": {
+              "Ref": "T0"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t1",
+            "TriggerTargetArn": {
+              "Ref": "T1"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t2",
+            "TriggerTargetArn": {
+              "Ref": "T2"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t3",
+            "TriggerTargetArn": {
+              "Ref": "T3"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t4",
+            "TriggerTargetArn": {
+              "Ref": "T4"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t5",
+            "TriggerTargetArn": {
+              "Ref": "T5"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t6",
+            "TriggerTargetArn": {
+              "Ref": "T6"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t7",
+            "TriggerTargetArn": {
+              "Ref": "T7"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t8",
+            "TriggerTargetArn": {
+              "Ref": "T8"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          },
+          {
+            "TriggerName": "t9",
+            "TriggerTargetArn": {
+              "Ref": "T9"
+            },
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

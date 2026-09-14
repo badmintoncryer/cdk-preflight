@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-trigger-name-and-target-unique
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "Trigger names and trigger target ARNs are each unique within a deployment group"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: a deployment group whose four triggers repeat one name across two topics and one topic across two names -> \"Duplicate Trigger target name detected\" (ROLLBACK_COMPLETE); pass two triggers with their own name and their own topic -> CREATE_COMPLETE. The duplicate-target half is the same rule from the other side and was measured on its own: two triggers with different names on one topic are refused with \"Duplicate Trigger target arn detected\" (probe B1, 2026-09-14 us-east-1). Both fixtures create their topics because CodeDeploy resolves the topic before it compares anything (probe B2)."
+addedOn: 2026-09-14

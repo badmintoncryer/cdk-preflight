@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-termination-wait-max
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "TerminationWaitTimeInMinutes may not exceed 2880 (two days)"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-blueinstanceterminationoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: TerminationWaitTimeInMinutes 2881 -> \"Timeout for instance termination cannot be more than 2 days\" (ROLLBACK_COMPLETE); pass the same group with 2880 -> CREATE_COMPLETE. The cap does not depend on the Action - KEEP_ALIVE with 2881 is refused with the same message (probe C3, 2026-09-14 us-east-1). BlueGreenDeploymentConfiguration is checked whatever the DeploymentStyle says, so neither fixture needs a load balancer or an Auto Scaling group."
+addedOn: 2026-09-14

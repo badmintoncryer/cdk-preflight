@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::Application",
+      "Properties": {
+        "ComputePlatform": "Server"
+      }
+    },
+    "R2": {
+      "Type": "AWS::CodeDeploy::DeploymentGroup",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "R1"
+        },
+        "ServiceRoleArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
+        "Ec2TagFilters": [
+          {
+            "Key": "cdkpf-matches-nothing",
+            "Value": "x",
+            "Type": "KEY_AND_VALUE"
+          }
+        ],
+        "TriggerConfigurations": [
+          {
+            "TriggerName": "t",
+            "TriggerEvents": [
+              "DeploymentSuccess"
+            ],
+            "TriggerTargetArn": {
+              "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:cdkpf-codedeploy-region"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
