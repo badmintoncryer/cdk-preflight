@@ -8737,6 +8737,479 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Matching means Id equality AND effective ReturnData true (default true,\n# bench w04b); w12 proved an Id match with ReturnData false does not count.\n# Only n == 0 fires - the duplicate-match side is unbenched. Queries with\n# unresolvable Id/ReturnData make the count unknowable, so the rule skips.\n_pf_cwtmi_countable(q) if object.get(q, \"ReturnData\", \"__pf_absent\") == \"__pf_absent\"\n\n_pf_cwtmi_countable(q) if is_boolean(object.get(q, \"ReturnData\", null))\n\n_pf_cwtmi_matches(q, tmid) if {\n\tobject.get(q, \"Id\", null) == tmid\n\tobject.get(q, \"ReturnData\", true) == true\n}\n\nviolation contains make_diag_full(\"pf-cloudwatch-threshold-metric-id\", \"ERROR\", name,\n\t\"Properties.ThresholdMetricId\",\n\tsprintf(\"No metric query with Id '%s' returns data; PutMetricAlarm fails with \\\"Metrics list must contain exactly one metric matching the ThresholdMetricId parameter\\\"\", [tmid]),\n\t\"Point ThresholdMetricId at a query whose ReturnData is true\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html\") if {\n\tsome name in resources_of_type(\"AWS::CloudWatch::Alarm\")\n\ttmid := resolve(name, \"Properties.ThresholdMetricId\")\n\tis_string(tmid)\n\titems := [q | some q in flatten_list(name, \"Properties.Metrics\")]\n\tcount(items) > 0\n\tevery q in items {\n\t\tis_object(q.value)\n\t\tis_string(object.get(q.value, \"Id\", null))\n\t\t_pf_cwtmi_countable(q.value)\n\t}\n\tcount([q | some q in items; _pf_cwtmi_matches(q.value, tmid)]) == 0\n}\n"
   },
   {
+    "id": "pf-codebuild-artifacts-encryption-disabled-s3-only",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Artifacts.EncryptionDisabled is only set for S3 artifacts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-artifacts-encryption-disabled-s3-only\", \"ERROR\", name,\n\t\"Properties.Artifacts.EncryptionDisabled\",\n\tsprintf(\"EncryptionDisabled is set on %s artifacts; CreateProject fails with \\\"Invalid artifacts: artifact type %s should have null encryptionDisabled\\\"\", [t, t]),\n\t\"Drop EncryptionDisabled, or publish the artifacts to S3\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ta := _pf_codebuildlib_artifacts(name)\n\t_pf_codebuildlib_true(object.get(a, \"EncryptionDisabled\", null))\n\tt := _pf_codebuildlib_str(a, \"Type\")\n\tt != \"S3\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-artifacts-no-artifacts-no-location",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "NO_ARTIFACTS carries no Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-artifacts-no-artifacts-no-location\", \"ERROR\", name,\n\t\"Properties.Artifacts.Location\",\n\t\"Artifacts.Type is NO_ARTIFACTS but a Location is set; CreateProject fails with \\\"Invalid artifacts: artifact type NO_ARTIFACTS should have null location\\\"\",\n\t\"Drop Artifacts.Location, or set Artifacts.Type to S3\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ta := _pf_codebuildlib_artifacts(name)\n\t_pf_codebuildlib_str(a, \"Type\") == \"NO_ARTIFACTS\"\n\t_pf_codebuildlib_has(a, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-artifacts-s3-location-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "S3 artifacts carry a Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-artifacts-s3-location-required\", \"ERROR\", name,\n\t\"Properties.Artifacts\",\n\t\"Artifacts.Type is S3 but no Location is set; CreateProject fails with \\\"Invalid artifacts: location is required\\\"\",\n\t\"Set Artifacts.Location to the output bucket\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ta := _pf_codebuildlib_artifacts(name)\n\t_pf_codebuildlib_str(a, \"Type\") == \"S3\"\n\tnot _pf_codebuildlib_has(a, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-badge-not-supported-for-s3-source",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Build badges are not enabled on an S3 or source-less project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbbadge_unsupported := {\"S3\": \"Build badges are not supported for S3 source\", \"NO_SOURCE\": \"Build badges are not supported for projects with no source\"}\n\nviolation contains make_diag_full(\"pf-codebuild-badge-not-supported-for-s3-source\", \"ERROR\", name,\n\t\"Properties.BadgeEnabled\",\n\tsprintf(\"BadgeEnabled is true on a %s source; CreateProject fails with \\\"%s\\\"\", [t, _pf_cbbadge_unsupported[t]]),\n\t\"Drop BadgeEnabled, or build from a source provider that serves badges\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_true(object.get(_pf_codebuildlib_props(name), \"BadgeEnabled\", null))\n\tt := _pf_codebuildlib_source_type(name)\n\t_pf_cbbadge_unsupported[t]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-badge-not-with-codepipeline-source",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Build badges are not enabled on a CODEPIPELINE project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-badge-not-with-codepipeline-source\", \"ERROR\", name,\n\t\"Properties.BadgeEnabled\",\n\t\"BadgeEnabled is true on a CODEPIPELINE source; CreateProject fails with \\\"Build badges are not supported for CodePipeline source\\\"\",\n\t\"Drop BadgeEnabled from the project CodePipeline drives\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_true(object.get(_pf_codebuildlib_props(name), \"BadgeEnabled\", null))\n\t_pf_codebuildlib_source_type(name) == \"CODEPIPELINE\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-build-batch-timeout-range",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The batch build timeout stays between 5 and 2160 minutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbbtr_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectbuildbatchconfig.html\"\n\n_pf_cbbtr_mins(name) := n if n := _pf_codebuildlib_num(object.get(_pf_codebuildlib_batch(name), \"TimeoutInMins\", null))\n\nviolation contains make_diag_full(\"pf-codebuild-build-batch-timeout-range\", \"ERROR\", name,\n\t\"Properties.BuildBatchConfig.TimeoutInMins\",\n\tsprintf(\"TimeoutInMins is %v; CreateProject fails with \\\"TimeoutInMins must be between 5 and 2160\\\"\", [n]),\n\t\"Use a batch timeout between 5 and 2160 minutes\", _pf_cbbtr_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := _pf_cbbtr_mins(name)\n\tn < 5\n}\n\nviolation contains make_diag_full(\"pf-codebuild-build-batch-timeout-range\", \"ERROR\", name,\n\t\"Properties.BuildBatchConfig.TimeoutInMins\",\n\tsprintf(\"TimeoutInMins is %v; CreateProject fails with \\\"TimeoutInMins must be between 5 and 2160\\\"\", [n]),\n\t\"Use a batch timeout between 5 and 2160 minutes\", _pf_cbbtr_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := _pf_cbbtr_mins(name)\n\tn > 2160\n}\n"
+  },
+  {
+    "id": "pf-codebuild-cache-docker-layer-linux-only",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "PrivilegedMode is not set on a Windows environment",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-cache-docker-layer-linux-only\", \"ERROR\", name,\n\t\"Properties.Environment.PrivilegedMode\",\n\tsprintf(\"PrivilegedMode is true on %s; CreateProject fails with \\\"PrivilegedMode is not supported for %s projects\\\". The Docker daemon (and so LOCAL_DOCKER_LAYER_CACHE) is only available in a Linux environment\", [t, t]),\n\t\"Drop PrivilegedMode, or run the build in a Linux environment\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\te := _pf_codebuildlib_env(name)\n\t_pf_codebuildlib_true(object.get(e, \"PrivilegedMode\", null))\n\tt := _pf_codebuildlib_str(e, \"Type\")\n\tstartswith(t, \"WINDOWS_SERVER_\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-cache-local-requires-modes",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A LOCAL cache names its modes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-cache-local-requires-modes\", \"ERROR\", name,\n\t\"Properties.Cache\",\n\t\"Cache.Type is LOCAL but no Modes are listed; CreateProject fails with \\\"At least one mode must be provided for cache type: LOCAL\\\"\",\n\t\"List at least one of LOCAL_SOURCE_CACHE, LOCAL_DOCKER_LAYER_CACHE or LOCAL_CUSTOM_CACHE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectcache.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tc := _pf_codebuildlib_cache(name)\n\t_pf_codebuildlib_str(c, \"Type\") == \"LOCAL\"\n\tobject.get(c, \"Modes\", []) == []\n}\n"
+  },
+  {
+    "id": "pf-codebuild-cache-location-ignored-for-local",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "LOCAL_SOURCE_CACHE goes with a project that has a source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-cache-location-ignored-for-local\", \"ERROR\", name,\n\t\"Properties.Cache.Modes\",\n\t\"LOCAL_SOURCE_CACHE caches the checkout, but Source.Type is NO_SOURCE; CreateProject fails with \\\"Cache mode LOCAL_SOURCE_CACHE is not available for source type NO_SOURCE\\\"\",\n\t\"Drop LOCAL_SOURCE_CACHE, or give the project a source to check out\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectcache.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome m in object.get(_pf_codebuildlib_cache(name), \"Modes\", [])\n\tm == \"LOCAL_SOURCE_CACHE\"\n\t_pf_codebuildlib_source_type(name) == \"NO_SOURCE\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-cache-s3-requires-location",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "An S3 cache names the bucket and prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-cache-s3-requires-location\", \"ERROR\", name,\n\t\"Properties.Cache\",\n\t\"Cache.Type is S3 but no Location is set; CreateProject fails with \\\"Invalid cache: location must be a valid S3 bucket, followed by slash and the prefix\\\"\",\n\t\"Set Cache.Location to bucket/prefix\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectcache.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tc := _pf_codebuildlib_cache(name)\n\t_pf_codebuildlib_str(c, \"Type\") == \"S3\"\n\tnot _pf_codebuildlib_has(c, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-compute-type-environment-type",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The Lambda compute types go with a Lambda environment type",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbcte_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html\"\n\n_pf_cbcte_lambda_env := {\"LINUX_LAMBDA_CONTAINER\", \"ARM_LAMBDA_CONTAINER\"}\n\nviolation contains make_diag_full(\"pf-codebuild-compute-type-environment-type\", \"ERROR\", name,\n\t\"Properties.Environment.ComputeType\",\n\tsprintf(\"ComputeType %s is a Lambda compute type but Environment.Type is %s; CreateProject fails with \\\"Invalid compute type provided\\\"\", [c, t]),\n\t\"Use a Lambda environment type, or pick a compute type the environment supports\", _pf_cbcte_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tc := _pf_codebuildlib_compute_type(name)\n\tstartswith(c, \"BUILD_LAMBDA_\")\n\tt := _pf_codebuildlib_env_type(name)\n\tnot _pf_cbcte_lambda_env[t]\n}\n\nviolation contains make_diag_full(\"pf-codebuild-compute-type-environment-type\", \"ERROR\", name,\n\t\"Properties.Environment.ComputeType\",\n\tsprintf(\"Environment.Type %s only runs Lambda compute types but ComputeType is %s; CreateProject fails with \\\"Compute type %s is not supported for %s\\\"\", [t, c, c, t]),\n\t\"Use one of the BUILD_LAMBDA_* compute types in a Lambda environment\", _pf_cbcte_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tc := _pf_codebuildlib_compute_type(name)\n\tstartswith(c, \"BUILD_GENERAL1_\")\n\tt := _pf_codebuildlib_env_type(name)\n\t_pf_cbcte_lambda_env[t]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-concurrent-build-limit-range",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The per-project concurrent build limit is at least 1",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-concurrent-build-limit-range\", \"ERROR\", name,\n\t\"Properties.ConcurrentBuildLimit\",\n\tsprintf(\"ConcurrentBuildLimit is %v; CreateProject fails with \\\"Project level concurrent builds limit should be greater than 0\\\"\", [n]),\n\t\"Set ConcurrentBuildLimit to 1 or more, or leave it out to use the account limit\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := _pf_codebuildlib_num(object.get(_pf_codebuildlib_props(name), \"ConcurrentBuildLimit\", null))\n\tn < 1\n}\n"
+  },
+  {
+    "id": "pf-codebuild-curated-image-requires-codebuild-credentials",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A CodeBuild curated image is pulled with CODEBUILD credentials",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-curated-image-requires-codebuild-credentials\", \"ERROR\", name,\n\t\"Properties.Environment.ImagePullCredentialsType\",\n\tsprintf(\"Image %s is a CodeBuild curated image but ImagePullCredentialsType is SERVICE_ROLE; CreateProject fails with \\\"Invalid input: cannot use a CodeBuild curated image with imagePullCredentialsType SERVICE_ROLE\\\"\", [img]),\n\t\"Use ImagePullCredentialsType CODEBUILD for a curated image\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\te := _pf_codebuildlib_env(name)\n\t_pf_codebuildlib_str(e, \"ImagePullCredentialsType\") == \"SERVICE_ROLE\"\n\timg := _pf_codebuildlib_str(e, \"Image\")\n\tstartswith(img, \"aws/codebuild/\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-encryption-key-region",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The build output encryption key lives in the project's Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-encryption-key-region\", \"ERROR\", name,\n\t\"Properties.EncryptionKey\",\n\tsprintf(\"EncryptionKey is a KMS key in %s but the project deploys to %s; CreateProject fails with \\\"Invalid encryption key: region does not match current region\\\"\", [r, data.cdk_preflight.deploy_region]),\n\t\"Reference a KMS key in the deployment Region\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tv := object.get(_pf_codebuildlib_props(name), \"EncryptionKey\", null)\n\t_pf_codebuildlib_arn_service(v) == \"kms\"\n\tr := _pf_codebuildlib_region_mismatch(v)\n}\n"
+  },
+  {
+    "id": "pf-codebuild-environment-variable-name-reserved",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Environment variable names stay off the reserved CODEBUILD_ prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-environment-variable-name-reserved\", \"ERROR\", name,\n\t\"Properties.Environment.EnvironmentVariables\",\n\tsprintf(\"Environment variable %s uses the CODEBUILD_ prefix CodeBuild reserves for the build agent; CreateProject fails with \\\"No user environment variables can start with CODEBUILD_\\\"\", [v]),\n\t\"Rename the variable to something outside the CODEBUILD_ namespace\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.Environment.EnvironmentVariables\")\n\tv := item.value.Name\n\tis_string(v)\n\tstartswith(v, \"CODEBUILD_\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-environment-variable-name-unique",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Environment variable names are unique within a project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Two entries carrying the same Name, found by index so that no count() is\n# involved: the duplicate is a pairing, not a threshold.\nviolation contains make_diag_full(\"pf-codebuild-environment-variable-name-unique\", \"ERROR\", name,\n\t\"Properties.Environment.EnvironmentVariables\",\n\tsprintf(\"Environment variable %s is declared more than once; CreateProject fails with \\\"EnvironmentVariable name cannot be duplicated\\\"\", [v]),\n\t\"Give each environment variable its own name, or keep only one entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tvars := flatten_list(name, \"Properties.Environment.EnvironmentVariables\")\n\tsome a in vars\n\tsome b in vars\n\ta.index < b.index\n\tv := a.value.Name\n\tis_string(v)\n\tb.value.Name == v\n}\n"
+  },
+  {
+    "id": "pf-codebuild-file-system-identifier-charset",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A project that mounts a file system runs in privileged mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-file-system-identifier-charset\", \"ERROR\", name,\n\t\"Properties.Environment.PrivilegedMode\",\n\t\"FileSystemLocations mounts a file system into the build container, which needs the privileged Docker daemon; CreateProject fails with \\\"Privileged Mode has to be set for projects with File System Locations\\\"\",\n\t\"Set Environment.PrivilegedMode to true, or drop FileSystemLocations\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectfilesystemlocation.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tcount(flatten_list(name, \"Properties.FileSystemLocations\")) > 0\n\te := _pf_codebuildlib_env(name)\n\tnot _pf_codebuildlib_true(object.get(e, \"PrivilegedMode\", null))\n}\n"
+  },
+  {
+    "id": "pf-codebuild-file-system-location-format",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "An EFS mount location names the file system and the directory",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-file-system-location-format\", \"ERROR\", name,\n\t\"Properties.FileSystemLocations\",\n\tsprintf(\"FileSystemLocations Location %s carries no directory; CreateProject fails with \\\"File System Location is invalid, should be in the form 'FileSystemDNS':'FileSystemDirectory'\\\"\", [loc]),\n\t\"Write the location as the EFS DNS name, a colon, and the directory (e.g. fs-0123.efs.us-east-1.amazonaws.com:/)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectfilesystemlocation.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.FileSystemLocations\")\n\tloc := item.value.Location\n\tis_string(loc)\n\tnot contains(loc, \":\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-git-submodules-config-git-sources-only",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Git submodules are only configured on a git-backed source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbgsm_unsupported := {\"S3\": \"S3\", \"CODEPIPELINE\": \"CodePipeline\"}\n\nviolation contains make_diag_full(\"pf-codebuild-git-submodules-config-git-sources-only\", \"ERROR\", name,\n\t\"Properties.Source.GitSubmodulesConfig\",\n\tsprintf(\"GitSubmodulesConfig is set on a %s source, which is not a git checkout; CreateProject fails with \\\"Git submodules config is not supported for %s source\\\"\", [t, _pf_cbgsm_unsupported[t]]),\n\t\"Drop GitSubmodulesConfig, or build from a git-backed source\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_has(_pf_codebuildlib_source(name), \"GitSubmodulesConfig\")\n\tt := _pf_codebuildlib_source_type(name)\n\t_pf_cbgsm_unsupported[t]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-lambda-compute-no-privileged-mode",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "PrivilegedMode is not set on the Lambda compute mode",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-lambda-compute-no-privileged-mode\", \"ERROR\", name,\n\t\"Properties.Environment.PrivilegedMode\",\n\tsprintf(\"PrivilegedMode is true on %s; the Lambda compute mode has no Docker daemon and CreateProject fails with \\\"Cannot specify privilegedMode for lambda compute\\\"\", [t]),\n\t\"Drop PrivilegedMode, or run the build on a container compute type\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\te := _pf_codebuildlib_env(name)\n\t_pf_codebuildlib_true(object.get(e, \"PrivilegedMode\", null))\n\tt := _pf_codebuildlib_str(e, \"Type\")\n\tendswith(t, \"_LAMBDA_CONTAINER\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-logs-s3-requires-location",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Enabled S3 build logs name the bucket and prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-logs-s3-requires-location\", \"ERROR\", name,\n\t\"Properties.LogsConfig.S3Logs\",\n\t\"S3Logs.Status is ENABLED but no Location is set; CreateProject fails with \\\"Invalid logsConfig: s3Logs location must be provided if status is 'ENABLED'\\\"\",\n\t\"Set S3Logs.Location to bucket/prefix, or leave S3Logs.Status at DISABLED\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-s3logsconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ts3 := _pf_codebuildlib_obj(_pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"LogsConfig\"), \"S3Logs\")\n\t_pf_codebuildlib_str(s3, \"Status\") == \"ENABLED\"\n\tnot _pf_codebuildlib_has(s3, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-project-description-length",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The project description stays within 255 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-project-description-length\", \"ERROR\", name,\n\t\"Properties.Description\",\n\tsprintf(\"Description is %d characters; CreateProject fails with \\\"Max description length is 255\\\"\", [count(d)]),\n\t\"Shorten the description to 255 characters or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\td := object.get(_pf_codebuildlib_props(name), \"Description\", null)\n\t_pf_codebuildlib_lit(d)\n\tcount(d) > 255\n}\n"
+  },
+  {
+    "id": "pf-codebuild-project-name-length",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The project name stays within 150 characters",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-project-name-length\", \"ERROR\", name,\n\t\"Properties.Name\",\n\tsprintf(\"Name is %d characters; CreateProject fails with \\\"Project name length cannot be greater than 150 characters\\\"\", [count(n)]),\n\t\"Shorten the project name to 150 characters or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := object.get(_pf_codebuildlib_props(name), \"Name\", null)\n\t_pf_codebuildlib_lit(n)\n\tcount(n) > 150\n}\n"
+  },
+  {
+    "id": "pf-codebuild-report-build-status-provider",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "ReportBuildStatus is only set on a source provider that reports status",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbrbs_unsupported := {\"S3\", \"NO_SOURCE\", \"CODEPIPELINE\", \"CODECOMMIT\"}\n\nviolation contains make_diag_full(\"pf-codebuild-report-build-status-provider\", \"ERROR\", name,\n\t\"Properties.Source.ReportBuildStatus\",\n\tsprintf(\"ReportBuildStatus is set on a %s source; only GitHub, GitHub Enterprise, GitLab and Bitbucket take build status back, and CreateProject fails with \\\"Source type %s does not support ReportBuildStatus\\\" even when the value is false\", [t, t]),\n\t\"Drop ReportBuildStatus, or build from GitHub, GitHub Enterprise, GitLab or Bitbucket\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ts := _pf_codebuildlib_source(name)\n\t_pf_codebuildlib_has(s, \"ReportBuildStatus\")\n\tt := _pf_codebuildlib_source_type(name)\n\tt in _pf_cbrbs_unsupported\n}\n"
+  },
+  {
+    "id": "pf-codebuild-reportgroup-no-export-forbids-destination",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A NO_EXPORT report group carries no S3 destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::ReportGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-reportgroup-no-export-forbids-destination\", \"ERROR\", name,\n\t\"Properties.ExportConfig.S3Destination\",\n\t\"ExportConfigType is NO_EXPORT but an S3Destination is set; CreateReportGroup fails with \\\"S3 export config should not be specified when export config type is NO_EXPORT\\\"\",\n\t\"Drop S3Destination, or set ExportConfigType to S3\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-reportgroup-reportexportconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::ReportGroup\")\n\tec := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"ExportConfig\")\n\t_pf_codebuildlib_str(ec, \"ExportConfigType\") == \"NO_EXPORT\"\n\t_pf_codebuildlib_has(ec, \"S3Destination\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-reportgroup-s3-export-requires-destination",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "An S3 report group names its destination",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::ReportGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-reportgroup-s3-export-requires-destination\", \"ERROR\", name,\n\t\"Properties.ExportConfig\",\n\t\"ExportConfigType is S3 but no S3Destination is set; CreateReportGroup fails with \\\"S3 export config is required when export config type is S3\\\"\",\n\t\"Set ExportConfig.S3Destination to the bucket the reports are exported to\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-reportgroup-reportexportconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::ReportGroup\")\n\tec := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"ExportConfig\")\n\t_pf_codebuildlib_str(ec, \"ExportConfigType\") == \"S3\"\n\tnot _pf_codebuildlib_has(ec, \"S3Destination\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifact-identifier-unique",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Secondary artifact identifiers are unique within a project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A pairing, not a threshold: count() would force the pass fixture down to a\n# single entry, which proves nothing about the duplicate.\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifact-identifier-unique\", \"ERROR\", name,\n\t\"Properties.SecondaryArtifacts\",\n\tsprintf(\"ArtifactIdentifier %s is used by more than one secondary artifact; CreateProject fails with \\\"Invalid input: artifactIdentifier cannot be duplicated\\\"\", [v]),\n\t\"Give each SecondaryArtifacts entry its own ArtifactIdentifier\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\titems := flatten_list(name, \"Properties.SecondaryArtifacts\")\n\tsome a in items\n\tsome b in items\n\ta.index < b.index\n\tv := a.value.ArtifactIdentifier\n\tis_string(v)\n\tb.value.ArtifactIdentifier == v\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifacts-identifier-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every secondary artifact carries an ArtifactIdentifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifacts-identifier-required\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondaryArtifacts[%d]\", [item.index]),\n\t\"A secondary artifact has no ArtifactIdentifier; CreateProject fails with \\\"Invalid input: artifactIdentifier is required for secondary artifacts\\\"\",\n\t\"Set ArtifactIdentifier on the entry; the buildspec names the artifact by it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondaryArtifacts\")\n\tnot _pf_codebuildlib_has(item.value, \"ArtifactIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifacts-max-12",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A project declares at most 12 secondary artifacts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifacts-max-12\", \"ERROR\", name,\n\t\"Properties.SecondaryArtifacts\",\n\tsprintf(\"%d secondary artifacts are declared; CreateProject fails with \\\"Invalid input: the maximum number of artifact definitions in secondaryArtifacts is 12\\\"\", [n]),\n\t\"Keep SecondaryArtifacts to 12 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.SecondaryArtifacts\"))\n\tn > 12\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-artifacts-no-codepipeline",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Secondary artifacts publish to S3",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Measured deny-list rather than \"anything but S3\": these are the two types the\n# service names, and the message quotes the type back.\n_pf_cbsano_denied := {\"CODEPIPELINE\": true, \"NO_ARTIFACTS\": true}\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-artifacts-no-codepipeline\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondaryArtifacts[%d].Type\", [item.index]),\n\tsprintf(\"A secondary artifact has Type %s; CreateProject fails with \\\"Invalid input: artifactType %s is not allowed for secondaryArtifacts\\\"\", [t, t]),\n\t\"Publish secondary artifacts to S3, or drop the entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondaryArtifacts\")\n\tt := item.value.Type\n\t_pf_cbsano_denied[t]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-source-identifier-unique",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Secondary source identifiers are unique within a project",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-source-identifier-unique\", \"ERROR\", name,\n\t\"Properties.SecondarySources\",\n\tsprintf(\"SourceIdentifier %s is used by more than one secondary source; CreateProject fails with \\\"Invalid input: sourceIdentifier cannot be duplicated\\\"\", [v]),\n\t\"Give each SecondarySources entry its own SourceIdentifier\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\titems := flatten_list(name, \"Properties.SecondarySources\")\n\tsome a in items\n\tsome b in items\n\ta.index < b.index\n\tv := a.value.SourceIdentifier\n\tis_string(v)\n\tb.value.SourceIdentifier == v\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-sources-identifier-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every secondary source carries a SourceIdentifier",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-sources-identifier-required\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondarySources[%d]\", [item.index]),\n\t\"A secondary source has no SourceIdentifier; CreateProject fails with \\\"Invalid input: sourceIdentifier is required for secondary sources\\\"\",\n\t\"Set SourceIdentifier on the entry; the buildspec and SecondarySourceVersions name the source by it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondarySources\")\n\tnot _pf_codebuildlib_has(item.value, \"SourceIdentifier\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-secondary-sources-max-12",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A project declares at most 12 secondary sources",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-secondary-sources-max-12\", \"ERROR\", name,\n\t\"Properties.SecondarySources\",\n\tsprintf(\"%d secondary sources are declared; CreateProject fails with \\\"Invalid input: the maximum number of secondary sources is 12\\\"\", [n]),\n\t\"Keep SecondarySources to 12 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.SecondarySources\"))\n\tn > 12\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-codepipeline-requires-artifacts-codepipeline",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "The CODEPIPELINE source and artifact types are set together",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbcpp_url := \"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\"\n\n_pf_cbcpp_msg := \"CreateProject fails with \\\"Invalid input: when using CodePipeline both sourceType, and artifactType must be set to: CODEPIPELINE\\\"\"\n\nviolation contains make_diag_full(\"pf-codebuild-source-codepipeline-requires-artifacts-codepipeline\", \"ERROR\", name,\n\t\"Properties.Artifacts.Type\",\n\tsprintf(\"Source.Type is CODEPIPELINE but Artifacts.Type is %s; %s\", [a, _pf_cbcpp_msg]),\n\t\"Set Artifacts.Type to CODEPIPELINE as well\", _pf_cbcpp_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_source_type(name) == \"CODEPIPELINE\"\n\ta := _pf_codebuildlib_artifacts_type(name)\n\ta != \"CODEPIPELINE\"\n}\n\nviolation contains make_diag_full(\"pf-codebuild-source-codepipeline-requires-artifacts-codepipeline\", \"ERROR\", name,\n\t\"Properties.Source.Type\",\n\tsprintf(\"Artifacts.Type is CODEPIPELINE but Source.Type is %s; %s\", [s, _pf_cbcpp_msg]),\n\t\"Set Source.Type to CODEPIPELINE as well\", _pf_cbcpp_url) if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\t_pf_codebuildlib_artifacts_type(name) == \"CODEPIPELINE\"\n\ts := _pf_codebuildlib_source_type(name)\n\ts != \"CODEPIPELINE\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-location-required",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every source that lives outside CodeBuild carries a Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The same check runs over Source and every SecondarySources entry: both come\n# back with the bare \"Project source location is required\".\n_pf_cbsrcloc_no_location := {\"CODEPIPELINE\": true, \"NO_SOURCE\": true}\n\nviolation contains make_diag_full(\"pf-codebuild-source-location-required\", \"ERROR\", name,\n\t\"Properties.Source.Location\",\n\tsprintf(\"Source.Type is %s but no Location is set; CreateProject fails with \\\"Project source location is required\\\"\", [t]),\n\t\"Set Source.Location to the repository or bucket the build reads\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ts := _pf_codebuildlib_source(name)\n\tt := _pf_codebuildlib_str(s, \"Type\")\n\tnot _pf_cbsrcloc_no_location[t]\n\tnot _pf_codebuildlib_has(s, \"Location\")\n}\n\nviolation contains make_diag_full(\"pf-codebuild-source-location-required\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondarySources[%d].Location\", [item.index]),\n\tsprintf(\"A secondary source has Type %s but no Location; CreateProject fails with \\\"Project source location is required\\\"\", [t]),\n\t\"Set Location on the SecondarySources entry\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondarySources\")\n\tt := item.value.Type\n\tis_string(t)\n\tnot _pf_cbsrcloc_no_location[t]\n\tnot _pf_codebuildlib_has(item.value, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-no-source-no-location",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A NO_SOURCE project carries no Source.Location",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-source-no-source-no-location\", \"ERROR\", name,\n\t\"Properties.Source.Location\",\n\t\"Source.Type is NO_SOURCE but a Location is set; CreateProject fails with \\\"Invalid input: source location must be empty for source type NO_SOURCE\\\"\",\n\t\"Drop Source.Location, or name the source type the location belongs to\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\ts := _pf_codebuildlib_source(name)\n\t_pf_codebuildlib_str(s, \"Type\") == \"NO_SOURCE\"\n\t_pf_codebuildlib_has(s, \"Location\")\n}\n"
+  },
+  {
+    "id": "pf-codebuild-source-version-identifier-must-match-source",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "Every SecondarySourceVersions entry names a declared secondary source",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only SecondarySources count: pointing the entry at the primary Source's own\n# SourceIdentifier is rejected the same way.\nviolation contains make_diag_full(\"pf-codebuild-source-version-identifier-must-match-source\", \"ERROR\", name,\n\tsprintf(\"Properties.SecondarySourceVersions[%d].SourceIdentifier\", [item.index]),\n\tsprintf(\"SecondarySourceVersions names %s, which no SecondarySources entry declares; CreateProject fails with \\\"Invalid input: secondary source identifier does not exist\\\"\", [id]),\n\t\"Point the entry at a SecondarySources SourceIdentifier, or drop it\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectsourceversion.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tsome item in flatten_list(name, \"Properties.SecondarySourceVersions\")\n\tid := item.value.SourceIdentifier\n\tis_string(id)\n\tdeclared := {i |\n\t\tsome s in flatten_list(name, \"Properties.SecondarySources\")\n\t\ti := s.value.SourceIdentifier\n\t}\n\tnot declared[id]\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-basic-auth-bitbucket-only",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "BASIC_AUTH source credentials are imported for Bitbucket only",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-basic-auth-bitbucket-only\", \"ERROR\", name,\n\t\"Properties.AuthType\",\n\tsprintf(\"AuthType is BASIC_AUTH on a %s credential; ImportSourceCredentials fails with \\\"Invalid AuthType provided for ServerType %s\\\"\", [st, st]),\n\t\"Use PERSONAL_ACCESS_TOKEN, CODECONNECTIONS or SECRETS_MANAGER for this provider\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\tp := _pf_codebuildlib_props(name)\n\t_pf_codebuildlib_str(p, \"AuthType\") == \"BASIC_AUTH\"\n\tst := _pf_codebuildlib_str(p, \"ServerType\")\n\tst != \"BITBUCKET\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-codeconnections-arn",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "A CODECONNECTIONS credential carries a connection ARN as its Token",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cbccarn_services := {\"codeconnections\": true, \"codestar-connections\": true}\n\n_pf_cbccarn_connection(v) if _pf_cbccarn_services[_pf_codebuildlib_arn_service(v)]\n\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-codeconnections-arn\", \"ERROR\", name,\n\t\"Properties.Token\",\n\t\"AuthType is CODECONNECTIONS but Token is not a connection ARN; ImportSourceCredentials fails with \\\"Token must be a valid CodeConnections arn\\\"\",\n\t\"Set Token to the arn:aws:codeconnections:...:connection/... of the connection\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\tp := _pf_codebuildlib_props(name)\n\t_pf_codebuildlib_str(p, \"AuthType\") == \"CODECONNECTIONS\"\n\ttok := _pf_codebuildlib_str(p, \"Token\")\n\tnot _pf_cbccarn_connection(tok)\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-oauth-not-supported",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "OAUTH source credentials are not imported through CloudFormation",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-oauth-not-supported\", \"ERROR\", name,\n\t\"Properties.AuthType\",\n\t\"AuthType is OAUTH; ImportSourceCredentials fails with \\\"OAUTH is not supported by the CodeBuild API. To connect to your account with OAUTH, use the AWS CodeBuild console.\\\"\",\n\t\"Connect the provider with OAUTH in the CodeBuild console, or import a PERSONAL_ACCESS_TOKEN credential instead\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\t_pf_codebuildlib_str(_pf_codebuildlib_props(name), \"AuthType\") == \"OAUTH\"\n}\n"
+  },
+  {
+    "id": "pf-codebuild-sourcecredential-one-per-server-type",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "One source credential per server type per Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::SourceCredential"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Also a pairing rather than a threshold: two resources naming the same\n# ServerType, found by logical id so the pair is reported once.\nviolation contains make_diag_full(\"pf-codebuild-sourcecredential-one-per-server-type\", \"ERROR\", b,\n\t\"Properties.ServerType\",\n\tsprintf(\"%s already imports a %s credential, and CodeBuild keeps one per server type per Region; the stack fails with \\\"Access token with server type %s already exists. Delete its source credential and try again.\\\"\", [a, st, st]),\n\t\"Keep one SourceCredential per server type, or split them across Regions\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html\") if {\n\tsome a in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\tsome b in resources_of_type(\"AWS::CodeBuild::SourceCredential\")\n\ta < b\n\tst := _pf_codebuildlib_str(_pf_codebuildlib_props(a), \"ServerType\")\n\t_pf_codebuildlib_str(_pf_codebuildlib_props(b), \"ServerType\") == st\n}\n"
+  },
+  {
+    "id": "pf-codebuild-vpc-security-groups-max-5",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "VpcConfig names at most 5 security groups",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-vpc-security-groups-max-5\", \"ERROR\", name,\n\t\"Properties.VpcConfig.SecurityGroupIds\",\n\tsprintf(\"%d security groups are named; CreateProject fails with \\\"Invalid vpc config: the maximum number of security groups is 5\\\"\", [n]),\n\t\"Keep VpcConfig.SecurityGroupIds to 5 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.VpcConfig.SecurityGroupIds\"))\n\tn > 5\n}\n"
+  },
+  {
+    "id": "pf-codebuild-vpc-subnets-max-16",
+    "service": "codebuild",
+    "severity": "ERROR",
+    "title": "VpcConfig names at most 16 subnets",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeBuild::Project"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codebuild-vpc-subnets-max-16\", \"ERROR\", name,\n\t\"Properties.VpcConfig.Subnets\",\n\tsprintf(\"%d subnets are named; CreateProject fails with \\\"Invalid vpc config: the maximum number of subnets is 16\\\"\", [n]),\n\t\"Keep VpcConfig.Subnets to 16 entries or fewer\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeBuild::Project\")\n\tn := count(flatten_list(name, \"Properties.VpcConfig.Subnets\"))\n\tn > 16\n}\n"
+  },
+  {
     "id": "pf-codecommit-code-branch-name-valid",
     "service": "codecommit",
     "severity": "ERROR",
@@ -26739,6 +27212,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/cloudwatch",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CloudWatch rules.\n\n# True absence needs the preprocessed document (see AGENTS.md); resolve() is\n# undefined for a missing key, so \"resolve(...) != x\" never fires on one.\n_pf_cwlib_absent(name, key) if {\n\tprops := input.resources[name].properties\n\tis_object(props)\n\tobject.get(props, key, \"__pf_absent\") == \"__pf_absent\"\n}\n\n# The statistic grammar CloudWatch accepts wherever a statistic is a string:\n# MetricStat.Stat, a dashboard widget's \"stat\", PutAnomalyDetector's Stat and\n# a metric stream's AdditionalStatistics. Percentiles stop at 100, which is\n# why the numeric part is spelled out instead of [0-9.]+ (p101 is rejected by\n# the service with \"Unsupported statistic p101\").\n# ponytail: the trimmed-mean interval forms (TM(10%:90%)) are matched loosely;\n# a malformed interval passes the rule and is caught by the service.\n_pf_cwlib_stat_re := `^(SampleCount|Average|Sum|Minimum|Maximum|IQM|[pP](100|[0-9]{1,2}(\\.[0-9]{1,2})?)|(TM|TC|TS|WM|tm|tc|ts|wm)((100|[0-9]{1,2}(\\.[0-9]{1,2})?)%?|\\([0-9.%:]*\\))|PR\\([0-9.:]*\\))$`\n\n_pf_cwlib_stat_ok(s) if regex.match(_pf_cwlib_stat_re, s)\n\n# DashboardBody is an opaque JSON string; every dashboard rule reads it here.\n_pf_cwlib_widgets(name) := ws if {\n\tbody := resolve(name, \"Properties.DashboardBody\")\n\tis_string(body)\n\tjson.is_valid(body)\n\tobj := json.unmarshal(body)\n\tis_object(obj)\n\tws := object.get(obj, \"widgets\", [])\n\tis_array(ws)\n}\n\n_pf_cwlib_wprops(w) := p if {\n\tis_object(w)\n\tp := object.get(w, \"properties\", null)\n\tis_object(p)\n}\n\n_pf_cwlib_wtype(w, t) if {\n\tis_object(w)\n\tobject.get(w, \"type\", null) == t\n}\n\n# InsightRule RuleBody is the other opaque JSON DSL on this service.\n_pf_cwlib_rulebody(name) := obj if {\n\tb := resolve(name, \"Properties.RuleBody\")\n\tis_string(b)\n\tjson.is_valid(b)\n\tobj := json.unmarshal(b)\n\tis_object(obj)\n}\n\n# The three alarm action lists, shared by the action rules.\n_pf_cwlib_action_keys := {\"AlarmActions\", \"OKActions\", \"InsufficientDataActions\"}\n\n# Metric queries of one kind (MetricStat / Expression) on an alarm.\n_pf_cwlib_queries(name, key) := qs if {\n\tqs := [q |\n\t\tsome item in flatten_list(name, \"Properties.Metrics\")\n\t\tq := item.value\n\t\tis_object(q)\n\t\tobject.get(q, key, null) != null\n\t]\n}\n\n# A literal ARN split into its six-plus segments. Refs and GetAtts resolve to a\n# logical id, which has no \"arn:\" prefix, so they skip.\n_pf_cwlib_arn(v) := parts if {\n\tis_string(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n"
+  },
+  {
+    "name": "_lib/codebuild",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeBuild rules. The raw (preprocessed) document is the\n# only place where \"the key is absent\" can be told apart from \"the value is a\n# token\", and most of these rules turn on absence, so every accessor here reads\n# input.resources[...].properties rather than resolve().\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_codebuildlib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n_pf_codebuildlib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_codebuildlib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n_pf_codebuildlib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n# A literal string member of a block; undefined for tokens and non-strings.\n_pf_codebuildlib_str(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\t_pf_codebuildlib_lit(v)\n}\n\n# CloudFormation accepts both the JSON boolean and the string, and templates\n# synthesized from YAML carry either, so \"== true\" alone misses half the cases.\n_pf_codebuildlib_true(v) if v == true\n\n_pf_codebuildlib_true(v) if {\n\tis_string(v)\n\tlower(v) == \"true\"\n}\n\n# to_number(null) is 0 in the engine's Rego build, so the value has to be\n# narrowed to a number or a numeric string first.\n_pf_codebuildlib_num(v) := v if is_number(v)\n\n_pf_codebuildlib_num(v) := n if {\n\tis_string(v)\n\tn := to_number(v)\n}\n\n# ---- the four blocks every CodeBuild rule reads -----------------------------\n\n_pf_codebuildlib_env(name) := e if e := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Environment\")\n\n_pf_codebuildlib_source(name) := s if s := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Source\")\n\n_pf_codebuildlib_artifacts(name) := a if a := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Artifacts\")\n\n_pf_codebuildlib_cache(name) := c if c := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"Cache\")\n\n_pf_codebuildlib_batch(name) := b if b := _pf_codebuildlib_obj(_pf_codebuildlib_props(name), \"BuildBatchConfig\")\n\n_pf_codebuildlib_env_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_env(name), \"Type\")\n\n_pf_codebuildlib_compute_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_env(name), \"ComputeType\")\n\n_pf_codebuildlib_source_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_source(name), \"Type\")\n\n_pf_codebuildlib_artifacts_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_artifacts(name), \"Type\")\n\n_pf_codebuildlib_cache_type(name) := t if t := _pf_codebuildlib_str(_pf_codebuildlib_cache(name), \"Type\")\n\n# ---- ARNs ------------------------------------------------------------------\n\n_pf_codebuildlib_arn_part(v, i) := p if {\n\t_pf_codebuildlib_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) > 5\n\tp := parts[i]\n\tp != \"\"\n}\n\n_pf_codebuildlib_arn_service(v) := s if s := _pf_codebuildlib_arn_part(v, 2)\n\n_pf_codebuildlib_arn_region(v) := r if r := _pf_codebuildlib_arn_part(v, 3)\n\n# The ARN's own region, but only when it differs from the deployment region.\n_pf_codebuildlib_region_mismatch(v) := r if {\n\tr := _pf_codebuildlib_arn_region(v)\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tr != region\n}\n"
   },
   {
     "name": "_lib/codecommit",

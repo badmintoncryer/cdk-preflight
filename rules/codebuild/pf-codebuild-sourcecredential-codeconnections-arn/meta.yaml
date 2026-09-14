@@ -1,0 +1,12 @@
+id: pf-codebuild-sourcecredential-codeconnections-arn
+service: codebuild
+resourceTypes: [AWS::CodeBuild::SourceCredential]
+benchRegion: us-east-1
+severity: ERROR
+title: A CODECONNECTIONS credential carries a connection ARN as its Token
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (AuthType CODECONNECTIONS with Token \"cdkpf-not-a-connection-arn\") -> \"Token must be a valid CodeConnections arn\" (ROLLBACK_COMPLETE); pass template (the same credential with Token arn:aws:codeconnections:us-east-1:214794239830:connection/11111111-2222-3333-4444-555555555555) -> CREATE_COMPLETE. The check is purely syntactic - that connection does not exist, and an arn:aws:codestar-connections:...:connection/... is taken too, while arn:aws:s3:::... and arn:aws:codebuild:...:project/... are rejected - so the rule only asks that the ARN name a connections service."
+addedOn: 2026-09-14

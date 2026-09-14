@@ -1,0 +1,12 @@
+id: pf-codebuild-file-system-location-format
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: An EFS mount location names the file system and the directory
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectfilesystemlocation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (FileSystemLocations Location fs-01234567.efs.us-east-1.amazonaws.com, no colon, with PrivilegedMode true) -> \"Invalid Input: File System Location is invalid, should be in the form 'FileSystemDNS':'FileSystemDirectory'\" (ROLLBACK_COMPLETE); pass template (PrivilegedMode true and no FileSystemLocations) -> CREATE_COMPLETE. The format is checked before the PrivilegedMode and VpcConfig requirements, and a fake file system id passes it, so no EFS file system is created. A pass carrying a well-formed location would need VpcConfig as well."
+addedOn: 2026-09-14

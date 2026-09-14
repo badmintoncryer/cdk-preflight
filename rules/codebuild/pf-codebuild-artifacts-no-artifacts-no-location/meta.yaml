@@ -1,0 +1,12 @@
+id: pf-codebuild-artifacts-no-artifacts-no-location
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: NO_ARTIFACTS carries no Location
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Artifacts.Type NO_ARTIFACTS with a Location) -> \"Invalid artifacts: artifact type NO_ARTIFACTS should have null location\" (ROLLBACK_COMPLETE); pass template (Artifacts.Type S3 with the same Location) -> CREATE_COMPLETE. CreateProject accepts Artifacts.Type CODEPIPELINE together with a Location, so the rule covers NO_ARTIFACTS only."
+addedOn: 2026-09-14

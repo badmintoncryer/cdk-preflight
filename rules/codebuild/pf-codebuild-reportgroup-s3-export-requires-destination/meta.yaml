@@ -1,0 +1,12 @@
+id: pf-codebuild-reportgroup-s3-export-requires-destination
+service: codebuild
+resourceTypes: [AWS::CodeBuild::ReportGroup]
+benchRegion: us-east-1
+severity: ERROR
+title: An S3 report group names its destination
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-reportgroup-reportexportconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (ReportGroup ExportConfig S3 with no S3Destination) -> \"Failed to call CreateReportGroup, reason: S3 export config is required when export config type is S3\" (ROLLBACK_COMPLETE); pass template (ExportConfigType S3 with S3Destination bucket cdkpf-codesuite-63) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

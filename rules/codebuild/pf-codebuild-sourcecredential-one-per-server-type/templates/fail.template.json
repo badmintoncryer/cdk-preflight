@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::SourceCredential",
+      "Properties": {
+        "ServerType": "GITHUB",
+        "AuthType": "PERSONAL_ACCESS_TOKEN",
+        "Token": "cdkpf-not-a-real-token"
+      }
+    },
+    "Other": {
+      "Type": "AWS::CodeBuild::SourceCredential",
+      "Properties": {
+        "ServerType": "GITHUB",
+        "AuthType": "PERSONAL_ACCESS_TOKEN",
+        "Token": "cdkpf-not-a-real-token-2"
+      }
+    }
+  }
+}

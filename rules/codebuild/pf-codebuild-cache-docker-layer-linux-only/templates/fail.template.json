@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::Project",
+      "Properties": {
+        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "Source": {
+          "Type": "NO_SOURCE",
+          "BuildSpec": "version: 0.2\nphases:\n  build:\n    commands:\n      - echo hi\n"
+        },
+        "Artifacts": {
+          "Type": "NO_ARTIFACTS"
+        },
+        "Environment": {
+          "Type": "WINDOWS_SERVER_2022_CONTAINER",
+          "ComputeType": "BUILD_GENERAL1_MEDIUM",
+          "Image": "aws/codebuild/windows-base:2022-1.0",
+          "PrivilegedMode": true
+        }
+      }
+    },
+    "Other": {
+      "Type": "AWS::CodeBuild::Project",
+      "Properties": {
+        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "Source": {
+          "Type": "NO_SOURCE",
+          "BuildSpec": "version: 0.2\nphases:\n  build:\n    commands:\n      - echo hi\n"
+        },
+        "Artifacts": {
+          "Type": "NO_ARTIFACTS"
+        },
+        "Environment": {
+          "Type": "WINDOWS_SERVER_2019_CONTAINER",
+          "ComputeType": "BUILD_GENERAL1_MEDIUM",
+          "Image": "aws/codebuild/windows-base:2019-3.0",
+          "PrivilegedMode": true
+        }
+      }
+    }
+  }
+}

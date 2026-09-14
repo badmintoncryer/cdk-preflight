@@ -1,0 +1,12 @@
+id: pf-codebuild-reportgroup-no-export-forbids-destination
+service: codebuild
+resourceTypes: [AWS::CodeBuild::ReportGroup]
+benchRegion: us-east-1
+severity: ERROR
+title: A NO_EXPORT report group carries no S3 destination
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-reportgroup-reportexportconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (ReportGroup ExportConfig NO_EXPORT carrying an S3Destination) -> \"Failed to call CreateReportGroup, reason: S3 export config should not be specified when export config type is NO_EXPORT\" (ROLLBACK_COMPLETE); pass template (NO_EXPORT with no S3Destination) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

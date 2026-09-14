@@ -794,6 +794,49 @@
 | `pf-cloudwatch-metric-stream-role-account` | AWS::CloudWatch::MetricStream | RoleArn must be in the stack's own account | ERROR | none |
 | `pf-cloudwatch-metricstat-stat-syntax` | AWS::CloudWatch::Alarm | MetricStat.Stat must be a CloudWatch statistic | ERROR | none |
 | `pf-cloudwatch-threshold-metric-id` | AWS::CloudWatch::Alarm | ThresholdMetricId must match a metric query that returns data | ERROR | none |
+| `pf-codebuild-artifacts-encryption-disabled-s3-only` | AWS::CodeBuild::Project | Artifacts.EncryptionDisabled is only set for S3 artifacts | ERROR | none |
+| `pf-codebuild-artifacts-no-artifacts-no-location` | AWS::CodeBuild::Project | NO_ARTIFACTS carries no Location | ERROR | none |
+| `pf-codebuild-artifacts-s3-location-required` | AWS::CodeBuild::Project | S3 artifacts carry a Location | ERROR | none |
+| `pf-codebuild-badge-not-supported-for-s3-source` | AWS::CodeBuild::Project | Build badges are not enabled on an S3 or source-less project | ERROR | none |
+| `pf-codebuild-badge-not-with-codepipeline-source` | AWS::CodeBuild::Project | Build badges are not enabled on a CODEPIPELINE project | ERROR | none |
+| `pf-codebuild-build-batch-timeout-range` | AWS::CodeBuild::Project | The batch build timeout stays between 5 and 2160 minutes | ERROR | none |
+| `pf-codebuild-cache-docker-layer-linux-only` | AWS::CodeBuild::Project | PrivilegedMode is not set on a Windows environment | ERROR | none |
+| `pf-codebuild-cache-local-requires-modes` | AWS::CodeBuild::Project | A LOCAL cache names its modes | ERROR | none |
+| `pf-codebuild-cache-location-ignored-for-local` | AWS::CodeBuild::Project | LOCAL_SOURCE_CACHE goes with a project that has a source | ERROR | none |
+| `pf-codebuild-cache-s3-requires-location` | AWS::CodeBuild::Project | An S3 cache names the bucket and prefix | ERROR | none |
+| `pf-codebuild-compute-type-environment-type` | AWS::CodeBuild::Project | The Lambda compute types go with a Lambda environment type | ERROR | none |
+| `pf-codebuild-concurrent-build-limit-range` | AWS::CodeBuild::Project | The per-project concurrent build limit is at least 1 | ERROR | none |
+| `pf-codebuild-curated-image-requires-codebuild-credentials` | AWS::CodeBuild::Project | A CodeBuild curated image is pulled with CODEBUILD credentials | ERROR | none |
+| `pf-codebuild-encryption-key-region` | AWS::CodeBuild::Project | The build output encryption key lives in the project's Region | ERROR | none |
+| `pf-codebuild-environment-variable-name-reserved` | AWS::CodeBuild::Project | Environment variable names stay off the reserved CODEBUILD_ prefix | ERROR | none |
+| `pf-codebuild-environment-variable-name-unique` | AWS::CodeBuild::Project | Environment variable names are unique within a project | ERROR | none |
+| `pf-codebuild-file-system-identifier-charset` | AWS::CodeBuild::Project | A project that mounts a file system runs in privileged mode | ERROR | none |
+| `pf-codebuild-file-system-location-format` | AWS::CodeBuild::Project | An EFS mount location names the file system and the directory | ERROR | none |
+| `pf-codebuild-git-submodules-config-git-sources-only` | AWS::CodeBuild::Project | Git submodules are only configured on a git-backed source | ERROR | none |
+| `pf-codebuild-lambda-compute-no-privileged-mode` | AWS::CodeBuild::Project | PrivilegedMode is not set on the Lambda compute mode | ERROR | none |
+| `pf-codebuild-logs-s3-requires-location` | AWS::CodeBuild::Project | Enabled S3 build logs name the bucket and prefix | ERROR | none |
+| `pf-codebuild-project-description-length` | AWS::CodeBuild::Project | The project description stays within 255 characters | ERROR | none |
+| `pf-codebuild-project-name-length` | AWS::CodeBuild::Project | The project name stays within 150 characters | ERROR | none |
+| `pf-codebuild-report-build-status-provider` | AWS::CodeBuild::Project | ReportBuildStatus is only set on a source provider that reports status | ERROR | none |
+| `pf-codebuild-reportgroup-no-export-forbids-destination` | AWS::CodeBuild::ReportGroup | A NO_EXPORT report group carries no S3 destination | ERROR | none |
+| `pf-codebuild-reportgroup-s3-export-requires-destination` | AWS::CodeBuild::ReportGroup | An S3 report group names its destination | ERROR | none |
+| `pf-codebuild-secondary-artifact-identifier-unique` | AWS::CodeBuild::Project | Secondary artifact identifiers are unique within a project | ERROR | none |
+| `pf-codebuild-secondary-artifacts-identifier-required` | AWS::CodeBuild::Project | Every secondary artifact carries an ArtifactIdentifier | ERROR | none |
+| `pf-codebuild-secondary-artifacts-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary artifacts | ERROR | none |
+| `pf-codebuild-secondary-artifacts-no-codepipeline` | AWS::CodeBuild::Project | Secondary artifacts publish to S3 | ERROR | none |
+| `pf-codebuild-secondary-source-identifier-unique` | AWS::CodeBuild::Project | Secondary source identifiers are unique within a project | ERROR | none |
+| `pf-codebuild-secondary-sources-identifier-required` | AWS::CodeBuild::Project | Every secondary source carries a SourceIdentifier | ERROR | none |
+| `pf-codebuild-secondary-sources-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary sources | ERROR | none |
+| `pf-codebuild-source-codepipeline-requires-artifacts-codepipeline` | AWS::CodeBuild::Project | The CODEPIPELINE source and artifact types are set together | ERROR | none |
+| `pf-codebuild-source-location-required` | AWS::CodeBuild::Project | Every source that lives outside CodeBuild carries a Location | ERROR | none |
+| `pf-codebuild-source-no-source-no-location` | AWS::CodeBuild::Project | A NO_SOURCE project carries no Source.Location | ERROR | none |
+| `pf-codebuild-source-version-identifier-must-match-source` | AWS::CodeBuild::Project | Every SecondarySourceVersions entry names a declared secondary source | ERROR | none |
+| `pf-codebuild-sourcecredential-basic-auth-bitbucket-only` | AWS::CodeBuild::SourceCredential | BASIC_AUTH source credentials are imported for Bitbucket only | ERROR | none |
+| `pf-codebuild-sourcecredential-codeconnections-arn` | AWS::CodeBuild::SourceCredential | A CODECONNECTIONS credential carries a connection ARN as its Token | ERROR | none |
+| `pf-codebuild-sourcecredential-oauth-not-supported` | AWS::CodeBuild::SourceCredential | OAUTH source credentials are not imported through CloudFormation | ERROR | none |
+| `pf-codebuild-sourcecredential-one-per-server-type` | AWS::CodeBuild::SourceCredential | One source credential per server type per Region | ERROR | none |
+| `pf-codebuild-vpc-security-groups-max-5` | AWS::CodeBuild::Project | VpcConfig names at most 5 security groups | ERROR | none |
+| `pf-codebuild-vpc-subnets-max-16` | AWS::CodeBuild::Project | VpcConfig names at most 16 subnets | ERROR | none |
 | `pf-codecommit-code-branch-name-valid` | AWS::CodeCommit::Repository | Code.BranchName must be a valid Git branch name | ERROR | none |
 | `pf-codecommit-kms-key-region` | AWS::CodeCommit::Repository | KmsKeyId must name a KMS key in the repository's Region | ERROR | none |
 | `pf-codecommit-trigger-branch-name-valid` | AWS::CodeCommit::Repository | Trigger branch names must be valid Git branch names | ERROR | none |

@@ -1,0 +1,12 @@
+id: pf-codebuild-badge-not-supported-for-s3-source
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: Build badges are not enabled on an S3 or source-less project
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (BadgeEnabled true on an S3 source and on a NO_SOURCE project) -> \"Build badges are not supported for projects with no source\" (ROLLBACK_COMPLETE; CreateProject answers the S3 half with \"Build badges are not supported for S3 source\"); pass template (BadgeEnabled true on a CODECOMMIT source) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

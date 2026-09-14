@@ -1,0 +1,84 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::Project",
+      "Properties": {
+        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "Source": {
+          "Type": "NO_SOURCE",
+          "BuildSpec": "version: 0.2\nphases:\n  build:\n    commands:\n      - echo hi\n"
+        },
+        "Artifacts": {
+          "Type": "NO_ARTIFACTS"
+        },
+        "Environment": {
+          "Type": "LINUX_CONTAINER",
+          "ComputeType": "BUILD_GENERAL1_SMALL",
+          "Image": "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+        },
+        "SecondarySources": [
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src0.zip",
+            "SourceIdentifier": "s0"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src1.zip",
+            "SourceIdentifier": "s1"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src2.zip",
+            "SourceIdentifier": "s2"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src3.zip",
+            "SourceIdentifier": "s3"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src4.zip",
+            "SourceIdentifier": "s4"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src5.zip",
+            "SourceIdentifier": "s5"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src6.zip",
+            "SourceIdentifier": "s6"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src7.zip",
+            "SourceIdentifier": "s7"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src8.zip",
+            "SourceIdentifier": "s8"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src9.zip",
+            "SourceIdentifier": "s9"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src10.zip",
+            "SourceIdentifier": "s10"
+          },
+          {
+            "Type": "S3",
+            "Location": "cdkpf-codesuite-63/src11.zip",
+            "SourceIdentifier": "s11"
+          }
+        ]
+      }
+    }
+  }
+}

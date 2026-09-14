@@ -1,0 +1,12 @@
+id: pf-codebuild-source-no-source-no-location
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: A NO_SOURCE project carries no Source.Location
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Source.Type NO_SOURCE carrying Location cdkpf-codesuite-63) -> \"Invalid input: source location must be empty for source type NO_SOURCE\" (ROLLBACK_COMPLETE); pass template (NO_SOURCE with no Location) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

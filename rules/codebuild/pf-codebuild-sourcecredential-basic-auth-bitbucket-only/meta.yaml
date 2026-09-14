@@ -1,0 +1,12 @@
+id: pf-codebuild-sourcecredential-basic-auth-bitbucket-only
+service: codebuild
+resourceTypes: [AWS::CodeBuild::SourceCredential]
+benchRegion: us-east-1
+severity: ERROR
+title: BASIC_AUTH source credentials are imported for Bitbucket only
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-sourcecredential.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (ServerType GITHUB with AuthType BASIC_AUTH and a Username) -> \"Invalid AuthType provided for ServerType GITHUB\" (ROLLBACK_COMPLETE); pass template (the same credential on ServerType BITBUCKET) -> CREATE_COMPLETE. ImportSourceCredentials answers GITHUB, GITLAB, GITHUB_ENTERPRISE and GITLAB_SELF_MANAGED the same way, so Bitbucket is the only provider that takes BASIC_AUTH."
+addedOn: 2026-09-14

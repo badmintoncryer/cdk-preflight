@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2394-blue" alt="2394 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2437-blue" alt="2437 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -155,7 +155,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>303 resource types across 48 services</b> — click to expand</summary>
+<summary><b>306 resource types across 49 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -172,6 +172,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **BedrockAgentCore** | `ApiKeyCredentialProvider` (1), `BrowserCustom` (1), `CodeInterpreterCustom` (1), `ConfigurationBundle` (3), `Dataset` (3), `Evaluator` (4), `Gateway` (5), `GatewayRule` (3), `GatewayTarget` (9), `Harness` (2), `HarnessEndpoint` (2), `Memory` (6), `OAuth2CredentialProvider` (3), `OnlineEvaluationConfig` (3), `PaymentCredentialProvider` (1), `PaymentManager` (1), `Policy` (3), `ResourcePolicy` (1), `Runtime` (8), `RuntimeEndpoint` (1) |
 | **CloudFront** | `AnycastIpList` (1), `CachePolicy` (7), `ContinuousDeploymentPolicy` (5), `Distribution` (55), `Function` (4), `KeyGroup` (1), `KeyValueStore` (2), `OriginRequestPolicy` (5), `PublicKey` (1), `RealtimeLogConfig` (3), `ResponseHeadersPolicy` (8), `VpcOrigin` (3) |
 | **CloudWatch** | `Alarm` (21), `AnomalyDetector` (6), `CompositeAlarm` (6), `Dashboard` (14), `InsightRule` (7), `MetricStream` (6) |
+| **CodeBuild** | `Project` (37), `ReportGroup` (2), `SourceCredential` (4) |
 | **CodeCommit** | `Repository` (11) |
 | **CodeDeploy** | `Application` (7), `DeploymentConfig` (12), `DeploymentGroup` (23) |
 | **CodePipeline** | `CustomActionType` (3), `Pipeline` (25), `Webhook` (2) |
