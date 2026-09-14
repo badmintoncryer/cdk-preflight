@@ -21,7 +21,6 @@
 | `pf-apigw-integration-http-uri` | AWS::ApiGateway::Method | An HTTP integration URI is an http(s) URL | ERROR | none |
 | `pf-apigw-integration-request-parameter-value` | AWS::ApiGateway::Method | Static integration request parameters must be single-quoted | ERROR | none |
 | `pf-apigw-integration-response-selection-pattern` | AWS::ApiGateway::Method | SelectionPattern must be a valid regular expression | ERROR | none |
-| `pf-apigw-integration-timeout-range` | AWS::ApiGateway::Method | REST integration timeouts are 50-29000 ms | ERROR | none |
 | `pf-apigw-integration-vpc-link-connection-id` | AWS::ApiGateway::Method | A VPC_LINK integration needs a ConnectionId | ERROR | none |
 | `pf-apigw-method-authorization-scopes-cognito` | AWS::ApiGateway::Method | AuthorizationScopes needs COGNITO_USER_POOLS authorization | ERROR | none |
 | `pf-apigw-method-authorizer-id` | AWS::ApiGateway::Method | CUSTOM and COGNITO_USER_POOLS authorization need AuthorizerId | ERROR | none |
@@ -1881,7 +1880,7 @@
 | `pf-route53-cidr-location-name-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup<br>AWS::Route53::CidrCollection | CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*] | ERROR | none |
 | `pf-route53-cidr-private-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | IP-based routing is not available in a private hosted zone | ERROR | none |
 | `pf-route53-cidr-same-collection-in-group` | AWS::Route53::RecordSetGroup | IP-based record sets sharing a name and type must use one CIDR collection | ERROR | none |
-| `pf-route53-cidrcollection-blocks-max-1000` | AWS::Route53::CidrCollection | A CIDR collection holds at most 1000 CIDR blocks across all locations | ERROR | none |
+| `pf-route53-cidrcollection-blocks-max-1000` | AWS::Route53::CidrCollection | One CIDR collection location holds at most 1000 CIDR blocks | ERROR | none |
 | `pf-route53-cidrcollection-cidr-item-blank` | AWS::Route53::CidrCollection | A CIDR block entry cannot be blank | ERROR | none |
 | `pf-route53-cidrcollection-cidr-item-length` | AWS::Route53::CidrCollection | A CIDR block entry must be 1 to 50 characters | ERROR | none |
 | `pf-route53-cidrcollection-cidrlist-required` | AWS::Route53::CidrCollection | Every location in a CIDR collection needs at least one CIDR block | ERROR | none |
