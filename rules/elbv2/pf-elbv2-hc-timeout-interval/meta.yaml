@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRef
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: interval 5 / timeout 10 (e01) -> \"Health check timeout '10' must be smaller than the interval '5'\"; interval 10 / timeout 10 (e01b) -> same error - equality is also rejected, so the rule fires on timeout >= interval. Both ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: HealthCheckTimeoutSeconds 5 with HealthCheckIntervalSeconds 5 -> \"Health check timeout '5' must be smaller than the interval '5'\" (ROLLBACK_COMPLETE — equal is the closest violating pair because the rule fires at `>=`); pass timeout 29 with interval 30 -> CREATE_COMPLETE. Both fixtures build their own VPC: with the made-up VpcId they carried, ELB answered \"The VPC ID 'vpc-11112222' is not found\" before it looked at the health check."
 addedOn: 2026-09-03

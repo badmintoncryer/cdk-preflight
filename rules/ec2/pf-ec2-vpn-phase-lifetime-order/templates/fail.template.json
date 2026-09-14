@@ -27,7 +27,7 @@
             "PreSharedKey": "cdkpf.PassKey123",
             "TunnelInsideCidr": "169.254.100.0/30",
             "Phase1LifetimeSeconds": 1000,
-            "Phase2LifetimeSeconds": 3000
+            "Phase2LifetimeSeconds": 1001
           }
         ],
         "VpnGatewayId": {
