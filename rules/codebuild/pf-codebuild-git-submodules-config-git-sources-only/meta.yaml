@@ -1,0 +1,12 @@
+id: pf-codebuild-git-submodules-config-git-sources-only
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: Git submodules are only configured on a git-backed source
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (Source.GitSubmodulesConfig on an S3 source and on a CODEPIPELINE source) -> \"Git submodules config is not supported for S3 source\" (ROLLBACK_COMPLETE; CreateProject answers the CODEPIPELINE half with \"Git submodules config is not supported for CodePipeline source\"); pass template (the same GitSubmodulesConfig on a CODECOMMIT source) -> CREATE_COMPLETE. NO_SOURCE is not in the rule: CreateProject accepts GitSubmodulesConfig there."
+addedOn: 2026-09-14

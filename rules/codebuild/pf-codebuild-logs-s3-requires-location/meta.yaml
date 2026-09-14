@@ -1,0 +1,12 @@
+id: pf-codebuild-logs-s3-requires-location
+service: codebuild
+resourceTypes: [AWS::CodeBuild::Project]
+benchRegion: us-east-1
+severity: ERROR
+title: Enabled S3 build logs name the bucket and prefix
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-s3logsconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail template (LogsConfig.S3Logs Status ENABLED with no Location) -> \"Invalid logsConfig: s3Logs location must be provided if status is 'ENABLED'\" (ROLLBACK_COMPLETE); pass template (the same S3Logs with Location cdkpf-codesuite-63/logs) -> CREATE_COMPLETE."
+addedOn: 2026-09-14

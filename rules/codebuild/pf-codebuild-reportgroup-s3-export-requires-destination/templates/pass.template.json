@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::CodeBuild::ReportGroup",
+      "Properties": {
+        "Type": "TEST",
+        "ExportConfig": {
+          "ExportConfigType": "S3",
+          "S3Destination": {
+            "Bucket": "cdkpf-codesuite-63"
+          }
+        }
+      }
+    }
+  }
+}

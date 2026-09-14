@@ -809,6 +809,18 @@
 | `pf-codebuild-concurrent-build-limit-range` | AWS::CodeBuild::Project | The per-project concurrent build limit is at least 1 | ERROR | none |
 | `pf-codebuild-curated-image-requires-codebuild-credentials` | AWS::CodeBuild::Project | A CodeBuild curated image is pulled with CODEBUILD credentials | ERROR | none |
 | `pf-codebuild-encryption-key-region` | AWS::CodeBuild::Project | The build output encryption key lives in the project's Region | ERROR | none |
+| `pf-codebuild-environment-variable-name-reserved` | AWS::CodeBuild::Project | Environment variable names stay off the reserved CODEBUILD_ prefix | ERROR | none |
+| `pf-codebuild-environment-variable-name-unique` | AWS::CodeBuild::Project | Environment variable names are unique within a project | ERROR | none |
+| `pf-codebuild-file-system-identifier-charset` | AWS::CodeBuild::Project | A project that mounts a file system runs in privileged mode | ERROR | none |
+| `pf-codebuild-file-system-location-format` | AWS::CodeBuild::Project | An EFS mount location names the file system and the directory | ERROR | none |
+| `pf-codebuild-git-submodules-config-git-sources-only` | AWS::CodeBuild::Project | Git submodules are only configured on a git-backed source | ERROR | none |
+| `pf-codebuild-lambda-compute-no-privileged-mode` | AWS::CodeBuild::Project | PrivilegedMode is not set on the Lambda compute mode | ERROR | none |
+| `pf-codebuild-logs-s3-requires-location` | AWS::CodeBuild::Project | Enabled S3 build logs name the bucket and prefix | ERROR | none |
+| `pf-codebuild-project-description-length` | AWS::CodeBuild::Project | The project description stays within 255 characters | ERROR | none |
+| `pf-codebuild-project-name-length` | AWS::CodeBuild::Project | The project name stays within 150 characters | ERROR | none |
+| `pf-codebuild-report-build-status-provider` | AWS::CodeBuild::Project | ReportBuildStatus is only set on a source provider that reports status | ERROR | none |
+| `pf-codebuild-reportgroup-no-export-forbids-destination` | AWS::CodeBuild::ReportGroup | A NO_EXPORT report group carries no S3 destination | ERROR | none |
+| `pf-codebuild-reportgroup-s3-export-requires-destination` | AWS::CodeBuild::ReportGroup | An S3 report group names its destination | ERROR | none |
 | `pf-codebuild-source-codepipeline-requires-artifacts-codepipeline` | AWS::CodeBuild::Project | The CODEPIPELINE source and artifact types are set together | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
