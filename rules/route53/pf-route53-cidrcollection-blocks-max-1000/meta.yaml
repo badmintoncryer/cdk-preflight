@@ -3,10 +3,10 @@ service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::CidrCollection]
 severity: ERROR
-title: "A CIDR collection holds at most 1000 CIDR blocks across all locations"
-constraintSource: https://docs.aws.amazon.com/general/latest/gr/r53.html
+title: "One CIDR collection location holds at most 1000 CIDR blocks"
+constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeCidrCollection.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-13 us-east-1: 1001 CIDR blocks in one location -> \"cvc-complex-type.2.4.d: Invalid content was found starting with element 'Cidr'. No child element is expected at this point\" (ROLLBACK_COMPLETE, the schema's own bound on a CidrList); pass 1000 -> CREATE_COMPLETE. The limit is on the collection, not the location: bench 2026-09-10 put 1001 blocks over two locations and ChangeCidrCollection answered LimitsExceeded (through CloudFormation the same template only gave an empty Route 53 400)."
+  evidence: "bench 2026-09-13 us-east-1: 1001 CIDR blocks in one location -> \"cvc-complex-type.2.4.d: Invalid content was found starting with element 'Cidr'. No child element is expected at this point\" (ROLLBACK_COMPLETE, the API's XML schema bound on a single CidrList); pass 1000 -> CREATE_COMPLETE. 2026-09-14 に ChangeCidrCollection を直叩きしても 1 リクエスト 1000 個は成功、1001 個は同じスキーマエラー。コレクション全体の 1000 は別物で、2 ロケーションに分けて 1001 個目を足すと LimitsExceeded が返る（引き上げ可能なクォータ L-945D15E5）ので数えない（原則 6）。"
 addedOn: 2026-09-10

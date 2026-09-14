@@ -201,17 +201,6 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Only unbalanced brackets are judged: that is the shape the service rejects\n# outright, and it cannot be mistaken for a legal pattern.\n_pf_apgirsp_unbalanced(p) if count(split(p, \"[\")) != count(split(p, \"]\"))\n\n_pf_apgirsp_unbalanced(p) if count(split(p, \"(\")) != count(split(p, \")\"))\n\nviolation contains make_diag_full(\"pf-apigw-integration-response-selection-pattern\", \"ERROR\", name,\n\t\"Properties.Integration.IntegrationResponses\",\n\tsprintf(\"SelectionPattern '%s' has unbalanced brackets and is not a valid regular expression; the method create fails with \\\"Invalid regex pattern specified\\\"\", [p]),\n\t\"Write SelectionPattern as a valid regular expression (e.g. \\\".*Not Found.*\\\")\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integrationresponse.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tsome item in flatten_list(name, \"Properties.Integration.IntegrationResponses\")\n\tr := item.value\n\tis_object(r)\n\tp := r.SelectionPattern\n\tis_string(p)\n\t_pf_apgirsp_unbalanced(p)\n}\n"
   },
   {
-    "id": "pf-apigw-integration-timeout-range",
-    "service": "apigateway",
-    "severity": "ERROR",
-    "title": "REST integration timeouts are 50-29000 ms",
-    "upstream": "none",
-    "resourceTypes": [
-      "AWS::ApiGateway::Method"
-    ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-apigw-integration-timeout-range\", \"ERROR\", name,\n\t\"Properties.Integration.TimeoutInMillis\",\n\tsprintf(\"Integration.TimeoutInMillis %v is outside 50-29000; the method create fails with \\\"Timeout should be between 50 ms and 29000 ms\\\"\", [t]),\n\t\"Use an integration timeout between 50 and 29000 milliseconds\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-method-integration.html\") if {\n\tsome name in resources_of_type(\"AWS::ApiGateway::Method\")\n\tt := to_number(resolve(name, \"Properties.Integration.TimeoutInMillis\"))\n\t_pf_apgitr_bad(t)\n}\n\n_pf_apgitr_bad(t) if t < 50\n\n_pf_apgitr_bad(t) if t > 29000\n"
-  },
-  {
     "id": "pf-apigw-integration-vpc-link-connection-id",
     "service": "apigateway",
     "severity": "ERROR",
@@ -21179,12 +21168,12 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "id": "pf-route53-cidrcollection-blocks-max-1000",
     "service": "route53",
     "severity": "ERROR",
-    "title": "A CIDR collection holds at most 1000 CIDR blocks across all locations",
+    "title": "One CIDR collection location holds at most 1000 CIDR blocks",
     "upstream": "none",
     "resourceTypes": [
       "AWS::Route53::CidrCollection"
     ],
-    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-route53-cidrcollection-blocks-max-1000\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"the collection lists %d CIDR blocks; a CIDR collection stops at 1000 across all locations\", [n]),\n\t\"Split the blocks across more than one CIDR collection\",\n\t\"https://docs.aws.amazon.com/general/latest/gr/r53.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tn := count(_pf_r53z_cidrs(name))\n\tn > 1000\n}\n"
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 1000 はロケーション 1 つ分（＝ ChangeCidrCollection 1 リクエスト分）の上限で、\n# API の XML スキーマが持っているハードな境界。\n# コレクション全体の 1000 は引き上げ可能なクォータ L-945D15E5 なので数えない（原則 6）。\nviolation contains make_diag_full(\"pf-route53-cidrcollection-blocks-max-1000\", \"ERROR\", name,\n\t\"Properties.Locations\",\n\tsprintf(\"location %v lists %d CIDR blocks; CloudFormation sends one location per request and a request takes at most 1000\", [li, n]),\n\t\"Split the location's blocks across several locations or collections\",\n\t\"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeCidrCollection.html\") if {\n\tsome name in resources_of_type(\"AWS::Route53::CidrCollection\")\n\tcs := _pf_r53z_cidrs(name)\n\tsome li in {c[0] | some c in cs}\n\tn := count([c | some c in cs; c[0] == li])\n\tn > 1000\n}\n"
   },
   {
     "id": "pf-route53-cidrcollection-cidr-item-blank",
