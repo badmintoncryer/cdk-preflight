@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Condition value 'get' contains a character that is not valid\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Condition value 'get' contains a character that is not valid\"; the pass template reached CREATE_COMPLETE. The 40-character bound inside the pattern is hard too: bench 2026-09-14 us-east-1, a 41-character method -> \"Condition value for 'http-request-method' cannot contain more than 40 characters\" (ROLLBACK_COMPLETE). The fixture keeps the charset case and the length end is pinned by a targeted case in test/rules.test.ts."
 addedOn: 2026-09-08

@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/userguide/create-comp
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"vCPU must be at least 1 for Windows Job definition, got 0.25.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: VCPU 0.5 with MEMORY 1024 -> \"vCPU must be at least 1 for Windows Job definition, got 0.5.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. Fargate vCPU is quantised to 0.25 / 0.5 / 1 / 2 / 4, so 0.5 is the closest violating value below 1 — the earlier 0.25 was two steps out. It has to be paired with 1024 MiB: at 512 MiB the create fails on the combination instead (\"Fargate resource requirements (0.50 vCPU, 512 MiB) not valid.\")."
 addedOn: 2026-09-12
