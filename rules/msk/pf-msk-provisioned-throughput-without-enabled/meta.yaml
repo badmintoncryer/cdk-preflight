@@ -1,0 +1,12 @@
+id: pf-msk-provisioned-throughput-without-enabled
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "VolumeThroughput only counts when ProvisionedThroughput is enabled"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-provisionedthroughput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: VolumeThroughput 250 with no Enabled -> \"To specify a value for VolumeThroughput, you must enable ProvisionedThroughput. ... 'volumeThroughput'\" (ROLLBACK_COMPLETE); pass the same VolumeThroughput 250 with Enabled true -> CREATE_COMPLETE"
+addedOn: 2026-09-14

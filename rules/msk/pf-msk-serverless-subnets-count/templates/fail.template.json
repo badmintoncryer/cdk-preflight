@@ -1,0 +1,56 @@
+{
+  "Resources": {
+    "ClusterTooFew": {
+      "Type": "AWS::MSK::ServerlessCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-slssub-fail-few",
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "VpcConfigs": [
+          {
+            "SubnetIds": [
+              "subnet-00000000000000001"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          }
+        ]
+      }
+    },
+    "ClusterTooMany": {
+      "Type": "AWS::MSK::ServerlessCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-slssub-fail-many",
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "VpcConfigs": [
+          {
+            "SubnetIds": [
+              "subnet-00000000000000101",
+              "subnet-00000000000000102",
+              "subnet-00000000000000103",
+              "subnet-00000000000000104",
+              "subnet-00000000000000105",
+              "subnet-00000000000000106",
+              "subnet-00000000000000107"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-msk-unauthenticated-only-requires-no-tls-only
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "A cluster has to accept some kind of client"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-clientauthentication.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: Sasl.Iam.Enabled false with Unauthenticated.Enabled false -> \"Unauthenticated cannot be set to false without enabling any authentication mechanisms. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE); pass Sasl.Iam.Enabled true with the same Unauthenticated.Enabled false -> CREATE_COMPLETE"
+addedOn: 2026-09-14

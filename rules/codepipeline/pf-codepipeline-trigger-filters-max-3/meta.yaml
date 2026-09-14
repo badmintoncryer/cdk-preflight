@@ -1,0 +1,12 @@
+id: pf-codepipeline-trigger-filters-max-3
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A Git trigger accepts at most 3 push and 3 pull-request filters"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_GitConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: 4 push filters -> \"Value at 'pipeline.triggers.1.member.gitConfiguration.push' failed to satisfy constraint: Member must have length less than or equal to 3\" (ROLLBACK_COMPLETE); pass 3 filters -> CREATE_COMPLETE"
+addedOn: 2026-09-14

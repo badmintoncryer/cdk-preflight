@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Configuration": {
+      "Type": "AWS::MSK::Configuration",
+      "Properties": {
+        "Name": "cdkpf-cfgkeys-fail",
+        "ServerProperties": "auto.create.topics.enable=true\nbroker.id=1"
+      }
+    }
+  }
+}

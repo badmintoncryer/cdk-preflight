@@ -1,0 +1,12 @@
+id: pf-msk-replicator-source-arn-xor-id
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Replicator]
+severity: ERROR
+title: "A ReplicationInfo names the source cluster by ARN or by id, never both"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-replicationinfo.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: create-replicator with SourceKafkaClusterArn and SourceKafkaClusterId together -> \"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId. Use either sourceKafkaClusterArn if replicating from MSK clusters or sourceKafkaClusterId if replicating from Apache Kafka clusters. Additional error details: InvalidParameter: sourceKafkaClusterArn\"; bench 2026-09-13 us-east-1: fail template -> \"Cannot specify both sourceKafkaClusterArn and sourceKafkaClusterId. Use either sourceKafkaClusterArn if replicating from MSK clusters or sourceKafkaClusterId if replicating from Apache Kafka clusters. 'sourceKafkaClusterArn'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up)"
+addedOn: 2026-09-13

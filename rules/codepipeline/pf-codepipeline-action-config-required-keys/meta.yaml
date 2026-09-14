@@ -1,0 +1,12 @@
+id: pf-codepipeline-action-config-required-keys
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "An action's Configuration must carry the keys its provider requires"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with each required key dropped in turn over the 13 Category/Provider pairs in the table -> \"InvalidActionDeclarationException: Action configuration for action 'X' is missing required configuration '<key>'\"; bench 2026-09-14 us-east-1: fail -> \"Action configuration for action 'Dep' is missing required configuration 'BucketName'\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

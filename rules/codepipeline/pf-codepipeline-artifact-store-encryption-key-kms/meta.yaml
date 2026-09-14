@@ -1,0 +1,12 @@
+id: pf-codepipeline-artifact-store-encryption-key-kms
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "An artifact store's EncryptionKey.Type must be the literal KMS"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with artifactStore.encryptionKey.type 'kms' -> \"ValidationException: Value at 'pipeline.artifactStore.encryptionKey.type' failed to satisfy constraint: Member must satisfy enum value set: [KMS]\"; bench 2026-09-14 us-east-1: fail -> \"1 validation error detected: Value at 'pipeline.artifactStore.encryptionKey.type' failed to satisfy constraint: Member must satisfy enum value set: [KMS]\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

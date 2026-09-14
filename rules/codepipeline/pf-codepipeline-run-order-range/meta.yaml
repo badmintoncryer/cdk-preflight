@@ -1,0 +1,12 @@
+id: pf-codepipeline-run-order-range
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "An action's RunOrder must be between 1 and 999"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionDeclaration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with runOrder 1000 -> \"ValidationException: Value at 'pipeline.stages.2.member.actions.1.member.runOrder' failed to satisfy constraint: Member must have value less than or equal to 999\"; runOrder 999 and 1 were accepted; bench 2026-09-14 us-east-1: fail -> \"2 validation errors detected: Value at 'pipeline.stages.1.member.actions.1.member.runOrder' failed to satisfy constraint: Member must have value greater than or equal to 1; Value at 'pipeline.stages.2.member.actions.1.member.runOrder' failed to satisfy constraint: Member must have value less than or equal to 999\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14

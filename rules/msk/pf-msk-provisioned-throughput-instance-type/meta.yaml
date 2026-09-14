@@ -1,0 +1,12 @@
+id: pf-msk-provisioned-throughput-instance-type
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Provisioned storage throughput needs kafka.m5.4xlarge / kafka.m7g.2xlarge or larger"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: ProvisionedThroughput enabled on kafka.m5.2xlarge -> \"Provisioned throughput is not supported for the specified broker type. ... 'provisionedThroughput'\" (ROLLBACK_COMPLETE); pass the same ProvisionedThroughput on kafka.m7g.2xlarge, the smallest size the service accepts -> CREATE_COMPLETE"
+addedOn: 2026-09-14

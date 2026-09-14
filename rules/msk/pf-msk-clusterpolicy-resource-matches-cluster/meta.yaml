@@ -1,0 +1,12 @@
+id: pf-msk-clusterpolicy-resource-matches-cluster
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::ClusterPolicy]
+severity: ERROR
+title: "A cluster policy's Resource must be the cluster the policy is attached to"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/aws-access-mult-vpc.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: policy Resource arn:aws:kafka:us-east-1:214794239830:cluster/pftarget/2222...-2 against ClusterArn .../pfcluster/1111...-1 -> \"The cluster policy is not valid. Invalid cluster arn: \\\"arn:aws:kafka:us-east-1:214794239830:cluster/pftarget/22222222-3333-4444-5555-666666666666-2\\\"\" (ROLLBACK_COMPLETE). The CloudFormation handler validates the policy before it resolves ClusterArn, so the fixture needs no real cluster; pass not deployed (--fail-only: it would need one)"
+addedOn: 2026-09-13

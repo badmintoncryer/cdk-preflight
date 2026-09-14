@@ -1,0 +1,39 @@
+{
+ "Resources": {
+  "W0": {
+   "Type": "AWS::CodePipeline::Webhook",
+   "Properties": {
+    "Authentication": "GITHUB_HMAC",
+    "AuthenticationConfiguration": {
+     "SecretToken": "tok0123456789"
+    },
+    "Filters": [
+     {
+      "JsonPath": "$.a0",
+      "MatchEquals": "x"
+     },
+     {
+      "JsonPath": "$.a1",
+      "MatchEquals": "x"
+     },
+     {
+      "JsonPath": "$.a2",
+      "MatchEquals": "x"
+     },
+     {
+      "JsonPath": "$.a3",
+      "MatchEquals": "x"
+     },
+     {
+      "JsonPath": "$.a4",
+      "MatchEquals": "x"
+     }
+    ],
+    "TargetPipeline": "cdkpf-no-such-pipeline",
+    "TargetAction": "Src",
+    "TargetPipelineVersion": 1,
+    "RegisterWithThirdParty": false
+   }
+  }
+ }
+}

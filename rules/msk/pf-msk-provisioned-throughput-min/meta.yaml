@@ -1,0 +1,12 @@
+id: pf-msk-provisioned-throughput-min
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Provisioned storage throughput starts at 250 MiB/s"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-provision-throughput-management.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: VolumeThroughput 249 -> \"EBS volume throughput should be between 250 and 1000 MiB/s. ... 'volumeThroughput'\" (ROLLBACK_COMPLETE); pass VolumeThroughput 250 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

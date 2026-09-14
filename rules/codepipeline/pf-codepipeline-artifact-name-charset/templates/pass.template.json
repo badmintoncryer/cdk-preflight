@@ -1,0 +1,66 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodePipeline::Pipeline",
+   "Properties": {
+    "RoleArn": {
+     "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+    },
+    "ArtifactStore": {
+     "Type": "S3",
+     "Location": "cdkpf-codesuite-63"
+    },
+    "Stages": [
+     {
+      "Name": "Source",
+      "Actions": [
+       {
+        "Name": "Src",
+        "ActionTypeId": {
+         "Category": "Source",
+         "Owner": "AWS",
+         "Provider": "S3",
+         "Version": "1"
+        },
+        "Configuration": {
+         "S3Bucket": "cdkpf-codesuite-63",
+         "S3ObjectKey": "src.zip",
+         "PollForSourceChanges": "false"
+        },
+        "OutputArtifacts": [
+         {
+          "Name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "Name": "Deploy",
+      "Actions": [
+       {
+        "Name": "Dep",
+        "ActionTypeId": {
+         "Category": "Deploy",
+         "Owner": "AWS",
+         "Provider": "S3",
+         "Version": "1"
+        },
+        "Configuration": {
+         "BucketName": "cdkpf-codesuite-63",
+         "Extract": "false",
+         "ObjectKey": "out.zip"
+        },
+        "InputArtifacts": [
+         {
+          "Name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

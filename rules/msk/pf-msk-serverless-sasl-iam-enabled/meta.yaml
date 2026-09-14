@@ -1,0 +1,12 @@
+id: pf-msk-serverless-sasl-iam-enabled
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::ServerlessCluster]
+severity: ERROR
+title: "A serverless MSK cluster must keep SASL/IAM authentication enabled"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-13 us-east-1: ClientAuthentication.Sasl.Iam.Enabled false -> \"A serverless cluster must use SASL/IAM authentication. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: see pf-msk-serverless-name-pattern). The rejection arrives before the subnet lookup, so the fixture needs no real VPC"
+addedOn: 2026-09-13
