@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-triggers-max-10
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "A deployment group may carry at most 10 notification triggers"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: 11 triggers pointing at 11 topics -> \"Deployment Groups cannot contain more than 10 TriggerTargets.\" (ROLLBACK_COMPLETE); pass the same group with 10 triggers -> CREATE_COMPLETE. Each trigger needs its own real topic: CodeDeploy looks the topic up (\"Topic ARN ... does not exist due to: Topic does not exist\", probe B3) before it counts them, and two triggers may not share one topic (\"Duplicate Trigger target arn detected\", probe B1), so both fixtures create the topics they need and the stack deletes them again."
+addedOn: 2026-09-14

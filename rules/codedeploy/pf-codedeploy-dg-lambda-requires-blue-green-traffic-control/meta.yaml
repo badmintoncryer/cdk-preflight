@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-lambda-requires-blue-green-traffic-control
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup, AWS::CodeDeploy::Application]
+severity: ERROR
+title: "A Lambda deployment group must be BLUE_GREEN with WITH_TRAFFIC_CONTROL"
+constraintSource: https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateDeploymentGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: Lambda application, DeploymentStyle BLUE_GREEN + WITHOUT_TRAFFIC_CONTROL -> \"For LAMBDA deployment, the deployment type must be BLUE_GREEN, and deployment option must be WITH_TRAFFIC_CONTROL.\" (ROLLBACK_COMPLETE); pass BLUE_GREEN + WITH_TRAFFIC_CONTROL -> CREATE_COMPLETE. Confound recorded: with DeploymentType IN_PLACE (or a DeploymentStyle naming only one of the two members) CloudFormation's handler sends ec2TagFilters of its own and the stack fails with \"For Lambda deployment group, ec2TagFilters can not be specified\" instead - the deploy still fails, but the message names a different constraint, so the fixture uses the shape above. The raw CreateDeploymentGroup names this constraint for IN_PLACE and for an absent DeploymentStyle too (api-probe 2026-09-14 us-east-1)."
+addedOn: 2026-09-14

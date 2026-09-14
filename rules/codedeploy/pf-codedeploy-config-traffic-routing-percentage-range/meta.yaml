@@ -1,0 +1,12 @@
+id: pf-codedeploy-config-traffic-routing-percentage-range
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentConfig]
+severity: ERROR
+title: "Traffic routing percentage must be between 1 and 99"
+constraintSource: https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: CanaryPercentage 100 and LinearPercentage 0 in one stack -> \"Valid traffic routing percentage is from 1 to 99\" (ROLLBACK_COMPLETE); pass CanaryPercentage 99 and LinearPercentage 1 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: both blocks come back with the identical message, so they are one check and one rule."
+addedOn: 2026-09-14

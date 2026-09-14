@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-ec2-filters-server-platform-only
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup, AWS::CodeDeploy::Application]
+severity: ERROR
+title: "Instance tag filters are only valid on the Server compute platform"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: Lambda application, deployment group with Ec2TagFilters -> \"For Lambda deployment group, ec2TagFilters can not be specified\" (ROLLBACK_COMPLETE); pass the same Lambda group without them -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1 measured the other three properties and the other platform: Ec2TagSet -> \"For Lambda deployment group, ec2TagSet can not be specified\", OnPremisesInstanceTagFilters -> \"For Lambda deployment group, onPremisesInstanceTagFilters can not be specified\", OnPremisesTagSet -> \"For Lambda deployment group, onPremisesTagSet can not be specified\", and Ec2TagFilters under an ECS application -> \"For ECS deployment group, ec2TagFilters can not be specified\"."
+addedOn: 2026-09-14

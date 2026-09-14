@@ -805,6 +805,41 @@
 | `pf-codecommit-trigger-events-required` | AWS::CodeCommit::Repository | A trigger must specify at least one event | ERROR | none |
 | `pf-codecommit-trigger-name-unique` | AWS::CodeCommit::Repository | Trigger names must be unique within a repository | ERROR | none |
 | `pf-codecommit-triggers-max-10` | AWS::CodeCommit::Repository | A repository may declare at most 10 triggers | ERROR | none |
+| `pf-codedeploy-app-compute-platform-value` | AWS::CodeDeploy::Application | Application ComputePlatform must be Server, Lambda, ECS or Kubernetes | ERROR | pending-engine |
+| `pf-codedeploy-config-fleet-percent-range` | AWS::CodeDeploy::DeploymentConfig | MinimumHealthyHosts FLEET_PERCENT must be below 100 | ERROR | none |
+| `pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts` | AWS::CodeDeploy::DeploymentConfig | MinimumHealthyHosts is only valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-config-lambda-requires-traffic-routing` | AWS::CodeDeploy::DeploymentConfig | A Lambda or ECS deployment configuration must set TrafficRoutingConfig | ERROR | none |
+| `pf-codedeploy-config-name-reserved-prefix` | AWS::CodeDeploy::DeploymentConfig | A custom deployment configuration may not use the CodeDeployDefault. prefix | ERROR | none |
+| `pf-codedeploy-config-server-forbids-traffic-routing` | AWS::CodeDeploy::DeploymentConfig | TrafficRoutingConfig is not valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-config-server-requires-minimum-healthy-hosts` | AWS::CodeDeploy::DeploymentConfig | A Server deployment configuration must set MinimumHealthyHosts | ERROR | none |
+| `pf-codedeploy-config-traffic-routing-block-matches-type` | AWS::CodeDeploy::DeploymentConfig | TrafficRoutingConfig must carry exactly the sub-block its Type names | ERROR | none |
+| `pf-codedeploy-config-traffic-routing-percentage-range` | AWS::CodeDeploy::DeploymentConfig | Traffic routing percentage must be between 1 and 99 | ERROR | none |
+| `pf-codedeploy-config-traffic-shift-interval-max` | AWS::CodeDeploy::DeploymentConfig | A traffic shift may not take more than 2880 minutes end to end | ERROR | none |
+| `pf-codedeploy-config-zonal-minimum-healthy-per-zone-range` | AWS::CodeDeploy::DeploymentConfig | ZonalConfig MinimumHealthyHostsPerZone FLEET_PERCENT must be below 100 | ERROR | none |
+| `pf-codedeploy-config-zonal-server-only` | AWS::CodeDeploy::DeploymentConfig | ZonalConfig is only supported on the Server compute platform | ERROR | none |
+| `pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms` | AWS::CodeDeploy::DeploymentGroup | An enabled AlarmConfiguration needs at least one alarm | ERROR | none |
+| `pf-codedeploy-dg-autorollback-enabled-requires-events` | AWS::CodeDeploy::DeploymentGroup | An enabled AutoRollbackConfiguration needs at least one event | ERROR | none |
+| `pf-codedeploy-dg-blue-green-config-required-members` | AWS::CodeDeploy::DeploymentGroup | BlueGreenDeploymentConfiguration must carry DeploymentReadyOption and TerminateBlueInstancesOnDeploymentSuccess | ERROR | none |
+| `pf-codedeploy-dg-bluegreen-requires-traffic-control` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | A BLUE_GREEN deployment style requires WITH_TRAFFIC_CONTROL | ERROR | none |
+| `pf-codedeploy-dg-copy-asg-requires-asg` | AWS::CodeDeploy::DeploymentGroup | COPY_AUTO_SCALING_GROUP needs exactly one Auto Scaling group on the deployment group | ERROR | none |
+| `pf-codedeploy-dg-deployment-config-platform-match` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application<br>AWS::CodeDeploy::DeploymentConfig | DeploymentConfigName must belong to the application's compute platform | ERROR | none |
+| `pf-codedeploy-dg-deployment-ready-continue-no-wait-time` | AWS::CodeDeploy::DeploymentGroup | CONTINUE_DEPLOYMENT does not take a WaitTimeInMinutes | ERROR | none |
+| `pf-codedeploy-dg-deployment-ready-stop-requires-wait-time` | AWS::CodeDeploy::DeploymentGroup | STOP_DEPLOYMENT needs a WaitTimeInMinutes above zero | ERROR | none |
+| `pf-codedeploy-dg-ec2-filters-server-platform-only` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | Instance tag filters are only valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-dg-ec2-tag-filters-xor-tag-set` | AWS::CodeDeploy::DeploymentGroup | Ec2TagFilters and Ec2TagSet cannot both be specified | ERROR | none |
+| `pf-codedeploy-dg-ecs-services-requires-ecs-platform` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | ECSServices is only valid on the ECS compute platform | ERROR | none |
+| `pf-codedeploy-dg-lambda-forbids-blue-green-config` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | BlueGreenDeploymentConfiguration is not valid on the Lambda compute platform | ERROR | none |
+| `pf-codedeploy-dg-lambda-requires-blue-green-traffic-control` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | A Lambda deployment group must be BLUE_GREEN with WITH_TRAFFIC_CONTROL | ERROR | none |
+| `pf-codedeploy-dg-onprem-tag-filters-xor-tag-set` | AWS::CodeDeploy::DeploymentGroup | OnPremisesInstanceTagFilters and OnPremisesTagSet cannot both be specified | ERROR | none |
+| `pf-codedeploy-dg-revision-bundle-type-server` | AWS::CodeDeploy::DeploymentGroup | An EC2/On-Premises revision bundle is a tar, tgz or zip archive | ERROR | none |
+| `pf-codedeploy-dg-revision-github-server-only` | AWS::CodeDeploy::DeploymentGroup | A GitHub revision can only be deployed on the EC2/On-Premises platform | ERROR | none |
+| `pf-codedeploy-dg-tag-filter-type-value-consistency` | AWS::CodeDeploy::DeploymentGroup | A KEY_ONLY tag filter carries no Value and a VALUE_ONLY tag filter carries no Key | ERROR | none |
+| `pf-codedeploy-dg-target-group-name-max-32` | AWS::CodeDeploy::DeploymentGroup | A TargetGroupInfo Name is a target group name of at most 32 characters, never an ARN | ERROR | none |
+| `pf-codedeploy-dg-termination-wait-max` | AWS::CodeDeploy::DeploymentGroup | TerminationWaitTimeInMinutes may not exceed 2880 (two days) | ERROR | none |
+| `pf-codedeploy-dg-traffic-control-requires-load-balancer` | AWS::CodeDeploy::DeploymentGroup | A Server deployment group routing traffic needs a load balancer or target group | ERROR | none |
+| `pf-codedeploy-dg-trigger-name-and-target-unique` | AWS::CodeDeploy::DeploymentGroup | Trigger names and trigger target ARNs are each unique within a deployment group | ERROR | none |
+| `pf-codedeploy-dg-trigger-target-region` | AWS::CodeDeploy::DeploymentGroup | A trigger's SNS topic must live in the deployment group's own Region | ERROR | none |
+| `pf-codedeploy-dg-triggers-max-10` | AWS::CodeDeploy::DeploymentGroup | A deployment group may carry at most 10 notification triggers | ERROR | none |
 | `pf-codepipeline-action-config-required-keys` | AWS::CodePipeline::Pipeline | An action's Configuration must carry the keys its provider requires | ERROR | none |
 | `pf-codepipeline-action-type-id-combination` | AWS::CodePipeline::Pipeline | An action's Category, Owner and Provider must be a published combination | ERROR | none |
 | `pf-codepipeline-artifact-name-charset` | AWS::CodePipeline::Pipeline | An artifact name is at most 100 characters of letters, digits, underscore and hyphen | ERROR | none |

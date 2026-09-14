@@ -8858,6 +8858,398 @@ export const BUNDLED_RULES: BundledRuleData[] = [
     "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codecommit-triggers-max-10\", \"ERROR\", name,\n\t\"Properties.Triggers\",\n\tsprintf(\"The repository declares %d triggers; the handler's PutRepositoryTriggers fails with \\\"Trigger limit for a particular repository is 10\\\"\", [count(ts)]),\n\t\"Declare at most 10 triggers on a repository\",\n\t\"https://docs.aws.amazon.com/codecommit/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeCommit::Repository\")\n\tts := _pf_cclib_triggers(name)\n\tcount(ts) > 10\n}\n"
   },
   {
+    "id": "pf-codedeploy-app-compute-platform-value",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Application ComputePlatform must be Server, Lambda, ECS or Kubernetes",
+    "upstream": "pending-engine",
+    "resourceTypes": [
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The bundled engine knows this enum but lists only ECS/Lambda/Server and\n# reports the miss as W3030, which does not block a synth; the service takes a\n# fourth value (Kubernetes) the engine has never heard of.\nviolation contains make_diag_full(\"pf-codedeploy-app-compute-platform-value\", \"ERROR\", name,\n\t\"Properties.ComputePlatform\",\n\tsprintf(\"ComputePlatform '%v' is not a CodeDeploy compute platform; the application create fails with \\\"ComputePlatform '%v' is not valid. Valid values are [Server, Lambda, ECS, Kubernetes]\\\"\", [cp, cp]),\n\t\"Use Server, Lambda, ECS or Kubernetes - EC2 and on-premises deployments are the Server platform\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateApplication.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::Application\")\n\tcp := resolve(name, \"Properties.ComputePlatform\")\n\t_pf_codedeploylib_lit(cp)\n\tnot cp in {\"Server\", \"Lambda\", \"ECS\", \"Kubernetes\"}\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-fleet-percent-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "MinimumHealthyHosts FLEET_PERCENT must be below 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# 100% healthy would leave nothing to deploy to, so the ceiling is exclusive.\n# There is no floor: 0 is accepted despite the \"should be positive\" wording.\nviolation contains make_diag_full(\"pf-codedeploy-config-fleet-percent-range\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts.Value\",\n\tsprintf(\"MinimumHealthyHosts is FLEET_PERCENT %v; the deployment configuration create fails with \\\"The value for the minimum healthy hosts with type of FLEET_PERCENT should be positive and less than 100\\\"\", [v]),\n\t\"Use a FLEET_PERCENT value of 99 or less, or switch Type to HOST_COUNT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-minimumhealthyhosts.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tresolve(name, \"Properties.MinimumHealthyHosts.Type\") == \"FLEET_PERCENT\"\n\tv := _pf_codedeploylib_num(resolve(name, \"Properties.MinimumHealthyHosts.Value\"))\n\tv > 99\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "MinimumHealthyHosts is only valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MinimumHealthyHosts counts instances, which the Lambda and ECS platforms do\n# not have. Both reject it; the message names the platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts\",\n\tsprintf(\"MinimumHealthyHosts is set on a %v deployment configuration; the create fails with \\\"minimum healthy hosts should be null for %v deployment configuration\\\"\", [p, p]),\n\t\"Drop MinimumHealthyHosts - only the Server (EC2/on-premises) platform takes it; Lambda and ECS use TrafficRoutingConfig\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp in {\"Lambda\", \"ECS\"}\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"MinimumHealthyHosts\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-lambda-requires-traffic-routing",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Lambda or ECS deployment configuration must set TrafficRoutingConfig",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Lambda and ECS platforms shift traffic rather than count healthy hosts, so\n# the routing block is the whole configuration and the service has no default.\nviolation contains make_diag_full(\"pf-codedeploy-config-lambda-requires-traffic-routing\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig\",\n\tsprintf(\"A %v deployment configuration has no TrafficRoutingConfig; the create fails with \\\"Traffic routing configuration cannot be null nor empty for deployment configurations on this platform.\\\"\", [p]),\n\t\"Add TrafficRoutingConfig with a Type (AllAtOnce, TimeBasedCanary or TimeBasedLinear)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp in {\"Lambda\", \"ECS\"}\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-name-reserved-prefix",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A custom deployment configuration may not use the CodeDeployDefault. prefix",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The prefix is reserved for the predefined configurations. Only the dot makes\n# it reserved: \"CodeDeployDefaultFoo\" is accepted, and the match is case\n# sensitive (\"codedeploydefault.\" is accepted too).\nviolation contains make_diag_full(\"pf-codedeploy-config-name-reserved-prefix\", \"ERROR\", name,\n\t\"Properties.DeploymentConfigName\",\n\tsprintf(\"DeploymentConfigName '%v' uses the reserved CodeDeployDefault. prefix; the deployment configuration create fails with \\\"The prefix CodeDeployDefault. is reserved for predefined configuration names\\\"\", [n]),\n\t\"Name the custom deployment configuration something that does not start with \\\"CodeDeployDefault.\\\"\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tn := resolve(name, \"Properties.DeploymentConfigName\")\n\t_pf_codedeploylib_lit(n)\n\tstartswith(n, \"CodeDeployDefault.\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-server-forbids-traffic-routing",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TrafficRoutingConfig is not valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An in-place EC2/on-premises deployment has no traffic to shift. An absent\n# ComputePlatform is Server, so the same rejection applies to a configuration\n# that never names a platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-server-forbids-traffic-routing\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig\",\n\t\"TrafficRoutingConfig is set on a Server deployment configuration; the create fails with \\\"Traffic routing configuration should be null for Server deployment configuration\\\"\",\n\t\"Drop TrafficRoutingConfig, or set ComputePlatform to Lambda or ECS (an absent ComputePlatform is Server)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\t_pf_codedeploylib_platform(name) == \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-server-requires-minimum-healthy-hosts",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Server deployment configuration must set MinimumHealthyHosts",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# MinimumHealthyHosts is what a Server deployment configuration configures; the\n# service has no default for it. An absent ComputePlatform is Server, so the same\n# rejection applies to a configuration that never names a platform.\nviolation contains make_diag_full(\"pf-codedeploy-config-server-requires-minimum-healthy-hosts\", \"ERROR\", name,\n\t\"Properties.MinimumHealthyHosts\",\n\t\"A Server deployment configuration has no MinimumHealthyHosts; the create fails with \\\"minimum healthy hosts argument is missing\\\"\",\n\t\"Add MinimumHealthyHosts with a Type (HOST_COUNT or FLEET_PERCENT) and a Value\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\t_pf_codedeploylib_platform(name) == \"Server\"\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"MinimumHealthyHosts\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-routing-block-matches-type",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TrafficRoutingConfig must carry exactly the sub-block its Type names",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Type picks the sub-block: the one it names has to be there and the other one\n# has to be absent. AllAtOnce names neither, so it takes neither.\n_pf_cdtrb_cfg(name) := trc if {\n\ttrc := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"TrafficRoutingConfig\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-block-matches-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [blk]),\n\tsprintf(\"TrafficRoutingConfig.Type is %v but %v is also set; the deployment configuration create fails with \\\"%vConfiguration should be null for %v type\\\"\", [t, blk, blk, t]),\n\tsprintf(\"Drop %v, or set Type to %v\", [blk, blk]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-trafficroutingconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\ttrc := _pf_cdtrb_cfg(name)\n\tt := object.get(trc, \"Type\", null)\n\t_pf_codedeploylib_lit(t)\n\tsome blk in [\"TimeBasedCanary\", \"TimeBasedLinear\"]\n\tblk != t\n\t_pf_codedeploylib_has(trc, blk)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-block-matches-type\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [t]),\n\tsprintf(\"TrafficRoutingConfig.Type is %v but there is no %v block; the deployment configuration create fails with \\\"%vConfiguration should not be null for %v type\\\"\", [t, t, t, t]),\n\tsprintf(\"Add the %v block with its interval and percentage, or use Type AllAtOnce\", [t]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-trafficroutingconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\ttrc := _pf_cdtrb_cfg(name)\n\tt := object.get(trc, \"Type\", null)\n\tt in {\"TimeBasedCanary\", \"TimeBasedLinear\"}\n\tnot _pf_codedeploylib_has(trc, t)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-routing-percentage-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Traffic routing percentage must be between 1 and 99",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# One check covers both blocks: the canary and the linear percentage go through\n# the same validation and come back with the same message.\n_pf_cdtrpct_bad(p) if p > 99\n\n_pf_cdtrpct_bad(p) if p < 1\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-routing-percentage-range\", \"ERROR\", name,\n\tsprintf(\"Properties.TrafficRoutingConfig.%v\", [blk]),\n\tsprintf(\"%v is %v; the deployment configuration create fails with \\\"Valid traffic routing percentage is from 1 to 99\\\"\", [blk, p]),\n\t\"Shift between 1 and 99 percent of the traffic per step (100 percent at once is Type AllAtOnce)\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tsome blk in [\"TimeBasedCanary.CanaryPercentage\", \"TimeBasedLinear.LinearPercentage\"]\n\tp := _pf_codedeploylib_num(resolve(name, sprintf(\"Properties.TrafficRoutingConfig.%v\", [blk])))\n\t_pf_cdtrpct_bad(p)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-traffic-shift-interval-max",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A traffic shift may not take more than 2880 minutes end to end",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The cap is on the whole shift, not on one wait. A canary waits once, so its\n# ceiling is the interval itself. A linear configuration waits\n# floor(100 / LinearPercentage) times, so the interval that fits shrinks as the\n# step does - measured 2026-09-14 us-east-1: 2880x99%, 1440x50%, 960x33%,\n# 288x10% and 28x1% are accepted and one minute more on any of them is not.\n_pf_cdtsi_shifts(pct) := floor(100 / pct)\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-shift-interval-max\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig.TimeBasedCanary.CanaryInterval\",\n\tsprintf(\"CanaryInterval is %v minutes; the deployment configuration create fails with \\\"Canary interval must be between 1 and 2880 minutes (2 days)\\\"\", [civ]),\n\t\"Wait at most 2880 minutes (2 days) before shifting the rest of the traffic\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tciv := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedCanary.CanaryInterval\"))\n\tciv > 2880\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-config-traffic-shift-interval-max\", \"ERROR\", name,\n\t\"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearInterval\",\n\tsprintf(\"Shifting %v percent every %v minutes takes %v minutes end to end; the deployment configuration create fails with \\\"Total Traffic shifting intervals must be positive integers up to 2880 minutes (2 days)\\\"\", [pct, liv, total]),\n\t\"Keep LinearInterval x floor(100 / LinearPercentage) at or below 2880 minutes (2 days)\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/limits.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tliv := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearInterval\"))\n\tpct := _pf_codedeploylib_num(resolve(name, \"Properties.TrafficRoutingConfig.TimeBasedLinear.LinearPercentage\"))\n\tpct > 0\n\ttotal := liv * _pf_cdtsi_shifts(pct)\n\ttotal > 2880\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-zonal-minimum-healthy-per-zone-range",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ZonalConfig MinimumHealthyHostsPerZone FLEET_PERCENT must be below 100",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The per-zone minimum has the same exclusive ceiling as the fleet-wide one,\n# but its own exception type and message.\nviolation contains make_diag_full(\"pf-codedeploy-config-zonal-minimum-healthy-per-zone-range\", \"ERROR\", name,\n\t\"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Value\",\n\tsprintf(\"MinimumHealthyHostsPerZone is FLEET_PERCENT %v; the deployment configuration create fails with \\\"The value of the 'Minimum health hosts per zone' setting when configured with a 'Type' value of 'FLEET_PERCENT' must be positive and less than 100.\\\"\", [v]),\n\t\"Use a FLEET_PERCENT value of 99 or less, or switch MinimumHealthyHostsPerZone.Type to HOST_COUNT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentconfig-zonalconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tresolve(name, \"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Type\") == \"FLEET_PERCENT\"\n\tv := _pf_codedeploylib_num(resolve(name, \"Properties.ZonalConfig.MinimumHealthyHostsPerZone.Value\"))\n\tv > 99\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-config-zonal-server-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ZonalConfig is only supported on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Zonal deployments roll through Availability Zones one at a time, which only\n# the EC2/on-premises platform does.\nviolation contains make_diag_full(\"pf-codedeploy-config-zonal-server-only\", \"ERROR\", name,\n\t\"Properties.ZonalConfig\",\n\tsprintf(\"ZonalConfig is set on a %v deployment configuration; the create fails with \\\"Zonal deployments are only supported with EC2 deployments.\\\"\", [p]),\n\t\"Drop ZonalConfig - it exists only for the Server (EC2/on-premises) platform\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations-create.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentConfig\")\n\tp := _pf_codedeploylib_platform(name)\n\tp != \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ZonalConfig\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "An enabled AlarmConfiguration needs at least one alarm",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Enabled means \"gate the deployment on these alarms\", so the list has to name\n# one. An absent list and an empty list are both refused, with two messages.\n_pf_cdalarm_one(ac) if {\n\ta := object.get(ac, \"Alarms\", null)\n\tis_array(a)\n\tcount(a) > 0\n}\n\n# A token in place of the list: unknowable, so the rule stays quiet.\n_pf_cdalarm_one(ac) if {\n\ta := object.get(ac, \"Alarms\", null)\n\ta != null\n\tnot is_array(a)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms\", \"ERROR\", name,\n\t\"Properties.AlarmConfiguration.Alarms\",\n\t\"AlarmConfiguration.Enabled is true but no alarm is listed; the deployment group create fails with \\\"Deployment Groups need to have at least one alarms attached if they are monitored.\\\"\",\n\t\"List at least one CloudWatch alarm in AlarmConfiguration.Alarms, or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-alarmconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tac := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"AlarmConfiguration\")\n\tobject.get(ac, \"Enabled\", false) == true\n\tnot _pf_cdalarm_one(ac)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-autorollback-enabled-requires-events",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "An enabled AutoRollbackConfiguration needs at least one event",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Enabled with no Events is a rollback that can never trigger, and the service\n# refuses it rather than picking a default.\n_pf_cdroll_one(rc) if {\n\te := object.get(rc, \"Events\", null)\n\tis_array(e)\n\tcount(e) > 0\n}\n\n_pf_cdroll_one(rc) if {\n\te := object.get(rc, \"Events\", null)\n\te != null\n\tnot is_array(e)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-autorollback-enabled-requires-events\", \"ERROR\", name,\n\t\"Properties.AutoRollbackConfiguration.Events\",\n\t\"AutoRollbackConfiguration.Enabled is true but no event is listed; the deployment group create fails with \\\"Deployment Groups need to have at least one event specified when auto rollback is enabled\\\"\",\n\t\"List at least one event (DEPLOYMENT_FAILURE, DEPLOYMENT_STOP_ON_ALARM, DEPLOYMENT_STOP_ON_REQUEST), or set Enabled to false\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-autorollbackconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\trc := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"AutoRollbackConfiguration\")\n\tobject.get(rc, \"Enabled\", false) == true\n\tnot _pf_cdroll_one(rc)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-blue-green-config-required-members",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "BlueGreenDeploymentConfiguration must carry DeploymentReadyOption and TerminateBlueInstancesOnDeploymentSuccess",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Both members are optional in the schema and neither gets a default: writing the\n# block at all commits you to both. The trigger is the block, not DeploymentStyle -\n# the service refuses these on a group that never says BLUE_GREEN (measured\n# 2026-09-14 us-east-1), which is also why the candidate's \"a BLUE_GREEN deployment\n# group must set ...\" wording is narrower than the check.\nviolation contains make_diag_full(\"pf-codedeploy-dg-blue-green-config-required-members\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.DeploymentReadyOption\",\n\t\"BlueGreenDeploymentConfiguration has no DeploymentReadyOption; the deployment group create fails with \\\"Deployment ready option cannot be null for blue green deployment\\\"\",\n\t\"Add DeploymentReadyOption with an ActionOnTimeout, or drop BlueGreenDeploymentConfiguration\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tnot _pf_codedeploylib_has(bg, \"DeploymentReadyOption\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-blue-green-config-required-members\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.TerminateBlueInstancesOnDeploymentSuccess\",\n\t\"BlueGreenDeploymentConfiguration has no TerminateBlueInstancesOnDeploymentSuccess; the deployment group create fails with \\\"Terminate blue instances on deployment success behaviour cannot be set to null for Blue Green deployments\\\"\",\n\t\"Add TerminateBlueInstancesOnDeploymentSuccess with an Action (TERMINATE or KEEP_ALIVE)\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tnot _pf_codedeploylib_has(bg, \"TerminateBlueInstancesOnDeploymentSuccess\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-bluegreen-requires-traffic-control",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A BLUE_GREEN deployment style requires WITH_TRAFFIC_CONTROL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Blue/green swaps traffic between two fleets, so there is no such thing as a\n# blue/green deployment that does not reroute traffic. A Lambda group gets a\n# different message for the same shape (\"For LAMBDA deployment, ...\") and is left\n# to pf-codedeploy-dg-lambda-requires-blue-green-traffic-control; the guard is\n# written as a negation so a group naming an application outside the template -\n# where the platform is unknowable - is still checked.\n_pf_cdbgtc_lambda(name) if {\n\t_pf_codedeploylib_dg_platform(name) == \"Lambda\"\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-bluegreen-requires-traffic-control\", \"ERROR\", name,\n\t\"Properties.DeploymentStyle.DeploymentOption\",\n\t\"DeploymentStyle is BLUE_GREEN with WITHOUT_TRAFFIC_CONTROL; the deployment group create fails with \\\"BLUE_GREEN deployment type not supported with WITHOUT_TRAFFIC_CONTROL option\\\"\",\n\t\"Set DeploymentOption to WITH_TRAFFIC_CONTROL (and give the group a LoadBalancerInfo), or use DeploymentType IN_PLACE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentstyle.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tnot _pf_cdbgtc_lambda(name)\n\tds := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"DeploymentStyle\")\n\tobject.get(ds, \"DeploymentType\", null) == \"BLUE_GREEN\"\n\tobject.get(ds, \"DeploymentOption\", null) == \"WITHOUT_TRAFFIC_CONTROL\"\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-copy-asg-requires-asg",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "COPY_AUTO_SCALING_GROUP needs exactly one Auto Scaling group on the deployment group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The green fleet is a copy of the blue one, so there has to be exactly one blue\n# Auto Scaling group to copy. Zero groups and two groups are refused with the\n# same message.\n_pf_cdcasg_one(name) if {\n\ta := object.get(_pf_codedeploylib_props(name), \"AutoScalingGroups\", null)\n\tis_array(a)\n\tcount(a) == 1\n}\n\n_pf_cdcasg_one(name) if {\n\ta := object.get(_pf_codedeploylib_props(name), \"AutoScalingGroups\", null)\n\ta != null\n\tnot is_array(a)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-copy-asg-requires-asg\", \"ERROR\", name,\n\t\"Properties.AutoScalingGroups\",\n\t\"GreenFleetProvisioningOption.Action is COPY_AUTO_SCALING_GROUP but AutoScalingGroups does not name exactly one group; the deployment group create fails with \\\"Exactly one AutoScaling group must be specified when selecting the COPY_AUTO_SCALING_GROUP green fleet provisioning option.\\\"\",\n\t\"Name exactly one Auto Scaling group in AutoScalingGroups, or use GreenFleetProvisioningOption DISCOVER_EXISTING\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-greenfleetprovisioningoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tgf := _pf_codedeploylib_obj(bg, \"GreenFleetProvisioningOption\")\n\tobject.get(gf, \"Action\", null) == \"COPY_AUTO_SCALING_GROUP\"\n\tnot _pf_cdcasg_one(name)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-deployment-config-platform-match",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "DeploymentConfigName must belong to the application's compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application",
+      "AWS::CodeDeploy::DeploymentConfig"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A deployment configuration carries its own compute platform, and the service\n# refuses one that does not match the application's. Two ways to know it from the\n# template: a predefined CodeDeployDefault.* name spells the platform out, and a\n# custom configuration in the same template carries ComputePlatform. Any other\n# literal names a configuration created elsewhere, and the rule stays quiet.\n_pf_cdpm_predef(n) := \"Lambda\" if startswith(n, \"CodeDeployDefault.Lambda\")\n\n_pf_cdpm_predef(n) := \"ECS\" if startswith(n, \"CodeDeployDefault.ECS\")\n\n_pf_cdpm_predef(n) := \"Server\" if {\n\tn in {\"CodeDeployDefault.AllAtOnce\", \"CodeDeployDefault.HalfAtATime\", \"CodeDeployDefault.OneAtATime\"}\n}\n\n_pf_cdpm_cfg(name) := p if {\n\tc := resolve(name, \"Properties.DeploymentConfigName\")\n\tinput.resources[c].resourceType == \"AWS::CodeDeploy::DeploymentConfig\"\n\tp := _pf_codedeploylib_platform(c)\n}\n\n_pf_cdpm_cfg(name) := p if {\n\tc := resolve(name, \"Properties.DeploymentConfigName\")\n\t_pf_codedeploylib_lit(c)\n\tp := _pf_cdpm_predef(c)\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-deployment-config-platform-match\", \"ERROR\", name,\n\t\"Properties.DeploymentConfigName\",\n\tsprintf(\"The deployment configuration is for the %v compute platform but the application is %v; the deployment group create fails with \\\"Compute platform of deployment config ... does not match expected compute platform, correct compute platform should be %v.\\\"\", [cp, ap, ap]),\n\tsprintf(\"Name a deployment configuration whose compute platform is %v\", [ap]),\n\t\"https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tap := _pf_codedeploylib_dg_platform(name)\n\tcp := _pf_cdpm_cfg(name)\n\tcp != ap\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-deployment-ready-continue-no-wait-time",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "CONTINUE_DEPLOYMENT does not take a WaitTimeInMinutes",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CONTINUE_DEPLOYMENT means \"reroute as soon as the green fleet is ready\", so\n# there is no timeout to wait out. Zero is accepted (it is the same as no wait);\n# anything above it is refused.\nviolation contains make_diag_full(\"pf-codedeploy-dg-deployment-ready-continue-no-wait-time\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.DeploymentReadyOption.WaitTimeInMinutes\",\n\tsprintf(\"DeploymentReadyOption.ActionOnTimeout is CONTINUE_DEPLOYMENT with WaitTimeInMinutes %v; the deployment group create fails with \\\"Deployment ready action cannot be set to 'CONTINUE_DEPLOYMENT' when timeout is specified\\\"\", [w]),\n\t\"Drop WaitTimeInMinutes (or set it to 0), or use ActionOnTimeout STOP_DEPLOYMENT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentreadyoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tdro := _pf_codedeploylib_obj(bg, \"DeploymentReadyOption\")\n\tobject.get(dro, \"ActionOnTimeout\", null) == \"CONTINUE_DEPLOYMENT\"\n\tw := _pf_codedeploylib_num(object.get(dro, \"WaitTimeInMinutes\", null))\n\tw > 0\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-deployment-ready-stop-requires-wait-time",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "STOP_DEPLOYMENT needs a WaitTimeInMinutes above zero",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# STOP_DEPLOYMENT stops the deployment when the timeout expires, so a timeout of\n# zero (written, or left out and defaulted) would stop it before it began.\n_pf_cdstop_wait(dro) := w if {\n\tw := _pf_codedeploylib_num(object.get(dro, \"WaitTimeInMinutes\", null))\n}\n\n_pf_cdstop_wait(dro) := 0 if {\n\tnot _pf_codedeploylib_has(dro, \"WaitTimeInMinutes\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-deployment-ready-stop-requires-wait-time\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.DeploymentReadyOption.WaitTimeInMinutes\",\n\t\"DeploymentReadyOption.ActionOnTimeout is STOP_DEPLOYMENT with a wait time of 0 minutes; the deployment group create fails with \\\"Deployment ready action cannot be set to STOP_DEPLOYMENT when timeout is set to 0 minutes.\\\"\",\n\t\"Set WaitTimeInMinutes to the number of minutes to wait before stopping, or use ActionOnTimeout CONTINUE_DEPLOYMENT\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentreadyoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tdro := _pf_codedeploylib_obj(bg, \"DeploymentReadyOption\")\n\tobject.get(dro, \"ActionOnTimeout\", null) == \"STOP_DEPLOYMENT\"\n\t_pf_cdstop_wait(dro) == 0\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-ec2-filters-server-platform-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Instance tag filters are only valid on the Server compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Tag filters pick EC2 or on-premises instances to deploy to, which the Lambda\n# and ECS platforms do not have. All four targeting properties are refused, each\n# with its own exception but the same sentence.\nviolation contains make_diag_full(\"pf-codedeploy-dg-ec2-filters-server-platform-only\", \"ERROR\", name,\n\tsprintf(\"Properties.%v\", [k]),\n\tsprintf(\"%v is set on a deployment group whose application is the %v compute platform; the create fails with \\\"For %v deployment group, %v%v can not be specified\\\"\", [k, p, p, lower(substring(k, 0, 1)), substring(k, 1, -1)]),\n\tsprintf(\"Drop %v - only the Server (EC2/on-premises) platform selects instances by tag\", [k]),\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_dg_platform(name)\n\tp != \"Server\"\n\tsome k in [\"Ec2TagFilters\", \"Ec2TagSet\", \"OnPremisesInstanceTagFilters\", \"OnPremisesTagSet\"]\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), k)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-ec2-tag-filters-xor-tag-set",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Ec2TagFilters and Ec2TagSet cannot both be specified",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The two express the same selection differently (a flat OR-list versus groups\n# ANDed together), and the service will not merge them.\nviolation contains make_diag_full(\"pf-codedeploy-dg-ec2-tag-filters-xor-tag-set\", \"ERROR\", name,\n\t\"Properties.Ec2TagSet\",\n\t\"Ec2TagFilters and Ec2TagSet are both set; the deployment group create fails with \\\"The request specified both Ec2TagFilters and Ec2TagSet, but only one of these data types can be used in a single call.\\\"\",\n\t\"Keep one: Ec2TagFilters for a flat OR of tags, Ec2TagSet for groups that must all match\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_props(name)\n\t_pf_codedeploylib_has(p, \"Ec2TagFilters\")\n\t_pf_codedeploylib_has(p, \"Ec2TagSet\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-ecs-services-requires-ecs-platform",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "ECSServices is only valid on the ECS compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# An EC2/on-premises deployment group has no ECS services to name.\n# TargetGroupPairInfoList is in the same sentence of the service error but is NOT\n# in the same check: the service accepts it on a Server group (measured\n# 2026-09-14 us-east-1), so this rule does not claim it.\nviolation contains make_diag_full(\"pf-codedeploy-dg-ecs-services-requires-ecs-platform\", \"ERROR\", name,\n\t\"Properties.ECSServices\",\n\t\"ECSServices is set on a deployment group whose application is the Server compute platform; the create fails with \\\"Server Deployment Groups should not define a value for ecsServices, eksClusters, or targetGroupPairInfoList\\\"\",\n\t\"Drop ECSServices, or point ApplicationName at an application whose ComputePlatform is ECS\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Server\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ECSServices\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-lambda-forbids-blue-green-config",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "BlueGreenDeploymentConfiguration is not valid on the Lambda compute platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Lambda deployment group is always blue/green, and the shift is described by\n# its deployment configuration rather than by this block, which talks about\n# instances and Auto Scaling groups. ECS is the opposite - there the block is\n# mandatory - so this one names Lambda only.\nviolation contains make_diag_full(\"pf-codedeploy-dg-lambda-forbids-blue-green-config\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration\",\n\t\"BlueGreenDeploymentConfiguration is set on a deployment group whose application is the Lambda compute platform; the create fails with \\\"For Lambda deployment group, blueGreenDeploymentConfiguration can not be specified\\\"\",\n\t\"Drop BlueGreenDeploymentConfiguration - a Lambda deployment group shifts traffic through its DeploymentConfigName\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Lambda\"\n\t_pf_codedeploylib_has(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-lambda-requires-blue-green-traffic-control",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Lambda deployment group must be BLUE_GREEN with WITH_TRAFFIC_CONTROL",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup",
+      "AWS::CodeDeploy::Application"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# A Lambda deployment always shifts an alias between two versions, so it has\n# exactly one legal deployment style. Only a written-out value is judged: an\n# absent DeploymentStyle is left to CloudFormation's handler, which supplies one.\n# That handler also sends ec2TagFilters for any DeploymentType other than\n# BLUE_GREEN, so an IN_PLACE Lambda group is refused for the tag filters before\n# the style is ever looked at (measured 2026-09-14 us-east-1) - the deploy still\n# fails, just with the other sentence.\n_pf_cdlbg_bad(ds) if {\n\tdt := object.get(ds, \"DeploymentType\", null)\n\t_pf_codedeploylib_lit(dt)\n\tdt != \"BLUE_GREEN\"\n}\n\n_pf_cdlbg_bad(ds) if {\n\to := object.get(ds, \"DeploymentOption\", null)\n\t_pf_codedeploylib_lit(o)\n\to != \"WITH_TRAFFIC_CONTROL\"\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-lambda-requires-blue-green-traffic-control\", \"ERROR\", name,\n\t\"Properties.DeploymentStyle\",\n\t\"The application is the Lambda compute platform, so the deployment group create fails with \\\"For LAMBDA deployment, the deployment type must be BLUE_GREEN, and deployment option must be WITH_TRAFFIC_CONTROL.\\\"\",\n\t\"Set DeploymentStyle to DeploymentType BLUE_GREEN with DeploymentOption WITH_TRAFFIC_CONTROL\",\n\t\"https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_CreateDeploymentGroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Lambda\"\n\tds := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"DeploymentStyle\")\n\t_pf_cdlbg_bad(ds)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-onprem-tag-filters-xor-tag-set",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "OnPremisesInstanceTagFilters and OnPremisesTagSet cannot both be specified",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Same exclusivity as the EC2 pair, enforced by its own exception.\nviolation contains make_diag_full(\"pf-codedeploy-dg-onprem-tag-filters-xor-tag-set\", \"ERROR\", name,\n\t\"Properties.OnPremisesTagSet\",\n\t\"OnPremisesInstanceTagFilters and OnPremisesTagSet are both set; the deployment group create fails with \\\"The request specified both OnPremisesTagFilters and OnPremisesTagSet, but only one of these data types can be used in a single call.\\\"\",\n\t\"Keep one: OnPremisesInstanceTagFilters for a flat OR of tags, OnPremisesTagSet for groups that must all match\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_props(name)\n\t_pf_codedeploylib_has(p, \"OnPremisesInstanceTagFilters\")\n\t_pf_codedeploylib_has(p, \"OnPremisesTagSet\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-revision-bundle-type-server",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "An EC2/On-Premises revision bundle is a tar, tgz or zip archive",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The Deployment property makes CloudFormation start a deployment, and on the\n# EC2/On-Premises platform the revision bundle has to be an archive. YAML and\n# JSON are the AppSpec forms of the Lambda and ECS platforms and are refused\n# here. lower() keeps the rule off a spelling the service might still take.\nviolation contains make_diag_full(\"pf-codedeploy-dg-revision-bundle-type-server\", \"ERROR\", name,\n\t\"Properties.Deployment.Revision.S3Location.BundleType\",\n\tsprintf(\"the deployment group is on the EC2/On-Premises platform but its revision bundle type is \\\"%s\\\"; the deployment fails with \\\"BundleType must be either tar, zip or tgz\\\"\", [bt]),\n\t\"Bundle the revision as tar, tgz or zip\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-s3location.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Server\"\n\tbt := resolve(name, \"Properties.Deployment.Revision.S3Location.BundleType\")\n\t_pf_codedeploylib_lit(bt)\n\tnot lower(bt) in [\"tar\", \"tgz\", \"zip\"]\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-revision-github-server-only",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A GitHub revision can only be deployed on the EC2/On-Premises platform",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CloudFormation creates the deployment group and then starts the deployment the\n# Deployment property describes. A GitHub revision is only a thing on the\n# EC2/On-Premises platform; on Lambda or ECS the CreateDeployment behind the\n# property is refused and the stack rolls back.\n_pf_cdrgh_github(name) if resolve(name, \"Properties.Deployment.Revision.RevisionType\") == \"GitHub\"\n\n_pf_cdrgh_github(name) if {\n\td := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"Deployment\")\n\tr := _pf_codedeploylib_obj(d, \"Revision\")\n\t_pf_codedeploylib_has(r, \"GitHubLocation\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-revision-github-server-only\", \"ERROR\", name,\n\t\"Properties.Deployment.Revision\",\n\tsprintf(\"the deployment group is on the %s compute platform but its Deployment names a GitHub revision; the deployment fails with \\\"Revision type: GitHub is not supported under compute platform: %s\\\"\", [p, upper(p)]),\n\t\"Deploy the revision from Amazon S3, or move the deployment group to the EC2/On-Premises platform\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-githublocation.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tp := _pf_codedeploylib_dg_platform(name)\n\tp in [\"Lambda\", \"ECS\"]\n\t_pf_cdrgh_github(name)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-tag-filter-type-value-consistency",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A KEY_ONLY tag filter carries no Value and a VALUE_ONLY tag filter carries no Key",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The filter Type says which halves of the tag are matched; the half that is not\n# matched must not be supplied. Applies to every place a tag filter can sit: the\n# two flat lists and the two tag sets.\n_pf_cdtfc_flat(name) := [{\"path\": sprintf(\"Properties.%s.%d\", [k, it.index]), \"value\": it.value} |\n\tsome k in [\"Ec2TagFilters\", \"OnPremisesInstanceTagFilters\"]\n\tsome it in flatten_list(name, sprintf(\"Properties.%s\", [k]))\n]\n\n_pf_cdtfc_set(name, prop, list, group) := [{\"path\": sprintf(\"Properties.%s.%s.%d.%s.%d\", [prop, list, g.index, group, it.index]), \"value\": it.value} |\n\tsome g in flatten_list(name, sprintf(\"Properties.%s.%s\", [prop, list]))\n\tsome it in flatten_list(name, sprintf(\"Properties.%s.%s.%d.%s\", [prop, list, g.index, group]))\n]\n\n_pf_cdtfc_items(name) := array.concat(\n\t_pf_cdtfc_flat(name),\n\tarray.concat(\n\t\t_pf_cdtfc_set(name, \"Ec2TagSet\", \"Ec2TagSetList\", \"Ec2TagGroup\"),\n\t\t_pf_cdtfc_set(name, \"OnPremisesTagSet\", \"OnPremisesTagSetList\", \"OnPremisesTagGroup\"),\n\t),\n)\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-tag-filter-type-value-consistency\", \"ERROR\", name,\n\tit.path,\n\t\"the tag filter Type is KEY_ONLY but a Value is supplied; the deployment group create fails with \\\"Values must not be provided for key-only filters.\\\"\",\n\t\"Drop Value, or use KEY_AND_VALUE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-ec2tagfilter.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome it in _pf_cdtfc_items(name)\n\tis_object(it.value)\n\tobject.get(it.value, \"Type\", null) == \"KEY_ONLY\"\n\t_pf_codedeploylib_has(it.value, \"Value\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-tag-filter-type-value-consistency\", \"ERROR\", name,\n\tit.path,\n\t\"the tag filter Type is VALUE_ONLY but a Key is supplied; the deployment group create fails with \\\"Keys must not be provided for value-only filters.\\\"\",\n\t\"Drop Key, or use KEY_AND_VALUE\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-ec2tagfilter.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome it in _pf_cdtfc_items(name)\n\tis_object(it.value)\n\tobject.get(it.value, \"Type\", null) == \"VALUE_ONLY\"\n\t_pf_codedeploylib_has(it.value, \"Key\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-target-group-name-max-32",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A TargetGroupInfo Name is a target group name of at most 32 characters, never an ARN",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# TargetGroupInfo.Name is the target group's NAME, and a target group name is at\n# most 32 characters. Writing its ARN there is the same mistake seen from the\n# service side: the ARN is over 32 characters, so it is refused by this one check.\n# Measured with and without DeploymentStyle - the length is checked either way.\nviolation contains make_diag_full(\"pf-codedeploy-dg-target-group-name-max-32\", \"ERROR\", name,\n\tsprintf(\"Properties.LoadBalancerInfo.TargetGroupInfoList.%d.Name\", [it.index]),\n\tsprintf(\"the target group name is %d characters; the deployment group create fails with \\\"The target group name ... specified in targetGroupInfoList exceeds the maximum allowed length of 32 characters.\\\"\", [count(n)]),\n\t\"Name the target group (at most 32 characters), not its ARN\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-targetgroupinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome it in flatten_list(name, \"Properties.LoadBalancerInfo.TargetGroupInfoList\")\n\tis_object(it.value)\n\tn := object.get(it.value, \"Name\", null)\n\t_pf_codedeploylib_lit(n)\n\tcount(n) > 32\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-termination-wait-max",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "TerminationWaitTimeInMinutes may not exceed 2880 (two days)",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# The wait before the original instances are terminated is capped at two days.\n# _pf_codedeploylib_num keeps a Ref or an absent key out of the comparison -\n# to_number(resolve(...)) would read an absent key as 0.\nviolation contains make_diag_full(\"pf-codedeploy-dg-termination-wait-max\", \"ERROR\", name,\n\t\"Properties.BlueGreenDeploymentConfiguration.TerminateBlueInstancesOnDeploymentSuccess.TerminationWaitTimeInMinutes\",\n\tsprintf(\"TerminationWaitTimeInMinutes is %d; the deployment group create fails with \\\"Timeout for instance termination cannot be more than 2 days\\\"\", [w]),\n\t\"Wait at most 2880 minutes before terminating the original instances\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-blueinstanceterminationoption.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tbg := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), \"BlueGreenDeploymentConfiguration\")\n\tt := _pf_codedeploylib_obj(bg, \"TerminateBlueInstancesOnDeploymentSuccess\")\n\tw := _pf_codedeploylib_num(object.get(t, \"TerminationWaitTimeInMinutes\", null))\n\tw > 2880\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-traffic-control-requires-load-balancer",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A Server deployment group routing traffic needs a load balancer or target group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# WITH_TRAFFIC_CONTROL means CodeDeploy moves instances in and out of a load\n# balancer, so on the EC2/On-Premises platform it needs one to move them in and\n# out of. Lambda also uses WITH_TRAFFIC_CONTROL and carries no LoadBalancerInfo,\n# so the rule only speaks when the application it names is a Server one.\n_pf_cdtcrlb_lists := [\"ElbInfoList\", \"TargetGroupInfoList\", \"TargetGroupPairInfoList\"]\n\n_pf_cdtcrlb_has_lb(name) if {\n\tsome k in _pf_cdtcrlb_lists\n\tcount(flatten_list(name, sprintf(\"Properties.LoadBalancerInfo.%s\", [k]))) > 0\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-traffic-control-requires-load-balancer\", \"ERROR\", name,\n\t\"Properties.LoadBalancerInfo\",\n\t\"DeploymentStyle.DeploymentOption is WITH_TRAFFIC_CONTROL but LoadBalancerInfo names no load balancer or target group; the deployment group create fails with \\\"The deploymentOption value is set to WITH_TRAFFIC_CONTROL, but no load balancer or target group has been specified in loadBalancerInfo.\\\"\",\n\t\"Name a load balancer in LoadBalancerInfo, or use WITHOUT_TRAFFIC_CONTROL\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-loadbalancerinfo.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\t_pf_codedeploylib_dg_platform(name) == \"Server\"\n\tresolve(name, \"Properties.DeploymentStyle.DeploymentOption\") == \"WITH_TRAFFIC_CONTROL\"\n\tnot _pf_cdtcrlb_has_lb(name)\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-trigger-name-and-target-unique",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "Trigger names and trigger target ARNs are each unique within a deployment group",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n_pf_cdtu_vals(name, key) := [v |\n\tsome it in flatten_list(name, \"Properties.TriggerConfigurations\")\n\tv := resolve(name, sprintf(\"Properties.TriggerConfigurations.%d.%s\", [it.index, key]))\n]\n\n_pf_cdtu_dup(name, key) := [v |\n\tvs := _pf_cdtu_vals(name, key)\n\tsome v in vs\n\tcount([y | some y in vs; y == v]) > 1\n]\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-trigger-name-and-target-unique\", \"ERROR\", name,\n\t\"Properties.TriggerConfigurations\",\n\tsprintf(\"two triggers share the name \\\"%s\\\"; the deployment group create fails with \\\"Duplicate Trigger target name detected\\\"\", [v]),\n\t\"Give every trigger its own TriggerName\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome v in _pf_cdtu_dup(name, \"TriggerName\")\n}\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-trigger-name-and-target-unique\", \"ERROR\", name,\n\t\"Properties.TriggerConfigurations\",\n\t\"two triggers point at the same topic; the deployment group create fails with \\\"Duplicate Trigger target arn detected\\\"\",\n\t\"Point every trigger at its own topic, and put all the events one topic needs on a single trigger\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tsome _ in _pf_cdtu_dup(name, \"TriggerTargetArn\")\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-trigger-target-region",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A trigger's SNS topic must live in the deployment group's own Region",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# CodeDeploy resolves the trigger topic in its own Region only: a topic ARN whose\n# Region field is another one is refused out of hand, whether or not the topic\n# really exists there. Needs data.cdk_preflight.deploy_region, so the rule is\n# silent unless the engine was given a concrete region.\nviolation contains make_diag_full(\"pf-codedeploy-dg-trigger-target-region\", \"ERROR\", name,\n\tsprintf(\"Properties.TriggerConfigurations.%d.TriggerTargetArn\", [it.index]),\n\tsprintf(\"the trigger topic is in %s but the deployment group deploys to %s; the create fails with \\\"Topic ARN ... is not valid\\\"\", [r, region]),\n\t\"Point the trigger at a topic in the deployment group's own Region (build the ARN with ${AWS::Region})\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tregion := data.cdk_preflight.deploy_region\n\tis_string(region)\n\tsome it in flatten_list(name, \"Properties.TriggerConfigurations\")\n\tarn := resolve(name, sprintf(\"Properties.TriggerConfigurations.%d.TriggerTargetArn\", [it.index]))\n\tis_string(arn)\n\tstartswith(arn, \"arn:\")\n\tparts := split(arn, \":\")\n\tcount(parts) >= 6\n\tparts[2] == \"sns\"\n\tr := parts[3]\n\tr != \"\"\n\tr != region\n}\n"
+  },
+  {
+    "id": "pf-codedeploy-dg-triggers-max-10",
+    "service": "codedeploy",
+    "severity": "ERROR",
+    "title": "A deployment group may carry at most 10 notification triggers",
+    "upstream": "none",
+    "resourceTypes": [
+      "AWS::CodeDeploy::DeploymentGroup"
+    ],
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\nviolation contains make_diag_full(\"pf-codedeploy-dg-triggers-max-10\", \"ERROR\", name,\n\t\"Properties.TriggerConfigurations\",\n\tsprintf(\"the deployment group declares %d notification triggers; the create fails with \\\"Deployment Groups cannot contain more than 10 TriggerTargets.\\\"\", [n]),\n\t\"Declare at most 10 triggers on the deployment group\",\n\t\"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-triggerconfig.html\") if {\n\tsome name in resources_of_type(\"AWS::CodeDeploy::DeploymentGroup\")\n\tn := count(flatten_list(name, \"Properties.TriggerConfigurations\"))\n\tn > 10\n}\n"
+  },
+  {
     "id": "pf-codepipeline-action-config-required-keys",
     "service": "codepipeline",
     "severity": "ERROR",
@@ -26351,6 +26743,10 @@ export const BUNDLED_LIBS: BundledLibData[] = [
   {
     "name": "_lib/codecommit",
     "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeCommit rules.\n#\n# AWS::CodeCommit::Repository.Triggers is applied by the CloudFormation handler\n# with PutRepositoryTriggers after the repository exists, so every trigger\n# constraint surfaces as a CREATE_FAILED on the repository itself. Triggers are\n# read off the raw document: resolve() cannot prove a key absent, and the list\n# has to keep its index so a diagnostic can point at one trigger.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n_pf_cclib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_cclib_triggers(name) := t if {\n\tt := object.get(_pf_cclib_props(name), \"Triggers\", [])\n\tis_array(t)\n}\n\n# A user-written literal string. Ref/GetAtt resolve to a logical id in the\n# template, and an unresolved intrinsic stays a marker object.\n_pf_cclib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# The parts of a literal ARN, guarded so a token never reaches a rule.\n_pf_cclib_arn(v) := parts if {\n\t_pf_cclib_lit(v)\n\tstartswith(v, \"arn:\")\n\tparts := split(v, \":\")\n\tcount(parts) >= 6\n}\n\n# Git ref names CodeCommit rejects. Measured against PutRepositoryTriggers\n# (2026-09-14, us-east-1): a space or a tab, \"..\", \"//\", \"@{\", any of ~^:?*[\\,\n# a leading \"/\" or \".\", a trailing \"/\" or \".\", and a \".lock\" suffix all raise\n# InvalidRepositoryTriggerBranchNameException. Accepted in the same run, so\n# deliberately not encoded: ; , ' ( ) & % # ! + = < | \" ` , a leading \"-\", a\n# bare \"@\", non-ASCII, and a 255-character name.\n_pf_cclib_bad_ref(b) if {\n\t_pf_cclib_lit(b)\n\tregex.match(`[ \\t~^:?*\\[\\\\]|\\.\\.|//|@\\{|^[./]|[/.]$|\\.lock$`, b)\n}\n"
+  },
+  {
+    "name": "_lib/codedeploy",
+    "rego": "package cdk_preflight\n\nimport rego.v1\n\n# Shared helpers for the CodeDeploy rules: traversal of the raw document\n# (resolve() cannot prove a key absent), literal/number guards, and the compute\n# platform that decides which half of a deployment configuration is legal.\n# Loaded ahead of every rule (BUNDLED_LIBS); never emits diagnostics.\n\n# A user-written literal, not a Ref/GetAtt that resolve() turned into a logical id.\n_pf_codedeploylib_lit(v) if {\n\tis_string(v)\n\tnot input.resources[v]\n}\n\n# Raw properties of a resource. The preprocessed document is the only place\n# where \"the key is absent\" can be told apart from \"the value is a token\".\n_pf_codedeploylib_props(name) := p if {\n\tp := input.resources[name].properties\n\tis_object(p)\n}\n\n_pf_codedeploylib_has(o, k) if {\n\tis_object(o)\n\tobject.get(o, k, \"__pf_absent\") != \"__pf_absent\"\n}\n\n_pf_codedeploylib_obj(o, k) := v if {\n\tis_object(o)\n\tv := object.get(o, k, null)\n\tis_object(v)\n}\n\n# A number written as a literal - a JSON number, or the string CloudFormation\n# also accepts for a numeric property. A Ref and an absent key both yield\n# nothing, so a caller checking a lower bound is not fooled by to_number(null),\n# which is 0.\n_pf_codedeploylib_num(v) := v if is_number(v)\n\n_pf_codedeploylib_num(v) := n if {\n\tis_string(v)\n\tregex.match(`^-?[0-9]+$`, v)\n\tn := to_number(v)\n}\n\n# ComputePlatform of a resource that carries its own - AWS::CodeDeploy::Application\n# and AWS::CodeDeploy::DeploymentConfig. An absent property is Server: the\n# service applies that default and then enforces the Server rules against it\n# (measured 2026-09-14 us-east-1: CreateDeploymentConfig with no computePlatform\n# and a trafficRoutingConfig fails with \"should be null for Server deployment\n# configuration\"). A Ref or token yields nothing, so a rule built on this helper\n# stays silent rather than guessing.\n#\n# A deployment group does NOT carry one: its platform comes from the application\n# it names, which is a cross-resource hop this helper deliberately does not make.\n_pf_codedeploylib_platform(name) := p if {\n\tp := resolve(name, \"Properties.ComputePlatform\")\n\t_pf_codedeploylib_lit(p)\n}\n\n_pf_codedeploylib_platform(name) := \"Server\" if {\n\tnot _pf_codedeploylib_has(_pf_codedeploylib_props(name), \"ComputePlatform\")\n}\n\n\n# Compute platform of a deployment group. It carries none of its own: the platform\n# is the one on the AWS::CodeDeploy::Application that ApplicationName points at.\n# Only a Ref to an application in the same template can answer - a literal name\n# refers to an application created elsewhere, whose platform the template does not\n# know, so the helper yields nothing and every rule built on it stays silent\n# rather than assuming Server.\n_pf_codedeploylib_dg_platform(name) := p if {\n\ta := resolve(name, \"Properties.ApplicationName\")\n\tinput.resources[a].resourceType == \"AWS::CodeDeploy::Application\"\n\tp := _pf_codedeploylib_platform(a)\n}\n"
   },
   {
     "name": "_lib/codepipeline",

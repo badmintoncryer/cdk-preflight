@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "R1": {
+      "Type": "AWS::CodeDeploy::Application",
+      "Properties": {
+        "ComputePlatform": "Server"
+      }
+    },
+    "R2": {
+      "Type": "AWS::CodeDeploy::DeploymentGroup",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "R1"
+        },
+        "ServiceRoleArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
+        "BlueGreenDeploymentConfiguration": {
+          "DeploymentReadyOption": {
+            "ActionOnTimeout": "CONTINUE_DEPLOYMENT"
+          },
+          "GreenFleetProvisioningOption": {
+            "Action": "COPY_AUTO_SCALING_GROUP"
+          },
+          "TerminateBlueInstancesOnDeploymentSuccess": {
+            "Action": "KEEP_ALIVE",
+            "TerminationWaitTimeInMinutes": 0
+          }
+        }
+      }
+    }
+  }
+}

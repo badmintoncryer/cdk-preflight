@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-lambda-forbids-blue-green-config
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup, AWS::CodeDeploy::Application]
+severity: ERROR
+title: "BlueGreenDeploymentConfiguration is not valid on the Lambda compute platform"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-bluegreendeploymentconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: Lambda application, deployment group BLUE_GREEN + WITH_TRAFFIC_CONTROL carrying a complete BlueGreenDeploymentConfiguration -> \"For Lambda deployment group, blueGreenDeploymentConfiguration can not be specified\" (ROLLBACK_COMPLETE); pass the same group without the block -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: an ECS group is the opposite (\"For ECS deployment group, blueGreenDeploymentConfiguration must be specified\"), so the rule names Lambda only."
+addedOn: 2026-09-14

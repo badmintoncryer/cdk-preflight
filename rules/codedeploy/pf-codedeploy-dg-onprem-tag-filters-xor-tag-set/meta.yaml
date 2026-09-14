@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-onprem-tag-filters-xor-tag-set
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "OnPremisesInstanceTagFilters and OnPremisesTagSet cannot both be specified"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentgroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: OnPremisesInstanceTagFilters and OnPremisesTagSet both set -> \"The request specified both OnPremisesTagFilters and OnPremisesTagSet, but only one of these data types can be used in a single call. Remove one tag specification type, and then try again.\" (ROLLBACK_COMPLETE); pass OnPremisesTagSet alone -> CREATE_COMPLETE."
+addedOn: 2026-09-14

@@ -1,0 +1,12 @@
+id: pf-codedeploy-config-server-forbids-traffic-routing
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentConfig]
+severity: ERROR
+title: "TrafficRoutingConfig is not valid on the Server compute platform"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codedeploy-deploymentconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: ComputePlatform Server + TrafficRoutingConfig AllAtOnce -> \"Traffic routing configuration should be null for Server deployment configuration\" (ROLLBACK_COMPLETE); pass Server without TrafficRoutingConfig -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: omitting ComputePlatform altogether draws the same rejection, which is why the rule reads an absent platform as Server."
+addedOn: 2026-09-14

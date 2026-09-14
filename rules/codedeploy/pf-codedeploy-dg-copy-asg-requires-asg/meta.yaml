@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-copy-asg-requires-asg
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "COPY_AUTO_SCALING_GROUP needs exactly one Auto Scaling group on the deployment group"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-greenfleetprovisioningoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: GreenFleetProvisioningOption COPY_AUTO_SCALING_GROUP with no AutoScalingGroups -> \"Exactly one AutoScaling group must be specified when selecting the COPY_AUTO_SCALING_GROUP green fleet provisioning option.\" (ROLLBACK_COMPLETE); pass the same option naming one Auto Scaling group (MinSize/MaxSize/DesiredCapacity 0, so no instance ever launches) -> CREATE_COMPLETE. Confound removed: with Ec2TagFilters also on the group the same create is refused with a longer form of the message (\"To provision based off an existing fleet that contains EC2 instances, on premises instances or multiple AutoScaling groups, please select the PROVISION_FROM_LAUNCH_CONFIGURATION option.\"), so neither fixture carries tag filters."
+addedOn: 2026-09-14
