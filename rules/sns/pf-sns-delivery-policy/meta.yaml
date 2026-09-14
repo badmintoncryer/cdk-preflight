@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/sns/latest/dg/sns-message-delivery
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: Attributes Reason: DeliveryPolicy: healthyRetryPolicy.numRetries must be less than or equal to 100\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: one subscription breaking two branches at once — numRetries 101 and minDelayTarget 21 over maxDelayTarget 20 -> \"DeliveryPolicy: healthyRetryPolicy.numRetries must be less than or equal to 100\" (ROLLBACK_COMPLETE; SNS reports the retry count first, so the delay ordering stays behind it); pass numRetries 50 with minDelayTarget 60 and maxDelayTarget 60 -> CREATE_COMPLETE."
 addedOn: 2026-09-05

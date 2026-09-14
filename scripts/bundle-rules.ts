@@ -303,6 +303,10 @@ export function crossFieldProblem(rego: string, fail: string, pass: string): str
     const via = /to_number\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/.exec(expr);
     if (via) expr = new RegExp(`(?:^|\\n)\\s*${via[1]}\\s*:=\\s*(.*)`).exec(block)?.[1] ?? expr;
     const quoted = [...expr.matchAll(/"([^"]*)"/g)].map((q) => q[1]).filter((q) => !q.startsWith('__pf'));
+    // 足し合わせた値は 1 つのプロパティではない。`total := a + b + c` を最後の名前で代表させると
+    // 見当違いの組を突き合わせる（SNS の `numRetries < total` がこれで numMaxDelayRetries と
+    // 比べられていた）。算術が混ざった代入は解決できないものとして黙る。
+    if (/[+*/]|\s-\s/.test(expr.replace(/"[^"]*"/g, ''))) return undefined;
     const seg = quoted.pop()?.split('.').pop();
     return seg && /^[A-Za-z][A-Za-z0-9]*$/.test(seg) ? seg : undefined;
   };

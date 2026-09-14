@@ -10,7 +10,7 @@
         "Statistic": "Average",
         "Period": 60,
         "Threshold": 80,
-        "DatapointsToAlarm": 5
+        "DatapointsToAlarm": 4
       }
     }
   }

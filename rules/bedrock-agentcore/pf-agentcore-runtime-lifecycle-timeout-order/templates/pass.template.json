@@ -80,7 +80,7 @@
         },
         "LifecycleConfiguration": {
           "IdleRuntimeSessionTimeout": 600,
-          "MaxLifetime": 3600
+          "MaxLifetime": 600
         }
       }
     }

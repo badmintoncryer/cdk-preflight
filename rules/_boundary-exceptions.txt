@@ -14,7 +14,6 @@
 #     pf-elasticache-port の 1150/8004/8006/65535 と pf-route53profiles-…-priority-range の 101/9899 が該当。
 #     どちらもフィクスチャは手で境界に置いてある。_lib を丸ごと渡すと呼んでいない述語のしきい値まで
 #     拾って 160 本が誤検出になるので、やるなら呼び出し先だけを解決する call-graph が要る（#224）。
-pf-agentcore-runtime-lifecycle-timeout-order  pending #225
 pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」で、テンプレートに固定値としては書けない（エンジンに時計が無い）。ルールが見ている 100000000000（西暦 5138 年＝秒とミリ秒の取り違え）はどの日付でも違反になる部分集合で、pass をその値に乗せると 365 日を超えて実機に拒否される。fail は 100000000001 に乗せ、pass は Expires を省いて既定の 7 日にしてある
 pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
 pf-asg-desired-capacity-range  ルールが持つ 3 つ目の比較 `MinSize <= MaxSize` は違反条件ではなく、DesiredCapacity を見る前の前提ガード。同値の fail も 1 差の pass も意味を持たない。DesiredCapacity の両端はフィクスチャを境界に置いてある（fail 3/max 2 と 1/min 2、pass 2==max と 0==min）
@@ -23,7 +22,6 @@ pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとし
 pf-cloudwatch-alarm-evaluation-window  3600 は予算の段を選ぶ境目（Period >= 3600 なら 1 週間、未満なら 1 日）で、順序のある制約ではない。実際のしきい値 604800 / 86400 は Period x EvaluationPeriods の積なのでテンプレートに数値としては現れない。フィクスチャは 3600x169 / 3600x168 と 60x1441 / 60x1440 に乗せてある
 pf-cloudwatch-alarm-expressions-max  数えているのは Metrics のうち Expression を持つ要素だけを集めるヘルパーの戻り値で、Metrics 配列そのものの長さとは 1 ずれる。フィクスチャは 11 / 10 本に乗せてある
 pf-cloudwatch-composite-suppressor-format  count(parts) >= 7 は ActionsSuppressor を ARN として割った断片数のガードで、順序のある制約ではない
-pf-cloudwatch-datapoints-evaluation  pending #225
 pf-cloudwatch-insight-rule-keys-max  しきい値と突き合わせるのは RuleBody（JSON 文字列）の中の Contribution.Keys の長さで、テンプレートの構造には配列として現れない。フィクスチャは 5 / 4 本に乗せてある
 pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
 pf-dynamodb-projection-nonkey-total  しきい値と突き合わせるのは INCLUDE インデックスをまたいだ投影属性数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 に乗せてある（1 インデックス 20 本の上限は pf-dynamodb-projection-nonkey-limit 側で境界に乗っている）
@@ -32,14 +30,12 @@ pf-ec2-sg-cidr-valid  オクテットの 256/255 は IPv4 表記の中にある�
 pf-ec2-sg-port-range  順序チェックの本体にある t <= 65535 は「両方とも範囲内の値のときだけ前後関係を見る」ためのガードで、上限そのものは同じファイルの _pf_port_out(n) if n > 65535 が見ている。フィクスチャは 65536 / 65535 に乗せてあり、順序の違反も 65535:65534 で境界に乗っている（埋め込み ingress の順序は同梱エンジンの E9002 が持っているので、fail では単独リソース側に置いた）
 pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エントリに立っている source 系フィールドの本数（固定の 4 キーを数えたヘルパーの戻り値）で、どの配列長とも文字列長とも一致しない。フィクスチャは 2 / 1 本に乗せてある
 pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
-pf-ec2-vpn-phase-lifetime-order  pending #225
 pf-ecr-lifecycle-tag-status  しきい値と突き合わせるのは tagPatternList の 1 エントリに含まれる `*` の個数で、テンプレートには数値として現れない（しかも LifecyclePolicyText は JSON 文字列）。フィクスチャは 5 個 / 4 個に乗せてある
 pf-ecs-fargate-windows-cpu-under-1vcpu  Fargate の Cpu は 256 / 512 / 1024 … という飛び飛びの集合なので 1023 は存在しない値。1024 未満で実際に指定できる最大は 512 で、fail はそこに乗せてある（2026-09-13 us-east-1 RegisterTaskDefinition: Windows + 512 CPU / 2048 memory は "No Fargate configuration exists for given values"、1024 は通る）
 pf-efs-throughput-mode  上限ちょうどの pass は作れない: プロビジョンドスループットは $6/MiBps-月なので 3414 MiBps は数分でも 7 ドル近くかかる（L-BFB6FB19 は Adjustable: false なのでハードリミットではある）。fail は 3415 に乗せ、pass は 1 MiBps にしてある
 pf-elasticache-auth-token  しきい値はヘルパー述語の引数（`_pf_ecauth_bad_length(n) if n < 16`）にあり、n が何を数えた値かは呼び出し側の別ブロックなので検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
 pf-elasticache-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウ（`ddd:hh24:mi-ddd:hh24:mi`）の長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
 pf-elasticache-user-authentication  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字、本数は 3 / 2 本に乗せてある
-pf-elbv2-hc-timeout-interval  pending #225
 pf-elbv2-rule-condition-values-max  しきい値と突き合わせるのは Conditions をまたいだ値の数の合計で、どの配列長とも一致しない。フィクスチャは 6 / 5 値に乗せてある（実機も 3+3 の分割で上限を返す）
 pf-elbv2-tg-name  count(n) <= 32 は長すぎる名前を書式のほうの本体に渡さないための排他ガードで、上限そのものは同じファイルの count(n) > 32 が見ている。フィクスチャは 33 / 32 に乗せてある
 pf-firehose-prefix-length  しきい値は展開後のプレフィックスの文字数で、テンプレートに数値としては現れない。数えているのも 2 つの count の和なので検出器は「何を数えたか」まで辿れない。フィクスチャは Prefix / ErrorOutputPrefix それぞれ 513 文字と、両方 512 文字ちょうどに乗せてある
@@ -69,7 +65,6 @@ pf-route53profiles-profileresourceassociation-rulegroups-max  しきい値と突
 pf-route53resolver-firewallrulegroupassociation-max-per-vpc  しきい値と突き合わせるのは「同じ VPC を指しているアソシエーションの本数」で、テンプレートのどの配列長とも一致しない（リソースをまたいで数えた値）。フィクスチャは 6 / 5 本に乗せてある
 pf-s3-lifecycle-transition-waterfall-order  pass を限界そのもの（2 つの遷移を同じ日に置く）にはできない。S3 は後ろのクラスを厳密に後の日付に置くことを要求し、さらに IA からアーカイブへは 30 日以上空ける必要があるので、同値のテンプレートはデプロイできない。fail は 1 日差（GLACIER 89 / STANDARD_IA 90）に乗せてある
 pf-sfn-asl-name-limits  ステート名も Label も DefinitionString（JSON 文字列）の中にあるので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない（エスケープされた引用符は文字列の一部として読まれる）。フィクスチャは 81 / 80 文字と 41 / 40 文字に乗せてある
-pf-sns-delivery-policy  pending #225
 pf-sns-fifo-only-attributes  上限ちょうどの pass は残せない: ArchivePolicy を持つトピックは削除できず（2026-09-13 us-east-1: "Cannot delete a topic with an ArchivePolicy"）、スタック削除が DELETE_FAILED になってトピックが毎回残る。fail に 366 日と 0 日を置いて両端を確認し、pass は ArchivePolicy を持たない FIFO トピックにしてある
 pf-sqs-redrive-allow-policy  しきい値はヘルパー述語の引数（`_pf_sqsrap_out(n) if n > 10`）にあり、n が何を数えた値かは呼び出し側の別ブロックにあるので検出器から辿れない。フィクスチャは 11 / 10 本に乗せてある
 pf-ssm-parameter-name  1011 は名前そのものではなく ARN 全体（arn:aws:ssm:<region>:<account>:parameter/ + 名前）の上限で、検出器が拾っているのは足し算の右辺。許される名前の長さはリージョン名の長さで変わるので固定の数値としてはテンプレートに現れない。フィクスチャは us-east-1 + 12 桁アカウントの端（素の名前 967 / 966）に乗せてある

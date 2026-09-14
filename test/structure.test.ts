@@ -394,6 +394,16 @@ test('crossFieldProblem pins the pair when the limit is another property', () =>
   expect(crossFieldProblem(ge, fx(1, 1), fx(1, 2))).toBeUndefined();
   // 比率は「1 ずれ」では測れないので対象外
   expect(crossFieldProblem(rego.replace('mn > mx', 'mn > mx * 50'), fx(10, 1), fx(1, 10))).toBeUndefined();
+  // 足し合わせた値は 1 つのプロパティではないので、代表させずに黙る
+  const summed = [
+    'violation contains 1 if {',
+    '\tn := to_number(resolve(name, "Properties.MinValue"))',
+    '\ttotal := to_number(resolve(name, "Properties.MaxValue")) + 5',
+    '\tn < total',
+    '}',
+    '',
+  ].join('\n');
+  expect(crossFieldProblem(summed, fx(10, 1), fx(1, 10))).toBeUndefined();
   // 値を持たない pass はふつうにあるので判定しない
   expect(crossFieldProblem(rego, fx(2, 1), JSON.stringify({ Resources: {} }))).toBeUndefined();
 });

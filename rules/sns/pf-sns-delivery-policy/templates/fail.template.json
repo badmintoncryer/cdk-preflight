@@ -14,7 +14,7 @@
         "Endpoint": "https://example.com/hook",
         "DeliveryPolicy": {
           "healthyRetryPolicy": {
-            "minDelayTarget": 1,
+            "minDelayTarget": 21,
             "maxDelayTarget": 20,
             "numRetries": 101
           }
