@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/DNSL
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00309] Account '214794239830' has exceeded 'max-target-ips-per-resolver-rule'. (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00309] Account '214794239830' has exceeded 'max-target-ips-per-resolver-rule'. (ROLLBACK_COMPLETE)。2026-09-14: L-D74B6237 Target IP addresses per resolver rule は既定値 6 で Adjustable=false。引き上げられないので原則 6 の対象外。"
 addedOn: 2026-09-10

@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-13 us-east-1: 1001 domains -> \"1 validation error detected: Value 'Invalid request provided: UpdateFirewallDomainsRequest(...)'\" ROLLBACK_COMPLETE; pass 1000 domains -> CREATE_COMPLETE. api 2026-09-13 us-east-1 UpdateFirewallDomains: 1001 domains -> ValidationException \"[RSLVR-02028] You must provide less than \\\"1000\\\" domains in a request.\" The limit is per UpdateFirewallDomains call, which is what the Domains property of one resource becomes; 1000 goes through. Service Quotas lists no quota for domains per list (only 100000 per account and 1000 domain lists per account), so this is not an adjustable limit."
+  evidence: "bench 2026-09-10 us-east-1: fail template -> UpdateFirewallDomains が \"Invalid request provided\" で ROLLBACK_COMPLETE。2026-09-14 に API を直叩きして境界を確定: 1000 個の ADD は COMPLETE、1001 個は ValidationException \"[RSLVR-02028] You must provide less than \\\"1000\\\" domains in a request\"。1000 に対応するクォータは無い（Domains per account は 100000、Domains in a file imported from S3 は 250000）ので原則 6 の対象外。"
 addedOn: 2026-09-10
