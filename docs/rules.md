@@ -810,7 +810,7 @@
 | `pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms` | AWS::CodeDeploy::DeploymentGroup | An enabled AlarmConfiguration needs at least one alarm | ERROR | none |
 | `pf-codedeploy-dg-autorollback-enabled-requires-events` | AWS::CodeDeploy::DeploymentGroup | An enabled AutoRollbackConfiguration needs at least one event | ERROR | none |
 | `pf-codedeploy-dg-blue-green-config-required-members` | AWS::CodeDeploy::DeploymentGroup | BlueGreenDeploymentConfiguration must carry DeploymentReadyOption and TerminateBlueInstancesOnDeploymentSuccess | ERROR | none |
-| `pf-codedeploy-dg-bluegreen-requires-traffic-control` | AWS::CodeDeploy::DeploymentGroup | A BLUE_GREEN deployment style requires WITH_TRAFFIC_CONTROL | ERROR | none |
+| `pf-codedeploy-dg-bluegreen-requires-traffic-control` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | A BLUE_GREEN deployment style requires WITH_TRAFFIC_CONTROL | ERROR | none |
 | `pf-codedeploy-dg-copy-asg-requires-asg` | AWS::CodeDeploy::DeploymentGroup | COPY_AUTO_SCALING_GROUP needs exactly one Auto Scaling group on the deployment group | ERROR | none |
 | `pf-codedeploy-dg-deployment-config-platform-match` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application<br>AWS::CodeDeploy::DeploymentConfig | DeploymentConfigName must belong to the application's compute platform | ERROR | none |
 | `pf-codedeploy-dg-deployment-ready-continue-no-wait-time` | AWS::CodeDeploy::DeploymentGroup | CONTINUE_DEPLOYMENT does not take a WaitTimeInMinutes | ERROR | none |

@@ -12,9 +12,7 @@ _pf_cdpm_predef(n) := "Lambda" if startswith(n, "CodeDeployDefault.Lambda")
 _pf_cdpm_predef(n) := "ECS" if startswith(n, "CodeDeployDefault.ECS")
 
 _pf_cdpm_predef(n) := "Server" if {
-	startswith(n, "CodeDeployDefault.")
-	not startswith(n, "CodeDeployDefault.Lambda")
-	not startswith(n, "CodeDeployDefault.ECS")
+	n in {"CodeDeployDefault.AllAtOnce", "CodeDeployDefault.HalfAtATime", "CodeDeployDefault.OneAtATime"}
 }
 
 _pf_cdpm_cfg(name) := p if {
