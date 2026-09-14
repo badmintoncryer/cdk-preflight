@@ -143,6 +143,39 @@ function stripRegoComments(src: string): string {
   return out.join('');
 }
 
+// `mn := to_number(resolve(name, "Properties.InstanceMaintenancePolicy.MinHealthyPercentage"))`
+// -> MinHealthyPercentage。しきい値がテンプレートのどのプロパティに掛かるかを辿る。
+// 辿れない形（ヘルパー越し、算術を挟むもの、添字だけのもの）は undefined。
+function keyFor(v: string, block: string): string | undefined {
+  const m = new RegExp(`(?:^|\\n)\\s*${v}(?:_raw)?\\s*:=\\s*(.*)`).exec(block);
+  if (!m) return undefined;
+  let expr = m[1];
+  const via = /to_number\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/.exec(expr);
+  if (via) expr = new RegExp(`(?:^|\\n)\\s*${via[1]}\\s*:=\\s*(.*)`).exec(block)?.[1] ?? expr;
+  const quoted = [...expr.matchAll(/"([^"]*)"/g)].map((q) => q[1]).filter((q) => !q.startsWith('__pf'));
+  // 足し合わせた値は 1 つのプロパティではない。`total := a + b + c` を最後の名前で代表させると
+  // 見当違いのプロパティと突き合わせる。算術が混ざった代入は解決できないものとして黙る。
+  if (/[+*/]|\s-\s/.test(expr.replace(/"[^"]*"/g, ''))) return undefined;
+  const seg = quoted.pop()?.split('.').pop();
+  return seg && /^[A-Za-z][A-Za-z0-9]*$/.test(seg) ? seg : undefined;
+}
+
+/** テンプレートに現れるそのキーの数値を全部集める（文字列で書かれた数値も数える）。 */
+function valuesOf(json: string, key: string): number[] {
+  const out: number[] = [];
+  const walk = (v: unknown): void => {
+    if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') {
+      for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+        if (k === key && (typeof x === 'number' || (typeof x === 'string' && /^-?\d+(\.\d+)?$/.test(x)))) out.push(Number(x));
+        walk(x);
+      }
+    }
+  };
+  walk(JSON.parse(json));
+  return out;
+}
+
 const THRESHOLD = /([A-Za-z_][A-Za-z0-9_.]*\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
 
 /**
@@ -201,7 +234,7 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   const negated = new Set([...rego.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
   const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
 
-  type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number };
+  type Threshold = { counted: boolean; kind: 'array' | 'string' | 'both'; op: string; n: number; key: string | undefined };
   const thresholdsOf = (block: string): Threshold[] => {
     const assigned = new Map(shared);
     for (const m of block.matchAll(ASSIGN)) assigned.set(m[1], m[2]);
@@ -243,9 +276,15 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     const ownerAt = (i: number) => owners.filter(([at]) => at <= i).pop()?.[1] ?? '';
     return [...code.matchAll(THRESHOLD)]
       .map((m) => {
+        const at = m.index ?? 0;
+        const line = code.slice(code.lastIndexOf('\n', at) + 1, (code.indexOf('\n', at) + 1 || code.length) - 1);
         const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
-        const op = negated.has(ownerAt(m.index ?? 0)) ? FLIP[m[2]] : m[2];
-        return { counted: expr.trimStart().startsWith('count('), kind: kindOf(expr), op, n: Number(m[3]) };
+        const op = negated.has(ownerAt(at)) ? FLIP[m[2]] : m[2];
+        const counted = expr.trimStart().startsWith('count(');
+        // 算術を挟む比較は左辺が 1 つの値ではない。`mx - mn > 100` の左辺を `mn` と読むと
+        // 見当違いのプロパティに 101 を要求する（`shape` と同じく対象外にする）。
+        const arith = /[*+/]|\s-\s/.test(line);
+        return { counted, kind: arith ? ('shape' as const) : kindOf(expr), op, n: Number(m[3]), key: counted || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(m[1]) ? undefined : keyFor(m[1], block) };
       })
       .filter((t): t is Threshold => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   };
@@ -258,14 +297,21 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     // 違反する中で限界に最も近い値 / 限界そのもの
     const tightest = t.op === '<' ? t.n - 1 : t.op === '<=' ? t.n : t.op === '>' ? t.n + 1 : t.n;
     const limit = t.op === '<' ? t.n : t.op === '<=' ? t.n + 1 : t.op === '>' ? t.n : t.n - 1;
-    const has = (p: ReturnType<typeof fixturePools>, v: number) => {
-      if (!t.counted) return p.nums.has(v);
+    const has = (p: ReturnType<typeof fixturePools>, v: number, raw: string) => {
+      if (!t.counted) {
+        // 素の数値比較のプールは「テンプレートに現れる数字の並び全部」で、別の場所の同じ数に
+        // 偶然当たる。しきい値の掛かるプロパティまで辿れて、そのキーがテンプレートにあるときは
+        // その値だけを見る。辿れない・キーが無い（DashboardBody のような JSON 文字列の中など）
+        // ときは従来どおり全部のプールに落とす——見えないものを赤にすると誤検出しか増えない。
+        const xs = t.key ? valuesOf(raw, t.key) : [];
+        return xs.length ? xs.includes(v) : p.nums.has(v);
+      }
       if (t.kind === 'array') return p.sizes.has(v);
       if (t.kind === 'string') return p.lens.has(v);
       return p.lens.has(v) || p.sizes.has(v);
     };
-    if (!has(pools.fail, tightest)) problems.push(`fail template has no ${tightest} for \`${t.op} ${t.n}\``);
-    if (!has(pools.pass, limit)) problems.push(`pass template has no ${limit} for \`${t.op} ${t.n}\``);
+    if (!has(pools.fail, tightest, fail)) problems.push(`fail template has no ${tightest} for \`${t.op} ${t.n}\``);
+    if (!has(pools.pass, limit, pass)) problems.push(`pass template has no ${limit} for \`${t.op} ${t.n}\``);
   }
   return problems.length === 0 ? undefined : problems.join('; ');
 }
@@ -295,36 +341,6 @@ export function crossFieldProblem(rego: string, fail: string, pass: string): str
 
   const negated = new Set([...src.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
   const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
-  // `mn := to_number(resolve(name, "Properties.ComputeResources.MinvCpus"))` -> MinvCpus
-  const keyFor = (v: string, block: string): string | undefined => {
-    const m = new RegExp(`(?:^|\\n)\\s*${v}(?:_raw)?\\s*:=\\s*(.*)`).exec(block);
-    if (!m) return undefined;
-    let expr = m[1];
-    const via = /to_number\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/.exec(expr);
-    if (via) expr = new RegExp(`(?:^|\\n)\\s*${via[1]}\\s*:=\\s*(.*)`).exec(block)?.[1] ?? expr;
-    const quoted = [...expr.matchAll(/"([^"]*)"/g)].map((q) => q[1]).filter((q) => !q.startsWith('__pf'));
-    // 足し合わせた値は 1 つのプロパティではない。`total := a + b + c` を最後の名前で代表させると
-    // 見当違いの組を突き合わせる（SNS の `numRetries < total` がこれで numMaxDelayRetries と
-    // 比べられていた）。算術が混ざった代入は解決できないものとして黙る。
-    if (/[+*/]|\s-\s/.test(expr.replace(/"[^"]*"/g, ''))) return undefined;
-    const seg = quoted.pop()?.split('.').pop();
-    return seg && /^[A-Za-z][A-Za-z0-9]*$/.test(seg) ? seg : undefined;
-  };
-  const valuesOf = (json: string, key: string): number[] => {
-    const out: number[] = [];
-    const walk = (v: unknown): void => {
-      if (Array.isArray(v)) v.forEach(walk);
-      else if (v && typeof v === 'object') {
-        for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-          if (k === key && (typeof x === 'number' || (typeof x === 'string' && /^-?\d+(\.\d+)?$/.test(x)))) out.push(Number(x));
-          walk(x);
-        }
-      }
-    };
-    walk(JSON.parse(json));
-    return out;
-  };
-
   const problems: string[] = [];
   const seen = new Set<string>();
   for (const block of blocks) {
