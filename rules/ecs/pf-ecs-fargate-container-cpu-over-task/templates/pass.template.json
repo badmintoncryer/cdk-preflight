@@ -20,7 +20,8 @@
           {
             "Name": "app",
             "Image": "public.ecr.aws/nginx/nginx:latest",
-            "Essential": true
+            "Essential": true,
+            "Cpu": 256
           }
         ]
       }

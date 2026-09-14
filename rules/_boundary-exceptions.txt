@@ -44,13 +44,7 @@ pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エント�
 pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
 pf-ec2-vpn-phase-lifetime-order  pending #225
 pf-ecr-lifecycle-tag-status  しきい値と突き合わせるのは tagPatternList の 1 エントリに含まれる `*` の個数で、テンプレートには数値として現れない（しかも LifecyclePolicyText は JSON 文字列）。フィクスチャは 5 個 / 4 個に乗せてある
-pf-ecs-container-memory-over-task  pending #225
-pf-ecs-container-memory-reservation  pending #225
-pf-ecs-cp-scaling-step-order  pending #225
-pf-ecs-fargate-container-cpu-over-task  pending #225
 pf-ecs-fargate-windows-cpu-under-1vcpu  Fargate の Cpu は 256 / 512 / 1024 … という飛び飛びの集合なので 1023 は存在しない値。1024 未満で実際に指定できる最大は 512 で、fail はそこに乗せてある（2026-09-13 us-east-1 RegisterTaskDefinition: Windows + 512 CPU / 2048 memory は "No Fargate configuration exists for given values"、1024 は通る）
-pf-ecs-svc-min-healthy-over-max-percent  pending #225
-pf-ecs-ulimit-soft-over-hard  pending #225
 pf-efs-throughput-mode  上限ちょうどの pass は作れない: プロビジョンドスループットは $6/MiBps-月なので 3414 MiBps は数分でも 7 ドル近くかかる（L-BFB6FB19 は Adjustable: false なのでハードリミットではある）。fail は 3415 に乗せ、pass は 1 MiBps にしてある
 pf-elasticache-auth-token  しきい値はヘルパー述語の引数（`_pf_ecauth_bad_length(n) if n < 16`）にあり、n が何を数えた値かは呼び出し側の別ブロックなので検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
 pf-elasticache-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウ（`ddd:hh24:mi-ddd:hh24:mi`）の長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある

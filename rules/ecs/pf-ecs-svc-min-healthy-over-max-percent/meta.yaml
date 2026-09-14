@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/se
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-min-healthy-over-max-percent.log"
+  evidence: "bench 2026-09-14 us-east-1: MinimumHealthyPercent 100 with MaximumPercent 100 -> \"Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments.\" (ROLLBACK_COMPLETE — equal is the closest violating pair because the rule fires at `>=`); pass 99 / 100 -> CREATE_COMPLETE."
 addedOn: 2026-09-08

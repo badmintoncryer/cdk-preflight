@@ -17,7 +17,7 @@
             "Ulimits": [
               {
                 "Name": "nofile",
-                "SoftLimit": 2048,
+                "SoftLimit": 1025,
                 "HardLimit": 1024
               }
             ]

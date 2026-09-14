@@ -21,7 +21,7 @@
             "Name": "app",
             "Image": "public.ecr.aws/nginx/nginx:latest",
             "Essential": true,
-            "Cpu": 512
+            "Cpu": 257
           }
         ]
       }
