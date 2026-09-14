@@ -3452,8 +3452,12 @@ describe('length bounds embedded in format regexes (#226)', () => {
         R: {
           Type: 'AWS::Route53::RecordSet',
           Properties: {
-            Name: 'www.example.com', Type: 'A', TTL: '60', ResourceRecords: ['192.0.2.1'],
-            HostedZoneId: 'Z1111111111111', SetIdentifier: 's1',
+            Name: 'www.example.com',
+            Type: 'A',
+            TTL: '60',
+            ResourceRecords: ['192.0.2.1'],
+            HostedZoneId: 'Z1111111111111',
+            SetIdentifier: 's1',
             CidrRoutingConfig: { CollectionId: '00000000-0000-0000-0000-000000000000', LocationName: loc },
           },
         },
@@ -3491,7 +3495,8 @@ describe('length bounds embedded in format regexes (#226)', () => {
         S: {
           Type: 'AWS::ECS::Service',
           Properties: {
-            Cluster: 'c', TaskDefinition: 'td',
+            Cluster: 'c',
+            TaskDefinition: 'td',
             ServiceConnectConfiguration: { Enabled: true, Services: [{ PortName: 'p', ClientAliases: [{ Port: 80, DnsName: dns }] }] },
           },
         },
