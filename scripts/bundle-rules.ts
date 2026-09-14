@@ -270,6 +270,91 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   return problems.length === 0 ? undefined : problems.join('; ');
 }
 
+/**
+ * 原則 2 の「しきい値はリテラルでなくてもよい」側の機械チェック。`MinValue > MaxValue` のように
+ * 限界が別プロパティの値である制約では、fail は 2 つの値が違反側に 1 だけずれた組を、pass は
+ * 同値を持つ（同値で既に違反する `>=` / `<=` は逆で、fail が同値・pass が 1 ずれ）。
+ * `MinValue 10 / MaxValue 1` はルールが `mn > mx + 5` でも鳴るので、定数も演算子も固定できない。
+ *
+ * 比較の両辺を代入から辿って「テンプレートのどのプロパティを読んだ値か」まで見る。辿れない形
+ * （一意性のペア走査 `i < j`、ヘルパー越しの値、算術を挟むもの）は黙って対象外にする——
+ * 見当違いのプロパティと突き合わせて誤検出するより、見えない範囲を正直に残すほうがましなので。
+ * 両方のテンプレートに値が無いときも対象外（プロパティを省くのが正しい pass はふつうにある）。
+ */
+export function crossFieldProblem(rego: string, fail: string, pass: string): string | undefined {
+  const src = stripRegoComments(rego);
+  const blocks: string[] = [];
+  let cur = '';
+  let depth = 0;
+  for (const line of src.split('\n')) {
+    cur += line + '\n';
+    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+    if (depth <= 0 && line.trimEnd() === '}') { blocks.push(cur); cur = ''; depth = 0; }
+  }
+  if (cur.trim()) blocks.push(cur);
+
+  const negated = new Set([...src.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
+  const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
+  // `mn := to_number(resolve(name, "Properties.ComputeResources.MinvCpus"))` -> MinvCpus
+  const keyFor = (v: string, block: string): string | undefined => {
+    const m = new RegExp(`(?:^|\\n)\\s*${v}(?:_raw)?\\s*:=\\s*(.*)`).exec(block);
+    if (!m) return undefined;
+    let expr = m[1];
+    const via = /to_number\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/.exec(expr);
+    if (via) expr = new RegExp(`(?:^|\\n)\\s*${via[1]}\\s*:=\\s*(.*)`).exec(block)?.[1] ?? expr;
+    const quoted = [...expr.matchAll(/"([^"]*)"/g)].map((q) => q[1]).filter((q) => !q.startsWith('__pf'));
+    const seg = quoted.pop()?.split('.').pop();
+    return seg && /^[A-Za-z][A-Za-z0-9]*$/.test(seg) ? seg : undefined;
+  };
+  const valuesOf = (json: string, key: string): number[] => {
+    const out: number[] = [];
+    const walk = (v: unknown): void => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') {
+        for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+          if (k === key && (typeof x === 'number' || (typeof x === 'string' && /^-?\d+(\.\d+)?$/.test(x)))) out.push(Number(x));
+          walk(x);
+        }
+      }
+    };
+    walk(JSON.parse(json));
+    return out;
+  };
+
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const block of blocks) {
+    const code = block.replace(/"(?:[^"\\\n]|\\.)*"|`[^`]*`/g, (m) => ' '.repeat(m.length));
+    const owners = [...code.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)/gm)].map((m) => [m.index ?? 0, m[1]] as const);
+    const ownerAt = (i: number) => owners.filter(([at]) => at <= i).pop()?.[1] ?? '';
+    for (const m of code.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*(<=|>=|<|>)\s*([A-Za-z_][A-Za-z0-9_]*)\b/g)) {
+      const at = m.index ?? 0;
+      const line = code.slice(code.lastIndexOf('\n', at) + 1, (code.indexOf('\n', at) + 1 || code.length) - 1);
+      // 算術を挟む比較（`n > s * 50` のような比率）は「1 ずれ」では測れない
+      if (/[*+/]/.test(line)) continue;
+      const ka = keyFor(m[1], block);
+      const kb = keyFor(m[3], block);
+      if (!ka || !kb) continue;
+      const op = negated.has(ownerAt(at)) ? FLIP[m[2]] : m[2];
+      const key = `${ka}${op}${kb}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const [dFail, dPass] = { '>': [1, 0], '>=': [0, -1], '<': [-1, 0], '<=': [0, 1] }[op]!;
+      const near = (json: string, delta: number) => {
+        const xs = valuesOf(json, ka);
+        const ys = valuesOf(json, kb);
+        if (!xs.length || !ys.length) return true; // 値が無いときは判定しない
+        if (ka !== kb) return xs.some((x) => ys.some((y) => x - y === delta));
+        return xs.some((x, i) => xs.some((y, j) => i !== j && x - y === delta));
+      };
+      const pair = `\`${ka} ${op} ${kb}\``;
+      if (!near(fail, dFail)) problems.push(`fail template has no ${ka}/${kb} ${dFail === 0 ? 'equal' : '1 apart'} for ${pair}`);
+      if (!near(pass, dPass)) problems.push(`pass template has no ${ka}/${kb} ${dPass === 0 ? 'equal' : '1 apart'} for ${pair}`);
+    }
+  }
+  return problems.length === 0 ? undefined : problems.join('; ');
+}
+
 export function headerProblem(rego: string): string | undefined {
   const packages = [...rego.matchAll(/^package\s+(\S+)/gm)].map((m) => m[1]);
   if (packages.length !== 1 || packages[0] !== 'cdk_preflight') {

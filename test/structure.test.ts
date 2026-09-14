@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { boundaryProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
+import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -376,16 +376,37 @@ test('boundaryProblem measures the string the rule sees, not the escaped JSON', 
   expect(boundaryProblem(rego, fixture(`"${'x'.repeat(19)}"`), fixture(`"${'x'.repeat(18)}"`))).toBeUndefined();
 });
 
+test('crossFieldProblem pins the pair when the limit is another property', () => {
+  const rego = [
+    'violation contains 1 if {',
+    '\tmn := to_number(resolve(name, "Properties.MinValue"))',
+    '\tmx := to_number(resolve(name, "Properties.MaxValue"))',
+    '\tmn > mx',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (mn: number, mx: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { MinValue: mn, MaxValue: mx } } } });
+  expect(crossFieldProblem(rego, fx(2, 1), fx(1, 1))).toBeUndefined();
+  expect(crossFieldProblem(rego, fx(10, 1), fx(1, 1))).toMatch(/fail template has no MinValue\/MaxValue 1 apart/);
+  expect(crossFieldProblem(rego, fx(2, 1), fx(1, 10))).toMatch(/pass template has no MinValue\/MaxValue equal/);
+  // 同値で既に違反する比較は fail と pass が入れ替わる
+  const ge = rego.replace('mn > mx', 'mn >= mx');
+  expect(crossFieldProblem(ge, fx(1, 1), fx(1, 2))).toBeUndefined();
+  // 比率は「1 ずれ」では測れないので対象外
+  expect(crossFieldProblem(rego.replace('mn > mx', 'mn > mx * 50'), fx(10, 1), fx(1, 10))).toBeUndefined();
+  // 値を持たない pass はふつうにあるので判定しない
+  expect(crossFieldProblem(rego, fx(2, 1), JSON.stringify({ Resources: {} }))).toBeUndefined();
+});
+
 test('every fixture pair sits on the boundary, or is listed as an exception', () => {
   const exceptions = boundaryExceptions();
   const flagged = new Map<string, string>();
   for (const r of collectRules(root)) {
     const dir = path.join(root, 'rules', r.service, r.id, 'templates');
-    const problem = boundaryProblem(
-      r.rego,
-      fs.readFileSync(path.join(dir, 'fail.template.json'), 'utf8'),
-      fs.readFileSync(path.join(dir, 'pass.template.json'), 'utf8'),
-    );
+    const fail = fs.readFileSync(path.join(dir, 'fail.template.json'), 'utf8');
+    const pass = fs.readFileSync(path.join(dir, 'pass.template.json'), 'utf8');
+    // しきい値がリテラルの形と、しきい値が別プロパティの値である形。例外ファイルは共通
+    const problem = [boundaryProblem(r.rego, fail, pass), crossFieldProblem(r.rego, fail, pass)].filter(Boolean).join('; ');
     if (problem) flagged.set(r.id, problem);
   }
   // 新しく緩いペアが入ってきたら、直すか例外ファイルに理由を書くまで赤いまま
