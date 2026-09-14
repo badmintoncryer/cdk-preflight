@@ -9,5 +9,6 @@ violation contains make_diag_full("pf-codebuild-file-system-identifier-charset",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-projectfilesystemlocation.html") if {
 	some name in resources_of_type("AWS::CodeBuild::Project")
 	count(flatten_list(name, "Properties.FileSystemLocations")) > 0
-	not _pf_codebuildlib_true(object.get(_pf_codebuildlib_env(name), "PrivilegedMode", null))
+	e := _pf_codebuildlib_env(name)
+	not _pf_codebuildlib_true(object.get(e, "PrivilegedMode", null))
 }

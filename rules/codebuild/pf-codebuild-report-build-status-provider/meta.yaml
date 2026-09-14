@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Source.ReportBuildStatus false on an S3 source, and true on a CODECOMMIT source) -> \"Source type CODECOMMIT does not support ReportBuildStatus\" (ROLLBACK_COMPLETE; CreateProject answers the S3 half with \"Source type S3 does not support ReportBuildStatus\" even though the value there is false, and answers NO_SOURCE and CODEPIPELINE the same way); pass template (ReportBuildStatus true on a GITHUB source) -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: fail template (Source.ReportBuildStatus false on an S3 source, and true on a CODECOMMIT source) -> \"Source type CODECOMMIT does not support ReportBuildStatus\" (ROLLBACK_COMPLETE; CreateProject answers the S3 half with \"Source type S3 does not support ReportBuildStatus\" even though the value there is false - a stack carrying that S3 resource on its own also rolled back with that message, so CloudFormation does forward a false Boolean rather than dropping the key - and answers NO_SOURCE and CODEPIPELINE the same way); pass template (ReportBuildStatus true on a GITHUB source) -> CREATE_COMPLETE."
 addedOn: 2026-09-14
