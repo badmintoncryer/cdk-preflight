@@ -1,0 +1,12 @@
+id: pf-codepipeline-trigger-filter-patterns-max-8
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A Git trigger filter accepts at most 8 include and 8 exclude patterns"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_GitConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: 9 FilePaths.Includes patterns -> \"Value at 'pipeline.triggers.1.member.gitConfiguration.push.1.member.filePaths.includes' failed to satisfy constraint: Member must have length less than or equal to 8\" (ROLLBACK_COMPLETE); pass 8 patterns -> CREATE_COMPLETE"
+addedOn: 2026-09-14

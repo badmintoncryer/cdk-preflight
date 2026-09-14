@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Configuration": {
+      "Type": "AWS::MSK::Configuration",
+      "Properties": {
+        "Name": "cdkpf-cal-fail",
+        "ServerProperties": "custom.advertised.listeners=CLIENT://b-{broker_id}.example.com:9092"
+      }
+    }
+  }
+}

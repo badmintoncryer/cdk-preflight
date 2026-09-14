@@ -1,0 +1,73 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::MSK::ServerlessCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-slsvpc-fail",
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "VpcConfigs": [
+          {
+            "SubnetIds": [
+              "subnet-00000000000000001",
+              "subnet-00000000000000002"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          },
+          {
+            "SubnetIds": [
+              "subnet-00000000000000011",
+              "subnet-00000000000000012"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          },
+          {
+            "SubnetIds": [
+              "subnet-00000000000000021",
+              "subnet-00000000000000022"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          },
+          {
+            "SubnetIds": [
+              "subnet-00000000000000031",
+              "subnet-00000000000000032"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          },
+          {
+            "SubnetIds": [
+              "subnet-00000000000000041",
+              "subnet-00000000000000042"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          },
+          {
+            "SubnetIds": [
+              "subnet-00000000000000051",
+              "subnet-00000000000000052"
+            ],
+            "SecurityGroups": [
+              "sg-11111111111111111"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

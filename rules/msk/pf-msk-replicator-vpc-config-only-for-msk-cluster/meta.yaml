@@ -1,0 +1,12 @@
+id: pf-msk-replicator-vpc-config-only-for-msk-cluster
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Replicator]
+severity: ERROR
+title: "VpcConfig belongs to an MSK cluster entry, not an Apache Kafka one"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-replicator-kafkacluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-13 us-east-1: create-replicator with VpcConfig on an ApacheKafkaCluster entry -> \"The vpcConfig parameter is only supported for AmazonMskCluster. Additional error details: InvalidParameter: vpcConfig\"; bench 2026-09-13 us-east-1: fail template -> \"The vpcConfig parameter is only supported for AmazonMskCluster. 'vpcConfig'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a pass template needs two ACTIVE MSK clusters, ~31 min each, which one stack cannot stand up)"
+addedOn: 2026-09-13

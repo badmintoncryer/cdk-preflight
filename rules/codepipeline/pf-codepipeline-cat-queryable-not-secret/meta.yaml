@@ -1,0 +1,12 @@
+id: pf-codepipeline-cat-queryable-not-secret
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::CustomActionType]
+severity: ERROR
+title: "A Queryable configuration property must be Required and not Secret"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionConfigurationProperty.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreateCustomActionType with a queryable+secret property -> \"InvalidActionTypeException: Invalid queryable property 'a'. Queryable configuration properties must be required and non-secret.\"; bench 2026-09-14 us-east-1: fail -> \"Invalid queryable property 'a'. Queryable configuration properties must be required and non-secret.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE The pass fixture names the custom action type after the stack id's GUID because DeleteCustomActionType burns the Category/Provider/Version triple permanently (re-creating it returns \"... has been deleted. Create a new version of the action type.\"); the fail fixture creates nothing, so the monthly --fail-only run is unaffected."
+addedOn: 2026-09-14

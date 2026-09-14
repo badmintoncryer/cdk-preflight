@@ -1,0 +1,17 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodeCommit::Repository",
+   "Properties": {
+    "RepositoryName": "cdkpf-cc-cbn-p",
+    "Code": {
+     "S3": {
+      "Bucket": "cdkpf-codesuite-63",
+      "Key": "cdkpf-code.zip"
+     },
+     "BranchName": "main"
+    }
+   }
+  }
+ }
+}

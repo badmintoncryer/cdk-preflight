@@ -1,0 +1,12 @@
+id: pf-msk-tiered-storage-instance-type
+service: msk
+benchRegion: us-east-1
+resourceTypes: [AWS::MSK::Cluster]
+severity: ERROR
+title: "Tiered storage is not available on kafka.t3.small brokers"
+constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-tiered-storage.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: StorageMode TIERED on kafka.t3.small -> \"Tiered storage is not supported for the specified broker type. ... 'instanceType'\" (ROLLBACK_COMPLETE); pass the same StorageMode TIERED on kafka.m5.large -> CREATE_COMPLETE"
+addedOn: 2026-09-14

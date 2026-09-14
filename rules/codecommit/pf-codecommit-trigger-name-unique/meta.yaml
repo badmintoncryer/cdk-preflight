@@ -1,0 +1,12 @@
+id: pf-codecommit-trigger-name-unique
+service: codecommit
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeCommit::Repository]
+severity: ERROR
+title: "Trigger names must be unique within a repository"
+constraintSource: https://docs.aws.amazon.com/codecommit/latest/APIReference/API_PutRepositoryTriggers.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: fail two triggers both named dup -> \"Duplicate repository trigger names are not allowed\" (ROLLBACK_COMPLETE); pass two triggers named t0 and t1 -> CREATE_COMPLETE"
+addedOn: 2026-09-14

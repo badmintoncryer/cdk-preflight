@@ -1,0 +1,12 @@
+id: pf-codepipeline-trigger-source-action-is-connection
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "A Git trigger must name a CodeStarSourceConnection source action of the pipeline"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: a trigger naming an S3 source action -> \"InvalidStructureException: Triggers for connections must reference a CodeStarSourceConnection action. Note that when you specify a trigger, you can't specify more than one trigger per source action.\" (ROLLBACK_COMPLETE); api-probe 2026-09-14 us-east-1: a trigger naming an action that does not exist returns the same error; pass naming the CodeStarSourceConnection action -> CREATE_COMPLETE"
+addedOn: 2026-09-14

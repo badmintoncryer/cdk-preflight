@@ -1,0 +1,51 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::MSK::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-msk-vcanac-pass",
+        "KafkaVersion": "3.9.x",
+        "NumberOfBrokerNodes": 2,
+        "BrokerNodeGroupInfo": {
+          "InstanceType": "kafka.m5.large",
+          "ClientSubnets": [
+            "subnet-2e0a500f",
+            "subnet-ab11fde7"
+          ],
+          "SecurityGroups": [
+            "sg-7d699f61"
+          ],
+          "StorageInfo": {
+            "EBSStorageInfo": {
+              "VolumeSize": 1
+            }
+          },
+          "ConnectivityInfo": {
+            "VpcConnectivity": {
+              "ClientAuthentication": {
+                "Sasl": {
+                  "Iam": {
+                    "Enabled": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ClientAuthentication": {
+          "Sasl": {
+            "Iam": {
+              "Enabled": true
+            }
+          }
+        },
+        "EncryptionInfo": {
+          "EncryptionInTransit": {
+            "ClientBroker": "TLS",
+            "InCluster": true
+          }
+        }
+      }
+    }
+  }
+}

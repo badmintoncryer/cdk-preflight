@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Configuration": {
+      "Type": "AWS::MSK::Configuration",
+      "Properties": {
+        "Name": "cdkpf-kvu-pass",
+        "ServerProperties": "auto.create.topics.enable=true\nnum.partitions=1",
+        "KafkaVersionsList": [
+          "3.9.x"
+        ]
+      }
+    }
+  }
+}

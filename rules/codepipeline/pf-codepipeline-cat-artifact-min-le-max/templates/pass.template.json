@@ -1,0 +1,46 @@
+{
+ "Resources": {
+  "R": {
+   "Type": "AWS::CodePipeline::CustomActionType",
+   "Properties": {
+    "Category": "Build",
+    "Provider": {
+     "Fn::Select": [
+      4,
+      {
+       "Fn::Split": [
+        "-",
+        {
+         "Fn::Select": [
+          2,
+          {
+           "Fn::Split": [
+            "/",
+            {
+             "Ref": "AWS::StackId"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "Version": "1",
+    "InputArtifactDetails": {
+     "MaximumCount": 1,
+     "MinimumCount": 1
+    },
+    "OutputArtifactDetails": {
+     "MaximumCount": 1,
+     "MinimumCount": 0
+    },
+    "Settings": {
+     "EntityUrlTemplate": "https://example.com/entity",
+     "ExecutionUrlTemplate": "https://example.com/execution"
+    }
+   }
+  }
+ }
+}

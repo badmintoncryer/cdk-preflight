@@ -1,0 +1,12 @@
+id: pf-codepipeline-artifact-stores-region-of-pipeline
+service: codepipeline
+benchRegion: us-east-1
+resourceTypes: [AWS::CodePipeline::Pipeline]
+severity: ERROR
+title: "The cross-region ArtifactStores list must include the pipeline's own region"
+constraintSource: https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with artifactStores covering only us-west-2 -> \"ValidationException: Your pipeline must have an artifact store, such as an artifact bucket, for each region where you have an action. The following region is missing in 'pipeline.artifactStores': us-east-1.\"; the same pipeline with a us-east-1 entry was accepted; bench 2026-09-14 us-east-1: fail -> \"Your pipeline must have an artifact store, such as an artifact bucket, for each region where you have an action. The following region is missing in 'pipeline.artifactStores': us-east-1.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-14
