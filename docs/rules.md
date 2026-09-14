@@ -798,13 +798,29 @@
 | `pf-codedeploy-app-compute-platform-value` | AWS::CodeDeploy::Application | Application ComputePlatform must be Server, Lambda, ECS or Kubernetes | ERROR | pending-engine |
 | `pf-codedeploy-config-fleet-percent-range` | AWS::CodeDeploy::DeploymentConfig | MinimumHealthyHosts FLEET_PERCENT must be below 100 | ERROR | none |
 | `pf-codedeploy-config-lambda-forbids-minimum-healthy-hosts` | AWS::CodeDeploy::DeploymentConfig | MinimumHealthyHosts is only valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-config-lambda-requires-traffic-routing` | AWS::CodeDeploy::DeploymentConfig | A Lambda or ECS deployment configuration must set TrafficRoutingConfig | ERROR | none |
 | `pf-codedeploy-config-name-reserved-prefix` | AWS::CodeDeploy::DeploymentConfig | A custom deployment configuration may not use the CodeDeployDefault. prefix | ERROR | none |
 | `pf-codedeploy-config-server-forbids-traffic-routing` | AWS::CodeDeploy::DeploymentConfig | TrafficRoutingConfig is not valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-config-server-requires-minimum-healthy-hosts` | AWS::CodeDeploy::DeploymentConfig | A Server deployment configuration must set MinimumHealthyHosts | ERROR | none |
 | `pf-codedeploy-config-traffic-routing-block-matches-type` | AWS::CodeDeploy::DeploymentConfig | TrafficRoutingConfig must carry exactly the sub-block its Type names | ERROR | none |
 | `pf-codedeploy-config-traffic-routing-percentage-range` | AWS::CodeDeploy::DeploymentConfig | Traffic routing percentage must be between 1 and 99 | ERROR | none |
 | `pf-codedeploy-config-traffic-shift-interval-max` | AWS::CodeDeploy::DeploymentConfig | A traffic shift may not take more than 2880 minutes end to end | ERROR | none |
 | `pf-codedeploy-config-zonal-minimum-healthy-per-zone-range` | AWS::CodeDeploy::DeploymentConfig | ZonalConfig MinimumHealthyHostsPerZone FLEET_PERCENT must be below 100 | ERROR | none |
 | `pf-codedeploy-config-zonal-server-only` | AWS::CodeDeploy::DeploymentConfig | ZonalConfig is only supported on the Server compute platform | ERROR | none |
+| `pf-codedeploy-dg-alarm-configuration-enabled-requires-alarms` | AWS::CodeDeploy::DeploymentGroup | An enabled AlarmConfiguration needs at least one alarm | ERROR | none |
+| `pf-codedeploy-dg-autorollback-enabled-requires-events` | AWS::CodeDeploy::DeploymentGroup | An enabled AutoRollbackConfiguration needs at least one event | ERROR | none |
+| `pf-codedeploy-dg-blue-green-config-required-members` | AWS::CodeDeploy::DeploymentGroup | BlueGreenDeploymentConfiguration must carry DeploymentReadyOption and TerminateBlueInstancesOnDeploymentSuccess | ERROR | none |
+| `pf-codedeploy-dg-bluegreen-requires-traffic-control` | AWS::CodeDeploy::DeploymentGroup | A BLUE_GREEN deployment style requires WITH_TRAFFIC_CONTROL | ERROR | none |
+| `pf-codedeploy-dg-copy-asg-requires-asg` | AWS::CodeDeploy::DeploymentGroup | COPY_AUTO_SCALING_GROUP needs exactly one Auto Scaling group on the deployment group | ERROR | none |
+| `pf-codedeploy-dg-deployment-config-platform-match` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application<br>AWS::CodeDeploy::DeploymentConfig | DeploymentConfigName must belong to the application's compute platform | ERROR | none |
+| `pf-codedeploy-dg-deployment-ready-continue-no-wait-time` | AWS::CodeDeploy::DeploymentGroup | CONTINUE_DEPLOYMENT does not take a WaitTimeInMinutes | ERROR | none |
+| `pf-codedeploy-dg-deployment-ready-stop-requires-wait-time` | AWS::CodeDeploy::DeploymentGroup | STOP_DEPLOYMENT needs a WaitTimeInMinutes above zero | ERROR | none |
+| `pf-codedeploy-dg-ec2-filters-server-platform-only` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | Instance tag filters are only valid on the Server compute platform | ERROR | none |
+| `pf-codedeploy-dg-ec2-tag-filters-xor-tag-set` | AWS::CodeDeploy::DeploymentGroup | Ec2TagFilters and Ec2TagSet cannot both be specified | ERROR | none |
+| `pf-codedeploy-dg-ecs-services-requires-ecs-platform` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | ECSServices is only valid on the ECS compute platform | ERROR | none |
+| `pf-codedeploy-dg-lambda-forbids-blue-green-config` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | BlueGreenDeploymentConfiguration is not valid on the Lambda compute platform | ERROR | none |
+| `pf-codedeploy-dg-lambda-requires-blue-green-traffic-control` | AWS::CodeDeploy::DeploymentGroup<br>AWS::CodeDeploy::Application | A Lambda deployment group must be BLUE_GREEN with WITH_TRAFFIC_CONTROL | ERROR | none |
+| `pf-codedeploy-dg-onprem-tag-filters-xor-tag-set` | AWS::CodeDeploy::DeploymentGroup | OnPremisesInstanceTagFilters and OnPremisesTagSet cannot both be specified | ERROR | none |
 | `pf-cognito-alias-username-exclusive` | AWS::Cognito::UserPool | AliasAttributes and UsernameAttributes are mutually exclusive | ERROR | none |
 | `pf-cognito-analytics-application-requires-role` | AWS::Cognito::UserPoolClient | Pinpoint ApplicationId needs a RoleArn | ERROR | none |
 | `pf-cognito-analytics-arn-region` | AWS::Cognito::UserPoolClient | The Pinpoint analytics app must be in the pool region | ERROR | none |

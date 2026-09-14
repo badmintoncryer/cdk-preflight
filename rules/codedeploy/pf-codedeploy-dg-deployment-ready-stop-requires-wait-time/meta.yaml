@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-deployment-ready-stop-requires-wait-time
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "STOP_DEPLOYMENT needs a WaitTimeInMinutes above zero"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentreadyoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: DeploymentReadyOption STOP_DEPLOYMENT with WaitTimeInMinutes 0 -> \"Deployment ready action cannot be set to STOP_DEPLOYMENT when timeout is set to 0 minutes.\" (ROLLBACK_COMPLETE); pass STOP_DEPLOYMENT with WaitTimeInMinutes 1 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: leaving WaitTimeInMinutes out gives the same message as writing 0."
+addedOn: 2026-09-14

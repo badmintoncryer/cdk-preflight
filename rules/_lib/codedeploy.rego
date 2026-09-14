@@ -61,3 +61,16 @@ _pf_codedeploylib_platform(name) := p if {
 _pf_codedeploylib_platform(name) := "Server" if {
 	not _pf_codedeploylib_has(_pf_codedeploylib_props(name), "ComputePlatform")
 }
+
+
+# Compute platform of a deployment group. It carries none of its own: the platform
+# is the one on the AWS::CodeDeploy::Application that ApplicationName points at.
+# Only a Ref to an application in the same template can answer - a literal name
+# refers to an application created elsewhere, whose platform the template does not
+# know, so the helper yields nothing and every rule built on it stays silent
+# rather than assuming Server.
+_pf_codedeploylib_dg_platform(name) := p if {
+	a := resolve(name, "Properties.ApplicationName")
+	input.resources[a].resourceType == "AWS::CodeDeploy::Application"
+	p := _pf_codedeploylib_platform(a)
+}

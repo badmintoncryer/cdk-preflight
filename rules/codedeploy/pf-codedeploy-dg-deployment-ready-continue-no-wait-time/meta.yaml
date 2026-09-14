@@ -1,0 +1,12 @@
+id: pf-codedeploy-dg-deployment-ready-continue-no-wait-time
+service: codedeploy
+benchRegion: us-east-1
+resourceTypes: [AWS::CodeDeploy::DeploymentGroup]
+severity: ERROR
+title: "CONTINUE_DEPLOYMENT does not take a WaitTimeInMinutes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-deploymentreadyoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-14 us-east-1: DeploymentReadyOption CONTINUE_DEPLOYMENT with WaitTimeInMinutes 1 -> \"Deployment ready action cannot be set to 'CONTINUE_DEPLOYMENT' when timeout is specified\" (ROLLBACK_COMPLETE); pass CONTINUE_DEPLOYMENT with WaitTimeInMinutes 0 -> CREATE_COMPLETE, so the limit sits between 0 and 1."
+addedOn: 2026-09-14
