@@ -23,6 +23,13 @@ const project = new awscdk.AwsCdkConstructLibrary({
     'fail-fast',
   ],
   gitignore: ['*.js', '*.d.ts', '!test/.*.snapshot/**/*', '.tmp', '!/rules/logs/'],
+  jestOptions: {
+    jestConfig: {
+      // src/rules.generated.ts は rules/** から機械生成する 3MB のデータ塊で、
+      // カバレッジ率に意味が無いうえ v8 の計測対象としては一番重い。
+      coveragePathIgnorePatterns: ['/node_modules/', '/src/rules.generated.ts'],
+    },
+  },
   devDeps: ['yaml'],
   releaseToNpm: true,
   packageName: 'cdk-preflight',
