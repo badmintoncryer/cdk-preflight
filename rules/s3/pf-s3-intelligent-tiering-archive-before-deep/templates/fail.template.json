@@ -11,7 +11,7 @@
             "Tierings": [
               {
                 "AccessTier": "ARCHIVE_ACCESS",
-                "Days": 200
+                "Days": 180
               },
               {
                 "AccessTier": "DEEP_ARCHIVE_ACCESS",

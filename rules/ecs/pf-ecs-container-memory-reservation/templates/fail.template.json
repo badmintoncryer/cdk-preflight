@@ -9,7 +9,7 @@
             "Image": "public.ecr.aws/nginx/nginx:latest",
             "Essential": true,
             "Memory": 256,
-            "MemoryReservation": 512
+            "MemoryReservation": 257
           }
         ]
       }

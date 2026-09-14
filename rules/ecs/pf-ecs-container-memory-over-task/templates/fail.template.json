@@ -14,7 +14,7 @@
             "Name": "app",
             "Image": "public.ecr.aws/nginx/nginx:latest",
             "Essential": true,
-            "Memory": 1024
+            "Memory": 513
           }
         ]
       }

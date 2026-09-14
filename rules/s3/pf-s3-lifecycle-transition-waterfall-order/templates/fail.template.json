@@ -12,7 +12,7 @@
               "Transitions": [
                 {
                   "StorageClass": "GLACIER",
-                  "TransitionInDays": 30
+                  "TransitionInDays": 89
                 },
                 {
                   "StorageClass": "STANDARD_IA",

@@ -21,8 +21,8 @@
           }
         },
         "DeploymentConfiguration": {
-          "MinimumHealthyPercent": 100,
-          "MaximumPercent": 200
+          "MinimumHealthyPercent": 99,
+          "MaximumPercent": 100
         }
       }
     },

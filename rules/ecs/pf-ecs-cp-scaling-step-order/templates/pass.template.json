@@ -11,7 +11,7 @@
             "Status": "ENABLED",
             "TargetCapacity": 100,
             "MinimumScalingStepSize": 10,
-            "MaximumScalingStepSize": 100
+            "MaximumScalingStepSize": 10
           }
         }
       }

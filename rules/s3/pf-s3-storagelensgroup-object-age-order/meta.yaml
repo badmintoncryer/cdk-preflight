@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"This object age combination isn't valid.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: DaysGreaterThan 30 with DaysLessThan 30 -> \"This object age combination isn't valid.\" (ROLLBACK_COMPLETE); pass 29 / 30 -> CREATE_COMPLETE."
 addedOn: 2026-09-06

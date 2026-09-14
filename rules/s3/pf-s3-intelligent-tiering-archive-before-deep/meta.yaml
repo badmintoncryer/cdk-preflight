@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Days specified in DEEP_ARCHIVE_ACCESS should be greater than days specified in ARCHIVE_ACCESS\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: ARCHIVE_ACCESS 180 with DEEP_ARCHIVE_ACCESS 180 -> \"Days specified in DEEP_ARCHIVE_ACCESS should be greater than days specified in ARCHIVE_ACCESS\" (ROLLBACK_COMPLETE); pass ARCHIVE_ACCESS 179 / DEEP_ARCHIVE_ACCESS 180 -> CREATE_COMPLETE (179 still clears the 90-day minimum for ARCHIVE_ACCESS)."
 addedOn: 2026-09-06
