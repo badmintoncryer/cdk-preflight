@@ -3435,3 +3435,83 @@ describe('kinesis / managed flink rules', () => {
     silent({ Resources: { Ref1: { ...refData.Resources.Ref1, Properties: { ...(refData.Resources.Ref1 as any).Properties, ApplicationName: 'imported-app' } } } }, 'pf-kinesisanalytics-sql-only-resource');
   });
 });
+
+// 書式ルールの正規表現には長さの端が埋まっていることがある（`{1,40}` など）。比較演算子が
+// 出ないので boundaryProblem からは完全に見えず、フィクスチャは書式のほうしか触っていない。
+// 端そのものは実機で確かめてある（下の各コメント）ので、枝はここで押さえる。
+describe('length bounds embedded in format regexes (#226)', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const rep = (n: number, c = 'a') => c.repeat(n);
+
+  test('route 53 CIDR location name: 16 characters, 17 rejected', () => {
+    // bench 2026-09-14 us-east-1: ChangeCidrCollection at 17 -> "cvc-maxLength-valid: Value
+    // 'aaaaaaaaaaaaaaaaa' with length = '17' is not facet-valid with respect to maxLength '16'
+    // for type 'CidrLocationNameDefaultNotAllowed'"; 16 accepted.
+    const rec = (loc: string) => ({
+      Resources: {
+        R: {
+          Type: 'AWS::Route53::RecordSet',
+          Properties: {
+            Name: 'www.example.com', Type: 'A', TTL: '60', ResourceRecords: ['192.0.2.1'],
+            HostedZoneId: 'Z1111111111111', SetIdentifier: 's1',
+            CidrRoutingConfig: { CollectionId: '00000000-0000-0000-0000-000000000000', LocationName: loc },
+          },
+        },
+      },
+    });
+    expect(ids(diagnoseTemplate(rec(rep(17))))).toContain('pf-route53-cidr-location-name-format');
+    expect(ids(diagnoseTemplate(rec(rep(16))))).not.toContain('pf-route53-cidr-location-name-format');
+  });
+
+  test('ELB rule http-request-method: 40 characters, 41 rejected', () => {
+    // bench 2026-09-14 us-east-1: 41 -> "Condition value for 'http-request-method' cannot
+    // contain more than 40 characters"; the fixture keeps the charset case.
+    const rule = (method: string) => ({
+      Resources: {
+        R: {
+          Type: 'AWS::ElasticLoadBalancingV2::ListenerRule',
+          Properties: {
+            ListenerArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/app/x/1/2',
+            Priority: 1,
+            Actions: [{ Type: 'fixed-response', FixedResponseConfig: { StatusCode: '200' } }],
+            Conditions: [{ Field: 'http-request-method', HttpRequestMethodConfig: { Values: [method] } }],
+          },
+        },
+      },
+    });
+    expect(ids(diagnoseTemplate(rule(rep(41, 'A'))))).toContain('pf-elbv2-rule-http-method-charset');
+    expect(ids(diagnoseTemplate(rule(rep(40, 'A'))))).not.toContain('pf-elbv2-rule-http-method-charset');
+  });
+
+  test('ECS Service Connect DNS name: 127 characters, 128 rejected', () => {
+    // bench 2026-09-14 us-east-1: 128 -> "The DNS name that you provided is invalid. ...
+    // Up to 127 characters are allowed."
+    const svc = (dns: string) => ({
+      Resources: {
+        S: {
+          Type: 'AWS::ECS::Service',
+          Properties: {
+            Cluster: 'c', TaskDefinition: 'td',
+            ServiceConnectConfiguration: { Enabled: true, Services: [{ PortName: 'p', ClientAliases: [{ Port: 80, DnsName: dns }] }] },
+          },
+        },
+      },
+    });
+    expect(ids(diagnoseTemplate(svc(rep(128))))).toContain('pf-ecs-svc-connect-client-alias-dns-name');
+    expect(ids(diagnoseTemplate(svc(rep(127))))).not.toContain('pf-ecs-svc-connect-client-alias-dns-name');
+  });
+
+  test('SSM association instance ids: 17 hex digits, 18 rejected', () => {
+    // bench 2026-09-14 us-east-1: CreateAssociation with i- and mi- at 18 hex ->
+    // "Invalid InstanceId format: i-000000000000000000"; i- at 17 was accepted.
+    const assoc = (id: string) => ({
+      Resources: {
+        A: { Type: 'AWS::SSM::Association', Properties: { Name: 'AWS-RunShellScript', Parameters: { commands: ['echo'] }, Targets: [{ Key: 'InstanceIds', Values: [id] }] } },
+      },
+    });
+    expect(ids(diagnoseTemplate(assoc(`i-${rep(18, '0')}`)))).toContain('pf-ssm-association-targets');
+    expect(ids(diagnoseTemplate(assoc(`i-${rep(17, '0')}`)))).not.toContain('pf-ssm-association-targets');
+    expect(ids(diagnoseTemplate(assoc(`mi-${rep(18, '0')}`)))).toContain('pf-ssm-association-targets');
+    expect(ids(diagnoseTemplate(assoc(`mi-${rep(17, '0')}`)))).not.toContain('pf-ssm-association-targets');
+  });
+});

@@ -13,11 +13,11 @@
           "ResourceRequirements": [
             {
               "Type": "VCPU",
-              "Value": "0.25"
+              "Value": "0.5"
             },
             {
               "Type": "MEMORY",
-              "Value": "512"
+              "Value": "1024"
             }
           ],
           "RuntimePlatform": {

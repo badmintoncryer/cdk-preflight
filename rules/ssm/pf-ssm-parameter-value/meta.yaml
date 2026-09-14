@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReferenc
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error occurred during operation 'PutParameter'.\" (the CloudFormation handler masks the service error; the same input sent straight to the API is rejected with \"Parameter value: '{{ssm:other}}' failed to satisfy constraint: Parameter value can't nest another parameter. Do not use \"{{}}\" in the value.\"); pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error occurred during operation 'PutParameter'.\" (the CloudFormation handler masks the service error; the same input sent straight to the API is rejected with \"Parameter value: '{{ssm:other}}' failed to satisfy constraint: Parameter value can't nest another parameter. Do not use \"{{}}\" in the value.\"); pass template -> CREATE_COMPLETE The 17-hex bound inside the ami- pattern is NOT established: bench 2026-09-14 us-east-1, PutParameter with data-type aws:ec2:image accepted both 18 and 17 hex digits and neither parameter could be read back afterwards, so the API never gave an answer about the length. Treat that end as unbenched."
 addedOn: 2026-09-05

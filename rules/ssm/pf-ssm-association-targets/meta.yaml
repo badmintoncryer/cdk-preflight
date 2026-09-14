@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReferenc
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: Unsupported target key: foo, can either be InstanceIds, aws:NoOpAutomationTag, resource-groups:name, tag-key or start with tag:\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: Unsupported target key: foo, can either be InstanceIds, aws:NoOpAutomationTag, resource-groups:name, tag-key or start with tag:\"; pass template -> CREATE_COMPLETE The 17-hex bound inside the instance-id pattern is hard too: bench 2026-09-14 us-east-1, CreateAssociation with i- and mi- at 18 hex digits -> \"Invalid InstanceId format: i-000000000000000000\", i- at 17 accepted. Pinned by a targeted case in test/rules.test.ts."
 addedOn: 2026-09-05
