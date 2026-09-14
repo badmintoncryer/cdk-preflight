@@ -6,7 +6,30 @@
         "CachePolicyConfig": {
           "Name": "p1",
           "MinTTL": 10,
-          "DefaultTTL": 5,
+          "DefaultTTL": 9,
+          "MaxTTL": 100,
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "EnableAcceptEncodingGzip": false,
+            "HeadersConfig": {
+              "HeaderBehavior": "none"
+            },
+            "CookiesConfig": {
+              "CookieBehavior": "none"
+            },
+            "QueryStringsConfig": {
+              "QueryStringBehavior": "none"
+            }
+          }
+        }
+      }
+    },
+    "R2": {
+      "Type": "AWS::CloudFront::CachePolicy",
+      "Properties": {
+        "CachePolicyConfig": {
+          "Name": "p2",
+          "MinTTL": 10,
+          "DefaultTTL": 101,
           "MaxTTL": 100,
           "ParametersInCacheKeyAndForwardedToOrigin": {
             "EnableAcceptEncodingGzip": false,

@@ -9,7 +9,7 @@
             "Name": "level",
             "AttributeDataType": "String",
             "StringAttributeConstraints": {
-              "MinLength": "10",
+              "MinLength": "6",
               "MaxLength": "5"
             }
           }

@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ContinuousDeploymentPolicy: The parameter StagingDistributionDnsNames is not a default CloudFront domain name. (Service: CloudFront, Status Code: 400, Request ID: c19a5d05-384d-406c-9a89-5aa0cc9c329d) (SDK Attempt Count: 1)" (RequestToken: eddd235a-5af9-931c-c302-2f0037ce708f, HandlerErrorCode: InvalidRequest)'
+  evidence: "bench 2026-09-14 us-east-1: IdleTTL 601 with MaximumTTL 600 -> \"The parameter Maximum TTL must be larger than Inactive Session TTL.\" (ROLLBACK_COMPLETE); pass 600 / 600 -> CREATE_COMPLETE, so despite the wording equal is accepted and is the limit. Both fixtures now build their own staging distribution and pass its DomainName: with the literal \"a.cloudfront.net\" the create failed on \"The parameter StagingDistributionDnsNames is not a default CloudFront domain name\" long before the TTLs were read, which is the confound the earlier evidence had recorded."
 addedOn: 2026-09-08
 benchRegion: us-east-1

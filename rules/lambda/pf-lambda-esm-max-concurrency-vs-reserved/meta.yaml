@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): MaximumConcurrency: 100 is greater than Function Reserved Concurrency: 5'
+  evidence: "bench 2026-09-14 us-east-1: MaximumConcurrency 6 against ReservedConcurrentExecutions 5 -> \"MaximumConcurrency: 6 is greater than Function Reserved Concurrency: 5\" (ROLLBACK_COMPLETE); pass 100 against 100 -> CREATE_COMPLETE."
 addedOn: 2026-09-07

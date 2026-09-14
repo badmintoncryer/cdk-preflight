@@ -13,6 +13,20 @@
           "MaxCapacity": 256
         }
       }
+    },
+    "C2": {
+      "Type": "AWS::RDS::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "aurora-postgresql",
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "ServerlessV2ScalingConfiguration": {
+          "MinCapacity": 0.5,
+          "MaxCapacity": 0.5
+        }
+      }
     }
   }
 }

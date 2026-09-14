@@ -10,7 +10,7 @@
         "AllocatedStorage": "100",
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
-        "MaxAllocatedStorage": 50
+        "MaxAllocatedStorage": 99
       }
     }
   }

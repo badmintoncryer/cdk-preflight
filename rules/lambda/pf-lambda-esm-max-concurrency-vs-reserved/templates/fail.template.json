@@ -31,7 +31,7 @@
           ]
         },
         "ScalingConfig": {
-          "MaximumConcurrency": 100
+          "MaximumConcurrency": 6
         }
       }
     },

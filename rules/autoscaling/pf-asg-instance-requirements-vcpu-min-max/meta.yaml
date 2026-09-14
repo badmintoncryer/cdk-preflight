@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: Invalid instance requirements. The Min value (8) in VCpuCount must be less or equal to the Max value (2). -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: VCpuCount Min 3 with Max 2 -> \"Invalid instance requirements. The Min value (3) in VCpuCount must be less or equal to the Max value (2).\" (ROLLBACK_COMPLETE); pass Min 2 with Max 2 -> CREATE_COMPLETE."
 addedOn: 2026-09-09
