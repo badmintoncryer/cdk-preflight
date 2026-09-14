@@ -38,6 +38,20 @@ test('the README resource-type list is up to date', () => {
   expect(actual).toContain(expected);
 });
 
+// ルール表は test/rules.shard*.test.ts に分割して jest の並列に乗せている。シャードを
+// 足し引きしたときに 0..N-1 が揃わないと、そのぶんのルールが黙って誰にも検査されなくなる。
+test('the rule-table shards cover every rule exactly once', () => {
+  const dir = path.join(root, 'test');
+  const calls = fs.readdirSync(dir)
+    .filter((f) => /^rules\.shard\d+\.test\.ts$/.test(f))
+    .map((f) => fs.readFileSync(path.join(dir, f), 'utf8').match(/describeRuleTable\((\d+), (\d+)\)/))
+    .map((m) => [Number(m![1]), Number(m![2])] as const);
+  expect(calls.length).toBeGreaterThan(0);
+  const total = calls[0][1];
+  expect(calls.map((c) => c[1])).toEqual(calls.map(() => total));
+  expect(calls.map((c) => c[0]).sort((a, b) => a - b)).toEqual([...Array(total).keys()]);
+});
+
 test('every bundled rule declares the package cdk_preflight and rego.v1', () => {
   for (const r of BUNDLED_RULES) {
     expect(r.rego).toContain('package cdk_preflight');

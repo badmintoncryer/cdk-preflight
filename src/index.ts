@@ -1,7 +1,7 @@
-import { CloudFormationValidatePlugin, Stage, Validations } from 'aws-cdk-lib';
+import { Stage, Validations } from 'aws-cdk-lib';
 import { IConstruct } from 'constructs';
-import { installEnforceGate, PreflightEnforcePlugin } from './private/enforce';
-import { BUNDLED_LIBS, BUNDLED_RULES } from './rules.generated';
+import { installEnforceGate, observePluginCached, PreflightEnforcePlugin } from './private/enforce';
+import { BUNDLED_RULES } from './rules.generated';
 
 /**
  * Options for {@link Preflight.apply}.
@@ -83,12 +83,7 @@ export class Preflight {
       Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, options.strict ?? false));
       installEnforceGate(scope);
     } else {
-      Validations.of(scope).addPlugins(new CloudFormationValidatePlugin({
-        regoRules: [
-          ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
-          ...selected.map((r) => ({ name: r.id, content: r.rego })),
-        ],
-      }));
+      Validations.of(scope).addPlugins(observePluginCached(selected));
     }
   }
 
