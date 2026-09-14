@@ -9,7 +9,7 @@
         "Engine": "redis",
         "NumCacheClusters": 1,
         "AutomaticFailoverEnabled": false,
-        "Port": 6379
+        "Port": 1150
       }
     }
   }

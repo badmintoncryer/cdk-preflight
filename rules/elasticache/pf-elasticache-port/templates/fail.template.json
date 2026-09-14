@@ -11,6 +11,30 @@
         "AutomaticFailoverEnabled": false,
         "Port": 8005
       }
+    },
+    "RGLow": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-port-low",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumCacheClusters": 1,
+        "AutomaticFailoverEnabled": false,
+        "Port": 1149
+      }
+    },
+    "RGHigh": {
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+      "Properties": {
+        "ReplicationGroupId": "cdkpf-port-high",
+        "ReplicationGroupDescription": "cdk-preflight bench",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "redis",
+        "NumCacheClusters": 1,
+        "AutomaticFailoverEnabled": false,
+        "Port": 65536
+      }
     }
   }
 }

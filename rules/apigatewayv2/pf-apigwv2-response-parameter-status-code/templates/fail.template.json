@@ -18,7 +18,15 @@
         "IntegrationUri": "https://example.com",
         "PayloadFormatVersion": "1.0",
         "ResponseParameters": {
-          "999": {
+          "199": {
+            "ResponseParameters": [
+              {
+                "Destination": "append:header.x",
+                "Source": "y"
+              }
+            ]
+          },
+          "600": {
             "ResponseParameters": [
               {
                 "Destination": "append:header.x",

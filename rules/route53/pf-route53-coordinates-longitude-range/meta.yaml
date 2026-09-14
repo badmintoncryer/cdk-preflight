@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/reso
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 457; cvc-pattern-valid: Value '200' is not facet-valid with respect to pattern '[-+]?(180|(1[0-7][0-9]|[0-9]{1,2})(\\.[0-9]{0,2})?)' for type 'Longitude'. (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-14 us-east-1: Longitude 180.01 -> \"Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; cvc-pattern-valid: Value '180.01' is not facet-valid with respect to pattern '[-+]?(180|(1[0-7][0-9]|[0-9]{1,2})(\\.[0-9]{0,2})?)' for type 'Longitude'\" (ROLLBACK_COMPLETE); pass Longitude 180 -> CREATE_COMPLETE. The XSD allows 180 exactly or up to 179.99, so 180.01 is the closest violating value; the machine check asks for the integer 181 instead (see rules/_boundary-exceptions.txt)."
 addedOn: 2026-09-10

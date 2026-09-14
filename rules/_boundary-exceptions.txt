@@ -7,6 +7,12 @@
 #   それ以外       — 恒久的な例外。しきい値の検出がそのルールでは意味を持たない理由を具体的に
 #                    書く（ARN の断片数のようなガード、エンジンのスキーマが持っている側の端、
 #                    実機で作れない量など）
+#
+# 検出器が構造的に見ていない端（例外行にはできない = flagged にならないので、ここに覚書として残す）:
+#   - rules/_lib/*.rego に書いたしきい値は boundaryProblem に渡っていない（rule.rego しか見ない）。
+#     pf-elasticache-port の 1150/8004/8006/65535 と pf-route53profiles-…-priority-range の 101/9899 が該当。
+#     どちらもフィクスチャは手で境界に置いてある。_lib を丸ごと渡すと呼んでいない述語のしきい値まで
+#     拾って 160 本が誤検出になるので、やるなら呼び出し先だけを解決する call-graph が要る（#224）。
 pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」で、テンプレートに固定値としては書けない（エンジンに時計が無い）。ルールが見ている 100000000000（西暦 5138 年＝秒とミリ秒の取り違え）はどの日付でも違反になる部分集合で、pass をその値に乗せると 365 日を超えて実機に拒否される。fail は 100000000001 に乗せ、pass は Expires を省いて既定の 7 日にしてある
 pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
 pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
@@ -18,6 +24,7 @@ pf-cloudwatch-insight-rule-keys-max  しきい値と突き合わせるのは Rul
 pf-cognito-token-validity-range  上側の 86400 秒 / 315360000 秒は同梱エンジンのスキーマ（AccessTokenValidity 1-86400、RefreshTokenValidity 1-315360000）が F3034 で止めるので fail に置けない（原則 1）。単位を分に上げれば書けるが、その場合の最小の違反は 86460 秒で境界ではない。下側の 300 秒 / 3600 秒は境界に乗せてあり、pass は上限ちょうども載せている
 pf-dynamodb-projection-nonkey-total  しきい値と突き合わせるのは INCLUDE インデックスをまたいだ投影属性数の合計で、どの配列長とも一致しない。フィクスチャは 101 / 100 に乗せてある（1 インデックス 20 本の上限は pf-dynamodb-projection-nonkey-limit 側で境界に乗っている）
 pf-dynamodb-resource-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（解決後の形で 20481 / 20480 ちょうどに乗せてある）
+pf-ec2-sg-cidr-valid  オクテットの 256/255 は IPv4 表記の中にあるので数値プールには 0.256 としてしか現れない（境界は fail の 10.0.0.256/24 と pass の 10.0.0.255/32 に置いてある）。プレフィックスの 33/32 は境界に乗っている
 pf-ec2-sg-port-range  順序チェックの本体にある t <= 65535 は「両方とも範囲内の値のときだけ前後関係を見る」ためのガードで、上限そのものは同じファイルの _pf_port_out(n) if n > 65535 が見ている。フィクスチャは 65536 / 65535 に乗せてあり、順序の違反も 65535:65534 で境界に乗っている（埋め込み ingress の順序は同梱エンジンの E9002 が持っているので、fail では単独リソース側に置いた）
 pf-ec2-sg-source-exclusive  しきい値と突き合わせるのは 1 エントリに立っている source 系フィールドの本数（固定の 4 キーを数えたヘルパーの戻り値）で、どの配列長とも文字列長とも一致しない。フィクスチャは 2 / 1 本に乗せてある
 pf-ec2-subnet-cidr-size  下限 /16 を破る fail は作れない: VPC の最大が /16 なので /15 のサブネットは同梱エンジンの E3059（VPC に収まらない）で止まる。上限は /29 / /28 に乗せてあり、pass は下限ちょうどの /16 サブネットも載せている
@@ -40,9 +47,12 @@ pf-lambda-layerperm-arn-length  上限 140 に届く有効なレイヤー ARN �
 pf-lambda-perm-policy-size  しきい値は SourceArn 長の合計。fail は既に合計 20480 ちょうど。pass（20479）は Permission が約 270 本必要で、CFN のテンプレート上限 51,200 バイトに入らない
 pf-memorydb-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウの長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
 pf-memorydb-user-password  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
+pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある
 pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
 pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）
+pf-route53-coordinates-latitude-range  XSD が 90 ちょうどか 0-89 の 2 桁小数までしか許さないので最も近い違反値は 90.01。機械チェックは整数の 91 を要求する（pass の 90 は境界に乗っている）
+pf-route53-coordinates-longitude-range  同じ XSD の形で、最も近い違反値は 180.01。機械チェックは整数の 181 を要求する（pass の 180 は境界に乗っている）
 pf-route53-healthcheck-alarm-high-resolution  CloudWatch の Period は 10/20/30 か 60 の倍数しか取れないので 31-59 は作れない。fail は作れる中で最大の 30、pass は 60 に乗せてある
 pf-route53-hostedzone-name-label-63  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
 pf-route53-record-name-label-length  ラベルは Name の一部分なので、検出器が見る「引用符で囲まれた文字列の長さ」には現れない。フィクスチャは 64 / 63 に乗せてある
@@ -60,4 +70,3 @@ pf-wafv2-custom-response  コンテナ全体で 50 KB という上限は本文�
 pf-wafv2-ipset-addresses  p <= 32 は IPv4 のプレフィックス長が範囲内かの形のガードで、順序のある制約ではない（33 は有効な値ですらない）
 pf-wafv2-logging-destination  count(parts) >= 7 は ARN を割った断片数のガード。parts が some で束縛されているので split の検出に引っかからない
 pf-wafv2-managed-rule-group  ExemptUriRegularExpressions の 1..5 はヘルパー述語（_pf_wafmrg_bad_count(n) if n > 5）の引数で、検出器は呼び出し側の値まで辿れない。フィクスチャは 6 / 5 本に乗せてある
-pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある

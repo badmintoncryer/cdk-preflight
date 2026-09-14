@@ -125,6 +125,77 @@
         },
         "ResourceProperties": "{\"priority\": 101}"
       }
+    },
+    "Rg2": {
+      "Type": "AWS::Route53Resolver::FirewallRuleGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-rg2-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "FirewallRules": [
+          {
+            "Priority": 101,
+            "Action": "ALERT",
+            "FirewallDomainListId": {
+              "Ref": "Dl"
+            }
+          }
+        ]
+      }
+    },
+    "ResAssoc2": {
+      "Type": "AWS::Route53Profiles::ProfileResourceAssociation",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "cdkpf-ra2-",
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      "/",
+                      {
+                        "Ref": "AWS::StackId"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "ProfileId": {
+          "Ref": "Profile"
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "Rg2",
+            "Arn"
+          ]
+        },
+        "ResourceProperties": "{\"priority\": 9899}"
+      }
     }
   }
 }

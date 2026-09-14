@@ -18,7 +18,7 @@
         "SetIdentifier": "s1",
         "GeoProximityLocation": {
           "AWSRegion": "us-east-1",
-          "Bias": 50
+          "Bias": 99
         },
         "HostedZoneId": {
           "Ref": "Zone"

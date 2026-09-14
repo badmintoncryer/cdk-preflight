@@ -7,5 +7,5 @@ constraintSource: https://docs.aws.amazon.com/AmazonElastiCache/latest/APIRefere
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid endpoint port: 8005. Valid range is 1150-8004,8006-65535\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: one template with Port 1149, 8005 and 65536 -> \"Invalid endpoint port: 1149. Valid range is 1150-8004,8006-65535\" (ROLLBACK_COMPLETE; CloudFormation reports the first rejected resource, so the 8005 and 65536 ends stay hidden behind it); pass Port 1150 -> CREATE_COMPLETE. The other three limits (8004, 8006, 65535) are only exercised from the fail side: a pass sitting on each end would mean four billable replication groups per verification run. The range lives in _pf_cachelib_port_ok in rules/_lib/cache.rego, which boundaryProblem never sees (it is handed rule.rego only), so nothing machine-checks these ends."
 addedOn: 2026-09-06

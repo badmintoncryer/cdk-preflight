@@ -223,9 +223,15 @@ test('boundaryProblem pins both the constant and the operator', () => {
   expect(boundaryProblem(rego, fixture('x'.repeat(19)), fixture('x'.repeat(20)))).toBeUndefined();
   expect(boundaryProblem(rego, fixture('short'), fixture('x'.repeat(20)))).toMatch(/fail template has no 19/);
   expect(boundaryProblem(rego, fixture('x'.repeat(19)), fixture('x'.repeat(26)))).toMatch(/pass template has no 20/);
-  // 数値のしきい値はテンプレートを生で走査するので、文字列に包まれた数も拾う
+  // 数値のしきい値はテンプレートを生で走査するので、文字列に包まれた数も拾う。左辺が
+  // to_number(...) や abs(...) でもしきい値として見える——ここを count(...) だけに絞って
+  // いたときは、しきい値が 1 つも検出されないので緩いペアが黙って通っていた。
   const numeric = 'violation contains 1 if {\n\tto_number(v) > 300\n}\n';
   expect(boundaryProblem(numeric, fixture('301'), fixture('300'))).toBeUndefined();
+  expect(boundaryProblem(numeric, fixture('9999'), fixture('300'))).toMatch(/fail template has no 301/);
+  expect(boundaryProblem(numeric, fixture('301'), fixture('5'))).toMatch(/pass template has no 300/);
+  const wrapped = 'violation contains 1 if {\n\tabs(n) > 90\n}\n';
+  expect(boundaryProblem(wrapped, fixture('95'), fixture('45'))).toMatch(/fail template has no 91/);
   // 存在チェック（0/1）と小数のしきい値には隣の値が定義できないので見ない
   expect(boundaryProblem('violation contains 1 if {\n\tcount(v) > 0\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
   expect(boundaryProblem('violation contains 1 if {\n\tw > 0.15\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
