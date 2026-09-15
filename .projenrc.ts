@@ -73,11 +73,25 @@ project.tryFindObjectFile('.github/dependabot.yml')!.addOverride('updates.1', {
   'groups': { all: { patterns: ['*'] } },
 });
 
-// rules/**/rule.rego + meta.yaml を src/rules.generated.ts に束ねる（コミット対象・鮮度は structure テストで担保）
+// src/rules.generated.ts は rules/** から決定的に作られ preCompile で必ず生成されるので、コミットしない。
+// 追跡していると 3MB の生成物がルール追加 PR すべての diff に乗り、PR 同士が必ず衝突する。
+// `gitignore:` オプションではなくここで足すこと: あちらは出力の先頭に並ぶので、
+// 後から来る `!/src/` に打ち消される（.gitignore は最後にマッチした行が勝つ）。
+project.gitignore.exclude('/src/rules.generated.ts');
+
+// rules/**/rule.rego + meta.yaml を src/rules.generated.ts に束ねる（gitignore 済み・preCompile で毎回生成）
 const bundleRules = project.addTask('bundle-rules', {
   exec: 'ts-node --project test/tsconfig.json scripts/bundle-rules.ts',
 });
 project.preCompileTask.spawn(bundleRules);
+
+// コミット対象の docs/rules.md と README（バッジ・リソース表）を書くのはこのタスクだけ。
+// preCompile からは呼ばない: ルール追加 PR がこの 2 つを触らなければ PR 同士は衝突しない。
+// main では release の self mutation がこれを回して数字を合わせる。
+project.addTask('bundle-docs', {
+  exec: 'ts-node --project test/tsconfig.json scripts/bundle-rules.ts --docs',
+  description: 'regenerate docs/rules.md and the generated parts of README.md',
+});
 
 // `npx cdk-preflight init` codemod
 project.package.addBin({ 'cdk-preflight': 'lib/cli.js', 'cdkpf': 'lib/cli.js' });
@@ -287,7 +301,7 @@ monthlyVerify.addJob('report', {
 const selfMutationCommit: github.workflows.JobStep = {
   name: 'Self mutation',
   run: [
-    'npx projen bundle-rules',
+    'npx projen bundle-docs',
     'if ! git diff --ignore-space-at-eol --exit-code; then',
     '  git add -A',
     '  git commit -m "chore: self mutation"',

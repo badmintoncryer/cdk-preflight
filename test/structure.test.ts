@@ -1,6 +1,10 @@
 /**
  * リポジトリ構造の lint テスト。
- * rules/ ディレクトリの完全性と、生成物（rules.generated.ts / docs/rules.md）の鮮度を担保する。
+ * rules/ ディレクトリの完全性と、レンダラがルールを取りこぼさないことを担保する。
+ *
+ * 生成物の「鮮度」はここでは検査しない。src/rules.generated.ts は gitignore 済みで preCompile が
+ * 毎回書き直すため、docs/rules.md と README は `bundle-docs`（release の self mutation）だけが書くため、
+ * どちらもコミット内容とレンダリング結果がずれる経路が無い。
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -20,22 +24,24 @@ test('rule ids are unique', () => {
   expect(new Set(ids).size).toBe(ids.length);
 });
 
-test('src/rules.generated.ts is up to date', () => {
-  const expected = renderGenerated(collectRules(root), collectLibs(root));
-  const actual = fs.readFileSync(path.join(root, 'src', 'rules.generated.ts'), 'utf8');
-  expect(actual).toBe(expected);
-});
+/**
+ * 「生成物が最新か」の 3 本が偶然守っていた唯一の実害は、レンダラがルールを黙って落とすこと。
+ * それを直接書く。3 つのレンダラは別々の絞り込みを通るので、3 つとも見る。
+ */
+test('the renderers drop no rule', () => {
+  const rules = collectRules(root);
+  const generated = renderGenerated(rules, collectLibs(root));
+  const docs = renderDocs(rules);
+  const supported = renderSupported(rules);
 
-test('docs/rules.md is up to date', () => {
-  const expected = renderDocs(collectRules(root));
-  const actual = fs.readFileSync(path.join(root, 'docs', 'rules.md'), 'utf8');
-  expect(actual).toBe(expected);
-});
-
-test('the README resource-type list is up to date', () => {
-  const expected = renderSupported(collectRules(root));
-  const actual = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
-  expect(actual).toContain(expected);
+  for (const r of rules) {
+    expect(generated).toContain(JSON.stringify(r.id));
+    expect(docs).toContain(r.id);
+  }
+  // README のリソース表は ID ではなく型ごとの本数で書かれる。短縮名はサービスをまたいで重複する
+  // （ApiGateway と AppSync の両方に ApiKey がある）ので、名前ではなく本数の総和で見る。
+  const tallied = [...supported.matchAll(/\((\d+)\)/g)].reduce((n, m) => n + Number(m[1]), 0);
+  expect(tallied).toBe(rules.reduce((n, r) => n + r.resourceTypes.length, 0));
 });
 
 // ルール表は test/rules.shard*.test.ts に分割して jest の並列に乗せている。シャードを

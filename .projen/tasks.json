@@ -68,6 +68,15 @@
         }
       ]
     },
+    "bundle-docs": {
+      "name": "bundle-docs",
+      "description": "regenerate docs/rules.md and the generated parts of README.md",
+      "steps": [
+        {
+          "exec": "ts-node --project test/tsconfig.json scripts/bundle-rules.ts --docs"
+        }
+      ]
+    },
     "bundle-rules": {
       "name": "bundle-rules",
       "steps": [

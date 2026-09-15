@@ -78,7 +78,7 @@ The two failure modes are watched separately: **staleness** (the constraint disa
 Then:
 
 1. `rm -rf rules/<service>/<rule-id>/` — delete outright, no tombstone. `upstream: retired` exists for a rule mid-flight, not for a corpse.
-2. `npx projen bundle-rules` (regenerates `src/rules.generated.ts` and `docs/rules.md`).
+2. `npx projen bundle-rules` (regenerates `src/rules.generated.ts`; the file is gitignored, so nothing to commit).
 3. One line in the PR body naming the engine rule id that replaced it.
 
 Users pinned to an older `aws-cdk-lib` keep the old behavior by staying on the older cdk-preflight, so a deletion never leaves them uncovered.
@@ -97,7 +97,7 @@ rules/_lib/<name>.rego      # shared helpers (never emit violations); loaded bef
                             # regardless of `exclude` — so a rule may depend on a lib but never on another rule
 src/index.ts                # Preflight.apply / PreflightOptions (jsii surface — keep minimal)
 src/private/enforce.ts      # enforce-mode plugin (calls the engine directly)
-src/rules.generated.ts      # GENERATED from rules/ — never edit; run `npx projen bundle-rules`
+src/rules.generated.ts      # GENERATED from rules/ and GITIGNORED — `npx projen bundle-rules` (runs in preCompile)
 scripts/bundle-rules.ts     # generator + structural validation
 scripts/rule-check.ts       # one-process local gates: `guard` (bare engine) and `check` (fixtures, pre-bundle)
 test/                       # 4 layers: rules / loader / structure / cli
@@ -151,10 +151,16 @@ If you are a subagent running one of these phases, do not spawn further agents.
    - **Cheap screen for definition-level constraints**: some services expose their create-time validator as a free API (`aws stepfunctions validate-state-machine-definition --type STANDARD|EXPRESS` is the same validator CreateStateMachine runs). Use it to triage doc hypotheses before spending a CloudFormation deploy on each — 100 Step Functions hypotheses took minutes (2026-09-05). The real-deploy gate stays.
 3. `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <service|rule-id>` while iterating: it reads `rules/` straight from disk into a single engine (no bundle, no meta validation, no jest) and reports, per rule, whether the fail template fires its own rule, the pass template is silent for every rule, and neither trips a built-in ERROR/FATAL. Then `npx projen bundle-rules` and `npx jest test/rules test/structure.test.ts` (the `test/rules` pattern picks up both `rules.test.ts` and the `rules.shard*.test.ts` files that carry the per-rule table) — the duplication guard and fixture checks run there for real. Prefer `jest -t` while iterating; the full suite is ~11,400 tests / ~2.5 min on 8 cores (measured 2026-09-14), so keep it for the pre-PR run.
 4. **Real-deploy gate**: `bash bench/verify-rule.sh <rule-id>` deploys the fail template (expects CREATE to fail; records the service error message) and, where cheap, the pass template (expects success, then deletes). Paste the observed error into `meta.yaml#repro.evidence` with the date. Only `doc-only` rules may skip this, with justification.
-5. Update nothing else by hand — `docs/rules.md`, `src/rules.generated.ts`, and the parts of `README.md` between the
-   `<!-- supported-resources:start -->` markers (plus the rule-count badge) are all written by `npx projen bundle-rules`.
-   `test/structure.test.ts` fails when any of them is stale, so adding a rule that touches a new resource type cannot
-   silently leave the README's supported-resource list behind.
+5. Update nothing else by hand, and **do not commit the generated artifacts** — a rule PR touches `rules/**` and
+   nothing else. `src/rules.generated.ts` is gitignored and written by `npx projen bundle-rules`, which `preCompile`
+   spawns on every build. `docs/rules.md` and the parts of `README.md` between the `<!-- supported-resources:start -->`
+   markers (plus the rule-count badge) stay committed but are written **only** by `npx projen bundle-docs`, which the
+   release workflow's self-mutation step runs on `main`. Keeping them out of the PR diff is what makes two rule PRs
+   mergeable in either order: before this split, every pair of rule PRs conflicted on those three files and each merge
+   forced the rest to rebase and regenerate.
+
+   Consequence for a fresh clone: run `npx projen bundle-rules` once before `npx jest` or anything else that imports
+   `src/rules.generated.ts` — it does not exist until a build writes it.
 
 ## Commands
 
@@ -162,7 +168,8 @@ If you are a subagent running one of these phases, do not spawn further agents.
 |---|---|
 | Local rule gates, one process (pre-bundle) | `npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check [service\|rule-id]` |
 | Duplication guard for candidate templates | `... scripts/rule-check.ts guard <dir>` |
-| Regenerate bundle + docs | `npx projen bundle-rules` |
+| Regenerate the bundle (gitignored) | `npx projen bundle-rules` |
+| Regenerate docs/rules.md + README (main only) | `npx projen bundle-docs` |
 | Unit tests | `npx jest` |
 | Full build (jsii, lint, tests, package) | `npx projen build` |
 | Real-deploy verification for one rule | `bash bench/verify-rule.sh <rule-id>` |

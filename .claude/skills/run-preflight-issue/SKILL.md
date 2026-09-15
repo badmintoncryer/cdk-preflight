@@ -73,7 +73,8 @@ rule-discovery issue 1 本（例 #64 Glue + Athena）を、**棚卸しから PR 
 4. **課金物の禁止**: 禁止リソース型を名指しし、「**create API を呼ぶ前に落とす**」「pass フィクスチャを作らない
    （`--fail-only`）」「既存の無料下敷きは消さない」。`絶対に課金パネルのリソースを作らない`はユーザーの明示指示
 5. **git の縛り**: `main` に直接コミットしない / ブランチを切る / **push も `gh pr create` もしない** /
-   コミットメッセージに attribution 行を入れない
+   コミットメッセージに attribution 行を入れない / **コミットするのは `rules/**` だけ**
+   （生成物は `src/rules.generated.ts` が gitignore、`docs/rules.md` と README は `bundle-docs` が main で書く）
 6. **報告の型**（下記）と「日本語で」
 7. **迷ったら減らす方向に倒せ**。中途半端なルールを 1 本入れるより、確実な本数だけ入れて残りを報告させる
 
@@ -96,6 +97,7 @@ ls rules/<svc> | wc -l                                                     # 本
 npx ts-node --transpile-only --project test/tsconfig.json scripts/rule-check.ts check <svc>   # 0 NG か
 grep -rl '<禁止リソース型>' rules/<svc> | wc -l                             # 課金物が 0 件か
 git log --oneline -1 && git branch --show-current                          # コミットがあり main でないか
+git diff --name-only origin/main.. | grep -v '^rules/' | head                # rules/ 以外を触っていないか（生成物は非コミット）
 ```
 
 B の後は課金物の実在確認も回す（例 `aws athena list-capacity-reservations`）。**食い違ったら同じエージェントに

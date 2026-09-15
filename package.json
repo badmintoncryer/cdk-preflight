@@ -13,6 +13,7 @@
     "build": "projen build",
     "bump": "projen bump",
     "bump:releasable-commits": "projen bump:releasable-commits",
+    "bundle-docs": "projen bundle-docs",
     "bundle-rules": "projen bundle-rules",
     "clobber": "projen clobber",
     "compat": "projen compat",
