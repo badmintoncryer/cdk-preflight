@@ -1,4 +1,4 @@
-id: pf-codebuild-cache-location-ignored-for-local
+id: pf-codebuild-local-source-cache-needs-source
 service: codebuild
 resourceTypes: [AWS::CodeBuild::Project]
 benchRegion: us-east-1

@@ -1,4 +1,4 @@
-id: pf-codebuild-file-system-identifier-charset
+id: pf-codebuild-file-system-locations-need-privileged-mode
 service: codebuild
 resourceTypes: [AWS::CodeBuild::Project]
 benchRegion: us-east-1

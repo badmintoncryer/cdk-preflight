@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-codebuild-cache-location-ignored-for-local", "ERROR", name,
+violation contains make_diag_full("pf-codebuild-local-source-cache-needs-source", "ERROR", name,
 	"Properties.Cache.Modes",
 	"LOCAL_SOURCE_CACHE caches the checkout, but Source.Type is NO_SOURCE; CreateProject fails with \"Cache mode LOCAL_SOURCE_CACHE is not available for source type NO_SOURCE\"",
 	"Drop LOCAL_SOURCE_CACHE, or give the project a source to check out",
