@@ -8,7 +8,7 @@ _pf_eccn_fix := "Keep NumCacheNodes at 1 for Redis (use a replication group for 
 
 violation contains make_diag_full("pf-elasticache-cache-cluster-nodes", "ERROR", name,
 	"Properties.NumCacheNodes",
-	sprintf("a Redis cluster asks for %v nodes; the create call fails with \"Cannot create a Redis cluster with a NumCacheNodes parameter greater than 1.\"", [n]),
+	sprintf("a Redis cluster asks for %v nodes; the create call fails with \"NumCacheNodes should be 1 if engine is redis\"", [n]),
 	_pf_eccn_fix, _pf_eccn_url) if {
 	some name in resources_of_type("AWS::ElastiCache::CacheCluster")
 	lower(resolve(name, "Properties.Engine")) == "redis"

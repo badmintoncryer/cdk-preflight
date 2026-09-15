@@ -376,6 +376,46 @@ test('boundaryProblem measures the string the rule sees, not the escaped JSON', 
   expect(boundaryProblem(rego, fixture(`"${'x'.repeat(19)}"`), fixture(`"${'x'.repeat(18)}"`))).toBeUndefined();
 });
 
+test('boundaryProblem weighs a bare number against the property it reads', () => {
+  // 素の数値比較のプールは「テンプレートに現れる数字の並び全部」なので、別の場所に同じ数が
+  // あると緩いペアが黙って通る。しきい値の掛かるプロパティまで辿れたときはその値だけを見る。
+  const rego = [
+    'violation contains 1 if {',
+    '\tn := to_number(resolve(name, "Properties.NumCacheNodes"))',
+    '\tn < 2',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (nodes: number, port: number) => JSON.stringify({
+    Resources: { X: { Type: 'AWS::X::Y', Properties: { NumCacheNodes: nodes, Port: port } } },
+  });
+  expect(boundaryProblem(rego, fx(1, 6379), fx(2, 6379))).toBeUndefined();
+  // 1 も 2 もテンプレートのどこかにはあるが、NumCacheNodes はどちらの端にも乗っていない
+  expect(boundaryProblem(rego, fx(3, 1), fx(9, 2))).toMatch(/fail template has no 1 for `< 2`; pass template has no 2 for `< 2`/);
+  // プロパティがテンプレートに無いときは従来どおり全部のプールで見る。DashboardBody のような
+  // JSON 文字列の中の値はパース済みの構造には現れないので、ここを赤にすると誤検出しか増えない
+  const nested = JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { Body: '{"NumCacheNodes":1}' } } } });
+  expect(boundaryProblem(rego, nested, JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { Body: '{"NumCacheNodes":2}' } } } }))).toBeUndefined();
+});
+
+test('boundaryProblem does not read one side of an arithmetic comparison as the threshold', () => {
+  // `mx - mn > 100` の左辺は 1 つの値ではない。`mn > 100` と読むと MinHealthyPercentage に
+  // 101 を要求してしまう（実際に恒久例外が 1 本これで書かれていた）
+  const rego = [
+    'violation contains 1 if {',
+    '\tmn := to_number(resolve(name, "Properties.MinHealthyPercentage"))',
+    '\tmx := to_number(resolve(name, "Properties.MaxHealthyPercentage"))',
+    '\tmx - mn > 100',
+    '}',
+    '',
+  ].join('\n');
+  const fx = (mn: number, mx: number) => JSON.stringify({
+    Resources: { X: { Type: 'AWS::X::Y', Properties: { MinHealthyPercentage: mn, MaxHealthyPercentage: mx } } },
+  });
+  expect(boundaryProblem(rego, fx(0, 101), fx(0, 100))).toBeUndefined();
+  expect(boundaryProblem(rego, fx(0, 500), fx(0, 5))).toBeUndefined();
+});
+
 test('crossFieldProblem pins the pair when the limit is another property', () => {
   const rego = [
     'violation contains 1 if {',

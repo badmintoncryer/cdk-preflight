@@ -82,6 +82,27 @@
           }
         ]
       }
+    },
+    "MC": {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "ClusterName": "cdkpf-ccn-crossaz",
+        "CacheNodeType": "cache.t4g.micro",
+        "Engine": "memcached",
+        "AZMode": "cross-az",
+        "NumCacheNodes": 2,
+        "CacheSubnetGroupName": {
+          "Ref": "SNG"
+        },
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "SG",
+              "GroupId"
+            ]
+          }
+        ]
+      }
     }
   }
 }
