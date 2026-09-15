@@ -800,9 +800,7 @@
 | `pf-codebuild-badge-not-supported-for-s3-source` | AWS::CodeBuild::Project | Build badges are not enabled on an S3 or source-less project | ERROR | none |
 | `pf-codebuild-badge-not-with-codepipeline-source` | AWS::CodeBuild::Project | Build badges are not enabled on a CODEPIPELINE project | ERROR | none |
 | `pf-codebuild-build-batch-timeout-range` | AWS::CodeBuild::Project | The batch build timeout stays between 5 and 2160 minutes | ERROR | none |
-| `pf-codebuild-cache-docker-layer-linux-only` | AWS::CodeBuild::Project | PrivilegedMode is not set on a Windows environment | ERROR | none |
 | `pf-codebuild-cache-local-requires-modes` | AWS::CodeBuild::Project | A LOCAL cache names its modes | ERROR | none |
-| `pf-codebuild-cache-location-ignored-for-local` | AWS::CodeBuild::Project | LOCAL_SOURCE_CACHE goes with a project that has a source | ERROR | none |
 | `pf-codebuild-cache-s3-requires-location` | AWS::CodeBuild::Project | An S3 cache names the bucket and prefix | ERROR | none |
 | `pf-codebuild-compute-type-environment-type` | AWS::CodeBuild::Project | The Lambda compute types go with a Lambda environment type | ERROR | none |
 | `pf-codebuild-concurrent-build-limit-range` | AWS::CodeBuild::Project | The per-project concurrent build limit is at least 1 | ERROR | none |
@@ -810,11 +808,13 @@
 | `pf-codebuild-encryption-key-region` | AWS::CodeBuild::Project | The build output encryption key lives in the project's Region | ERROR | none |
 | `pf-codebuild-environment-variable-name-reserved` | AWS::CodeBuild::Project | Environment variable names stay off the reserved CODEBUILD_ prefix | ERROR | none |
 | `pf-codebuild-environment-variable-name-unique` | AWS::CodeBuild::Project | Environment variable names are unique within a project | ERROR | none |
-| `pf-codebuild-file-system-identifier-charset` | AWS::CodeBuild::Project | A project that mounts a file system runs in privileged mode | ERROR | none |
 | `pf-codebuild-file-system-location-format` | AWS::CodeBuild::Project | An EFS mount location names the file system and the directory | ERROR | none |
+| `pf-codebuild-file-system-locations-need-privileged-mode` | AWS::CodeBuild::Project | A project that mounts a file system runs in privileged mode | ERROR | none |
 | `pf-codebuild-git-submodules-config-git-sources-only` | AWS::CodeBuild::Project | Git submodules are only configured on a git-backed source | ERROR | none |
 | `pf-codebuild-lambda-compute-no-privileged-mode` | AWS::CodeBuild::Project | PrivilegedMode is not set on the Lambda compute mode | ERROR | none |
+| `pf-codebuild-local-source-cache-needs-source` | AWS::CodeBuild::Project | LOCAL_SOURCE_CACHE goes with a project that has a source | ERROR | none |
 | `pf-codebuild-logs-s3-requires-location` | AWS::CodeBuild::Project | Enabled S3 build logs name the bucket and prefix | ERROR | none |
+| `pf-codebuild-privileged-mode-not-on-windows` | AWS::CodeBuild::Project | PrivilegedMode is not set on a Windows environment | ERROR | none |
 | `pf-codebuild-project-description-length` | AWS::CodeBuild::Project | The project description stays within 255 characters | ERROR | none |
 | `pf-codebuild-project-name-length` | AWS::CodeBuild::Project | The project name stays within 150 characters | ERROR | none |
 | `pf-codebuild-report-build-status-provider` | AWS::CodeBuild::Project | ReportBuildStatus is only set on a source provider that reports status | ERROR | none |
@@ -823,7 +823,7 @@
 | `pf-codebuild-secondary-artifact-identifier-unique` | AWS::CodeBuild::Project | Secondary artifact identifiers are unique within a project | ERROR | none |
 | `pf-codebuild-secondary-artifacts-identifier-required` | AWS::CodeBuild::Project | Every secondary artifact carries an ArtifactIdentifier | ERROR | none |
 | `pf-codebuild-secondary-artifacts-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary artifacts | ERROR | none |
-| `pf-codebuild-secondary-artifacts-no-codepipeline` | AWS::CodeBuild::Project | Secondary artifacts publish to S3 | ERROR | none |
+| `pf-codebuild-secondary-artifacts-s3-only` | AWS::CodeBuild::Project | Secondary artifacts publish to S3 | ERROR | none |
 | `pf-codebuild-secondary-source-identifier-unique` | AWS::CodeBuild::Project | Secondary source identifiers are unique within a project | ERROR | none |
 | `pf-codebuild-secondary-sources-identifier-required` | AWS::CodeBuild::Project | Every secondary source carries a SourceIdentifier | ERROR | none |
 | `pf-codebuild-secondary-sources-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary sources | ERROR | none |
