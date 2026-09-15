@@ -1,4 +1,4 @@
-id: pf-codebuild-secondary-artifacts-no-codepipeline
+id: pf-codebuild-secondary-artifacts-s3-only
 service: codebuild
 resourceTypes: [AWS::CodeBuild::Project]
 benchRegion: us-east-1

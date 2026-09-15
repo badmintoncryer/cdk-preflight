@@ -1,4 +1,4 @@
-id: pf-codebuild-cache-docker-layer-linux-only
+id: pf-codebuild-privileged-mode-not-on-windows
 service: codebuild
 resourceTypes: [AWS::CodeBuild::Project]
 benchRegion: us-east-1

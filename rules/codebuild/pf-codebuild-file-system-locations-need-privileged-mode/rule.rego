@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-codebuild-file-system-identifier-charset", "ERROR", name,
+violation contains make_diag_full("pf-codebuild-file-system-locations-need-privileged-mode", "ERROR", name,
 	"Properties.Environment.PrivilegedMode",
 	"FileSystemLocations mounts a file system into the build container, which needs the privileged Docker daemon; CreateProject fails with \"Privileged Mode has to be set for projects with File System Locations\"",
 	"Set Environment.PrivilegedMode to true, or drop FileSystemLocations",
