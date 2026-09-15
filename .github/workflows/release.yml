@@ -48,7 +48,7 @@ jobs:
         run: yarn install --check-files --frozen-lockfile
       - name: Self mutation
         run: |-
-          npx projen bundle-rules
+          npx projen bundle-docs
           if ! git diff --ignore-space-at-eol --exit-code; then
             git add -A
             git commit -m "chore: self mutation"

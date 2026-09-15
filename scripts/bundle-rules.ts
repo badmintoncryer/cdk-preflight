@@ -591,13 +591,22 @@ if (require.main === module) {
     ...libs.map((l) => ({ name: l.name, rego: l.rego })),
   ]);
   if (collisions.length > 0) throw new Error(`rego name collisions:\n  ${collisions.join('\n  ')}`);
-  fs.writeFileSync(path.join(root, 'src', 'rules.generated.ts'), renderGenerated(rules, libs));
-  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'docs', 'rules.md'), renderDocs(rules));
-  const readme = path.join(root, 'README.md');
-  fs.writeFileSync(readme, withSupported(fs.readFileSync(readme, 'utf8')
-    .replace(/badge\/rules-\d+-/, `badge/rules-${rules.length}-`)
-    .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`), rules));
-  // eslint-disable-next-line no-console
-  console.log(`bundled ${rules.length} rules -> src/rules.generated.ts, docs/rules.md, README.md`);
+
+  // 既定は src/rules.generated.ts だけ（gitignore 済みのビルド生成物）。--docs を付けたときだけ
+  // コミット対象の docs/rules.md と README を書く。ルール追加 PR がこの 2 つを触らないので、
+  // PR 同士が生成物で衝突しない。main では release の self-mutation が `bundle-docs` を回す。
+  if (!process.argv.includes('--docs')) {
+    fs.writeFileSync(path.join(root, 'src', 'rules.generated.ts'), renderGenerated(rules, libs));
+    // eslint-disable-next-line no-console
+    console.log(`bundled ${rules.length} rules -> src/rules.generated.ts`);
+  } else {
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'rules.md'), renderDocs(rules));
+    const readme = path.join(root, 'README.md');
+    fs.writeFileSync(readme, withSupported(fs.readFileSync(readme, 'utf8')
+      .replace(/badge\/rules-\d+-/, `badge/rules-${rules.length}-`)
+      .replace(/alt="\d+ bundled rules"/, `alt="${rules.length} bundled rules"`), rules));
+    // eslint-disable-next-line no-console
+    console.log(`bundled ${rules.length} rules -> docs/rules.md, README.md`);
+  }
 }

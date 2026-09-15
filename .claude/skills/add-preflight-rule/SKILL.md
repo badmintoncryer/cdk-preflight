@@ -31,7 +31,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    - fail テンプレートがデプロイに**成功**したら、それはドキュメント側の誤り（BROKEN-EXPECTATION）。ルールを削除し、証拠を issue に残して終了する。CloudFront では明文化された制約 9 件中 3 件がこれだった（2026-09-02）
    - **予想と違う理由**で失敗した場合（他アカウントの ARN、ドメイン所有権の検証など）は証拠にならない。サービスエラーが対象の制約そのものを名指しするまでテンプレートを作り直すか、除去できない交絡は `evidence` に明記する
    - `doc-only` は「再現に安価に作れないリソース（検証済み ACM 証明書、所有ドメイン等）が要る」場合に限る最終手段であって、まだ試していない制約への近道ではない。詳細は AGENTS.md の "A doc sentence is a hypothesis, not evidence" に従う
-6. **仕上げ**: `npx projen build` 全緑 → ブランチ作成 → conventional commit（`feat(rules): add <rule-id>`）→ PR 本文に: 制約の出典 / 重複チェック結果 / 実機再現ログ。
+6. **仕上げ**: `npx projen build` 全緑 → ブランチ作成 → **コミットするのは `rules/**` だけ**（`src/rules.generated.ts` は gitignore 済み、`docs/rules.md` と README のバッジ・リソース表は `bundle-docs` が main で書く。ここを触らないので PR 同士が衝突しない）→ conventional commit（`feat(rules): add <rule-id>`）→ PR 本文に: 制約の出典 / 重複チェック結果 / 実機再現ログ。
 
 ## セッションの切り方（コンテキスト予算）
 
