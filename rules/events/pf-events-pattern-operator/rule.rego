@@ -57,6 +57,8 @@ violation contains make_diag_full("pf-events-pattern-operator", "ERROR", name,
 	some m in _pf_evpop_matchers(name)
 	ab := object.get(m, "anything-but", null)
 	is_object(ab)
+	# A Ref/GetAtt here is a string by the time PutRule runs (issue #237).
+	not _pf_evlib_marker(ab)
 	some k, v in ab
 	not k in _pf_evpop_anything_but_inner
 }
