@@ -5,7 +5,7 @@ resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
 severity: ERROR
 title: "A single ResourceRecords value is limited to 4000 characters"
 constraintSource: https://docs.aws.amazon.com/general/latest/gr/r53.html
-upstream: pending-engine
+upstream: cfn-schema
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 4001-character TXT value -> CloudFormation stops it before provisioning (stack CREATE_FAILED, DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\"), so the message names no property; the same record put straight to ChangeResourceRecordSets names the constraint: \"cvc-maxLength-valid: Value '...' with length = '4001' is not facet-valid with respect to maxLength '4000' for type 'RData'\". pass 4000 characters -> CREATE_COMPLETE. The count is the presentation string exactly as written, quotes and separators included. The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine."

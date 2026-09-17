@@ -39,7 +39,7 @@ export interface BundledRule {
 }
 
 const SEVERITIES = ['FATAL', 'ERROR', 'WARN', 'INFO'];
-const UPSTREAMS = ['none', 'pending-engine', 'engine-pr', 'retired'];
+const UPSTREAMS = ['none', 'pending-engine', 'cfn-schema', 'engine-pr', 'retired'];
 const REPRO_METHODS = ['real-deploy', 'research-case', 'doc-only'];
 
 const ISO_DATE = /\d{4}-\d{2}-\d{2}/;
