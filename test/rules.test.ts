@@ -1408,6 +1408,40 @@ describe('lambda function and esm rules', () => {
     });
   });
 
+  describe('pf-lambda-layer-cross-account-needs-permission', () => {
+    const RULE = 'pf-lambda-layer-cross-account-needs-permission';
+    const INSIGHTS = 'arn:aws:lambda:us-east-1:580247275435:layer:LambdaInsightsExtension:60';
+    const ADOT = 'arn:aws:lambda:us-east-1:615299751070:layer:AWSOpenTelemetryDistroPython:16';
+    const PARAMS = 'arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension:18';
+    const PRIVATE = 'arn:aws:lambda:us-east-1:444455556666:layer:l:1';
+    const own = (t: unknown, region?: string) => diagnoseTemplate(t, region).filter((d) => d.ruleId === RULE);
+
+    test('layers AWS publishes are shared with every account (issue #238)', () => {
+      expect(own(fn({ Layers: [INSIGHTS, ADOT, PARAMS] }), 'us-east-1')).toHaveLength(0);
+    });
+
+    test('the deploy account owns its own layer, written literally or through the pseudo parameter', () => {
+      expect(own(fn({ Layers: ['arn:aws:lambda:us-east-1:123456789012:layer:mine:1'] }), 'us-east-1')).toHaveLength(0);
+      expect(own(fn({ Layers: [{ 'Fn::Sub': 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:mine:1' }] }), 'us-east-1')).toHaveLength(0);
+    });
+
+    test('a region mapping that resolves to an AWS layer is silent (the region-agnostic CDK route)', () => {
+      const t = { Mappings: { M: { 'us-east-1': { arn: INSIGHTS } } }, ...fn({ Layers: [{ 'Fn::FindInMap': ['M', { Ref: 'AWS::Region' }, 'arn'] }] }) };
+      expect(own(t, 'us-east-1')).toHaveLength(0);
+    });
+
+    test('a private layer of another account is reported once, as a warning', () => {
+      const ds = own(fn({ Layers: [INSIGHTS, PRIVATE] }), 'us-east-1');
+      expect(ds).toHaveLength(1);
+      expect(ds[0].severity).toBe('WARN');
+      expect(ds[0].message).toContain('444455556666');
+    });
+
+    test('without a deploy account the rule skips', () => {
+      expect(own(fn({ Layers: [PRIVATE] }))).toHaveLength(0);
+    });
+  });
+
   describe('event source mapping rules stay stream-agnostic', () => {
     const KINESIS = 'arn:aws:kinesis:us-east-1:123456789012:stream/s';
     test('kinesis sources take StartingPosition and big batches without a window', () => {

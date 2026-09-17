@@ -1,12 +1,12 @@
 id: pf-lambda-layer-cross-account-needs-permission
 service: lambda
 resourceTypes: [AWS::Lambda::Function]
-severity: ERROR
+severity: WARN
 title: "A cross-account layer needs a share"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/adding-layers.html
 benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateFunction (us-east-1, 2026-09-07): "User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: lambda:GetLayerVersion on resource: arn:aws:lambda:us-east-1:444455556666:layer:l:1 because no resource-based policy allows the lambda:GetLayerVersion action"'
+  evidence: 'CreateFunction (us-east-1, 2026-09-07): "User: arn:aws:iam::214794239830:user/Administrator is not authorized to perform: lambda:GetLayerVersion on resource: arn:aws:lambda:us-east-1:444455556666:layer:l:1 because no resource-based policy allows the lambda:GetLayerVersion action". WARN rather than ERROR: whether the owner has shared the layer is invisible in the consumer template (only the owner can write the LayerVersionPermission), and the layers AWS publishes (Lambda Insights, ADOT, the AppConfig and Parameters-and-Secrets extensions) deploy for every account (issue #238), so their publisher accounts are exempt. Reads data.cdk_preflight.deploy_account: silent unless the app has a concrete account (enforce mode).'
 addedOn: 2026-09-07

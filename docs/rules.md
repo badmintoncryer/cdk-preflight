@@ -1810,7 +1810,7 @@
 | `pf-lambda-layer-compatible-architectures-enum` | AWS::Lambda::LayerVersion | CompatibleArchitectures are x86_64 or arm64 | ERROR | pending-engine |
 | `pf-lambda-layer-compatible-runtimes-enum` | AWS::Lambda::LayerVersion | CompatibleRuntimes are known runtime identifiers | ERROR | pending-engine |
 | `pf-lambda-layer-content-storage-mode-enum` | AWS::Lambda::LayerVersion | S3ObjectStorageMode is COPY or REFERENCE | ERROR | pending-engine |
-| `pf-lambda-layer-cross-account-needs-permission` | AWS::Lambda::Function | A cross-account layer needs a share | ERROR | none |
+| `pf-lambda-layer-cross-account-needs-permission` | AWS::Lambda::Function | A cross-account layer needs a share | WARN | none |
 | `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | ERROR | none |
 | `pf-lambda-layer-reference-glacier-storage-class` | AWS::Lambda::LayerVersion | REFERENCE content cannot be archived | WARN | none |
 | `pf-lambda-layer-reference-needs-bucket-policy` | AWS::Lambda::LayerVersion | REFERENCE content needs a bucket policy for Lambda | WARN | none |
