@@ -46,6 +46,12 @@ export interface PreflightOptions {
    * proposed to the upstream cloudformation-validate engine but are not merged
    * yet). Disable this if you run a newer engine that already covers them.
    *
+   * Rules marked `cfn-schema` are unaffected by this switch. CloudFormation's
+   * own registry schema does reject those templates, but only with a
+   * stack-level "Validation failed with 1 error(s)" that names no property, so
+   * they keep earning their place at synth time and no engine release retires
+   * them.
+   *
    * @default true
    */
   readonly includeUpstreamPending?: boolean;

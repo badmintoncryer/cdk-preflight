@@ -119,7 +119,7 @@ describe('observe mode (enforce: false)', () => {
     addBadSecurityGroup(new Stack(app, 'S'));
     app.synth();
     const rules = readReport(app).map((v) => v.ruleName);
-    // 現在の同梱ルールに pending-engine は無いため、全ルールが有効なまま
+    // pf-ec2-sg-port-range は pending-engine ではないので、この切り替えでは落ちない
     expect(rules).toContain('pf-ec2-sg-port-range');
   });
 });

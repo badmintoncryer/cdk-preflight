@@ -73,6 +73,12 @@ Include rules that are marked `pending-engine` (candidates that have been propos
 
 Disable this if you run a newer engine that already covers them.
 
+Rules marked `cfn-schema` are unaffected by this switch. CloudFormation's
+own registry schema does reject those templates, but only with a
+stack-level "Validation failed with 1 error(s)" that names no property, so
+they keep earning their place at synth time and no engine release retires
+them.
+
 ---
 
 ##### `strict`<sup>Optional</sup> <a name="strict" id="cdk-preflight.PreflightOptions.property.strict"></a>
