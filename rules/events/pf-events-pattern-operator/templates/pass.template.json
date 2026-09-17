@@ -1,12 +1,21 @@
 {
  "AWSTemplateFormatVersion": "2010-09-09",
  "Resources": {
+  "T": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {}
+  },
   "R1": {
    "Type": "AWS::Events::Rule",
    "Properties": {
     "EventPattern": {
      "source": [
       "cdkpf.test"
+     ],
+     "resources": [
+      {
+       "Ref": "T"
+      }
      ],
      "detail": {
       "x": [

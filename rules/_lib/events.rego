@@ -18,14 +18,27 @@ import rego.v1
 # elements are collected as nodes rather than as matchers. Getting that wrong
 # would report every key inside a valid $or as an unknown operator.
 
+# An intrinsic the engine could not resolve (a Ref/GetAtt inside a list, a
+# Join/Sub over another resource, a no-default parameter) reaches the rules
+# as a marker object whose keys start with "__". CloudFormation turns it into
+# a string before events:PutRule sees the pattern, so it is never a matcher
+# nor a node: every walk below skips it.
+_pf_evlib_marker(v) if {
+	is_object(v)
+	some k, _ in v
+	startswith(k, "__")
+}
+
 _pf_evlib_obj_values(n) := {v |
 	some k, v in n
 	is_object(v)
+	not _pf_evlib_marker(v)
 }
 
 _pf_evlib_or_branches(n) := {e |
 	some e in object.get(n, "$or", [])
 	is_object(e)
+	not _pf_evlib_marker(e)
 }
 
 _pf_evlib_level(n) := union({_pf_evlib_obj_values(n), _pf_evlib_or_branches(n)})
@@ -51,17 +64,16 @@ _pf_evlib_arrays(p) := union({_pf_evlib_arrays_of(n) | some n in _pf_evlib_nodes
 _pf_evlib_objs_of(a) := {e |
 	some e in a
 	is_object(e)
+	not _pf_evlib_marker(e)
 }
 
 # Every matcher object, e.g. {"prefix": "a"} or {"numeric": [">", 0]}.
 _pf_evlib_matchers(p) := union({_pf_evlib_objs_of(a) | some a in _pf_evlib_arrays(p)})
 
-# The pattern as a plain object, or undefined when it is absent or carries
-# unresolved intrinsics (marker keys start with "__").
+# The pattern as a plain object, or undefined when it is absent or is itself
+# an unresolved intrinsic.
 _pf_evlib_pattern(name, path) := p if {
 	p := resolve(name, path)
 	is_object(p)
-	every k, _ in p {
-		not startswith(k, "__")
-	}
+	not _pf_evlib_marker(p)
 }

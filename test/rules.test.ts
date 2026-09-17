@@ -885,6 +885,16 @@ describe('eventbridge rules', () => {
       expect(ids(diagnoseTemplate(t))).toEqual(['pf-events-pattern-scalar-value']);
     });
 
+    // A list-typed parameter in place of a matcher array is a marker object
+    // whose "__dynamic" key holds a string; it is not a bare scalar (issue #237).
+    test('an intrinsic in place of a matcher array is not a bare scalar', () => {
+      const t = rule(
+        { EventPattern: { source: { Ref: 'Sources' } }, Targets: [{ Id: 't1', Arn: QARN }] },
+        { Sources: { Type: 'CommaDelimitedList' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
     test('a matcher object legally carries scalars and stays silent', () => {
       const t = rule({
         EventPattern: { source: ['a'], detail: { x: [{ prefix: 'a' }, { numeric: ['>', 0, '<', 10] }] } },
@@ -913,6 +923,66 @@ describe('eventbridge rules', () => {
 
     test('an archive pattern wrapped in an array stays silent', () => {
       expect(ids(diagnoseTemplate(archive({ source: ['app.x'] })))).toHaveLength(0);
+    });
+  });
+
+  describe('pf-events-pattern-operator', () => {
+    // An intrinsic the engine cannot resolve reaches the rules as a marker
+    // object ({"__ref": ...}, {"__dynamic": ...}). CloudFormation turns it into
+    // a string before events:PutRule sees the pattern, so it is never an
+    // operator; the lib skips markers at every depth (issue #237).
+    test('a Ref or GetAtt inside a matcher array is not an operator', () => {
+      const t = rule({ EventPattern: { source: ['aws.sqs'], resources: [QARN, { Ref: 'Q' }] }, Targets: [{ Id: 't1', Arn: QARN }] });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('a Join or Sub over another resource is not an operator', () => {
+      const t = rule({
+        EventPattern: {
+          source: ['aws.sqs'],
+          resources: [
+            { 'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, ':sqs:us-east-1:123456789012:', { 'Fn::GetAtt': ['Q', 'QueueName'] }]] },
+            { 'Fn::Sub': 'arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:${Q.QueueName}' },
+          ],
+        },
+        Targets: [{ Id: 't1', Arn: QARN }],
+      });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    // A no-default parameter is a two-key marker ({"__dynamic", "__param_type"}).
+    test('a parameter without a default is not an operator', () => {
+      const t = rule(
+        { EventPattern: { source: ['aws.glue'], detail: { databaseName: [{ Ref: 'Name' }] } }, Targets: [{ Id: 't1', Arn: QARN }] },
+        { Name: { Type: 'String' } },
+      );
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('anything-but may wrap a Ref', () => {
+      const t = rule({ EventPattern: { source: ['aws.sqs'], resources: [{ 'anything-but': QARN }] }, Targets: [{ Id: 't1', Arn: QARN }] });
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('a Ref inside a $or branch of an archive pattern is not an operator', () => {
+      const t = {
+        Resources: {
+          Q: { Type: 'AWS::SQS::Queue', Properties: {} },
+          A: {
+            Type: 'AWS::Events::Archive',
+            Properties: {
+              SourceArn: 'arn:aws:events:us-east-1:123456789012:event-bus/default',
+              EventPattern: { source: ['aws.sqs'], detail: { $or: [{ queue: [{ Ref: 'Q' }] }, { name: ['x'] }] } },
+            },
+          },
+        },
+      };
+      expect(ids(diagnoseTemplate(t))).toHaveLength(0);
+    });
+
+    test('a typo beside a Ref is still reported, once', () => {
+      const t = rule({ EventPattern: { source: ['aws.sqs'], resources: [{ Ref: 'Q' }, { startsWith: 'x' }] }, Targets: [{ Id: 't1', Arn: QARN }] });
+      expect(ids(diagnoseTemplate(t))).toEqual(['pf-events-pattern-operator']);
     });
   });
 
