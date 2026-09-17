@@ -147,7 +147,7 @@
 | `pf-appsync-ds-http-requires-config` | AWS::AppSync::DataSource | A HTTP data source needs HttpConfig | ERROR | none |
 | `pf-appsync-ds-lambda-requires-config` | AWS::AppSync::DataSource | A AWS_LAMBDA data source needs LambdaConfig | ERROR | none |
 | `pf-appsync-ds-lambda-requires-service-role` | AWS::AppSync::DataSource | A data source that reaches another service needs ServiceRoleArn | ERROR | none |
-| `pf-appsync-ds-metrics-config-value` | AWS::AppSync::DataSource | MetricsConfig takes ENABLED / DISABLED | ERROR | pending-engine |
+| `pf-appsync-ds-metrics-config-value` | AWS::AppSync::DataSource | MetricsConfig takes ENABLED / DISABLED | ERROR | cfn-schema |
 | `pf-appsync-ds-none-forbids-config` | AWS::AppSync::DataSource | A NONE data source takes no configuration block | ERROR | none |
 | `pf-appsync-ds-opensearch-requires-config` | AWS::AppSync::DataSource | A AMAZON_OPENSEARCH_SERVICE data source needs OpenSearchServiceConfig | ERROR | none |
 | `pf-appsync-ds-rds-requires-config` | AWS::AppSync::DataSource | A RELATIONAL_DATABASE data source needs RelationalDatabaseConfig | ERROR | none |
@@ -184,7 +184,7 @@
 | `pf-appsync-res-field-in-schema` | AWS::AppSync::Resolver | FieldName must exist on the type | ERROR | none |
 | `pf-appsync-res-kind-value` | AWS::AppSync::Resolver | Kind takes UNIT / PIPELINE | ERROR | pending-engine |
 | `pf-appsync-res-max-batch-size-requires-lambda-ds` | AWS::AppSync::Resolver | MaxBatchSize only applies to a Lambda data source | ERROR | none |
-| `pf-appsync-res-metrics-config-value` | AWS::AppSync::Resolver | MetricsConfig takes ENABLED / DISABLED | ERROR | pending-engine |
+| `pf-appsync-res-metrics-config-value` | AWS::AppSync::Resolver | MetricsConfig takes ENABLED / DISABLED | ERROR | cfn-schema |
 | `pf-appsync-res-pipeline-forbids-data-source` | AWS::AppSync::Resolver | A PIPELINE resolver takes no DataSourceName | ERROR | none |
 | `pf-appsync-res-pipeline-functions-max` | AWS::AppSync::Resolver | A pipeline runs at most 10 functions | ERROR | none |
 | `pf-appsync-res-pipeline-requires-functions` | AWS::AppSync::Resolver | A PIPELINE resolver needs PipelineConfig.Functions | ERROR | none |
@@ -208,7 +208,7 @@
 | `pf-appsync-schema-root-type-missing` | AWS::AppSync::GraphQLSchema | The schema block may only name declared types | ERROR | none |
 | `pf-appsync-schema-undefined-type-reference` | AWS::AppSync::GraphQLSchema | Every field type must be declared in the schema | ERROR | none |
 | `pf-appsync-schema-unknown-scalar` | AWS::AppSync::GraphQLSchema | Only AppSync's own AWS scalars exist | ERROR | none |
-| `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | pending-engine |
+| `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | cfn-schema |
 | `pf-appsync-source-api-merged-not-source` | AWS::AppSync::SourceApiAssociation | A merged API cannot be a source API | ERROR | none |
 | `pf-appsync-source-api-not-merged-target` | AWS::AppSync::SourceApiAssociation | The association target must be a MERGED API | ERROR | none |
 | `pf-athena-dc-glue-requires-catalog-id` | AWS::Athena::DataCatalog | A GLUE data catalog requires the catalog-id parameter | ERROR | none |
@@ -503,7 +503,7 @@
 | `pf-batch-se-name` | AWS::Batch::ServiceEnvironment | Service environment names allow only letters, numbers, hyphen and underscore | ERROR | none |
 | `pf-batch-sp-fairshare-quotashare-exclusive` | AWS::Batch::SchedulingPolicy | FairsharePolicy and QuotaSharePolicy are mutually exclusive | ERROR | none |
 | `pf-batch-sp-name` | AWS::Batch::SchedulingPolicy | Scheduling policy names allow only letters, numbers, hyphen and underscore | ERROR | none |
-| `pf-batch-sp-quota-share-idle-strategy-value` | AWS::Batch::SchedulingPolicy | QuotaSharePolicy.IdleResourceAssignmentStrategy must be FIFO | ERROR | none |
+| `pf-batch-sp-quota-share-idle-strategy-value` | AWS::Batch::SchedulingPolicy | QuotaSharePolicy.IdleResourceAssignmentStrategy must be FIFO | ERROR | cfn-schema |
 | `pf-batch-sp-share-distribution-max` | AWS::Batch::SchedulingPolicy | A fair-share policy supports at most 500 share identifiers | ERROR | none |
 | `pf-batch-sp-share-identifier-duplicate` | AWS::Batch::SchedulingPolicy | ShareDistribution entries need unique share identifiers | ERROR | none |
 | `pf-batch-sp-share-identifier-overlap` | AWS::Batch::SchedulingPolicy | A share identifier prefix may not cover another share identifier | ERROR | none |
@@ -637,7 +637,7 @@
 | `pf-agentcore-runtime-artifact-exactly-one` | AWS::BedrockAgentCore::Runtime | AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration | ERROR | none |
 | `pf-agentcore-runtime-code-entrypoint-extension` | AWS::BedrockAgentCore::Runtime | A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*) | ERROR | none |
 | `pf-agentcore-runtime-endpoint-name-default` | AWS::BedrockAgentCore::RuntimeEndpoint | A RuntimeEndpoint cannot be named DEFAULT (the runtime already owns that endpoint) | ERROR | none |
-| `pf-agentcore-runtime-env-var-count` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime EnvironmentVariables holds at most 50 entries | ERROR | pending-engine |
+| `pf-agentcore-runtime-env-var-count` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime EnvironmentVariables holds at most 50 entries | ERROR | cfn-schema |
 | `pf-agentcore-runtime-lifecycle-timeout-order` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime IdleRuntimeSessionTimeout must not exceed MaxLifetime | ERROR | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | ERROR | pending-engine |
 | `pf-agentcore-runtime-session-storage-single` | AWS::BedrockAgentCore::Runtime | An AgentCore Runtime allows at most one SessionStorage filesystem configuration | ERROR | none |
@@ -1034,7 +1034,7 @@
 | `pf-dynamodb-duplicate-index-name` | AWS::DynamoDB::Table | Secondary index names must be unique | ERROR | none |
 | `pf-dynamodb-global-table-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable AttributeDefinitions must match the key schemas exactly | ERROR | none |
 | `pf-dynamodb-global-table-gsi-provisioned-write-settings` | AWS::DynamoDB::GlobalTable | Each GSI of a PROVISIONED GlobalTable needs WriteProvisionedThroughputSettings | ERROR | none |
-| `pf-dynamodb-global-table-key-schema-shape` | AWS::DynamoDB::GlobalTable | GlobalTable KeySchema must be [HASH] or [HASH, RANGE] | ERROR | none |
+| `pf-dynamodb-global-table-key-schema-shape` | AWS::DynamoDB::GlobalTable | GlobalTable KeySchema must be [HASH] or [HASH, RANGE] | ERROR | cfn-schema |
 | `pf-dynamodb-global-table-lsi-attribute-definitions` | AWS::DynamoDB::GlobalTable | GlobalTable LSI key attributes must be defined in AttributeDefinitions | ERROR | none |
 | `pf-dynamodb-global-table-lsi-count` | AWS::DynamoDB::GlobalTable | A global table can carry at most 5 local secondary indexes | ERROR | none |
 | `pf-dynamodb-global-table-lsi-shape` | AWS::DynamoDB::GlobalTable | A GlobalTable LSI needs a RANGE key and the table's leading hash key | ERROR | none |
@@ -1162,7 +1162,7 @@
 | `pf-ecr-pull-through-cache-url` | AWS::ECR::PullThroughCacheRule | UpstreamRegistryUrl must be one of the supported upstream endpoints and cannot be this registry itself | ERROR | none |
 | `pf-ecr-registry-scanning-configuration` | AWS::ECR::RegistryScanningConfiguration | BASIC scanning supports SCAN_ON_PUSH only, and two rules cannot share a scan frequency | ERROR | none |
 | `pf-ecr-replication-destination` | AWS::ECR::ReplicationConfiguration | A replication destination must be another registry: not the deploy account in the deploy region, and not another partition | ERROR | none |
-| `pf-ecr-repository-creation-template-applied-for` | AWS::ECR::RepositoryCreationTemplate | AppliedFor accepts REPLICATION, PULL_THROUGH_CACHE and CREATE_ON_PUSH only | ERROR | none |
+| `pf-ecr-repository-creation-template-applied-for` | AWS::ECR::RepositoryCreationTemplate | AppliedFor accepts REPLICATION, PULL_THROUGH_CACHE and CREATE_ON_PUSH only | ERROR | cfn-schema |
 | `pf-ecr-signing-profile-region` | AWS::ECR::SigningConfiguration | A signing profile ARN must be in the same region as the registry | ERROR | none |
 | `pf-ecs-awsfirelens-without-router` | AWS::ECS::TaskDefinition | The awsfirelens log driver requires a FireLens router container | ERROR | none |
 | `pf-ecs-awslogs-fargate-missing-stream-prefix` | AWS::ECS::TaskDefinition | awslogs on Fargate requires the awslogs-stream-prefix option | ERROR | none |
@@ -1612,7 +1612,7 @@
 | `pf-glue-ml-transform-max-capacity-with-worker-type` | AWS::Glue::MLTransform | MLTransform MaxCapacity cannot be combined with WorkerType | ERROR | none |
 | `pf-glue-ml-transform-worker-type-and-number-of-workers` | AWS::Glue::MLTransform | MLTransform WorkerType and NumberOfWorkers have to be set together | ERROR | none |
 | `pf-glue-partition-values-match-partition-keys` | AWS::Glue::Partition | Partition Values must be as many as the table's PartitionKeys | ERROR | none |
-| `pf-glue-schema-compatibility` | AWS::Glue::Schema | Schema Compatibility must be one of the seven documented modes | ERROR | pending-engine |
+| `pf-glue-schema-compatibility` | AWS::Glue::Schema | Schema Compatibility must be one of the seven documented modes | ERROR | cfn-schema |
 | `pf-glue-schema-definition-format` | AWS::Glue::Schema | SchemaDefinition must parse as the declared DataFormat | ERROR | none |
 | `pf-glue-schema-name-charset` | AWS::Glue::Schema | A schema name is limited to letters, digits and - _ $ | ERROR | pending-engine |
 | `pf-glue-security-configuration-kms-key` | AWS::Glue::SecurityConfiguration | KMS encryption modes need a KmsKeyArn | ERROR | none |
@@ -1628,7 +1628,7 @@
 | `pf-glue-trigger-schedule-day-of-month-or-week` | AWS::Glue::Trigger | A Glue cron expression must put ? in exactly one of day-of-month and day-of-week | ERROR | none |
 | `pf-glue-trigger-scheduled-requires-schedule` | AWS::Glue::Trigger | A SCHEDULED trigger must carry a Schedule | ERROR | none |
 | `pf-glue-user-defined-function-owner-type` | AWS::Glue::UserDefinedFunction | A user-defined function needs an OwnerType of USER, ROLE or GROUP | ERROR | pending-engine |
-| `pf-glue-user-defined-function-resource-uri-type` | AWS::Glue::UserDefinedFunction | A function ResourceUri needs a ResourceType of JAR, FILE or ARCHIVE | ERROR | pending-engine |
+| `pf-glue-user-defined-function-resource-uri-type` | AWS::Glue::UserDefinedFunction | A function ResourceUri needs a ResourceType of JAR, FILE or ARCHIVE | ERROR | cfn-schema |
 | `pf-glue-workflow-max-concurrent-runs-min` | AWS::Glue::Workflow | A workflow needs at least one concurrent run | ERROR | pending-engine |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
@@ -2036,7 +2036,7 @@
 | `pf-route53-alias-target-outside-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An alias into a hosted zone of this template must target a name inside that zone | ERROR | none |
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | ERROR | none |
 | `pf-route53-caa-tag-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A CAA tag must be issue, issuewild or iodef | ERROR | none |
-| `pf-route53-cidr-collection-id-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.CollectionId must be a UUID | ERROR | pending-engine |
+| `pf-route53-cidr-collection-id-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.CollectionId must be a UUID | ERROR | cfn-schema |
 | `pf-route53-cidr-location-name-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup<br>AWS::Route53::CidrCollection | CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*] | ERROR | none |
 | `pf-route53-cidr-private-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | IP-based routing is not available in a private hosted zone | ERROR | none |
 | `pf-route53-cidr-same-collection-in-group` | AWS::Route53::RecordSetGroup | IP-based record sets sharing a name and type must use one CIDR collection | ERROR | none |
@@ -2058,7 +2058,7 @@
 | `pf-route53-dnssec-requires-ksk` | AWS::Route53::DNSSEC | DNSSEC cannot be enabled on a hosted zone without a key signing key | ERROR | none |
 | `pf-route53-ds-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A DS record value needs exactly 4 space-separated fields | ERROR | none |
 | `pf-route53-failover-alias-evaluate-target-health` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A PRIMARY failover alias must set EvaluateTargetHealth to true | ERROR | none |
-| `pf-route53-failover-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Failover must be PRIMARY or SECONDARY | ERROR | pending-engine |
+| `pf-route53-failover-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Failover must be PRIMARY or SECONDARY | ERROR | cfn-schema |
 | `pf-route53-failover-requires-health-check` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A non-alias PRIMARY failover record needs a health check | ERROR | none |
 | `pf-route53-geolocation-continent-code-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.ContinentCode must be one of the seven two-letter continent codes | ERROR | none |
 | `pf-route53-geolocation-country-code-iso` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.CountryCode must be an ISO 3166-1 alpha-2 country code | ERROR | none |
@@ -2068,7 +2068,7 @@
 | `pf-route53-geolocation-subdivision-requires-us` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode is only valid with CountryCode US | ERROR | none |
 | `pf-route53-geolocation-unsupported-country` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Four ISO country codes have no Route 53 geolocation coverage | ERROR | none |
 | `pf-route53-geoproximity-awsregion-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.AWSRegion must be an existing AWS Region | ERROR | none |
-| `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | pending-engine |
+| `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | cfn-schema |
 | `pf-route53-geoproximity-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates | ERROR | pending-engine |
 | `pf-route53-geoproximity-localzonegroup-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.LocalZoneGroup must be a Local Zone group name | ERROR | none |
 | `pf-route53-geoproximity-max-30-same-name-type` | AWS::Route53::RecordSetGroup | A geoproximity group may hold at most 30 record sets per name and type | ERROR | none |
@@ -2139,7 +2139,7 @@
 | `pf-route53-naptr-regexp-replacement-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A NAPTR value carries either a regexp or a replacement, never both | ERROR | none |
 | `pf-route53-naptr-service-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR service field must be quoted | ERROR | none |
 | `pf-route53-private-zone-health-check-policy` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record with no routing policy cannot reference a health check | ERROR | none |
-| `pf-route53-record-comment-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Comment is limited to 256 characters | ERROR | pending-engine |
+| `pf-route53-record-comment-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Comment is limited to 256 characters | ERROR | cfn-schema |
 | `pf-route53-record-name-charset` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name cannot contain a space | ERROR | none |
 | `pf-route53-record-name-label-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Each label of a record name is limited to 63 bytes | ERROR | none |
 | `pf-route53-record-name-punycode` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name must be ASCII (IDNs go in as Punycode) | ERROR | none |
@@ -2150,10 +2150,10 @@
 | `pf-route53-record-value-source` | AWS::Route53::RecordSet | A record set needs AliasTarget or the full TTL+ResourceRecords pair | ERROR | none |
 | `pf-route53-recordsetgroup-max-1000-elements` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 1000 ResourceRecords values in total | ERROR | none |
 | `pf-route53-recordsetgroup-max-32000-chars` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 32000 characters of record data | ERROR | none |
-| `pf-route53-resourcerecord-value-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A single ResourceRecords value is limited to 4000 characters | ERROR | pending-engine |
+| `pf-route53-resourcerecord-value-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A single ResourceRecords value is limited to 4000 characters | ERROR | cfn-schema |
 | `pf-route53-resourcerecords-max-400` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record set may hold at most 400 ResourceRecords values | ERROR | none |
 | `pf-route53-routing-policy-exclusive` | AWS::Route53::RecordSet | A record set can use only one routing policy | ERROR | none |
-| `pf-route53-set-identifier-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SetIdentifier must be 1-128 characters | ERROR | pending-engine |
+| `pf-route53-set-identifier-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SetIdentifier must be 1-128 characters | ERROR | cfn-schema |
 | `pf-route53-set-identifier-pairing` | AWS::Route53::RecordSet | SetIdentifier and a routing policy must appear together | ERROR | none |
 | `pf-route53-set-identifier-unique-in-group` | AWS::Route53::RecordSetGroup | SetIdentifier must be unique among record sets sharing a name and type | ERROR | none |
 | `pf-route53-simple-and-policy-same-name-type` | AWS::Route53::RecordSetGroup | A simple record set cannot coexist with a routing-policy record set of the same name and type | ERROR | none |
@@ -2311,7 +2311,7 @@
 | `pf-s3-website-replace-key-exclusive` | AWS::S3::Bucket | ReplaceKeyWith and ReplaceKeyPrefixWith are mutually exclusive | ERROR | none |
 | `pf-s3-website-routing-rules-need-index` | AWS::S3::Bucket | RoutingRules require an IndexDocument | ERROR | none |
 | `pf-s3express-ap-name-suffix` | AWS::S3Express::AccessPoint | An S3 Express access point name must end with --<availability-zone-id>--xa-s3 | ERROR | none |
-| `pf-s3express-ap-scope-permissions` | AWS::S3Express::AccessPoint | Access point scope permissions are bare API names, not s3: actions | ERROR | none |
+| `pf-s3express-ap-scope-permissions` | AWS::S3Express::AccessPoint | Access point scope permissions are bare API names, not s3: actions | ERROR | cfn-schema |
 | `pf-s3express-ap-zone-mismatch` | AWS::S3Express::AccessPoint | An S3 Express access point must carry the same zone id as its bucket | ERROR | none |
 | `pf-s3express-bucket-key-enabled-false` | AWS::S3Express::DirectoryBucket | A directory bucket must keep BucketKeyEnabled true | ERROR | none |
 | `pf-s3express-bucket-location-region` | AWS::S3Express::DirectoryBucket | LocationName must name a zone in the region the stack deploys to | ERROR | none |
