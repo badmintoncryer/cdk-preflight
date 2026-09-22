@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::DocDBElastic::Cluster",
+      "Properties": {
+        "AdminUserName": "pfadmin",
+        "AdminUserPassword": "pfpassword1234",
+        "AuthType": "PLAIN_TEXT",
+        "ShardCapacity": 2,
+        "ShardCount": 1,
+        "ClusterName": "cdkpf-dbe-mw-pass",
+        "PreferredMaintenanceWindow": "sun:23:00-sun:23:30"
+      }
+    }
+  }
+}

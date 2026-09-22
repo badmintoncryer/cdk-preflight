@@ -1,0 +1,11 @@
+id: pf-docdbelastic-shard-capacity-enum
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "ShardCapacity must be one of 2, 4, 8, 16, 32 or 64 vCPUs"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdbelastic-cluster.html#cfn-docdbelastic-cluster-shardcapacity
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster ShardCapacity 3 -> \"ValidationException: Invalid Input - '3'. ShardCapacity must be a power of 2 within [2, 64].\"; ShardCapacity 128 -> same sentence with '128' (#66 phase B; pf-dbe-shard-capacity-max merged here, the chained second fail cluster carries 128; pass stays at 2 vCPU because 64 vCPU is $8.45/hr); bench: PENDING"
+addedOn: 2026-09-22

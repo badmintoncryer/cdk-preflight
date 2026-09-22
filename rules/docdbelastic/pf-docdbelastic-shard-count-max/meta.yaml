@@ -1,0 +1,11 @@
+id: pf-docdbelastic-shard-count-max
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "ShardCount must not exceed 32"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster ShardCount 33 -> \"ValidationException: Invalid Input - '33'. ShardCount should be between 1 and 32.\" (#66 phase B; the pass fixture is 32 shards x 2 vCPU = $8.45/hr, run the bench --fail-only); bench: PENDING"
+addedOn: 2026-09-22
