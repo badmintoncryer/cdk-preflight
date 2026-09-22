@@ -1,0 +1,11 @@
+id: pf-docdbelastic-admin-password-charset
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "AdminUserPassword must not contain a forward slash, double quote or at sign"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdbelastic-cluster.html#cfn-docdbelastic-cluster-adminuserpassword
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster with a forbidden character in AdminUserPassword -> \"ValidationException: Invalid password set in the AdminUserPassword.\" (#66 phase B, UNNAMED: the message does not name the character; a length violation gets a different sentence); bench: PENDING"
+addedOn: 2026-09-22

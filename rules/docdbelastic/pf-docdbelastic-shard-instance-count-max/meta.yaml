@@ -1,0 +1,11 @@
+id: pf-docdbelastic-shard-instance-count-max
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "ShardInstanceCount must not exceed 16"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster ShardInstanceCount 17 -> \"ValidationException: Invalid Input - '17'. ShardInstanceCount should be between 1 and 16.\" (#66 phase B; the pass fixture is 16 instances x 2 vCPU = $4.22/hr, run the bench --fail-only); bench: PENDING"
+addedOn: 2026-09-22

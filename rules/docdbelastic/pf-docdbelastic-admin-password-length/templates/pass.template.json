@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::DocDBElastic::Cluster",
+      "Properties": {
+        "AdminUserName": "pfadmin",
+        "AdminUserPassword": "xxxxxxxx",
+        "AuthType": "PLAIN_TEXT",
+        "ShardCapacity": 2,
+        "ShardCount": 1,
+        "ClusterName": "cdkpf-dbe-pwlen-pass-a"
+      }
+    },
+    "C2": {
+      "Type": "AWS::DocDBElastic::Cluster",
+      "Properties": {
+        "AdminUserName": "pfadmin",
+        "AdminUserPassword": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "AuthType": "PLAIN_TEXT",
+        "ShardCapacity": 2,
+        "ShardCount": 1,
+        "ClusterName": "cdkpf-dbe-pwlen-pass-b"
+      }
+    }
+  }
+}
