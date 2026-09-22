@@ -1,0 +1,12 @@
+id: pf-redshift-defer-maintenance-duration-endtime
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "DeferMaintenanceDuration and DeferMaintenanceEndTime are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_ModifyClusterMaintenance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH, post-create: ModifyClusterMaintenance runs after CreateCluster, so the fail stack creates one ra3.large single-node cluster before rolling back; API doc: If you specify a duration, you can't specify an end time); bench: PENDING 2026-09-22 us-east-1"
+addedOn: 2026-09-22

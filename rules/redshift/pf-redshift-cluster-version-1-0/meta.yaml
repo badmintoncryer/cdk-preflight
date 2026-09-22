@@ -1,0 +1,12 @@
+id: pf-redshift-cluster-version-1-0
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ClusterVersion accepts only 1.0"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterCombination: Cannot find Cluster version 2.0\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

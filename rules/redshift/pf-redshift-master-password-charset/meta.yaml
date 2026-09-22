@@ -1,0 +1,12 @@
+id: pf-redshift-master-password-charset
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "MasterUserPassword must be printable ASCII without / @ \" ' \\ or space"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: The parameter MasterUserPassword is not a valid password. Only printable ASCII characters except for '/', '@', '\"', ' ', '\\', ''' may be used.\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

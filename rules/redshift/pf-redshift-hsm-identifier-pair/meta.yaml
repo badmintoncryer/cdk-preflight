@@ -1,0 +1,12 @@
+id: pf-redshift-hsm-identifier-pair
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "HsmClientCertificateIdentifier and HsmConfigurationIdentifier must be set together"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-redshift-cluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Either both HsmClientCertificateIdentifier and HsmConfigurationIdentifier should be provided for a cluster using an HSM, or neither should be provided for a cluster not using an HSM.\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

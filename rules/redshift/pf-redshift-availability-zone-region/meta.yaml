@@ -1,0 +1,12 @@
+id: pf-redshift-availability-zone-region
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "AvailabilityZone must belong to the deployment region"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster with AvailabilityZone us-west-2a -> \"InvalidVPCNetworkStateFault: Cluster subnet group default doesn't cover the AZ specified.\" (#66 phase B, UNNAMED: the message names the subnet group, not the region); bench: PENDING. Evaluates only in enforce mode with a concrete app region (deploy_region injection); silent otherwise. Test fixtures assume the harness region us-east-1."
+addedOn: 2026-09-22
