@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Neptune::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {}
+    },
+    "I": {
+      "Type": "AWS::Neptune::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "C"
+        },
+        "DBInstanceClass": "db.t4g.medium",
+        "AvailabilityZone": "us-east-1a"
+      }
+    }
+  }
+}

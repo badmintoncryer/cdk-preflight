@@ -1,0 +1,12 @@
+id: pf-neptune-subnet-group-two-az
+service: neptune
+resourceTypes: [AWS::Neptune::DBSubnetGroup, AWS::EC2::Subnet]
+severity: ERROR
+title: "A DB subnet group must cover at least two Availability Zones"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-dbsubnetgroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBSubnetGroup -> \"DBSubnetGroupDoesNotCoverEnoughAZs: The DB subnet group doesn't meet Availability Zone (AZ) coverage requirement. Current AZ coverage: us-east-1a. Add subnets to cover at least 2 AZs.\" (#66 phase B); bench: PENDING"
+benchRegion: us-east-1
+addedOn: 2026-09-22

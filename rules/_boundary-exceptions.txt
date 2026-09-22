@@ -60,6 +60,7 @@ pf-lambda-perm-policy-size  しきい値は SourceArn 長の合計。fail は既
 pf-memorydb-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウの長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
 pf-memorydb-user-password  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
 pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある
+pf-neptune-serverless-min-le-max  MinCapacity / MaxCapacity は 0.5 NCU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 3.0/2.5 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 2.5/2.5 で限界そのものに乗せてある
 pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
 pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
 pf-rds-serverless-v2-capacity  MinCapacity / MaxCapacity は 0.5 ACU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 1.5/1 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 0.5/0.5 で限界そのものに乗っている

@@ -1,0 +1,12 @@
+id: pf-neptune-backup-window-format
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster]
+severity: ERROR
+title: "PreferredBackupWindow must be hh24:mi-hh24:mi (UTC)"
+constraintSource: https://docs.aws.amazon.com/neptune/latest/userguide/api-clusters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Invalid backup window time '0700' specified. Should be specified as a time hh24:mi (24H Clock UTC). Example: 03:15\" (#66 phase B); bench: PENDING"
+benchRegion: us-east-1
+addedOn: 2026-09-22

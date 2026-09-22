@@ -1,0 +1,12 @@
+id: pf-neptune-globalcluster-source-exclusive
+service: neptune
+resourceTypes: [AWS::Neptune::GlobalCluster]
+severity: ERROR
+title: "SourceDBClusterIdentifier excludes Engine, EngineVersion and StorageEncrypted"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-globalcluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateGlobalCluster -> \"InvalidParameterCombination: When creating global cluster from existing db cluster, value for engineName should not be specified since it will be inherited from source cluster\" (#66 phase B); bench: PENDING"
+benchRegion: us-east-1
+addedOn: 2026-09-22

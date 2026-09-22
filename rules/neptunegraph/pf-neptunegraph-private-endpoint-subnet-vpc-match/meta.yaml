@@ -1,0 +1,12 @@
+id: pf-neptunegraph-private-endpoint-subnet-vpc-match
+service: neptunegraph
+resourceTypes: [AWS::NeptuneGraph::PrivateGraphEndpoint, AWS::EC2::Subnet]
+severity: ERROR
+title: "PrivateGraphEndpoint SubnetIds must belong to its VpcId"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptunegraph-privategraphendpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH); bench: PENDING 2026-09-22 us-east-1"
+benchRegion: us-east-1
+addedOn: 2026-09-22

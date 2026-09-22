@@ -1,0 +1,12 @@
+id: pf-neptune-db-serverless-needs-scaling-config
+service: neptune
+resourceTypes: [AWS::Neptune::DBInstance, AWS::Neptune::DBCluster]
+severity: ERROR
+title: "A db.serverless instance needs a cluster with ServerlessScalingConfiguration"
+constraintSource: https://docs.aws.amazon.com/neptune/latest/userguide/neptune-serverless-capacity-scaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH); bench: PENDING 2026-09-22 us-east-1"
+benchRegion: us-east-1
+addedOn: 2026-09-22

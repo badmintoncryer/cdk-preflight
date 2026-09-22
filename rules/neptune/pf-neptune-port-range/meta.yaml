@@ -1,0 +1,12 @@
+id: pf-neptune-port-range
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster]
+severity: ERROR
+title: "DBPort must be within 1150-65535"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-dbcluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Invalid endpoint port 1149. Valid range is: 1150-65535\" (#66 phase B); bench: PENDING"
+benchRegion: us-east-1
+addedOn: 2026-09-22

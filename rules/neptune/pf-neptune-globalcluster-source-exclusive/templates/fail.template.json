@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::Neptune::GlobalCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "SourceDBClusterIdentifier": "arn:aws:rds:us-east-1:123456789012:cluster:pf66-src",
+        "Engine": "neptune"
+      }
+    }
+  }
+}
