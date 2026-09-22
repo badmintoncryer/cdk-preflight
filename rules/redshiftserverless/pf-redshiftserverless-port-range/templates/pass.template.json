@@ -1,0 +1,68 @@
+{
+  "Resources": {
+    "NS1": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-port-p1"
+      }
+    },
+    "WG1": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-port-p1",
+        "NamespaceName": {
+          "Ref": "NS1"
+        },
+        "Port": 5431
+      }
+    },
+    "NS2": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-port-p2"
+      }
+    },
+    "WG2": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-port-p2",
+        "NamespaceName": {
+          "Ref": "NS2"
+        },
+        "Port": 5455
+      }
+    },
+    "NS3": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-port-p3"
+      }
+    },
+    "WG3": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-port-p3",
+        "NamespaceName": {
+          "Ref": "NS3"
+        },
+        "Port": 8191
+      }
+    },
+    "NS4": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-port-p4"
+      }
+    },
+    "WG4": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-port-p4",
+        "NamespaceName": {
+          "Ref": "NS4"
+        },
+        "Port": 8215
+      }
+    }
+  }
+}

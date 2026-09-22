@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-logexp-f",
+        "LogExports": [
+          "querylog"
+        ]
+      }
+    }
+  }
+}

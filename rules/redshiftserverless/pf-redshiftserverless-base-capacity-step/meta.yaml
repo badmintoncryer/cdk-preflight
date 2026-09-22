@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-base-capacity-step
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Workgroup]
+severity: ERROR
+title: "Workgroup BaseCapacity above 8 must be a multiple of 8"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-capacity.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateWorkgroup baseCapacity 12 -> \"ValidationException: The base capacity must be a multiple of 8.\" (#66 phase B; the fail fixture sits on 9, the nearest violation above 8, and the pass fixture on 8 and 16); bench: PENDING"
+addedOn: 2026-09-22

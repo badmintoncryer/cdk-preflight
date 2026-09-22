@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-adminpw-f",
+        "AdminUsername": "benchadmin",
+        "ManageAdminPassword": true,
+        "AdminUserPassword": "Benchpass123"
+      }
+    }
+  }
+}

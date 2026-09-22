@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-workgroup-subnet-az-count
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Workgroup, AWS::EC2::Subnet]
+severity: ERROR
+title: "Enhanced VPC routing needs subnets in three availability zones"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-known-issues.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateWorkgroup enhancedVpcRouting=true with subnets in 2 AZs -> \"ValidationException: There aren't enough free IP addresses in subnets to allow this operation. Make sure that there are at least 37 free IP addresses in 3 subnets. Each subnet should be in a different Availability Zone.\"; control enhancedVpcRouting=false with the same 2 subnets -> accepted (#66 phase B; the message mixes the free-IP count into the zone requirement, so the fixtures use /24 subnets and only the zone count is violated); bench: PENDING"
+addedOn: 2026-09-22
