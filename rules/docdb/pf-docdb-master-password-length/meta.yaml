@@ -1,0 +1,12 @@
+id: pf-docdb-master-password-length
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "MasterUserPassword must be at least 8 characters"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/API_CreateDBCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: The parameter MasterUserPassword is not a valid password because it is shorter than 8 characters.\" (#66 phase B TARGET 7-character password; 8-character control accepted); bench: PENDING"
+addedOn: 2026-09-22

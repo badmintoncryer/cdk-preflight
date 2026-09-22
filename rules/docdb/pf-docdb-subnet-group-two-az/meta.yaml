@@ -1,0 +1,12 @@
+id: pf-docdb-subnet-group-two-az
+service: docdb
+resourceTypes: [AWS::DocDB::DBSubnetGroup, AWS::EC2::Subnet]
+severity: ERROR
+title: "A DB subnet group must cover at least two Availability Zones"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbsubnetgroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBSubnetGroup -> \"DBSubnetGroupDoesNotCoverEnoughAZs: The DB subnet group doesn't meet Availability Zone (AZ) coverage requirement. Current AZ coverage: us-east-1a. Add subnets to cover at least 2 AZs.\" (#66 phase B TARGET 2 subnets in us-east-1a; us-east-1a + us-east-1b control accepted); bench: PENDING"
+addedOn: 2026-09-22

@@ -1,0 +1,12 @@
+id: pf-docdb-master-user-secret-kms-requires-manage
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "MasterUserSecretKmsKeyId requires ManageMasterUserPassword"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: A ManageMasterUserPassword value is required when MasterUserSecretKmsKeyId is specified.\" (#66 phase B TARGET); bench: PENDING"
+addedOn: 2026-09-22

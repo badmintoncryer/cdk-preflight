@@ -1,0 +1,12 @@
+id: pf-docdb-backup-window-format
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "PreferredBackupWindow must be hh24:mi-hh24:mi"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Invalid backup window time '0700' specified. Should be specified as a time hh24:mi (24H Clock UTC). Example: 03:15\" (#66 phase B TARGET value 0700-0730); bench: PENDING"
+addedOn: 2026-09-22

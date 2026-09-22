@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::DocDB::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123"
+      }
+    },
+    "I": {
+      "Type": "AWS::DocDB::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "C"
+        },
+        "DBInstanceClass": "db.t3.medium",
+        "AvailabilityZone": "us-east-1a"
+      }
+    }
+  }
+}

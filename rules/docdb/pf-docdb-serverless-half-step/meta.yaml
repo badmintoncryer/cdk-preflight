@@ -1,0 +1,12 @@
+id: pf-docdb-serverless-half-step
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "Serverless capacity must be a multiple of 0.5 DCU"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/API_ServerlessV2ScalingConfiguration.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Serverless v2 capacity value 8.3 is not valid. It must be a multiple of 0.5.\" (#66 phase B TARGET MinCapacity 8.3; 8.5 control accepted); bench: PENDING"
+addedOn: 2026-09-22
