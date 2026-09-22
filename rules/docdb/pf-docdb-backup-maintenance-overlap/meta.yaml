@@ -1,0 +1,12 @@
+id: pf-docdb-backup-maintenance-overlap
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "The backup window and the maintenance window must not overlap"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: The backup window and maintenance window must not overlap.\" (#66 phase B TARGET backup 07:00-07:30 vs maintenance mon:07:29-mon:07:59 (1 min); control mon:07:30-mon:08:00 accepted); bench: PENDING"
+addedOn: 2026-09-22

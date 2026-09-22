@@ -1,0 +1,12 @@
+id: pf-docdb-backup-window-duration
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "The backup window must be at least 30 minutes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Backup window must be at least 30 minutes.\" (#66 phase B TARGET 29-minute window; 30-minute control accepted); bench: PENDING"
+addedOn: 2026-09-22

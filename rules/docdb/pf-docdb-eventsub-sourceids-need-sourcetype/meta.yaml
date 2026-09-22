@@ -1,0 +1,12 @@
+id: pf-docdb-eventsub-sourceids-need-sourcetype
+service: docdb
+resourceTypes: [AWS::DocDB::EventSubscription]
+severity: ERROR
+title: "SourceIds requires SourceType"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-eventsubscription.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateEventSubscription -> \"InvalidParameterCombination: If SourceType is null, SourceId must also be null.\" (#66 phase B TARGET); bench: PENDING"
+addedOn: 2026-09-22

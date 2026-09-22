@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "E": {
+      "Type": "AWS::DocDB::EventSubscription",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "SnsTopicArn": {
+          "Ref": "T"
+        },
+        "SourceIds": [
+          "cdkpf-nonexistent"
+        ]
+      }
+    }
+  }
+}

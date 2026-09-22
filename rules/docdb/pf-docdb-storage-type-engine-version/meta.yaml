@@ -1,0 +1,12 @@
+id: pf-docdb-storage-type-engine-version
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "StorageType iopt1 requires engine version 5.0 or later"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/db-instance-classes.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterCombination: The iopt1 storage type isn't supported for the 4.0.0 DB engine version.\" (#66 phase B TARGET iopt1 + 4.0.0; iopt1 + 5.0.0 control accepted); bench: PENDING"
+addedOn: 2026-09-22

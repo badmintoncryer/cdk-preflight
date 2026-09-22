@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::DocDB::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "ServerlessV2ScalingConfiguration": {
+          "MinCapacity": 8.5,
+          "MaxCapacity": 8
+        }
+      }
+    }
+  }
+}
