@@ -1,0 +1,12 @@
+id: pf-redshift-eventsub-sourceids-need-sourcetype
+service: redshift
+resourceTypes: [AWS::Redshift::EventSubscription]
+severity: ERROR
+title: "EventSubscription SourceIds requires SourceType"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-redshift-eventsubscription.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateEventSubscription -> \"InvalidParameterCombination: If SourceType is null, SourceId must also be null.\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

@@ -1,0 +1,12 @@
+id: pf-redshift-port-range-ra3
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "RG and RA3 clusters accept only ports 5431-5455 or 8191-8215"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-redshift-cluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH, ra3 billing_risk high, create-* not called; fail puts 5430 / 5456 / 8190 / 8216 on four ra3.large single-node clusters that CreateCluster rejects, pass runs four ra3.large single-node clusters on 5431 / 5455 / 8191 / 8215 (about $2.2/h while they exist); API doc: For clusters with RG or RA3 nodes - Select a port within the ranges 5431-5455 or 8191-8215); bench: PENDING 2026-09-22 us-east-1"
+addedOn: 2026-09-22

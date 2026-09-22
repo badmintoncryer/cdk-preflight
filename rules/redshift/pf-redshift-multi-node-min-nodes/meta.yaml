@@ -1,0 +1,12 @@
+id: pf-redshift-multi-node-min-nodes
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "multi-node clusters need NumberOfNodes of at least 2"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Number of nodes for cluster type multi-node must be greater than or equal to 2.\" (#66 phase B) (pass creates a 2-node ra3.large cluster, about $1.09/h while it exists); bench: PENDING"
+addedOn: 2026-09-22

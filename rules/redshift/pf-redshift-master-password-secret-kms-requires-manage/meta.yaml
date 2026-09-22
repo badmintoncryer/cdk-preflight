@@ -1,0 +1,12 @@
+id: pf-redshift-master-password-secret-kms-requires-manage
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "MasterPasswordSecretKmsKeyId requires ManageMasterPassword true"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: You can't set the secret encryption KMS key for this cluster without opting in to manage your admin credentials using AWS Secrets Manager. Opt in to managing your admin credentials with Secrets Manager, then try again.\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

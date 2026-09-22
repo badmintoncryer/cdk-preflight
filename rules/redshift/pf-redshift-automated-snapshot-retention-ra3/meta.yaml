@@ -1,0 +1,12 @@
+id: pf-redshift-automated-snapshot-retention-ra3
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "AutomatedSnapshotRetentionPeriod cannot be 0 on RA3/RG node types"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH, ra3 billing_risk high, create-* not called; fail is rejected at CreateCluster, pass creates one ra3.large single-node cluster); bench: PENDING 2026-09-22 us-east-1"
+addedOn: 2026-09-22

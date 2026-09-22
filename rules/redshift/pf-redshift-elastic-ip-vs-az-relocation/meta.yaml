@@ -1,0 +1,12 @@
+id: pf-redshift-elastic-ip-vs-az-relocation
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ElasticIp cannot be combined with AvailabilityZoneRelocation"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster with ElasticIp 203.0.113.10 + AvailabilityZoneRelocation -> \"InvalidElasticIpFault: The Elastic IP address 203.0.113.10 does not exist.\" (#66 phase B HOLD: the EIP existence check comes first, so both fixtures now allocate a real AWS::EC2::EIP in the stack); API doc: Don't specify the Elastic IP address for a publicly accessible cluster with availability zone relocation turned on; bench: PENDING"
+addedOn: 2026-09-22

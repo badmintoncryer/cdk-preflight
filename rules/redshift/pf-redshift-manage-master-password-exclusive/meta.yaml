@@ -1,0 +1,12 @@
+id: pf-redshift-manage-master-password-exclusive
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ManageMasterPassword and MasterUserPassword are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Your Amazon Redshift cluster is opting in to manage your password using AWS Secrets Manager. To provide your own password, opt out of managing your password with Secrets Manager.\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

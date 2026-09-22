@@ -1,0 +1,75 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "C": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "MasterUserPassword": "Pf66bench1"
+      }
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "scheduler.redshift.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "pf66-redshift-scheduler",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "redshift:PauseCluster",
+                    "redshift:ResumeCluster",
+                    "redshift:DescribeClusters"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "S": {
+      "Type": "AWS::Redshift::ScheduledAction",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ScheduledActionName": "pf-redshift-scheduled-action-schedule-format-pass",
+        "IamRole": {
+          "Fn::GetAtt": [
+            "R",
+            "Arn"
+          ]
+        },
+        "TargetAction": {
+          "PauseCluster": {
+            "ClusterIdentifier": {
+              "Ref": "C"
+            }
+          }
+        },
+        "Schedule": "cron(0 10 ? * MON *)"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-redshift-dbname-lowercase
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "DBName must be lowercase, start with a letter and use only [a-z0-9_+.@-]"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: DbName parameter must be lowercase, begin with a letter, contain only alphanumeric characters, underscore ('_'), plus sign ('+'), dot ('.'), at ('@'), or hyphen ('-'), and be less than 64 characters.\" (#66 phase B) (the API accepts _ + . @ - as well, so the rule judges the service's own character set, not the doc's \"alphanumeric only\"; length is not judged); bench: PENDING"
+addedOn: 2026-09-22

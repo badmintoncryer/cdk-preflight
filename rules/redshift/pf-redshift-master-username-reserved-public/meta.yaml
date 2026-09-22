@@ -1,0 +1,12 @@
+id: pf-redshift-master-username-reserved-public
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "MasterUsername must not be PUBLIC"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: The master username can't be named PUBLIC\" (#66 phase B) (only PUBLIC is named by the API; the letter-first rule is unprobed and not judged); bench: PENDING"
+addedOn: 2026-09-22

@@ -1,0 +1,12 @@
+id: pf-redshift-master-password-length
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "MasterUserPassword must be at least 8 characters"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Invalid master password. Password should be atleast 8 characters long.\" (#66 phase B) (the 64-character upper end is the engine schema's, F3033); bench: PENDING"
+addedOn: 2026-09-22
