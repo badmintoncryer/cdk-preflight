@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-port-range
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Workgroup]
+severity: ERROR
+title: "Workgroup Port must be within 5431-5455 or 8191-8215"
+constraintSource: https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_CreateWorkgroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateWorkgroup port 5430 -> \"ValidationException: Amazon Redshift Serverless doesn't support ports outside of the range (5431-5455) and (8191-8215): 5430.\"; port 5456 -> same message ending \": 5456.\" (#66 phase B; the fail fixture carries all four edges 5430 / 5456 / 8190 / 8216 and the pass fixture 5431 / 5455 / 8191 / 8215, one namespace per workgroup); bench: PENDING"
+addedOn: 2026-09-22

@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-maxcap-p"
+      }
+    },
+    "WG": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-maxcap-p",
+        "NamespaceName": {
+          "Ref": "NS"
+        },
+        "BaseCapacity": 32,
+        "MaxCapacity": 32
+      }
+    }
+  }
+}

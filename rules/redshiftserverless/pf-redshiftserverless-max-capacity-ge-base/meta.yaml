@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-max-capacity-ge-base
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Workgroup]
+severity: ERROR
+title: "Workgroup MaxCapacity must not be lower than BaseCapacity"
+constraintSource: https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_CreateWorkgroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateWorkgroup baseCapacity 32 / maxCapacity 24 -> \"ValidationException: The base capacity can't be more than 24 RPUs.\" (#66 phase B; the service phrases the check from the base side); bench: PENDING"
+addedOn: 2026-09-22

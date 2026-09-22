@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-snapshot-copy-destination-region-self
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Namespace]
+severity: ERROR
+title: "Snapshot copy DestinationRegion must differ from the namespace region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-redshiftserverless-namespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateSnapshotCopyConfiguration destinationRegion us-east-1 from us-east-1 -> \"ValidationException: Invalid Region 'us-east-1'.\" (#66 phase B; the CloudFormation handler calls it after CreateNamespace, so the fail stack creates the namespace first and rolls it back). Evaluates only in enforce mode with a concrete app region (deploy_region injection); silent otherwise. Test fixtures assume the harness region us-east-1; bench: PENDING"
+addedOn: 2026-09-22

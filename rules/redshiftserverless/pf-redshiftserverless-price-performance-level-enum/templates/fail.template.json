@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-ppt-f"
+      }
+    },
+    "WG": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-ppt-f",
+        "NamespaceName": {
+          "Ref": "NS"
+        },
+        "PricePerformanceTarget": {
+          "Level": 30,
+          "Status": "ENABLED"
+        }
+      }
+    }
+  }
+}

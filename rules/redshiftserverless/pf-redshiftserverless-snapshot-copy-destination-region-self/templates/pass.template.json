@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-snapcopy-p",
+        "SnapshotCopyConfigurations": [
+          {
+            "DestinationRegion": "us-west-2"
+          }
+        ]
+      }
+    }
+  }
+}

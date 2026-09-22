@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-admin-secret-kms-requires-manage
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Namespace]
+severity: ERROR
+title: "AdminPasswordSecretKmsKeyId requires ManageAdminPassword"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-redshiftserverless-namespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateNamespace with adminPasswordSecretKmsKeyId and no manageAdminPassword -> \"ValidationException: The AdminPasswordSecretKmsKeyId parameter cannot be provided unless ManagedAdminPassword is true.\" (#66 phase B); bench: PENDING"
+addedOn: 2026-09-22

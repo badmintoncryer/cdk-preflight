@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-default-iam-role-in-iam-roles
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Namespace]
+severity: ERROR
+title: "DefaultIamRoleArn must also be listed in IamRoles"
+constraintSource: https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_CreateNamespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateNamespace defaultIamRoleArn role/pf66-a with iamRoles [role/pf66-b] -> \"ValidationException: Invalid default IAM Role 'arn:aws:iam::...:role/pf66-a'. The IAM roles list isnt specified or it doesnt contain a default IAM Role: [arn:aws:iam::...:role/pf66-b].\" (#66 phase B; the fixtures create the two roles with a redshift / redshift-serverless trust policy so the service reaches this check); bench: PENDING"
+addedOn: 2026-09-22
