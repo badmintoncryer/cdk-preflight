@@ -1,0 +1,12 @@
+id: pf-neptunegraph-graph-name-lowercase
+service: neptunegraph
+resourceTypes: [AWS::NeptuneGraph::Graph]
+severity: ERROR
+title: "GraphName must be lowercase and must not start with g-"
+constraintSource: https://docs.aws.amazon.com/neptune-analytics/latest/apiref/API_CreateGraph.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH); bench: PENDING 2026-09-22 us-east-1"
+benchRegion: us-east-1
+addedOn: 2026-09-22

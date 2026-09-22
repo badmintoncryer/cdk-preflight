@@ -1,0 +1,54 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::NeptuneGraph::Graph",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ProvisionedMemory": 16,
+        "ReplicaCount": 0,
+        "DeletionProtection": false
+      }
+    },
+    "VA": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "VB": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.1.0.0/16"
+      }
+    },
+    "SB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VB"
+        },
+        "CidrBlock": "10.1.0.0/24",
+        "AvailabilityZone": "us-east-1a"
+      }
+    },
+    "E": {
+      "Type": "AWS::NeptuneGraph::PrivateGraphEndpoint",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "GraphIdentifier": {
+          "Ref": "G"
+        },
+        "VpcId": {
+          "Ref": "VA"
+        },
+        "SubnetIds": [
+          {
+            "Ref": "SB"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-neptune-maintenance-window-duration
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster, AWS::Neptune::DBInstance]
+severity: ERROR
+title: "The maintenance window must be at least 30 minutes"
+constraintSource: https://docs.aws.amazon.com/neptune/latest/userguide/api-clusters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Maintenance window must be at least 30 minutes.\" (#66 phase B); bench: PENDING"
+benchRegion: us-east-1
+addedOn: 2026-09-22

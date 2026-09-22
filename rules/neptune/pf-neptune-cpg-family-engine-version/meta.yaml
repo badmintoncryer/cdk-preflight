@@ -1,0 +1,12 @@
+id: pf-neptune-cpg-family-engine-version
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster, AWS::Neptune::DBClusterParameterGroup]
+severity: ERROR
+title: "The cluster parameter group family must match the cluster engine version"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-dbclusterparametergroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterCombination: The Parameter Group pf66-pg12 with DBParameterGroupFamily neptune1.2 cannot be used for this instance. Please use a Parameter Group with DBParameterGroupFamily neptune1.3\" (#66 phase B); bench: PENDING"
+benchRegion: us-east-1
+addedOn: 2026-09-22

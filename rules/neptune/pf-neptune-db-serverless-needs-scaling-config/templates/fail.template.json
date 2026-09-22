@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Neptune::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {}
+    },
+    "I": {
+      "Type": "AWS::Neptune::DBInstance",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBClusterIdentifier": {
+          "Ref": "C"
+        },
+        "DBInstanceClass": "db.serverless"
+      }
+    }
+  }
+}
