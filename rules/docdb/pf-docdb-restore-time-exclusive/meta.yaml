@@ -1,0 +1,12 @@
+id: pf-docdb-restore-time-exclusive
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "RestoreToTime and UseLatestRestorableTime are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH: RestoreDBClusterToPointInTime needs a real source cluster, DBClusterNotFound came first; fixtures carry the source cluster in-template); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Failed to create DB Cluster with id: r-ryiqql0kqexa due to error: RestoreToTime and UseLatestRestorableTime cannot be specified at the same time   (RequestToken: 9c5cc2b3-ba55-4236-bab8-c3fec2662293)\" (ROLLBACK_COMPLETE); pass: fail-only (see #66)"
+addedOn: 2026-09-22

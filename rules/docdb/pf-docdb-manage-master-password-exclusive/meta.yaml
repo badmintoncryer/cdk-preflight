@@ -1,0 +1,12 @@
+id: pf-docdb-manage-master-password-exclusive
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "ManageMasterUserPassword and MasterUserPassword are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: MasterUserPassword and ManageMasterUserPassword are mutually exclusive. Specify only one of these parameters.\" (#66 phase B TARGET); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  MasterUserPassword and ManageMasterUserPassword are mutually exclusive. Specify only one of these parameters. (Service: Rds, Status Code: 400, Request ID: 05682b23-84ba-4fd6-bb45-4fbb032d08dd) (SDK Attempt Count: 1)  (RequestToken: b87e735d-226d-48ca-864b-9667c2bb\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

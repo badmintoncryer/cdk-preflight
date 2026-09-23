@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::DocDBElastic::Cluster",
+      "Properties": {
+        "AdminUserName": "pfadmin",
+        "AdminUserPassword": "pfpassword1234",
+        "AuthType": "PLAIN_TEXT",
+        "ShardCapacity": 2,
+        "ShardCount": 33,
+        "ClusterName": "cdkpf-dbe-cnt-fail"
+      }
+    }
+  }
+}

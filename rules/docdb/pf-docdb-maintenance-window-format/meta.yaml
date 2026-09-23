@@ -1,0 +1,12 @@
+id: pf-docdb-maintenance-window-format
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "PreferredMaintenanceWindow must be ddd:hh24:mi-ddd:hh24:mi"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Invalid maintenance window time '07:30' specified. Should be specified as a time ddd:hh24:mi (24H Clock UTC). Example: Mon:00:15\" (#66 phase B TARGET value 07:30-08:00 (no day)); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid maintenance window time '07:30' specified. Should be specified as a time ddd:hh24:mi (24H Clock UTC). Example: Mon:00:15 (Service: Rds, Status Code: 400, Request ID: 60d909e3-36d5-4555-b7c2-a48d5dae2df3) (SDK Attempt Count: 1)  (RequestToken: 9be9e88f-9a19\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

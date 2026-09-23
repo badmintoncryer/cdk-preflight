@@ -1,0 +1,46 @@
+{
+  "Resources": {
+    "V": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "S0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "V"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": "us-east-1a"
+      }
+    },
+    "S1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "V"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": "us-east-1a"
+      }
+    },
+    "G": {
+      "Type": "AWS::DocDB::DBSubnetGroup",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBSubnetGroupDescription": "cdkpf",
+        "SubnetIds": [
+          {
+            "Ref": "S0"
+          },
+          {
+            "Ref": "S1"
+          }
+        ]
+      }
+    }
+  }
+}

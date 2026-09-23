@@ -1026,6 +1026,31 @@
 | `pf-cognito-verification-sms-placeholder` | AWS::Cognito::UserPool | The verification SMS needs the {####} code placeholder | ERROR | none |
 | `pf-cognito-web-authn-relying-party-format` | AWS::Cognito::UserPool | WebAuthnRelyingPartyID is a bare domain name | ERROR | none |
 | `pf-cognito-write-attributes-immutable` | AWS::Cognito::UserPoolClient | Verified-status attributes cannot be written by a client | ERROR | none |
+| `pf-docdb-backup-maintenance-overlap` | AWS::DocDB::DBCluster | The backup window and the maintenance window must not overlap | ERROR | none |
+| `pf-docdb-backup-window-duration` | AWS::DocDB::DBCluster | The backup window must be at least 30 minutes | ERROR | none |
+| `pf-docdb-backup-window-format` | AWS::DocDB::DBCluster | PreferredBackupWindow must be hh24:mi-hh24:mi | ERROR | none |
+| `pf-docdb-eventsub-sourceids-need-sourcetype` | AWS::DocDB::EventSubscription | SourceIds requires SourceType | ERROR | none |
+| `pf-docdb-instance-az-region` | AWS::DocDB::DBInstance | AvailabilityZone must be an Availability Zone of the deploy region | ERROR | none |
+| `pf-docdb-maintenance-window-duration` | AWS::DocDB::DBCluster | The maintenance window must be at least 30 minutes | ERROR | none |
+| `pf-docdb-maintenance-window-format` | AWS::DocDB::DBCluster | PreferredMaintenanceWindow must be ddd:hh24:mi-ddd:hh24:mi | ERROR | none |
+| `pf-docdb-manage-master-password-exclusive` | AWS::DocDB::DBCluster | ManageMasterUserPassword and MasterUserPassword are mutually exclusive | ERROR | none |
+| `pf-docdb-master-password-length` | AWS::DocDB::DBCluster | MasterUserPassword must be at least 8 characters | ERROR | none |
+| `pf-docdb-master-user-secret-kms-requires-manage` | AWS::DocDB::DBCluster | MasterUserSecretKmsKeyId requires ManageMasterUserPassword | ERROR | none |
+| `pf-docdb-restore-copy-on-write-time` | AWS::DocDB::DBCluster | RestoreToTime cannot be specified for a copy-on-write restore | ERROR | none |
+| `pf-docdb-restore-time-exclusive` | AWS::DocDB::DBCluster | RestoreToTime and UseLatestRestorableTime are mutually exclusive | ERROR | none |
+| `pf-docdb-serverless-half-step` | AWS::DocDB::DBCluster | Serverless capacity must be a multiple of 0.5 DCU | ERROR | none |
+| `pf-docdb-serverless-min-le-max` | AWS::DocDB::DBCluster | Serverless MinCapacity must not exceed MaxCapacity | ERROR | none |
+| `pf-docdb-storage-type-engine-version` | AWS::DocDB::DBCluster | StorageType iopt1 requires engine version 5.0 or later | ERROR | none |
+| `pf-docdb-subnet-group-name-not-default` | AWS::DocDB::DBSubnetGroup | DBSubnetGroupName: default is reserved | ERROR | none |
+| `pf-docdb-subnet-group-two-az` | AWS::DocDB::DBSubnetGroup<br>AWS::EC2::Subnet | A DB subnet group must cover at least two Availability Zones | ERROR | none |
+| `pf-docdb-username-first-char-letter` | AWS::DocDB::DBCluster | MasterUsername must start with a letter | ERROR | none |
+| `pf-docdbelastic-admin-password-charset` | AWS::DocDBElastic::Cluster | AdminUserPassword must not contain a forward slash, double quote or at sign | ERROR | none |
+| `pf-docdbelastic-admin-password-length` | AWS::DocDBElastic::Cluster | AdminUserPassword must be 8-99 characters | ERROR | none |
+| `pf-docdbelastic-admin-username-first-char` | AWS::DocDBElastic::Cluster | AdminUserName must start with a letter | ERROR | none |
+| `pf-docdbelastic-maintenance-window-duration` | AWS::DocDBElastic::Cluster | PreferredMaintenanceWindow must span at least 30 minutes | ERROR | none |
+| `pf-docdbelastic-shard-capacity-enum` | AWS::DocDBElastic::Cluster | ShardCapacity must be one of 2, 4, 8, 16, 32 or 64 vCPUs | ERROR | none |
+| `pf-docdbelastic-shard-count-max` | AWS::DocDBElastic::Cluster | ShardCount must not exceed 32 | ERROR | none |
+| `pf-docdbelastic-shard-instance-count-max` | AWS::DocDBElastic::Cluster | ShardInstanceCount must not exceed 16 | ERROR | none |
 | `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | ERROR | none |
 | `pf-dynamodb-attribute-type` | AWS::DynamoDB::Table | AttributeType must be S, N or B | ERROR | pending-engine |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | ERROR | none |

@@ -1,0 +1,12 @@
+id: pf-docdb-maintenance-window-duration
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "The maintenance window must be at least 30 minutes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Maintenance window must be at least 30 minutes.\" (#66 phase B TARGET 29-minute window; 30-minute control accepted); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Maintenance window must be at least 30 minutes. (Service: Rds, Status Code: 400, Request ID: 1a00c207-4f7a-439c-85d0-62598047f6c8) (SDK Attempt Count: 1)  (RequestToken: e8fbecdc-8d6f-4c13-b35b-b7d32537d593)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

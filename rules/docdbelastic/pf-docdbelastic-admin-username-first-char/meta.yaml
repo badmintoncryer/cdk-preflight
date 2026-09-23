@@ -1,0 +1,11 @@
+id: pf-docdbelastic-admin-username-first-char
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "AdminUserName must start with a letter"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdbelastic-cluster.html#cfn-docdbelastic-cluster-adminusername
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster with AdminUserName 1pfadmin -> \"ValidationException: Invalid admin user name - 1pfadmin.\" (#66 phase B, UNNAMED: the message names the property, not the rule); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid admin user name - 1pfadmin. (Service: DocDbElastic, Status Code: 400, Request ID: 87710250-eab4-4b15-abe6-ecc4de58a1fb) (SDK Attempt Count: 1)  (RequestToken: 0e9add22-2cb9-fef3-f530-bc3b24643179, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

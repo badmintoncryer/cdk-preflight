@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::DocDB::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123",
+        "StorageType": "iopt1",
+        "EngineVersion": "4.0.0"
+      }
+    }
+  }
+}
