@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "NS8": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-bcstep-p8"
+      }
+    },
+    "WG8": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-bcstep-p8",
+        "NamespaceName": {
+          "Ref": "NS8"
+        },
+        "BaseCapacity": 8
+      }
+    },
+    "NS16": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-bcstep-p16"
+      }
+    },
+    "WG16": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-bcstep-p16",
+        "NamespaceName": {
+          "Ref": "NS16"
+        },
+        "BaseCapacity": 16
+      }
+    }
+  }
+}

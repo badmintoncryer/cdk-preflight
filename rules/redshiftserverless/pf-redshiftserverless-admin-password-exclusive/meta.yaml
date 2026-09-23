@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-admin-password-exclusive
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Namespace]
+severity: ERROR
+title: "ManageAdminPassword cannot be combined with AdminUserPassword"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-redshiftserverless-namespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateNamespace with manageAdminPassword=true and adminUserPassword -> \"ValidationException: The AdminUserPassword parameter cannot be provided if ManagedAdminPassword is true.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The AdminUserPassword parameter cannot be provided if ManagedAdminPassword is true. (Service: RedshiftServerless, Status Code: 400, Request ID: e2e94545-932a-4203-8405-34d5f7358592) (SDK Attempt Count: 1)  (RequestToken: 90264c0d-aa6a-9de7-5e03-54eeb8b31762, Handl\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22
