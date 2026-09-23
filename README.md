@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2462-blue" alt="2462 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2513-blue" alt="2513 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -155,7 +155,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>311 resource types across 51 services</b> — click to expand</summary>
+<summary><b>323 resource types across 55 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -180,7 +180,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **DocDB** | `DBCluster` (14), `DBInstance` (1), `DBSubnetGroup` (2), `EventSubscription` (1) |
 | **DocDBElastic** | `Cluster` (7) |
 | **DynamoDB** | `GlobalTable` (26), `Table` (28) |
-| **EC2** | `ClientVpnAuthorizationRule` (1), `ClientVpnEndpoint` (6), `DHCPOptions` (2), `EIPAssociation` (1), `FlowLog` (4), `Instance` (10), `KeyPair` (1), `LaunchTemplate` (5), `NatGateway` (2), `NetworkAclEntry` (1), `NetworkInterface` (2), `PlacementGroup` (3), `PrefixList` (3), `Route` (1), `SecurityGroup` (6), `SecurityGroupEgress` (5), `SecurityGroupIngress` (5), `Subnet` (7), `TrafficMirrorTarget` (1), `TransitGateway` (2), `TransitGatewayRoute` (1), `Volume` (6), `VPC` (2), `VPCCidrBlock` (1), `VPCEndpoint` (4), `VPCGatewayAttachment` (1), `VPNConnection` (5) |
+| **EC2** | `ClientVpnAuthorizationRule` (1), `ClientVpnEndpoint` (6), `DHCPOptions` (2), `EIPAssociation` (1), `FlowLog` (4), `Instance` (10), `KeyPair` (1), `LaunchTemplate` (5), `NatGateway` (2), `NetworkAclEntry` (1), `NetworkInterface` (2), `PlacementGroup` (3), `PrefixList` (3), `Route` (1), `SecurityGroup` (6), `SecurityGroupEgress` (5), `SecurityGroupIngress` (5), `Subnet` (10), `TrafficMirrorTarget` (1), `TransitGateway` (2), `TransitGatewayRoute` (1), `Volume` (6), `VPC` (2), `VPCCidrBlock` (1), `VPCEndpoint` (4), `VPCGatewayAttachment` (1), `VPNConnection` (5) |
 | **ECR** | `PullThroughCacheRule` (3), `RegistryScanningConfiguration` (1), `ReplicationConfiguration` (1), `Repository` (7), `RepositoryCreationTemplate` (8), `SigningConfiguration` (1) |
 | **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (37), `TaskDefinition` (64), `TaskSet` (2) |
 | **EFS** | `AccessPoint` (1), `FileSystem` (7), `MountTarget` (4) |
@@ -198,8 +198,12 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **Logs** | `AccountPolicy` (6), `DeliveryDestination` (3), `Destination` (1), `LogAnomalyDetector` (2), `LogGroup` (10), `MetricFilter` (7), `QueryDefinition` (1), `ResourcePolicy` (1), `SubscriptionFilter` (6), `Transformer` (3) |
 | **MemoryDB** | `Cluster` (8), `User` (1) |
 | **MSK** | `BatchScramSecret` (2), `Cluster` (31), `ClusterPolicy` (1), `Configuration` (4), `Replicator` (10), `ServerlessCluster` (4) |
+| **Neptune** | `DBCluster` (11), `DBClusterParameterGroup` (1), `DBInstance` (3), `DBSubnetGroup` (1), `GlobalCluster` (1) |
+| **NeptuneGraph** | `Graph` (2), `PrivateGraphEndpoint` (1) |
 | **Pipes** | `Pipe` (9) |
 | **RDS** | `DBCluster` (19), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
+| **Redshift** | `Cluster` (20), `EventSubscription` (1), `ScheduledAction` (2) |
+| **RedshiftServerless** | `Namespace` (5), `Workgroup` (6) |
 | **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (75), `RecordSetGroup` (76) |
 | **Route53Profiles** | `ProfileAssociation` (1), `ProfileResourceAssociation` (6) |
 | **Route53Resolver** | `FirewallDomainList` (3), `FirewallRuleGroup` (18), `FirewallRuleGroupAssociation` (4), `ResolverDNSSECConfig` (1), `ResolverEndpoint` (18), `ResolverQueryLoggingConfig` (1), `ResolverQueryLoggingConfigAssociation` (1), `ResolverRule` (15), `ResolverRuleAssociation` (1) |
