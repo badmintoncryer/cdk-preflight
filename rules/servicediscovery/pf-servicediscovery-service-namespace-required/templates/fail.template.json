@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend"
+      }
+    }
+  }
+}

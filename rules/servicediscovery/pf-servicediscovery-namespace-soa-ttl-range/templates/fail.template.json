@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "soaf.cdkpf67.appnao.com",
+        "Properties": {
+          "DnsProperties": {
+            "SOA": {
+              "TTL": 2147483648
+            }
+          }
+        }
+      }
+    }
+  }
+}

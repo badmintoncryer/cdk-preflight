@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-namespace-required
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "A service must name the namespace it belongs to"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'Error occurred during operation 'NamespaceId is required but was not provided'.' (RequestToken: 994f840b-b6aa-046e-aa54-f44e97a2b885, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; the message comes from the CFN resource handler's own pre-check, not from the CreateService API ('Service namespace id cannot be null')"
+addedOn: 2026-09-22

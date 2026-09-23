@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-attributes-max-entries
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "A service may carry at most 30 service attributes"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_UpdateServiceAttributes.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: 31 ServiceAttributes entries -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); 30 entries -> CREATE_COMPLETE"
+addedOn: 2026-09-22

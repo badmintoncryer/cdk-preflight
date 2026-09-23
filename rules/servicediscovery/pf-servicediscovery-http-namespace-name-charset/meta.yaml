@@ -1,0 +1,12 @@
+id: pf-servicediscovery-http-namespace-name-charset
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::HttpNamespace]
+severity: ERROR
+title: "An HTTP namespace name must be printable ASCII"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateHttpNamespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: '1 validation error detected: Value 'cdkpf67 hnc' at 'name' failed to satisfy constraint: Member must satisfy regular expression pattern: ^(?!arn:)[!-~]{1,1024}$ (Service: ServiceDiscovery, Status Code: 400, Request ID: 56664b76-d60a-4f31-b7d2-63cf12e5730f) (SDK Attempt Count: 1)' (RequestToken: c8c692de-e446-eb90-84cd-4d8c01a3636e, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

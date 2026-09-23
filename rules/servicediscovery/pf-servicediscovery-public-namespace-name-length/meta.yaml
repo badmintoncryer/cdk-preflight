@@ -1,0 +1,12 @@
+id: pf-servicediscovery-public-namespace-name-length
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::PublicDnsNamespace]
+severity: ERROR
+title: "A public DNS namespace name is limited to 253 characters"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePublicDnsNamespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: Name of 254 characters -> \"Resource handler returned message: '1 validation error detected: Value 'pblfaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.cdkpf67.appnao.com' at 'name' failed to satisfy constraint: Member must have length less than or equal to 253 (Service: ServiceDiscovery, Status Code: 400, Request ID: 39639410-4c12-4a1c-af25-b951ab8b80fa) (SDK Attempt Count: 1)' (RequestToken: 075df89d-6962-64db-6f30-75f6c8c167df, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); Name of 253 -> CREATE_COMPLETE"
+addedOn: 2026-09-22

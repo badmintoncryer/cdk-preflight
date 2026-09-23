@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-cname-requires-weighted
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "A CNAME service record requires the WEIGHTED routing policy"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_DnsConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'WEIGHTED routing policy must be used with DNS Record Type CNAME (Service: ServiceDiscovery, Status Code: 400, Request ID: 604c9eba-d38b-4b6a-8ff1-8f004f58c890) (SDK Attempt Count: 1)' (RequestToken: 360dca28-f684-526e-c7e3-fe9bcc636b21, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

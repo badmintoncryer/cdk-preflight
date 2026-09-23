@@ -1,0 +1,44 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "nccp.cdkpf67.appnao.com"
+      }
+    },
+    "SvcOne": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "A",
+              "TTL": 60
+            }
+          ]
+        }
+      }
+    },
+    "SvcTwo": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "frontend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "A",
+              "TTL": 60
+            }
+          ]
+        }
+      }
+    }
+  }
+}

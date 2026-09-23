@@ -1,0 +1,12 @@
+id: pf-servicediscovery-namespace-description-length
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::HttpNamespace, AWS::ServiceDiscovery::PublicDnsNamespace, AWS::ServiceDiscovery::PrivateDnsNamespace]
+severity: ERROR
+title: "A namespace description is limited to 1024 characters"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateHttpNamespace.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: Description of 1025 characters -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); Description of 1024 -> CREATE_COMPLETE"
+addedOn: 2026-09-22

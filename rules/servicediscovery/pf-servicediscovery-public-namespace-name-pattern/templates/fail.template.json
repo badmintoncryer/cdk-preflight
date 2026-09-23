@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "cdkpf67singlelabel"
+      }
+    }
+  }
+}
