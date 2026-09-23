@@ -1,0 +1,11 @@
+id: pf-docdbelastic-admin-password-length
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "AdminUserPassword must be 8-99 characters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdbelastic-cluster.html#cfn-docdbelastic-cluster-adminuserpassword
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster with a 7 character AdminUserPassword -> \"ValidationException: Invalid password set in the AdminUserPassword. Password must be longer than 8 ASCII characters.\" (#66 phase B); api-probe 2026-09-22 us-east-1: 8 and 99 characters accepted, 100 rejected with \"Password must be less than 99 ASCII characters\" — the CloudFormation doc's \"8-100\" upper end is wrong by one; bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid password set in the AdminUserPassword. Password must be longer than 8 ASCII characters. (Service: DocDbElastic, Status Code: 400, Request ID: ab8c6655-91f7-4a77-ac91-11012a3f2213) (SDK Attempt Count: 1)  (RequestToken: 8df810cd-8dbb-2ec9-869d-af6340ff04e4,\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

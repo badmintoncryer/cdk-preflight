@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Src": {
+      "Type": "AWS::DocDB::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "MasterUsername": "benchuser",
+        "MasterUserPassword": "benchpass123"
+      }
+    },
+    "R": {
+      "Type": "AWS::DocDB::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "SourceDBClusterIdentifier": {
+          "Ref": "Src"
+        },
+        "RestoreType": "copy-on-write",
+        "UseLatestRestorableTime": true
+      }
+    }
+  }
+}

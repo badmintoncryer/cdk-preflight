@@ -1,0 +1,12 @@
+id: pf-docdb-username-first-char-letter
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "MasterUsername must start with a letter"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/API_CreateDBCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster MasterUsername 1pfadmin -> \"InvalidParameterValue: Invalid master user name\" (#66 phase B UNNAMED: the API names the property, not the rule; control benchuser accepted); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid master user name (Service: Rds, Status Code: 400, Request ID: 11942c3e-7878-4ba5-a01d-4d76446a63ee) (SDK Attempt Count: 1)  (RequestToken: bc1d7240-f94d-4e68-b408-e336358332c4)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

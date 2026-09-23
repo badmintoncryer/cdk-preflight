@@ -1,0 +1,12 @@
+id: pf-docdb-instance-az-region
+service: docdb
+resourceTypes: [AWS::DocDB::DBInstance]
+severity: ERROR
+title: "AvailabilityZone must be an Availability Zone of the deploy region"
+constraintSource: https://docs.aws.amazon.com/documentdb/latest/developerguide/API_CreateDBInstance.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH: CreateDBInstance needs a real parent cluster, DBClusterNotFound came first); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The availability zone requested is not supported by the DB Cluster.  Available options: [us-east-1c, us-east-1d, us-east-1f] (Service: Rds, Status Code: 400, Request ID: 899a826b-8b0a-4337-ace1-82c32a2fbc91) (SDK Attempt Count: 1)  (RequestToken: 721fa114-a383-489\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

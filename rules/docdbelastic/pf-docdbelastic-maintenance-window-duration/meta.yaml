@@ -1,0 +1,11 @@
+id: pf-docdbelastic-maintenance-window-duration
+service: docdbelastic
+resourceTypes: [AWS::DocDBElastic::Cluster]
+severity: ERROR
+title: "PreferredMaintenanceWindow must span at least 30 minutes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdbelastic-cluster.html#cfn-docdbelastic-cluster-preferredmaintenancewindow
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster with a 29 minute PreferredMaintenanceWindow -> \"ValidationException: Maintenance window must be at least 30 minutes long.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Maintenance window must be at least 30 minutes long. (Service: DocDbElastic, Status Code: 400, Request ID: 9b885a96-e596-49c6-9f64-9420dd25b15c) (SDK Attempt Count: 1)  (RequestToken: a4453b63-cd0d-0ab1-1660-6c73da69e7a3, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22
