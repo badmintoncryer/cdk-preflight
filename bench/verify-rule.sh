@@ -104,12 +104,13 @@ failed_type() { # スタックの中で最初に CREATE_FAILED になったリ�
 # verified に見えた）。判定するのは「倒れたのがルールの対象型」か「上限系の文面ではない」
 # ときだけにする。メッセージだけで見分けようとすると誤検出する: 名前の一意性を見る
 # ルールは "already exists" が、ロールのアカウントを見るルールは "is not authorized" が
-# 本物の証拠になる。
+# 本物の証拠になる。文面の側は CloudFormation が空白なしの HandlerErrorCode: AlreadyExists でも
+# 同じことを言うので両方拾う（2026-09-22、足場の HttpNamespace の衝突が素通りして verified になった）。
 scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失敗なら 0
   local ftype=$1 reason=$2
   case "$ftype" in "" | None) return 1 ;; esac
   grep -qF "$ftype" <<<"$RTYPES" && return 1
-  grep -qiE 'maximum number of|LimitExceeded|limit exceeded|quota|Rate exceeded|Throttl|already exists' <<<"$reason"
+  grep -qiE 'maximum number of|LimitExceeded|limit exceeded|quota|Rate exceeded|Throttl|already ?exists' <<<"$reason"
 }
 
 cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除まで自動で撃つ

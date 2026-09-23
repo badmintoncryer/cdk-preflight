@@ -65,6 +65,21 @@ expect 0 "$got" "a constraint on the rule's own resource type must verify"
 got=$(run "AWS::Batch::ComputeEnvironment" "Object already exists: cdkpf-probe")
 expect 0 "$got" "already exists on the rule's own type is evidence, not scaffolding"
 
+# CloudFormation は同じことを空白なしの HandlerErrorCode: AlreadyExists でも言う。"already exists"
+# だけを見ていると足場の衝突が素通りして verified になる（2026-09-22、pf-servicediscovery-* で
+# 足場の HttpNamespace が前回の消し残りとぶつかったのに OK が出た）。
+COLLIDE='Resource handler returned message: "Another operation of type CreateHttpNamespace and id abc has completed (Service: ServiceDiscovery, Status Code: 400, Request ID: r1)" (RequestToken: t1, HandlerErrorCode: AlreadyExists)'
+got=$(run "AWS::ServiceDiscovery::HttpNamespace" "$COLLIDE")
+expect 4 "$got" "AlreadyExists without a space is still a scaffolding collision"
+grep -q "INCONCLUSIVE: the fixture's AWS::ServiceDiscovery::HttpNamespace failed" "$tmp/out" \
+  || { echo "FAIL: the no-space AlreadyExists collision was not named"; cat "$tmp/out"; exit 1; }
+grep -q "^OK:" "$tmp/out" \
+  && { echo "FAIL: a scaffolding collision was written up as verified"; cat "$tmp/out"; exit 1; }
+
+# 見分けているのは文面ではなく $ftype。同じ文面でもルールの対象型が倒れたなら本物の証拠
+got=$(run "AWS::Batch::ComputeEnvironment" "$COLLIDE")
+expect 0 "$got" "AlreadyExists on the rule's own type is evidence, not scaffolding"
+
 # 足場の型でも、上限系でない文面なら判定を続ける（リソース型だけで弾かない）
 got=$(run "AWS::EC2::Subnet" "The CIDR '10.0.0.0/24' conflicts with another subnet")
 expect 0 "$got" "a non-quota failure elsewhere must not be swallowed"
