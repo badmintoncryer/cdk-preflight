@@ -18,8 +18,30 @@ REGION="${CDKPF_REGION:-${META_REGION:-ap-northeast-1}}"
 mkdir -p bench/logs
 LOG="bench/logs/$RULE.log"
 : > "$LOG"
+ERRF=$(mktemp)
+trap 'rm -f "$ERRF"' EXIT
 
-POLL_BUDGET_SECONDS=3600
+POLL_BUDGET_SECONDS=${CDKPF_POLL_BUDGET:-3600}
+
+# aws CLI が非ゼロで返ったからといってスタックが無いとは限らない。スロットリングも
+# 瞬断も期限切れの認証も同じ「非ゼロ」で、それを GONE に潰すと進行中のスタックを
+# 消しにかかる（2026-09-22、4 並列で回していて pf-servicediscovery-* の 2 本が
+# 進行中なのに GONE と報告され、cleanup が作成途中で消して証拠が消えた。片方は
+# 直後の reason_of が理由を拾えていて、スタックが在ることが自分のログで裏取りできた）。
+# 「無い」と言い切れるのは ValidationError がそう名指ししたときだけ。
+stack_status() { # <stack> -> STATUS か GONE を stdout。読めなければ UNREADABLE と rc 1
+  local st rc
+  st=$(aws cloudformation describe-stacks --stack-name "$1" --region "$REGION" \
+    --query "Stacks[0].StackStatus" --output text 2>"$ERRF")
+  rc=$?
+  # stderr は混ぜない: rc 0 でも警告が出ることがあり、混ぜると status に化けて
+  # 終端判定をすり抜ける。
+  [ "$rc" -eq 0 ] && { echo "$st"; return 0; }
+  grep -qE 'ValidationError.*does not exist' "$ERRF" && { echo GONE; return 0; }
+  cat "$ERRF" >> "$LOG"
+  echo UNREADABLE
+  return 1
+}
 
 poll_terminal() { # stack -> echo final status
   local stack=$1
@@ -30,31 +52,49 @@ poll_terminal() { # stack -> echo final status
   # 旧実装の「180 回」は名目 30 分に対して実際は約 33 分だった。回数指定は API のレイテンシで
   # 予算がずれるうえ、ずれる方向がコメントと逆（名目より長い）なので当てにできない。
   local deadline=$(( $(date +%s) + POLL_BUDGET_SECONDS ))
+  local unreadable=0 st
   while [ "$(date +%s)" -lt "$deadline" ]; do
-    st=$(aws cloudformation describe-stacks --stack-name "$stack" --region "$REGION" \
-      --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo GONE)
-    case "$st" in
-      CREATE_COMPLETE|CREATE_FAILED|ROLLBACK_COMPLETE|ROLLBACK_FAILED|GONE) echo "$st"; return ;;
-    esac
+    if st=$(stack_status "$stack"); then
+      unreadable=0
+      case "$st" in
+        CREATE_COMPLETE|CREATE_FAILED|ROLLBACK_COMPLETE|ROLLBACK_FAILED|GONE) echo "$st"; return ;;
+      esac
+    else
+      # 読めないのはたいてい一過性なので、間隔を伸ばしながら数回だけ粘る。
+      unreadable=$(( unreadable + 1 ))
+      [ "$unreadable" -ge 5 ] && { echo UNREADABLE; return; }
+      sleep $(( unreadable * 10 ))
+      continue
+    fi
     sleep 10
   done
   echo TIMEOUT
 }
 
+# イベント側も同じ落とし穴で、しかもこちらのほうが高くつく。読めなかったのか該当イベントが
+# 無いのかが空文字に潰れると、下の足場ガードが無言で no-op になり、足場が倒れただけの
+# ロールバックがそのまま "OK: verified" になる（= 嘘の証拠が meta.yaml に焼き付く）。
+# 読めなかったことは戻り値で伝え、呼び出し側で判定を降りる。
+events_query() { # <stack> <jmespath> -> 値を stdout。読めなければ rc 1
+  local v
+  v=$(aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
+    --query "$2" --output text 2>"$ERRF")
+  [ $? -eq 0 ] || { cat "$ERRF" >> "$LOG"; return 1; }
+  echo "$v"
+}
+
 reason_of() { # リソースの CREATE_FAILED を優先。無ければスタックレベル（早期検証の失敗はこちらにしか出ない）
   local q r
   for q in "ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack'" "ResourceStatus=='CREATE_FAILED'"; do
-    r=$(aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
-      --query "StackEvents[?$q]|[-1].ResourceStatusReason" --output text 2>/dev/null)
-    [ -n "$r" ] && [ "$r" != "None" ] && { echo "$r"; return; }
+    r=$(events_query "$1" "StackEvents[?$q]|[-1].ResourceStatusReason") || return 1
+    [ -n "$r" ] && [ "$r" != "None" ] && { echo "$r"; return 0; }
   done
   echo "$r"
 }
 
 failed_type() { # スタックの中で最初に CREATE_FAILED になったリソースの型
-  aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
-    --query "StackEvents[?ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack']|[-1].ResourceType" \
-    --output text 2>/dev/null
+  events_query "$1" \
+    "StackEvents[?ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack']|[-1].ResourceType"
 }
 
 # フィクスチャは検査対象の周りに足場（VPC、ロール、バケット）を建てる。足場のほうが
@@ -73,19 +113,28 @@ scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失
 }
 
 cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除まで自動で撃つ
-  local stack=$1
-  aws cloudformation describe-stacks --stack-name "$stack" --region "$REGION" >/dev/null 2>&1 || return 0
-  aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" 2>/dev/null
-  aws cloudformation wait stack-delete-complete --stack-name "$stack" --region "$REGION" 2>/dev/null && return 0
+  local stack=$1 st
+  if st=$(stack_status "$stack"); then
+    [ "$st" = GONE ] && return 0
+  else
+    # 状態が読めないだけで「消し終わった」ことにすると、課金物を黙って置き去りにする。
+    # 在るか分からないときは消しにいく（無いスタックへの delete-stack は無害）。
+    echo "cleanup: $stack ($REGION) status unreadable, deleting anyway" >> "$LOG"
+  fi
+  aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1
+  aws cloudformation wait stack-delete-complete --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1 && return 0
+  # wait が落ちた理由は DELETE_FAILED とは限らない（throttle でも落ちる）。LEFTOVER は
+  # 消し残りの索引として読むものなので、消えているなら黙って抜ける。
+  [ "$(stack_status "$stack")" = GONE ] && return 0
   local ids
   ids=$(aws cloudformation describe-stack-resources --stack-name "$stack" --region "$REGION" \
-    --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text 2>/dev/null)
+    --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text 2>>"$LOG")
   if [ -z "$ids" ] || [ "$ids" = "None" ]; then
     echo "LEFTOVER: $stack ($REGION) delete did not complete" | tee -a "$LOG"
     return 0
   fi
-  aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" --retain-resources $ids 2>/dev/null
-  if aws cloudformation wait stack-delete-complete --stack-name "$stack" --region "$REGION" 2>/dev/null; then
+  aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" --retain-resources $ids >>"$LOG" 2>&1
+  if aws cloudformation wait stack-delete-complete --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1; then
     echo "LEFTOVER: $stack ($REGION) deleted with retained resources: $ids" | tee -a "$LOG"
   else
     echo "LEFTOVER: $stack ($REGION) still stuck after retain-delete: $ids" | tee -a "$LOG"
@@ -117,8 +166,9 @@ echo "=== $RULE: fail template ($REGION) ===" | tee -a "$LOG"
 FSTACK="cdkpf-$RULE-fail"
 create_stack "$FSTACK" "$DIR/templates/fail.template.json" fail
 FSTATUS=$(poll_terminal "$FSTACK")
-REASON=$(reason_of "$FSTACK")
-FTYPE=$(failed_type "$FSTACK")
+READ_FAILED=0
+REASON=$(reason_of "$FSTACK") || READ_FAILED=1
+FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
 echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
 echo "fail: reason=$REASON" | tee -a "$LOG"
 cleanup "$FSTACK"
@@ -130,18 +180,28 @@ case "$FSTATUS" in
   CREATE_COMPLETE)
     echo "!! BROKEN-EXPECTATION: fail template deployed successfully — the constraint may have drifted" | tee -a "$LOG"
     exit 2 ;;
+  UNREADABLE)
+    echo "!! INCONCLUSIVE: could not read the fail stack's status — see $LOG" | tee -a "$LOG"
+    exit 4 ;;
   GONE|TIMEOUT)
     echo "!! INCONCLUSIVE: fail stack ended $FSTATUS — cannot judge the constraint" | tee -a "$LOG"
     exit 4 ;;
 esac
+# ここまで来たのはスタックが倒れたとき。倒れた理由が読めないまま先に進むと、足場が倒れた
+# だけのロールバックを足場ガードが素通しして verified になる。
+if [ "$READ_FAILED" = 1 ]; then
+  echo "!! INCONCLUSIVE: could not read the fail stack's events — the scaffolding guard cannot run" | tee -a "$LOG"
+  exit 4
+fi
 
 if [ "$FAIL_ONLY" != "--fail-only" ]; then
   echo "=== $RULE: pass template ($REGION) ===" | tee -a "$LOG"
   PSTACK="cdkpf-$RULE-pass"
   create_stack "$PSTACK" "$DIR/templates/pass.template.json" pass
   PSTATUS=$(poll_terminal "$PSTACK")
-  PREASON=$(reason_of "$PSTACK")
-  PTYPE=$(failed_type "$PSTACK")
+  PREAD_FAILED=0
+  PREASON=$(reason_of "$PSTACK") || PREAD_FAILED=1
+  PTYPE=$(failed_type "$PSTACK") || PREAD_FAILED=1
   echo "pass: finalStatus=$PSTATUS" | tee -a "$LOG"
   echo "pass: reason=$PREASON" | tee -a "$LOG"
   cleanup "$PSTACK"
@@ -149,7 +209,12 @@ if [ "$FAIL_ONLY" != "--fail-only" ]; then
     echo "!! INCONCLUSIVE: the pass fixture's $PTYPE failed for a reason of its own: $PREASON" | tee -a "$LOG"
     exit 4
   fi
-  [ "$PSTATUS" != "CREATE_COMPLETE" ] && { echo "!! pass template failed to deploy — fixture is not clean" | tee -a "$LOG"; exit 3; }
+  [ "$PSTATUS" = UNREADABLE ] && { echo "!! INCONCLUSIVE: could not read the pass stack's status — see $LOG" | tee -a "$LOG"; exit 4; }
+  if [ "$PSTATUS" != "CREATE_COMPLETE" ]; then
+    [ "$PREAD_FAILED" = 1 ] && { echo "!! INCONCLUSIVE: could not read the pass stack's events — cannot tell a dirty fixture from a read error" | tee -a "$LOG"; exit 4; }
+    echo "!! pass template failed to deploy — fixture is not clean" | tee -a "$LOG"
+    exit 3
+  fi
 fi
 
 echo "OK: $RULE verified (fail=$FSTATUS)" | tee -a "$LOG"
