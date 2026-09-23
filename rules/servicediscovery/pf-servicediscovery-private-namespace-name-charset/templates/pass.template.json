@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+      "Properties": {
+        "Name": "cdkpf67-pnc-p.local",
+        "Vpc": "vpc-4331593e"
+      }
+    }
+  }
+}

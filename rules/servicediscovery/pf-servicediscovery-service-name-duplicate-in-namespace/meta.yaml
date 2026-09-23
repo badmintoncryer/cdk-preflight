@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-name-duplicate-in-namespace
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "Two services in one namespace may not share a name"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'Resource of type 'AWS::ServiceDiscovery::Service' with identifier 'backend' already exists.' (RequestToken: ef0426d4-ae5c-9b46-2a1c-a5f0f39d6109, HandlerErrorCode: AlreadyExists)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; the second service carries a DependsOn: without it CloudFormation creates both at once and the loser gets an unnamed 500 (GeneralServiceException) instead of AlreadyExists"
+addedOn: 2026-09-22

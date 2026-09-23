@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "crwf.cdkpf67.appnao.com"
+      }
+    },
+    "SvcExplicit": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "cnamemv",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "CNAME",
+              "TTL": 60
+            }
+          ],
+          "RoutingPolicy": "MULTIVALUE"
+        }
+      }
+    },
+    "SvcAbsent": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "cnameabs",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "CNAME",
+              "TTL": 60
+            }
+          ]
+        }
+      }
+    }
+  }
+}

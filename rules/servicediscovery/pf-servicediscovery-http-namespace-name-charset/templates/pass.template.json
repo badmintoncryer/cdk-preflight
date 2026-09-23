@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-hnc-p"
+      }
+    }
+  }
+}

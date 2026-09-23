@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-dnsrecord-type-combination
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "Only a few DnsRecords type combinations are valid"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_DnsRecord.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'DnsRecord Type CNAME cannot be combined with other types (Service: ServiceDiscovery, Status Code: 400, Request ID: 0204918f-f8e7-4465-97ae-e9c185d765a1) (SDK Attempt Count: 1)' (RequestToken: c592188c-dfe0-c09d-cc90-24d416040390, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

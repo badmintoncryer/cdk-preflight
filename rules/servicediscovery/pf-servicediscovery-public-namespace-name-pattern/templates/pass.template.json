@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "pnp.cdkpf67.appnao.com"
+      }
+    }
+  }
+}

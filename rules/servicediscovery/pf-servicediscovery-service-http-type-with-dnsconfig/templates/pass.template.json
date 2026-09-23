@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-htd-p"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "httpsvc",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "Type": "HTTP"
+      }
+    }
+  }
+}

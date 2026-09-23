@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-nd-p"
+      }
+    },
+    "SvcOne": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        }
+      }
+    },
+    "SvcTwo": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "frontend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        }
+      }
+    }
+  }
+}

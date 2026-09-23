@@ -1,0 +1,51 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-sam-p"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "ServiceAttributes": {
+          "k0": "v",
+          "k1": "v",
+          "k2": "v",
+          "k3": "v",
+          "k4": "v",
+          "k5": "v",
+          "k6": "v",
+          "k7": "v",
+          "k8": "v",
+          "k9": "v",
+          "k10": "v",
+          "k11": "v",
+          "k12": "v",
+          "k13": "v",
+          "k14": "v",
+          "k15": "v",
+          "k16": "v",
+          "k17": "v",
+          "k18": "v",
+          "k19": "v",
+          "k20": "v",
+          "k21": "v",
+          "k22": "v",
+          "k23": "v",
+          "k24": "v",
+          "k25": "v",
+          "k26": "v",
+          "k27": "v",
+          "k28": "v",
+          "k29": "v"
+        }
+      }
+    }
+  }
+}

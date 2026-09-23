@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "cwhf.cdkpf67.appnao.com"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "cnamehc",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "CNAME",
+              "TTL": 60
+            }
+          ],
+          "RoutingPolicy": "WEIGHTED"
+        },
+        "HealthCheckConfig": {
+          "Type": "HTTP",
+          "ResourcePath": "/",
+          "FailureThreshold": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-servicediscovery-public-namespace-name-pattern
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::PublicDnsNamespace]
+severity: ERROR
+title: "A public DNS namespace name must be a multi-label DNS domain"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreatePublicDnsNamespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: '1 validation error detected: Value 'cdkpf67singlelabel' at 'name' failed to satisfy constraint: Member must satisfy regular expression pattern: ^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?$ (Service: ServiceDiscovery, Status Code: 400, Request ID: fe98fa7b-c91f-42c8-910c-4551e3652183) (SDK Attempt Count: 1)' (RequestToken: b295c57b-a457-08ee-e828-a052b9a746a8, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

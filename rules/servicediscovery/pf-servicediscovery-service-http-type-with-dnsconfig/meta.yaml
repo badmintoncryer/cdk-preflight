@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-http-type-with-dnsconfig
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "A service of Type HTTP cannot declare DnsConfig"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'When you create a service with a type of HTTP, you can't include a DnsConfig element. (Service: ServiceDiscovery, Status Code: 400, Request ID: 485f5e52-31b5-40fb-94d1-d92fa9fd07f6) (SDK Attempt Count: 1)' (RequestToken: fc706568-82b6-2f27-925e-d5806ef3663d, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

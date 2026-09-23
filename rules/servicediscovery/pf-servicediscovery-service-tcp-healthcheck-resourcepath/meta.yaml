@@ -1,0 +1,12 @@
+id: pf-servicediscovery-service-tcp-healthcheck-resourcepath
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Service]
+severity: ERROR
+title: "A TCP health check may not carry a resource path"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'TCP health checks must not have a resource path specified. (Service: ServiceDiscovery, Status Code: 400, Request ID: 4129f5b2-6cca-4e34-bad2-f4e07f6b0ee6) (SDK Attempt Count: 1)' (RequestToken: fbf82a55-1a17-2074-6b6c-03b0d12f5238, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass template not deployed: the only clean form of this rule keeps a HealthCheckConfig, and CloudFormation cannot order instance deregistration before service deletion, so such a pass fixture risks orphaning a Route 53 health check that only Cloud Map can delete; gated with --fail-only"
+addedOn: 2026-09-22

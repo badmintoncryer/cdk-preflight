@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+      "Properties": {
+        "Name": "名前空間.local",
+        "Vpc": "vpc-4331593e"
+      }
+    }
+  }
+}

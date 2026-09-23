@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "dtcf.cdkpf67.appnao.com"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "combo",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "A",
+              "TTL": 60
+            },
+            {
+              "Type": "CNAME",
+              "TTL": 60
+            }
+          ],
+          "RoutingPolicy": "WEIGHTED"
+        }
+      }
+    }
+  }
+}
