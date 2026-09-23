@@ -2421,6 +2421,26 @@
 | `pf-secretsmanager-secret-name` | AWS::SecretsManager::Secret | A secret Name may only contain ASCII letters, digits and -/_+=.@! (no spaces, colons, hashes or non-ASCII text) | ERROR | none |
 | `pf-secretsmanager-secret-string-exclusive` | AWS::SecretsManager::Secret | SecretString and GenerateSecretString cannot both be set on a secret | ERROR | none |
 | `pf-secretsmanager-target-attachment` | AWS::SecretsManager::SecretTargetAttachment | SecretTargetAttachment needs a TargetType from the documented list and a secret whose value is a JSON object (SecretString JSON or GenerateSecretString with SecretStringTemplate) | ERROR | none |
+| `pf-servicediscovery-http-namespace-name-charset` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name must be printable ASCII | ERROR | none |
+| `pf-servicediscovery-http-namespace-name-length` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name is limited to 1024 characters | ERROR | cfn-schema |
+| `pf-servicediscovery-namespace-description-length` | AWS::ServiceDiscovery::HttpNamespace<br>AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | A namespace description is limited to 1024 characters | ERROR | cfn-schema |
+| `pf-servicediscovery-namespace-soa-ttl-range` | AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | The SOA record TTL of a DNS namespace may not exceed 2147483647 | ERROR | cfn-schema |
+| `pf-servicediscovery-private-namespace-name-charset` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name must be printable ASCII | ERROR | none |
+| `pf-servicediscovery-private-namespace-name-length` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name is limited to 253 characters | ERROR | none |
+| `pf-servicediscovery-public-namespace-name-length` | AWS::ServiceDiscovery::PublicDnsNamespace | A public DNS namespace name is limited to 253 characters | ERROR | none |
+| `pf-servicediscovery-public-namespace-name-pattern` | AWS::ServiceDiscovery::PublicDnsNamespace | A public DNS namespace name must be a multi-label DNS domain | ERROR | none |
+| `pf-servicediscovery-service-attributes-max-entries` | AWS::ServiceDiscovery::Service | A service may carry at most 30 service attributes | ERROR | cfn-schema |
+| `pf-servicediscovery-service-cname-requires-weighted` | AWS::ServiceDiscovery::Service | A CNAME service record requires the WEIGHTED routing policy | ERROR | none |
+| `pf-servicediscovery-service-cname-with-healthcheck` | AWS::ServiceDiscovery::Service | A CNAME service cannot carry a Route 53 health check | ERROR | none |
+| `pf-servicediscovery-service-dnsconfig-in-http-namespace` | AWS::ServiceDiscovery::Service | A service in an HTTP namespace cannot declare DnsConfig | ERROR | none |
+| `pf-servicediscovery-service-dnsrecord-type-combination` | AWS::ServiceDiscovery::Service | Only a few DnsRecords type combinations are valid | ERROR | none |
+| `pf-servicediscovery-service-dnsrecord-type-duplicate` | AWS::ServiceDiscovery::Service | DnsRecords may not repeat the same record type | ERROR | none |
+| `pf-servicediscovery-service-healthcheck-in-private-namespace` | AWS::ServiceDiscovery::Service | A service in a private DNS namespace cannot carry a health check | ERROR | none |
+| `pf-servicediscovery-service-http-type-with-dnsconfig` | AWS::ServiceDiscovery::Service | A service of Type HTTP cannot declare DnsConfig | ERROR | none |
+| `pf-servicediscovery-service-name-case-collision` | AWS::ServiceDiscovery::Service | Two services in one DNS namespace may not differ only by case | ERROR | none |
+| `pf-servicediscovery-service-name-duplicate-in-namespace` | AWS::ServiceDiscovery::Service | Two services in one namespace may not share a name | ERROR | none |
+| `pf-servicediscovery-service-namespace-required` | AWS::ServiceDiscovery::Service | A service must name the namespace it belongs to | ERROR | none |
+| `pf-servicediscovery-service-tcp-healthcheck-resourcepath` | AWS::ServiceDiscovery::Service | A TCP health check may not carry a resource path | ERROR | none |
 | `pf-sns-delivery-policy` | AWS::SNS::Subscription<br>AWS::SNS::Topic | HTTP/S DeliveryPolicy retry values: minDelayTarget >= 1, maxDelayTarget <= 3600 and >= minDelayTarget, numRetries 0..100 and at least the sum of the phase retries, phase counts >= 0, backoffFunction one of arithmetic|exponential|geometric|linear, maxReceivesPerSecond >= 1 (subscription DeliveryPolicy and topic DeliveryPolicy.http) | ERROR | none |
 | `pf-sns-fifo-only-attributes` | AWS::SNS::Topic | ContentBasedDeduplication, ArchivePolicy and FifoThroughputScope are FIFO-only topic attributes, and ArchivePolicy.MessageRetentionPeriod is 1..365 days | ERROR | none |
 | `pf-sns-fifo-queue-on-standard-topic` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A FIFO SQS queue cannot subscribe to a standard topic (a FIFO topic may fan out to standard queues, not the reverse) | ERROR | none |
