@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Neptune::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "PreferredBackupWindow": "07:00-08:00",
+        "PreferredMaintenanceWindow": "mon:08:00-mon:09:00"
+      }
+    }
+  }
+}

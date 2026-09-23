@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::NeptuneGraph::Graph",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ProvisionedMemory": 16,
+        "ReplicaCount": 0,
+        "DeletionProtection": false,
+        "GraphName": "pf66-name-lower"
+      }
+    }
+  }
+}

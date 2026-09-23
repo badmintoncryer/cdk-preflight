@@ -1,0 +1,12 @@
+id: pf-neptune-backup-maintenance-overlap
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster]
+severity: ERROR
+title: "The backup window and the maintenance window must not overlap"
+constraintSource: https://docs.aws.amazon.com/neptune/latest/userguide/api-clusters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: The backup window and maintenance window must not overlap.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The backup window and maintenance window must not overlap. (Service: Neptune, Status Code: 400, Request ID: f4702d2f-5b65-4013-86be-dae81b3cfcf6) (SDK Attempt Count: 1)  (RequestToken: 35484fa2-6d90-206d-85e7-0825836d3618, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+benchRegion: us-east-1
+addedOn: 2026-09-22

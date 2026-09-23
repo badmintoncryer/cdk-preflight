@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Neptune::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ServerlessScalingConfiguration": {
+          "MinCapacity": 2.5,
+          "MaxCapacity": 2.5
+        }
+      }
+    }
+  }
+}

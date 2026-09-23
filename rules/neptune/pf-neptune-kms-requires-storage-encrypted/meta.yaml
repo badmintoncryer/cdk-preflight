@@ -1,0 +1,12 @@
+id: pf-neptune-kms-requires-storage-encrypted
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster]
+severity: ERROR
+title: "KmsKeyId requires StorageEncrypted: true"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-dbcluster.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterCombination: You cannot specify KMS key for unencrypted clusters.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  You cannot specify KMS key for unencrypted clusters. (Service: Neptune, Status Code: 400, Request ID: e26e99c4-96cb-4158-85ef-b29d43c8538d) (SDK Attempt Count: 1)  (RequestToken: 299b77ed-0fb1-33a2-cddd-81d8736bc541, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+benchRegion: us-east-1
+addedOn: 2026-09-22
