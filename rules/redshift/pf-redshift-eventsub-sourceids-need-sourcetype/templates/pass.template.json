@@ -1,0 +1,20 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "T": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {}
+    },
+    "S": {
+      "Type": "AWS::Redshift::EventSubscription",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "SubscriptionName": "pf-redshift-eventsub-sourceids-need-sourcetype-pass",
+        "SnsTopicArn": {
+          "Ref": "T"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-redshift-scheduled-action-start-before-end
+service: redshift
+resourceTypes: [AWS::Redshift::ScheduledAction]
+severity: ERROR
+title: "ScheduledAction StartTime must be earlier than EndTime"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-redshift-scheduledaction.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateScheduledAction -> \"InvalidParameterCombination: The StartTime must be earlier than EndTime.\" (#66 phase B) (probed with StartTime after EndTime; the rule also flags StartTime equal to EndTime, which is unprobed. Same cluster-first fixture as the schedule-format rule); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The StartTime must be earlier than EndTime. (Service: Redshift, Status Code: 400, Request ID: af2440ed-bbfc-4ef6-92b8-7b5e682c8ffe) (SDK Attempt Count: 1)  (RequestToken: 4580f18e-bd87-b81f-6509-7b2f6bfc5a5b, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

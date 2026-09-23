@@ -1,0 +1,43 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "C": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "ManageMasterPassword": true,
+        "MasterPasswordSecretKmsKeyId": {
+          "Ref": "K"
+        }
+      }
+    },
+    "K": {
+      "Type": "AWS::KMS::Key",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
