@@ -375,6 +375,9 @@
         },
         {
           "exec": "bash bench/verify-rule.test.sh"
+        },
+        {
+          "exec": "python3 scripts/plan-services.py --self-test"
         }
       ]
     },

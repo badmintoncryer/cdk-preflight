@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { awscdk, github, JsonPatch } from 'projen';
 const project = new awscdk.AwsCdkConstructLibrary({
   author: 'Kazuho CryerShinozuka',
@@ -154,28 +153,11 @@ project.addTask('redundancy-scan', {
   description: 'List rules the bundled engine now blocks by itself (retirement candidates)',
   exec: 'ts-node --project test/tsconfig.json scripts/redundancy-scan.ts',
 });
-const services = fs
-  .readdirSync('rules', { withFileTypes: true })
-  .filter((e) => e.isDirectory() && !e.name.startsWith('_')) // rules/_lib holds shared helpers, not rules
-  .map((e) => e.name)
-  .sort();
-// 1 ジョブに収まらないサービスはジョブを増やす方向にだけ割る（ジョブ内は逐次のままなので
-// 同時 VPC 数は maxParallel を超えない）。認証は role-duration-seconds 4h、ジョブは
-// timeoutMinutes 300 なので、1 シャード 3h 以内を目安にする。
-// route53resolver: 実測 2026-09-11 us-east-1（fail-only）— エンドポイントが立ち切る 10 本が
-// 337 秒/本、エンドポイント自身が違反で即拒否される 19 本が 225 秒/本、残り 33 本が 50 秒/本。
-// 62 本を逐次で回すと 2.6h で、INCONCLUSIVE のリトライが重なると 4h に触れる。3 分割で 1 本 55 分前後。
-// msk: 実測 2026-09-13/14 us-east-1 — fail は同期拒否 8 秒 + ROLLBACK 2m51s で 1 本約 3 分、
-// うち 13 本は VPC/サブネット/SG を同一スタックに建てるぶん +2 分。52 本を逐次で回すと約 3h で
-// 目安の上限に張り付き、INCONCLUSIVE のリトライが乗ると 4h の認証期限に触れる。2 分割で 1 本 1.5h 前後。
-const shards: Record<string, number> = { route53resolver: 3, msk: 2 };
-services.forEach((s) => {
-  // verify-all.sh は "<service>.<i>of<n>" を '.' で切って解釈する
-  if (s.includes('.')) throw new Error(`service directory name must not contain a dot: ${s}`);
-});
-const shardedServices = services.flatMap((s) =>
-  shards[s] ? Array.from({ length: shards[s] }, (_, i) => `${s}.${i + 1}of${shards[s]}`) : [s],
-);
+// サービス一覧とシャード数は scripts/plan-services.py に置き、plan ジョブが実行時に
+// rules/ を読んで組む。ここで焼き込むと全サービス名が workflow の 1 行に並ぶので、
+// サービスを足す PR が毎回その行で衝突する（2026-09-22、#66 の 4 本で踏んだ）。
+project.testTask.exec('python3 scripts/plan-services.py --self-test');
+
 const monthlyVerify = new github.GithubWorkflow(project.github!, 'monthly-verify', {
   limitConcurrency: true,
   concurrencyOptions: { group: 'monthly-verify', cancelInProgress: false },
@@ -210,22 +192,15 @@ const awsCredsStep: github.workflows.JobStep = {
 // 単一サービス dispatch の絞り込みは matrix 自体を plan ジョブで組んで実現する
 monthlyVerify.addJob('plan', {
   runsOn: ['ubuntu-latest'],
-  permissions: {},
+  // rules/ を読むために checkout する（行列は実行時に組む）
+  permissions: { contents: github.workflows.JobPermission.READ },
   outputs: { services: { stepId: 'plan', outputName: 'services' } },
   steps: [
+    checkoutStep,
     {
       id: 'plan',
       name: 'Compute service matrix',
-      run: [
-        'if [ -n "${{ inputs.service }}" ]; then',
-        // サービス名だけを渡されたらそのサービスのシャードに展開する（知らない名前はそのまま通す）
-        '  python3 -c \'import json,sys; a=json.loads(sys.argv[1]); s=sys.argv[2];' +
-          ' print("services="+json.dumps([x for x in a if x==s or x.startswith(s+".")] or [s]))\'' +
-          ` '${JSON.stringify(shardedServices)}' "\${{ inputs.service }}" >> "$GITHUB_OUTPUT"`,
-        'else',
-        `  echo 'services=${JSON.stringify(shardedServices)}' >> "$GITHUB_OUTPUT"`,
-        'fi',
-      ].join('\n'),
+      run: 'python3 scripts/plan-services.py "${{ inputs.service }}" >> "$GITHUB_OUTPUT"',
     },
   ],
 });
