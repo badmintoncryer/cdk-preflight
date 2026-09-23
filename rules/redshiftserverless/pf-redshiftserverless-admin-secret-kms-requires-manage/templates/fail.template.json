@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-adminkms-f",
+        "AdminPasswordSecretKmsKeyId": "alias/aws/secretsmanager"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-bcfloor-p"
+      }
+    },
+    "WG": {
+      "Type": "AWS::RedshiftServerless::Workgroup",
+      "Properties": {
+        "WorkgroupName": "pfrss-bcfloor-p",
+        "NamespaceName": {
+          "Ref": "NS"
+        },
+        "BaseCapacity": 4
+      }
+    }
+  }
+}

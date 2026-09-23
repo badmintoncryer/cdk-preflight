@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-price-performance-level-enum
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Workgroup]
+severity: ERROR
+title: "PricePerformanceTarget Level must be 1, 25, 50, 75 or 100"
+constraintSource: https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_PerformanceTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateWorkgroup pricePerformanceTarget level 30 -> \"ValidationException: The specified pricePerformanceTargetLevel is invalid. Valid levels are 1, 25, 50, 75, and 100.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The specified pricePerformanceTargetLevel is invalid. Valid levels are 1, 25, 50, 75, and 100. (Service: RedshiftServerless, Status Code: 400, Request ID: dd65ad4d-16cf-4770-98bb-8b380d780d87) (SDK Attempt Count: 1)  (RequestToken: 69410357-0ab4-836c-7fc8-523bed1f\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

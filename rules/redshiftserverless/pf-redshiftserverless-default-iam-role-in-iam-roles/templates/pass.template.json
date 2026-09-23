@@ -1,0 +1,70 @@
+{
+  "Resources": {
+    "RoleA": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "redshift.amazonaws.com",
+                  "redshift-serverless.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "RoleB": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "redshift.amazonaws.com",
+                  "redshift-serverless.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-defrole-p",
+        "DefaultIamRoleArn": {
+          "Fn::GetAtt": [
+            "RoleA",
+            "Arn"
+          ]
+        },
+        "IamRoles": [
+          {
+            "Fn::GetAtt": [
+              "RoleA",
+              "Arn"
+            ]
+          },
+          {
+            "Fn::GetAtt": [
+              "RoleB",
+              "Arn"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
