@@ -199,7 +199,7 @@ const checkoutStep: github.workflows.JobStep = {
 };
 const awsCredsStep: github.workflows.JobStep = {
   name: 'Configure AWS credentials',
-  uses: 'aws-actions/configure-aws-credentials@v4',
+  uses: 'aws-actions/configure-aws-credentials@v6',
   with: {
     'role-to-assume': verifyRole,
     'aws-region': 'ap-northeast-1',
@@ -277,7 +277,7 @@ monthlyVerify.addJob('report', {
     { name: 'Sweep leftover stacks', run: 'bash bench/sweep.sh | tee bench/out/sweep.log' },
     {
       name: 'Setup node',
-      uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+      uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
       with: { 'node-version': '20' },
     },
     { name: 'Install', run: 'yarn install --check-files --frozen-lockfile' },
