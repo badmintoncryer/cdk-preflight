@@ -1,0 +1,12 @@
+id: pf-docdb-subnet-group-name-not-default
+service: docdb
+resourceTypes: [AWS::DocDB::DBSubnetGroup]
+severity: ERROR
+title: "DBSubnetGroupName: default is reserved"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbsubnetgroup.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBSubnetGroup -> \"InvalidParameterValue: Subnet group name default is reserved. Please specify another name.\" (#66 phase B TARGET); bench 2026-09-22 us-east-1: fail -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

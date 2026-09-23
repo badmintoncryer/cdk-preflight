@@ -1,0 +1,12 @@
+id: pf-docdb-restore-copy-on-write-time
+service: docdb
+resourceTypes: [AWS::DocDB::DBCluster]
+severity: ERROR
+title: "RestoreToTime cannot be specified for a copy-on-write restore"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-docdb-dbcluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH: RestoreDBClusterToPointInTime needs a real source cluster, DBClusterNotFound came first; fixtures carry the source cluster in-template); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Please specify RestoreToTime between Earliest Restorable Time and Latest Restorable Time of source cluster. (Service: Rds, Status Code: 400, Request ID: 22d9287c-239e-460c-b2d0-dcba168f9559) (SDK Attempt Count: 1)  (RequestToken: 3ff6f4a7-7548-4c20-84c0-5e535bc9df\" (ROLLBACK_COMPLETE); pass: fail-only (see #66)"
+addedOn: 2026-09-22
