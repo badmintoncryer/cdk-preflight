@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-uaap"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        }
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "MY_ATTR": "v"
+        }
+      }
+    }
+  }
+}

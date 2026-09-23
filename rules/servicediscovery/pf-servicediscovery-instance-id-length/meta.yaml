@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-id-length
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "An instance id is at most 64 characters"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: 65-char InstanceId -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); pass 64-char InstanceId -> CREATE_COMPLETE"
+addedOn: 2026-09-23

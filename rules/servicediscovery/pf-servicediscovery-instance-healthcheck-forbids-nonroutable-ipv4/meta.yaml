@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-healthcheck-forbids-nonroutable-ipv4
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "A health-checked service rejects a non-routable AWS_INSTANCE_IPV4"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_HealthCheckConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: health-checked service, AWS_INSTANCE_IPV4=10.0.0.1 -> \"IPv4 address 10.0.0.1 is forbidden for healthChecks\" (ROLLBACK_COMPLETE); pass not deployed on purpose: registering an instance on a HealthCheckConfig service creates a Route 53 health check that Cloud Map can orphan (--fail-only)"
+addedOn: 2026-09-23

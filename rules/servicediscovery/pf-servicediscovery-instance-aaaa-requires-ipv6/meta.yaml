@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-aaaa-requires-ipv6
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "An AAAA record service needs AWS_INSTANCE_IPV6 on every instance"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: AAAA-record service, instance without AWS_INSTANCE_IPV6 -> \"Required attribute(s) AWS_INSTANCE_IPV6 are missing.\" (ROLLBACK_COMPLETE); pass with AWS_INSTANCE_IPV6=2001:db8::1 -> CREATE_COMPLETE"
+addedOn: 2026-09-23

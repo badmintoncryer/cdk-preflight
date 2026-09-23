@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-srv-requires-ip
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "An SRV record service needs an IP address on every instance"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: SRV-record service, AWS_INSTANCE_PORT only -> \"At least one of AWS_INSTANCE_IPV4 AWS_INSTANCE_IPV6 is required.\" (ROLLBACK_COMPLETE); pass port + AWS_INSTANCE_IPV4 -> CREATE_COMPLETE"
+addedOn: 2026-09-23

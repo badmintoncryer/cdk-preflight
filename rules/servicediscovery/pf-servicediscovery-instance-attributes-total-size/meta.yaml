@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-attributes-total-size
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "All instance attributes together are at most 5000 characters"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: 5001 chars of attribute keys+values -> \"Instance attributes too large. Maximum allowed size of all attributes is 5000 characters.\" (ROLLBACK_COMPLETE); pass 5000 chars -> CREATE_COMPLETE"
+addedOn: 2026-09-23

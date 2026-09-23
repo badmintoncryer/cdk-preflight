@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "arwf.cdkpf67.appnao.com"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "A",
+              "TTL": 60
+            }
+          ]
+        }
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "AWS_ALIAS_DNS_NAME": "cdkpf67-probe-1234567890.us-east-1.elb.amazonaws.com"
+        }
+      }
+    }
+  }
+}

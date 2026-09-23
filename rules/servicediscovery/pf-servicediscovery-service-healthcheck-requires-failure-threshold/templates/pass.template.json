@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "hftp.cdkpf67.appnao.com"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "A",
+              "TTL": 60
+            }
+          ]
+        },
+        "HealthCheckConfig": {
+          "Type": "HTTP",
+          "ResourcePath": "/",
+          "FailureThreshold": 1
+        }
+      }
+    }
+  }
+}

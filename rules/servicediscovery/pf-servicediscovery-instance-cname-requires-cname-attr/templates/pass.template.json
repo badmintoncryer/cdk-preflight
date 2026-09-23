@@ -1,0 +1,44 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+      "Properties": {
+        "Name": "cnrp.cdkpf67.local",
+        "Vpc": "vpc-4331593e"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "CNAME",
+              "TTL": 60
+            }
+          ],
+          "RoutingPolicy": "WEIGHTED"
+        }
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "AWS_INSTANCE_CNAME": "target.example.com"
+        }
+      }
+    }
+  }
+}

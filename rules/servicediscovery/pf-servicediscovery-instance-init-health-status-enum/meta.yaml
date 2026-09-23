@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-init-health-status-enum
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "AWS_INIT_HEALTH_STATUS is HEALTHY or UNHEALTHY"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: AWS_INIT_HEALTH_STATUS=UNKNOWN -> \"No enum constant com.amazon.route53.autonaming.model.InitHealthStatus.UNKNOWN\" (ROLLBACK_COMPLETE); pass AWS_INIT_HEALTH_STATUS=HEALTHY -> CREATE_COMPLETE"
+addedOn: 2026-09-23

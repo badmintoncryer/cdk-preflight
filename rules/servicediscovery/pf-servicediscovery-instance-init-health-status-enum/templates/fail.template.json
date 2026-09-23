@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-ihsf"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        }
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "AWS_INIT_HEALTH_STATUS": "UNKNOWN",
+          "custom": "v"
+        }
+      }
+    }
+  }
+}

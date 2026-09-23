@@ -1,0 +1,48 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PublicDnsNamespace",
+      "Properties": {
+        "Name": "hnrf.cdkpf67.appnao.com"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "A",
+              "TTL": 60
+            }
+          ]
+        },
+        "HealthCheckConfig": {
+          "Type": "HTTP",
+          "ResourcePath": "/",
+          "FailureThreshold": 1
+        }
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "AWS_INSTANCE_IPV4": "10.0.0.1",
+          "AWS_INSTANCE_PORT": "80"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-alias-requires-weighted
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "An ALIAS instance needs a WEIGHTED service"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_DnsConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: AWS_ALIAS_DNS_NAME on a MULTIVALUE service -> \"ALIAS instance can be registered only in services with WEIGHTED routing policy\" (ROLLBACK_COMPLETE); pass RoutingPolicy WEIGHTED with a real ALB DNS name -> CREATE_COMPLETE"
+addedOn: 2026-09-23

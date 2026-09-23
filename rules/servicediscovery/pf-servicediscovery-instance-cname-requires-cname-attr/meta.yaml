@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-cname-requires-cname-attr
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "A CNAME record service needs AWS_INSTANCE_CNAME on every instance"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: CNAME-record service, instance without AWS_INSTANCE_CNAME -> \"Required attribute(s) AWS_INSTANCE_CNAME are missing.\" (ROLLBACK_COMPLETE); pass with AWS_INSTANCE_CNAME -> CREATE_COMPLETE"
+addedOn: 2026-09-23

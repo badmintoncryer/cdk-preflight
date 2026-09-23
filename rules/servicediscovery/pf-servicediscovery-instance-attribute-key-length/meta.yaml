@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-attribute-key-length
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "An instance attribute key is at most 255 characters"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: 256-char attribute key -> \"1 validation error detected: Value '{k...(256 chars)=v}' at 'attributes' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less tha [...] al to 0, Member must satisfy regular expression pattern: ^[a-zA-Z0-9!-~]+$, Member must not be null]\" (ROLLBACK_COMPLETE); pass 255-char key -> CREATE_COMPLETE"
+addedOn: 2026-09-23
