@@ -1,0 +1,12 @@
+id: pf-redshift-single-node-node-count
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "single-node clusters must not declare more than one node"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Number of nodes must be 1 or not be supplied for cluster type single-node.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Number of nodes must be 1 or not be supplied for cluster type single-node. (Service: Redshift, Status Code: 400, Request ID: b223d426-39af-4480-84ea-a7cc4ec699a8) (SDK Attempt Count: 1)  (RequestToken: c81ceda7-6011-8dd8-9e70-52a0d1355771, HandlerErrorCode: Genera\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE (poll budget expired; CREATE_COMPLETE read back with describe-stacks)"
+addedOn: 2026-09-22

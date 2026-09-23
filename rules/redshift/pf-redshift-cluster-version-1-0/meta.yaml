@@ -1,0 +1,12 @@
+id: pf-redshift-cluster-version-1-0
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ClusterVersion accepts only 1.0"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterCombination: Cannot find Cluster version 2.0\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Cannot find Cluster version 2.0 (Service: Redshift, Status Code: 400, Request ID: 95f4c626-1fd1-412c-80e2-ae7bae017cd1) (SDK Attempt Count: 1)  (RequestToken: 42558d4d-38af-c31e-96ff-51f47f2e17d3, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

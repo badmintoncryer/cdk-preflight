@@ -1,0 +1,57 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "C1": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "MasterUserPassword": "Pf66bench1",
+        "Port": 5431
+      }
+    },
+    "C2": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "MasterUserPassword": "Pf66bench1",
+        "Port": 5455
+      }
+    },
+    "C3": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "MasterUserPassword": "Pf66bench1",
+        "Port": 8191
+      }
+    },
+    "C4": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "MasterUserPassword": "Pf66bench1",
+        "Port": 8215
+      }
+    }
+  }
+}

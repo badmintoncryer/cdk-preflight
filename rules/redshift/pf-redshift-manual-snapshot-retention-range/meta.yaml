@@ -1,0 +1,12 @@
+id: pf-redshift-manual-snapshot-retention-range
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ManualSnapshotRetentionPeriod must be at most 3653 days"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidRetentionPeriodFault: Retention period cannot exceed 3653 days.\" (#66 phase B) (only the upper end is probed; -1 means indefinite and is not judged); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Retention period cannot exceed 3653 days. (Service: Redshift, Status Code: 400, Request ID: df28b48b-4eb8-431c-acea-08deaada739b) (SDK Attempt Count: 1)  (RequestToken: 182f5987-2a13-ac42-254c-f6767d94ccef, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

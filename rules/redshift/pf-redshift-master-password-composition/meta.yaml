@@ -1,0 +1,12 @@
+id: pf-redshift-master-password-composition
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "MasterUserPassword needs an uppercase letter, a lowercase letter and a digit"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: The parameter MasterUserPassword must contain at least 1 upper case letter.\" (#66 phase B) (the fixture exercises the uppercase branch; the lowercase and digit branches follow the same API constraint list and are unprobed); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The parameter MasterUserPassword must contain at least 1 upper case letter. (Service: Redshift, Status Code: 400, Request ID: 2ea96ef5-0d4d-4ac7-a2c9-5578f93fcaa4) (SDK Attempt Count: 1)  (RequestToken: fb5c5812-55f1-d99a-7ada-433e4355ce44, HandlerErrorCode: Gener\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22
