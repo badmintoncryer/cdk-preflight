@@ -1,0 +1,12 @@
+id: pf-neptune-serverless-min-le-max
+service: neptune
+resourceTypes: [AWS::Neptune::DBCluster]
+severity: ERROR
+title: "Serverless MinCapacity must not exceed MaxCapacity"
+constraintSource: https://docs.aws.amazon.com/neptune/latest/userguide/neptune-serverless-capacity-scaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Serverless v2 minimum capacity must be less than or equal to maximum capacity\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Serverless v2 minimum capacity must be less than or equal to maximum capacity (Service: Neptune, Status Code: 400, Request ID: 88b1e054-4404-4c6d-87fd-ee39a1b890f5) (SDK Attempt Count: 1)  (RequestToken: 37aa024c-b8eb-c014-a697-8f872d707d4c, HandlerErrorCode: Inva\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+benchRegion: us-east-1
+addedOn: 2026-09-22

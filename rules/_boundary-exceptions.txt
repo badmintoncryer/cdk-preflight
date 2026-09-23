@@ -85,3 +85,5 @@ pf-wafv2-ipset-addresses  p <= 32 は IPv4 のプレフィックス長が範囲�
 pf-wafv2-logging-destination  count(parts) >= 7 は ARN を割った断片数のガード。parts が some で束縛されているので split の検出に引っかからない
 pf-wafv2-managed-rule-group  ExemptUriRegularExpressions の 1..5 はヘルパー述語（_pf_wafmrg_bad_count(n) if n > 5）の引数で、検出器は呼び出し側の値まで辿れない。フィクスチャは 6 / 5 本に乗せてある
 pf-docdb-serverless-min-le-max  MinCapacity / MaxCapacity は 0.5 DCU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 8.5/8 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 8/8 で限界そのものに乗っている（pf-rds-serverless-v2-capacity と同型）
+pf-neptune-serverless-min-le-max  MinCapacity / MaxCapacity は 0.5 NCU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 3.0/2.5 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 2.5/2.5 で限界そのものに乗せてある
+pf-redshiftserverless-max-capacity-ge-base  BaseCapacity / MaxCapacity は 8 RPU 刻み（8-512）なので、最も近い違反値の差は 8 であって 1 ではない（fail は 32/24 に乗せてある。B の api-probe も同じ値で "The base capacity can't be more than 24 RPUs."）。pass は 32/32 で同値に乗っている

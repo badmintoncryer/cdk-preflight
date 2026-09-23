@@ -1,0 +1,38 @@
+{
+  "Resources": {
+    "NS": {
+      "Type": "AWS::RedshiftServerless::Namespace",
+      "Properties": {
+        "NamespaceName": "pfrss-adminkms-p",
+        "AdminUsername": "benchadmin",
+        "ManageAdminPassword": true,
+        "AdminPasswordSecretKmsKeyId": {
+          "Ref": "K"
+        }
+      }
+    },
+    "K": {
+      "Type": "AWS::KMS::Key",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "PendingWindowInDays": 7,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

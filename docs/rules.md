@@ -1980,6 +1980,23 @@
 | `pf-msk-unauthenticated-only-requires-no-tls-only` | AWS::MSK::Cluster | A cluster has to accept some kind of client | ERROR | none |
 | `pf-msk-vpc-connectivity-auth-not-at-create` | AWS::MSK::Cluster | Multi-VPC connectivity auth schemes cannot be enabled at create time | ERROR | none |
 | `pf-msk-zookeeper-access-not-at-create` | AWS::MSK::Cluster | ZookeeperAccess cannot be set while the cluster is created | ERROR | none |
+| `pf-neptune-backup-maintenance-overlap` | AWS::Neptune::DBCluster | The backup window and the maintenance window must not overlap | ERROR | none |
+| `pf-neptune-backup-retention-range` | AWS::Neptune::DBCluster | BackupRetentionPeriod must be at most 35 days | ERROR | none |
+| `pf-neptune-backup-window-duration` | AWS::Neptune::DBCluster | The backup window must be at least 30 minutes | ERROR | none |
+| `pf-neptune-backup-window-format` | AWS::Neptune::DBCluster | PreferredBackupWindow must be hh24:mi-hh24:mi (UTC) | ERROR | none |
+| `pf-neptune-cpg-family-engine-version` | AWS::Neptune::DBCluster<br>AWS::Neptune::DBClusterParameterGroup | The cluster parameter group family must match the cluster engine version | ERROR | none |
+| `pf-neptune-db-serverless-needs-scaling-config` | AWS::Neptune::DBInstance<br>AWS::Neptune::DBCluster | A db.serverless instance needs a cluster with ServerlessScalingConfiguration | ERROR | none |
+| `pf-neptune-globalcluster-source-exclusive` | AWS::Neptune::GlobalCluster | SourceDBClusterIdentifier excludes Engine, EngineVersion and StorageEncrypted | ERROR | none |
+| `pf-neptune-instance-az-region` | AWS::Neptune::DBInstance | The instance AvailabilityZone must be in the deployment region | ERROR | none |
+| `pf-neptune-kms-requires-storage-encrypted` | AWS::Neptune::DBCluster | KmsKeyId requires StorageEncrypted: true | ERROR | none |
+| `pf-neptune-maintenance-window-duration` | AWS::Neptune::DBCluster<br>AWS::Neptune::DBInstance | The maintenance window must be at least 30 minutes | ERROR | none |
+| `pf-neptune-port-range` | AWS::Neptune::DBCluster | DBPort must be within 1150-65535 | ERROR | none |
+| `pf-neptune-serverless-half-step` | AWS::Neptune::DBCluster | Serverless capacities must be multiples of 0.5 NCU | ERROR | none |
+| `pf-neptune-serverless-min-le-max` | AWS::Neptune::DBCluster | Serverless MinCapacity must not exceed MaxCapacity | ERROR | none |
+| `pf-neptune-subnet-group-two-az` | AWS::Neptune::DBSubnetGroup<br>AWS::EC2::Subnet | A DB subnet group must cover at least two Availability Zones | ERROR | none |
+| `pf-neptunegraph-graph-name-lowercase` | AWS::NeptuneGraph::Graph | GraphName must be lowercase and must not start with g- | ERROR | none |
+| `pf-neptunegraph-private-endpoint-subnet-vpc-match` | AWS::NeptuneGraph::PrivateGraphEndpoint<br>AWS::EC2::Subnet | PrivateGraphEndpoint SubnetIds must belong to its VpcId | ERROR | none |
+| `pf-neptunegraph-vector-dimension-range` | AWS::NeptuneGraph::Graph | VectorSearchDimension must be within 1-65536 | ERROR | none |
 | `pf-pipes-batch-size-target-limit` | AWS::Pipes::Pipe | Source BatchSize is capped by what the target accepts per call | ERROR | none |
 | `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | ERROR | none |
 | `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | ERROR | none |
@@ -2051,6 +2068,40 @@
 | `pf-rds-subnet-group-name-reserved` | AWS::RDS::DBSubnetGroup | DBSubnetGroupName: default is reserved | ERROR | none |
 | `pf-rds-timezone-engine` | AWS::RDS::DBInstance | Timezone is only accepted by Db2 and SQL Server engines | ERROR | none |
 | `pf-rds-window-overlap` | AWS::RDS::DBInstance | The backup window and the maintenance window must not overlap | ERROR | none |
+| `pf-redshift-automated-snapshot-retention-ra3` | AWS::Redshift::Cluster | AutomatedSnapshotRetentionPeriod cannot be 0 on RA3/RG node types | ERROR | none |
+| `pf-redshift-automated-snapshot-retention-range` | AWS::Redshift::Cluster | AutomatedSnapshotRetentionPeriod must be at most 35 days | ERROR | none |
+| `pf-redshift-availability-zone-region` | AWS::Redshift::Cluster | AvailabilityZone must belong to the deployment region | ERROR | none |
+| `pf-redshift-cluster-version-1-0` | AWS::Redshift::Cluster | ClusterVersion accepts only 1.0 | ERROR | none |
+| `pf-redshift-dbname-lowercase` | AWS::Redshift::Cluster | DBName must be lowercase, start with a letter and use only [a-z0-9_+.@-] | ERROR | none |
+| `pf-redshift-defer-maintenance-duration-endtime` | AWS::Redshift::Cluster | DeferMaintenanceDuration and DeferMaintenanceEndTime are mutually exclusive | ERROR | none |
+| `pf-redshift-defer-maintenance-duration-max` | AWS::Redshift::Cluster | DeferMaintenanceDuration must be at most 60 days | ERROR | none |
+| `pf-redshift-elastic-ip-publicly-accessible` | AWS::Redshift::Cluster | ElasticIp requires PubliclyAccessible true | ERROR | none |
+| `pf-redshift-eventsub-sourceids-need-sourcetype` | AWS::Redshift::EventSubscription | EventSubscription SourceIds requires SourceType | ERROR | none |
+| `pf-redshift-hsm-identifier-pair` | AWS::Redshift::Cluster | HsmClientCertificateIdentifier and HsmConfigurationIdentifier must be set together | ERROR | none |
+| `pf-redshift-manage-master-password-exclusive` | AWS::Redshift::Cluster | ManageMasterPassword and MasterUserPassword are mutually exclusive | ERROR | none |
+| `pf-redshift-manual-snapshot-retention-range` | AWS::Redshift::Cluster | ManualSnapshotRetentionPeriod must be at most 3653 days | ERROR | none |
+| `pf-redshift-master-password-charset` | AWS::Redshift::Cluster | MasterUserPassword must be printable ASCII without / @ " ' \ or space | ERROR | none |
+| `pf-redshift-master-password-composition` | AWS::Redshift::Cluster | MasterUserPassword needs an uppercase letter, a lowercase letter and a digit | ERROR | none |
+| `pf-redshift-master-password-length` | AWS::Redshift::Cluster | MasterUserPassword must be at least 8 characters | ERROR | none |
+| `pf-redshift-master-password-secret-kms-requires-manage` | AWS::Redshift::Cluster | MasterPasswordSecretKmsKeyId requires ManageMasterPassword true | ERROR | none |
+| `pf-redshift-master-username-reserved-public` | AWS::Redshift::Cluster | MasterUsername must not be PUBLIC | ERROR | none |
+| `pf-redshift-multi-node-min-nodes` | AWS::Redshift::Cluster | multi-node clusters need NumberOfNodes of at least 2 | ERROR | none |
+| `pf-redshift-node-type-single-node-support` | AWS::Redshift::Cluster | ra3.4xlarge, ra3.16xlarge, rg.4xlarge, rg.12xlarge and dc2.8xlarge have no single-node configuration | ERROR | none |
+| `pf-redshift-port-range-ra3` | AWS::Redshift::Cluster | RG and RA3 clusters accept only ports 5431-5455 or 8191-8215 | ERROR | none |
+| `pf-redshift-scheduled-action-schedule-format` | AWS::Redshift::ScheduledAction | ScheduledAction Schedule must be an at(...) or cron(...) expression | ERROR | none |
+| `pf-redshift-scheduled-action-start-before-end` | AWS::Redshift::ScheduledAction | ScheduledAction StartTime must be earlier than EndTime | ERROR | none |
+| `pf-redshift-single-node-node-count` | AWS::Redshift::Cluster | single-node clusters must not declare more than one node | ERROR | none |
+| `pf-redshiftserverless-admin-password-exclusive` | AWS::RedshiftServerless::Namespace | ManageAdminPassword cannot be combined with AdminUserPassword | ERROR | none |
+| `pf-redshiftserverless-admin-secret-kms-requires-manage` | AWS::RedshiftServerless::Namespace | AdminPasswordSecretKmsKeyId requires ManageAdminPassword | ERROR | none |
+| `pf-redshiftserverless-base-capacity-floor` | AWS::RedshiftServerless::Workgroup | Workgroup BaseCapacity must be at least 4 RPUs | ERROR | none |
+| `pf-redshiftserverless-base-capacity-step` | AWS::RedshiftServerless::Workgroup | Workgroup BaseCapacity above 8 must be a multiple of 8 | ERROR | none |
+| `pf-redshiftserverless-default-iam-role-in-iam-roles` | AWS::RedshiftServerless::Namespace | DefaultIamRoleArn must also be listed in IamRoles | ERROR | none |
+| `pf-redshiftserverless-log-exports-enum` | AWS::RedshiftServerless::Namespace | LogExports accepts only useractivitylog, userlog and connectionlog | ERROR | pending-engine |
+| `pf-redshiftserverless-max-capacity-ge-base` | AWS::RedshiftServerless::Workgroup | Workgroup MaxCapacity must not be lower than BaseCapacity | ERROR | none |
+| `pf-redshiftserverless-port-range` | AWS::RedshiftServerless::Workgroup | Workgroup Port must be within 5431-5455 or 8191-8215 | ERROR | none |
+| `pf-redshiftserverless-price-performance-level-enum` | AWS::RedshiftServerless::Workgroup | PricePerformanceTarget Level must be 1, 25, 50, 75 or 100 | ERROR | none |
+| `pf-redshiftserverless-snapshot-copy-destination-region-self` | AWS::RedshiftServerless::Namespace | Snapshot copy DestinationRegion must differ from the namespace region | ERROR | none |
+| `pf-redshiftserverless-workgroup-subnet-az-count` | AWS::RedshiftServerless::Workgroup<br>AWS::EC2::Subnet | Enhanced VPC routing needs subnets in three availability zones | ERROR | none |
 | `pf-route53-alias-apex-to-cname` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A zone-apex alias cannot target a CNAME record set | ERROR | none |
 | `pf-route53-alias-beanstalk-zone-id` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An Elastic Beanstalk alias must use the hosted zone id of the environment's region | ERROR | none |
 | `pf-route53-alias-cloudfront-zone-id` | AWS::Route53::RecordSet | A CloudFront alias target must use hosted zone Z2FDTNDATAQYW2 | ERROR | none |

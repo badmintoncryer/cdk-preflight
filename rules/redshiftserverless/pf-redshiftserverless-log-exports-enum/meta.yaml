@@ -1,0 +1,12 @@
+id: pf-redshiftserverless-log-exports-enum
+service: redshiftserverless
+benchRegion: us-east-1
+resourceTypes: [AWS::RedshiftServerless::Namespace]
+severity: ERROR
+title: "LogExports accepts only useractivitylog, userlog and connectionlog"
+constraintSource: https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_CreateNamespace.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateNamespace logExports [querylog] -> \"ValidationException: 1 validation error detected: Value '[querylog]' at 'logExports' failed to satisfy constraint: Member must satisfy constraint: [Member must satisfy enum value set: [connectionlog, useractivitylog, userlog]]\" (#66 phase B). Gray zone: the bundled engine reports the enum only as W3030/WARN, so nothing blocks the deploy; bench 2026-09-22 us-east-1: fail -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

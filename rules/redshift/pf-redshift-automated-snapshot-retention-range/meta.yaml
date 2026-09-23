@@ -1,0 +1,12 @@
+id: pf-redshift-automated-snapshot-retention-range
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "AutomatedSnapshotRetentionPeriod must be at most 35 days"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Invalid automated snapshot retention period: 36. Retention period must be between 0 and 35.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid automated snapshot retention period: 36. Retention period must be between 0 and 35. (Service: Redshift, Status Code: 400, Request ID: 6988c37d-e796-424d-b893-3151fba351a2) (SDK Attempt Count: 1)  (RequestToken: e57331c9-cddd-f94b-b09a-a6144f8696a0, Handler\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

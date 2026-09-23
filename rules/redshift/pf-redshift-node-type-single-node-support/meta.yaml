@@ -1,0 +1,12 @@
+id: pf-redshift-node-type-single-node-support
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ra3.4xlarge, ra3.16xlarge, rg.4xlarge, rg.12xlarge and dc2.8xlarge have no single-node configuration"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe: none (#66 phase B BENCH, ra3 billing_risk high, create-* not called; fail is rejected at CreateCluster, pass is 2 x ra3.4xlarge multi-node (about $6.5/h) so run it --fail-only; management guide node table: these types start at 2 nodes); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  single-node with ra3.4xlarge is not supported. (Service: Redshift, Status Code: 400, Request ID: db83a361-5fc3-4500-8ae9-71d89be680db) (SDK Attempt Count: 1)  (RequestToken: 62b8d36d-b2fc-509f-5266-6f45d90afcff, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass: fail-only (see #66)"
+addedOn: 2026-09-22

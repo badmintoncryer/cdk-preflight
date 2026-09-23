@@ -1,0 +1,12 @@
+id: pf-redshift-elastic-ip-publicly-accessible
+service: redshift
+resourceTypes: [AWS::Redshift::Cluster]
+severity: ERROR
+title: "ElasticIp requires PubliclyAccessible true"
+constraintSource: https://docs.aws.amazon.com/redshift/latest/APIReference/API_CreateCluster.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: Elastic IP address can only be specified for clusters in a publicly-accessible VPC.\" (#66 phase B) (the check precedes the EIP existence check, so the fail fixture uses the TEST-NET address 203.0.113.10; the pass allocates an AWS::EC2::EIP); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Elastic IP address can only be specified for clusters in a publicly-accessible VPC. (Service: Redshift, Status Code: 400, Request ID: 8ff77875-0527-455f-b208-0d0f04f08c3d) (SDK Attempt Count: 1)  (RequestToken: 4c9778d5-2e58-f606-dcf4-5188ffe45a74, HandlerErrorCod\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-22

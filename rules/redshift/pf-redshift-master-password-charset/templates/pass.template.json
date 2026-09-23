@@ -1,0 +1,17 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "C": {
+      "Type": "AWS::Redshift::Cluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "ClusterType": "single-node",
+        "NodeType": "ra3.large",
+        "DBName": "dev",
+        "MasterUsername": "pfadmin",
+        "MasterUserPassword": "Pf66bench1"
+      }
+    }
+  }
+}
