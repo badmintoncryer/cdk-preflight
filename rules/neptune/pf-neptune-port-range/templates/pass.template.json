@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::Neptune::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBPort": 1150
+      }
+    },
+    "C2": {
+      "Type": "AWS::Neptune::DBCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "DBPort": 65535
+      }
+    }
+  }
+}

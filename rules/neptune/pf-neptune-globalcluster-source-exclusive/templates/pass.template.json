@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::Neptune::GlobalCluster",
+      "DeletionPolicy": "Delete",
+      "UpdateReplacePolicy": "Delete",
+      "Properties": {
+        "Engine": "neptune",
+        "DeletionProtection": false
+      }
+    }
+  }
+}
