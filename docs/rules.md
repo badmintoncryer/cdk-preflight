@@ -1454,6 +1454,77 @@
 | `pf-efs-performance-mode` | AWS::EFS::FileSystem | PerformanceMode maxIO works with neither One Zone storage nor elastic throughput | ERROR | none |
 | `pf-efs-replication-destination` | AWS::EFS::FileSystem | A replication destination pairs Region with an Availability Zone and a KMS key of that same region | ERROR | none |
 | `pf-efs-throughput-mode` | AWS::EFS::FileSystem | ProvisionedThroughputInMibps belongs to ThroughputMode: provisioned and nothing else | ERROR | none |
+| `pf-eks-accessentry-groups-reserved-prefix` | AWS::EKS::AccessEntry | An access entry KubernetesGroups name may not start with a prefix EKS reserves | ERROR | none |
+| `pf-eks-accessentry-node-type-forbids-groups` | AWS::EKS::AccessEntry | A node-type access entry cannot carry KubernetesGroups | ERROR | none |
+| `pf-eks-accessentry-node-type-forbids-policies` | AWS::EKS::AccessEntry | A node-type access entry cannot have access policies associated | ERROR | none |
+| `pf-eks-accessentry-node-type-requires-role` | AWS::EKS::AccessEntry | A node-type access entry principal must be an IAM role, not a user | ERROR | none |
+| `pf-eks-accessentry-policy-arn-form` | AWS::EKS::AccessEntry | An access policy ARN is not an IAM policy ARN | ERROR | none |
+| `pf-eks-accessentry-policy-arn-partition` | AWS::EKS::AccessEntry | An access policy ARN must name the deploy partition | ERROR | none |
+| `pf-eks-accessentry-principal-arn-account` | AWS::EKS::AccessEntry | A node-type access entry principal must live in the deploy account | ERROR | none |
+| `pf-eks-accessentry-principal-arn-duplicate` | AWS::EKS::AccessEntry | One IAM principal may hold only one access entry per cluster | ERROR | none |
+| `pf-eks-accessentry-principal-arn-service-linked-role` | AWS::EKS::AccessEntry | An access entry principal cannot be a service-linked role | ERROR | none |
+| `pf-eks-accessentry-requires-api-auth-mode` | AWS::EKS::AccessEntry<br>AWS::EKS::Cluster | Access entries need a cluster whose authentication mode includes API | ERROR | none |
+| `pf-eks-accessentry-scope-cluster-forbids-namespaces` | AWS::EKS::AccessEntry | A cluster-scoped access policy cannot name namespaces | ERROR | none |
+| `pf-eks-accessentry-scope-namespace-requires-namespaces` | AWS::EKS::AccessEntry | A namespace-scoped access policy must name at least one namespace | ERROR | none |
+| `pf-eks-accessentry-username-only-standard` | AWS::EKS::AccessEntry | A node-type access entry cannot carry a Username | ERROR | none |
+| `pf-eks-accessentry-username-reserved-prefix` | AWS::EKS::AccessEntry | An access entry Username may not start with a prefix EKS reserves | ERROR | none |
+| `pf-eks-addon-configuration-values-json` | AWS::EKS::Addon | ConfigurationValues that opens as a JSON object must parse | ERROR | none |
+| `pf-eks-addon-duplicate-per-cluster` | AWS::EKS::Addon | The same add-on cannot be installed twice on one cluster | ERROR | none |
+| `pf-eks-addon-namespace-config-format` | AWS::EKS::Addon | NamespaceConfig.Namespace must be an RFC 1123 DNS label | ERROR | none |
+| `pf-eks-addon-service-account-role-account` | AWS::EKS::Addon | An add-on service account role must live in the deploy account | ERROR | none |
+| `pf-eks-addon-version-format` | AWS::EKS::Addon | AddonVersion must be of the form vX.Y.Z-eksbuild.N | ERROR | none |
+| `pf-eks-cluster-automode-all-three` | AWS::EKS::Cluster | EKS Auto Mode needs compute, load balancing and block storage switched together | ERROR | none |
+| `pf-eks-cluster-automode-nodepools-need-noderole` | AWS::EKS::Cluster | ComputeConfig.NodePools requires ComputeConfig.NodeRoleArn | ERROR | none |
+| `pf-eks-cluster-automode-requires-api-auth` | AWS::EKS::Cluster | EKS Auto Mode requires an API access authentication mode | ERROR | none |
+| `pf-eks-cluster-encryption-kms-key-region` | AWS::EKS::Cluster | The EncryptionConfig KMS key must live in the cluster's own region | ERROR | none |
+| `pf-eks-cluster-encryption-resources-secrets-only` | AWS::EKS::Cluster | EncryptionConfig.Resources only accepts secrets | ERROR | none |
+| `pf-eks-cluster-endpoint-both-disabled` | AWS::EKS::Cluster | A cluster must keep at least one of the public and private API endpoints enabled | ERROR | none |
+| `pf-eks-cluster-ipv6-forbids-service-ipv4-cidr` | AWS::EKS::Cluster | An ipv6 cluster may not carry a ServiceIpv4Cidr | ERROR | none |
+| `pf-eks-cluster-remote-network-overlaps-service-cidr` | AWS::EKS::Cluster | Remote networks may not overlap the Kubernetes service range | ERROR | none |
+| `pf-eks-cluster-remote-network-requires-api-auth` | AWS::EKS::Cluster | A cluster with remote networks requires an API access authentication mode | ERROR | none |
+| `pf-eks-cluster-remote-network-rfc1918` | AWS::EKS::Cluster | Remote node and pod networks must be private address space | ERROR | none |
+| `pf-eks-cluster-remote-node-pod-network-overlap` | AWS::EKS::Cluster | Remote node networks may not overlap remote pod networks | ERROR | none |
+| `pf-eks-cluster-remote-pod-network-requires-node-network` | AWS::EKS::Cluster | RemoteNetworkConfig requires RemoteNodeNetworks | ERROR | none |
+| `pf-eks-cluster-role-arn-account` | AWS::EKS::Cluster | The cluster service role must live in the deploy account | ERROR | none |
+| `pf-eks-cluster-service-ipv4-cidr-prefix-range` | AWS::EKS::Cluster | ServiceIpv4Cidr must have a netmask between /12 and /24 | ERROR | none |
+| `pf-eks-cluster-service-ipv4-cidr-private-range` | AWS::EKS::Cluster | ServiceIpv4Cidr must sit inside an RFC 1918 block | ERROR | none |
+| `pf-eks-cluster-sg-and-subnets-same-vpc` | AWS::EKS::Cluster<br>AWS::EC2::SecurityGroup<br>AWS::EC2::Subnet | A cluster's security groups and subnets must belong to one VPC | ERROR | none |
+| `pf-eks-cluster-subnets-two-azs` | AWS::EKS::Cluster<br>AWS::EC2::Subnet | A cluster's subnets must cover at least two availability zones | ERROR | none |
+| `pf-eks-cluster-version-unsupported` | AWS::EKS::Cluster | Version must be a Kubernetes minor version EKS still creates clusters on | ERROR | none |
+| `pf-eks-fargate-name-charset` | AWS::EKS::FargateProfile | FargateProfileName must start with a letter or digit and hold only letters, digits, hyphens and underscores | ERROR | none |
+| `pf-eks-fargate-selector-label-key-format` | AWS::EKS::FargateProfile | Fargate selector label keys must be Kubernetes qualified names | ERROR | none |
+| `pf-eks-fargate-selector-namespace-format` | AWS::EKS::FargateProfile | A Fargate selector namespace must be a DNS-1123 label (wildcards allowed) | ERROR | none |
+| `pf-eks-fargate-selectors-max-five` | AWS::EKS::FargateProfile | A Fargate profile accepts at most five selectors | ERROR | none |
+| `pf-eks-fargate-subnets-private-only` | AWS::EKS::FargateProfile<br>AWS::EC2::Subnet | Fargate profile subnets must be private | ERROR | none |
+| `pf-eks-idp-groups-prefix-system` | AWS::EKS::IdentityProviderConfig | Oidc.GroupsPrefix cannot be the reserved system: prefix | ERROR | none |
+| `pf-eks-idp-issuer-url-https` | AWS::EKS::IdentityProviderConfig | The OIDC issuer URL must use https | ERROR | none |
+| `pf-eks-idp-username-prefix-system` | AWS::EKS::IdentityProviderConfig | Oidc.UsernamePrefix cannot be the reserved system: prefix | ERROR | none |
+| `pf-eks-nodegroup-ami-type-arch-match` | AWS::EKS::Nodegroup | InstanceTypes must have the same CPU architecture as AmiType | ERROR | none |
+| `pf-eks-nodegroup-custom-ami-type-needs-lt` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | AmiType CUSTOM requires a launch template that supplies the AMI | ERROR | none |
+| `pf-eks-nodegroup-label-key-format` | AWS::EKS::Nodegroup | Labels keys must be Kubernetes qualified names | ERROR | none |
+| `pf-eks-nodegroup-label-reserved-prefix` | AWS::EKS::Nodegroup | Labels keys may not use the kubernetes.io / k8s.io / eks.amazonaws.com prefixes | ERROR | none |
+| `pf-eks-nodegroup-lt-forbids-disk-size` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | DiskSize cannot be combined with a launch template | ERROR | none |
+| `pf-eks-nodegroup-lt-forbids-lt-instance-type` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | InstanceTypes cannot be set when the launch template already sets InstanceType | ERROR | none |
+| `pf-eks-nodegroup-lt-forbids-remote-access` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | RemoteAccess cannot be combined with a launch template | ERROR | none |
+| `pf-eks-nodegroup-lt-forbids-subnet-id` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | A managed node group's launch template must not pin a subnet on a network interface | ERROR | none |
+| `pf-eks-nodegroup-lt-id-or-name-required` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | LaunchTemplate must carry either Id or Name | ERROR | none |
+| `pf-eks-nodegroup-lt-id-xor-name` | AWS::EKS::Nodegroup<br>AWS::EC2::LaunchTemplate | LaunchTemplate must carry Id or Name, never both | ERROR | none |
+| `pf-eks-nodegroup-name-charset` | AWS::EKS::Nodegroup | NodegroupName must start with a letter or digit and hold only letters, digits, hyphens and underscores | ERROR | none |
+| `pf-eks-nodegroup-name-length` | AWS::EKS::Nodegroup | NodegroupName may be at most 63 characters | ERROR | none |
+| `pf-eks-nodegroup-repair-parallel-xor` | AWS::EKS::Nodegroup | NodeRepairConfig accepts MaxParallelNodesRepairedCount or …Percentage, never both | ERROR | none |
+| `pf-eks-nodegroup-repair-threshold-xor` | AWS::EKS::Nodegroup | NodeRepairConfig accepts MaxUnhealthyNodeThresholdCount or …Percentage, never both | ERROR | none |
+| `pf-eks-nodegroup-scaling-desired-le-max` | AWS::EKS::Nodegroup | ScalingConfig DesiredSize must not exceed MaxSize | ERROR | none |
+| `pf-eks-nodegroup-scaling-min-le-desired` | AWS::EKS::Nodegroup | ScalingConfig MinSize must not exceed DesiredSize | ERROR | none |
+| `pf-eks-nodegroup-subnets-match-cluster-vpc` | AWS::EKS::Nodegroup<br>AWS::EKS::Cluster<br>AWS::EC2::Subnet | Node group subnets must sit in the cluster's VPC | ERROR | none |
+| `pf-eks-nodegroup-taint-key-format` | AWS::EKS::Nodegroup | Taint keys must be Kubernetes qualified names | ERROR | none |
+| `pf-eks-nodegroup-update-config-required` | AWS::EKS::Nodegroup | UpdateConfig must carry at least one of its three settings | ERROR | none |
+| `pf-eks-nodegroup-update-config-xor` | AWS::EKS::Nodegroup | UpdateConfig accepts MaxUnavailable or MaxUnavailablePercentage, never both | ERROR | none |
+| `pf-eks-nodegroup-version-matches-cluster` | AWS::EKS::Nodegroup<br>AWS::EKS::Cluster | A node group's Kubernetes version must be within three minors of the cluster's | ERROR | none |
+| `pf-eks-podidentity-duplicate` | AWS::EKS::PodIdentityAssociation | One cluster, namespace and service account may hold only one pod identity association | ERROR | none |
+| `pf-eks-podidentity-namespace-format` | AWS::EKS::PodIdentityAssociation | A pod identity Namespace must be a DNS-1123 label | ERROR | none |
+| `pf-eks-podidentity-policy-requires-disable-session-tags` | AWS::EKS::PodIdentityAssociation | A pod identity Policy requires DisableSessionTags to be true | ERROR | none |
+| `pf-eks-podidentity-role-arn-account` | AWS::EKS::PodIdentityAssociation | A pod identity RoleArn must live in the deploy account | ERROR | none |
+| `pf-eks-podidentity-service-account-format` | AWS::EKS::PodIdentityAssociation | A pod identity ServiceAccount must be a DNS-1123 subdomain | ERROR | none |
 | `pf-elasticache-auth-token` | AWS::ElastiCache::ReplicationGroup | AuthToken needs in-transit encryption and must be 16-128 printable characters without slash, quotes or at-sign | ERROR | none |
 | `pf-elasticache-cache-cluster-nodes` | AWS::ElastiCache::CacheCluster | A Redis cluster holds one node and cross-az needs at least two | ERROR | none |
 | `pf-elasticache-cluster-mode-parameter-group` | AWS::ElastiCache::ReplicationGroup | More than one node group needs a parameter group with cluster-enabled set to yes | ERROR | none |
