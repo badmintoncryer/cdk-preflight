@@ -1,0 +1,12 @@
+id: pf-eks-idp-issuer-url-https
+service: eks
+resourceTypes: [AWS::EKS::IdentityProviderConfig]
+benchRegion: us-east-1
+severity: ERROR
+title: "The OIDC issuer URL must use https"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-identityproviderconfig-oidcidentityproviderconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Oidc.IssuerUrl \"http://example.okta.com/oauth2/default\" -> ROLLBACK_COMPLETE, \"IssuerURL must use https:// scheme.\" (HandlerErrorCode: InvalidRequest). fail-only, and the fixture builds its own EKS cluster: AssociateIdentityProviderConfig reads this only after it has found the cluster, so a fixture pointing at a literal probe cluster would go INCONCLUSIVE the day that cluster is deleted."
+addedOn: 2026-09-25

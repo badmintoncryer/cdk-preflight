@@ -1,0 +1,12 @@
+id: pf-eks-addon-namespace-config-format
+service: eks
+resourceTypes: [AWS::EKS::Addon]
+benchRegion: us-east-1
+severity: ERROR
+title: "NamespaceConfig.Namespace must be an RFC 1123 DNS label"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-addon-namespaceconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: NamespaceConfig.Namespace \"bad_ns\" -> ROLLBACK_COMPLETE, \"Provided namespace value is not a valid RFC 1123 DNS label\" (HandlerErrorCode: InvalidRequest). fail-only, and the fixture builds its own EKS cluster: CreateAddon reads this only after it has found the cluster, so a fixture pointing at a literal probe cluster would go INCONCLUSIVE the day that cluster is deleted."
+addedOn: 2026-09-25
