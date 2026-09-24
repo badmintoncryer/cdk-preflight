@@ -1,0 +1,12 @@
+id: pf-appautoscaling-predictive-buffer-required
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "IncreaseMaxCapacity needs a MaxCapacityBuffer"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredictiveScalingPolicyConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PredictiveScalingPolicyConfiguration with MaxCapacityBreachBehavior IncreaseMaxCapacity and no MaxCapacityBuffer -> \"You must specify MaxCapacityBuffer when using IncreaseMaxCapacity.\" (ROLLBACK_COMPLETE); pass the same policy with MaxCapacityBuffer 10 -> CREATE_COMPLETE (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+addedOn: 2026-09-24

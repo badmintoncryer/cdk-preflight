@@ -1,0 +1,73 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-aas-sbo-f"
+      }
+    },
+    "Task": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "cdkpf-aas-sbo-f",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "busybox",
+            "Memory": 128,
+            "Essential": true
+          }
+        ]
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "cdkpf-aas-sbo-f-svc",
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "Task"
+        },
+        "DesiredCount": 0,
+        "LaunchType": "EC2"
+      }
+    },
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 0,
+        "ResourceId": "service/cdkpf-aas-sbo-f/cdkpf-aas-sbo-f-svc",
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "ServiceNamespace": "ecs"
+      },
+      "DependsOn": "Svc"
+    },
+    "Policy": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyType": "StepScaling",
+        "StepScalingPolicyConfiguration": {
+          "StepAdjustments": [
+            {
+              "MetricIntervalLowerBound": 10,
+              "MetricIntervalUpperBound": 10,
+              "ScalingAdjustment": 1
+            },
+            {
+              "MetricIntervalLowerBound": 10,
+              "ScalingAdjustment": 2
+            }
+          ],
+          "AdjustmentType": "ChangeInCapacity"
+        },
+        "PolicyName": "cdkpf-aas-sbo-f-p",
+        "ScalingTargetId": {
+          "Ref": "Target"
+        }
+      }
+    }
+  }
+}

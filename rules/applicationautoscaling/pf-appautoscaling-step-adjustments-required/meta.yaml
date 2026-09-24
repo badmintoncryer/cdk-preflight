@@ -1,0 +1,12 @@
+id: pf-appautoscaling-step-adjustments-required
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A step scaling policy needs at least one step adjustment"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_StepScalingPolicyConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: StepScalingPolicyConfiguration with AdjustmentType ChangeInCapacity and StepAdjustments [] -> \"There must be at least one step adjustment\" (ROLLBACK_COMPLETE); pass the same configuration with one adjustment -> CREATE_COMPLETE. api-probe 2026-09-24 us-east-1 (#68 phase B): leaving StepAdjustments out entirely draws the same sentence, and the registry schema flags neither shape (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+addedOn: 2026-09-24

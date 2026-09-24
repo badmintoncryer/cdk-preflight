@@ -1,0 +1,12 @@
+id: pf-appautoscaling-min-adjustment-magnitude-percent-only
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "MinAdjustmentMagnitude only goes with PercentChangeInCapacity"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_StepScalingPolicyConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: AdjustmentType ChangeInCapacity with MinAdjustmentMagnitude 2 -> \"Minimum adjustment magnitude is only allowed for adjustment type PercentChangeInCapacity\" (ROLLBACK_COMPLETE); pass the same policy with AdjustmentType PercentChangeInCapacity -> CREATE_COMPLETE. api-probe 2026-09-24 us-east-1 (#68 phase B): ExactCapacity draws the same sentence, which is why the rule matches the two absolute types by name (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+addedOn: 2026-09-24

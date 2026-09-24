@@ -1,0 +1,12 @@
+id: pf-appautoscaling-step-adjustment-exact-capacity-negative
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "ExactCapacity steps cannot ask for a negative capacity"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_StepAdjustment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: AdjustmentType ExactCapacity with ScalingAdjustment -1 -> \"Scaling adjustment cannot be less than 0 when adjustment type is ExactCapacity\" (ROLLBACK_COMPLETE); pass the same policy with ScalingAdjustment 0 -> CREATE_COMPLETE, so -1 is the closest violating value and 0 the limit (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+addedOn: 2026-09-24

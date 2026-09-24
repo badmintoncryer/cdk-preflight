@@ -1,0 +1,12 @@
+id: pf-appautoscaling-step-adjustment-missing-null-lower
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A negative MetricIntervalLowerBound needs an adjustment open at the bottom"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_StepAdjustment.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: StepAdjustments [lower -1 / upper 0, lower 0 / no upper] - the lowest bound is -1 and no adjustment is open at the bottom -> \"There must be a step adjustment with an unspecified lower bound when one step adjustment has a negative lower bound\" (ROLLBACK_COMPLETE); pass a single adjustment whose lowest bound is exactly 0 [lower 0 / no upper] -> CREATE_COMPLETE, so -1 is the closest violating value and 0 the limit (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+addedOn: 2026-09-24
