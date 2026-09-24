@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "User": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "UserName": "cdkpf-eks-aerole"
+      }
+    },
+    "Main": {
+      "Type": "AWS::EKS::AccessEntry",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-aerole",
+        "Type": "EC2_LINUX",
+        "PrincipalArn": {
+          "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:user/cdkpf-eks-aerole"
+        }
+      }
+    },
+    "ByRef": {
+      "Type": "AWS::EKS::AccessEntry",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-aerole2",
+        "Type": "EC2_LINUX",
+        "PrincipalArn": {
+          "Fn::GetAtt": [
+            "User",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

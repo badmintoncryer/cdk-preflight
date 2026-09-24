@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-node-type-requires-role
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "A node-type access entry principal must be an IAM role, not a user"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with PrincipalArn spelling an IAM user in the deploy account, both as an Fn::Sub literal and as Fn::GetAtt on an AWS::IAM::User -> ROLLBACK_COMPLETE, \"AccessEntry principalArn must be IAM role when using types [EC2_LINUX, EC2_WINDOWS, FARGATE_LINUX, HYBRID_LINUX, EC2]\" (HandlerErrorCode: InvalidRequest). All five node types were measured the same day straight against CreateAccessEntry and each drew this message, while STANDARD reached the cluster lookup - which is why the rule is gated on the type. Separate from pf-eks-accessentry-principal-arn-account, which is about the account rather than the principal kind. fail-only, and the fixture names an absent cluster instead of building one: CreateAccessEntry validates this before it looks the cluster up."
+addedOn: 2026-09-25

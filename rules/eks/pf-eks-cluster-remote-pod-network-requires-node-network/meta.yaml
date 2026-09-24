@@ -1,0 +1,12 @@
+id: pf-eks-cluster-remote-pod-network-requires-node-network
+service: eks
+resourceTypes: [AWS::EKS::Cluster]
+benchRegion: us-east-1
+severity: ERROR
+title: "RemoteNetworkConfig requires RemoteNodeNetworks"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-remotenetworkconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: RemoteNetworkConfig carrying only RemotePodNetworks -> ROLLBACK_COMPLETE, \"remoteNodeNetworks are required when specifying remoteNetworkConfig.\" (HandlerErrorCode: InvalidRequest); adding RemoteNodeNetworks reaches the next check. Node networks on their own are accepted (phase B measured a CreateCluster with node networks and no pod networks succeeding on 2026-09-24), so the requirement runs one way only. fail-only, no cluster created."
+addedOn: 2026-09-25
