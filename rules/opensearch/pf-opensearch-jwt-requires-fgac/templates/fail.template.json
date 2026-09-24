@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-jwt-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "m6g.large.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "AdvancedSecurityOptions": {
+          "Enabled": false,
+          "JWTOptions": {
+            "Enabled": true,
+            "PublicKey": "abc",
+            "SubjectKey": "sub",
+            "RolesKey": "roles"
+          }
+        }
+      }
+    }
+  }
+}

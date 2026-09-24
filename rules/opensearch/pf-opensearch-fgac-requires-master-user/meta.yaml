@@ -1,0 +1,12 @@
+id: pf-opensearch-fgac-requires-master-user
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Without the internal user database a master user ARN is required"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-masteruseroptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with InternalUserDatabaseEnabled false and no MasterUserOptions) -> \"If you don't enable the internal user database, you must provide a master user ARN.\" (ROLLBACK_COMPLETE); pass (the same domain with MasterUserOptions.MasterUserARN set to an IAM role in the deploy account) not deployed (--fail-only: the pass needs that role to exist, which the bench account does not keep)."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-fgac-requires-node-to-node
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Fine-grained access control requires node-to-node encryption"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with NodeToNodeEncryptionOptions.Enabled false) -> \"You must enable node-to-node encryption to use advanced security options.\" (ROLLBACK_COMPLETE); pass (OpenSearch_2.19, m6g.large.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, encryption at rest + node-to-node + EnforceHTTPS + internal user database with a master name and password) -> CREATE_COMPLETE. This is the canonical FGAC scaffold the other AdvancedSecurityOptions rules' pass fixtures share."
+addedOn: 2026-09-25

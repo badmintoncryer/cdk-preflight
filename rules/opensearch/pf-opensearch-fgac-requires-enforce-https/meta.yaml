@@ -1,0 +1,12 @@
+id: pf-opensearch-fgac-requires-enforce-https
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Fine-grained access control requires EnforceHTTPS"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with DomainEndpointOptions.EnforceHTTPS false) -> \"You must enable EnforceHTTPS in the domain endpoint options to use advanced security.\" (ROLLBACK_COMPLETE); pass (the same domain with it true) not deployed (--fail-only), but that FGAC scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+addedOn: 2026-09-25

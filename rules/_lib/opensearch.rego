@@ -51,6 +51,29 @@ _pf_os_has(name, key) if _pf_os_at(name, key) != "__pf_absent"
 
 _pf_os_missing(name, block, key) if _pf_os_at2(name, block, key) == "__pf_absent"
 
+# Presence three levels down (AdvancedSecurityOptions.MasterUserOptions.MasterUserName).
+# object.get's default stands in for a missing middle block, so an absent parent
+# reads as "the key is absent" instead of going undefined.
+_pf_os_has3(name, block, sub, key) if {
+	b := _pf_os_at(name, block)
+	is_object(b)
+	s := object.get(b, sub, {})
+	is_object(s)
+	object.get(s, key, "__pf_absent") != "__pf_absent"
+}
+
+# "Elasticsearch_6.5" -> 605, "Elasticsearch_7.10" -> 710. Undefined unless the
+# string carries the engine asked for, so an OpenSearch version never answers an
+# Elasticsearch question. major*100+minor rather than to_number("6.5"): read as a
+# decimal, 2.9 would outrank 2.11.
+_pf_os_engine_num(v, engine) := n if {
+	is_string(v)
+	startswith(v, sprintf("%v_", [engine]))
+	parts := split(substring(v, count(engine) + 1, -1), ".")
+	count(parts) == 2
+	n := (to_number(parts[0]) * 100) + to_number(parts[1])
+}
+
 # ARN pieces. Intrinsics reach Rego as marker objects, so is_string() already
 # excludes Ref/GetAtt wiring; the "arn:" prefix excludes a resolved logical id.
 _pf_os_arn_part(arn, i) := p if {

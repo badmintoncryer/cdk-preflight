@@ -1,0 +1,12 @@
+id: pf-opensearch-kms-key-region
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The encryption key must live in the deploy Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-encryptionatrestoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (EncryptionAtRestOptions.KmsKeyId an ap-northeast-1 key ARN in the deploy account) -> \"Error in Accessing KmsKeyID with details:Invalid arn ap-northeast-1 (Service: AWSKMS; ... Error Code: NotFoundException)\" (ROLLBACK_COMPLETE); pass (the same ARN built with ${AWS::Region}) not deployed (--fail-only: the pass would need a real key, and the bench account keeps none). The message names the rejected Region itself, and KMS refuses the ARN before it looks the key up, so the rejection does not depend on whether the key exists - the same shape as pf-agentcore-kms-key-region."
+addedOn: 2026-09-25

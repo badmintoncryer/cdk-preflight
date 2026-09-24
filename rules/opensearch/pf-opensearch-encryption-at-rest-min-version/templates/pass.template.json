@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-earver-p",
+        "EngineVersion": "Elasticsearch_5.1",
+        "ClusterConfig": {
+          "InstanceType": "m4.large.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp2",
+          "VolumeSize": 10
+        },
+        "EncryptionAtRestOptions": {
+          "Enabled": true
+        }
+      }
+    }
+  }
+}

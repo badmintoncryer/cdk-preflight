@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-volume-size-min
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "EBS volumes start at 10 GiB"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (gp3 9 GiB on m6g.large.search) -> \"Volume size must be between 10 and 1024 for m6g.large.search instance type and version OpenSearch_2.19\" (ROLLBACK_COMPLETE); pass (the same volume at 10 GiB) not deployed (--fail-only), but the m6g.large.search + gp3 10 GiB scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node. The upper end in the message is that instance type's; 10 GiB is the floor every OpenSearch_2.19 type shares (or1 / or2 start at 20), so only the floor is in the rule."
+addedOn: 2026-09-25

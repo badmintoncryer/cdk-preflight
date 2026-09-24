@@ -1,0 +1,12 @@
+id: pf-opensearch-log-type-unknown
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: WARN
+title: "LogPublishingOptions only accepts the five known log types"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/APIReference/API_CreateDomain.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (LogPublishingOptions keyed on \"SLOW_LOGS\") -> \"Map keys must satisfy constraint: [Member must satisfy enum value set: [INDEX_SLOW_LOGS, TASK_DETAILS_LOGS, ES_APPLICATION_LOGS, AUDIT_LOGS, SEARCH_SLOW_LOGS]]\" (ROLLBACK_COMPLETE); pass (\"SEARCH_SLOW_LOGS\") not deployed (--fail-only: log publishing needs a real log group with a resource policy to reach CREATE_COMPLETE). WARN, not ERROR: the set is an allowlist, and the documentation still lists only four of these five - TASK_DETAILS_LOGS is the one AWS added without updating it - so treating a sixth as an error would be betting the same way twice."
+addedOn: 2026-09-25

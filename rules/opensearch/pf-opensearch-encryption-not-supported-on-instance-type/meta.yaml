@@ -1,0 +1,12 @@
+id: pf-opensearch-encryption-not-supported-on-instance-type
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The t2 and r3 families cannot encrypt at rest"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/encryption-at-rest.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (t2.small.search + gp2 10 GiB with EncryptionAtRestOptions.Enabled true) -> \"Encryption at rest is not supported with t2.small.search instances\" (ROLLBACK_COMPLETE); pass (t3.small.search, the next size up that does encrypt) not deployed (--fail-only), but the t3.small.search scaffold reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. Denylist: the only OpenSearch_2.19 types answering EncryptionEnabled false are t2.small / t2.medium and the five r3 sizes (list-instance-type-details, us-east-1 2026-09-25), which is both families whole."
+addedOn: 2026-09-25

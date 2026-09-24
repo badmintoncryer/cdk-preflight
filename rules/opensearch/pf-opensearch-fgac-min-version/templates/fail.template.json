@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-fgacver-f",
+        "EngineVersion": "Elasticsearch_6.5",
+        "ClusterConfig": {
+          "InstanceType": "m5.large.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "EncryptionAtRestOptions": {
+          "Enabled": true
+        },
+        "NodeToNodeEncryptionOptions": {
+          "Enabled": true
+        },
+        "DomainEndpointOptions": {
+          "EnforceHTTPS": true
+        },
+        "AdvancedSecurityOptions": {
+          "Enabled": true,
+          "InternalUserDatabaseEnabled": true,
+          "MasterUserOptions": {
+            "MasterUserName": "pfadmin",
+            "MasterUserPassword": "Pf-Probe-1234!"
+          }
+        }
+      }
+    }
+  }
+}

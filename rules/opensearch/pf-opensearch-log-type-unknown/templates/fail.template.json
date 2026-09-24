@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-logtype-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "LogPublishingOptions": {
+          "SLOW_LOGS": {
+            "Enabled": true,
+            "CloudWatchLogsLogGroupArn": {
+              "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/opensearch/pfos"
+            }
+          }
+        }
+      }
+    }
+  }
+}

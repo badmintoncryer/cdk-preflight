@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-volume-type-supported
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Newer instance families do not offer gp2"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-instance-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (gp2 10 GiB on m7i.large.search) -> \"EBS volume-types :[io1, gp3] must be selected for m7i.large.search\" (ROLLBACK_COMPLETE); pass (the same instance type on gp3 10 GiB / 3000 IOPS / 125 MiB/s, which describe-instance-type-limits confirms it takes from 10 GiB) not deployed (--fail-only). The family set is a denylist of the families whose OpenSearch_2.19 StorageTypes carry ebs entries but no gp2 one (all 231 types probed, us-east-1 2026-09-25), so a family AWS adds later is simply not flagged."
+addedOn: 2026-09-25
