@@ -3,10 +3,10 @@ service: ses
 benchRegion: us-east-1
 resourceTypes: [AWS::SES::ReceiptRuleSet]
 severity: ERROR
-title: "A receipt rule set's name takes only letters, digits, underscores and dashes"
+title: "A receipt rule set's name must start and end with a letter or digit"
 constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference/API_CreateReceiptRuleSet.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: fail template (RuleSetName \"-pf-ses-rs-charset\") -> ROLLBACK_FAILED with \"Not a valid ruleSetName: -pf-ses-rs-charset (Service: Ses, Status Code: 400)\" - the rollback cannot delete a rule set that was never created, so the stack is removed with the resource retained and nothing is left in SES. pass template (RuleSetName \"pf-ses-rs-charset\") -> CREATE_COMPLETE. The sentence does not spell the charset out; the allowed set (ASCII letters, digits, underscore, dash; start and end alphanumeric) is CreateReceiptRuleSet's own wording, and it differs from a rule name in that a period is NOT allowed here."
+  evidence: "bench 2026-09-24 us-east-1: fail template (RuleSetName \"-pf-ses-rs-charset\") -> ROLLBACK_FAILED with \"Not a valid ruleSetName: -pf-ses-rs-charset (Service: Ses, Status Code: 400)\" - the rollback cannot delete a rule set that was never created, so the stack is removed with the resource retained and nothing is left in SES. pass template (RuleSetName \"pf-ses-rs-charset\") -> CREATE_COMPLETE. api 2026-09-24 us-east-1 pins both ends: \"pf-c2-probe-\" (trailing dash) and \"_pfc2probe\" (leading underscore) get the same sentence. The CreateReceiptRuleSet doc leaves periods out of the allowed characters, but \"pf.c2.probe\" and \"pf_c2.probe-1\" are ACCEPTED (deleted in-session), so that half of the doc is broken and the rule does not flag periods. The charset itself is the service front door, not this rule: \"pf+c2probe\", \"pf~c2probe\", \"pf:c2probe\", \"pf c2probe\" and a non-ASCII name all fail earlier with \"Member must satisfy regular expression pattern: ^[a-zA-Z0-9_.-]+$\"; what only this rule sees is the start/end-alphanumeric check behind it."
 addedOn: 2026-09-24
