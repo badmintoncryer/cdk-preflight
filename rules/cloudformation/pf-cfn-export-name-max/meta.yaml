@@ -1,0 +1,12 @@
+id: pf-cfn-export-name-max
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "An export name may be at most 256 characters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): a 257-character Export.Name -> An error occurred (ValidationError) when calling the CreateStack operation: Template format error: Output A is malformed. The Name field of every Export member must not be longer than 256 characters. The same template with a 256-character name was accepted, so the limit is 256, not the 255 the user guide's limits page implies."
+addedOn: 2026-09-25

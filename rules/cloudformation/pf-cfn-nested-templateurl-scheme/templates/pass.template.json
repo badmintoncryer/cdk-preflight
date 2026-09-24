@@ -1,0 +1,17 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  },
+  "S": {
+   "Type": "AWS::CloudFormation::Stack",
+   "Properties": {
+    "TemplateURL": "https://cdkpf-bench-layers.s3.amazonaws.com/cfn73/child.json"
+   }
+  }
+ }
+}

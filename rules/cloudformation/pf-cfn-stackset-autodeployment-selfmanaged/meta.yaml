@@ -1,0 +1,12 @@
+id: pf-cfn-stackset-autodeployment-selfmanaged
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["AWS::CloudFormation::StackSet"]
+severity: ERROR
+title: "AutoDeployment may not be set on a SELF_MANAGED stack set"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-stackset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: AutoDeployment on a SELF_MANAGED stack set -> \"Resource handler returned message: \\\"AutoDeployment is not supported (Service: CloudFormation, Status Code: 400)\\\" (HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); the same stack set without AutoDeployment -> CREATE_COMPLETE."
+addedOn: 2026-09-25

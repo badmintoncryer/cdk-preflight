@@ -1,0 +1,12 @@
+id: pf-cfn-param-value-max
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "A parameter default may be at most 4096 characters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): a 4097-character Default -> An error occurred (ValidationError) when calling the CreateStack operation: Template format error: Parameter 'P' default value '<the whole 4097-character value, echoed back>' length is greater than 4096. The same template with a 4096-character Default was accepted."
+addedOn: 2026-09-25

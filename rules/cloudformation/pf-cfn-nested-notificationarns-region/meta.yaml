@@ -1,0 +1,12 @@
+id: pf-cfn-nested-notificationarns-region
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["AWS::CloudFormation::Stack"]
+severity: ERROR
+title: "A nested stack's NotificationARNs must be SNS topics in the stack's own Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-stack.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: NotificationARNs [arn:aws:sns:eu-west-1:...] on a stack in us-east-1 -> the nested AWS::CloudFormation::Stack CREATE_FAILED \"Invalid parameter: TopicArn (Service: AmazonSNS; Status Code: 400; Error Code: InvalidParameter)\" (ROLLBACK_COMPLETE); a topic ARN in the stack's own Region -> CREATE_COMPLETE. A topic that simply does not exist in the same Region answers \"Topic does not exist\" instead, so this message really is the cross-Region one."
+addedOn: 2026-09-25

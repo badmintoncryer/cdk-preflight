@@ -1,0 +1,12 @@
+id: pf-cfn-custom-servicetoken-region
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "A custom resource's ServiceToken must live in the stack's own Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-customresource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: ServiceToken arn:aws:lambda:eu-west-1:123456789012:function:f on a stack in us-east-1 -> \"Functions from 'eu-west-1' are not reachable in this region ('us-east-1') (Service: AWSLambda; Status Code: 404; Error Code: ResourceNotFoundException)\" (ROLLBACK_COMPLETE); the same fixture pointing at a function ARN in the stack's own Region -> CREATE_COMPLETE."
+addedOn: 2026-09-25

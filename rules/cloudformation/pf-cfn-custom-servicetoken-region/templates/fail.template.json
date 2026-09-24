@@ -1,0 +1,17 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  },
+  "CR": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": "arn:aws:lambda:eu-west-1:123456789012:function:f"
+   }
+  }
+ }
+}

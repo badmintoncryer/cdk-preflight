@@ -1,0 +1,12 @@
+id: pf-cfn-nested-templateurl-scheme
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["AWS::CloudFormation::Stack"]
+severity: ERROR
+title: "A nested stack's TemplateURL must be an https:// S3 URL"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-stack.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: TemplateURL s3://cdkpf-bench-layers/cfn73/child.json -> the nested AWS::CloudFormation::Stack CREATE_FAILED \"The location for an Amazon S3 bucket must start with https://\" (ROLLBACK_COMPLETE); the https:// form of the same object -> CREATE_COMPLETE."
+addedOn: 2026-09-25

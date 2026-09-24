@@ -1,0 +1,60 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  },
+  "CrRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    ]
+   }
+  },
+  "CrFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "FunctionName": "cdkpf73-svctsvc-responder",
+    "Runtime": "nodejs22.x",
+    "Handler": "index.handler",
+    "Timeout": 30,
+    "Role": {
+     "Fn::GetAtt": [
+      "CrRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "exports.handler = (e, c) => require('cfn-response').send(e, c, 'SUCCESS', {});\n"
+    }
+   }
+  },
+  "CR": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "DependsOn": [
+    "CrFn"
+   ],
+   "Properties": {
+    "ServiceToken": {
+     "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf73-svctsvc-responder"
+    }
+   }
+  }
+ }
+}

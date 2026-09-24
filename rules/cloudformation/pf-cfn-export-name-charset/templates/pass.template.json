@@ -1,0 +1,19 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  }
+ },
+ "Outputs": {
+  "A": {
+   "Value": "v",
+   "Export": {
+    "Name": "cdkpf73-charset-p"
+   }
+  }
+ }
+}

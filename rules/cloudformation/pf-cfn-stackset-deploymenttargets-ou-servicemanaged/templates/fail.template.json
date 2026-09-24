@@ -1,0 +1,31 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "SS": {
+   "Type": "AWS::CloudFormation::StackSet",
+   "Properties": {
+    "StackSetName": "cdkpf73-ssou-f",
+    "TemplateBody": "{\"Resources\":{\"X\":{\"Type\":\"AWS::CloudFormation::WaitConditionHandle\"}}}",
+    "PermissionModel": "SELF_MANAGED",
+    "StackInstancesGroup": [
+     {
+      "Regions": [
+       "us-east-1"
+      ],
+      "DeploymentTargets": {
+       "OrganizationalUnitIds": [
+        "ou-abcd-12345678"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  }
+ }
+}

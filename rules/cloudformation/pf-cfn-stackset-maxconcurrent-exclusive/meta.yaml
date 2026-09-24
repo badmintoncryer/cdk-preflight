@@ -1,0 +1,12 @@
+id: pf-cfn-stackset-maxconcurrent-exclusive
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["AWS::CloudFormation::StackSet"]
+severity: ERROR
+title: "MaxConcurrentCount and MaxConcurrentPercentage are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudformation-stackset-operationpreferences.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: OperationPreferences carrying both MaxConcurrentCount and MaxConcurrentPercentage, together with one StackInstancesGroup -> \"Resource handler returned message: \\\"Exactly one of MaxConcurrentCount or MaxConcurrentPercentage must be specified (Service: CloudFormation, Status Code: 400)\\\" (HandlerErrorCode: InvalidRequest)\", ROLLBACK_FAILED (the StackSet has to be retained on delete). The same preferences with no StackInstancesGroup deploy CREATE_COMPLETE, which is why the rule requires a non-empty StackInstancesGroup."
+addedOn: 2026-09-25

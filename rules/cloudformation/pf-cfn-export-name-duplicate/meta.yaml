@@ -1,0 +1,12 @@
+id: pf-cfn-export-name-duplicate
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "Two outputs in one template may not share an export name"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): two outputs exporting \"dup-name\" -> An error occurred (ValidationError) when calling the CreateStack operation: Template format error: The Outputs section contains duplicate Export names: [dup-name]. Specify a unique name for each export. CreateChangeSet returns the identical message."
+addedOn: 2026-09-25

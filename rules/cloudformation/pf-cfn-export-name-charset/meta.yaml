@@ -1,0 +1,12 @@
+id: pf-cfn-export-name-charset
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "Export names may use only alphanumerics, colons and hyphens"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): Export.Name \"bad_name/with*chars\" -> An error occurred (ValidationError) when calling the CreateStack operation: Template format error: Output A is malformed. The Name field of every Export member must be specified and consist only of alphanumeric characters, colons, or hyphens."
+addedOn: 2026-09-25

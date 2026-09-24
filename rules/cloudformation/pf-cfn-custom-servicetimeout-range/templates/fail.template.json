@@ -1,0 +1,25 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  },
+  "CrLow": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": "arn:aws:sns:us-east-1:214794239830:cdkpf73-absent",
+    "ServiceTimeout": "0"
+   }
+  },
+  "CrHigh": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": "arn:aws:sns:us-east-1:214794239830:cdkpf73-absent",
+    "ServiceTimeout": "14401"
+   }
+  }
+ }
+}
