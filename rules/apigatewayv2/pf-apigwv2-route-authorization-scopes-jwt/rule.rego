@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-apigwv2-route-authorization-scopes-jwt", "
 	"Set AuthorizationType: JWT, or drop AuthorizationScopes",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-route.html") if {
 	some name in resources_of_type("AWS::ApiGatewayV2::Route")
+	_pf_unconditional_list(name, "Properties.AuthorizationScopes")
 	count(flatten_list(name, "Properties.AuthorizationScopes")) > 0
 	not _pf_agvrasj_jwt(name)
 }

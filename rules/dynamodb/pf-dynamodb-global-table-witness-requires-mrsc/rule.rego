@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-witness-requires-mrs
 	"Set MultiRegionConsistency to STRONG (with exactly three Regions), or drop GlobalTableWitnesses",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-dynamodb-globaltable-globaltablewitness.html") if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
+	_pf_unconditional_list(name, "Properties.GlobalTableWitnesses")
 	count(flatten_list(name, "Properties.GlobalTableWitnesses")) > 0
 	not _pf_ddb_mrsc(name)
 }

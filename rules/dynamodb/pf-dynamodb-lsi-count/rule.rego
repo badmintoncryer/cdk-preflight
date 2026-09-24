@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-dynamodb-lsi-count", "ERROR", name,
 	"Keep LocalSecondaryIndexes at 5 or fewer (this limit cannot be raised); model the rest as global secondary indexes",
 	"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ServiceQuotas.html") if {
 	some name in resources_of_type("AWS::DynamoDB::Table")
+	_pf_countable_list(name, "Properties.LocalSecondaryIndexes")
 	n := count(flatten_list(name, "Properties.LocalSecondaryIndexes"))
 	n > 5
 }

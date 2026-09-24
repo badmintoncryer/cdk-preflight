@@ -20,5 +20,6 @@ violation contains make_diag_full("pf-msk-tls-enabled-requires-ca-list", "ERROR"
 
 _pf_msktercl_complete(name, tls) if {
 	object.get(tls, "Enabled", "__pf_absent") != "__pf_absent"
+	_pf_unconditional_list(name, "Properties.ClientAuthentication.Tls.CertificateAuthorityArnList")
 	count(flatten_list(name, "Properties.ClientAuthentication.Tls.CertificateAuthorityArnList")) > 0
 }

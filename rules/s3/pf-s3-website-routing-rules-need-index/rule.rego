@@ -15,6 +15,7 @@ violation contains make_diag_full("pf-s3-website-routing-rules-need-index", "ERR
 	"the website configuration declares RoutingRules without an IndexDocument; PutBucketWebsite requires one",
 	_pf_s3wri_fix, _pf_s3wri_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_unconditional_list(name, "Properties.WebsiteConfiguration.RoutingRules")
 	count(flatten_list(name, "Properties.WebsiteConfiguration.RoutingRules")) > 0
 	not _pf_s3wri_has_index(name)
 }

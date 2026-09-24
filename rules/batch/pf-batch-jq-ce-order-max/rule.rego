@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-batch-jq-ce-order-max", "ERROR", name,
 	"Attach at most 3 compute environments",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateJobQueue.html") if {
 	some name in resources_of_type("AWS::Batch::JobQueue")
+	_pf_countable_list(name, "Properties.ComputeEnvironmentOrder")
 	n := count(flatten_list(name, "Properties.ComputeEnvironmentOrder"))
 	n > 3
 }

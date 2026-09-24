@@ -21,6 +21,7 @@ violation contains make_diag_full("pf-redshiftserverless-workgroup-subnet-az-cou
 	"https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-known-issues.html") if {
 	some name in resources_of_type("AWS::RedshiftServerless::Workgroup")
 	_pf_rsslib_true(name, "EnhancedVpcRouting")
+	_pf_countable_list(name, "Properties.SubnetIds")
 	subs := [s | some s in flatten_list(name, "Properties.SubnetIds")]
 	count(subs) > 0
 	every s in subs {

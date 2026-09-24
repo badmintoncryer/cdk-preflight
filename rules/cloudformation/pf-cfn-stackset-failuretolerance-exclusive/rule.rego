@@ -7,6 +7,7 @@ import rego.v1
 # deploys clean (measured 2026-09-25), so the empty case is not a violation.
 _pf_cfnssft_bad contains name if {
 	some name in resources_of_type("AWS::CloudFormation::StackSet")
+	_pf_unconditional_list(name, "Properties.StackInstancesGroup")
 	count(flatten_list(name, "Properties.StackInstancesGroup")) > 0
 	op := object.get(object.get(input.resources[name], "properties", {}), "OperationPreferences", {})
 	object.get(op, "FailureToleranceCount", null) != null

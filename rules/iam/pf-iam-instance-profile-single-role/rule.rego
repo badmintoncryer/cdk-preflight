@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-iam-instance-profile-single-role", "ERROR"
 	"Keep exactly one role per instance profile",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-instanceprofile.html") if {
 	some name in resources_of_type("AWS::IAM::InstanceProfile")
+	_pf_countable_list(name, "Properties.Roles")
 	n := count(flatten_list(name, "Properties.Roles"))
 	n > 1
 }

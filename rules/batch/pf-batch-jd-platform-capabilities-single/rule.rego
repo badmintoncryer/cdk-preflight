@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-batch-jd-platform-capabilities-single", "E
 	"Keep a single capability",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_RegisterJobDefinition.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
+	_pf_countable_list(name, "Properties.PlatformCapabilities")
 	n := count(flatten_list(name, "Properties.PlatformCapabilities"))
 	n > 1
 }

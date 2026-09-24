@@ -20,6 +20,7 @@ violation contains make_diag_full("pf-sfn-logging-destination", "ERROR", name,
 	_pf_sfnlog_fix, _pf_sfnlog_url) if {
 	some name in resources_of_type("AWS::StepFunctions::StateMachine")
 	_pf_sfnlog_on(name)
+	_pf_countable_list(name, "Properties.LoggingConfiguration.Destinations")
 	n := count(flatten_list(name, "Properties.LoggingConfiguration.Destinations"))
 	n != 1
 }

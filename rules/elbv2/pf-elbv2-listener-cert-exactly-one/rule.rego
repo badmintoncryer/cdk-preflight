@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-elbv2-listener-cert-exactly-one", "ERROR",
 	sprintf("The listener declares %d certificates; CreateListener takes exactly one default certificate", [n]),
 	_pf_elblc1_fix, _pf_elblc1_url) if {
 	some name in _pf_elb_listeners
+	_pf_countable_list(name, "Properties.Certificates")
 	n := count(flatten_list(name, "Properties.Certificates"))
 	n > 1
 }

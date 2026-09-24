@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-ecs-svc-connect-client-aliases-max", "ERRO
 	is_array(svcs)
 	some s in svcs
 	ca := object.get(s, "ClientAliases", [])
+	_pf_countable_items(ca)
 	count(ca) > 1
 }

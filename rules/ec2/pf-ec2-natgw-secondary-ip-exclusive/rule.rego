@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-ec2-natgw-secondary-ip-exclusive", "ERROR"
 	_pf_ec2ngs_url) if {
 	some name in resources_of_type("AWS::EC2::NatGateway")
 	not _pf_ec2lib_absent(name, "SecondaryPrivateIpAddressCount")
+	_pf_unconditional_list(name, "Properties.SecondaryPrivateIpAddresses")
 	count(flatten_list(name, "Properties.SecondaryPrivateIpAddresses")) > 0
 }

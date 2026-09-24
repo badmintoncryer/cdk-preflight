@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-logs-query-definition-log-groups-max", "ER
 	"Keep the saved query to 50 log groups",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-querydefinition.html") if {
 	some name in resources_of_type("AWS::Logs::QueryDefinition")
+	_pf_countable_list(name, "Properties.LogGroupNames")
 	items := [x | some x in flatten_list(name, "Properties.LogGroupNames")]
 	n := count(items)
 	n > 50

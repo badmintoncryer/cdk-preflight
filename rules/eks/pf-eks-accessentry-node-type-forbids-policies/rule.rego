@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-eks-accessentry-node-type-forbids-policies
 	some name in resources_of_type("AWS::EKS::AccessEntry")
 	t := resolve(name, "Properties.Type")
 	t in {"EC2_LINUX", "EC2_WINDOWS"}
+	_pf_unconditional_list(name, "Properties.AccessPolicies")
 	count(flatten_list(name, "Properties.AccessPolicies")) > 0
 }

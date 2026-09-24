@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-batch-jd-consumable-resource-list-max", "E
 	"Declare at most 5 consumable resources",
 	"https://docs.aws.amazon.com/batch/latest/userguide/resource-aware-scheduling-how-to-for-jobs.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
+	_pf_countable_list(name, "Properties.ConsumableResourceProperties.ConsumableResourceList")
 	n := count(flatten_list(name, "Properties.ConsumableResourceProperties.ConsumableResourceList"))
 	n > 5
 }

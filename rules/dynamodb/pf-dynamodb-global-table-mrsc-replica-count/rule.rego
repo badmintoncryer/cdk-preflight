@@ -11,7 +11,9 @@ violation contains make_diag_full("pf-dynamodb-global-table-mrsc-replica-count",
 	_pf_ddbmrc_url) if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
 	_pf_ddb_mrsc(name)
+	_pf_countable_list(name, "Properties.Replicas")
 	nr := count(flatten_list(name, "Properties.Replicas"))
+	_pf_countable_list(name, "Properties.GlobalTableWitnesses")
 	nw := count(flatten_list(name, "Properties.GlobalTableWitnesses"))
 	total := nr + nw
 	total != 3
@@ -24,6 +26,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-mrsc-replica-count",
 	_pf_ddbmrc_url) if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
 	_pf_ddb_mrsc(name)
+	_pf_countable_list(name, "Properties.Replicas")
 	nr := count(flatten_list(name, "Properties.Replicas"))
 	nr < 2
 }

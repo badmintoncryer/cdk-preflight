@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-ec2-instance-ipv6-exclusive", "ERROR", nam
 	_pf_ec2i6_url) if {
 	some name in resources_of_type("AWS::EC2::Instance")
 	not _pf_ec2lib_absent(name, "Ipv6AddressCount")
+	_pf_unconditional_list(name, "Properties.Ipv6Addresses")
 	count(flatten_list(name, "Properties.Ipv6Addresses")) > 0
 }

@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-cloudfront-realtime-log-endpoint-count", "
 	sprintf("%v endpoints are declared; CloudFront accepts exactly one", [count(eps)]),
 	_pf_cf_realtime_log_endpoint_count_fix, _pf_cf_realtime_log_endpoint_count_url) if {
 	some name in resources_of_type("AWS::CloudFront::RealtimeLogConfig")
+	_pf_countable_list(name, "Properties.EndPoints")
 	eps := [e | some e in flatten_list(name, "Properties.EndPoints")]
 	count(eps) > 1
 }

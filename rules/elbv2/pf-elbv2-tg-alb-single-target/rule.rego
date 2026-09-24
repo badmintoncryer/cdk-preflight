@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-elbv2-tg-alb-single-target", "ERROR", name
 	_pf_elbta1_fix, _pf_elbta1_url) if {
 	some name in _pf_elb_tgs
 	_pf_elb_tgtype(name) == "alb"
+	_pf_countable_list(name, "Properties.Targets")
 	n := count(flatten_list(name, "Properties.Targets"))
 	n > 1
 }

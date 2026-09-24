@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-cloudwatch-alarm-actions-max", "ERROR", na
 	"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html") if {
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
 	some key in _pf_cwlib_action_keys
+	_pf_countable_list(name, sprintf("Properties.%s", [key]))
 	items := [x | some x in flatten_list(name, sprintf("Properties.%s", [key]))]
 	n := count(items)
 	n > 5

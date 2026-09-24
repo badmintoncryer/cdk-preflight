@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-ec2-dhcp-ntp-servers-count", "ERROR", name
 	_pf_ec2dhn_url) if {
 	some name in resources_of_type("AWS::EC2::DHCPOptions")
 	some k in _pf_ec2dhn_lists
+	_pf_countable_list(name, sprintf("Properties.%s", [k]))
 	n := count(flatten_list(name, sprintf("Properties.%s", [k])))
 	n > 4
 }

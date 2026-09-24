@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-cloudwatch-anomaly-detector-math-single-qu
 	"Use SingleMetricAnomalyDetector for one metric, or add the math expression query",
 	"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html") if {
 	some name in resources_of_type("AWS::CloudWatch::AnomalyDetector")
+	_pf_countable_list(name, "Properties.MetricMathAnomalyDetector.MetricDataQueries")
 	items := [q | some q in flatten_list(name, "Properties.MetricMathAnomalyDetector.MetricDataQueries")]
 	count(items) == 1
 }

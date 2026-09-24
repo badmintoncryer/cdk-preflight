@@ -9,5 +9,6 @@ violation contains make_diag_full("pf-cognito-mfa-off-with-enabled-mfas", "ERROR
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	resolve(name, "Properties.MfaConfiguration") == "OFF"
+	_pf_unconditional_list(name, "Properties.EnabledMfas")
 	count(flatten_list(name, "Properties.EnabledMfas")) > 0
 }

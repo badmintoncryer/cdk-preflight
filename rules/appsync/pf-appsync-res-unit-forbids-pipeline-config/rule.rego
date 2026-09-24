@@ -9,5 +9,6 @@ violation contains make_diag_full("pf-appsync-res-unit-forbids-pipeline-config",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html") if {
 	some name in resources_of_type("AWS::AppSync::Resolver")
 	resolve(name, "Properties.Kind") == "UNIT"
+	_pf_unconditional_list(name, "Properties.PipelineConfig.Functions")
 	count(flatten_list(name, "Properties.PipelineConfig.Functions")) > 0
 }

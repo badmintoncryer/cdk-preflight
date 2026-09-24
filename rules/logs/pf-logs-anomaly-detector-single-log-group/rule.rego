@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-logs-anomaly-detector-single-log-group", "
 	"Create one anomaly detector per log group",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loganomalydetector.html") if {
 	some name in resources_of_type("AWS::Logs::LogAnomalyDetector")
+	_pf_countable_list(name, "Properties.LogGroupArnList")
 	items := [x | some x in flatten_list(name, "Properties.LogGroupArnList")]
 	n := count(items)
 	n > 1

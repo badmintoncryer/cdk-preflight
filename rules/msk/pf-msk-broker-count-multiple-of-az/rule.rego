@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-msk-broker-count-multiple-of-az", "ERROR",
 	"Set NumberOfBrokerNodes to a multiple of the number of client subnets",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-cluster.html") if {
 	some name in resources_of_type("AWS::MSK::Cluster")
+	_pf_countable_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets")
 	s := count(flatten_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets"))
 	s > 0
 	n := to_number(resolve(name, "Properties.NumberOfBrokerNodes"))
