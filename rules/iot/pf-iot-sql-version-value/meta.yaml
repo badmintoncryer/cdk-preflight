@@ -1,0 +1,12 @@
+id: pf-iot-sql-version-value
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::TopicRule]
+severity: ERROR
+title: "AwsIotSqlVersion must be 2015-10-08, 2016-03-23, 2016-03-23-beta or beta"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-topicrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRule awsIotSqlVersion \"2020-01-01\" -> \"SqlParseException: Invalid SQL version: 2020-01-01\", same for \"2015-10-08-beta\", \"2016-03-23-beta2\", \"2015-10-09\", \"2017-03-23\", \"2016-3-23\", \"v2\", \"xbeta\", \"betax\" and for \"2016-03-23\" with a leading or trailing space; accepted were \"2015-10-08\", \"2016-03-23\", \"2016-03-23-beta\", \"2016-03-23-BETA\", \"beta\", \"BETA\", \"Beta\" and \"\" - so the set is those four, matched case-insensitively, plus the empty string; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid SQL version: 2015-10-08-beta (Service: Iot, Status Code: 400, Request ID: 0a0a2e5a-6350-49b0-a7a3-ba4915a217a2) (SDK Attempt Count: 1)\\\" (RequestToken: 09c1c126-1629-c19a-81e2-1e89b6ac3568, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

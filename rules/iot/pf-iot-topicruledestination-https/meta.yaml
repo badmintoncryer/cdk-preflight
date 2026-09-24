@@ -1,0 +1,12 @@
+id: pf-iot-topicruledestination-https
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::TopicRuleDestination]
+severity: ERROR
+title: "A topic rule destination's ConfirmationUrl must be https"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-topicruledestination.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRuleDestination confirmationUrl \"http://example.invalid/c\" -> \"InvalidRequestException: Invalid confirmationUrl: 'http://example.invalid/c' is not a valid HTTPS URL\" (#270 phase B); an https URL is created in status IN_PROGRESS and CloudFormation does not wait for the confirmation callback (measured 2026-09-25: a one-resource stack reached CREATE_COMPLETE); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid confirmationUrl: 'http://cdkpf270.example.com/trdsf' is not a valid HTTPS URL (Service: Iot, Status Code: 400, Request ID: 334990e0-3e19-45a4-8225-eca5fe578d9f) (SDK Attempt Count: 1)\\\" (RequestToken: 7763dfe8-b356-a5a1-4480-c05c0af1ef2a, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

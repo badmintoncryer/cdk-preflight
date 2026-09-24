@@ -1,0 +1,12 @@
+id: pf-iot-thing-attribute-count
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Thing]
+severity: ERROR
+title: "A thing may carry at most 3 attributes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-thing.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateThing with 4 attributes and no thing type -> \"InvalidRequestException: To use more than 3 attributes, a thing must have a type specified.\"; 3 attributes accepted (#270 phase B). AWS::IoT::Thing has no ThingTypeName property, so the cap is always 3 from CloudFormation; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"To use more than 3 attributes, a thing must have a type specified. (Service: Iot, Status Code: 400, Request ID: f1b940af-7f4e-4888-abdd-278500c0c4fc) (SDK Attempt Count: 1)\\\" (RequestToken: af485140-9c75-27c1-eed9-80c187d60dc6, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

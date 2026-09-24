@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-polver-f",
+        "PolicyDocument": {
+          "Version": "2008-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "iot:Connect",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

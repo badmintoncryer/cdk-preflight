@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-polstmt-f",
+        "PolicyDocument": {
+          "Version": "2012-10-17"
+        }
+      }
+    }
+  }
+}

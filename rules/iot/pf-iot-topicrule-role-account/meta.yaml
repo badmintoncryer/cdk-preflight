@@ -1,0 +1,12 @@
+id: pf-iot-topicrule-role-account
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::TopicRule]
+severity: ERROR
+title: "A topic rule action's RoleArn must live in the deploy account"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-topicrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRule with actions[0].republish.roleArn = arn:aws:iam::210987654321:role/other -> \"AccessDeniedException: Cross-account pass role is not allowed.\" (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Access denied for operation 'CreateTopicRule'.\\\" (RequestToken: e9e3f7fe-7123-895c-86c6-1fcdbf81f73e, HandlerErrorCode: AccessDenied)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE - the handler collapses the service's \"Cross-account pass role is not allowed.\" into a generic AccessDenied, so the wording that names the constraint is the API one above (a non-existent role in the *deploy* account answers \"AWS IoT (iot.amazonaws.com) is unable to assume role\" instead, which is what rules out that confound)"
+addedOn: 2026-09-25

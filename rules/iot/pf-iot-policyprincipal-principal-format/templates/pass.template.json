@@ -1,0 +1,42 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-ppfmt-p",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "iot:Connect",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "C": {
+      "Type": "AWS::IoT::Certificate",
+      "Properties": {
+        "CertificateMode": "SNI_ONLY",
+        "CertificatePem": "-----BEGIN CERTIFICATE-----\nMIIDBzCCAe+gAwIBAgIUYBQNS8DAWylb9SR/KDnflXHDlQMwDQYJKoZIhvcNAQEL\nBQAwEzERMA8GA1UEAwwIY2RrcGYyNzAwHhcNMjYwOTI0MjMyMTAzWhcNMjcwOTI0\nMjMyMTAzWjATMREwDwYDVQQDDAhjZGtwZjI3MDCCASIwDQYJKoZIhvcNAQEBBQAD\nggEPADCCAQoCggEBALePSHk4XSX8gDBReClJuTY1EgmOWURr6Fb+e2hnGcIc3w4j\neY4xqlje5M/lRI8N3eIhxaHCdEImI4XzprXPrz7gBL3SG/sVPVjGbx7pC9gSermw\nH3+Gb2aPpM2vT62WCqssYT0HyXbBpC/zv2RwWkaluhyEiF8Y7Ko+UpGC4TAFf47E\ndh0bJbKel2DoKJTwFL3jItuIF3pjPvEppLHX/11FN5cn7W964zeoSZ4WVT61Boed\nJbBMj1oxa4S+vBIGXmxIFxtCkUkpRt1nBe9DE+L0AwaE+MWv10XhQeY9rzJC+Dch\n/Jxn/PJMlyRA7ZKcVLKCmJ4fARVekiERtMgJrYkCAwEAAaNTMFEwHQYDVR0OBBYE\nFO2YOvnZoVliCdOp0EsBQfu/bl71MB8GA1UdIwQYMBaAFO2YOvnZoVliCdOp0EsB\nQfu/bl71MA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAJezxQGa\ngVDAp5MlruOoYNKNps0Flw6vdZ0bY8vESqPHhpxjrN+kxCfCwfS0+d7Feq3p/NnC\nWhsF38GmboDItP4p6IVCBT5FNVREHgR32hzEfs4NxRmkWNgO+7vMne38F9PAuZMw\nE4KxZQG7ToKqToevBNZndjm8PJgdjXLKzdIhhQW1xXLQR5/V1NwaMSFO+/ljJPvo\nLqOVIUOQXO1AVgT8od02mxTaa/VJYdV/MpbVW4589UsRgQOb0zFtyCQmJFj18l45\nr8pCV+839/W6ai9wqOL7ca0SSUKtUlJp6K2R6d3cHJ/t24OIV7itwAeJwTMkQKu7\nDqVWSvLTX6ytDhU=\n-----END CERTIFICATE-----",
+        "Status": "ACTIVE"
+      }
+    },
+    "A": {
+      "Type": "AWS::IoT::PolicyPrincipalAttachment",
+      "Properties": {
+        "PolicyName": {
+          "Ref": "P"
+        },
+        "Principal": {
+          "Fn::GetAtt": [
+            "C",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

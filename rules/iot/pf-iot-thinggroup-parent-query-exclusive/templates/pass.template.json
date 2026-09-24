@@ -1,0 +1,19 @@
+{
+  "Resources": {
+    "Parent": {
+      "Type": "AWS::IoT::ThingGroup",
+      "Properties": {
+        "ThingGroupName": "cdkpf270-tgpq-pp"
+      }
+    },
+    "Child": {
+      "Type": "AWS::IoT::ThingGroup",
+      "Properties": {
+        "ThingGroupName": "cdkpf270-tgpq-pc",
+        "ParentGroupName": {
+          "Ref": "Parent"
+        }
+      }
+    }
+  }
+}

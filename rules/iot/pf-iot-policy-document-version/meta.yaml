@@ -1,0 +1,12 @@
+id: pf-iot-policy-document-version
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Policy]
+severity: ERROR
+title: "An IoT policy document's Version must be 2012-10-17"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/iot-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreatePolicy with a document declaring \"Version\": \"2008-10-17\" -> \"MalformedPolicyException: Policy document is Malformed: Unknown policy document version. It must be version 2012-10-17\" (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Policy document is Malformed: Unknown policy document version. It must be version 2012-10-17 (Service: Iot, Status Code: 400, Request ID: 399dc71a-2539-4012-8bfa-60b318eb29b9) (SDK Attempt Count: 1)\\\" (RequestToken: 025612f7-ce0f-fc5f-3ae1-3dd85063bdfb, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

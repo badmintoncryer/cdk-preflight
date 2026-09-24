@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Http": {
+      "Type": "AWS::IoT::TopicRuleDestination",
+      "Properties": {
+        "HttpUrlProperties": {
+          "ConfirmationUrl": "https://cdkpf270.example.com/trd1p"
+        }
+      }
+    }
+  }
+}

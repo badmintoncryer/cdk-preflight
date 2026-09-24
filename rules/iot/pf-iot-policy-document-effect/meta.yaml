@@ -1,0 +1,12 @@
+id: pf-iot-policy-document-effect
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Policy]
+severity: ERROR
+title: "A policy statement's Effect must be Allow or Deny"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/iot-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreatePolicy with a statement whose Effect is \"Permit\" -> \"MalformedPolicyException: Policy document is Malformed: Invalid effect: Permit\" (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Policy document is Malformed: Invalid effect: Permit (Service: Iot, Status Code: 400, Request ID: 356a1312-a3ae-4a07-a676-68b6e1a8dc8a) (SDK Attempt Count: 1)\\\" (RequestToken: 69e76a17-0550-9dd2-c258-7a33e77cf86a, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-poleff-p",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "iot:Connect",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Deny",
+              "Action": "iot:Publish",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

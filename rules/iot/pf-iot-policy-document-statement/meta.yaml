@@ -1,0 +1,12 @@
+id: pf-iot-policy-document-statement
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Policy]
+severity: ERROR
+title: "An IoT policy document must carry at least one statement"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/iot-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreatePolicy with a document carrying only \"Version\" -> \"MalformedPolicyException: Policy document is Malformed: Policy has no statements\" (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Policy document is Malformed: Policy has no statements (Service: Iot, Status Code: 400, Request ID: a16132eb-aba1-405a-8d61-b509ff55817c) (SDK Attempt Count: 1)\\\" (RequestToken: 3a340fd7-e492-479f-4ff3-4daba03a7163, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

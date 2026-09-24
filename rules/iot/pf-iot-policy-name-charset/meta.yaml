@@ -1,0 +1,12 @@
+id: pf-iot-policy-name-charset
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Policy]
+severity: ERROR
+title: "PolicyName accepts only [A-Za-z0-9_+=,.@-]"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreatePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreatePolicy policyName \"テスト用\" -> \"InvalidRequestException: 1 validation error detected: Value at 'policyName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w+=,.@-]+\" (#270 phase B). The service's \\\\w is Java's ASCII class, so the rule spells the range out - the engine's regex is Rust and its \\\\w matches Japanese; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: 1 validation error detected: Value at 'policyName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w+=,.@-]+ (Service: Iot, Status Code: 400, Request ID: 18b57717-3ed3-493d-837b-4e474b08b3d2) (SDK Attempt Count: 1)\\\" (RequestToken: 3cd94481-5058-d134-5d2d-786df59dc64b, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25
