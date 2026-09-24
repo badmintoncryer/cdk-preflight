@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::EKS::Addon",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-cfg",
+        "AddonName": "vpc-cni",
+        "ConfigurationValues": "{\"replicaCount\": 1}"
+      }
+    }
+  }
+}
