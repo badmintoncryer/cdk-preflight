@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-iops-only-gp3-io1
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Iops belongs to gp3 and io1 volumes only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-ebsoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (gp2 10 GiB with Iops 3000 on t3.small.search) -> \"IOPS is only valid when volume type is io1 or gp3.\" (ROLLBACK_COMPLETE); pass (the same gp2 volume with Iops dropped) not deployed (--fail-only: a domain takes 15-25 min to build and CreateDomain answers this synchronously), but the t3.small.search / gp3 10 GiB scaffold it shares reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. Written as a denylist of the volume types that reject Iops (standard, gp2), so a type AWS adds later is a miss rather than a false positive."
+addedOn: 2026-09-25

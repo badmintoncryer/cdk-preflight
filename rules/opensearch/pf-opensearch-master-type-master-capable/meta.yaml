@@ -1,0 +1,12 @@
+id: pf-opensearch-master-type-master-capable
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Not every instance family can be a dedicated master"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-instance-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (DedicatedMasterType or1.medium.search over an m6g.large.search data tier, 3 masters) -> \"Invalid instance type for master nodes: or1.medium.search. For more information refer to AWS public documentation\" (ROLLBACK_COMPLETE); pass (the same template with m6g.large.search masters) not deployed (--fail-only). The denylist is every family whose list-instance-type-details InstanceRole carries no \"master\" entry (all 231 OpenSearch_2.19 types, us-east-1 2026-09-24)."
+addedOn: 2026-09-25

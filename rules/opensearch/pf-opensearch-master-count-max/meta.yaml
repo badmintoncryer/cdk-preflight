@@ -1,0 +1,12 @@
+id: pf-opensearch-master-count-max
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "A domain takes at most 5 dedicated master nodes"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-dedicatedmasternodes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (DedicatedMasterCount 6 with DedicatedMasterType t3.small.search on a one-node t3.small.search domain) -> \"Dedicated master instances count should be between 2 and 5.\" (ROLLBACK_COMPLETE); pass (the same template at 5) not deployed (--fail-only; CreateDomain answers this synchronously and 5 masters plus a data node is the priciest stack in this slice). The service raises LimitExceededException here, but the sentence names the fixed 2-5 range rather than an account quota - describe-instance-type-limits answers MinimumInstanceCount 2 / MaximumInstanceCount 5 for the master role on every family."
+addedOn: 2026-09-25

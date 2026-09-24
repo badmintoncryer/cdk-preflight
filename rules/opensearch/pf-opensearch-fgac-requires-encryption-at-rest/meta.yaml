@@ -1,0 +1,12 @@
+id: pf-opensearch-fgac-requires-encryption-at-rest
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Fine-grained access control requires encryption at rest"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with EncryptionAtRestOptions.Enabled false) -> \"You must enable encryption at rest to use advanced security options.\" (ROLLBACK_COMPLETE); pass (the same domain with it true) not deployed (--fail-only), but that FGAC scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+addedOn: 2026-09-25

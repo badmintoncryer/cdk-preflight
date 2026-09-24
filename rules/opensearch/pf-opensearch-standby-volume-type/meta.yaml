@@ -1,0 +1,12 @@
+id: pf-opensearch-standby-volume-type
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Multi-AZ with Standby takes gp3 or io1 volumes"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (standby over 3 AZ on a gp2 10 GiB volume) -> \"Domains with standby only support the GP3 and io1 volume types of EBS storage.\" (ROLLBACK_COMPLETE); pass (the same template on gp3 with Iops and Throughput) not deployed (--fail-only). Written as a denylist of the EBS types standby rejects (standard, gp2) so a type AWS adds later is a miss rather than a false positive; m6g.large.search does offer gp2, which is what keeps this fixture from tripping pf-opensearch-ebs-volume-type-supported."
+addedOn: 2026-09-25

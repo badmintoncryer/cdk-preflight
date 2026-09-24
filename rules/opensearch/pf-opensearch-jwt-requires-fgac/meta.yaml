@@ -1,0 +1,12 @@
+id: pf-opensearch-jwt-requires-fgac
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "JWT authentication needs fine-grained access control"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-advancedsecurityoptionsinput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (AdvancedSecurityOptions.Enabled false with JWTOptions.Enabled true) -> \"Advanced security option must be enabled to configure JWT.\" (ROLLBACK_COMPLETE); pass (the same domain with JWTOptions dropped) not deployed (--fail-only), but the m6g.large.search + gp3 scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+addedOn: 2026-09-25

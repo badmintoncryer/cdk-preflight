@@ -1,0 +1,12 @@
+id: pf-opensearch-log-publishing-requires-arn
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "An enabled log type needs a log group ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-logpublishingoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (LogPublishingOptions.SEARCH_SLOW_LOGS with Enabled true and no CloudWatchLogsLogGroupArn) -> \"Log publishing option is misconfigured. Enter valid CloudWatch Logs Arn and Enable flag for LogType \\\"SEARCH_SLOW_LOGS\\\"\" (ROLLBACK_COMPLETE); pass (the same entry with an ARN) not deployed (--fail-only: reaching CREATE_COMPLETE with log publishing on needs a real log group carrying a resource policy for es.amazonaws.com, which the bench account does not keep)."
+addedOn: 2026-09-25

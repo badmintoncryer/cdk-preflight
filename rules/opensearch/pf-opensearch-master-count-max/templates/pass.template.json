@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-mastermax-p",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1,
+          "DedicatedMasterEnabled": true,
+          "DedicatedMasterType": "t3.small.search",
+          "DedicatedMasterCount": 5
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        }
+      }
+    }
+  }
+}

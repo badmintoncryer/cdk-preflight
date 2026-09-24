@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-ebsstore-p",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "i3.large.search",
+          "InstanceCount": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-opensearch-master-options-require-enabled
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "DedicatedMasterCount and DedicatedMasterType need DedicatedMasterEnabled"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-clusterconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (DedicatedMasterCount 3 and DedicatedMasterType t3.small.search with no DedicatedMasterEnabled) -> \"DedicatedMasterEnabled must be set to True to specify the DedicatedMasterCount and DedicatedMasterType options.\" (ROLLBACK_COMPLETE); pass (the same template with DedicatedMasterEnabled true) not deployed (--fail-only). One rule for both properties on purpose: CreateDomain answered that same sentence for a count-only template and for a type-only template when they were probed separately on 2026-09-24, so two rules would be two names for one message."
+addedOn: 2026-09-25

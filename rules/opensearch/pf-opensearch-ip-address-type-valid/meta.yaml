@@ -1,0 +1,12 @@
+id: pf-opensearch-ip-address-type-valid
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: WARN
+title: "IPAddressType is ipv4 or dualstack"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/APIReference/API_CreateDomain.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (IPAddressType \"ipv6\") -> \"Value 'ipv6' at 'iPAddressType' failed to satisfy constraint: Member must satisfy enum value set: [ipv4, dualstack]\" (ROLLBACK_COMPLETE); pass (\"dualstack\") not deployed (--fail-only), but the t3.small.search / gp3 scaffold it shares reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. WARN, not ERROR: the set is an allowlist taken from the enum the service printed, and a value AWS adds later would read as a violation - the same drift that left the documented LogPublishingOptions and TLSSecurityPolicy sets each one value short."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-engine-version-pattern
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "EngineVersion must be Elasticsearch_x.y or OpenSearch_x.y"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/APIReference/API_CreateDomain.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (EngineVersion \"OpenSearch2.19\", the underscore dropped) -> \"Value 'OpenSearch2.19' at 'engineVersion' failed to satisfy constraint: Member must satisfy regular expression pattern: ^Elasticsearch_[0-9]{1}\\.[0-9]{1,2}$|^OpenSearch_[0-9]{1,2}\\.[0-9]{1,2}$\" (ROLLBACK_COMPLETE); pass (\"OpenSearch_2.19\") not deployed (--fail-only), but that exact scaffold reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. The rule carries the server's own pattern verbatim."
+addedOn: 2026-09-25

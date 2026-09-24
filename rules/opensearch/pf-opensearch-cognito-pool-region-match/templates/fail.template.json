@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-cogregion-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "CognitoOptions": {
+          "Enabled": true,
+          "UserPoolId": "ap-northeast-1_abcd1234",
+          "IdentityPoolId": {
+            "Fn::Sub": "${AWS::Region}:11111111-2222-3333-4444-555555555555"
+          },
+          "RoleArn": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/service-role/CognitoAccessForAmazonOpenSearch"
+          }
+        }
+      }
+    }
+  }
+}

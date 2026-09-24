@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-warmdata-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1,
+          "DedicatedMasterEnabled": true,
+          "DedicatedMasterType": "t3.small.search",
+          "DedicatedMasterCount": 3,
+          "WarmEnabled": true,
+          "WarmType": "ultrawarm1.medium.search",
+          "WarmCount": 2
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        }
+      }
+    }
+  }
+}

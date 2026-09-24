@@ -1,0 +1,12 @@
+id: pf-opensearch-encryption-at-rest-min-version
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Encryption at rest needs Elasticsearch 5.1 or later"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/encryption-at-rest.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (Elasticsearch_2.3 on m4.large.search + gp2 10 GiB with EncryptionAtRestOptions.Enabled true) -> \"Encryption at rest is not supported for Elasticsearch 2.3\" (ROLLBACK_COMPLETE); pass (the same domain on Elasticsearch_5.1) -> CREATE_COMPLETE, which puts the boundary on 5.1 itself. 2.3 is the highest version the service still offers below 5.1 - 5.0 was never published - and the old-version scaffold is m4.large.search + gp2 because Elasticsearch_2.3 has neither t3 nor gp3."
+addedOn: 2026-09-25

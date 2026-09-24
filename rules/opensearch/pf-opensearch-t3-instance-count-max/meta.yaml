@@ -1,0 +1,12 @@
+id: pf-opensearch-t3-instance-count-max
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "T3 domains take at most 10 data nodes"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (11 t3.small.search data nodes with 3 t3.small.search dedicated masters) -> \"Instance count should be between 1 and 10.\" (ROLLBACK_COMPLETE); pass (the same template at 10 data nodes) not deployed (--fail-only). That the masters are not counted against the 10 comes from a separate probe on 2026-09-24: CreateDomain accepted 10 data nodes plus 3 masters and the domain was deleted before it finished building, so the synchronous check is what was observed. describe-instance-type-limits answers MaximumInstanceCount 10 for the data role on t3.small.search."
+addedOn: 2026-09-25

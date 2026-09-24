@@ -1,0 +1,12 @@
+id: pf-opensearch-master-count-min
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Dedicated master nodes come in twos or more"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-dedicatedmasternodes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (DedicatedMasterCount 1 with DedicatedMasterType t3.small.search) -> \"Dedicated master node count should be greater than 1.\" (ROLLBACK_COMPLETE); pass (the same template at 2, the boundary itself) not deployed (--fail-only; the rejection is synchronous)."
+addedOn: 2026-09-25

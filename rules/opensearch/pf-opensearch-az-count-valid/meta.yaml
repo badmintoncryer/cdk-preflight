@@ -1,0 +1,12 @@
+id: pf-opensearch-az-count-valid
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "AvailabilityZoneCount is either 2 or 3"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-zoneawarenessconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (AvailabilityZoneCount 4, InstanceCount 4 so the floor rule stays out of it) -> \"NumberOfAvailabilityZones should be either 2 or 3\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: an OpenSearch domain takes 15-25 min to build and the constraint is answered by CreateDomain's synchronous validation), but the base scaffold the pass fixture shares - t3.small.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, OpenSearch_2.19 - reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min."
+addedOn: 2026-09-25

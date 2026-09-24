@@ -1,0 +1,12 @@
+id: pf-opensearch-warm-count-min
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "UltraWarm starts at 2 nodes"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (WarmCount 1 with WarmType ultrawarm1.medium.search on an m6g.large.search domain with 3 masters) -> \"Warm storage node count must be between 2 and 150.\" (ROLLBACK_COMPLETE); pass (the same template at 2, the boundary itself) not deployed (--fail-only; UltraWarm plus 3 masters is the priciest scaffold in this slice)."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-or1-min-version
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The OR1 family needs OpenSearch 2.11 or later"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/or1.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (OpenSearch_2.9 + or1.medium.search + encryption at rest + gp3 20 GiB) -> \"Invalid instance type: or1.medium.search\" (ROLLBACK_COMPLETE); pass (the same template with EngineVersion OpenSearch_2.11 and nothing else changed) -> CREATE_COMPLETE. The message does not name the version, so the pass doubles as the control: the only difference between the two stacks is the version field, and list-instance-type-details agrees - it returns no or1 type for OpenSearch_2.9 and all eight for 2.11. 2.10 was never published, so 2.9 is the nearest version below the boundary."
+addedOn: 2026-09-25

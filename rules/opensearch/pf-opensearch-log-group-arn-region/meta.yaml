@@ -1,0 +1,12 @@
+id: pf-opensearch-log-group-arn-region
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The log group must live in the deploy Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-logpublishingoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (LogPublishingOptions.SEARCH_SLOW_LOGS pointing at an ap-northeast-1 log group in the deploy account) -> \"The CloudWatch Logs ARN referring to the log group for logging your SEARCH_SLOW_LOGS logs is invalid. Please specify a valid ARN.\" (ROLLBACK_COMPLETE). That message does not name the Region, so the same run deployed the control: the identical template with the ARN rebuilt on ${AWS::Region}, the log group still absent, is rejected differently - \"The specified CloudWatch Logs log group doesn't exist.\" (ROLLBACK_COMPLETE). Only the Region field differs between the two, so the \"invalid ARN\" answer is about the Region and not about the group being missing. The pass fixture cannot reach CREATE_COMPLETE without a real log group carrying a resource policy for es.amazonaws.com, which the bench account does not keep."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-or1-master-graviton
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "OR1 domains need Graviton dedicated masters"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/or1.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (or1.medium.search data tier with encryption at rest and gp3 20 GiB, 3 m5.large.search masters) -> \"Graviton-based master nodes are required for OR1 instance family.\" (ROLLBACK_COMPLETE); pass (the same template with m6g.large.search masters) not deployed (--fail-only). The denylist is every master-capable family that is not Graviton-based, read off list-instance-type-details on 2026-09-24."
+addedOn: 2026-09-25

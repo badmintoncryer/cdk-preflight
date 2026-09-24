@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-azvalid-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 4,
+          "ZoneAwarenessEnabled": true,
+          "ZoneAwarenessConfig": {
+            "AvailabilityZoneCount": 4
+          }
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        }
+      }
+    }
+  }
+}

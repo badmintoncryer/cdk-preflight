@@ -1,0 +1,12 @@
+id: pf-opensearch-access-policies-ip-condition-on-vpc-domain
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "A VPC domain cannot carry an IP-based access policy"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/vpc.html#vpc-security
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (VPCOptions on the default VPC's subnet-2e0a500f + sg-7d699f61, AccessPolicies carrying a Condition IpAddress on aws:SourceIp) -> \"You can't attach an IP-based policy to a domain that has a VPC endpoint. Instead, use a security group to control IP-based access.\" (ROLLBACK_COMPLETE); pass (the same VPC domain with the Condition removed) -> CREATE_COMPLETE. The subnet has to be real: a made-up id is rejected earlier with \"The subnet ID ... does not exist\"."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-warm-type-family
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: WARN
+title: "WarmType takes an ultrawarm1 or oi2 type"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (WarmType m6g.large.search) -> \"Member must satisfy enum value set: [ultrawarm1.xlarge.search, ultrawarm1.large.search, ultrawarm1.2xlarge.search, oi2.8xlarge.search, oi2.large.search, ultrawarm1.medium.search, oi2.4xlarge.search, oi2.2xlarge.search, oi2.16xlarge.search, oi2.24xlarge.search, oi2.12xlarge.search, oi2.xlarge.search]\" (ROLLBACK_COMPLETE); pass (ultrawarm1.medium.search) not deployed (--fail-only). WARN, not ERROR: the allowlist is the 12 types the service printed, and AWS adds UltraWarm sizes without touching the documentation."
+addedOn: 2026-09-25

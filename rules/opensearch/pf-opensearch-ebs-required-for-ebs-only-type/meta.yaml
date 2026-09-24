@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-required-for-ebs-only-type
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: WARN
+title: "EBS-only instance families need EBSOptions"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/supported-instance-types.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (m6g.large.search with EBSOptions.EBSEnabled false) -> \"EBS storage must be selected for m6g.large.search\" (ROLLBACK_COMPLETE); pass (the same instance type with gp3 10 GiB / 3000 IOPS / 125 MiB/s) not deployed (--fail-only), but the identical m6g.large.search + gp3 scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node. WARN, not ERROR: the family set is an allowlist - every family whose describe-instance-type-limits answers StorageTypes ebs with no instance entry (all 231 OpenSearch_2.19 types, us-east-1 2026-09-25) - so a family that later gains an instance store would read as a violation."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-az-count-min
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "A zone-aware domain needs at least one data node per Availability Zone"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (InstanceCount 2 with ZoneAwarenessEnabled and AvailabilityZoneCount 3) -> \"You must choose a minimum of three data nodes for a three Availability Zone deployment\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: an OpenSearch domain takes 15-25 min to build and the constraint is answered by CreateDomain's synchronous validation), but the base scaffold the pass fixture shares - t3.small.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, OpenSearch_2.19 - reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. The constraint is a floor and not a multiple: a contrast stack with InstanceCount 4 / AvailabilityZoneCount 3 reached CREATE_COMPLETE the same day (cdkpf-pf-opensearch-az43-contrast), which is why the rule reads InstanceCount < AvailabilityZoneCount. An omitted AvailabilityZoneCount (the service default) is not judged."
+addedOn: 2026-09-25

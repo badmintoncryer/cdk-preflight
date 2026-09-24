@@ -1,0 +1,12 @@
+id: pf-opensearch-saml-requires-fgac
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "SAML authentication needs fine-grained access control"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-advancedsecurityoptionsinput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (AdvancedSecurityOptions.SAMLOptions.Enabled with AdvancedSecurityOptions.Enabled false) -> \"Advanced security option must be enabled to configure SAML.\" (ROLLBACK_COMPLETE); pass (the same domain with SAMLOptions dropped) not deployed (--fail-only; CreateDomain answers this synchronously)."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-or1-requires-encryption-at-rest
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The OR1 family needs encryption at rest"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/or1.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (or1.medium.search + gp3 20 GiB with no EncryptionAtRestOptions) -> \"Enable encryption at rest to use the OR1 instance family\" (ROLLBACK_COMPLETE); pass (the same template plus EncryptionAtRestOptions.Enabled) not deployed here, but that exact shape on OpenSearch_2.11 reached CREATE_COMPLETE the same day under pf-opensearch-or1-min-version."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-cognito-pool-region-match
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The Cognito user pool and identity pool must be in the same Region"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cognito-auth.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (UserPoolId ap-northeast-1_abcd1234, IdentityPoolId in the deploy Region, RoleArn in the deploy account) -> \"IdentityPool and UserPool should be in the same region\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: an OpenSearch domain takes 15-25 min to build and the constraint is answered by CreateDomain's synchronous validation), but the base scaffold the pass fixture shares - t3.small.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, OpenSearch_2.19 - reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. One rule for what the survey listed as cognito-user-pool-region and cognito-identity-pool-region: the service answers both with this single message. What is proven is that the two pools agree with each other, not that either matches the deploy Region - a contrast with both pools in us-east-1 and a role that does not exist got past this check and failed with \"Amazon OpenSearch Service must be allowed to use the passed role\" instead."
+addedOn: 2026-09-25

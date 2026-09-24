@@ -1,0 +1,12 @@
+id: pf-opensearch-fgac-master-user-exclusive
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "MasterUserName and MasterUserARN are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-masteruseroptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (MasterUserOptions carrying MasterUserName, MasterUserPassword and MasterUserARN together) -> \"You must provide either a master username or a master user ARN but not together.\" (ROLLBACK_COMPLETE); pass (the same domain with MasterUserARN dropped) not deployed (--fail-only), but that FGAC scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+addedOn: 2026-09-25

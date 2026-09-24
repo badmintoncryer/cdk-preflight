@@ -1,0 +1,12 @@
+id: pf-opensearch-standby-requires-3-masters
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Multi-AZ with Standby uses exactly 3 dedicated masters"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (standby over 3 AZ with 4 dedicated masters) -> \"Domains with standby must have 3 nodes that are eligible to be master nodes.\" (ROLLBACK_COMPLETE); pass (the same template at 3 masters) not deployed (--fail-only). 4 rather than 5 so the fixture sits one node off the only accepted count."
+addedOn: 2026-09-25

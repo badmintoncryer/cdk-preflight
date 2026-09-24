@@ -1,0 +1,12 @@
+id: pf-opensearch-standby-data-count-multiple-of-az
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "With standby the data nodes divide by the Availability Zone count"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (MultiAZWithStandbyEnabled with 4 m6g.large.search data nodes over 3 Availability Zones and 3 masters) -> \"The number of data nodes must be a multiple of the number of Availability Zones configured for the domain.\" (ROLLBACK_COMPLETE); pass (the same template at 3 data nodes) not deployed (--fail-only). Gated on standby because the same 4-over-3 spread without MultiAZWithStandbyEnabled was accepted by CreateDomain on 2026-09-24 (deleted before it finished building), so this is not a zone-awareness rule - without standby the only count rule is InstanceCount >= AvailabilityZoneCount."
+addedOn: 2026-09-25

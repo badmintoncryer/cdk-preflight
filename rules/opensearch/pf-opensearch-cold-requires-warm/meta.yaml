@@ -1,0 +1,12 @@
+id: pf-opensearch-cold-requires-warm
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Cold storage requires UltraWarm"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-coldstorageoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (ColdStorageOptions.Enabled on m6g.large.search x1 with 3 dedicated masters, no WarmEnabled) -> \"To use cold storage, you must have UltraWarm enabled.\" (ROLLBACK_COMPLETE); pass (the same template plus WarmEnabled / ultrawarm1.medium.search / WarmCount 2) not deployed (--fail-only; UltraWarm plus 3 masters is the priciest scaffold in this slice)."
+addedOn: 2026-09-25

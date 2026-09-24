@@ -1,0 +1,12 @@
+id: pf-opensearch-tls-policy-valid
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: WARN
+title: "TLSSecurityPolicy takes one of the five published policies"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-domainendpointoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (DomainEndpointOptions.TLSSecurityPolicy Policy-Min-TLS-1-1-2019-07) -> \"Member must satisfy enum value set: [Policy-Min-TLS-1-2-FIPS-PQ-2026-10, Policy-Min-TLS-1-0-2019-07, Policy-Min-TLS-1-2-2019-07, Policy-Min-TLS-1-2-RFC9151-FIPS-2024-08, Policy-Min-TLS-1-2-PFS-2023-10]\" (ROLLBACK_COMPLETE); pass (Policy-Min-TLS-1-2-2019-07) not deployed (--fail-only). WARN, not ERROR: the allowlist is the enum the service printed, and the documentation still lists only three of the five."
+addedOn: 2026-09-25

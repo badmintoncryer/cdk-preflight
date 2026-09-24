@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-io1-iops-min
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "io1 volumes start at 1000 IOPS"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-ebsoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (io1 35 GiB with Iops 999 on m6g.large.search) -> \"Iops must be between 1000 and 16000.\" (ROLLBACK_COMPLETE); pass (the same volume at Iops 1000) not deployed (--fail-only). m6g rather than t3 because t3 offers no io1 at all, and 35 GiB because that is io1's floor on this family."
+addedOn: 2026-09-25

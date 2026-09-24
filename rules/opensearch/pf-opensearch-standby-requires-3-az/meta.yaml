@@ -1,0 +1,12 @@
+id: pf-opensearch-standby-requires-3-az
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Multi-AZ with Standby uses exactly 3 Availability Zones"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-multiaz.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (standby with AvailabilityZoneCount 2 and 4 data nodes - 4 divides by 2, so the AZ count is the only thing wrong) -> \"Domains with standby must use 3 Availability Zones.\" (ROLLBACK_COMPLETE); pass (3 AZ with 3 data nodes) not deployed (--fail-only)."
+addedOn: 2026-09-25

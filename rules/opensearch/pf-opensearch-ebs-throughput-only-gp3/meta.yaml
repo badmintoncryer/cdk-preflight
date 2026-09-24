@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-throughput-only-gp3
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Throughput belongs to gp3 volumes only"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-ebsoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (gp2 10 GiB with Throughput 125 on t3.small.search) -> \"Throughput is only valid when volume type is GP3.\" (ROLLBACK_COMPLETE); pass (the same gp2 volume with Throughput dropped) not deployed (--fail-only), but the t3.small.search / gp3 10 GiB scaffold it shares reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. Written as a denylist (standard, gp2, io1) rather than an allowlist holding gp3 alone."
+addedOn: 2026-09-25

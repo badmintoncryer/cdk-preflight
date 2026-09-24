@@ -1,0 +1,12 @@
+id: pf-opensearch-fgac-min-version
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Fine-grained access control needs Elasticsearch 6.7 or later"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (Elasticsearch_6.5 on m5.large.search + gp3 with the full FGAC set - encryption at rest, node-to-node, EnforceHTTPS, internal user database with name and password) -> \"Advanced security feature is not available for the selected ES Version.\" (ROLLBACK_COMPLETE); pass (the same domain on Elasticsearch_6.7) -> CREATE_COMPLETE, which puts the boundary on 6.7 itself. 6.5 is the highest version the service still offers below 6.7 - 6.6 was never published."
+addedOn: 2026-09-25
