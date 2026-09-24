@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-vlminmax-69",
+        "LockConfiguration": {
+          "MinRetentionDays": 8,
+          "MaxRetentionDays": 7
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-backup-restore-testing-plan-recovery-point-types
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::RestoreTestingPlan]
+severity: ERROR
+title: "RecoveryPointTypes accepts only SNAPSHOT and CONTINUOUS"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-restoretestingplan-restoretestingrecoverypointselection.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (RecoveryPointTypes [\"ARCHIVE\"]) -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE; CreateStack-time raw-schema validation that names no property); pass (RecoveryPointTypes [\"SNAPSHOT\"], one property apart) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

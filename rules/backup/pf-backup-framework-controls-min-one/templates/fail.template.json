@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Fw": {
+      "Type": "AWS::Backup::Framework",
+      "Properties": {
+        "FrameworkName": "cdkpf_fwctl1_69",
+        "FrameworkControls": []
+      }
+    }
+  }
+}

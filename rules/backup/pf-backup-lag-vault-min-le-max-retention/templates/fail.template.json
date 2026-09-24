@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::LogicallyAirGappedBackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-lagminmax-69",
+        "MinRetentionDays": 8,
+        "MaxRetentionDays": 7
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-backup-report-plan-name-charset
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::ReportPlan]
+severity: ERROR
+title: "A report plan name must start with a letter and use only letters, digits and underscores"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-backup-reportplan.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (ReportPlanName \"cdkpf-rpname-69\") -> \"Invalid report plan name cdkpf-rpname-69. Report plan names must be between 1 and 256 characters, start with a letter (A-Z and a-z), and consist only of letters, numbers (0-9), and underscores (_).\" (ROLLBACK_COMPLETE); pass (ReportPlanName \"cdkpf_rpname_69\") -> CREATE_COMPLETE"
+addedOn: 2026-09-24

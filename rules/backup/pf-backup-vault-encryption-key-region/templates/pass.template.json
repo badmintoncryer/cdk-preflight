@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-venckey-69",
+        "EncryptionKeyArn": "arn:aws:kms:us-east-1:214794239830:key/11111111-2222-3333-4444-555555555555"
+      }
+    }
+  }
+}

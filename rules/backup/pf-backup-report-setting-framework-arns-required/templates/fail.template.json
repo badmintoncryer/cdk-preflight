@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket"
+    },
+    "Rp": {
+      "Type": "AWS::Backup::ReportPlan",
+      "Properties": {
+        "ReportPlanName": "cdkpf_rpfwarns_69",
+        "ReportDeliveryChannel": {
+          "S3BucketName": {
+            "Ref": "Bucket"
+          }
+        },
+        "ReportSetting": {
+          "ReportTemplate": "CONTROL_COMPLIANCE_REPORT"
+        }
+      }
+    }
+  }
+}

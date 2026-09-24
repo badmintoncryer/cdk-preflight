@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Fw": {
+      "Type": "AWS::Backup::Framework",
+      "Properties": {
+        "FrameworkName": "cdkpf_fwtags1_69",
+        "FrameworkControls": [
+          {
+            "ControlName": "BACKUP_RECOVERY_POINT_MINIMUM_RETENTION_CHECK",
+            "ControlInputParameters": [
+              {
+                "ParameterName": "requiredRetentionDays",
+                "ParameterValue": "35"
+              }
+            ],
+            "ControlScope": {
+              "Tags": [
+                {
+                  "Key": "cdkpf-a-69",
+                  "Value": "1"
+                },
+                {
+                  "Key": "cdkpf-b-69",
+                  "Value": "2"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-backup-restore-testing-selection-protected-resource-type
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::RestoreTestingSelection]
+severity: WARN
+title: "A restore testing selection resource type must be one of the types AWS Backup can restore-test"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-backup-restoretestingselection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (ProtectedResourceType \"CDKPFNOSUCH69\") -> \"Invalid resource type. Valid options: [NEPTUNE, S3, EBS, DYNAMODB, EC2, RDS, FSX, AURORA, DOCUMENTDB, EFS].\" (ROLLBACK_COMPLETE); pass (ProtectedResourceType \"EBS\") -> CREATE_COMPLETE. Severity is WARN because AWS keeps adding restore-testing resource types to that list"
+addedOn: 2026-09-24

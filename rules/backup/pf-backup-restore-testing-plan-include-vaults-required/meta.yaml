@@ -1,0 +1,12 @@
+id: pf-backup-restore-testing-plan-include-vaults-required
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::RestoreTestingPlan]
+severity: ERROR
+title: "A restore testing plan must include at least one backup vault"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-restoretestingplan-restoretestingrecoverypointselection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (IncludeVaults []) -> \"\\\"IncludeVaults\\\" list cannot be null or empty.\" (ROLLBACK_COMPLETE); pass (IncludeVaults with one vault ARN) -> CREATE_COMPLETE"
+addedOn: 2026-09-24
