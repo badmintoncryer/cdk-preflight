@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-selectors-exclusive
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A trail cannot set both EventSelectors and AdvancedEventSelectors"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudtrail-trail.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"You can select events by using either EventSelectors or AdvancedEventSelectors, but not both.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

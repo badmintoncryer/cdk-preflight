@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-aes-data-requires-resources-type
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A Data event selector needs a resources.type field"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-advancedfieldselector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"The following selectors are required when the eventCategory field value equals Data: [resources.type].\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

@@ -1,0 +1,45 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "EventDataStore": {
+      "Type": "AWS::CloudTrail::EventDataStore",
+      "Properties": {
+        "TerminationProtectionEnabled": false,
+        "MultiRegionEnabled": false,
+        "OrganizationEnabled": false,
+        "AdvancedEventSelectors": [
+          {
+            "FieldSelectors": [
+              {
+                "Field": "eventCategory",
+                "Equals": [
+                  "Data"
+                ]
+              },
+              {
+                "Field": "resources.type",
+                "Equals": [
+                  "AWS::S3::Object"
+                ]
+              },
+              {
+                "Field": "resources.ARN",
+                "StartsWith": [
+                  "arn:aws:s3:::cdkpf-ct69-no-such-bucket/"
+                ]
+              }
+            ]
+          }
+        ],
+        "ContextKeySelectors": [
+          {
+            "Type": "RequestContext",
+            "Equals": [
+              "eventName"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

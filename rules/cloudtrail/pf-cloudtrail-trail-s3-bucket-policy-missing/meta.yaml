@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-s3-bucket-policy-missing
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "The trail's S3 bucket needs a policy that lets CloudTrail write to it"
+constraintSource: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create_trail_bucket_policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Incorrect S3 bucket policy is detected for bucket: cdkpf-pf-cloudtrail-trail-s3-bucket-policy--bucket-gamal4vsvoww\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24
