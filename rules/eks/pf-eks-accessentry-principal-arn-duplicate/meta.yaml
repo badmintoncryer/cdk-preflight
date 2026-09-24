@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-principal-arn-duplicate
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "One IAM principal may hold only one access entry per cluster"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: two AWS::EKS::AccessEntry on one cluster with the same PrincipalArn -> ROLLBACK_COMPLETE, \"arn:aws:iam::<account>:role/...-NodeRole-...|Cluster-gzDMMTAzYmAT already exists in stack arn:aws:cloudformation:us-east-1:...:stack/cdkpf-pf-eks-accessentry-principal-arn-duplicate-fail/...\" - the access entry physical id is \"<principalArn>|<clusterName>\", so CloudFormation own duplicate primary-id check fires before EKS does (the same collision straight against CreateAccessEntry gives ResourceInUseException \"The specified access entry resource is already in use on this cluster.\", measured 2026-09-24). The collision is inside the one stack, not against another. The second entry carries DependsOn so the two are not issued at once. fail-only; the fixture builds its own cluster (AccessConfig.AuthenticationMode API) because CreateAccessEntry looks the cluster up first."
+addedOn: 2026-09-25
