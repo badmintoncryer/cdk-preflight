@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2606-blue" alt="2606 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2733-blue" alt="2733 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -155,7 +155,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>333 resource types across 59 services</b> — click to expand</summary>
+<summary><b>359 resource types across 65 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -168,16 +168,20 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **AppSync** | `Api` (7), `ApiCache` (4), `ApiKey` (2), `ChannelNamespace` (5), `DataSource` (15), `DomainName` (1), `FunctionConfiguration` (24), `GraphQLApi` (16), `GraphQLSchema` (12), `Resolver` (32), `SourceApiAssociation` (3) |
 | **Athena** | `DataCatalog` (6), `WorkGroup` (8) |
 | **AutoScaling** | `AutoScalingGroup` (38), `LifecycleHook` (8), `ScalingPolicy` (41), `ScheduledAction` (13), `WarmPool` (4) |
+| **Backup** | `BackupPlan` (12), `BackupSelection` (4), `BackupVault` (3), `Framework` (3), `LogicallyAirGappedBackupVault` (2), `ReportPlan` (2), `RestoreTestingPlan` (5), `RestoreTestingSelection` (3) |
 | **Batch** | `ComputeEnvironment` (40), `ConsumableResource` (2), `JobDefinition` (109), `JobQueue` (18), `SchedulingPolicy` (8), `ServiceEnvironment` (6) |
 | **Bedrock** | `ApplicationInferenceProfile` (2), `AutomatedReasoningPolicy` (3), `Blueprint` (3), `DataAutomationProject` (8), `DataSource` (12), `Flow` (14), `Guardrail` (19), `IntelligentPromptRouter` (5), `KnowledgeBase` (18), `Prompt` (4) |
 | **BedrockAgentCore** | `ApiKeyCredentialProvider` (1), `BrowserCustom` (1), `CodeInterpreterCustom` (1), `ConfigurationBundle` (3), `Dataset` (3), `Evaluator` (4), `Gateway` (5), `GatewayRule` (3), `GatewayTarget` (9), `Harness` (2), `HarnessEndpoint` (2), `Memory` (6), `OAuth2CredentialProvider` (3), `OnlineEvaluationConfig` (3), `PaymentCredentialProvider` (1), `PaymentManager` (1), `Policy` (3), `ResourcePolicy` (1), `Runtime` (8), `RuntimeEndpoint` (1) |
+| **CertificateManager** | `Certificate` (4) |
 | **CloudFront** | `AnycastIpList` (1), `CachePolicy` (7), `ContinuousDeploymentPolicy` (5), `Distribution` (55), `Function` (4), `KeyGroup` (1), `KeyValueStore` (2), `OriginRequestPolicy` (5), `PublicKey` (1), `RealtimeLogConfig` (3), `ResponseHeadersPolicy` (8), `VpcOrigin` (3) |
+| **CloudTrail** | `EventDataStore` (1), `Trail` (19) |
 | **CloudWatch** | `Alarm` (21), `AnomalyDetector` (6), `CompositeAlarm` (6), `Dashboard` (14), `InsightRule` (7), `MetricStream` (6) |
 | **CodeBuild** | `Project` (37), `ReportGroup` (2), `SourceCredential` (4) |
 | **CodeCommit** | `Repository` (11) |
 | **CodeDeploy** | `Application` (7), `DeploymentConfig` (12), `DeploymentGroup` (23) |
 | **CodePipeline** | `CustomActionType` (3), `Pipeline` (25), `Webhook` (2) |
 | **Cognito** | `IdentityPool` (3), `IdentityPoolRoleAttachment` (7), `LogDeliveryConfiguration` (3), `ManagedLoginBranding` (2), `UserPool` (52), `UserPoolClient` (21), `UserPoolDomain` (7), `UserPoolGroup` (1), `UserPoolIdentityProvider` (11), `UserPoolResourceServer` (4), `UserPoolRiskConfigurationAttachment` (6), `UserPoolUICustomizationAttachment` (2) |
+| **Config** | `ConfigRule` (6), `ConfigurationAggregator` (2), `ConfigurationRecorder` (7), `ConformancePack` (1), `RemediationConfiguration` (2) |
 | **DocDB** | `DBCluster` (14), `DBInstance` (1), `DBSubnetGroup` (2), `EventSubscription` (1) |
 | **DocDBElastic** | `Cluster` (7) |
 | **DynamoDB** | `GlobalTable` (26), `Table` (28) |
@@ -189,6 +193,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **ElasticLoadBalancingV2** | `Listener` (57), `ListenerCertificate` (2), `ListenerRule` (37), `LoadBalancer` (37), `TargetGroup` (58), `TrustStore` (1), `TrustStoreRevocation` (1) |
 | **Events** | `ApiDestination` (1), `Archive` (5), `Connection` (1), `Endpoint` (2), `EventBus` (2), `Rule` (23) |
 | **EventSchemas** | `Discoverer` (1), `Registry` (1), `RegistryPolicy` (1), `Schema` (1) |
+| **GlobalAccelerator** | `Accelerator` (1), `EndpointGroup` (5), `Listener` (2) |
 | **Glue** | `Classifier` (6), `Connection` (5), `Crawler` (11), `CustomEntityType` (1), `Database` (1), `DataQualityRuleset` (1), `Job` (15), `MLTransform` (4), `Partition` (1), `Schema` (3), `SecurityConfiguration` (1), `Table` (1), `Trigger` (10), `UserDefinedFunction` (2), `Workflow` (1) |
 | **IAM** | `Group` (23), `GroupPolicy` (1), `InstanceProfile` (2), `ManagedPolicy` (31), `OIDCProvider` (2), `Policy` (29), `Role` (40), `RolePolicy` (1), `ServiceLinkedRole` (1), `User` (24), `UserPolicy` (1) |
 | **Kinesis** | `ResourcePolicy` (4), `Stream` (5), `StreamConsumer` (2) |
@@ -212,7 +217,8 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **S3Express** | `AccessPoint` (3), `DirectoryBucket` (11) |
 | **Scheduler** | `Schedule` (10), `ScheduleGroup` (1) |
 | **SecretsManager** | `RotationSchedule` (4), `Secret` (5), `SecretTargetAttachment` (1) |
-| **ServiceDiscovery** | `HttpNamespace` (3), `PrivateDnsNamespace` (4), `PublicDnsNamespace` (4), `Service` (12) |
+| **ServiceDiscovery** | `HttpNamespace` (3), `Instance` (19), `PrivateDnsNamespace` (4), `PublicDnsNamespace` (4), `Service` (13) |
+| **SES** | `ConfigurationSetEventDestination` (8), `ContactList` (1), `EmailIdentity` (6), `ReceiptRule` (6), `ReceiptRuleSet` (1), `Template` (1) |
 | **SNS** | `Subscription` (9), `Topic` (12), `TopicPolicy` (1) |
 | **SQS** | `Queue` (9), `QueuePolicy` (1) |
 | **SSM** | `Association` (3), `Document` (3), `MaintenanceWindow` (2), `MaintenanceWindowTarget` (1), `MaintenanceWindowTask` (1), `Parameter` (5) |

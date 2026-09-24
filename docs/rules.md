@@ -4,6 +4,10 @@
 
 | Rule | Resource types | Constraint | Severity | Upstream status |
 |---|---|---|---|---|
+| `pf-acm-domain-name-cn-64-octets` | AWS::CertificateManager::Certificate | A certificate's DomainName must be at most 64 characters | ERROR | none |
+| `pf-acm-domain-validation-option-known-domain` | AWS::CertificateManager::Certificate | Every DomainValidationOptions entry must name the certificate's own DomainName or a SubjectAlternativeName | ERROR | none |
+| `pf-acm-public-key-algorithm` | AWS::CertificateManager::Certificate | A public ACM certificate takes only RSA_2048, EC_prime256v1 or EC_secp384r1 | ERROR | none |
+| `pf-acm-validation-domain-superdomain` | AWS::CertificateManager::Certificate | An email-validated certificate's ValidationDomain must be a superdomain of the domain it validates | ERROR | none |
 | `pf-apigw-access-log-format-request-id` | AWS::ApiGateway::Stage | Access log format must include a request id variable | ERROR | none |
 | `pf-apigw-api-key-value-length` | AWS::ApiGateway::ApiKey | An API key value is at least 20 characters | ERROR | none |
 | `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | ERROR | none |
@@ -375,6 +379,40 @@
 | `pf-asg-wp-weighted-mixed-instances-incompatible` | AWS::AutoScaling::WarmPool<br>AWS::AutoScaling::AutoScalingGroup | A weighted mixed instances policy takes no warm pool | ERROR | none |
 | `pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation` | AWS::AutoScaling::AutoScalingGroup | Zonal shift needs cross-zone load balancing on its target groups | ERROR | none |
 | `pf-asg-zone-or-subnet-required` | AWS::AutoScaling::AutoScalingGroup | A group needs AvailabilityZones, AvailabilityZoneIds, or subnets | ERROR | none |
+| `pf-backup-advanced-setting-backup-options-values` | AWS::Backup::BackupPlan | BackupOptions only accepts WindowsVSS set to enabled or disabled | ERROR | none |
+| `pf-backup-advanced-setting-resource-type-ec2-only` | AWS::Backup::BackupPlan | AdvancedBackupSettings only accepts the EC2 resource type | ERROR | none |
+| `pf-backup-completion-window-gt-start-window` | AWS::Backup::BackupPlan | CompletionWindowMinutes must be at least 60 minutes greater than StartWindowMinutes | ERROR | none |
+| `pf-backup-continuous-delete-after-days-max` | AWS::Backup::BackupPlan | A continuous backup rule cannot retain recovery points for more than 35 days | ERROR | none |
+| `pf-backup-continuous-no-cold-storage` | AWS::Backup::BackupPlan | A continuous backup rule cannot move recovery points to cold storage | ERROR | none |
+| `pf-backup-copy-action-lifecycle-cold-to-delete-gap` | AWS::Backup::BackupPlan | A copy action lifecycle must keep DeleteAfterDays at least 90 days after MoveToColdStorageAfterDays | ERROR | none |
+| `pf-backup-copy-destination-vault-arn-format` | AWS::Backup::BackupPlan | A copy action destination must be a backup vault ARN | ERROR | none |
+| `pf-backup-framework-control-scope-tags-max-one` | AWS::Backup::Framework | A framework control scope may carry at most one tag key/value pair | ERROR | none |
+| `pf-backup-framework-controls-min-one` | AWS::Backup::Framework | A backup audit framework must define at least one control | ERROR | none |
+| `pf-backup-framework-name-charset` | AWS::Backup::Framework | A framework name must start with a letter and use only letters, digits and underscores | ERROR | none |
+| `pf-backup-lag-vault-min-le-max-retention` | AWS::Backup::LogicallyAirGappedBackupVault | A logically air-gapped vault MinRetentionDays may not exceed MaxRetentionDays | ERROR | none |
+| `pf-backup-lag-vault-min-retention-days` | AWS::Backup::LogicallyAirGappedBackupVault | A logically air-gapped vault must retain recovery points for at least 7 days | ERROR | none |
+| `pf-backup-lifecycle-cold-to-delete-gap` | AWS::Backup::BackupPlan | A backup rule lifecycle must keep DeleteAfterDays at least 90 days after MoveToColdStorageAfterDays | ERROR | none |
+| `pf-backup-plan-name-charset` | AWS::Backup::BackupPlan | A backup plan name may only contain alphanumerics, hyphens, underscores and periods | ERROR | none |
+| `pf-backup-report-plan-name-charset` | AWS::Backup::ReportPlan | A report plan name must start with a letter and use only letters, digits and underscores | ERROR | none |
+| `pf-backup-report-setting-framework-arns-required` | AWS::Backup::ReportPlan | A compliance report plan must list the framework ARNs it reports on | ERROR | none |
+| `pf-backup-restore-testing-plan-include-vaults-required` | AWS::Backup::RestoreTestingPlan | A restore testing plan must include at least one backup vault | ERROR | none |
+| `pf-backup-restore-testing-plan-name-charset` | AWS::Backup::RestoreTestingPlan | A restore testing plan name may only contain letters, digits and underscores | ERROR | none |
+| `pf-backup-restore-testing-plan-recovery-point-types` | AWS::Backup::RestoreTestingPlan | RecoveryPointTypes accepts only SNAPSHOT and CONTINUOUS | ERROR | cfn-schema |
+| `pf-backup-restore-testing-plan-selection-window-days` | AWS::Backup::RestoreTestingPlan | A restore testing plan may look back at most 365 days for recovery points | ERROR | none |
+| `pf-backup-restore-testing-plan-start-window-hours` | AWS::Backup::RestoreTestingPlan | A restore testing plan start window may not exceed 168 hours | ERROR | none |
+| `pf-backup-restore-testing-selection-arns-xor-conditions` | AWS::Backup::RestoreTestingSelection | A restore testing selection uses either protected resource ARNs or conditions, not both | ERROR | none |
+| `pf-backup-restore-testing-selection-name-charset` | AWS::Backup::RestoreTestingSelection | A restore testing selection name may only contain letters, digits and underscores | ERROR | none |
+| `pf-backup-restore-testing-selection-protected-resource-type` | AWS::Backup::RestoreTestingSelection | A restore testing selection resource type must be one of the types AWS Backup can restore-test | WARN | none |
+| `pf-backup-rule-name-charset` | AWS::Backup::BackupPlan | A backup rule name may only contain alphanumerics, hyphens, underscores and periods | ERROR | none |
+| `pf-backup-schedule-expression-cron-only` | AWS::Backup::BackupPlan | A backup rule schedule must be a cron() expression | ERROR | none |
+| `pf-backup-selection-conditions-key-prefix` | AWS::Backup::BackupSelection | A selection condition key must be prefixed with aws:ResourceTag/ | ERROR | none |
+| `pf-backup-selection-list-of-tags-string-equals-only` | AWS::Backup::BackupSelection | ListOfTags only accepts the STRINGEQUALS condition type | ERROR | none |
+| `pf-backup-selection-not-resources-max` | AWS::Backup::BackupSelection | NotResources accepts at most 30 wildcard selectors | ERROR | none |
+| `pf-backup-selection-requires-resources-or-tags` | AWS::Backup::BackupSelection | A backup selection must list resources or tags | ERROR | none |
+| `pf-backup-start-window-minutes-min` | AWS::Backup::BackupPlan | StartWindowMinutes must be at least 60 minutes | ERROR | none |
+| `pf-backup-vault-encryption-key-region` | AWS::Backup::BackupVault | A backup vault encryption key must live in the deploy region | ERROR | none |
+| `pf-backup-vault-lock-changeable-for-days-min` | AWS::Backup::BackupVault | A compliance-mode vault lock needs a cooling-off period of at least 3 days | ERROR | none |
+| `pf-backup-vault-lock-min-le-max-retention` | AWS::Backup::BackupVault | A vault lock MinRetentionDays may not exceed MaxRetentionDays | ERROR | none |
 | `pf-batch-ce-allocation-strategy-compute-type` | AWS::Batch::ComputeEnvironment | The allocation strategy must match the compute resource type | ERROR | none |
 | `pf-batch-ce-bid-percentage-range` | AWS::Batch::ComputeEnvironment | BidPercentage must be between 0 and 100 | ERROR | none |
 | `pf-batch-ce-desired-vcpus-range` | AWS::Batch::ComputeEnvironment | DesiredvCpus must sit between MinvCpus and MaxvCpus | ERROR | none |
@@ -784,6 +822,26 @@
 | `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin ports must be 80, 443 or 1024-65535 | ERROR | none |
 | `pf-cloudfront-vpc-origin-ssl-protocols-required` | AWS::CloudFront::VpcOrigin | An HTTPS-capable VPC origin must list OriginSSLProtocols | ERROR | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | ERROR | none |
+| `pf-cloudtrail-eds-context-key-requires-large-event-size` | AWS::CloudTrail::EventDataStore | Context key selectors require MaxEventSize Large | ERROR | none |
+| `pf-cloudtrail-trail-aes-conditions-max` | AWS::CloudTrail::Trail | A trail holds at most 500 advanced event selector condition values | ERROR | none |
+| `pf-cloudtrail-trail-aes-data-requires-resources-type` | AWS::CloudTrail::Trail | A Data event selector needs a resources.type field | ERROR | none |
+| `pf-cloudtrail-trail-aes-error-code-value` | AWS::CloudTrail::Trail | VpceAccessDenied is the only errorCode a selector can filter on | ERROR | none |
+| `pf-cloudtrail-trail-aes-event-category-equals-only` | AWS::CloudTrail::Trail | eventCategory, readOnly and resources.type only accept the Equals operator | ERROR | none |
+| `pf-cloudtrail-trail-aes-event-category-required` | AWS::CloudTrail::Trail | Every advanced event selector needs an eventCategory field | ERROR | none |
+| `pf-cloudtrail-trail-aes-event-category-value` | AWS::CloudTrail::Trail | A trail only logs the Management, Data and NetworkActivity event categories | ERROR | none |
+| `pf-cloudtrail-trail-aes-field-unknown` | AWS::CloudTrail::Trail | An advanced field selector only names CloudTrail's defined fields | WARN | none |
+| `pf-cloudtrail-trail-aes-network-requires-event-source` | AWS::CloudTrail::Trail | A NetworkActivity event selector needs an eventSource field | ERROR | none |
+| `pf-cloudtrail-trail-aes-resources-type-single` | AWS::CloudTrail::Trail | An advanced event selector holds at most one resources.type field | ERROR | none |
+| `pf-cloudtrail-trail-cwl-loggroup-region` | AWS::CloudTrail::Trail | The CloudWatch Logs log group must be in the deployment Region | ERROR | none |
+| `pf-cloudtrail-trail-cwl-pair` | AWS::CloudTrail::Trail | CloudWatch Logs delivery needs both the log group ARN and the role ARN | ERROR | none |
+| `pf-cloudtrail-trail-data-resource-type` | AWS::CloudTrail::Trail | A basic event selector only logs three data resource types | ERROR | none |
+| `pf-cloudtrail-trail-data-resources-max` | AWS::CloudTrail::Trail | A trail logs at most 250 data resource values across all event selectors | ERROR | none |
+| `pf-cloudtrail-trail-kms-key-region` | AWS::CloudTrail::Trail | A trail's KMS key must be in the deployment Region | ERROR | none |
+| `pf-cloudtrail-trail-name-adjacent-separators` | AWS::CloudTrail::Trail | A trail name cannot have adjacent periods, hyphens or underscores | ERROR | none |
+| `pf-cloudtrail-trail-name-not-ip-format` | AWS::CloudTrail::Trail | A trail name must not look like an IP address | ERROR | none |
+| `pf-cloudtrail-trail-s3-bucket-policy-missing` | AWS::CloudTrail::Trail | The trail's S3 bucket needs a policy that lets CloudTrail write to it | ERROR | none |
+| `pf-cloudtrail-trail-s3-data-resource-value-suffix` | AWS::CloudTrail::Trail | An S3 data resource value must name an object prefix, not a bare bucket ARN | ERROR | none |
+| `pf-cloudtrail-trail-selectors-exclusive` | AWS::CloudTrail::Trail | A trail cannot set both EventSelectors and AdvancedEventSelectors | ERROR | none |
 | `pf-cloudwatch-alarm-action-vendor` | AWS::CloudWatch::Alarm | Alarm actions accept only the CloudWatch action vendors | ERROR | none |
 | `pf-cloudwatch-alarm-actions-max` | AWS::CloudWatch::Alarm | Each alarm action list holds at most 5 ARNs | ERROR | none |
 | `pf-cloudwatch-alarm-anomaly-autoscaling-action` | AWS::CloudWatch::Alarm | An anomaly-detection alarm cannot carry an Auto Scaling action | ERROR | none |
@@ -1073,6 +1131,24 @@
 | `pf-cognito-verification-sms-placeholder` | AWS::Cognito::UserPool | The verification SMS needs the {####} code placeholder | ERROR | none |
 | `pf-cognito-web-authn-relying-party-format` | AWS::Cognito::UserPool | WebAuthnRelyingPartyID is a bare domain name | ERROR | none |
 | `pf-cognito-write-attributes-immutable` | AWS::Cognito::UserPoolClient | Verified-status attributes cannot be written by a client | ERROR | none |
+| `pf-config-aggregator-account-source-regions-exclusive` | AWS::Config::ConfigurationAggregator | An account aggregation source takes AllAwsRegions or AwsRegions, not both | ERROR | none |
+| `pf-config-aggregator-source-exactly-one` | AWS::Config::ConfigurationAggregator | An aggregator takes account sources or an organization source, not both | ERROR | none |
+| `pf-config-conformance-pack-template-body-resource-types` | AWS::Config::ConformancePack | A conformance pack template holds only Config rules and remediations | ERROR | none |
+| `pf-config-recorder-all-supported-with-resource-types` | AWS::Config::ConfigurationRecorder | RecordingGroup cannot list ResourceTypes while AllSupported is true | ERROR | none |
+| `pf-config-recorder-exclusion-requires-strategy` | AWS::Config::ConfigurationRecorder | ExclusionByResourceTypes needs the EXCLUSION_BY_RESOURCE_TYPES recording strategy | ERROR | none |
+| `pf-config-recorder-exclusion-strategy-with-resource-types` | AWS::Config::ConfigurationRecorder | The EXCLUSION_BY_RESOURCE_TYPES strategy cannot also list ResourceTypes | ERROR | none |
+| `pf-config-recorder-include-global-requires-all-supported` | AWS::Config::ConfigurationRecorder | IncludeGlobalResourceTypes needs AllSupported to be true | ERROR | none |
+| `pf-config-recorder-recording-mode-daily-resource-types` | AWS::Config::ConfigurationRecorder | Three Config-owned resource types cannot be recorded daily | ERROR | none |
+| `pf-config-recorder-strategy-all-supported-requires-all-supported` | AWS::Config::ConfigurationRecorder | The ALL_SUPPORTED_RESOURCE_TYPES strategy needs AllSupported to be true | ERROR | none |
+| `pf-config-recorder-strategy-inclusion-requires-resource-types` | AWS::Config::ConfigurationRecorder | The INCLUSION_BY_RESOURCE_TYPES strategy needs ResourceTypes | ERROR | none |
+| `pf-config-remediation-automatic-requires-attempts-and-retry` | AWS::Config::RemediationConfiguration | Automatic remediation needs MaximumAutomaticAttempts and RetryAttemptSeconds | ERROR | none |
+| `pf-config-remediation-resource-value-allowed` | AWS::Config::RemediationConfiguration | ResourceValue.Value only takes RESOURCE_ID | ERROR | none |
+| `pf-config-rule-custom-lambda-requires-source-details` | AWS::Config::ConfigRule | A custom Config rule needs Source.SourceDetails | ERROR | none |
+| `pf-config-rule-custom-policy-message-type` | AWS::Config::ConfigRule | A CUSTOM_POLICY rule takes only the two change-notification message types | ERROR | none |
+| `pf-config-rule-custom-policy-requires-details` | AWS::Config::ConfigRule | A CUSTOM_POLICY rule needs Source.CustomPolicyDetails | ERROR | none |
+| `pf-config-rule-scope-resource-id-requires-single-type` | AWS::Config::ConfigRule | Scope.ComplianceResourceId needs exactly one ComplianceResourceTypes entry | ERROR | none |
+| `pf-config-rule-scope-tag-value-requires-tag-key` | AWS::Config::ConfigRule | Scope.TagValue is only read together with Scope.TagKey | ERROR | none |
+| `pf-config-rule-source-detail-frequency-requires-scheduled` | AWS::Config::ConfigRule | A SourceDetail's MaximumExecutionFrequency only applies to ScheduledNotification | ERROR | none |
 | `pf-docdb-backup-maintenance-overlap` | AWS::DocDB::DBCluster | The backup window and the maintenance window must not overlap | ERROR | none |
 | `pf-docdb-backup-window-duration` | AWS::DocDB::DBCluster | The backup window must be at least 30 minutes | ERROR | none |
 | `pf-docdb-backup-window-format` | AWS::DocDB::DBCluster | PreferredBackupWindow must be hh24:mi-hh24:mi | ERROR | none |
@@ -1639,6 +1715,14 @@
 | `pf-firehose-snowflake-user` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a user or a secret | ERROR | none |
 | `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
 | `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
+| `pf-ga-endpoint-group-region-supported` | AWS::GlobalAccelerator::EndpointGroup | EndpointGroupRegion must be a real AWS Region | ERROR | none |
+| `pf-ga-endpoint-group-unique-per-listener-region` | AWS::GlobalAccelerator::EndpointGroup | A listener holds at most one endpoint group per Region | ERROR | none |
+| `pf-ga-flow-logs-require-bucket-and-prefix` | AWS::GlobalAccelerator::Accelerator | Flow logs need both FlowLogsS3Bucket and FlowLogsS3Prefix | ERROR | none |
+| `pf-ga-health-check-interval-10-or-30` | AWS::GlobalAccelerator::EndpointGroup | HealthCheckIntervalSeconds must be 10 or 30 | ERROR | none |
+| `pf-ga-listener-port-range-order` | AWS::GlobalAccelerator::Listener | A listener PortRange must have FromPort <= ToPort | ERROR | none |
+| `pf-ga-listener-port-ranges-unique-per-accelerator` | AWS::GlobalAccelerator::Listener | Listeners on one accelerator must not share port ranges | ERROR | none |
+| `pf-ga-port-override-endpoint-port-not-in-listener-range` | AWS::GlobalAccelerator::EndpointGroup | A port override must not target a listener port of the accelerator | ERROR | none |
+| `pf-ga-port-override-listener-port-in-range` | AWS::GlobalAccelerator::EndpointGroup | A port override must name a listener port the listener accepts | ERROR | none |
 | `pf-glue-classifier-csv-custom-datatype` | AWS::Glue::Classifier | Custom CSV datatypes come from the supported set | ERROR | pending-engine |
 | `pf-glue-classifier-csv-custom-datatype-flag` | AWS::Glue::Classifier | ContainsCustomDatatype and CustomDatatypeConfigured travel together | ERROR | none |
 | `pf-glue-classifier-csv-quote-symbol` | AWS::Glue::Classifier | The CSV quote symbol differs from the delimiter | ERROR | none |
@@ -2470,6 +2554,25 @@
 | `pf-secretsmanager-target-attachment` | AWS::SecretsManager::SecretTargetAttachment | SecretTargetAttachment needs a TargetType from the documented list and a secret whose value is a JSON object (SecretString JSON or GenerateSecretString with SecretStringTemplate) | ERROR | none |
 | `pf-servicediscovery-http-namespace-name-charset` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name must be printable ASCII | ERROR | none |
 | `pf-servicediscovery-http-namespace-name-length` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name is limited to 1024 characters | ERROR | cfn-schema |
+| `pf-servicediscovery-instance-a-requires-ipv4` | AWS::ServiceDiscovery::Instance | An A record service needs AWS_INSTANCE_IPV4 on every instance | ERROR | none |
+| `pf-servicediscovery-instance-aaaa-requires-ipv6` | AWS::ServiceDiscovery::Instance | An AAAA record service needs AWS_INSTANCE_IPV6 on every instance | ERROR | none |
+| `pf-servicediscovery-instance-alias-requires-weighted` | AWS::ServiceDiscovery::Instance | An ALIAS instance needs a WEIGHTED service | ERROR | none |
+| `pf-servicediscovery-instance-attribute-key-length` | AWS::ServiceDiscovery::Instance | An instance attribute key is at most 255 characters | ERROR | none |
+| `pf-servicediscovery-instance-attribute-key-pattern` | AWS::ServiceDiscovery::Instance | An instance attribute key is printable ASCII with no spaces | ERROR | none |
+| `pf-servicediscovery-instance-attribute-value-length` | AWS::ServiceDiscovery::Instance | An instance attribute value is at most 1024 characters | ERROR | none |
+| `pf-servicediscovery-instance-attributes-total-size` | AWS::ServiceDiscovery::Instance | All instance attributes together are at most 5000 characters | ERROR | none |
+| `pf-servicediscovery-instance-cname-requires-cname-attr` | AWS::ServiceDiscovery::Instance | A CNAME record service needs AWS_INSTANCE_CNAME on every instance | ERROR | none |
+| `pf-servicediscovery-instance-custom-attributes-max` | AWS::ServiceDiscovery::Instance | An instance carries at most 30 custom attributes | ERROR | none |
+| `pf-servicediscovery-instance-ec2-id-exclusive` | AWS::ServiceDiscovery::Instance | AWS_EC2_INSTANCE_ID takes no companion attribute but AWS_INIT_HEALTH_STATUS | ERROR | none |
+| `pf-servicediscovery-instance-ec2-id-http-namespace-only` | AWS::ServiceDiscovery::Instance | AWS_EC2_INSTANCE_ID only works in an HTTP namespace | ERROR | none |
+| `pf-servicediscovery-instance-healthcheck-forbids-nonroutable-ipv4` | AWS::ServiceDiscovery::Instance | A health-checked service rejects a non-routable AWS_INSTANCE_IPV4 | ERROR | none |
+| `pf-servicediscovery-instance-healthcheck-requires-port` | AWS::ServiceDiscovery::Instance | An instance of a health-checked service needs AWS_INSTANCE_PORT | ERROR | none |
+| `pf-servicediscovery-instance-id-length` | AWS::ServiceDiscovery::Instance | An instance id is at most 64 characters | ERROR | cfn-schema |
+| `pf-servicediscovery-instance-id-pattern` | AWS::ServiceDiscovery::Instance | An instance id takes a restricted character set | ERROR | none |
+| `pf-servicediscovery-instance-init-health-status-enum` | AWS::ServiceDiscovery::Instance | AWS_INIT_HEALTH_STATUS is HEALTHY or UNHEALTHY | ERROR | none |
+| `pf-servicediscovery-instance-srv-requires-ip` | AWS::ServiceDiscovery::Instance | An SRV record service needs an IP address on every instance | ERROR | none |
+| `pf-servicediscovery-instance-srv-requires-port` | AWS::ServiceDiscovery::Instance | An SRV record service needs AWS_INSTANCE_PORT on every instance | ERROR | none |
+| `pf-servicediscovery-instance-unknown-aws-attribute` | AWS::ServiceDiscovery::Instance | The AWS_ attribute prefix is reserved | ERROR | none |
 | `pf-servicediscovery-namespace-description-length` | AWS::ServiceDiscovery::HttpNamespace<br>AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | A namespace description is limited to 1024 characters | ERROR | cfn-schema |
 | `pf-servicediscovery-namespace-soa-ttl-range` | AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | The SOA record TTL of a DNS namespace may not exceed 2147483647 | ERROR | cfn-schema |
 | `pf-servicediscovery-private-namespace-name-charset` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name must be printable ASCII | ERROR | none |
@@ -2483,11 +2586,35 @@
 | `pf-servicediscovery-service-dnsrecord-type-combination` | AWS::ServiceDiscovery::Service | Only a few DnsRecords type combinations are valid | ERROR | none |
 | `pf-servicediscovery-service-dnsrecord-type-duplicate` | AWS::ServiceDiscovery::Service | DnsRecords may not repeat the same record type | ERROR | none |
 | `pf-servicediscovery-service-healthcheck-in-private-namespace` | AWS::ServiceDiscovery::Service | A service in a private DNS namespace cannot carry a health check | ERROR | none |
+| `pf-servicediscovery-service-healthcheck-requires-failure-threshold` | AWS::ServiceDiscovery::Service | A HealthCheckConfig without FailureThreshold breaks the service handler | ERROR | none |
 | `pf-servicediscovery-service-http-type-with-dnsconfig` | AWS::ServiceDiscovery::Service | A service of Type HTTP cannot declare DnsConfig | ERROR | none |
 | `pf-servicediscovery-service-name-case-collision` | AWS::ServiceDiscovery::Service | Two services in one DNS namespace may not differ only by case | ERROR | none |
 | `pf-servicediscovery-service-name-duplicate-in-namespace` | AWS::ServiceDiscovery::Service | Two services in one namespace may not share a name | ERROR | none |
 | `pf-servicediscovery-service-namespace-required` | AWS::ServiceDiscovery::Service | A service must name the namespace it belongs to | ERROR | none |
 | `pf-servicediscovery-service-tcp-healthcheck-resourcepath` | AWS::ServiceDiscovery::Service | A TCP health check may not carry a resource path | ERROR | none |
+| `pf-ses-bounce-action-smtp-reply-code` | AWS::SES::ReceiptRule | A bounce action's SmtpReplyCode must be a three-digit 4xx or 5xx reply code | ERROR | none |
+| `pf-ses-bounce-action-status-code` | AWS::SES::ReceiptRule | A bounce action's StatusCode must be 4.x.y or 5.x.y with a single-digit subject and detail | ERROR | none |
+| `pf-ses-byodkim-requires-domain-identity` | AWS::SES::EmailIdentity | BYODKIM works only on a domain identity, not an email address | ERROR | none |
+| `pf-ses-byodkim-requires-selector-and-key` | AWS::SES::EmailIdentity | BYODKIM needs both DomainSigningSelector and DomainSigningPrivateKey | ERROR | none |
+| `pf-ses-contact-list-topic-subscription-status-enum` | AWS::SES::ContactList | A contact list topic's DefaultSubscriptionStatus is OPT_IN or OPT_OUT | ERROR | none |
+| `pf-ses-dkim-next-signing-key-length-easy-dkim-only` | AWS::SES::EmailIdentity | NextSigningKeyLength cannot be combined with the BYODKIM selector and key | ERROR | none |
+| `pf-ses-dkim-private-key-base64` | AWS::SES::EmailIdentity | A BYODKIM private key must be bare base64, not a PEM block | ERROR | none |
+| `pf-ses-dkim-signing-selector-charset` | AWS::SES::EmailIdentity | A BYODKIM selector must be a single DNS label without a leading or trailing hyphen | ERROR | none |
+| `pf-ses-event-destination-matching-event-types-enum` | AWS::SES::ConfigurationSetEventDestination | MatchingEventTypes takes only the ten SES event types | ERROR | none |
+| `pf-ses-event-destination-matching-event-types-nonempty` | AWS::SES::ConfigurationSetEventDestination | An event destination must match at least one event type | ERROR | none |
+| `pf-ses-event-destination-requires-destination` | AWS::SES::ConfigurationSetEventDestination | An event destination must carry one destination block | ERROR | none |
+| `pf-ses-eventbridge-destination-bus-region` | AWS::SES::ConfigurationSetEventDestination | An EventBridge event destination must be in the deployment Region | ERROR | none |
+| `pf-ses-eventbridge-destination-default-bus-only` | AWS::SES::ConfigurationSetEventDestination | An EventBridge event destination must point at the default event bus | ERROR | none |
+| `pf-ses-firehose-destination-arn-format` | AWS::SES::ConfigurationSetEventDestination | A Firehose event destination needs a deliverystream ARN | ERROR | none |
+| `pf-ses-firehose-destination-stream-region` | AWS::SES::ConfigurationSetEventDestination | A Firehose event destination must stream to the deployment Region | ERROR | none |
+| `pf-ses-mail-from-domain-subdomain-of-identity` | AWS::SES::EmailIdentity | A custom MAIL FROM domain must be a subdomain of the identity it belongs to | ERROR | none |
+| `pf-ses-receipt-action-exactly-one` | AWS::SES::ReceiptRule | Each entry of a receipt rule's Actions carries exactly one action | ERROR | none |
+| `pf-ses-receipt-rule-actions-max-10` | AWS::SES::ReceiptRule | A receipt rule holds at most 10 actions | ERROR | none |
+| `pf-ses-receipt-rule-after-exists` | AWS::SES::ReceiptRule | A receipt rule's After must name a rule that the template actually creates | ERROR | none |
+| `pf-ses-receipt-rule-name-charset` | AWS::SES::ReceiptRule | A receipt rule's name takes only letters, digits, underscores, dashes and periods | ERROR | none |
+| `pf-ses-receipt-rule-set-name-charset` | AWS::SES::ReceiptRuleSet | A receipt rule set's name must start and end with a letter or digit | ERROR | none |
+| `pf-ses-sns-destination-topic-region` | AWS::SES::ConfigurationSetEventDestination | An SNS event destination must publish to a topic in the deployment Region | ERROR | none |
+| `pf-ses-template-html-or-text-part` | AWS::SES::Template | An email template needs an HtmlPart or a TextPart | ERROR | none |
 | `pf-sns-delivery-policy` | AWS::SNS::Subscription<br>AWS::SNS::Topic | HTTP/S DeliveryPolicy retry values: minDelayTarget >= 1, maxDelayTarget <= 3600 and >= minDelayTarget, numRetries 0..100 and at least the sum of the phase retries, phase counts >= 0, backoffFunction one of arithmetic|exponential|geometric|linear, maxReceivesPerSecond >= 1 (subscription DeliveryPolicy and topic DeliveryPolicy.http) | ERROR | none |
 | `pf-sns-fifo-only-attributes` | AWS::SNS::Topic | ContentBasedDeduplication, ArchivePolicy and FifoThroughputScope are FIFO-only topic attributes, and ArchivePolicy.MessageRetentionPeriod is 1..365 days | ERROR | none |
 | `pf-sns-fifo-queue-on-standard-topic` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A FIFO SQS queue cannot subscribe to a standard topic (a FIFO topic may fan out to standard queues, not the reverse) | ERROR | none |
