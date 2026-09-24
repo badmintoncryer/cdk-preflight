@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "A1": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-princ-acct-a",
+        "Type": "data",
+        "Policy": {
+          "Fn::Sub": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-o\"],\"Permission\":[\"aoss:DescribeCollectionItems\"]}],\"Principal\":[\"arn:aws:iam::${AWS::AccountId}:role/probe\"]}]"
+        }
+      }
+    },
+    "A2": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-princ-acct-b",
+        "Type": "data",
+        "Policy": {
+          "Fn::Sub": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-p\"],\"Permission\":[\"aoss:DescribeCollectionItems\"]}],\"Principal\":[\"saml/${AWS::AccountId}/myprovider/user/Annie\"]}]"
+        }
+      }
+    }
+  }
+}

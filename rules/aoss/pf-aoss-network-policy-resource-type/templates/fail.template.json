@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P1": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-rtype-a",
+        "Type": "network",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"index\",\"Resource\":[\"collection/probe-l\"]}],\"AllowFromPublic\":true}]"
+      }
+    },
+    "P2": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-rtype-b",
+        "Type": "network",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"dashboard\",\"Resource\":[\"dashboard/probe-l\"]}],\"AllowFromPublic\":true}]"
+      }
+    }
+  }
+}

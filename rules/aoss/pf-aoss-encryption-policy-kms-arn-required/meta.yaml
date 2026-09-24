@@ -1,0 +1,12 @@
+id: pf-aoss-encryption-policy-kms-arn-required
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "AWSOwnedKey false needs a KmsARN"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-encryption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (AWSOwnedKey false and no KmsARN) -> \"Policy json is invalid, error: [$.AWSOwnedKey: must be a constant value true]\" (ROLLBACK_COMPLETE); pass (the same policy with AWSOwnedKey true) -> CREATE_COMPLETE"
+addedOn: 2026-09-25

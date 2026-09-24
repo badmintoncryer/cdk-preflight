@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "L": {
+      "Type": "AWS::OpenSearchServerless::LifecyclePolicy",
+      "Properties": {
+        "Name": "lc-ret",
+        "Type": "retention",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"index\",\"Resource\":[\"index/probe-u/logs\"],\"MinIndexRetention\":\"24h\"},{\"ResourceType\":\"index\",\"Resource\":[\"index/probe-u/metrics\"],\"MinIndexRetention\":\"3650d\"}]}"
+      }
+    }
+  }
+}

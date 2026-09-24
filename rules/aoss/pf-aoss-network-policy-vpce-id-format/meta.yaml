@@ -1,0 +1,12 @@
+id: pf-aoss-network-policy-vpce-id-format
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "SourceVPCEs holds VPC endpoint ids"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-network.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (SourceVPCEs vpc-0123456789abcdef0) -> \"Policy json is invalid, error: [$[0].SourceVPCEs[0]: does not match the regex pattern ^vpce-[a-zA-Z0-9]{8,20}$ ...]\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only). api 2026-09-25 us-east-1 CreateSecurityPolicy accepted vpce-0123456789abcdef0, which does not exist in the account - the service checks the format only, so the fixture needs no managed VPC endpoint."
+addedOn: 2026-09-25

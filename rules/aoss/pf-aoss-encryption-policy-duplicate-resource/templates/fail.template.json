@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P1": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-dup-1",
+        "Type": "encryption",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-e\"]}],\"AWSOwnedKey\":true}"
+      }
+    },
+    "P2": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-dup-2",
+        "Type": "encryption",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-e\"]}],\"AWSOwnedKey\":true}"
+      }
+    }
+  }
+}

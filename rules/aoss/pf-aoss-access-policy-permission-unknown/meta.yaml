@@ -1,0 +1,12 @@
+id: pf-aoss-access-policy-permission-unknown
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::AccessPolicy]
+severity: ERROR
+title: "A data access permission must be a known aoss action"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-genref.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (Permission es:ReadDocument) -> \"Policy json is invalid, error: [... $[0].Rules[0].Permission[0]: does not have a value in the enumeration [aoss:ReadDocument, aoss:WriteDocument, aoss:CreateIndex, aoss:DeleteIndex, aoss:UpdateIndex, aoss:DescribeIndex, aoss:DelegateAccess, aoss:RestoreSnapshot, aoss:DescribeSnapshot, aoss:*]]\" (ROLLBACK_COMPLETE); pass (aoss:ReadDocument) -> CREATE_COMPLETE. The four enumerations the message prints are the source of truth for _pf_aoss_perms; the developer guide lists 11 permissions and misses DelegateAccess, RestoreSnapshot, DescribeSnapshot and the whole model / agent branches."
+addedOn: 2026-09-25

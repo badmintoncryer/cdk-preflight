@@ -1,0 +1,12 @@
+id: pf-aoss-network-policy-resource-type
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "A network policy rule covers collection or dashboard, and always collection/<name>"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-network.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail carries two policies, each one variable off the pass. ResourceType dashboard over dashboard/probe-l -> \"Policy json is invalid, error: [$[0].Rules[0].ResourceType: must be a constant value collection, $[0].Rules[0].Resource[0]: does not match the regex pattern ^collection/(?:[a-z][a-z0-9_-]{2,63}\\\\*?|\\\\*)$]\" (ROLLBACK_COMPLETE) - a dashboard rule still takes the collection/ form. The other arm (ResourceType index) is proven alone by api 2026-09-25 us-east-1 CreateSecurityPolicy: \"[$[0].Rules[0].ResourceType: does not have a value in the enumeration [collection, dashboard]]\". pass (ResourceType collection and ResourceType dashboard, both over collection/probe-l) -> CREATE_COMPLETE"
+addedOn: 2026-09-25

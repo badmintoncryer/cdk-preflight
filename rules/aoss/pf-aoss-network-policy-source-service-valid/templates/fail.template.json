@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-src-svc",
+        "Type": "network",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-k\"]}],\"AllowFromPublic\":false,\"SourceServices\":[\"lambda.amazonaws.com\"]}]"
+      }
+    }
+  }
+}

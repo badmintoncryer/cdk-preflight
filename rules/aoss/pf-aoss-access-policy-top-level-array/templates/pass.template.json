@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-array",
+        "Type": "data",
+        "Policy": {
+          "Fn::Sub": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-n\"],\"Permission\":[\"aoss:DescribeCollectionItems\"]}],\"Principal\":[\"arn:aws:iam::${AWS::AccountId}:role/probe\"]}]"
+        }
+      }
+    }
+  }
+}

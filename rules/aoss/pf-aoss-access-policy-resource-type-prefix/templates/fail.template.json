@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-rprefix",
+        "Type": "data",
+        "Policy": {
+          "Fn::Sub": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"index/probe-q/logs\"],\"Permission\":[\"aoss:DescribeCollectionItems\"]}],\"Principal\":[\"arn:aws:iam::${AWS::AccountId}:role/probe\"]}]"
+        }
+      }
+    }
+  }
+}

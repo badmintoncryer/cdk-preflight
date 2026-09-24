@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "L1": {
+      "Type": "AWS::OpenSearchServerless::LifecyclePolicy",
+      "Properties": {
+        "Name": "lc-rtype-a",
+        "Type": "retention",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"index/probe-y/logs\"],\"MinIndexRetention\":\"20d\"}]}"
+      }
+    },
+    "L2": {
+      "Type": "AWS::OpenSearchServerless::LifecyclePolicy",
+      "Properties": {
+        "Name": "lc-rtype-b",
+        "Type": "retention",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"index\",\"Resource\":[\"collection/probe-y\"],\"MinIndexRetention\":\"20d\"}]}"
+      }
+    }
+  }
+}

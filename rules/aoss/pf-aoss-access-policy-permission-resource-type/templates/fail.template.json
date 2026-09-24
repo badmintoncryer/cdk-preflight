@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-permrt",
+        "Type": "data",
+        "Policy": {
+          "Fn::Sub": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-s\"],\"Permission\":[\"aoss:ReadDocument\"]}],\"Principal\":[\"arn:aws:iam::${AWS::AccountId}:role/probe\"]}]"
+        }
+      }
+    }
+  }
+}
