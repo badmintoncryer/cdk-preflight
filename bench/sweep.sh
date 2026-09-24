@@ -142,6 +142,37 @@ sweep_global_accelerator() {
   done
 }
 
+# CloudFormation はスタックを消してもフィクスチャの S3 バケットを残す。CloudTrail は
+# AWSLogs/<account>/CloudTrail/ に 0 バイトのマーカーを、AWS Config は ConfigWritabilityCheckFile を
+# 書くので、スタック削除時の DeleteBucket が必ず「空でない」で失敗し、retain 削除で切り離される
+# （2026-09-24 実測: #69 の実機ゲートで CloudTrail 33 個 / Config 32 個。月次でも同じだけ溜まる）。
+# スタックタグは S3 に伝播していないのでタグ索引では拾えない。バケット名で拾う。
+# 対象は cdkpf-pf-* だけ — ベンチのスタック名が cdkpf-<ルール id>-fail|pass で、ルール id は必ず
+# pf- で始まるため。常設の cdkpf-bench-layers と cdkpf-<service>-probe-* には構造的に当たらない。
+sweep_fixture_buckets() {
+  local b region key vid
+  aws s3api list-buckets --query "Buckets[?starts_with(Name,'cdkpf-pf-')].Name" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r b; do
+    { [ -z "$b" ] || [ "$b" = "None" ]; } && continue
+    region=$(aws s3api get-bucket-location --bucket "$b" --query LocationConstraint --output text 2>/dev/null)
+    { [ -z "$region" ] || [ "$region" = "None" ] || [ "$region" = "null" ]; } && region=us-east-1
+    : > "$RECLAIM_ERR"
+    # バージョンと削除マーカーが 1 つでも残っているとバケットは消せない
+    aws s3api list-object-versions --bucket "$b" --region "$region" \
+      --query '[Versions,DeleteMarkers][][].[Key,VersionId]' --output text 2>/dev/null |
+      while read -r key vid; do
+        [ -z "$key" ] && continue
+        aws s3api delete-object --bucket "$b" --key "$key" --version-id "$vid" \
+          --region "$region" >/dev/null 2>&1
+      done
+    if aws s3api delete-bucket --bucket "$b" --region "$region" 2>"$RECLAIM_ERR"; then
+      echo "sweep: reclaimed fixture bucket $b ($region)"
+    else
+      echo "LEFTOVER: fixture bucket $b ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+}
+
 # us-west-2 は Global Accelerator のフィクスチャ用（GA は us-west-2 にしか作れない）
 for region in ap-northeast-1 us-east-1 us-west-2; do
   aws cloudformation list-stacks --region "$region" \
@@ -182,5 +213,6 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
   sweep_dns_firewall "$region"
 done
 
+sweep_fixture_buckets
 sweep_global_accelerator
 echo "sweep done"
