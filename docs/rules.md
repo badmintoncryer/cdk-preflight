@@ -102,6 +102,53 @@
 | `pf-apigwv2-websocket-no-cors` | AWS::ApiGatewayV2::Api | WebSocket APIs take no CORS configuration | ERROR | none |
 | `pf-apigwv2-websocket-payload-version` | AWS::ApiGatewayV2::Integration | WebSocket AWS_PROXY integrations reject payload format 2.0 | ERROR | none |
 | `pf-apigwv2-websocket-route-selection` | AWS::ApiGatewayV2::Api | WebSocket APIs need RouteSelectionExpression | ERROR | none |
+| `pf-appautoscaling-alb-metric-requires-resource-label` | AWS::ApplicationAutoScaling::ScalingPolicy | ALBRequestCountPerTarget needs a ResourceLabel | ERROR | none |
+| `pf-appautoscaling-customized-metric-exclusive` | AWS::ApplicationAutoScaling::ScalingPolicy | A customized metric uses metric math or a single metric, never both | ERROR | none |
+| `pf-appautoscaling-customized-metric-unsupported-dimension` | AWS::ApplicationAutoScaling::ScalingPolicy | DynamoDB table dimensions do not accept a customized metric | ERROR | none |
+| `pf-appautoscaling-dynamodb-target-value-range` | AWS::ApplicationAutoScaling::ScalingPolicy | A DynamoDB capacity utilization target must be between 10 and 90 | ERROR | none |
+| `pf-appautoscaling-elasticache-replicas-max-capacity-5` | AWS::ApplicationAutoScaling::ScalableTarget | An ElastiCache replication-group:Replicas target caps MaxCapacity at 5 | ERROR | none |
+| `pf-appautoscaling-lambda-resource-id-qualifier` | AWS::ApplicationAutoScaling::ScalableTarget | Lambda provisioned concurrency cannot be scaled on $LATEST | ERROR | none |
+| `pf-appautoscaling-min-adjustment-magnitude-percent-only` | AWS::ApplicationAutoScaling::ScalingPolicy | MinAdjustmentMagnitude only goes with PercentChangeInCapacity | ERROR | none |
+| `pf-appautoscaling-min-capacity-zero-namespace` | AWS::ApplicationAutoScaling::ScalableTarget | MinCapacity 0 is rejected for DynamoDB, Keyspaces, MSK, ElastiCache, Neptune and Comprehend | ERROR | none |
+| `pf-appautoscaling-min-max-capacity` | AWS::ApplicationAutoScaling::ScalableTarget | ScalableTarget MinCapacity must not exceed MaxCapacity | ERROR | none |
+| `pf-appautoscaling-namespace-dimension-match` | AWS::ApplicationAutoScaling::ScalableTarget | ScalableDimension's first segment must be the ServiceNamespace | ERROR | none |
+| `pf-appautoscaling-policy-type-config-mismatch` | AWS::ApplicationAutoScaling::ScalingPolicy | A scaling policy may carry only the configuration block its PolicyType names | ERROR | none |
+| `pf-appautoscaling-policy-type-config-required` | AWS::ApplicationAutoScaling::ScalingPolicy | A scaling policy must carry the configuration block its PolicyType names | ERROR | none |
+| `pf-appautoscaling-predefined-metric-dimension` | AWS::ApplicationAutoScaling::ScalingPolicy | PredefinedMetricType must be one the ScalableDimension supports | ERROR | none |
+| `pf-appautoscaling-predictive-buffer-forbidden` | AWS::ApplicationAutoScaling::ScalingPolicy | HonorMaxCapacity rejects a MaxCapacityBuffer | ERROR | none |
+| `pf-appautoscaling-predictive-buffer-required` | AWS::ApplicationAutoScaling::ScalingPolicy | IncreaseMaxCapacity needs a MaxCapacityBuffer | ERROR | none |
+| `pf-appautoscaling-predictive-metric-pair-exclusive` | AWS::ApplicationAutoScaling::ScalingPolicy | A predictive metric specification is either one pair or one scaling plus one load metric | ERROR | none |
+| `pf-appautoscaling-predictive-metric-pair-type-dimension` | AWS::ApplicationAutoScaling::ScalingPolicy | An ECS predictive metric pair takes CPU, memory or ALB request count | ERROR | none |
+| `pf-appautoscaling-predictive-metric-spec-single` | AWS::ApplicationAutoScaling::ScalingPolicy | A predictive scaling policy takes exactly one metric specification | ERROR | none |
+| `pf-appautoscaling-predictive-scaling-ecs-only` | AWS::ApplicationAutoScaling::ScalingPolicy<br>AWS::ApplicationAutoScaling::ScalableTarget | PredictiveScaling is only available for Amazon ECS | ERROR | none |
+| `pf-appautoscaling-resource-id-shape` | AWS::ApplicationAutoScaling::ScalableTarget | ResourceId must carry the resource type its ScalableDimension names | ERROR | none |
+| `pf-appautoscaling-resource-label-format` | AWS::ApplicationAutoScaling::ScalingPolicy | ResourceLabel must be app/<lb>/<lb-id>/targetgroup/<tg>/<tg-id> | ERROR | none |
+| `pf-appautoscaling-resource-label-requires-alb-metric` | AWS::ApplicationAutoScaling::ScalingPolicy | ResourceLabel is only accepted with ALBRequestCountPerTarget | ERROR | none |
+| `pf-appautoscaling-rolearn-required-no-slr` | AWS::ApplicationAutoScaling::ScalableTarget | EMR scalable targets require an explicit RoleARN | ERROR | none |
+| `pf-appautoscaling-scalable-target-action-empty` | AWS::ApplicationAutoScaling::ScalableTarget | ScalableTargetAction needs MinCapacity, MaxCapacity or both | ERROR | none |
+| `pf-appautoscaling-scalable-target-action-min-max` | AWS::ApplicationAutoScaling::ScalableTarget | ScalableTargetAction MinCapacity must not exceed MaxCapacity | ERROR | none |
+| `pf-appautoscaling-scalable-target-action-required` | AWS::ApplicationAutoScaling::ScalableTarget | Every ScheduledAction needs a ScalableTargetAction | ERROR | none |
+| `pf-appautoscaling-schedule-at-format` | AWS::ApplicationAutoScaling::ScalableTarget | at() takes yyyy-mm-ddThh:mm:ss with no timezone suffix | ERROR | none |
+| `pf-appautoscaling-schedule-cron-day-fields` | AWS::ApplicationAutoScaling::ScalableTarget | cron() needs '?' in exactly one of day-of-month and day-of-week | ERROR | none |
+| `pf-appautoscaling-schedule-expression-form` | AWS::ApplicationAutoScaling::ScalableTarget | ScheduledAction Schedule must be at(), rate() or cron() | ERROR | none |
+| `pf-appautoscaling-schedule-rate-unit` | AWS::ApplicationAutoScaling::ScalableTarget | rate() takes a positive integer and minute(s), hour(s) or day(s) | ERROR | none |
+| `pf-appautoscaling-scheduled-action-name-chars` | AWS::ApplicationAutoScaling::ScalableTarget | ScheduledActionName may not contain ':', '/', '|', control characters or edge spaces | ERROR | none |
+| `pf-appautoscaling-scheduled-action-start-end-order` | AWS::ApplicationAutoScaling::ScalableTarget | ScheduledAction StartTime must be before EndTime | ERROR | none |
+| `pf-appautoscaling-scheduled-action-timezone-iana` | AWS::ApplicationAutoScaling::ScalableTarget | ScheduledAction Timezone must be an IANA time zone name | ERROR | none |
+| `pf-appautoscaling-step-adjustment-both-null` | AWS::ApplicationAutoScaling::ScalingPolicy | A step adjustment must carry at least one bound | ERROR | none |
+| `pf-appautoscaling-step-adjustment-bound-order` | AWS::ApplicationAutoScaling::ScalingPolicy | MetricIntervalUpperBound must be strictly above MetricIntervalLowerBound | ERROR | none |
+| `pf-appautoscaling-step-adjustment-exact-capacity-negative` | AWS::ApplicationAutoScaling::ScalingPolicy | ExactCapacity steps cannot ask for a negative capacity | ERROR | none |
+| `pf-appautoscaling-step-adjustment-gap` | AWS::ApplicationAutoScaling::ScalingPolicy | Step adjustment intervals may not leave a gap between them | ERROR | none |
+| `pf-appautoscaling-step-adjustment-missing-null-lower` | AWS::ApplicationAutoScaling::ScalingPolicy | A negative MetricIntervalLowerBound needs an adjustment open at the bottom | ERROR | none |
+| `pf-appautoscaling-step-adjustment-missing-null-upper` | AWS::ApplicationAutoScaling::ScalingPolicy | A positive MetricIntervalUpperBound needs an adjustment open at the top | ERROR | none |
+| `pf-appautoscaling-step-adjustment-overlap` | AWS::ApplicationAutoScaling::ScalingPolicy | Step adjustment intervals may not overlap | ERROR | none |
+| `pf-appautoscaling-step-adjustment-two-null-lower` | AWS::ApplicationAutoScaling::ScalingPolicy | Only one step adjustment may leave MetricIntervalLowerBound out | ERROR | none |
+| `pf-appautoscaling-step-adjustment-two-null-upper` | AWS::ApplicationAutoScaling::ScalingPolicy | Only one step adjustment may leave MetricIntervalUpperBound out | ERROR | none |
+| `pf-appautoscaling-step-adjustment-type-required` | AWS::ApplicationAutoScaling::ScalingPolicy | A step scaling policy needs an AdjustmentType | ERROR | none |
+| `pf-appautoscaling-step-adjustments-required` | AWS::ApplicationAutoScaling::ScalingPolicy | A step scaling policy needs at least one step adjustment | ERROR | none |
+| `pf-appautoscaling-step-scaling-unsupported-namespace` | AWS::ApplicationAutoScaling::ScalingPolicy<br>AWS::ApplicationAutoScaling::ScalableTarget | StepScaling is not available for DynamoDB, Comprehend, Lambda, Keyspaces, MSK, ElastiCache or Neptune | ERROR | none |
+| `pf-appautoscaling-tt-metric-spec-exclusive` | AWS::ApplicationAutoScaling::ScalingPolicy | A target tracking policy takes one metric specification, not both | ERROR | none |
+| `pf-appautoscaling-tt-metric-spec-missing` | AWS::ApplicationAutoScaling::ScalingPolicy | A target tracking policy needs a metric specification | ERROR | none |
 | `pf-appsync-api-additional-auth-duplicate-primary` | AWS::AppSync::GraphQLApi | An additional authentication provider may not repeat another mode | ERROR | none |
 | `pf-appsync-api-cognito-requires-userpool-config` | AWS::AppSync::GraphQLApi | AMAZON_COGNITO_USER_POOLS authentication needs UserPoolConfig | ERROR | none |
 | `pf-appsync-api-enhanced-metrics-values` | AWS::AppSync::GraphQLApi | DataSourceLevelMetricsBehavior takes one of two values | ERROR | pending-engine |
