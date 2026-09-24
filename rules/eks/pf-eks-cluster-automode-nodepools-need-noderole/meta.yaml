@@ -1,0 +1,12 @@
+id: pf-eks-cluster-automode-nodepools-need-noderole
+service: eks
+resourceTypes: [AWS::EKS::Cluster]
+benchRegion: us-east-1
+severity: ERROR
+title: "ComputeConfig.NodePools requires ComputeConfig.NodeRoleArn"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-computeconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: ComputeConfig with NodePools [\"general-purpose\"] and no NodeRoleArn -> ROLLBACK_COMPLETE, \"When Compute Config nodeRoleArn is null or empty, nodePool list cannot be populated.\" (HandlerErrorCode: InvalidRequest); adding NodeRoleArn reaches the next check. fail-only, no cluster created."
+addedOn: 2026-09-25
