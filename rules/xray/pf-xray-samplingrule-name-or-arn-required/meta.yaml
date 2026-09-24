@@ -1,0 +1,12 @@
+id: pf-xray-samplingrule-name-or-arn-required
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::SamplingRule]
+severity: ERROR
+title: "SamplingRule must set RuleName or RuleARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-xray-samplingrule-samplingrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-24 us-east-1: CreateSamplingRule without ruleName or ruleARN -> \"(InvalidRequestException) ... Request must contain either sampling rule name or sampling rule ARN\" (#71 phase B); bench 2026-09-24 us-east-1: fail (SamplingRule with neither) -> \"Invalid request provided: CreateSamplingRuleRequest(SamplingRule=SamplingRule(ResourceARN=*, Priority=9002, FixedRate=0.05, ...))\" (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass (RuleName pfxr-namereq-p) -> CREATE_COMPLETE. Confounder: the handler echoes the request but drops the service reason text, so the quoted wording comes from the direct API call."
+addedOn: 2026-09-24

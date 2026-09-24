@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Policy": {
+      "Type": "AWS::XRay::ResourcePolicy",
+      "Properties": {
+        "PolicyName": "pfxr-namepat-p",
+        "PolicyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"A\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"sns.amazonaws.com\"},\"Action\":[\"xray:PutTraceSegments\"],\"Resource\":\"*\"}]}"
+      }
+    }
+  }
+}

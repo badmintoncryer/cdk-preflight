@@ -1,0 +1,12 @@
+id: pf-xray-resourcepolicy-xray-actions-only
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::ResourcePolicy]
+severity: ERROR
+title: "ResourcePolicy may only grant xray: actions"
+constraintSource: https://docs.aws.amazon.com/xray/latest/api/API_PutResourcePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-24 us-east-1: PutResourcePolicy granting s3:GetObject -> MalformedPolicyDocumentException (the service returns an empty message body); xray:PutTraceSegments and xray:GetSamplingRules are both accepted and one s3 action mixed in with an xray one is still rejected, so the constraint is the namespace rather than a set of actions (#71 phase B); bench 2026-09-24 us-east-1: fail (Action s3:GetObject) -> \"Invalid request provided: Service returned error code MalformedPolicyDocumentException (Service: XRay, Status Code: 400)\" (ROLLBACK_COMPLETE); pass (Action xray:PutTraceSegments) -> CREATE_COMPLETE. A bare * action is untested and the rule deliberately ignores any action without a namespace."
+addedOn: 2026-09-24

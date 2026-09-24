@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::XRay::SamplingRule",
+      "Properties": {
+        "SamplingRule": {
+          "Priority": 9002,
+          "FixedRate": 0.05,
+          "ReservoirSize": 1,
+          "Host": "*",
+          "HTTPMethod": "*",
+          "URLPath": "*",
+          "ServiceName": "*",
+          "ServiceType": "*",
+          "ResourceARN": "*",
+          "Version": 1
+        }
+      }
+    }
+  }
+}

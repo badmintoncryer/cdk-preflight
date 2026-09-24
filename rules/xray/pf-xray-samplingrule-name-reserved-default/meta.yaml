@@ -1,0 +1,12 @@
+id: pf-xray-samplingrule-name-reserved-default
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::SamplingRule]
+severity: ERROR
+title: "SamplingRule.RuleName Default is taken by the built-in rule"
+constraintSource: https://docs.aws.amazon.com/xray/latest/devguide/xray-console-sampling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (RuleName Default) -> \"Sampling rule already exists (Service: XRay, Status Code: 400)\" (HandlerErrorCode: AlreadyExists, ROLLBACK_COMPLETE); pass (RuleName pfxr-notdefault-p) -> CREATE_COMPLETE. The service does not call the name reserved: Default is the built-in account rule that already holds it, and get-sampling-rules showed that rule unchanged before and after the run."
+addedOn: 2026-09-24
