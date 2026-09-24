@@ -2584,3 +2584,13 @@
 | `pf-wafv2-statement-nesting` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | And/Or need two nested statements; managed rule group, rule group reference and rate-based statements cannot be nested | ERROR | none |
 | `pf-wafv2-text-transformations` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Text transformations: unique priorities, at most 10, and pre-parse transformations only on query-argument components with pre-parse types | ERROR | none |
 | `pf-wafv2-token-domains` | AWS::WAFv2::WebACL | Token domains must be registrable domains (no bare labels, TLDs or public suffixes), at most 10 | ERROR | none |
+| `pf-xray-group-notifications-require-insights` | AWS::XRay::Group | InsightsConfiguration notifications need insights enabled | ERROR | none |
+| `pf-xray-resourcepolicy-document-well-formed` | AWS::XRay::ResourcePolicy | ResourcePolicy.PolicyDocument must be a well-formed resource policy | ERROR | none |
+| `pf-xray-resourcepolicy-name-pattern` | AWS::XRay::ResourcePolicy | ResourcePolicy.PolicyName charset | ERROR | none |
+| `pf-xray-resourcepolicy-xray-actions-only` | AWS::XRay::ResourcePolicy | ResourcePolicy may only grant xray: actions | ERROR | none |
+| `pf-xray-samplingrule-attribute-key-max-32` | AWS::XRay::SamplingRule | SamplingRule.Attributes keys and values are limited to 32 characters | ERROR | none |
+| `pf-xray-samplingrule-attributes-max-5` | AWS::XRay::SamplingRule | SamplingRule.Attributes is limited to 5 entries | ERROR | none |
+| `pf-xray-samplingrule-name-arn-exclusive` | AWS::XRay::SamplingRule | SamplingRule cannot carry both RuleName and RuleARN | ERROR | none |
+| `pf-xray-samplingrule-name-or-arn-required` | AWS::XRay::SamplingRule | SamplingRule must set RuleName or RuleARN | ERROR | none |
+| `pf-xray-samplingrule-name-reserved-default` | AWS::XRay::SamplingRule | SamplingRule.RuleName Default is taken by the built-in rule | ERROR | none |
+| `pf-xray-samplingrule-version-must-be-1` | AWS::XRay::SamplingRule | SamplingRule.Version must be 1 | ERROR | none |
