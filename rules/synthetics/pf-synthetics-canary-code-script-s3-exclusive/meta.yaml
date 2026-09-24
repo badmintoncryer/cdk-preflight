@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-code-script-s3-exclusive
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "Code.Script cannot be combined with Code.S3Bucket/S3Key"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-code.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Code.Script together with Code.S3Bucket/S3Key -> \"Resource handler returned message: \"Invalid request provided: Both source location and source are specified. (Service: Synthetics, Status Code: 400, Request ID: 23b56a5d-7538-4ddd-8e29-13ce98b0a356) (SDK Attempt Count: 1)\" (RequestToken: 838b3eb9-8e3a-798b-dbd1-fbeb4f5673fa, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass Code.Script alone -> CREATE_COMPLETE"
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-code-handler-blueprint-exclusive
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "Code.Handler cannot be combined with Code.BlueprintTypes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-code.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Code.Handler index.handler together with Code.BlueprintTypes [multi-checks] -> \"Resource handler returned message: \"Invalid request provided: Request should contain only either a handler or blueprint types. (Service: Synthetics, Status Code: 400, Request ID: b982483b-a52e-400a-9201-fd1fb30a07f4) (SDK Attempt Count: 1)\" (RequestToken: db2b6c4c-0703-3d00-d6f7-969dc3d53064, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass Handler alone -> CREATE_COMPLETE"
+addedOn: 2026-09-24

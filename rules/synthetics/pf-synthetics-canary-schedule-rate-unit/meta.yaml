@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-schedule-rate-unit
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "A canary's rate() expression only accepts minute, minutes or hour"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-schedule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Schedule.Expression rate(1 hours) -> \"Resource handler returned message: \"Invalid request provided: Invalid Schedule Expression. (Service: Synthetics, Status Code: 400, Request ID: e2b30bf2-4283-49ae-8631-4af4ecf1d14d) (SDK Attempt Count: 1)\" (RequestToken: 42f566e3-a085-105e-f0b4-a6f5ff5e1236, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass rate(1 hour) -> CREATE_COMPLETE"
+addedOn: 2026-09-24
