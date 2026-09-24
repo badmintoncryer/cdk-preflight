@@ -1,0 +1,25 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  }
+ },
+ "Outputs": {
+  "A": {
+   "Value": "v",
+   "Export": {
+    "Name": "cdkpf73-dup-p1"
+   }
+  },
+  "B": {
+   "Value": "w",
+   "Export": {
+    "Name": "cdkpf73-dup-p2"
+   }
+  }
+ }
+}

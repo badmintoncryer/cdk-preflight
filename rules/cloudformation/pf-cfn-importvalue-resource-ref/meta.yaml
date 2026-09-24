@@ -1,0 +1,12 @@
+id: pf-cfn-importvalue-resource-ref
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "The argument of Fn::ImportValue may not depend on a resource"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): {\"Fn::ImportValue\": {\"Fn::GetAtt\": [\"T\", \"TopicName\"]}} -> An error occurred (ValidationError) when calling the CreateStack operation: Template error: the attribute in Fn::ImportValue must not depend on any resources, imported values, or Fn::GetAZs"
+addedOn: 2026-09-25

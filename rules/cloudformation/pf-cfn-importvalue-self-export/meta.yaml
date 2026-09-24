@@ -1,0 +1,12 @@
+id: pf-cfn-importvalue-self-export
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "A template may not import an export it declares itself"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-exports.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: a topic whose DisplayName is Fn::ImportValue of the export the same template declares -> stack-level CREATE_FAILED \"No export named cdkpf73-ivself-f found\" (ROLLBACK_COMPLETE); the same template without the self-import -> CREATE_COMPLETE."
+addedOn: 2026-09-25

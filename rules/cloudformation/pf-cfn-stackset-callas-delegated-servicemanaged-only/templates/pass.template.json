@@ -1,0 +1,20 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "SS": {
+   "Type": "AWS::CloudFormation::StackSet",
+   "Properties": {
+    "StackSetName": "cdkpf73-sscallas-p",
+    "TemplateBody": "{\"Resources\":{\"X\":{\"Type\":\"AWS::CloudFormation::WaitConditionHandle\"}}}",
+    "PermissionModel": "SELF_MANAGED",
+    "CallAs": "SELF"
+   }
+  },
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  }
+ }
+}

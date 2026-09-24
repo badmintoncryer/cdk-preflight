@@ -1,0 +1,20 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  },
+  "S": {
+   "Type": "AWS::CloudFormation::Stack",
+   "Properties": {
+    "TemplateURL": "https://cdkpf-bench-layers.s3.amazonaws.com/cfn73/child.json",
+    "NotificationARNs": [
+     "arn:aws:sns:eu-west-1:214794239830:cdkpf73-narn-f"
+    ]
+   }
+  }
+ }
+}

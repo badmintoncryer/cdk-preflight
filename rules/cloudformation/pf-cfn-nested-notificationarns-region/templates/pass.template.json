@@ -1,0 +1,26 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "NT": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "cdkpf73-narn-p",
+    "DisplayName": "pad"
+   }
+  },
+  "S": {
+   "Type": "AWS::CloudFormation::Stack",
+   "DependsOn": [
+    "NT"
+   ],
+   "Properties": {
+    "TemplateURL": "https://cdkpf-bench-layers.s3.amazonaws.com/cfn73/child.json",
+    "NotificationARNs": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cdkpf73-narn-p"
+     }
+    ]
+   }
+  }
+ }
+}

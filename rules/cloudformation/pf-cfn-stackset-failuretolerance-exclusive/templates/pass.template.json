@@ -1,0 +1,22 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "SS": {
+   "Type": "AWS::CloudFormation::StackSet",
+   "Properties": {
+    "StackSetName": "cdkpf73-ssft-p",
+    "TemplateBody": "{\"Resources\":{\"X\":{\"Type\":\"AWS::CloudFormation::WaitConditionHandle\"}}}",
+    "PermissionModel": "SELF_MANAGED",
+    "OperationPreferences": {
+     "FailureToleranceCount": 0
+    }
+   }
+  },
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  }
+ }
+}

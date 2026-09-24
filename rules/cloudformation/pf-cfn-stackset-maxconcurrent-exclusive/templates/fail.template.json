@@ -1,0 +1,35 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "SS": {
+   "Type": "AWS::CloudFormation::StackSet",
+   "Properties": {
+    "StackSetName": "cdkpf73-ssmc-f",
+    "TemplateBody": "{\"Resources\":{\"X\":{\"Type\":\"AWS::CloudFormation::WaitConditionHandle\"}}}",
+    "PermissionModel": "SELF_MANAGED",
+    "OperationPreferences": {
+     "MaxConcurrentCount": 1,
+     "MaxConcurrentPercentage": 1
+    },
+    "StackInstancesGroup": [
+     {
+      "Regions": [
+       "us-east-1"
+      ],
+      "DeploymentTargets": {
+       "Accounts": [
+        "214794239830"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Pad": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "pad"
+   }
+  }
+ }
+}

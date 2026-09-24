@@ -1,0 +1,12 @@
+id: pf-cfn-export-value-max
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["*"]
+severity: ERROR
+title: "An exported output value may be at most 1024 bytes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-exports.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: a 1025-byte exported Output value -> stack-level CREATE_FAILED \"Cannot export output A with length 1025. Max length of 1024 exceeded.\" (ROLLBACK_COMPLETE); the same Output at 1024 bytes -> CREATE_COMPLETE."
+addedOn: 2026-09-25

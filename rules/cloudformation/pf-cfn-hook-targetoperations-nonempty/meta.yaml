@@ -1,0 +1,12 @@
+id: pf-cfn-hook-targetoperations-nonempty
+service: cloudformation
+benchRegion: us-east-1
+resourceTypes: ["AWS::CloudFormation::GuardHook"]
+severity: ERROR
+title: "A Guard hook must declare at least one target operation"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-guardhook.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: TargetOperations [] on AWS::CloudFormation::GuardHook -> \"Resource handler returned message: \\\"Error occurred during operation 'AWS::CloudFormation::GuardHook'.\\\" (HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); the same hook with TargetOperations [\"RESOURCE\"] -> CREATE_COMPLETE. The service never names the property, so the message alone cannot tell anyone what is wrong."
+addedOn: 2026-09-25

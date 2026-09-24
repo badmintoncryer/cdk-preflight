@@ -1,0 +1,19 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "T": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "d"
+   }
+  }
+ },
+ "Outputs": {
+  "A": {
+   "Value": "v",
+   "Export": {
+    "Name": "cdkpf73-ivself-p"
+   }
+  }
+ }
+}
