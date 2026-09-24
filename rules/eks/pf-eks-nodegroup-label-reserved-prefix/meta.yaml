@@ -1,0 +1,12 @@
+id: pf-eks-nodegroup-label-reserved-prefix
+service: eks
+resourceTypes: [AWS::EKS::Nodegroup]
+benchRegion: us-east-1
+severity: ERROR
+title: Labels keys may not use the kubernetes.io / k8s.io / eks.amazonaws.com prefixes
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-nodegroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail template -> \"Label cannot start with reserved prefixes [kubernetes.io/, k8s.io/, eks.amazonaws.com/]\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+addedOn: 2026-09-25
