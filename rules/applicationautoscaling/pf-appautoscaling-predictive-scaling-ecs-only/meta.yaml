@@ -1,0 +1,12 @@
+id: pf-appautoscaling-predictive-scaling-ecs-only
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy, AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "PredictiveScaling is only available for Amazon ECS"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScalingPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PolicyType PredictiveScaling on a dynamodb target registered in the same stack -> \"Resource handler returned message: \"Account is not authorized (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 9735be93-158e-4c4d-b714-f7f9e4fd15bc) (SDK Attempt Count: 1)\" (RequestToken: 2570dcf0-f4db-9ceb-4235-e3fc4ee6f68a, HandlerErrorCode: AccessDenied)\" (ROLLBACK_COMPLETE); pass the identical predictive policy on an ecs target -> CREATE_COMPLETE. Same caveat as pf-appautoscaling-step-scaling-unsupported-namespace: the sentence does not name the pair, the ecs pass is the control"
+addedOn: 2026-09-24

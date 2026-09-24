@@ -1,0 +1,12 @@
+id: pf-appautoscaling-min-capacity-zero-namespace
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "MinCapacity 0 is rejected for DynamoDB, Keyspaces, MSK, ElastiCache, Neptune and Comprehend"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_RegisterScalableTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ServiceNamespace dynamodb with MinCapacity 0 -> \"Resource handler returned message: \"Minimum capacity cannot be less than 1 (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 6056c777-c586-408b-b452-7cf3e3cf44e1) (SDK Attempt Count: 1)\" (RequestToken: aa190cbb-46b0-0b4c-3d58-c88802f8aac9, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass MinCapacity 1 on a real PROVISIONED 1-RCU table -> CREATE_COMPLETE. api-probe 2026-09-24 us-east-1 (#68 phase B) returned the same sentence for cassandra, comprehend, elasticache, kafka and neptune"
+addedOn: 2026-09-24

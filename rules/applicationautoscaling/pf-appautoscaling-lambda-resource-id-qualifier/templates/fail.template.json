@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 0,
+        "ResourceId": "function:cdkpf-aas-lrq-f:$LATEST",
+        "ScalableDimension": "lambda:function:ProvisionedConcurrency",
+        "ServiceNamespace": "lambda"
+      }
+    }
+  }
+}

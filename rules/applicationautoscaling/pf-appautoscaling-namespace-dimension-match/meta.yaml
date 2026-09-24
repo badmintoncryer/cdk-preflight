@@ -1,0 +1,12 @@
+id: pf-appautoscaling-namespace-dimension-match
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScalableDimension's first segment must be the ServiceNamespace"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_RegisterScalableTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ServiceNamespace ecs with ScalableDimension dynamodb:table:ReadCapacityUnits -> \"Resource handler returned message: \"Account is not authorized (Service: ApplicationAutoScaling, Status Code: 400, Request ID: faa55e14-4421-4589-94a7-98c535899bcd) (SDK Attempt Count: 1)\" (RequestToken: 4004c538-f440-622b-0c27-c310c348b419, HandlerErrorCode: AccessDenied)\" (ROLLBACK_COMPLETE); pass the same target with the matching ServiceNamespace dynamodb on a real table -> CREATE_COMPLETE. The service does not name the pair, so the pass is the control: the account can register scalable targets, only the mismatched pair is refused"
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-appautoscaling-min-max-capacity
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScalableTarget MinCapacity must not exceed MaxCapacity"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_RegisterScalableTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: MinCapacity 2 / MaxCapacity 1 on a made-up dynamodb ResourceId (RegisterScalableTarget checks the shape before it looks the resource up, so the fail fixture needs no scaffold) -> \"Resource handler returned message: \"Maximum capacity cannot be less than minimum capacity (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 4d82d28e-3e12-4c1d-885e-0f1b3ba46fd3) (SDK Attempt Count: 1)\" (RequestToken: 46edb8a2-3d92-2ad7-ae17-b8a88f566def, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass MinCapacity 1 / MaxCapacity 1 (equal) on a real PROVISIONED 1-RCU table -> CREATE_COMPLETE"
+addedOn: 2026-09-24
