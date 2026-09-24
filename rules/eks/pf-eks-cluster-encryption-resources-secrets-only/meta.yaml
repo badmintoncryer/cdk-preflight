@@ -1,0 +1,12 @@
+id: pf-eks-cluster-encryption-resources-secrets-only
+service: eks
+resourceTypes: [AWS::EKS::Cluster]
+benchRegion: us-east-1
+severity: ERROR
+title: "EncryptionConfig.Resources only accepts secrets"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-encryptionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: EncryptionConfig.Resources [\"configmaps\"] -> ROLLBACK_COMPLETE, \"Invalid k8s resource for encryption\" (HandlerErrorCode: InvalidRequest); the same template with [\"secrets\"] reaches the next check. fail-only, no cluster created."
+addedOn: 2026-09-25

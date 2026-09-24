@@ -1,0 +1,12 @@
+id: pf-eks-cluster-sg-and-subnets-same-vpc
+service: eks
+resourceTypes: [AWS::EKS::Cluster, AWS::EC2::SecurityGroup, AWS::EC2::Subnet]
+benchRegion: us-east-1
+severity: ERROR
+title: "A cluster's security groups and subnets must belong to one VPC"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-resourcesvpcconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: SecurityGroupIds naming a group in a second VPC while SubnetIds stay in the first -> ROLLBACK_COMPLETE, \"Security group(s) [sg-0c241ca00756fcb4f] are not (in/associated to) the same VPC as the subnets. Please specify a security group that is associated with the VPC: vpc-06631f7065b2f52d3\" (HandlerErrorCode: InvalidRequest). fail-only, no cluster created."
+addedOn: 2026-09-25
