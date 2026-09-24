@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Acc": {
+      "Type": "AWS::GlobalAccelerator::Accelerator",
+      "Properties": {
+        "Name": "cdkpf-ga-lpu-f",
+        "Enabled": false
+      }
+    },
+    "LsnA": {
+      "Type": "AWS::GlobalAccelerator::Listener",
+      "Properties": {
+        "AcceleratorArn": {
+          "Ref": "Acc"
+        },
+        "Protocol": "TCP",
+        "PortRanges": [
+          {
+            "FromPort": 80,
+            "ToPort": 80
+          }
+        ]
+      }
+    },
+    "LsnB": {
+      "Type": "AWS::GlobalAccelerator::Listener",
+      "Properties": {
+        "AcceleratorArn": {
+          "Ref": "Acc"
+        },
+        "Protocol": "TCP",
+        "PortRanges": [
+          {
+            "FromPort": 80,
+            "ToPort": 80
+          }
+        ]
+      }
+    }
+  }
+}

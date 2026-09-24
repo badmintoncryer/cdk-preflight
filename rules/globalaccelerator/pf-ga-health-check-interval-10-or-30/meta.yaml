@@ -1,0 +1,12 @@
+id: pf-ga-health-check-interval-10-or-30
+service: globalaccelerator
+benchRegion: us-west-2
+resourceTypes: [AWS::GlobalAccelerator::EndpointGroup]
+severity: ERROR
+title: "HealthCheckIntervalSeconds must be 10 or 30"
+constraintSource: https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateEndpointGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-west-2: fail -> Resource handler returned message: \"Invalid HealthCheck Interval Seconds: 20 expected values are: 10 or 30 (Service: AWSGlobalAccelerator; Status Code: 400; Error Code: InvalidArgumentException; Request ID: dae33929-8166-4ffc-bcf2-2917578de8e1; Proxy: null)\" (RequestToken: 490cd73e-7ac3-7aee-2479-cedd647538e5, HandlerErrorCode: GeneralServiceException) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. fail HealthCheckIntervalSeconds 20 - inside the schema's 10-30 range, outside the documented value set; pass 30."
+addedOn: 2026-09-24

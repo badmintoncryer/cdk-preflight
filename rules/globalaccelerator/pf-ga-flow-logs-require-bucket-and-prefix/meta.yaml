@@ -1,0 +1,12 @@
+id: pf-ga-flow-logs-require-bucket-and-prefix
+service: globalaccelerator
+benchRegion: us-west-2
+resourceTypes: [AWS::GlobalAccelerator::Accelerator]
+severity: ERROR
+title: "Flow logs need both FlowLogsS3Bucket and FlowLogsS3Prefix"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-globalaccelerator-accelerator.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-west-2: fail -> Resource handler returned message: \"Flow logs prefix should not be empty. (Service: AWSGlobalAccelerator; Status Code: 400; Error Code: InvalidArgumentException; Request ID: 211d6450-b5bd-4582-8ad2-209cf162ba8e; Proxy: null)\" (RequestToken: 2ef2351b-259e-5bb8-203c-3842607041cb, HandlerErrorCode: GeneralServiceException) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. fail FlowLogsEnabled true with FlowLogsS3Bucket set and FlowLogsS3Prefix left out; pass FlowLogsEnabled false. The fully configured form (bucket + prefix) was observed reaching CREATE_COMPLETE in the same session, but it cannot stay in the fixture: the log-delivery service writes the prefix marker object into the bucket within two minutes, after which CloudFormation cannot delete the bucket (DELETE_FAILED, BucketNotEmpty). Note for the monthly run: when this handler fails it has already created the accelerator, and the rollback does NOT reclaim it - the orphan is swept by bench/sweep.sh's cdkpf- prefix."
+addedOn: 2026-09-24

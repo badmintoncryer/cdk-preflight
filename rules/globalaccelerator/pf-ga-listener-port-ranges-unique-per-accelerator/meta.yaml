@@ -1,0 +1,12 @@
+id: pf-ga-listener-port-ranges-unique-per-accelerator
+service: globalaccelerator
+benchRegion: us-west-2
+resourceTypes: [AWS::GlobalAccelerator::Listener]
+severity: ERROR
+title: "Listeners on one accelerator must not share port ranges"
+constraintSource: https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateListener.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-west-2: fail -> Resource handler returned message: \"Listener already exists: Invalid port range PortRange(fromPort=80, toPort=80), which overlaps with port range PortRange(fromPort=80, toPort=80) taken by listener arn:aws:globalaccelerator::214794239830:accelerator/23a65a91-bb13-46bf-996d-6e290d76d88f/listener/02328e21. (Service: AWSGlobalAccelerator; Status Code: 400; Error Code: InvalidPortRangeException; Request ID: 71c0b09a-2c8f-4165-a114-87f81eba2530; Proxy: null)\" (RequestToken: aa347c62-565d-ec3c-49c2-394a45ec923e, HandlerErrorCode: AlreadyExists) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. fail two listeners on one accelerator both claiming 80-80 (the minimal overlap); pass 80-80 and 81-81, adjacent and disjoint."
+addedOn: 2026-09-24

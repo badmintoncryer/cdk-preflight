@@ -1,0 +1,12 @@
+id: pf-ga-endpoint-group-region-supported
+service: globalaccelerator
+benchRegion: us-west-2
+resourceTypes: [AWS::GlobalAccelerator::EndpointGroup]
+severity: ERROR
+title: "EndpointGroupRegion must be a real AWS Region"
+constraintSource: https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateEndpointGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-west-2: fail -> Resource handler returned message: \"Invalid Endpoint Group region us-west-3 (Service: AWSGlobalAccelerator; Status Code: 400; Error Code: InvalidArgumentException; Request ID: f00be334-2903-4ff9-8415-461e0e887666; Proxy: null)\" (RequestToken: 6931ed00-291e-61a5-b366-be487b96b97b, HandlerErrorCode: GeneralServiceException) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. fail EndpointGroupRegion us-west-3 (a Region code that does not exist); pass us-west-2. The service names the Region, so what is proven is \"a real AWS Region code\", not \"a Region where Global Accelerator has endpoints\"."
+addedOn: 2026-09-24
