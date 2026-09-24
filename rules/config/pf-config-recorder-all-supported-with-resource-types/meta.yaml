@@ -1,0 +1,12 @@
+id: pf-config-recorder-all-supported-with-resource-types
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigurationRecorder]
+severity: ERROR
+title: "RecordingGroup cannot list ResourceTypes while AllSupported is true"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configurationrecorder-recordinggroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"The recording group provided is not valid\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

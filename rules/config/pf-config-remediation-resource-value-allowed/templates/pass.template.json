@@ -1,0 +1,183 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "ConfigRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
+        ]
+      }
+    },
+    "Recorder": {
+      "Type": "AWS::Config::ConfigurationRecorder",
+      "Properties": {
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "ConfigRole",
+            "Arn"
+          ]
+        },
+        "RecordingGroup": {
+          "AllSupported": false,
+          "ResourceTypes": [
+            "AWS::CloudTrail::Trail"
+          ]
+        }
+      }
+    },
+    "Bucket": {
+      "Type": "AWS::S3::Bucket"
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": [
+                "s3:GetBucketAcl",
+                "s3:ListBucket"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "Bucket",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Sub": "${Bucket.Arn}/AWSLogs/${AWS::AccountId}/Config/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Channel": {
+      "Type": "AWS::Config::DeliveryChannel",
+      "Properties": {
+        "S3BucketName": {
+          "Ref": "Bucket"
+        }
+      },
+      "DependsOn": "BucketPolicy"
+    },
+    "Rule": {
+      "Type": "AWS::Config::ConfigRule",
+      "Properties": {
+        "Source": {
+          "Owner": "AWS",
+          "SourceIdentifier": "S3_BUCKET_VERSIONING_ENABLED"
+        }
+      },
+      "DependsOn": "Recorder"
+    },
+    "Topic": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "RemediationRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ssm.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "publish",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "sns:Publish",
+                  "Resource": {
+                    "Ref": "Topic"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Remediation": {
+      "Type": "AWS::Config::RemediationConfiguration",
+      "Properties": {
+        "ConfigRuleName": {
+          "Ref": "Rule"
+        },
+        "TargetType": "SSM_DOCUMENT",
+        "TargetId": "AWS-PublishSNSNotification",
+        "Parameters": {
+          "AutomationAssumeRole": {
+            "StaticValue": {
+              "Values": [
+                {
+                  "Fn::GetAtt": [
+                    "RemediationRole",
+                    "Arn"
+                  ]
+                }
+              ]
+            }
+          },
+          "TopicArn": {
+            "StaticValue": {
+              "Values": [
+                {
+                  "Ref": "Topic"
+                }
+              ]
+            }
+          },
+          "Message": {
+            "ResourceValue": {
+              "Value": "RESOURCE_ID"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-config-aggregator-source-exactly-one
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigurationAggregator]
+severity: ERROR
+title: "An aggregator takes account sources or an organization source, not both"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-config-configurationaggregator.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Invalid request provided: The configuration aggregator cannot be created because your request contains both the AccountAggregationSource and the OrganizationAggregationSource. Include only one aggregation source and try again.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

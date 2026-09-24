@@ -1,0 +1,12 @@
+id: pf-config-remediation-automatic-requires-attempts-and-retry
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::RemediationConfiguration]
+severity: ERROR
+title: "Automatic remediation needs MaximumAutomaticAttempts and RetryAttemptSeconds"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-config-remediationconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (Automatic: true, MaximumAutomaticAttempts と RetryAttemptSeconds を省略) -> ROLLBACK_FAILED \"MaximumAutomaticAttempts and RetryAttemptSeconds parameters are required to enable automatic remediations for AWS Config Rules <rule>\"; pass (同じテンプレートに MaximumAutomaticAttempts: 1 と RetryAttemptSeconds: 60 を足しただけ) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

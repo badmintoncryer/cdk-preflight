@@ -1,0 +1,106 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "ConfigRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
+        ]
+      }
+    },
+    "Recorder": {
+      "Type": "AWS::Config::ConfigurationRecorder",
+      "Properties": {
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "ConfigRole",
+            "Arn"
+          ]
+        },
+        "RecordingGroup": {
+          "AllSupported": false,
+          "ResourceTypes": [
+            "AWS::CloudTrail::Trail"
+          ]
+        }
+      }
+    },
+    "Bucket": {
+      "Type": "AWS::S3::Bucket"
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": [
+                "s3:GetBucketAcl",
+                "s3:ListBucket"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "Bucket",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Sub": "${Bucket.Arn}/AWSLogs/${AWS::AccountId}/Config/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Channel": {
+      "Type": "AWS::Config::DeliveryChannel",
+      "Properties": {
+        "S3BucketName": {
+          "Ref": "Bucket"
+        }
+      },
+      "DependsOn": "BucketPolicy"
+    },
+    "Pack": {
+      "Type": "AWS::Config::ConformancePack",
+      "Properties": {
+        "ConformancePackName": "cdkpf-c69-pack-pass",
+        "TemplateBody": "Resources:\n  R:\n    Type: AWS::Config::ConfigRule\n    Properties:\n      Source:\n        Owner: AWS\n        SourceIdentifier: S3_BUCKET_VERSIONING_ENABLED\n"
+      },
+      "DependsOn": "Channel"
+    }
+  }
+}

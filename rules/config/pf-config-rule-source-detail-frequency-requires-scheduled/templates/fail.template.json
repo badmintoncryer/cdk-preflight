@@ -1,0 +1,25 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::Config::ConfigRule",
+      "Properties": {
+        "Source": {
+          "Owner": "CUSTOM_POLICY",
+          "CustomPolicyDetails": {
+            "PolicyRuntime": "guard-2.x.x",
+            "PolicyText": "rule cdkpf when resourceType == \"AWS::S3::Bucket\" { configuration exists }",
+            "EnableDebugLogDelivery": false
+          },
+          "SourceDetails": [
+            {
+              "EventSource": "aws.config",
+              "MessageType": "ConfigurationItemChangeNotification",
+              "MaximumExecutionFrequency": "Six_Hours"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

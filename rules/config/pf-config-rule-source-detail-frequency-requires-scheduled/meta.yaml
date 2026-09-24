@@ -1,0 +1,12 @@
+id: pf-config-rule-source-detail-frequency-requires-scheduled
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigRule]
+severity: ERROR
+title: "A SourceDetail's MaximumExecutionFrequency only applies to ScheduledNotification"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configrule-sourcedetail.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"A maximum execution frequency is not allowed if MessageType is ConfigurationItemChangeNotification or OversizedConfigurationItemChangeNotification.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

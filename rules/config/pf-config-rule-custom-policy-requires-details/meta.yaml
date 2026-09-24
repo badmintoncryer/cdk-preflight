@@ -1,0 +1,12 @@
+id: pf-config-rule-custom-policy-requires-details
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigRule]
+severity: ERROR
+title: "A CUSTOM_POLICY rule needs Source.CustomPolicyDetails"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configrule-source.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"CustomPolicyDetails is required when Owner is CUSTOM_POLICY\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

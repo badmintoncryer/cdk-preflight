@@ -1,0 +1,17 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::Config::ConfigRule",
+      "Properties": {
+        "Source": {
+          "Owner": "AWS",
+          "SourceIdentifier": "S3_BUCKET_VERSIONING_ENABLED"
+        },
+        "Scope": {
+          "TagValue": "cdkpf"
+        }
+      }
+    }
+  }
+}

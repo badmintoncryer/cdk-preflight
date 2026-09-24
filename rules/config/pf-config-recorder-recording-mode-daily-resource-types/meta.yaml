@@ -1,0 +1,12 @@
+id: pf-config-recorder-recording-mode-daily-resource-types
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigurationRecorder]
+severity: ERROR
+title: "Three Config-owned resource types cannot be recorded daily"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configurationrecorder-recordingmode.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"The provided RecordingMode is invalid. Recording mode overrides contains types currently not supported.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24
