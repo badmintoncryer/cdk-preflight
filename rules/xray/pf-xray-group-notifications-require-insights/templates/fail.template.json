@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Group": {
+      "Type": "AWS::XRay::Group",
+      "Properties": {
+        "GroupName": "pfxr-insights-f",
+        "FilterExpression": "service(\"cdkpf-no-such-service\")",
+        "InsightsConfiguration": {
+          "InsightsEnabled": false,
+          "NotificationsEnabled": true
+        }
+      }
+    }
+  }
+}

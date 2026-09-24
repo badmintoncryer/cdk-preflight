@@ -1,0 +1,12 @@
+id: pf-xray-samplingrule-attribute-key-max-32
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::SamplingRule]
+severity: ERROR
+title: "SamplingRule.Attributes keys and values are limited to 32 characters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-xray-samplingrule-samplingrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (a 33-character key and a 33-character value) -> \"2 validation errors detected: ... at 'samplingRule.attributes' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less than or equal to 32, Member must have length greater than or equal to 1]; ... Map value must satisfy constraint: [Member must have length less than or equal to 32, Member must have length greater than or equal to 1]\" (ROLLBACK_COMPLETE) - one deploy proves the key side and the value side at once; pass (32-character key and 32-character value) -> CREATE_COMPLETE."
+addedOn: 2026-09-24

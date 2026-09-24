@@ -1,0 +1,12 @@
+id: pf-xray-resourcepolicy-name-pattern
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::ResourcePolicy]
+severity: ERROR
+title: "ResourcePolicy.PolicyName charset"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-xray-resourcepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-24 us-east-1: PutResourcePolicy with policyName 'cdkpf b71 space' -> \"(ValidationException) 1 validation error detected: Value 'cdkpf b71 space' at 'policyName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\w+=,.@-]\" (#71 phase B); bench 2026-09-24 us-east-1: fail (PolicyName 'pfxr namepat f') -> \"Internal error occurred.\" (HandlerErrorCode: InternalFailure, ROLLBACK_COMPLETE); pass (PolicyName pfxr-namepat-p, same document) -> CREATE_COMPLETE. Confounder: the CloudFormation handler turns the ValidationException into a bare InternalFailure, so only the direct API call names the pattern; the two fixtures differ by one character. The bundled engine carries the same pattern but unanchored, so a partial match passes it."
+addedOn: 2026-09-24

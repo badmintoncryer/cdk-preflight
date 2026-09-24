@@ -1,0 +1,12 @@
+id: pf-xray-resourcepolicy-document-well-formed
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::ResourcePolicy]
+severity: ERROR
+title: "ResourcePolicy.PolicyDocument must be a well-formed resource policy"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-xray-resourcepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-24 us-east-1: PutResourcePolicy with the truncated document {\"Version\":\"2012-10-17\",\"Statement\":[ -> MalformedPolicyDocumentException (empty message body), and with a well-formed document whose statement has no Principal -> MalformedPolicyDocumentException (#71 phase B); bench 2026-09-24 us-east-1: fail (one policy with unparsable JSON plus one whose statement has no Principal) -> \"Invalid request provided: Service returned error code MalformedPolicyDocumentException (Service: XRay, Status Code: 400)\" (ROLLBACK_COMPLETE); pass (Principal {Service: sns.amazonaws.com}) -> CREATE_COMPLETE. The service never fills the message body, so the exception type is the whole of what it says."
+addedOn: 2026-09-24

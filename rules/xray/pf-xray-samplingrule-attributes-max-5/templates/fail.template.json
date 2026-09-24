@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::XRay::SamplingRule",
+      "Properties": {
+        "SamplingRule": {
+          "RuleName": "pfxr-attrs-f",
+          "Priority": 9004,
+          "FixedRate": 0.05,
+          "ReservoirSize": 1,
+          "Host": "*",
+          "HTTPMethod": "*",
+          "URLPath": "*",
+          "ServiceName": "*",
+          "ServiceType": "*",
+          "ResourceARN": "*",
+          "Version": 1,
+          "Attributes": {
+            "a1": "v",
+            "a2": "v",
+            "a3": "v",
+            "a4": "v",
+            "a5": "v",
+            "a6": "v"
+          }
+        }
+      }
+    }
+  }
+}

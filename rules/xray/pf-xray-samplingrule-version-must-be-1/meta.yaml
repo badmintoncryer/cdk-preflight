@@ -1,0 +1,12 @@
+id: pf-xray-samplingrule-version-must-be-1
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::SamplingRule]
+severity: ERROR
+title: "SamplingRule.Version must be 1"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-xray-samplingrule-samplingrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-24 us-east-1: CreateSamplingRule with version=2 -> \"(InvalidRequestException) ... Sampling rule version must be 1\" (#71 phase B); bench 2026-09-24 us-east-1: fail (Version 2) -> \"Invalid request provided: CreateSamplingRuleRequest(SamplingRule=SamplingRule(RuleName=pfxr-version-f, ..., Version=2))\" (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass (Version 1) -> CREATE_COMPLETE. Confounder: the handler echoes the request but drops the service reason text, so the quoted wording comes from the direct API call."
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-xray-samplingrule-name-arn-exclusive
+service: xray
+benchRegion: us-east-1
+resourceTypes: [AWS::XRay::SamplingRule]
+severity: ERROR
+title: "SamplingRule cannot carry both RuleName and RuleARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-xray-samplingrule-samplingrule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-24 us-east-1: CreateSamplingRule with both ruleName and ruleARN -> \"(InvalidRequestException) ... Request cannot contain both sampling rule name and sampling rule ARN\" (#71 phase B); bench 2026-09-24 us-east-1: fail (RuleName pfxr-namearn-f plus RuleARN) -> \"Invalid request provided: CreateSamplingRuleRequest(SamplingRule=SamplingRule(RuleName=pfxr-namearn-f, RuleARN=arn:aws:xray:us-east-1:123456789012:sampling-rule/pfxr-namearn-f, ...))\" (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass (RuleName only) -> CREATE_COMPLETE. Confounder: the CloudFormation handler echoes the request but drops the service reason text, so the quoted wording comes from the direct API call."
+addedOn: 2026-09-24
