@@ -1,0 +1,12 @@
+id: pf-config-rule-scope-resource-id-requires-single-type
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigRule]
+severity: ERROR
+title: "Scope.ComplianceResourceId needs exactly one ComplianceResourceTypes entry"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configrule-scope.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"A single resourceType should be provided when resourceId is provided in scope\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-config-rule-custom-policy-message-type
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConfigRule]
+severity: ERROR
+title: "A CUSTOM_POLICY rule takes only the two change-notification message types"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configrule-source.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"The provided SourceDetails are not valid. The SourceDetails should be null/empty if the owner is AWS. The SourceDetails should be provided if the owner is CUSTOM_LAMBDA or CUSTOM_POLICY. Only ConfigurationItemChangeNotification or OversizedConfigurationItemChangeNotification is allowed when the owner is CUSTOM_POLICY.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

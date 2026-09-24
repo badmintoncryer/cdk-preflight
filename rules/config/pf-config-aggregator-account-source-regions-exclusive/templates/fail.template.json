@@ -1,0 +1,23 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Aggregator": {
+      "Type": "AWS::Config::ConfigurationAggregator",
+      "Properties": {
+        "AccountAggregationSources": [
+          {
+            "AccountIds": [
+              {
+                "Ref": "AWS::AccountId"
+              }
+            ],
+            "AllAwsRegions": true,
+            "AwsRegions": [
+              "us-east-1"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

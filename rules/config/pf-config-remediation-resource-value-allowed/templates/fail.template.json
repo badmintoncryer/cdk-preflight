@@ -1,0 +1,20 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Remediation": {
+      "Type": "AWS::Config::RemediationConfiguration",
+      "Properties": {
+        "ConfigRuleName": "cdkpf-no-such-rule-69",
+        "TargetType": "SSM_DOCUMENT",
+        "TargetId": "AWS-PublishSNSNotification",
+        "Parameters": {
+          "Message": {
+            "ResourceValue": {
+              "Value": "RESOURCE_ARN"
+            }
+          }
+        }
+      }
+    }
+  }
+}

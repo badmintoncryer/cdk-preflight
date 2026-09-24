@@ -1,0 +1,12 @@
+id: pf-config-remediation-resource-value-allowed
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::RemediationConfiguration]
+severity: ERROR
+title: "ResourceValue.Value only takes RESOURCE_ID"
+constraintSource: https://docs.aws.amazon.com/config/latest/APIReference/API_ResourceValue.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"1 validation error detected: Value 'RESOURCE_ARN' at 'remediationConfigurations.1.member.parameters.Message.member.resourceValue.value' failed to satisfy constraint: Member must satisfy enum value set: [RESOURCE_ID]\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

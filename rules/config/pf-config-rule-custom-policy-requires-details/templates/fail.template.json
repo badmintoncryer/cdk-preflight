@@ -1,0 +1,19 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Rule": {
+      "Type": "AWS::Config::ConfigRule",
+      "Properties": {
+        "Source": {
+          "Owner": "CUSTOM_POLICY",
+          "SourceDetails": [
+            {
+              "EventSource": "aws.config",
+              "MessageType": "ConfigurationItemChangeNotification"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-config-conformance-pack-template-body-resource-types
+service: config
+benchRegion: us-east-1
+resourceTypes: [AWS::Config::ConformancePack]
+severity: ERROR
+title: "A conformance pack template holds only Config rules and remediations"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-config-conformancepack.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Invalid request provided: Invalid conformance pack template provided. Errors found: [Unsupported resource type(s) provided in the template]. Fix your template and try again.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

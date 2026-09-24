@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "RuleTwoTypes": {
+      "Type": "AWS::Config::ConfigRule",
+      "Properties": {
+        "Source": {
+          "Owner": "AWS",
+          "SourceIdentifier": "S3_BUCKET_VERSIONING_ENABLED"
+        },
+        "Scope": {
+          "ComplianceResourceId": "i-0123456789abcdef0",
+          "ComplianceResourceTypes": [
+            "AWS::EC2::Instance",
+            "AWS::S3::Bucket"
+          ]
+        }
+      }
+    },
+    "RuleNoTypes": {
+      "Type": "AWS::Config::ConfigRule",
+      "Properties": {
+        "Source": {
+          "Owner": "AWS",
+          "SourceIdentifier": "S3_BUCKET_VERSIONING_ENABLED"
+        },
+        "Scope": {
+          "ComplianceResourceId": "i-0123456789abcdef0"
+        }
+      }
+    }
+  }
+}

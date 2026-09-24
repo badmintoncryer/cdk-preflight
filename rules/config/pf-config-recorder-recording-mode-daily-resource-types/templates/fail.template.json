@@ -1,0 +1,54 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "ConfigRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "config.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
+        ]
+      }
+    },
+    "Recorder": {
+      "Type": "AWS::Config::ConfigurationRecorder",
+      "Properties": {
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "ConfigRole",
+            "Arn"
+          ]
+        },
+        "RecordingGroup": {
+          "AllSupported": false,
+          "ResourceTypes": [
+            "AWS::Config::ResourceCompliance"
+          ]
+        },
+        "RecordingMode": {
+          "RecordingFrequency": "CONTINUOUS",
+          "RecordingModeOverrides": [
+            {
+              "RecordingFrequency": "DAILY",
+              "ResourceTypes": [
+                "AWS::Config::ResourceCompliance"
+              ],
+              "Description": "cdkpf"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
