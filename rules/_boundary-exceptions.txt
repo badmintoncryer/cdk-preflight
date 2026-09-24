@@ -30,6 +30,8 @@ pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」�
 pf-asg-desired-capacity-range  ルールが持つ 3 つ目の比較 `MinSize <= MaxSize` は違反条件ではなく、DesiredCapacity を見る前の前提ガード。同値の fail も 1 差の pass も意味を持たない。DesiredCapacity の両端はフィクスチャを境界に置いてある（fail 3/max 2 と 1/min 2、pass 2==max と 0==min）
 pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
+pf-cloudtrail-trail-aes-conditions-max  しきい値と突き合わせるのは AdvancedEventSelectors をまたいだ条件値の合計で、どの配列長とも一致しない。フィクスチャは 2 セレクタで合計 501 / 500 に乗せてある
+pf-cloudtrail-trail-data-resources-max  しきい値と突き合わせるのは EventSelectors をまたいだ DataResources.Values の合計で、どの配列長とも一致しない。フィクスチャは 5 セレクタで合計 251 / 250 に乗せてある（実機も分割した形で上限を返す）
 pf-cloudwatch-alarm-evaluation-window  3600 は予算の段を選ぶ境目（Period >= 3600 なら 1 週間、未満なら 1 日）で、順序のある制約ではない。実際のしきい値 604800 / 86400 は Period x EvaluationPeriods の積なのでテンプレートに数値としては現れない。フィクスチャは 3600x169 / 3600x168 と 60x1441 / 60x1440 に乗せてある
 pf-cloudwatch-alarm-expressions-max  数えているのは Metrics のうち Expression を持つ要素だけを集めるヘルパーの戻り値で、Metrics 配列そのものの長さとは 1 ずれる。フィクスチャは 11 / 10 本に乗せてある
 pf-cloudwatch-composite-suppressor-format  count(parts) >= 7 は ActionsSuppressor を ARN として割った断片数のガードで、順序のある制約ではない

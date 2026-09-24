@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-data-resources-max
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A trail logs at most 250 data resource values across all event selectors"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-dataresource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (5 selectors, 251 values in total) -> ROLLBACK_FAILED \"Specify a valid number of DataResources.Values (0 to 250) for all your selectors\"; pass (5 selectors, 250 values) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

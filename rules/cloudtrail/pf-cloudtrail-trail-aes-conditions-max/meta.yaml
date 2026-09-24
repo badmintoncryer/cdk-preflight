@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-aes-conditions-max
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A trail holds at most 500 advanced event selector condition values"
+constraintSource: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/WhatIsCloudTrail-Limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (2 selectors, 501 condition values in total) -> ROLLBACK_FAILED \"There are too many filters applied. The maximum allowed number of filters is 500.\"; pass (2 selectors, 500 values) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

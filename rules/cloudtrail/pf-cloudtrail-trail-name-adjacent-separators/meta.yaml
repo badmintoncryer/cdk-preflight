@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-name-adjacent-separators
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A trail name cannot have adjacent periods, hyphens or underscores"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudtrail-trail.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"Trail name or ARN cannot have adjacent periods (.), hyphens (-), or underscores (_).\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

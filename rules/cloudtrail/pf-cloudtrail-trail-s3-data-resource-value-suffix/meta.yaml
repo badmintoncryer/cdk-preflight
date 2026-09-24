@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-s3-data-resource-value-suffix
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "An S3 data resource value must name an object prefix, not a bare bucket ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-dataresource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"Value arn:aws:s3:::cdkpf-ct69-b0 for DataResources.Values is invalid.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

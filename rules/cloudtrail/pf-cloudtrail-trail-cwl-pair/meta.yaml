@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-cwl-pair
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "CloudWatch Logs delivery needs both the log group ARN and the role ARN"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudtrail-trail.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"You must specify a log group and a role ARN.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

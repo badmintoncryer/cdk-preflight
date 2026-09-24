@@ -1,0 +1,364 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket"
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AclCheck",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:GetBucketAcl",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "Bucket",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Sid": "Write",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Sub": "${Bucket.Arn}/AWSLogs/${AWS::AccountId}/*"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Trail": {
+      "Type": "AWS::CloudTrail::Trail",
+      "Properties": {
+        "IsLogging": false,
+        "S3BucketName": {
+          "Ref": "Bucket"
+        },
+        "EventSelectors": [
+          {
+            "ReadWriteType": "All",
+            "IncludeManagementEvents": false,
+            "DataResources": [
+              {
+                "Type": "AWS::S3::Object",
+                "Values": [
+                  "arn:aws:s3:::cdkpf-ct69-b0/",
+                  "arn:aws:s3:::cdkpf-ct69-b1/",
+                  "arn:aws:s3:::cdkpf-ct69-b2/",
+                  "arn:aws:s3:::cdkpf-ct69-b3/",
+                  "arn:aws:s3:::cdkpf-ct69-b4/",
+                  "arn:aws:s3:::cdkpf-ct69-b5/",
+                  "arn:aws:s3:::cdkpf-ct69-b6/",
+                  "arn:aws:s3:::cdkpf-ct69-b7/",
+                  "arn:aws:s3:::cdkpf-ct69-b8/",
+                  "arn:aws:s3:::cdkpf-ct69-b9/",
+                  "arn:aws:s3:::cdkpf-ct69-b10/",
+                  "arn:aws:s3:::cdkpf-ct69-b11/",
+                  "arn:aws:s3:::cdkpf-ct69-b12/",
+                  "arn:aws:s3:::cdkpf-ct69-b13/",
+                  "arn:aws:s3:::cdkpf-ct69-b14/",
+                  "arn:aws:s3:::cdkpf-ct69-b15/",
+                  "arn:aws:s3:::cdkpf-ct69-b16/",
+                  "arn:aws:s3:::cdkpf-ct69-b17/",
+                  "arn:aws:s3:::cdkpf-ct69-b18/",
+                  "arn:aws:s3:::cdkpf-ct69-b19/",
+                  "arn:aws:s3:::cdkpf-ct69-b20/",
+                  "arn:aws:s3:::cdkpf-ct69-b21/",
+                  "arn:aws:s3:::cdkpf-ct69-b22/",
+                  "arn:aws:s3:::cdkpf-ct69-b23/",
+                  "arn:aws:s3:::cdkpf-ct69-b24/",
+                  "arn:aws:s3:::cdkpf-ct69-b25/",
+                  "arn:aws:s3:::cdkpf-ct69-b26/",
+                  "arn:aws:s3:::cdkpf-ct69-b27/",
+                  "arn:aws:s3:::cdkpf-ct69-b28/",
+                  "arn:aws:s3:::cdkpf-ct69-b29/",
+                  "arn:aws:s3:::cdkpf-ct69-b30/",
+                  "arn:aws:s3:::cdkpf-ct69-b31/",
+                  "arn:aws:s3:::cdkpf-ct69-b32/",
+                  "arn:aws:s3:::cdkpf-ct69-b33/",
+                  "arn:aws:s3:::cdkpf-ct69-b34/",
+                  "arn:aws:s3:::cdkpf-ct69-b35/",
+                  "arn:aws:s3:::cdkpf-ct69-b36/",
+                  "arn:aws:s3:::cdkpf-ct69-b37/",
+                  "arn:aws:s3:::cdkpf-ct69-b38/",
+                  "arn:aws:s3:::cdkpf-ct69-b39/",
+                  "arn:aws:s3:::cdkpf-ct69-b40/",
+                  "arn:aws:s3:::cdkpf-ct69-b41/",
+                  "arn:aws:s3:::cdkpf-ct69-b42/",
+                  "arn:aws:s3:::cdkpf-ct69-b43/",
+                  "arn:aws:s3:::cdkpf-ct69-b44/",
+                  "arn:aws:s3:::cdkpf-ct69-b45/",
+                  "arn:aws:s3:::cdkpf-ct69-b46/",
+                  "arn:aws:s3:::cdkpf-ct69-b47/",
+                  "arn:aws:s3:::cdkpf-ct69-b48/",
+                  "arn:aws:s3:::cdkpf-ct69-b49/",
+                  "arn:aws:s3:::cdkpf-ct69-b50/"
+                ]
+              }
+            ]
+          },
+          {
+            "ReadWriteType": "All",
+            "IncludeManagementEvents": false,
+            "DataResources": [
+              {
+                "Type": "AWS::S3::Object",
+                "Values": [
+                  "arn:aws:s3:::cdkpf-ct69-b51/",
+                  "arn:aws:s3:::cdkpf-ct69-b52/",
+                  "arn:aws:s3:::cdkpf-ct69-b53/",
+                  "arn:aws:s3:::cdkpf-ct69-b54/",
+                  "arn:aws:s3:::cdkpf-ct69-b55/",
+                  "arn:aws:s3:::cdkpf-ct69-b56/",
+                  "arn:aws:s3:::cdkpf-ct69-b57/",
+                  "arn:aws:s3:::cdkpf-ct69-b58/",
+                  "arn:aws:s3:::cdkpf-ct69-b59/",
+                  "arn:aws:s3:::cdkpf-ct69-b60/",
+                  "arn:aws:s3:::cdkpf-ct69-b61/",
+                  "arn:aws:s3:::cdkpf-ct69-b62/",
+                  "arn:aws:s3:::cdkpf-ct69-b63/",
+                  "arn:aws:s3:::cdkpf-ct69-b64/",
+                  "arn:aws:s3:::cdkpf-ct69-b65/",
+                  "arn:aws:s3:::cdkpf-ct69-b66/",
+                  "arn:aws:s3:::cdkpf-ct69-b67/",
+                  "arn:aws:s3:::cdkpf-ct69-b68/",
+                  "arn:aws:s3:::cdkpf-ct69-b69/",
+                  "arn:aws:s3:::cdkpf-ct69-b70/",
+                  "arn:aws:s3:::cdkpf-ct69-b71/",
+                  "arn:aws:s3:::cdkpf-ct69-b72/",
+                  "arn:aws:s3:::cdkpf-ct69-b73/",
+                  "arn:aws:s3:::cdkpf-ct69-b74/",
+                  "arn:aws:s3:::cdkpf-ct69-b75/",
+                  "arn:aws:s3:::cdkpf-ct69-b76/",
+                  "arn:aws:s3:::cdkpf-ct69-b77/",
+                  "arn:aws:s3:::cdkpf-ct69-b78/",
+                  "arn:aws:s3:::cdkpf-ct69-b79/",
+                  "arn:aws:s3:::cdkpf-ct69-b80/",
+                  "arn:aws:s3:::cdkpf-ct69-b81/",
+                  "arn:aws:s3:::cdkpf-ct69-b82/",
+                  "arn:aws:s3:::cdkpf-ct69-b83/",
+                  "arn:aws:s3:::cdkpf-ct69-b84/",
+                  "arn:aws:s3:::cdkpf-ct69-b85/",
+                  "arn:aws:s3:::cdkpf-ct69-b86/",
+                  "arn:aws:s3:::cdkpf-ct69-b87/",
+                  "arn:aws:s3:::cdkpf-ct69-b88/",
+                  "arn:aws:s3:::cdkpf-ct69-b89/",
+                  "arn:aws:s3:::cdkpf-ct69-b90/",
+                  "arn:aws:s3:::cdkpf-ct69-b91/",
+                  "arn:aws:s3:::cdkpf-ct69-b92/",
+                  "arn:aws:s3:::cdkpf-ct69-b93/",
+                  "arn:aws:s3:::cdkpf-ct69-b94/",
+                  "arn:aws:s3:::cdkpf-ct69-b95/",
+                  "arn:aws:s3:::cdkpf-ct69-b96/",
+                  "arn:aws:s3:::cdkpf-ct69-b97/",
+                  "arn:aws:s3:::cdkpf-ct69-b98/",
+                  "arn:aws:s3:::cdkpf-ct69-b99/",
+                  "arn:aws:s3:::cdkpf-ct69-b100/"
+                ]
+              }
+            ]
+          },
+          {
+            "ReadWriteType": "All",
+            "IncludeManagementEvents": false,
+            "DataResources": [
+              {
+                "Type": "AWS::S3::Object",
+                "Values": [
+                  "arn:aws:s3:::cdkpf-ct69-b101/",
+                  "arn:aws:s3:::cdkpf-ct69-b102/",
+                  "arn:aws:s3:::cdkpf-ct69-b103/",
+                  "arn:aws:s3:::cdkpf-ct69-b104/",
+                  "arn:aws:s3:::cdkpf-ct69-b105/",
+                  "arn:aws:s3:::cdkpf-ct69-b106/",
+                  "arn:aws:s3:::cdkpf-ct69-b107/",
+                  "arn:aws:s3:::cdkpf-ct69-b108/",
+                  "arn:aws:s3:::cdkpf-ct69-b109/",
+                  "arn:aws:s3:::cdkpf-ct69-b110/",
+                  "arn:aws:s3:::cdkpf-ct69-b111/",
+                  "arn:aws:s3:::cdkpf-ct69-b112/",
+                  "arn:aws:s3:::cdkpf-ct69-b113/",
+                  "arn:aws:s3:::cdkpf-ct69-b114/",
+                  "arn:aws:s3:::cdkpf-ct69-b115/",
+                  "arn:aws:s3:::cdkpf-ct69-b116/",
+                  "arn:aws:s3:::cdkpf-ct69-b117/",
+                  "arn:aws:s3:::cdkpf-ct69-b118/",
+                  "arn:aws:s3:::cdkpf-ct69-b119/",
+                  "arn:aws:s3:::cdkpf-ct69-b120/",
+                  "arn:aws:s3:::cdkpf-ct69-b121/",
+                  "arn:aws:s3:::cdkpf-ct69-b122/",
+                  "arn:aws:s3:::cdkpf-ct69-b123/",
+                  "arn:aws:s3:::cdkpf-ct69-b124/",
+                  "arn:aws:s3:::cdkpf-ct69-b125/",
+                  "arn:aws:s3:::cdkpf-ct69-b126/",
+                  "arn:aws:s3:::cdkpf-ct69-b127/",
+                  "arn:aws:s3:::cdkpf-ct69-b128/",
+                  "arn:aws:s3:::cdkpf-ct69-b129/",
+                  "arn:aws:s3:::cdkpf-ct69-b130/",
+                  "arn:aws:s3:::cdkpf-ct69-b131/",
+                  "arn:aws:s3:::cdkpf-ct69-b132/",
+                  "arn:aws:s3:::cdkpf-ct69-b133/",
+                  "arn:aws:s3:::cdkpf-ct69-b134/",
+                  "arn:aws:s3:::cdkpf-ct69-b135/",
+                  "arn:aws:s3:::cdkpf-ct69-b136/",
+                  "arn:aws:s3:::cdkpf-ct69-b137/",
+                  "arn:aws:s3:::cdkpf-ct69-b138/",
+                  "arn:aws:s3:::cdkpf-ct69-b139/",
+                  "arn:aws:s3:::cdkpf-ct69-b140/",
+                  "arn:aws:s3:::cdkpf-ct69-b141/",
+                  "arn:aws:s3:::cdkpf-ct69-b142/",
+                  "arn:aws:s3:::cdkpf-ct69-b143/",
+                  "arn:aws:s3:::cdkpf-ct69-b144/",
+                  "arn:aws:s3:::cdkpf-ct69-b145/",
+                  "arn:aws:s3:::cdkpf-ct69-b146/",
+                  "arn:aws:s3:::cdkpf-ct69-b147/",
+                  "arn:aws:s3:::cdkpf-ct69-b148/",
+                  "arn:aws:s3:::cdkpf-ct69-b149/",
+                  "arn:aws:s3:::cdkpf-ct69-b150/"
+                ]
+              }
+            ]
+          },
+          {
+            "ReadWriteType": "All",
+            "IncludeManagementEvents": false,
+            "DataResources": [
+              {
+                "Type": "AWS::S3::Object",
+                "Values": [
+                  "arn:aws:s3:::cdkpf-ct69-b151/",
+                  "arn:aws:s3:::cdkpf-ct69-b152/",
+                  "arn:aws:s3:::cdkpf-ct69-b153/",
+                  "arn:aws:s3:::cdkpf-ct69-b154/",
+                  "arn:aws:s3:::cdkpf-ct69-b155/",
+                  "arn:aws:s3:::cdkpf-ct69-b156/",
+                  "arn:aws:s3:::cdkpf-ct69-b157/",
+                  "arn:aws:s3:::cdkpf-ct69-b158/",
+                  "arn:aws:s3:::cdkpf-ct69-b159/",
+                  "arn:aws:s3:::cdkpf-ct69-b160/",
+                  "arn:aws:s3:::cdkpf-ct69-b161/",
+                  "arn:aws:s3:::cdkpf-ct69-b162/",
+                  "arn:aws:s3:::cdkpf-ct69-b163/",
+                  "arn:aws:s3:::cdkpf-ct69-b164/",
+                  "arn:aws:s3:::cdkpf-ct69-b165/",
+                  "arn:aws:s3:::cdkpf-ct69-b166/",
+                  "arn:aws:s3:::cdkpf-ct69-b167/",
+                  "arn:aws:s3:::cdkpf-ct69-b168/",
+                  "arn:aws:s3:::cdkpf-ct69-b169/",
+                  "arn:aws:s3:::cdkpf-ct69-b170/",
+                  "arn:aws:s3:::cdkpf-ct69-b171/",
+                  "arn:aws:s3:::cdkpf-ct69-b172/",
+                  "arn:aws:s3:::cdkpf-ct69-b173/",
+                  "arn:aws:s3:::cdkpf-ct69-b174/",
+                  "arn:aws:s3:::cdkpf-ct69-b175/",
+                  "arn:aws:s3:::cdkpf-ct69-b176/",
+                  "arn:aws:s3:::cdkpf-ct69-b177/",
+                  "arn:aws:s3:::cdkpf-ct69-b178/",
+                  "arn:aws:s3:::cdkpf-ct69-b179/",
+                  "arn:aws:s3:::cdkpf-ct69-b180/",
+                  "arn:aws:s3:::cdkpf-ct69-b181/",
+                  "arn:aws:s3:::cdkpf-ct69-b182/",
+                  "arn:aws:s3:::cdkpf-ct69-b183/",
+                  "arn:aws:s3:::cdkpf-ct69-b184/",
+                  "arn:aws:s3:::cdkpf-ct69-b185/",
+                  "arn:aws:s3:::cdkpf-ct69-b186/",
+                  "arn:aws:s3:::cdkpf-ct69-b187/",
+                  "arn:aws:s3:::cdkpf-ct69-b188/",
+                  "arn:aws:s3:::cdkpf-ct69-b189/",
+                  "arn:aws:s3:::cdkpf-ct69-b190/",
+                  "arn:aws:s3:::cdkpf-ct69-b191/",
+                  "arn:aws:s3:::cdkpf-ct69-b192/",
+                  "arn:aws:s3:::cdkpf-ct69-b193/",
+                  "arn:aws:s3:::cdkpf-ct69-b194/",
+                  "arn:aws:s3:::cdkpf-ct69-b195/",
+                  "arn:aws:s3:::cdkpf-ct69-b196/",
+                  "arn:aws:s3:::cdkpf-ct69-b197/",
+                  "arn:aws:s3:::cdkpf-ct69-b198/",
+                  "arn:aws:s3:::cdkpf-ct69-b199/",
+                  "arn:aws:s3:::cdkpf-ct69-b200/"
+                ]
+              }
+            ]
+          },
+          {
+            "ReadWriteType": "All",
+            "IncludeManagementEvents": false,
+            "DataResources": [
+              {
+                "Type": "AWS::S3::Object",
+                "Values": [
+                  "arn:aws:s3:::cdkpf-ct69-b201/",
+                  "arn:aws:s3:::cdkpf-ct69-b202/",
+                  "arn:aws:s3:::cdkpf-ct69-b203/",
+                  "arn:aws:s3:::cdkpf-ct69-b204/",
+                  "arn:aws:s3:::cdkpf-ct69-b205/",
+                  "arn:aws:s3:::cdkpf-ct69-b206/",
+                  "arn:aws:s3:::cdkpf-ct69-b207/",
+                  "arn:aws:s3:::cdkpf-ct69-b208/",
+                  "arn:aws:s3:::cdkpf-ct69-b209/",
+                  "arn:aws:s3:::cdkpf-ct69-b210/",
+                  "arn:aws:s3:::cdkpf-ct69-b211/",
+                  "arn:aws:s3:::cdkpf-ct69-b212/",
+                  "arn:aws:s3:::cdkpf-ct69-b213/",
+                  "arn:aws:s3:::cdkpf-ct69-b214/",
+                  "arn:aws:s3:::cdkpf-ct69-b215/",
+                  "arn:aws:s3:::cdkpf-ct69-b216/",
+                  "arn:aws:s3:::cdkpf-ct69-b217/",
+                  "arn:aws:s3:::cdkpf-ct69-b218/",
+                  "arn:aws:s3:::cdkpf-ct69-b219/",
+                  "arn:aws:s3:::cdkpf-ct69-b220/",
+                  "arn:aws:s3:::cdkpf-ct69-b221/",
+                  "arn:aws:s3:::cdkpf-ct69-b222/",
+                  "arn:aws:s3:::cdkpf-ct69-b223/",
+                  "arn:aws:s3:::cdkpf-ct69-b224/",
+                  "arn:aws:s3:::cdkpf-ct69-b225/",
+                  "arn:aws:s3:::cdkpf-ct69-b226/",
+                  "arn:aws:s3:::cdkpf-ct69-b227/",
+                  "arn:aws:s3:::cdkpf-ct69-b228/",
+                  "arn:aws:s3:::cdkpf-ct69-b229/",
+                  "arn:aws:s3:::cdkpf-ct69-b230/",
+                  "arn:aws:s3:::cdkpf-ct69-b231/",
+                  "arn:aws:s3:::cdkpf-ct69-b232/",
+                  "arn:aws:s3:::cdkpf-ct69-b233/",
+                  "arn:aws:s3:::cdkpf-ct69-b234/",
+                  "arn:aws:s3:::cdkpf-ct69-b235/",
+                  "arn:aws:s3:::cdkpf-ct69-b236/",
+                  "arn:aws:s3:::cdkpf-ct69-b237/",
+                  "arn:aws:s3:::cdkpf-ct69-b238/",
+                  "arn:aws:s3:::cdkpf-ct69-b239/",
+                  "arn:aws:s3:::cdkpf-ct69-b240/",
+                  "arn:aws:s3:::cdkpf-ct69-b241/",
+                  "arn:aws:s3:::cdkpf-ct69-b242/",
+                  "arn:aws:s3:::cdkpf-ct69-b243/",
+                  "arn:aws:s3:::cdkpf-ct69-b244/",
+                  "arn:aws:s3:::cdkpf-ct69-b245/",
+                  "arn:aws:s3:::cdkpf-ct69-b246/",
+                  "arn:aws:s3:::cdkpf-ct69-b247/",
+                  "arn:aws:s3:::cdkpf-ct69-b248/",
+                  "arn:aws:s3:::cdkpf-ct69-b249/",
+                  "arn:aws:s3:::cdkpf-ct69-b250/"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "DependsOn": "BucketPolicy"
+    }
+  }
+}

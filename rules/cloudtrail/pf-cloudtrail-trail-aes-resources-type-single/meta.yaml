@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-aes-resources-type-single
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "An advanced event selector holds at most one resources.type field"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-advancedfieldselector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"A duplicate event selector was found for at least one field. Only one selector is allowed per field.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-kms-key-region
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A trail's KMS key must be in the deployment Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudtrail-trail.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"KMS key ID arn:aws:kms:us-west-2:214794239830:key/11111111-2222-3333-4444-555555555555 does not exist, or s3 bucket cdkpf-pf-cloudtrail-trail-kms-key-region-fa-bucket-ugetbflgphqk and key are not in the same region.\"; control with a same-Region key ARN of the same (nonexistent) id answers \"Insufficient permissions to access S3 bucket ... or KMS key ...\" instead, so the Region clause is the branch the mismatch selects; pass not deployed (a same-Region CMK cannot be deleted for 7 days)"
+addedOn: 2026-09-24

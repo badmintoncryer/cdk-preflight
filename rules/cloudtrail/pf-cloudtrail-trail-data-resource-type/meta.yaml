@@ -1,0 +1,12 @@
+id: pf-cloudtrail-trail-data-resource-type
+service: cloudtrail
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudTrail::Trail]
+severity: ERROR
+title: "A basic event selector only logs three data resource types"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-dataresource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"Value AWS::SQS::Queue for DataResources.Type is invalid.\"; pass -> CREATE_COMPLETE"
+addedOn: 2026-09-24
