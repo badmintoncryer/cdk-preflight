@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-continuous-delete-after-days-max"
+      }
+    },
+    "Plan": {
+      "Type": "AWS::Backup::BackupPlan",
+      "Properties": {
+        "BackupPlan": {
+          "BackupPlanName": "cdkpf-plan-69",
+          "BackupPlanRule": [
+            {
+              "RuleName": "cdkpf-rule-69",
+              "TargetBackupVault": {
+                "Ref": "Vault"
+              },
+              "ScheduleExpression": "cron(0 0 1 1 ? 2035)",
+              "EnableContinuousBackup": true,
+              "Lifecycle": {
+                "DeleteAfterDays": 35
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

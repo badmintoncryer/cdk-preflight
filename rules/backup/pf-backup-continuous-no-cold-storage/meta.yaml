@@ -1,0 +1,12 @@
+id: pf-backup-continuous-no-cold-storage
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "A continuous backup rule cannot move recovery points to cold storage"
+constraintSource: https://docs.aws.amazon.com/aws-backup/latest/devguide/point-in-time-recovery.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (EnableContinuousBackup true + Lifecycle.MoveToColdStorageAfterDays 30, no DeleteAfterDays) -> \"Error in some rules due to : Invalid lifecycle. MoveToColdStorageAfterDays is unavailable\" (ROLLBACK_COMPLETE); pass (EnableContinuousBackup true + DeleteAfterDays 35, no cold storage) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

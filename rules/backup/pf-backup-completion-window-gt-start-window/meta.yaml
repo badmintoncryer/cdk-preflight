@@ -1,0 +1,12 @@
+id: pf-backup-completion-window-gt-start-window
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "CompletionWindowMinutes must be at least 60 minutes greater than StartWindowMinutes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupplan-backupruleresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (StartWindowMinutes 120 / CompletionWindowMinutes 179) -> \"Error in some rules due to : CompleteWindowMinutes must be at least 60 minutes greater than StartWindowMinutes\" (ROLLBACK_COMPLETE); pass (120 / 180) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

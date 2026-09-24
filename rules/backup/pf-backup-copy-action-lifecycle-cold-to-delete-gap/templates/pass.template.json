@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-copy-action-lifecycle-gap"
+      }
+    },
+    "Vault2": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-copy-action-lifecycle-gap2"
+      }
+    },
+    "Plan": {
+      "Type": "AWS::Backup::BackupPlan",
+      "DependsOn": [
+        "Vault2"
+      ],
+      "Properties": {
+        "BackupPlan": {
+          "BackupPlanName": "cdkpf-plan-69",
+          "BackupPlanRule": [
+            {
+              "RuleName": "cdkpf-rule-69",
+              "TargetBackupVault": {
+                "Ref": "Vault"
+              },
+              "ScheduleExpression": "cron(0 0 1 1 ? 2035)",
+              "CopyActions": [
+                {
+                  "DestinationBackupVaultArn": "arn:aws:backup:us-east-1:214794239830:backup-vault:cdkpf-copy-action-lifecycle-gap2",
+                  "Lifecycle": {
+                    "MoveToColdStorageAfterDays": 30,
+                    "DeleteAfterDays": 120
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

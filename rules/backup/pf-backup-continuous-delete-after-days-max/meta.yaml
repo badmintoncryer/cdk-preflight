@@ -1,0 +1,12 @@
+id: pf-backup-continuous-delete-after-days-max
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "A continuous backup rule cannot retain recovery points for more than 35 days"
+constraintSource: https://docs.aws.amazon.com/aws-backup/latest/devguide/point-in-time-recovery.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (EnableContinuousBackup true + DeleteAfterDays 36) -> \"Error in some rules due to : Invalid lifecycle. DeleteAfterDays cannot be less than 1 or more than 36500 days.\" (ROLLBACK_COMPLETE); pass (same rule with DeleteAfterDays 35) -> CREATE_COMPLETE. The quoted ceiling of 36500 is wrong - the 36/35 pair is what fixes the continuous-backup limit at 35 days"
+addedOn: 2026-09-24

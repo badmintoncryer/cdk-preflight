@@ -1,0 +1,12 @@
+id: pf-backup-schedule-expression-cron-only
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "A backup rule schedule must be a cron() expression"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupplan-backupruleresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (ScheduleExpression \"rate(1 day)\") -> \"Error in some rules due to : Cron expression is not valid: Invalid cron expression\" (ROLLBACK_COMPLETE); pass (ScheduleExpression \"cron(0 0 1 1 ? 2035)\") -> CREATE_COMPLETE"
+addedOn: 2026-09-24

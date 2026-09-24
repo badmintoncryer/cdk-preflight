@@ -1,0 +1,12 @@
+id: pf-backup-advanced-setting-resource-type-ec2-only
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "AdvancedBackupSettings only accepts the EC2 resource type"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupplan-advancedbackupsettingresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (AdvancedBackupSettings[0].ResourceType \"RDS\" with BackupOptions {WindowsVSS: enabled}) -> \"Invalid Resource Type : RDS\" (ROLLBACK_COMPLETE); pass (ResourceType \"EC2\") -> CREATE_COMPLETE"
+addedOn: 2026-09-24

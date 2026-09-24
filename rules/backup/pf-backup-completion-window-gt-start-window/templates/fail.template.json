@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-completion-window-gt-start-window"
+      }
+    },
+    "Plan": {
+      "Type": "AWS::Backup::BackupPlan",
+      "Properties": {
+        "BackupPlan": {
+          "BackupPlanName": "cdkpf-plan-69",
+          "BackupPlanRule": [
+            {
+              "RuleName": "cdkpf-rule-69",
+              "TargetBackupVault": {
+                "Ref": "Vault"
+              },
+              "ScheduleExpression": "cron(0 0 1 1 ? 2035)",
+              "StartWindowMinutes": 120,
+              "CompletionWindowMinutes": 179
+            }
+          ]
+        }
+      }
+    }
+  }
+}

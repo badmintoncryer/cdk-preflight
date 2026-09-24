@@ -1,0 +1,12 @@
+id: pf-backup-rule-name-charset
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "A backup rule name may only contain alphanumerics, hyphens, underscores and periods"
+constraintSource: https://docs.aws.amazon.com/aws-backup/latest/devguide/API_BackupRuleInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (RuleName \"cdkpf rule 69\") -> \"Error in some rules due to : Parameter RuleName contains invalid characters. Allowed characters are alphanumeric and '-_.'.\" (ROLLBACK_COMPLETE); pass (RuleName \"cdkpf.rule_69\") -> CREATE_COMPLETE"
+addedOn: 2026-09-24
