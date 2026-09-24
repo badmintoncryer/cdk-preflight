@@ -727,6 +727,27 @@
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | ERROR | pending-engine |
 | `pf-agentcore-runtime-session-storage-single` | AWS::BedrockAgentCore::Runtime | An AgentCore Runtime allows at most one SessionStorage filesystem configuration | ERROR | none |
 | `pf-agentcore-vpc-network-mode-config` | AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::BrowserCustom<br>AWS::BedrockAgentCore::CodeInterpreterCustom<br>AWS::BedrockAgentCore::Harness | NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness) | ERROR | none |
+| `pf-cfn-custom-servicetimeout-range` | * | A custom resource's ServiceTimeout must be between 1 and 14400 seconds | ERROR | none |
+| `pf-cfn-custom-servicetoken-region` | * | A custom resource's ServiceToken must live in the stack's own Region | ERROR | none |
+| `pf-cfn-custom-servicetoken-service` | * | A custom resource's ServiceToken must be an SNS topic or a Lambda function | ERROR | none |
+| `pf-cfn-export-name-charset` | * | Export names may use only alphanumerics, colons and hyphens | ERROR | none |
+| `pf-cfn-export-name-duplicate` | * | Two outputs in one template may not share an export name | ERROR | none |
+| `pf-cfn-export-name-max` | * | An export name may be at most 256 characters | ERROR | none |
+| `pf-cfn-export-name-resource-ref` | * | An export name may not depend on a resource or an imported value | ERROR | none |
+| `pf-cfn-export-value-list` | * | An exported output value must be a string, not a list | ERROR | none |
+| `pf-cfn-export-value-max` | * | An exported output value may be at most 1024 bytes | ERROR | none |
+| `pf-cfn-hook-targetoperations-nonempty` | AWS::CloudFormation::GuardHook | A Guard hook must declare at least one target operation | ERROR | none |
+| `pf-cfn-importvalue-resource-ref` | * | The argument of Fn::ImportValue may not depend on a resource | ERROR | none |
+| `pf-cfn-importvalue-self-export` | * | A template may not import an export it declares itself | ERROR | none |
+| `pf-cfn-nested-notificationarns-region` | AWS::CloudFormation::Stack | A nested stack's NotificationARNs must be SNS topics in the stack's own Region | ERROR | none |
+| `pf-cfn-nested-templateurl-scheme` | AWS::CloudFormation::Stack | A nested stack's TemplateURL must be an https:// S3 URL | ERROR | none |
+| `pf-cfn-param-value-max` | * | A parameter default may be at most 4096 characters | ERROR | none |
+| `pf-cfn-stackset-accounts-exclusive` | AWS::CloudFormation::StackSet | DeploymentTargets takes either Accounts or AccountsUrl, never both | ERROR | none |
+| `pf-cfn-stackset-autodeployment-selfmanaged` | AWS::CloudFormation::StackSet | AutoDeployment may not be set on a SELF_MANAGED stack set | ERROR | none |
+| `pf-cfn-stackset-callas-delegated-servicemanaged-only` | AWS::CloudFormation::StackSet | CallAs: DELEGATED_ADMIN requires PermissionModel: SERVICE_MANAGED | ERROR | none |
+| `pf-cfn-stackset-deploymenttargets-ou-servicemanaged` | AWS::CloudFormation::StackSet | OrganizationalUnitIds targets require PermissionModel: SERVICE_MANAGED | ERROR | none |
+| `pf-cfn-stackset-failuretolerance-exclusive` | AWS::CloudFormation::StackSet | FailureToleranceCount and FailureTolerancePercentage are mutually exclusive | ERROR | none |
+| `pf-cfn-stackset-maxconcurrent-exclusive` | AWS::CloudFormation::StackSet | MaxConcurrentCount and MaxConcurrentPercentage are mutually exclusive | ERROR | none |
 | `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | WARN | none |
 | `pf-cloudfront-alias-unique` | AWS::CloudFront::Distribution | Aliases must not contain duplicates | ERROR | none |
 | `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | ERROR | none |
