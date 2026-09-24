@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-env-vars-max-4kb
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "A canary's environment variables cannot exceed 4 KB in total"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-runconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: RunConfig.EnvironmentVariables totalling 4097 bytes of keys and values -> \"Resource handler returned message: \"Invalid request provided: Error parsing environment variables to json (Service: Synthetics, Status Code: 400, Request ID: 0c5c7469-17b1-4709-8e05-a61199188146) (SDK Attempt Count: 1)\" (RequestToken: cb5f1fff-850c-e285-d4b9-53e846c77fce, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass the same variables totalling 4096 bytes -> CREATE_COMPLETE"
+addedOn: 2026-09-24

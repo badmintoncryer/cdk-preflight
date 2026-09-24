@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-schedule-rate-max-1-hour
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "A canary's rate() expression cannot ask for more than one hour"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-schedule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Schedule.Expression rate(61 minutes) -> \"Resource handler returned message: \"Invalid request provided: Invalid Schedule Expression. (Service: Synthetics, Status Code: 400, Request ID: deb684c3-87ec-4238-a06f-bdb714d10830) (SDK Attempt Count: 1)\" (RequestToken: ac13bf51-3118-256c-f9f5-e926f228b1a5, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass rate(60 minutes) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

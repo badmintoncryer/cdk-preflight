@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-runtime-deprecated
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "A canary cannot be created on a deprecated runtime"
+constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Synthetics_Runtime_Support_Policy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: RuntimeVersion syn-nodejs-puppeteer-7.0 (deprecated 2026-01-22) -> \"Resource handler returned message: \"Invalid request provided: Deprecated runtime version specified: syn-nodejs-puppeteer-7.0 (Service: Synthetics, Status Code: 400, Request ID: 756e144d-94ab-46f7-b1e7-f36db646e98d) (SDK Attempt Count: 1)\" (RequestToken: 8d016af5-dbfa-e7b0-fc95-59a68c517b62, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass RuntimeVersion syn-nodejs-puppeteer-17.0 -> CREATE_COMPLETE"
+addedOn: 2026-09-24

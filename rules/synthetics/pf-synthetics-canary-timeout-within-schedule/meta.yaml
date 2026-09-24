@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-timeout-within-schedule
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "A canary's run timeout cannot exceed its own run frequency"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-runconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Schedule.Expression rate(1 minute) with RunConfig.TimeoutInSeconds 61 -> \"Resource handler returned message: \"Invalid request provided: Run timeout cannot be greater than 60 seconds for the chosen frequency (Service: Synthetics, Status Code: 400, Request ID: e8937ca0-e53c-47dd-bbe8-d10e21110793) (SDK Attempt Count: 1)\" (RequestToken: fcde6cbd-c50f-ae14-e2bd-43ab4670ebc7, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass the same schedule with TimeoutInSeconds 60 -> CREATE_COMPLETE"
+addedOn: 2026-09-24

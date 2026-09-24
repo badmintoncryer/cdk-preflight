@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-s3-encryption-mode-enum
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "S3Encryption mode must be SSE_S3 or SSE_KMS"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-s3encryption.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ArtifactConfig.S3Encryption.EncryptionMode SSE-KMS (hyphen) -> \"Resource handler returned message: \"Invalid request provided: 1 validation error detected: Value 'SSE-KMS' at 'artifactConfig.s3Encryption.encryptionMode' failed to satisfy constraint: Member must satisfy enum value set: [SSE_KMS, SSE_S3] (Service: Synthetics, Status Code: 400, Request ID: 16087792-fafc-416b-b725-7dbfcf637065) (SDK Attempt Count: 1)\" (RequestToken: 7869c6d1-b837-24fc-0be5-ec311fa87077, HandlerErrorCo [\u2026]\" (ROLLBACK_COMPLETE); pass SSE_S3 -> CREATE_COMPLETE"
+addedOn: 2026-09-24

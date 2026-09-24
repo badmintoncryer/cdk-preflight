@@ -1,0 +1,78 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "canary",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:GetBucketLocation",
+                    "s3:ListAllMyBuckets"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::cdkpf-bench-layers",
+                    "arn:aws:s3:::cdkpf-bench-layers/*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:ListAllMyBuckets",
+                    "cloudwatch:PutMetricData",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Canary": {
+      "Type": "AWS::Synthetics::Canary",
+      "Properties": {
+        "Name": "cdkpf-deprt-f",
+        "ArtifactS3Location": "s3://cdkpf-bench-layers/canary-artifacts/cdkpf-deprt-f",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "RuntimeVersion": "syn-nodejs-puppeteer-7.0",
+        "StartCanaryAfterCreation": false,
+        "ProvisionedResourceCleanup": "AUTOMATIC",
+        "Schedule": {
+          "Expression": "rate(60 minutes)"
+        },
+        "Code": {
+          "Handler": "index.handler",
+          "Script": "exports.handler = async () => {};"
+        }
+      }
+    }
+  }
+}
