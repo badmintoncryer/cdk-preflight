@@ -90,8 +90,9 @@ _pf_ekslib_cidr_in_any(c, ranges) if {
 }
 
 # CloudFormation defaults AccessConfig.AuthenticationMode to CONFIG_MAP, so a
-# cluster that never mentions AccessConfig authenticates that way. Lifted here
-# from pf-eks-accessentry-requires-api-auth-mode, which reads the same default.
+# cluster that never mentions AccessConfig authenticates that way. The access
+# entry rule pf-eks-accessentry-requires-api-auth-mode still carries its own copy
+# of this default (_pf_aeauth_mode); the two have not been converged.
 _pf_ekslib_auth_mode(name) := m if {
 	m := _pf_ekslib_oget(_pf_ekslib_get(name, "AccessConfig"), "AuthenticationMode")
 	is_string(m)

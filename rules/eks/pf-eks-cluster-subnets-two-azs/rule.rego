@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-eks-cluster-subnets-two-azs", "ERROR", nam
 	"Give the cluster subnets in two different availability zones",
 	"https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html") if {
 	some name in resources_of_type("AWS::EKS::Cluster")
+	is_array(object.get(_pf_ekslib_props(name), ["ResourcesVpcConfig", "SubnetIds"], null))
 	ids := flatten_list(name, "Properties.ResourcesVpcConfig.SubnetIds")
 	ids != []
 	count(ids) < 2

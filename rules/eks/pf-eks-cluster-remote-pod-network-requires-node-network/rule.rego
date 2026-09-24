@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-eks-cluster-remote-pod-network-requires-no
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-remotenetworkconfig.html") if {
 	some name in resources_of_type("AWS::EKS::Cluster")
 	rnc := _pf_ekslib_get(name, "RemoteNetworkConfig")
-	is_object(rnc)
+	is_array(_pf_ekslib_oget(rnc, "RemotePodNetworks"))
 	not _pf_eksrn_has_nodes(rnc)
 }
 
