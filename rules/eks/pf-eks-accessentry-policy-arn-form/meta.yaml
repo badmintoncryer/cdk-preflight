@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-policy-arn-form
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "An access policy ARN is not an IAM policy ARN"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/access-policies.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: AccessPolicies PolicyArn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy -> ROLLBACK_COMPLETE, \"The policyArn parameter format is not valid\". EKS access policies are managed by EKS rather than IAM, so their ARNs carry no account and sit under the eks service. fail-only; the fixture builds its own cluster."
+addedOn: 2026-09-25
