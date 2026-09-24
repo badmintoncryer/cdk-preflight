@@ -1,0 +1,12 @@
+id: pf-backup-restore-testing-selection-name-charset
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::RestoreTestingSelection]
+severity: ERROR
+title: "A restore testing selection name may only contain letters, digits and underscores"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-backup-restoretestingselection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (RestoreTestingSelectionName \"cdkpf-rtsname-69\") -> \"Invalid restore testing selection name.\" (ROLLBACK_COMPLETE; the message does not say why); pass (RestoreTestingSelectionName \"cdkpf_rtsname_69\", one property apart) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

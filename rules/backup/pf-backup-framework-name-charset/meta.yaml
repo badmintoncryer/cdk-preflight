@@ -1,0 +1,12 @@
+id: pf-backup-framework-name-charset
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::Framework]
+severity: ERROR
+title: "A framework name must start with a letter and use only letters, digits and underscores"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-backup-framework.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (FrameworkName \"cdkpf-fwname-69\") -> \"Invalid framework name cdkpf-fwname-69. Framework names must be between 1 and 256 characters, start with a letter (A-Z and a-z), and consist only of letters, numbers (0-9), and underscores (_).\" (ROLLBACK_COMPLETE); --fail-only: the \"cdkpf_fwname_69\" pass template is not deployed because a framework needs a ConfigurationRecorder to reach DeploymentStatus=COMPLETED"
+addedOn: 2026-09-24

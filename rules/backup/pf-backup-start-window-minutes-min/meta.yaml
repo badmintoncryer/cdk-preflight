@@ -1,0 +1,12 @@
+id: pf-backup-start-window-minutes-min
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "StartWindowMinutes must be at least 60 minutes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupplan-backupruleresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (StartWindowMinutes 59) -> \"Error in some rules due to : StartWindowMinutes parameter is below minimum value. StartWindowMinutes minimum value is: 60 minutes\" (ROLLBACK_COMPLETE); pass (60) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

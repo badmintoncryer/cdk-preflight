@@ -1,0 +1,12 @@
+id: pf-backup-plan-name-charset
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "A backup plan name may only contain alphanumerics, hyphens, underscores and periods"
+constraintSource: https://docs.aws.amazon.com/aws-backup/latest/devguide/API_BackupPlanInput.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (BackupPlanName \"cdkpf plan 69\") -> \"Parameter BackupPlanName contains invalid characters. Allowed characters are alphanumeric and '-_.'.\" (ROLLBACK_COMPLETE); pass (BackupPlanName \"cdkpf.plan_69\") -> CREATE_COMPLETE"
+addedOn: 2026-09-24

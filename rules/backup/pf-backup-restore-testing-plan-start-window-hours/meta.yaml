@@ -1,0 +1,12 @@
+id: pf-backup-restore-testing-plan-start-window-hours
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::RestoreTestingPlan]
+severity: ERROR
+title: "A restore testing plan start window may not exceed 168 hours"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-backup-restoretestingplan.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (StartWindowHours 169) -> \"Start window hours must be between [1] and [168].\" (ROLLBACK_COMPLETE); pass (StartWindowHours 168) -> CREATE_COMPLETE. The rule only checks the 168 upper bound; the lower bound was not deployed"
+addedOn: 2026-09-24

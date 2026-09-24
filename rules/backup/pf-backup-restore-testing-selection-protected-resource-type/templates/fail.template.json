@@ -1,0 +1,80 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "backup.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "cdkpf-backup-rts-69",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "tag:GetResources",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Rtp": {
+      "Type": "AWS::Backup::RestoreTestingPlan",
+      "Properties": {
+        "RestoreTestingPlanName": "cdkpf_rtsprt_69",
+        "ScheduleExpression": "cron(0 0 1 1 ? 2035)",
+        "RecoveryPointSelection": {
+          "Algorithm": "LATEST_WITHIN_WINDOW",
+          "IncludeVaults": [
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:backup:${AWS::Region}:${AWS::AccountId}:backup-vault:cdkpf-no-such-vault-69"
+            }
+          ],
+          "RecoveryPointTypes": [
+            "SNAPSHOT"
+          ],
+          "SelectionWindowDays": 30
+        }
+      }
+    },
+    "Rts": {
+      "Type": "AWS::Backup::RestoreTestingSelection",
+      "DependsOn": [
+        "Rtp"
+      ],
+      "Properties": {
+        "RestoreTestingPlanName": "cdkpf_rtsprt_69",
+        "RestoreTestingSelectionName": "cdkpf_rtsprt_69",
+        "IamRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "ProtectedResourceType": "CDKPFNOSUCH69",
+        "ProtectedResourceConditions": {
+          "StringEquals": [
+            {
+              "Key": "aws:ResourceTag/cdkpf-no-such-key-69",
+              "Value": "no-such-value-69"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

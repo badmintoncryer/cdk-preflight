@@ -1,0 +1,115 @@
+{
+  "Resources": {
+    "Vault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "cdkpf-selection-not-resources-max"
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "backup.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "cdkpf-backup-select-69",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "tag:GetResources",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Plan": {
+      "Type": "AWS::Backup::BackupPlan",
+      "Properties": {
+        "BackupPlan": {
+          "BackupPlanName": "cdkpf-plan-69",
+          "BackupPlanRule": [
+            {
+              "RuleName": "cdkpf-rule-69",
+              "TargetBackupVault": {
+                "Ref": "Vault"
+              },
+              "ScheduleExpression": "cron(0 0 1 1 ? 2035)"
+            }
+          ]
+        }
+      }
+    },
+    "Selection": {
+      "Type": "AWS::Backup::BackupSelection",
+      "Properties": {
+        "BackupPlanId": {
+          "Ref": "Plan"
+        },
+        "BackupSelection": {
+          "SelectionName": "cdkpf-sel-69",
+          "IamRoleArn": {
+            "Fn::GetAtt": [
+              "Role",
+              "Arn"
+            ]
+          },
+          "ListOfTags": [
+            {
+              "ConditionType": "STRINGEQUALS",
+              "ConditionKey": "cdkpf-no-such-key-69",
+              "ConditionValue": "no-such-value-69"
+            }
+          ],
+          "NotResources": [
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf690*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf691*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf692*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf693*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf694*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf695*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf696*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf697*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf698*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf699*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6910*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6911*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6912*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6913*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6914*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6915*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6916*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6917*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6918*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6919*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6920*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6921*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6922*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6923*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6924*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6925*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6926*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6927*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6928*",
+            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6929*"
+          ]
+        }
+      }
+    }
+  }
+}

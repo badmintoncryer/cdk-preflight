@@ -1,0 +1,12 @@
+id: pf-backup-selection-conditions-key-prefix
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupSelection]
+severity: ERROR
+title: "A selection condition key must be prefixed with aws:ResourceTag/"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupselection-conditions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (Conditions.StringEquals[0].ConditionKey \"cdkpf-no-such-key-69\") -> \"Invalid tag selection: 'cdkpf-no-such-key-69':'no-such-value-69'. Prefix 'aws:ResourceTag/' not found.\" (ROLLBACK_COMPLETE); pass (\"aws:ResourceTag/cdkpf-no-such-key-69\") -> CREATE_COMPLETE"
+addedOn: 2026-09-24

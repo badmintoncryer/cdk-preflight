@@ -1,0 +1,12 @@
+id: pf-backup-framework-controls-min-one
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::Framework]
+severity: ERROR
+title: "A backup audit framework must define at least one control"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-framework-frameworkcontrol.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (FrameworkControls []) -> \"Invalid request provided: AWS::Backup::Framework cdkpf_fwctl1_69 has no controls.\" (ROLLBACK_COMPLETE); --fail-only: a framework deploys its controls as AWS Config rules and goes DeploymentStatus=FAILED without a ConfigurationRecorder in the region (measured 2026-09-24), so the 1-control pass template is not deployed"
+addedOn: 2026-09-24

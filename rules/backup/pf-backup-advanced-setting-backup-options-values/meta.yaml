@@ -1,0 +1,12 @@
+id: pf-backup-advanced-setting-backup-options-values
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "BackupOptions only accepts WindowsVSS set to enabled or disabled"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupplan-advancedbackupsettingresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (AdvancedBackupSettings[0] ResourceType \"EC2\" + BackupOptions {WindowsVSS: \"on\"}) -> \"Invalid Resource Type : EC2\" (ROLLBACK_COMPLETE); pass (the same template with WindowsVSS \"enabled\") -> CREATE_COMPLETE. The service blames ResourceType even when the rejected value is the BackupOptions map, so the pair - identical but for the WindowsVSS value - is what pins the constraint"
+addedOn: 2026-09-24

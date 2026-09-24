@@ -1,0 +1,12 @@
+id: pf-backup-selection-not-resources-max
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupSelection]
+severity: ERROR
+title: "NotResources accepts at most 30 wildcard selectors"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupselection-backupselectionresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (31 wildcard ARNs in NotResources) -> \"Invalid backup selection. 'NotResources' section cannot contain more than 30 resource wildcard selectors.\" (ROLLBACK_COMPLETE); pass (30) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

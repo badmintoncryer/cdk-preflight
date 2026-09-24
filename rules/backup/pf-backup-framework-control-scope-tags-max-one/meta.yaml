@@ -1,0 +1,12 @@
+id: pf-backup-framework-control-scope-tags-max-one
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::Framework]
+severity: ERROR
+title: "A framework control scope may carry at most one tag key/value pair"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-framework-controlscope.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (ControlScope.Tags with 2 pairs) -> \"Invalid control scope ControlScope(complianceResourceIds=null, complianceResourceTypes=null, tags={cdkpf-a-69=1, cdkpf-b-69=2}). The control scope can include one or more resource types, a single tag key/value pair, or a combination of one resource type and one resource ID.\" (ROLLBACK_COMPLETE); --fail-only: the 1-pair pass template is not deployed because a framework needs a ConfigurationRecorder to reach DeploymentStatus=COMPLETED"
+addedOn: 2026-09-24

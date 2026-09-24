@@ -1,0 +1,12 @@
+id: pf-backup-copy-action-lifecycle-cold-to-delete-gap
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupPlan]
+severity: ERROR
+title: "A copy action lifecycle must keep DeleteAfterDays at least 90 days after MoveToColdStorageAfterDays"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupplan-copyactionresourcetype.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (CopyActions[0].Lifecycle MoveToColdStorageAfterDays 30 / DeleteAfterDays 119) -> \"Invalid lifecycle. DeleteAfterDays cannot be less than 90 days apart from MoveToColdStorageAfterDays\" (ROLLBACK_COMPLETE); pass (30 / 120) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

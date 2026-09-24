@@ -1,0 +1,12 @@
+id: pf-backup-vault-encryption-key-region
+service: backup
+benchRegion: us-east-1
+resourceTypes: [AWS::Backup::BackupVault]
+severity: ERROR
+title: "A backup vault encryption key must live in the deploy region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-backup-backupvault.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail (EncryptionKeyArn arn:aws:kms:us-west-2:...:key/11111111-2222-3333-4444-555555555555) -> \"Invalid Key provided by the user. Invalid arn us-west-2\" (ROLLBACK_COMPLETE); control stack with the SAME non-existent key id in a us-east-1 ARN -> \"Invalid Key provided by the user. Key '...' does not exist\" - a different branch, so the region check runs before the lookup; --fail-only: a same-region CMK cannot be deleted for 7 days, so no pass template is deployed"
+addedOn: 2026-09-24
