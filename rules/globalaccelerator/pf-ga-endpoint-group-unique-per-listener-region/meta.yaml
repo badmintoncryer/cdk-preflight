@@ -1,0 +1,12 @@
+id: pf-ga-endpoint-group-unique-per-listener-region
+service: globalaccelerator
+benchRegion: us-west-2
+resourceTypes: [AWS::GlobalAccelerator::EndpointGroup]
+severity: ERROR
+title: "A listener holds at most one endpoint group per Region"
+constraintSource: https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateEndpointGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-west-2: fail -> Resource handler returned message: \"Endpoint group already exists: Endpoint group already exists. (Service: AWSGlobalAccelerator; Status Code: 400; Error Code: EndpointGroupAlreadyExistsException; Request ID: f1cbaa01-0e6b-4a0f-9176-299758b29bee; Proxy: null)\" (RequestToken: 28e71789-553c-a71e-42b8-8adfc8b1a895, HandlerErrorCode: AlreadyExists) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. fail two endpoint groups on one listener both in us-west-2; pass the same two groups differing only in EndpointGroupRegion (us-west-2 and us-east-1), so the Region is what the uniqueness is keyed on."
+addedOn: 2026-09-24

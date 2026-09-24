@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Acc": {
+      "Type": "AWS::GlobalAccelerator::Accelerator",
+      "Properties": {
+        "Name": "cdkpf-ga-flb-p",
+        "Enabled": false,
+        "FlowLogsEnabled": false
+      }
+    }
+  }
+}

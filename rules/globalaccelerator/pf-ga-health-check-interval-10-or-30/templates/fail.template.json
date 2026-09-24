@@ -1,0 +1,36 @@
+{
+  "Resources": {
+    "Acc": {
+      "Type": "AWS::GlobalAccelerator::Accelerator",
+      "Properties": {
+        "Name": "cdkpf-ga-hci-f",
+        "Enabled": false
+      }
+    },
+    "Lsn": {
+      "Type": "AWS::GlobalAccelerator::Listener",
+      "Properties": {
+        "AcceleratorArn": {
+          "Ref": "Acc"
+        },
+        "Protocol": "TCP",
+        "PortRanges": [
+          {
+            "FromPort": 80,
+            "ToPort": 80
+          }
+        ]
+      }
+    },
+    "Eg": {
+      "Type": "AWS::GlobalAccelerator::EndpointGroup",
+      "Properties": {
+        "ListenerArn": {
+          "Ref": "Lsn"
+        },
+        "EndpointGroupRegion": "us-west-2",
+        "HealthCheckIntervalSeconds": 20
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "Acc": {
+      "Type": "AWS::GlobalAccelerator::Accelerator",
+      "Properties": {
+        "Name": "cdkpf-ga-poe-p",
+        "Enabled": false
+      }
+    },
+    "Lsn": {
+      "Type": "AWS::GlobalAccelerator::Listener",
+      "Properties": {
+        "AcceleratorArn": {
+          "Ref": "Acc"
+        },
+        "Protocol": "TCP",
+        "PortRanges": [
+          {
+            "FromPort": 80,
+            "ToPort": 81
+          }
+        ]
+      }
+    },
+    "Eg": {
+      "Type": "AWS::GlobalAccelerator::EndpointGroup",
+      "Properties": {
+        "ListenerArn": {
+          "Ref": "Lsn"
+        },
+        "EndpointGroupRegion": "us-west-2",
+        "PortOverrides": [
+          {
+            "ListenerPort": 80,
+            "EndpointPort": 82
+          }
+        ]
+      }
+    }
+  }
+}

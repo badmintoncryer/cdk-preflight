@@ -1,0 +1,12 @@
+id: pf-ga-listener-port-range-order
+service: globalaccelerator
+benchRegion: us-west-2
+resourceTypes: [AWS::GlobalAccelerator::Listener]
+severity: ERROR
+title: "A listener PortRange must have FromPort <= ToPort"
+constraintSource: https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateListener.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-west-2: fail -> Resource handler returned message: \"FromPort should be less than or equal to ToPort (Service: AWSGlobalAccelerator; Status Code: 400; Error Code: InvalidPortRangeException; Request ID: a0419899-ebe5-4eb6-94b1-b98f4e28edba; Proxy: null)\" (RequestToken: db1c19d3-7ad1-9001-d267-db1e031d5834, HandlerErrorCode: GeneralServiceException) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. fail FromPort 81 / ToPort 80 (one over the limit); pass 80 / 80 (the limit itself, a single-port range)."
+addedOn: 2026-09-24

@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Acc": {
+      "Type": "AWS::GlobalAccelerator::Accelerator",
+      "Properties": {
+        "Name": "cdkpf-ga-pro-p",
+        "Enabled": false
+      }
+    },
+    "Lsn": {
+      "Type": "AWS::GlobalAccelerator::Listener",
+      "Properties": {
+        "AcceleratorArn": {
+          "Ref": "Acc"
+        },
+        "Protocol": "TCP",
+        "PortRanges": [
+          {
+            "FromPort": 80,
+            "ToPort": 80
+          }
+        ]
+      }
+    }
+  }
+}

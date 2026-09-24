@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "Logs": {
+      "Type": "AWS::S3::Bucket"
+    },
+    "Acc": {
+      "Type": "AWS::GlobalAccelerator::Accelerator",
+      "Properties": {
+        "Name": "cdkpf-ga-flb-f",
+        "Enabled": false,
+        "FlowLogsEnabled": true,
+        "FlowLogsS3Bucket": {
+          "Ref": "Logs"
+        }
+      }
+    }
+  }
+}
