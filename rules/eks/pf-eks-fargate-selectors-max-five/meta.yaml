@@ -1,0 +1,12 @@
+id: pf-eks-fargate-selectors-max-five
+service: eks
+resourceTypes: [AWS::EKS::FargateProfile]
+benchRegion: us-east-1
+severity: ERROR
+title: "A Fargate profile accepts at most five selectors"
+constraintSource: https://docs.aws.amazon.com/eks/latest/APIReference/API_CreateFargateProfile.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: 6 selectors -> ROLLBACK_COMPLETE, \"Request contains more than 5 Selectors\" (HandlerErrorCode: InvalidRequest); the pass fixture sits on the limit with 5. fail-only, and the fixture builds its own EKS cluster: CreateFargateProfile reads this only after it has found the cluster, so a fixture pointing at a literal probe cluster would go INCONCLUSIVE the day that cluster is deleted."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-eks-fargate-subnets-private-only
+service: eks
+resourceTypes: [AWS::EKS::FargateProfile, AWS::EC2::Subnet]
+benchRegion: us-east-1
+severity: ERROR
+title: "Fargate profile subnets must be private"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: the profile's subnet associated with a route table carrying 0.0.0.0/0 -> the stack's internet gateway -> ROLLBACK_COMPLETE, \"Subnet subnet-0eebe596d6273dea1 provided in Fargate Profile is not a private subnet\" (HandlerErrorCode: InvalidRequest). The criterion is the route to an internet gateway, not MapPublicIpOnLaunch - phase B was refused with a subnet that had MapPublicIpOnLaunch false (2026-09-24). fail-only, and the fixture builds its own EKS cluster: CreateFargateProfile reads this only after it has found the cluster, so a fixture pointing at a literal probe cluster would go INCONCLUSIVE the day that cluster is deleted. The fail fixture's route needs DependsOn on the VPCGatewayAttachment, and the profile DependsOn the route and the association, or the profile can be created before the subnet is public."
+addedOn: 2026-09-25
