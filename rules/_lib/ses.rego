@@ -67,3 +67,44 @@ _pf_ses_event_types := {
 	"SEND", "REJECT", "BOUNCE", "COMPLAINT", "DELIVERY", "OPEN", "CLICK",
 	"RENDERING_FAILURE", "DELIVERY_DELAY", "SUBSCRIPTION",
 }
+
+# --- #70 C2: SES 受信系（ReceiptRule / ReceiptRuleSet）--------------------------
+# ReceiptRule.Rule.Actions の 1 要素が名乗れるアクションの種類。
+_pf_sesrx_action_keys := {
+	"AddHeaderAction", "BounceAction", "ConnectAction", "LambdaAction",
+	"S3Action", "SNSAction", "StopAction", "WorkmailAction",
+}
+
+# intrinsic はマーカーオブジェクトで届く: Ref / Fn::GetAtt は `__kind`、解けない参照や
+# 動的参照は `__dynamic`、Fn::If は `__conditional` + `__if_true` / `__if_false`
+# （実測 2026-09-24）。接頭辞で見るので、将来マーカーが増えても取りこぼさない。
+_pf_sesrx_marker(v) if {
+	some k in object.keys(v)
+	startswith(k, "__")
+}
+
+# Actions は前処理済みドキュメントの生の配列で読む。flatten_list() は Fn::If を真の枝に
+# 潰して返すので（実測 2026-09-24）、デプロイ時に AWS::NoValue へ落ちて消える要素まで
+# 「在る」ように見え、個数を数えるとそのぶん誤検出する。
+_pf_sesrx_actions(name) := a if {
+	props := object.get(input.resources[name], "properties", {})
+	a := object.get(object.get(props, "Rule", {}), "Actions", [])
+	is_array(a)
+}
+
+# 要素が実際に持っているアクション種別。条件付きで消えうるものは数に入れない。
+_pf_sesrx_named(o) := {k |
+	some k in _pf_sesrx_action_keys
+	v := object.get(o, k, null)
+	is_object(v)
+	not _pf_sesrx_marker(v)
+}
+
+# Actions の中の BounceAction を、要素の添字つきで返す（診断のパスに添字を出すため）。
+_pf_sesrx_bounce(name) := [[i, b] |
+	some i, e in _pf_sesrx_actions(name)
+	is_object(e)
+	b := object.get(e, "BounceAction", null)
+	is_object(b)
+	not _pf_sesrx_marker(b)
+]

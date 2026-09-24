@@ -1,0 +1,12 @@
+id: pf-ses-receipt-rule-set-name-charset
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ReceiptRuleSet]
+severity: ERROR
+title: "A receipt rule set's name takes only letters, digits, underscores and dashes"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference/API_CreateReceiptRuleSet.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (RuleSetName \"-pf-ses-rs-charset\") -> ROLLBACK_FAILED with \"Not a valid ruleSetName: -pf-ses-rs-charset (Service: Ses, Status Code: 400)\" - the rollback cannot delete a rule set that was never created, so the stack is removed with the resource retained and nothing is left in SES. pass template (RuleSetName \"pf-ses-rs-charset\") -> CREATE_COMPLETE. The sentence does not spell the charset out; the allowed set (ASCII letters, digits, underscore, dash; start and end alphanumeric) is CreateReceiptRuleSet's own wording, and it differs from a rule name in that a period is NOT allowed here."
+addedOn: 2026-09-24

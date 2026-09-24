@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "RS": {
+      "Type": "AWS::SES::ReceiptRuleSet",
+      "Properties": {}
+    },
+    "RR": {
+      "Type": "AWS::SES::ReceiptRule",
+      "Properties": {
+        "RuleSetName": {
+          "Ref": "RS"
+        },
+        "Rule": {
+          "Name": "pf-ses-action-one",
+          "Actions": [
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-1",
+                "HeaderValue": "cdk-preflight"
+              },
+              "StopAction": {
+                "Scope": "RuleSet"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

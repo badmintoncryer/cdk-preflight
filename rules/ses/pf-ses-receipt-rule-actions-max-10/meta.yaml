@@ -1,0 +1,12 @@
+id: pf-ses-receipt-rule-actions-max-10
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ReceiptRule]
+severity: ERROR
+title: "A receipt rule holds at most 10 actions"
+constraintSource: https://docs.aws.amazon.com/ses/latest/dg/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (11 AddHeaderActions) -> ROLLBACK_COMPLETE with \"Too many actions (Service: Ses, Status Code: 400)\" (HandlerErrorCode: ServiceLimitExceeded); pass template (10 AddHeaderActions) -> CREATE_COMPLETE. The sentence never states the number, so the limit is pinned by the pair (11 rejected / 10 accepted), not by the message."
+addedOn: 2026-09-24

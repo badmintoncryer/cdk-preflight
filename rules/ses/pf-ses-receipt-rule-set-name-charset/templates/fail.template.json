@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "RS": {
+      "Type": "AWS::SES::ReceiptRuleSet",
+      "Properties": {
+        "RuleSetName": "-pf-ses-rs-charset"
+      }
+    }
+  }
+}

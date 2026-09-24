@@ -1,0 +1,12 @@
+id: pf-ses-receipt-action-exactly-one
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ReceiptRule]
+severity: ERROR
+title: "Each entry of a receipt rule's Actions carries exactly one action"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference/API_ReceiptAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (one Actions entry carrying both AddHeaderAction and StopAction) -> ROLLBACK_COMPLETE with \"Exactly one action type must be specified for each ReceiptAction (Service: Ses, Status Code: 400)\"; pass template (the same two actions split into two entries) -> CREATE_COMPLETE."
+addedOn: 2026-09-24
