@@ -98,7 +98,52 @@ sweep_dns_firewall() {
   done
 }
 
-for region in ap-northeast-1 us-east-1; do
+# Global Accelerator は us-west-2 固定のグローバルサービス（accelerator の ARN はリージョン欄が空）で、
+# 下のタグ索引には載らない。有効・無効に関わらず 1 時間ごと（部分時間も 1 時間として）$0.025 かかるので、
+# 消し残すと気づかないまま積み上がる。名前の cdkpf- 接頭辞で拾い、
+# endpoint group → listener → accelerator の順に消す（依存があるので逆順では消せない）。
+sweep_global_accelerator() {
+  local arn lsn eg i st
+  aws globalaccelerator list-accelerators --region us-west-2 \
+    --query "Accelerators[?starts_with(Name,'cdkpf-')].AcceleratorArn" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r arn; do
+    [ -z "$arn" ] || [ "$arn" = "None" ] && continue
+    aws globalaccelerator list-listeners --accelerator-arn "$arn" --region us-west-2 \
+      --query 'Listeners[].ListenerArn' --output text 2>/dev/null | tr '\t' '\n' | while read -r lsn; do
+      [ -z "$lsn" ] || [ "$lsn" = "None" ] && continue
+      aws globalaccelerator list-endpoint-groups --listener-arn "$lsn" --region us-west-2 \
+        --query 'EndpointGroups[].EndpointGroupArn' --output text 2>/dev/null | tr '\t' '\n' | while read -r eg; do
+        [ -z "$eg" ] || [ "$eg" = "None" ] && continue
+        aws globalaccelerator delete-endpoint-group --endpoint-group-arn "$eg" --region us-west-2 >/dev/null 2>&1
+      done
+      aws globalaccelerator delete-listener --listener-arn "$lsn" --region us-west-2 >/dev/null 2>&1
+    done
+    # 有効なままでは消せない。無効化は非同期なので Status が DEPLOYED に戻るまで待つ（実測で数分）
+    aws globalaccelerator update-accelerator --accelerator-arn "$arn" --no-enabled --region us-west-2 >/dev/null 2>&1
+    for i in $(seq 40); do
+      st=$(aws globalaccelerator describe-accelerator --accelerator-arn "$arn" --region us-west-2 \
+        --query Accelerator.Status --output text 2>/dev/null)
+      [ "$st" = DEPLOYED ] && break
+      sleep 15
+    done
+    if aws globalaccelerator delete-accelerator --accelerator-arn "$arn" --region us-west-2 \
+         2>"$RECLAIM_ERR" >/dev/null; then
+      echo "sweep: reclaimed orphaned accelerator $arn (us-west-2)"
+    else
+      echo "LEFTOVER: orphaned accelerator $arn (us-west-2, \$0.025/h) — could not delete: $(reclaim_err)"
+    fi
+  done
+  # カスタムルーティングはフィクスチャで使っていない。出たときに見えるようにだけしておく
+  aws globalaccelerator list-custom-routing-accelerators --region us-west-2 \
+    --query "Accelerators[?starts_with(Name,'cdkpf-')].AcceleratorArn" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r arn; do
+    [ -z "$arn" ] || [ "$arn" = "None" ] && continue
+    echo "LEFTOVER: orphaned custom routing accelerator $arn (us-west-2, \$0.025/h) — remove by hand"
+  done
+}
+
+# us-west-2 は Global Accelerator のフィクスチャ用（GA は us-west-2 にしか作れない）
+for region in ap-northeast-1 us-east-1 us-west-2; do
   aws cloudformation list-stacks --region "$region" \
     --query "StackSummaries[?starts_with(StackName,'cdkpf-') && StackStatus!='DELETE_COMPLETE'].StackName" \
     --output text | tr '\t' '\n' | while read -r s; do
@@ -136,4 +181,6 @@ for region in ap-northeast-1 us-east-1; do
 
   sweep_dns_firewall "$region"
 done
+
+sweep_global_accelerator
 echo "sweep done"
