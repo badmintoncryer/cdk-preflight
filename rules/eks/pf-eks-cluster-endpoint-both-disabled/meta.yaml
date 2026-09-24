@@ -1,0 +1,12 @@
+id: pf-eks-cluster-endpoint-both-disabled
+service: eks
+resourceTypes: [AWS::EKS::Cluster]
+benchRegion: us-east-1
+severity: ERROR
+title: "A cluster must keep at least one of the public and private API endpoints enabled"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-resourcesvpcconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: EndpointPublicAccess false + EndpointPrivateAccess false -> ROLLBACK_COMPLETE, \"Private and public endpoint access cannot be false\" (HandlerErrorCode: InvalidRequest). fail-only, and no cluster is ever created: CreateCluster refuses the request synchronously, so the fail stack costs nothing."
+addedOn: 2026-09-25
