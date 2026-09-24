@@ -1,0 +1,12 @@
+id: pf-appautoscaling-predictive-metric-spec-single
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A predictive scaling policy takes exactly one metric specification"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredictiveScalingPolicyConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: MetricSpecifications carrying two entries (a CPU pair and a memory pair), each valid on its own -> \"You must specify one metric specification.\" (ROLLBACK_COMPLETE); pass the same policy with one entry -> CREATE_COMPLETE. api-probe 2026-09-24 us-east-1 (#68 phase B): an empty MetricSpecifications draws the same sentence; the absent key is the registry schema's F3003 and is left to it (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+addedOn: 2026-09-24

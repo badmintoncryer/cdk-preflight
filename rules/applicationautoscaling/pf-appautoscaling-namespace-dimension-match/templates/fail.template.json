@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 1,
+        "ResourceId": "table/cdkpf-aas-ndm-f",
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "ecs"
+      }
+    }
+  }
+}

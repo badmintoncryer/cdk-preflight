@@ -1,0 +1,12 @@
+id: pf-appautoscaling-schedule-cron-day-fields
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "cron() needs '?' in exactly one of day-of-month and day-of-week"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/userguide/scheduled-scaling-using-cron-expressions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: two actions, cron(0 8 * * * *) (neither day field is '?') and cron(0 8 ? * ? *) (both are) -> \"Invalid schedule expression. Details: Invalid CRON expression: error at position 1, details: '?' can only be specified for Day-of-Month or Day-of-Week.\" (ROLLBACK_COMPLETE); pass cron(0 8 1 * ? *) and cron(0 9 ? * 2 *) -> CREATE_COMPLETE. The sentence does not name the day-field rule, so the pass is the control: the same expression with exactly one '?' deploys"
+addedOn: 2026-09-24

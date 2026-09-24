@@ -1,0 +1,12 @@
+id: pf-appautoscaling-policy-type-config-required
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A scaling policy must carry the configuration block its PolicyType names"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScalingPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PolicyType StepScaling with no StepScalingPolicyConfiguration, on an ecs target registered in the same stack -> \"Resource handler returned message: \"StepScaling policy configuration must be specified (Service: ApplicationAutoScaling, Status Code: 400, Request ID: c5dcc8af-d255-4dc2-bd37-e363dc12baa0) (SDK Attempt Count: 1)\" (RequestToken: c6b9cba9-fc98-370e-513c-5bd19c6d11f9, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass the same policy carrying the StepScalingPolicyConfiguration -> CREATE_COMPLETE"
+addedOn: 2026-09-24

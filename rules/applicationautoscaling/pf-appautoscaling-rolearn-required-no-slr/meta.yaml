@@ -1,0 +1,12 @@
+id: pf-appautoscaling-rolearn-required-no-slr
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "EMR scalable targets require an explicit RoleARN"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_RegisterScalableTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ServiceNamespace elasticmapreduce with no RoleARN, on a made-up instancegroup ResourceId (no EMR cluster: the check runs before the instance group is looked up) -> \"Resource handler returned message: \"Role ARN must be specified (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 737f6b3e-581b-4d20-aad4-b1633fe27ec7) (SDK Attempt Count: 1)\" (RequestToken: e99c9e32-b6ea-99ab-45e1-00d354e90341, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass a dynamodb target with no RoleARN -> CREATE_COMPLETE, i.e. a namespace that does have a service-linked role; an elasticmapreduce pass fixture would need an hourly-billed EMR cluster"
+addedOn: 2026-09-24

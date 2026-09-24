@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 2,
+        "MinCapacity": 1,
+        "ResourceId": "instancegroup/j-2EEZNYKUA1NTV/ig-1791Y4E1L8YI0",
+        "ScalableDimension": "elasticmapreduce:instancegroup:InstanceCount",
+        "ServiceNamespace": "elasticmapreduce"
+      }
+    }
+  }
+}

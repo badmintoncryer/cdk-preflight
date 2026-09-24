@@ -1,0 +1,12 @@
+id: pf-appautoscaling-resource-label-requires-alb-metric
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "ResourceLabel is only accepted with ALBRequestCountPerTarget"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PredefinedMetricType ECSServiceAverageCPUUtilization with a well-formed ResourceLabel -> \"Resource label should not be specified for predefined metric type ECSServiceAverageCPUUtilization\" (ROLLBACK_COMPLETE); pass the same policy with the ResourceLabel removed -> CREATE_COMPLETE"
+addedOn: 2026-09-24

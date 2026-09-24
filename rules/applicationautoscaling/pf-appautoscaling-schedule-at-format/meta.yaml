@@ -1,0 +1,12 @@
+id: pf-appautoscaling-schedule-at-format
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "at() takes yyyy-mm-ddThh:mm:ss with no timezone suffix"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: two actions, at(2035-01-01T00:00:00Z) and at(2035-01-01) -> \"Invalid schedule expression. Details: Invalid schedule at DateTime expression: Invalid format: \"2035-01-01\" is too short\" (ROLLBACK_COMPLETE); pass at(2035-01-01T00:00:00) and at(2036-06-30T12:30:00) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

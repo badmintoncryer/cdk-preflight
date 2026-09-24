@@ -1,0 +1,75 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ]
+      }
+    },
+    "Fn": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "cdkpf-aas-lrq-p",
+        "Runtime": "python3.13",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(event, context):\n    return 'ok'\n"
+        }
+      }
+    },
+    "Ver": {
+      "Type": "AWS::Lambda::Version",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Fn"
+        }
+      }
+    },
+    "Alias": {
+      "Type": "AWS::Lambda::Alias",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Fn"
+        },
+        "FunctionVersion": {
+          "Fn::GetAtt": [
+            "Ver",
+            "Version"
+          ]
+        },
+        "Name": "live"
+      }
+    },
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 0,
+        "ResourceId": "function:cdkpf-aas-lrq-p:live",
+        "ScalableDimension": "lambda:function:ProvisionedConcurrency",
+        "ServiceNamespace": "lambda"
+      },
+      "DependsOn": "Alias"
+    }
+  }
+}

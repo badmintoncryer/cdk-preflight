@@ -1,0 +1,12 @@
+id: pf-appautoscaling-scheduled-action-timezone-iana
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScheduledAction Timezone must be an IANA time zone name"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Timezone 'JST' -> \"Invalid schedule timezone: JST\" (ROLLBACK_COMPLETE); pass Timezone Asia/Tokyo and US/Pacific -> CREATE_COMPLETE, i.e. the tzdata backward links are accepted too, which is why the embedded name set keeps them. api-probe 2026-09-24 (#68 phase B) also saw GMT+9 and Not/A_Zone refused and Etc/GMT+9 accepted"
+addedOn: 2026-09-24

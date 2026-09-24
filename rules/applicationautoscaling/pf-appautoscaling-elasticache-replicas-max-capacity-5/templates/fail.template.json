@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 6,
+        "MinCapacity": 1,
+        "ResourceId": "replication-group/cdkpf-aas-erm-f",
+        "ScalableDimension": "elasticache:replication-group:Replicas",
+        "ServiceNamespace": "elasticache"
+      }
+    }
+  }
+}

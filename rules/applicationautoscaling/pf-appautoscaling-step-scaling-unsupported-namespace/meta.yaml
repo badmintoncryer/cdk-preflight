@@ -1,0 +1,12 @@
+id: pf-appautoscaling-step-scaling-unsupported-namespace
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy, AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "StepScaling is not available for DynamoDB, Comprehend, Lambda, Keyspaces, MSK, ElastiCache or Neptune"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScalingPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PolicyType StepScaling on a dynamodb target registered in the same stack -> \"Resource handler returned message: \"Account is not authorized (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 009209fb-83ce-4fba-861b-136a212acf97) (SDK Attempt Count: 1)\" (RequestToken: bab4a56e-3d04-e375-72df-a1c08fcb242a, HandlerErrorCode: AccessDenied)\" (ROLLBACK_COMPLETE); pass the identical step policy on an ecs target -> CREATE_COMPLETE. The service does not name the namespace/policy-type pair, so the pass is the control: the account can create step scaling policies, only the dynamodb namespace refuses them"
+addedOn: 2026-09-24

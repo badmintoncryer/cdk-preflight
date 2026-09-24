@@ -1,0 +1,58 @@
+{
+  "Resources": {
+    "Table": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "cdkpf-aas-sru-p",
+        "BillingMode": "PROVISIONED",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        }
+      }
+    },
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 5,
+        "MinCapacity": 1,
+        "ResourceId": "table/cdkpf-aas-sru-p",
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+        "ScheduledActions": [
+          {
+            "ScheduledActionName": "cdkpf-sru-one",
+            "Schedule": "rate(1 minute)",
+            "ScalableTargetAction": {
+              "MinCapacity": 1,
+              "MaxCapacity": 1
+            },
+            "StartTime": "2035-01-01T00:00:00Z"
+          },
+          {
+            "ScheduledActionName": "cdkpf-sru-two",
+            "Schedule": "rate(2 days)",
+            "ScalableTargetAction": {
+              "MinCapacity": 1,
+              "MaxCapacity": 1
+            },
+            "StartTime": "2035-01-01T00:00:00Z"
+          }
+        ]
+      },
+      "DependsOn": "Table"
+    }
+  }
+}

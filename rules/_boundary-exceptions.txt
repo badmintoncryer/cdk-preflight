@@ -24,6 +24,7 @@
 #     pf-ecs-svc-connect-client-alias-dns-name / pf-ssm-association-targets の 4 本が該当し、端は実機で
 #     確かめたうえで test/rules.test.ts の targeted case で押さえてある（#226）。
 #     pf-ssm-parameter-value の ami-{8,17} だけは API が答えを返さないので未検証のまま。
+pf-appautoscaling-dynamodb-target-value-range  TargetValue は Double で、実機が拒否した最小の違反値は 9.9 と 90.1（9 / 91 も拒否されるが 10 / 90 との差が大きい）。検出器は整数しか探さないので 9 / 91 を要求するが、フィクスチャは実測どおり 9.9 / 90.1 に乗せてあり、pass は閉区間の両端ちょうど 10 / 90
 pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」で、テンプレートに固定値としては書けない（エンジンに時計が無い）。ルールが見ている 100000000000（西暦 5138 年＝秒とミリ秒の取り違え）はどの日付でも違反になる部分集合で、pass をその値に乗せると 365 日を超えて実機に拒否される。fail は 100000000001 に乗せ、pass は Expires を省いて既定の 7 日にしてある
 pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
 pf-asg-desired-capacity-range  ルールが持つ 3 つ目の比較 `MinSize <= MaxSize` は違反条件ではなく、DesiredCapacity を見る前の前提ガード。同値の fail も 1 差の pass も意味を持たない。DesiredCapacity の両端はフィクスチャを境界に置いてある（fail 3/max 2 と 1/min 2、pass 2==max と 0==min）

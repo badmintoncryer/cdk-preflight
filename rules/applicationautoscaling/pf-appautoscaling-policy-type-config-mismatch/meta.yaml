@@ -1,0 +1,12 @@
+id: pf-appautoscaling-policy-type-config-mismatch
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A scaling policy may carry only the configuration block its PolicyType names"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScalingPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PolicyType StepScaling carrying both StepScalingPolicyConfiguration and TargetTrackingScalingPolicyConfiguration -> \"Resource handler returned message: \"You must only provide a single scaling policy configuration, which must match the scaling policy type specified. (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 824736cb-8e4f-4cd5-9247-31037b549ab5) (SDK Attempt Count: 1)\" (RequestToken: ee8333aa-4666-9493-0cac-0d97e405cc52, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass the same policy with only the step configuration -> CREATE_COMPLETE. With only the non-matching block the service answers config-required's sentence instead, which is why the fixture carries both"
+addedOn: 2026-09-24

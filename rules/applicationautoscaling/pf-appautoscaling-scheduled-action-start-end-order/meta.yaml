@@ -1,0 +1,12 @@
+id: pf-appautoscaling-scheduled-action-start-end-order
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScheduledAction StartTime must be before EndTime"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: StartTime 2035-01-01T00:00:01Z with EndTime 2035-01-01T00:00:00Z (one second apart) -> \"StartTime must be before EndTime\" (ROLLBACK_COMPLETE); pass the same action with the two swapped -> CREATE_COMPLETE. Equal timestamps were not measured, so the rule only fires on a strict inversion"
+addedOn: 2026-09-24

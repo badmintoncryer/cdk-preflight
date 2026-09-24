@@ -1,0 +1,12 @@
+id: pf-appautoscaling-scheduled-action-name-chars
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScheduledActionName may not contain ':', '/', '|', control characters or edge spaces"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ScheduledActionName 'cdkpf:sa-one' -> \"1 validation error detected: Value 'cdkpf:sa-one' at 'scheduledActionName' failed to satisfy constraint: Member must satisfy regular expression pattern: (?!((^[ ]+.*)|(.*([\\u0000-\\u001f]|[\\u007f-\\u009f]|[:/|])+.*)|(.*[ ]+$))).+\" (ROLLBACK_COMPLETE); pass two actions named cdkpf-sa-one / cdkpf-sa-two -> CREATE_COMPLETE"
+addedOn: 2026-09-24

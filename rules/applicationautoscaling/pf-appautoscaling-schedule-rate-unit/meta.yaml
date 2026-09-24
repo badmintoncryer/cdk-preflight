@@ -1,0 +1,12 @@
+id: pf-appautoscaling-schedule-rate-unit
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "rate() takes a positive integer and minute(s), hour(s) or day(s)"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: two actions, rate(5 seconds) and rate(0 minutes) (CloudFormation reported the zero-value one) -> \"Invalid schedule frequency. Run for '1970-01-01T00:00:00.000Z' and '1970-01-01T00:00:00.000Z' are less than 60 seconds apart\" (ROLLBACK_COMPLETE); pass rate(1 minute) and rate(2 days), both with StartTime 2035 so nothing runs -> CREATE_COMPLETE; the singular form is accepted. api-probe 2026-09-24 (#68 phase B) saw rate(5 seconds) / rate(1 week) / rate(-1 minutes) answered with the syntax sentence"
+addedOn: 2026-09-24
