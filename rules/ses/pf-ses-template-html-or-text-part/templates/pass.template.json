@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::SES::Template",
+      "Properties": {
+        "Template": {
+          "SubjectPart": "cdk-preflight fixture",
+          "TextPart": "body"
+        }
+      }
+    }
+  }
+}

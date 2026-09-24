@@ -1,0 +1,49 @@
+{
+  "Resources": {
+    "RS": {
+      "Type": "AWS::SES::ReceiptRuleSet",
+      "Properties": {}
+    },
+    "RR": {
+      "Type": "AWS::SES::ReceiptRule",
+      "Properties": {
+        "RuleSetName": {
+          "Ref": "RS"
+        },
+        "Rule": {
+          "Name": "pf-ses-after-1",
+          "Actions": [
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-1",
+                "HeaderValue": "cdk-preflight"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "RR2": {
+      "Type": "AWS::SES::ReceiptRule",
+      "Properties": {
+        "RuleSetName": {
+          "Ref": "RS"
+        },
+        "After": {
+          "Ref": "RR"
+        },
+        "Rule": {
+          "Name": "pf-ses-after-2",
+          "Actions": [
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-2",
+                "HeaderValue": "cdk-preflight"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

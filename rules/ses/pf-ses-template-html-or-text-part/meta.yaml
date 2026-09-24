@@ -1,0 +1,12 @@
+id: pf-ses-template-html-or-text-part
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::Template]
+severity: ERROR
+title: "An email template needs an HtmlPart or a TextPart"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ses-template.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (SubjectPart only) -> ROLLBACK_COMPLETE with \"Template must specify at least one of the parts.\"; pass template (SubjectPart + TextPart) -> CREATE_COMPLETE."
+addedOn: 2026-09-24

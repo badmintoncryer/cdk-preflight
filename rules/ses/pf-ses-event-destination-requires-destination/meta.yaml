@@ -1,0 +1,12 @@
+id: pf-ses-event-destination-requires-destination
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
+severity: ERROR
+title: "An event destination must carry one destination block"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_EventDestinationDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (EventDestination with Enabled and MatchingEventTypes only) -> ROLLBACK_COMPLETE with \"Resource of type 'AWS::SES::ConfigurationSetEventDestination' with identifier 'event destination must present' was not found.\" - the handler wraps the service's \"Event destination is not provided.\" (api 2026-09-24 us-east-1) into a NotFound whose identifier carries the sentence; pass template (one SNS destination) -> CREATE_COMPLETE. The sibling hypothesis \"at most one destination\" does NOT ship: the API rejects two destination blocks but the CloudFormation handler deploys them (see the handoff for the BROKEN-EXPECTATION)."
+addedOn: 2026-09-24

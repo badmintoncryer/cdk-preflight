@@ -1,0 +1,12 @@
+id: pf-ses-receipt-rule-after-exists
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ReceiptRule]
+severity: ERROR
+title: "A receipt rule's After must name a rule that the template actually creates"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference/API_ReceiptRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (After \"pf-ses-no-such-rule\" on a rule set the same template creates) -> ROLLBACK_COMPLETE with \"Rule does not exist: pf-ses-no-such-rule (Service: Ses, Status Code: 400)\" (HandlerErrorCode: NotFound); pass template (a second rule whose After is a Ref to the first) -> CREATE_COMPLETE."
+addedOn: 2026-09-24

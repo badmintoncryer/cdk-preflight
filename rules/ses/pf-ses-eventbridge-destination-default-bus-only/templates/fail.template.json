@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "CS": {
+      "Type": "AWS::SES::ConfigurationSet"
+    },
+    "ED": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "CS"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND"
+          ],
+          "EventBridgeDestination": {
+            "EventBusArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/cdkpf-ses70-nondefault"
+            }
+          }
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::Events::EventBus",
+      "Properties": {
+        "Name": "cdkpf-ses70-nondefault"
+      }
+    }
+  }
+}

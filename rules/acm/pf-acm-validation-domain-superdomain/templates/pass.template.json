@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-valdom.example.com",
+        "ValidationMethod": "DNS",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "pf-acm-valdom.example.com",
+            "HostedZoneId": "Z00000000000000000000"
+          }
+        ]
+      }
+    }
+  }
+}

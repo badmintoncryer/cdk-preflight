@@ -1,0 +1,81 @@
+{
+  "Resources": {
+    "RS": {
+      "Type": "AWS::SES::ReceiptRuleSet",
+      "Properties": {}
+    },
+    "RR": {
+      "Type": "AWS::SES::ReceiptRule",
+      "Properties": {
+        "RuleSetName": {
+          "Ref": "RS"
+        },
+        "Rule": {
+          "Name": "pf-ses-actions-max",
+          "Actions": [
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-1",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-2",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-3",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-4",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-5",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-6",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-7",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-8",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-9",
+                "HeaderValue": "cdk-preflight"
+              }
+            },
+            {
+              "AddHeaderAction": {
+                "HeaderName": "X-PF-10",
+                "HeaderValue": "cdk-preflight"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-ses-dkim-next-signing-key-length-easy-dkim-only
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::EmailIdentity]
+severity: ERROR
+title: "NextSigningKeyLength cannot be combined with the BYODKIM selector and key"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_DkimSigningAttributes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: You cannot configure the identity to use Easy DKIM and Bring Your Own DKIM properties at the same time.\"; pass template (NextSigningKeyLength alone) -> CREATE_COMPLETE. The service API words it differently (\"NextSigningKeyLength cannot be used together with DomainSigningSelector and DomainSigningPrivateKey.\", api 2026-09-24 us-east-1). The fixture's private key is a pattern-valid base64 string that is not a key: the same API probe shows this check runs before the key is parsed, so no real key has to live in the repository."
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-acm-domain-name-cn-64-octets
+service: acm
+benchRegion: us-east-1
+resourceTypes: [AWS::CertificateManager::Certificate]
+severity: ERROR
+title: "A certificate's DomainName must be at most 64 characters"
+constraintSource: https://docs.aws.amazon.com/acm/latest/APIReference/API_RequestCertificate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (a 65-character DomainName) -> ROLLBACK_COMPLETE with \"The first domain name can be no longer than 64 characters.\"; api 2026-09-24 us-east-1: RequestCertificate for the 64-character pf-acm-cn64-d...d.appnao.com returned a CertificateArn (deleted in-session), so the limit sits exactly at 64. Verified fail-only: the committed pass template cannot deploy as it stands, because a DNS-validated certificate only reaches CREATE_COMPLETE with a HostedZoneId in a delegated public hosted zone and a portable fixture must not carry the bench account's zone id (same reason as pf-ec2-client-vpn-cert-region's placeholder ARNs)."
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-alg.example.com",
+        "ValidationMethod": "DNS",
+        "KeyAlgorithm": "RSA_2048"
+      }
+    }
+  }
+}

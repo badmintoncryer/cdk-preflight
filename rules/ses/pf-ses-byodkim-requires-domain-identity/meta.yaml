@@ -1,0 +1,12 @@
+id: pf-ses-byodkim-requires-domain-identity
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::EmailIdentity]
+severity: ERROR
+title: "BYODKIM works only on a domain identity, not an email address"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_CreateEmailIdentity.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (an MX-less throwaway address under appnao.com) -> ROLLBACK_COMPLETE with \"For BYODKIM, the EmailIdentity value must be a domain.\"; pass template (domain identity, Easy DKIM) -> CREATE_COMPLETE. api 2026-09-24 us-east-1 returns the same sentence, so the create is rejected and no verification mail is sent. The wider Phase A hypothesis (DkimSigningAttributes may not be set at all on an email identity) is broken and the rule is narrowed to BYODKIM: the same address with DkimSigningAttributes={NextSigningKeyLength: RSA_2048_BIT} was ACCEPTED (200, identity deleted in-session)."
+addedOn: 2026-09-24

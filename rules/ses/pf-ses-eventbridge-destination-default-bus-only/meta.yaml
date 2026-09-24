@@ -1,0 +1,12 @@
+id: pf-ses-eventbridge-destination-default-bus-only
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
+severity: ERROR
+title: "An EventBridge event destination must point at the default event bus"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_EventBridgeDestination.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid Event Bridge destination, must be default bus.\"; pass template (default bus) -> CREATE_COMPLETE. The fixture creates the custom bus it points at (AWS::Events::EventBus, free) so the rejection cannot be read as \"bus not found\" - api 2026-09-24 us-east-1 confirms the same sentence against a real custom bus. Both ARNs are written with Fn::Sub over ${AWS::AccountId} because a foreign account id is answered by a different check first (\"Invalid Event Bridge destination, cross account is not supported.\"); the pseudo-parameter pieces flatten for the rego while CloudFormation substitutes the deploying account."
+addedOn: 2026-09-24

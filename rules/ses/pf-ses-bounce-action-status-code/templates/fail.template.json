@@ -1,0 +1,37 @@
+{
+  "Resources": {
+    "RS": {
+      "Type": "AWS::SES::ReceiptRuleSet",
+      "Properties": {}
+    },
+    "RR": {
+      "Type": "AWS::SES::ReceiptRule",
+      "Properties": {
+        "RuleSetName": {
+          "Ref": "RS"
+        },
+        "Rule": {
+          "Name": "pf-ses-bounce-status",
+          "Actions": [
+            {
+              "BounceAction": {
+                "SmtpReplyCode": "550",
+                "Message": "cdk-preflight fixture",
+                "Sender": "bounce@pf-ses-bounce.example.com",
+                "StatusCode": "9.9"
+              }
+            },
+            {
+              "BounceAction": {
+                "SmtpReplyCode": "550",
+                "Message": "cdk-preflight fixture",
+                "Sender": "bounce@pf-ses-bounce.example.com",
+                "StatusCode": "5.10.1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

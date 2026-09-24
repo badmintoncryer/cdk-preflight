@@ -1,0 +1,12 @@
+id: pf-ses-contact-list-topic-subscription-status-enum
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ContactList]
+severity: ERROR
+title: "A contact list topic's DefaultSubscriptionStatus is OPT_IN or OPT_OUT"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_CreateContactList.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (DefaultSubscriptionStatus OPTIN on the first of two topics) -> ROLLBACK_COMPLETE with \"1 validation error detected: Value at 'topics.1.member.defaultSubscriptionStatus' failed to satisfy constraint: Member must satisfy enum value set: [OPT_OUT, OPT_IN]\"; pass template (OPT_IN and OPT_OUT) -> CREATE_COMPLETE. Both fixtures carry two topics so the rule's iteration is exercised."
+addedOn: 2026-09-24

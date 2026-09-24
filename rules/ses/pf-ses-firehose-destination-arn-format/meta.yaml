@@ -1,0 +1,12 @@
+id: pf-ses-firehose-destination-arn-format
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
+severity: ERROR
+title: "A Firehose event destination needs a deliverystream ARN"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_EventDestinationDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (an SNS topic ARN in DeliveryStreamARN, in the deployment Region so the region rule cannot also fire) -> ROLLBACK_COMPLETE with \"Invalid delivery stream ARN arn:aws:sns:us-east-1:214794239830:cdkpf-ses70-nope should have the form <arn:aws:firehose:region:[account-id]:deliverystream/[stream-name]>\"; pass template -> CREATE_COMPLETE. api 2026-09-24 us-east-1 returns the same sentence and shows the format check runs before the region check. The pass template publishes to an in-Region SNS topic - see pf-ses-firehose-destination-stream-region for why no Firehose stream is built."
+addedOn: 2026-09-24

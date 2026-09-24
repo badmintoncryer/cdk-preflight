@@ -1,0 +1,12 @@
+id: pf-ses-dkim-signing-selector-charset
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::EmailIdentity]
+severity: ERROR
+title: "A BYODKIM selector must be a single DNS label without a leading or trailing hyphen"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_DkimSigningAttributes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (selector \"-sel\", with a pattern-valid base64 string as the key so the key check cannot fire first) -> ROLLBACK_COMPLETE with \"1 validation error detected: Value at 'dkimSigningAttributes.domainSigningSelector' failed to satisfy constraint: Member must satisfy regular expression pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]))$\" (api 2026-09-24 us-east-1 returns the same sentence); pass template (Easy DKIM) -> CREATE_COMPLETE. The service pattern carries no length bound, so the rule claims none - the 63-octet half of the original hypothesis is not covered by this evidence."
+addedOn: 2026-09-24

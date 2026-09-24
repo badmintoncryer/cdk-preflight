@@ -1,0 +1,12 @@
+id: pf-ses-bounce-action-smtp-reply-code
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ReceiptRule]
+severity: ERROR
+title: "A bounce action's SmtpReplyCode must be a three-digit 4xx or 5xx reply code"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference/API_BounceAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1 (--fail-only): fail template (SmtpReplyCode \"99\" and \"999\") -> ROLLBACK_COMPLETE with \"Invalid SMTP reply code: 99 (Service: Ses, Status Code: 400)\". api 2026-09-24 us-east-1 pins the allow-set: 45, 99, 100, 250, 354, 399, 600, 999 and 4500 are rejected with the same sentence while 421, 450, 504, 550 and 599 return 200. Verified fail-only because BounceAction.Sender has to be an identity that is already verified in the receiving region, and no template can create one (a domain identity created by the same stack is still Pending), so the pass template keeps a portable placeholder sender and is not deployable - the accept side above is the API with a verified sender. The fail side needs no verified identity: the code is checked before the sender, so an unverified sender still returns the sentence above (measured 2026-09-24, which corrects the Phase B note that said both fixtures need one)."
+addedOn: 2026-09-24

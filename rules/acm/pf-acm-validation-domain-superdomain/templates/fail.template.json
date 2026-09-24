@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-valdom.appnao.com",
+        "ValidationMethod": "EMAIL",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "pf-acm-valdom.appnao.com",
+            "ValidationDomain": "pricoach.com"
+          }
+        ]
+      }
+    }
+  }
+}
