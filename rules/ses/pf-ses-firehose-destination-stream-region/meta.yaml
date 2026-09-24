@@ -1,0 +1,12 @@
+id: pf-ses-firehose-destination-stream-region
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
+severity: ERROR
+title: "A Firehose event destination must stream to the deployment Region"
+constraintSource: https://docs.aws.amazon.com/ses/latest/dg/regions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (a well-formed firehose ARN in eu-west-1 with no stream behind it) -> ROLLBACK_COMPLETE with \"Delivery stream <arn:aws:firehose:eu-west-1:214794239830:deliverystream/cdkpf-ses70-elsewhere> must be located in same region as SES <us-east-1>\"; pass template -> CREATE_COMPLETE. api 2026-09-24 us-east-1 fixes the order of the checks: the same fake ARN in the deployment Region answers \"Could not assume IAM role <...>\", so the Region is judged before the role and before the stream exists - no real stream or role is needed. Both ARNs use Fn::Sub over ${AWS::AccountId}, because a foreign account id is answered by \"Cross-account pass role is not allowed.\" instead. The pass template publishes to an in-Region SNS topic rather than building a Firehose stream: that fixture would need an S3 bucket and an SES-assumable role whose propagation delay makes the monthly run flaky, and the in-Region firehose case is already pinned by the API control above."
+addedOn: 2026-09-24

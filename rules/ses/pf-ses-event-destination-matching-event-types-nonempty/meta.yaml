@@ -1,0 +1,12 @@
+id: pf-ses-event-destination-matching-event-types-nonempty
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
+severity: ERROR
+title: "An event destination must match at least one event type"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_EventDestinationDefinition.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (MatchingEventTypes []) -> ROLLBACK_COMPLETE with \"At least one event type must be specified.\"; pass template (exactly one type, the boundary) -> CREATE_COMPLETE."
+addedOn: 2026-09-24

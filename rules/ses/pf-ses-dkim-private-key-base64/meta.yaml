@@ -1,0 +1,12 @@
+id: pf-ses-dkim-private-key-base64
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::EmailIdentity]
+severity: ERROR
+title: "A BYODKIM private key must be bare base64, not a PEM block"
+constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_DkimSigningAttributes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (base64 wrapped at 76 columns, the shape `openssl rsa -outform DER | base64` prints without `tr -d '\\n'`) -> ROLLBACK_COMPLETE with \"1 validation error detected: Value at 'dkimSigningAttributes.domainSigningPrivateKey' failed to satisfy constraint: Member must satisfy regular expression pattern: ^[a-zA-Z0-9+\\/]+={0,2}$\"; pass template (Easy DKIM) -> CREATE_COMPLETE. api 2026-09-24 us-east-1 returns the same sentence for a PEM block, and a pattern-valid single-line base64 string clears this check and is judged later - which is how the sibling DKIM fixtures avoid carrying a key. The pass template cannot exercise the property: an accepted value is a real RSA private key."
+addedOn: 2026-09-24

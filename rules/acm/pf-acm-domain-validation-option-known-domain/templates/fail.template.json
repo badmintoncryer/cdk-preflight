@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-dvo.appnao.com",
+        "ValidationMethod": "DNS",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "nowhere-dvo.appnao.com",
+            "ValidationDomain": "appnao.com"
+          }
+        ]
+      }
+    }
+  }
+}

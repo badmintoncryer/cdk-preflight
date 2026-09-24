@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "I": {
+      "Type": "AWS::SES::EmailIdentity",
+      "Properties": {
+        "EmailIdentity": "pf-ses-dkimpem.appnao.com",
+        "DkimSigningAttributes": {
+          "DomainSigningSelector": "sel1",
+          "DomainSigningPrivateKey": "Y2RrLXByZWZsaWdodCBmaXh0dXJlOiBub3QgYW4gUlNBIGtleS4gU0VTIHJlamVjdHMgdGhpcyBy\nZXF1ZXN0IGJlZm9yZSB0aGUga2V5IGlzIHBhcnNlZC4="
+        }
+      }
+    }
+  }
+}

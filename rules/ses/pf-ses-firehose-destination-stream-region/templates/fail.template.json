@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "CS": {
+      "Type": "AWS::SES::ConfigurationSet"
+    },
+    "ED": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "CS"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND"
+          ],
+          "KinesisFirehoseDestination": {
+            "DeliveryStreamARN": {
+              "Fn::Sub": "arn:${AWS::Partition}:firehose:eu-west-1:${AWS::AccountId}:deliverystream/cdkpf-ses70-elsewhere"
+            },
+            "IAMRoleARN": {
+              "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdkpf-ses70-nope"
+            }
+          }
+        }
+      }
+    }
+  }
+}

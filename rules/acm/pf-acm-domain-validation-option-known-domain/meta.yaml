@@ -1,0 +1,12 @@
+id: pf-acm-domain-validation-option-known-domain
+service: acm
+benchRegion: us-east-1
+resourceTypes: [AWS::CertificateManager::Certificate]
+severity: ERROR
+title: "Every DomainValidationOptions entry must name the certificate's own DomainName or a SubjectAlternativeName"
+constraintSource: https://docs.aws.amazon.com/acm/latest/APIReference/API_RequestCertificate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The domain specified in ValidationOptions, nowhere-dvo.appnao.com, is not the PrimaryDomain or part of SubjectAlternativeNames.\". That also answers the API lane's open question - the CloudFormation handler forwards DomainValidationOptions to RequestCertificate instead of consuming only HostedZoneId, so the violation is a rollback and not a CREATE_IN_PROGRESS hang. The first run of this fixture died for its own reason and is not the evidence: an entry with neither HostedZoneId nor ValidationDomain is rejected by the handler itself (\"Value null at 'domainValidationOptions.1.member.validationDomain' failed to satisfy constraint: Member must not be null\"), which is why the fixture carries ValidationDomain: appnao.com. api 2026-09-24 us-east-1: the same DomainValidationOptions is rejected with the constraint's own sentence under both DNS and EMAIL validation and nothing is created. Verified fail-only."
+addedOn: 2026-09-24

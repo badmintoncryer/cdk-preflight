@@ -1,0 +1,12 @@
+id: pf-ses-sns-destination-topic-region
+service: ses
+benchRegion: us-east-1
+resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
+severity: ERROR
+title: "An SNS event destination must publish to a topic in the deployment Region"
+constraintSource: https://docs.aws.amazon.com/ses/latest/dg/regions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (an own-account topic ARN in eu-west-1 with nothing behind it) -> ROLLBACK_COMPLETE with \"SNS topic must be located in same region as SES <us-east-1>\"; pass template (an AWS::SNS::Topic in the same stack, no topic policy needed) -> CREATE_COMPLETE. api 2026-09-24 us-east-1: a nonexistent topic in the deployment Region still answers with the Region sentence, so the fail side needs no real topic - but the ARN must carry the deploying account (${AWS::AccountId} through Fn::Sub), because a foreign account id is answered by \"No account can be found for SNS topic <...>\" instead."
+addedOn: 2026-09-24

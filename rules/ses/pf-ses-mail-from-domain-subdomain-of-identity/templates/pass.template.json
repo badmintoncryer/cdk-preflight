@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "I": {
+      "Type": "AWS::SES::EmailIdentity",
+      "Properties": {
+        "EmailIdentity": "pf-ses-mailfrom-p.appnao.com",
+        "MailFromAttributes": {
+          "MailFromDomain": "mail.pf-ses-mailfrom-p.appnao.com"
+        }
+      }
+    }
+  }
+}

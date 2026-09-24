@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-dvo.example.com",
+        "SubjectAlternativeNames": [
+          "alt.pf-acm-dvo.example.com"
+        ],
+        "ValidationMethod": "DNS",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "pf-acm-dvo.example.com",
+            "HostedZoneId": "Z00000000000000000000"
+          },
+          {
+            "DomainName": "alt.pf-acm-dvo.example.com",
+            "HostedZoneId": "Z00000000000000000000"
+          }
+        ]
+      }
+    }
+  }
+}

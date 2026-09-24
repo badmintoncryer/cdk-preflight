@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-cn64-dddddddddddddddddddddddddddddddddddddddddd.appnao.com",
+        "ValidationMethod": "DNS"
+      }
+    }
+  }
+}

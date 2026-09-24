@@ -1,0 +1,12 @@
+id: pf-acm-validation-domain-superdomain
+service: acm
+benchRegion: us-east-1
+resourceTypes: [AWS::CertificateManager::Certificate]
+severity: ERROR
+title: "An email-validated certificate's ValidationDomain must be a superdomain of the domain it validates"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-certificatemanager-certificate-domainvalidationoption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (ValidationMethod EMAIL, DomainName pf-acm-valdom.appnao.com, ValidationDomain pricoach.com - a domain this account owns, so even an unexpected acceptance would only mail our own admin@) -> ROLLBACK_COMPLETE with \"The validation domain, pricoach.com, must be a superdomain of the requested domain, pf-acm-valdom.appnao.com.\". No accepted-side control was run: a correct EMAIL fixture sends validation mail and then sits in CREATE_IN_PROGRESS until someone clicks it, which is a hang rather than a pass - which is also why the pass template switches to DNS validation, where ValidationDomain is not read. Verified fail-only."
+addedOn: 2026-09-24

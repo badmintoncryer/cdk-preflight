@@ -1,0 +1,12 @@
+id: pf-acm-public-key-algorithm
+service: acm
+benchRegion: us-east-1
+resourceTypes: [AWS::CertificateManager::Certificate]
+severity: ERROR
+title: "A public ACM certificate takes only RSA_2048, EC_prime256v1 or EC_secp384r1"
+constraintSource: https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: fail template (KeyAlgorithm RSA_4096) -> ROLLBACK_COMPLETE with \"Encryption Algorithm RSA_4096 is not supported in 214794239830 region\" - the service prints the account id where the region belongs, so do not match on what follows \"supported in\". api 2026-09-24 us-east-1: RSA_3072, EC_secp521r1 and RSA_1024 are rejected with the same sentence while RSA_2048 returns a CertificateArn (deleted in-session), which fixes the allow-set at the three values in the rule. Verified fail-only for the same reason as pf-acm-domain-name-cn-64-octets."
+addedOn: 2026-09-24

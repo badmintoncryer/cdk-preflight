@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "CS": {
+      "Type": "AWS::SES::ConfigurationSet"
+    },
+    "ED": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "CS"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND",
+            "DELIVERY"
+          ],
+          "SnsDestination": {
+            "TopicARN": {
+              "Ref": "T"
+            }
+          }
+        }
+      }
+    },
+    "T": {
+      "Type": "AWS::SNS::Topic"
+    }
+  }
+}

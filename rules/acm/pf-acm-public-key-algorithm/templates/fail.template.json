@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": "pf-acm-alg.appnao.com",
+        "ValidationMethod": "DNS",
+        "KeyAlgorithm": "RSA_4096"
+      }
+    }
+  }
+}

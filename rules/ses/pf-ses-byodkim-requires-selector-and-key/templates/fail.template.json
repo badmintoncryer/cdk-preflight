@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "I": {
+      "Type": "AWS::SES::EmailIdentity",
+      "Properties": {
+        "EmailIdentity": "pf-ses-byodkim-pair.appnao.com",
+        "DkimSigningAttributes": {
+          "DomainSigningSelector": "sel1"
+        }
+      }
+    }
+  }
+}

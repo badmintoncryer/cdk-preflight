@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "CS": {
+      "Type": "AWS::SES::ConfigurationSet"
+    },
+    "ED": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "CS"
+        },
+        "EventDestination": {
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "SEND"
+          ],
+          "EventBridgeDestination": {
+            "EventBusArn": {
+              "Fn::Sub": "arn:${AWS::Partition}:events:eu-west-1:${AWS::AccountId}:event-bus/default"
+            }
+          }
+        }
+      }
+    }
+  }
+}

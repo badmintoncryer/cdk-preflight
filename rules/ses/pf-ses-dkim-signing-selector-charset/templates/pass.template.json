@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "I": {
+      "Type": "AWS::SES::EmailIdentity",
+      "Properties": {
+        "EmailIdentity": "pf-ses-selector-p.appnao.com",
+        "DkimSigningAttributes": {
+          "NextSigningKeyLength": "RSA_2048_BIT"
+        }
+      }
+    }
+  }
+}

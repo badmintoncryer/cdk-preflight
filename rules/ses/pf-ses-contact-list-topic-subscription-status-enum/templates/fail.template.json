@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "L": {
+      "Type": "AWS::SES::ContactList",
+      "Properties": {
+        "Topics": [
+          {
+            "TopicName": "news",
+            "DisplayName": "News",
+            "DefaultSubscriptionStatus": "OPTIN"
+          },
+          {
+            "TopicName": "alerts",
+            "DisplayName": "Alerts",
+            "DefaultSubscriptionStatus": "OPT_OUT"
+          }
+        ]
+      }
+    }
+  }
+}
