@@ -1,0 +1,12 @@
+id: pf-eks-podidentity-namespace-format
+service: eks
+resourceTypes: [AWS::EKS::PodIdentityAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: "A pod identity Namespace must be a DNS-1123 label"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-podidentityassociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Namespace \"cdkpf_ns\" -> ROLLBACK_COMPLETE, \"The parameter namespace contains invalid characters. It should conform to the regular expression ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$\" - the service quotes back the exact pattern the rule carries. Probed the same day: \"cdkpf-ns\" reaches the cluster lookup and \"a.b\" does not, so a dot is legal in ServiceAccount but not here. fail-only, no cluster built."
+addedOn: 2026-09-25

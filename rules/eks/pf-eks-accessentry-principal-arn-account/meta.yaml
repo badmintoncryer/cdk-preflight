@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-principal-arn-account
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "A node-type access entry principal must live in the deploy account"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with PrincipalArn in account 999999999999 -> ROLLBACK_COMPLETE, \"AccessEntry principalArn must be from the same account as the cluster when using types [EC2_LINUX, EC2_WINDOWS, FARGATE_LINUX, HYBRID_LINUX, EC2]\". The same foreign ARN with Type STANDARD reaches the cluster lookup instead (measured the same day against CreateAccessEntry), which is why the rule is gated on the type. fail-only, no cluster built."
+addedOn: 2026-09-25

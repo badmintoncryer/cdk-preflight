@@ -66,3 +66,8 @@ _pf_ekslib_dns_subdomain(s) if {
 	count(s) <= 253
 	regex.match(`^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$`, s)
 }
+
+# Prefixes EKS refuses in an access entry's Username and in every KubernetesGroups
+# name. Measured one at a time against CreateAccessEntry on 2026-09-25; the service
+# echoes the offending prefix back. "sts:" is not among them, so the set is closed.
+_pf_ekslib_reserved_prefixes := ["system:", "eks:", "aws:", "amazon:", "iam:"]

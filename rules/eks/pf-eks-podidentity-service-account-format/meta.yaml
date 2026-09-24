@@ -1,0 +1,12 @@
+id: pf-eks-podidentity-service-account-format
+service: eks
+resourceTypes: [AWS::EKS::PodIdentityAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: "A pod identity ServiceAccount must be a DNS-1123 subdomain"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-podidentityassociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: ServiceAccount \"cdkpf_sa\" -> ROLLBACK_COMPLETE, \"The parameter serviceAccount contains invalid characters. It should conform to the regular expression ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$\". Probed the same day: \"a.b\" reaches the cluster lookup and \"a..b\" does not. fail-only, no cluster built."
+addedOn: 2026-09-25

@@ -1,0 +1,38 @@
+{
+  "Resources": {
+    "PodRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "pods.eks.amazonaws.com"
+              },
+              "Action": [
+                "sts:AssumeRole",
+                "sts:TagSession"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "Main": {
+      "Type": "AWS::EKS::PodIdentityAssociation",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-pins",
+        "Namespace": "cdkpf_ns",
+        "ServiceAccount": "cdkpf-sa",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "PodRole",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}
