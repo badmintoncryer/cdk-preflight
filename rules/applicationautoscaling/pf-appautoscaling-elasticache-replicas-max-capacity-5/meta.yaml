@@ -1,0 +1,12 @@
+id: pf-appautoscaling-elasticache-replicas-max-capacity-5
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "An ElastiCache replication-group:Replicas target caps MaxCapacity at 5"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_RegisterScalableTarget.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: MaxCapacity 6 on elasticache:replication-group:Replicas with a made-up ResourceId (the shape is checked before the replication group is looked up) -> \"Maximum capacity cannot be greater than 5\" (ROLLBACK_COMPLETE); pass template not deployed: the pass side needs a live (hourly-billed) ElastiCache replication group, so this rule is gated with --fail-only. MaxCapacity 5 was accepted by the api-probe on 2026-09-24 (#68 phase B)"
+addedOn: 2026-09-24

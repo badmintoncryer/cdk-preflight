@@ -1,0 +1,70 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-aas-tte-f"
+      }
+    },
+    "Task": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "cdkpf-aas-tte-f",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "busybox",
+            "Memory": 128,
+            "Essential": true
+          }
+        ]
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "cdkpf-aas-tte-f-svc",
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "Task"
+        },
+        "DesiredCount": 0,
+        "LaunchType": "EC2"
+      }
+    },
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 0,
+        "ResourceId": "service/cdkpf-aas-tte-f/cdkpf-aas-tte-f-svc",
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "ServiceNamespace": "ecs"
+      },
+      "DependsOn": "Svc"
+    },
+    "Policy1": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyType": "TargetTrackingScaling",
+        "TargetTrackingScalingPolicyConfiguration": {
+          "TargetValue": 50,
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+          },
+          "CustomizedMetricSpecification": {
+            "MetricName": "CPUUtilization",
+            "Namespace": "AWS/ECS",
+            "Statistic": "Average"
+          }
+        },
+        "PolicyName": "cdkpf-aas-tte-f-1",
+        "ScalingTargetId": {
+          "Ref": "Target"
+        }
+      }
+    }
+  }
+}

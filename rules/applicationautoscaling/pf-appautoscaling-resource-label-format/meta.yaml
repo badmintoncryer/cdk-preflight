@@ -1,0 +1,12 @@
+id: pf-appautoscaling-resource-label-format
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "ResourceLabel must be app/<lb>/<lb-id>/targetgroup/<tg>/<tg-id>"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ResourceLabel 'cdkpf-lb/cdkpf-tg' with PredefinedMetricType ALBRequestCountPerTarget (the shape is checked before the target group attachment is, so no load balancer is needed) -> \"Invalid resource label 'cdkpf-lb/cdkpf-tg' for predefined metric type ALBRequestCountPerTarget\" (ROLLBACK_COMPLETE); pass template not deployed: a well-formed label only deploys against a live (hourly-billed) load balancer and its attached target group, so this rule is gated with --fail-only"
+addedOn: 2026-09-24

@@ -1,0 +1,12 @@
+id: pf-appautoscaling-scalable-target-action-empty
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScalableTargetAction needs MinCapacity, MaxCapacity or both"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: ScalableTargetAction {} -> \"At least one of minimum capacity and maximum capacity should be provided\" (ROLLBACK_COMPLETE); pass one action with only MinCapacity and one with only MaxCapacity -> CREATE_COMPLETE, i.e. either half alone is enough"
+addedOn: 2026-09-24

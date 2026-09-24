@@ -1,0 +1,66 @@
+{
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "cdkpf-aas-rlf-f"
+      }
+    },
+    "Task": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "cdkpf-aas-rlf-f",
+        "ContainerDefinitions": [
+          {
+            "Name": "app",
+            "Image": "busybox",
+            "Memory": 128,
+            "Essential": true
+          }
+        ]
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "cdkpf-aas-rlf-f-svc",
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "Task"
+        },
+        "DesiredCount": 0,
+        "LaunchType": "EC2"
+      }
+    },
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 0,
+        "ResourceId": "service/cdkpf-aas-rlf-f/cdkpf-aas-rlf-f-svc",
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "ServiceNamespace": "ecs"
+      },
+      "DependsOn": "Svc"
+    },
+    "Policy1": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyType": "TargetTrackingScaling",
+        "TargetTrackingScalingPolicyConfiguration": {
+          "TargetValue": 50,
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ALBRequestCountPerTarget",
+            "ResourceLabel": "cdkpf-lb/cdkpf-tg"
+          }
+        },
+        "PolicyName": "cdkpf-aas-rlf-f-1",
+        "ScalingTargetId": {
+          "Ref": "Target"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-appautoscaling-tt-metric-spec-missing
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A target tracking policy needs a metric specification"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/userguide/target-tracking-scaling-policy-overview.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: a TargetTrackingScaling policy with TargetValue and neither metric specification -> \"PredefinedMetricSpecification or CustomizedMetricSpecification must be set for target tracking scaling.\" (ROLLBACK_COMPLETE); pass the same policy with PredefinedMetricSpecification ECSServiceAverageMemoryUtilization -> CREATE_COMPLETE"
+addedOn: 2026-09-24

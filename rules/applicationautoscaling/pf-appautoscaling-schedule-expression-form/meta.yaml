@@ -1,0 +1,12 @@
+id: pf-appautoscaling-schedule-expression-form
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "ScheduledAction Schedule must be at(), rate() or cron()"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Schedule '0 8 1 * ? *' (a cron body with no cron() wrapper) -> \"Invalid schedule expression. Details: Schedule expressions must have the following syntax: rate(<number>\\s?(minutes?|hours?|days?)), cron(<cron_expression>) or at(yyyy-MM-dd'T'HH:mm:ss).\" (ROLLBACK_COMPLETE); pass cron(0 8 1 * ? *) and at(2035-06-01T00:00:00) -> CREATE_COMPLETE"
+addedOn: 2026-09-24

@@ -1,0 +1,81 @@
+{
+  "Resources": {
+    "Table": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "cdkpf-aas-pmd-f",
+        "BillingMode": "PROVISIONED",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        }
+      }
+    },
+    "TargetR": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 1,
+        "ResourceId": "table/cdkpf-aas-pmd-f",
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb"
+      },
+      "DependsOn": "Table"
+    },
+    "TargetW": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 1,
+        "ResourceId": "table/cdkpf-aas-pmd-f",
+        "ScalableDimension": "dynamodb:table:WriteCapacityUnits",
+        "ServiceNamespace": "dynamodb"
+      },
+      "DependsOn": "Table"
+    },
+    "PolicyR": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyType": "TargetTrackingScaling",
+        "TargetTrackingScalingPolicyConfiguration": {
+          "TargetValue": 50,
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBWriteCapacityUtilization"
+          }
+        },
+        "PolicyName": "cdkpf-aas-pmd-f-r",
+        "ScalingTargetId": {
+          "Ref": "TargetR"
+        }
+      }
+    },
+    "PolicyW": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyType": "TargetTrackingScaling",
+        "TargetTrackingScalingPolicyConfiguration": {
+          "TargetValue": 50,
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "DynamoDBReadCapacityUtilization"
+          }
+        },
+        "PolicyName": "cdkpf-aas-pmd-f-w",
+        "ScalingTargetId": {
+          "Ref": "TargetW"
+        }
+      }
+    }
+  }
+}

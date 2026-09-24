@@ -1,0 +1,12 @@
+id: pf-appautoscaling-alb-metric-requires-resource-label
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "ALBRequestCountPerTarget needs a ResourceLabel"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PredefinedMetricType ALBRequestCountPerTarget with no ResourceLabel, on an ECS service registered in the same stack -> \"Resource label should be specified for predefined metric type ALBRequestCountPerTarget\" (ROLLBACK_COMPLETE); pass template not deployed: a deployable ResourceLabel needs a live (hourly-billed) Application Load Balancer with a target group attached to the service, so this rule is gated with --fail-only"
+addedOn: 2026-09-24

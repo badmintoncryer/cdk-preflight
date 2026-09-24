@@ -1,0 +1,12 @@
+id: pf-appautoscaling-predictive-metric-pair-type-dimension
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "An ECS predictive metric pair takes CPU, memory or ALB request count"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredictiveScalingMetricSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: PredefinedMetricPairSpecification ECSServiceTotalCPUUtilization (a value CloudFormation's own enum accepts) on an ECS service -> \"The predefined metric pair type for scalable dimension ecs:service:DesiredCount isn't valid. The supported values are: ECSServiceMemoryUtilization, ALBRequestCount and ECSServiceCPUUtilization.\" (ROLLBACK_COMPLETE); pass the same policy with ECSServiceCPUUtilization -> CREATE_COMPLETE"
+addedOn: 2026-09-24

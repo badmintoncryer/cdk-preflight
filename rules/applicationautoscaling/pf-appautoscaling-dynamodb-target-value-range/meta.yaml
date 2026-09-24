@@ -1,0 +1,12 @@
+id: pf-appautoscaling-dynamodb-target-value-range
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A DynamoDB capacity utilization target must be between 10 and 90"
+constraintSource: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/AutoScaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: one table with two targets, TargetValue 9.9 on the read dimension and 90.1 on the write dimension -> \"For predefined metric type DynamoDBReadCapacityUtilization, target value must be between '10.0' and '90.0', but was '9.9'.\" (ROLLBACK_COMPLETE); pass the same two targets at 10 and 90 -> CREATE_COMPLETE, so the interval is closed. The DynamoDB developer guide's 20-90% is advice: the service's own limit is 10"
+addedOn: 2026-09-24

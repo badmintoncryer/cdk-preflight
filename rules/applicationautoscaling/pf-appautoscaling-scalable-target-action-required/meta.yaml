@@ -1,0 +1,12 @@
+id: pf-appautoscaling-scalable-target-action-required
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalableTarget]
+severity: ERROR
+title: "Every ScheduledAction needs a ScalableTargetAction"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: a scheduled action with no ScalableTargetAction at all (CloudFormation documents it as Required: No and the engine's schema agrees) -> \"ScalableTargetAction must be set\" (ROLLBACK_COMPLETE); pass two actions that carry one -> CREATE_COMPLETE"
+addedOn: 2026-09-24

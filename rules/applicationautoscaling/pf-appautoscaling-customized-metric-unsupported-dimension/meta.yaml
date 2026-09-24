@@ -1,0 +1,12 @@
+id: pf-appautoscaling-customized-metric-unsupported-dimension
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "DynamoDB table dimensions do not accept a customized metric"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_CustomizedMetricSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: a CustomizedMetricSpecification on dynamodb:table:ReadCapacityUnits -> \"Scalable dimension dynamodb:table:ReadCapacityUnits does not support CustomizedMetricSpecification.\" (ROLLBACK_COMPLETE); pass the same shape of specification on an ECS service -> CREATE_COMPLETE. Only the two DynamoDB table dimensions are listed in the rule; the other dimensions were not measured"
+addedOn: 2026-09-24

@@ -47,3 +47,11 @@ _pf_aaslib_namespace(name) := ns if {
 	ns := resolve(_pf_aaslib_target_of(name), "Properties.ServiceNamespace")
 	ns in _pf_aaslib_namespaces
 }
+
+# The same walk for ScalableDimension. Every one of the 24 values has three
+# colon-separated segments, which is the literal guard: a logical id never does.
+_pf_aaslib_dimension(name) := dim if {
+	dim := resolve(_pf_aaslib_target_of(name), "Properties.ScalableDimension")
+	is_string(dim)
+	count(split(dim, ":")) == 3
+}

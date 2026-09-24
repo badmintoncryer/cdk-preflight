@@ -1,0 +1,12 @@
+id: pf-appautoscaling-predefined-metric-dimension
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "PredefinedMetricType must be one the ScalableDimension supports"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: one table with two targets: the read dimension asking for DynamoDBWriteCapacityUtilization and the write dimension asking for DynamoDBReadCapacityUtilization -> \"Scalable dimension dynamodb:table:ReadCapacityUnits only supports the following predefined metric types: DynamoDBReadCapacityUtilization\" (ROLLBACK_COMPLETE); pass the same two targets with the metric types swapped back -> CREATE_COMPLETE. The allowed sets in the rule are the namespace's own metric types (which can only miss, never misfire); only the DynamoDB read/write split is narrower, and that is the split measured here"
+addedOn: 2026-09-24

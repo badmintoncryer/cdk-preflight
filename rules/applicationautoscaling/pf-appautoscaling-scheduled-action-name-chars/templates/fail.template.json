@@ -1,0 +1,48 @@
+{
+  "Resources": {
+    "Table": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "cdkpf-aas-snc-f",
+        "BillingMode": "PROVISIONED",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pk",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "pk",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 1,
+          "WriteCapacityUnits": 1
+        }
+      }
+    },
+    "Target": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 5,
+        "MinCapacity": 1,
+        "ResourceId": "table/cdkpf-aas-snc-f",
+        "ScalableDimension": "dynamodb:table:ReadCapacityUnits",
+        "ServiceNamespace": "dynamodb",
+        "ScheduledActions": [
+          {
+            "ScheduledActionName": "cdkpf:sa-one",
+            "Schedule": "cron(0 8 1 * ? *)",
+            "ScalableTargetAction": {
+              "MinCapacity": 1,
+              "MaxCapacity": 1
+            }
+          }
+        ]
+      },
+      "DependsOn": "Table"
+    }
+  }
+}

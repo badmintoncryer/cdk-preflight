@@ -1,0 +1,12 @@
+id: pf-appautoscaling-tt-metric-spec-exclusive
+service: applicationautoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::ApplicationAutoScaling::ScalingPolicy]
+severity: ERROR
+title: "A target tracking policy takes one metric specification, not both"
+constraintSource: https://docs.aws.amazon.com/autoscaling/application/userguide/target-tracking-scaling-policy-overview.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: a TargetTrackingScaling policy carrying both PredefinedMetricSpecification and CustomizedMetricSpecification, on an ECS service registered in the same stack -> \"Only one of PredefinedMetricSpecification or CustomizedMetricSpecification can be set for target tracking scaling.\" (ROLLBACK_COMPLETE); pass the same policy with only the predefined spec -> CREATE_COMPLETE"
+addedOn: 2026-09-24
