@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-warmena-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "m6g.large.search",
+          "InstanceCount": 1,
+          "WarmType": "ultrawarm1.medium.search",
+          "WarmCount": 2
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        }
+      }
+    }
+  }
+}

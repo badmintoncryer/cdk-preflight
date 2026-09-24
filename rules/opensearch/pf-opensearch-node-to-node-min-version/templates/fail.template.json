@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-ntnver-f",
+        "EngineVersion": "Elasticsearch_5.6",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "NodeToNodeEncryptionOptions": {
+          "Enabled": true
+        }
+      }
+    }
+  }
+}

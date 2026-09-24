@@ -1,0 +1,12 @@
+id: pf-opensearch-vpc-subnet-count-requires-zone-awareness
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "More than one subnet needs zone awareness"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-vpcoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (VPCOptions with two subnet ids and no ZoneAwarenessEnabled) -> \"You must specify exactly one subnet.\" (ROLLBACK_COMPLETE); pass (the same template with one subnet id) not deployed (--fail-only; it would need a real subnet). The fixture's subnet ids are made up on purpose: CreateDomain answered the identical sentence for two real subnets on 2026-09-24, so the count is checked before the subnets are looked up."
+addedOn: 2026-09-25

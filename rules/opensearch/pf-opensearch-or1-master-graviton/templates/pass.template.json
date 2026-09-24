@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-or1grav-p",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "or1.medium.search",
+          "InstanceCount": 1,
+          "DedicatedMasterEnabled": true,
+          "DedicatedMasterType": "m6g.large.search",
+          "DedicatedMasterCount": 3
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 20,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "EncryptionAtRestOptions": {
+          "Enabled": true
+        }
+      }
+    }
+  }
+}

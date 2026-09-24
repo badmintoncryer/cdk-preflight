@@ -51,6 +51,16 @@ _pf_os_has(name, key) if _pf_os_at(name, key) != "__pf_absent"
 
 _pf_os_missing(name, block, key) if _pf_os_at2(name, block, key) == "__pf_absent"
 
+# Presence one level down (ClusterConfig.WarmCount), for the "X is set but its
+# Enabled flag is not" rules. Not `not _pf_os_missing(...)`: that reads true when
+# the parent block is absent too, because _pf_os_missing goes undefined there and
+# `not undefined` is true - which would fire on a domain carrying neither.
+_pf_os_has2(name, block, key) if {
+	b := _pf_os_at(name, block)
+	is_object(b)
+	object.get(b, key, "__pf_absent") != "__pf_absent"
+}
+
 # Presence three levels down (AdvancedSecurityOptions.MasterUserOptions.MasterUserName).
 # object.get's default stands in for a missing middle block, so an absent parent
 # reads as "the key is absent" instead of going undefined.

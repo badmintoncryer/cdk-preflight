@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-stbyver-p",
+        "EngineVersion": "OpenSearch_1.3",
+        "ClusterConfig": {
+          "InstanceType": "m6g.large.search",
+          "InstanceCount": 3,
+          "MultiAZWithStandbyEnabled": true,
+          "ZoneAwarenessEnabled": true,
+          "ZoneAwarenessConfig": {
+            "AvailabilityZoneCount": 3
+          },
+          "DedicatedMasterEnabled": true,
+          "DedicatedMasterType": "m6g.large.search",
+          "DedicatedMasterCount": 3
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        }
+      }
+    }
+  }
+}

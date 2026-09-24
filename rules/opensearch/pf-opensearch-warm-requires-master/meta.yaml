@@ -1,0 +1,12 @@
+id: pf-opensearch-warm-requires-master
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "UltraWarm needs dedicated master nodes"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (WarmEnabled with ultrawarm1.medium.search x2 and no dedicated masters) -> \"To use warm storage, your domain must have dedicated master nodes.\" (ROLLBACK_COMPLETE); pass (the same template plus 3 m6g.large.search masters) not deployed (--fail-only)."
+addedOn: 2026-09-25

@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-or1ear-f",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "or1.medium.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 20,
+          "Iops": 3000,
+          "Throughput": 125
+        }
+      }
+    }
+  }
+}

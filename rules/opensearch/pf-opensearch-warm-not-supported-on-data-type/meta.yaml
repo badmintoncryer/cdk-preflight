@@ -1,0 +1,12 @@
+id: pf-opensearch-warm-not-supported-on-data-type
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "T2 and T3 data nodes cannot carry UltraWarm"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (WarmEnabled with ultrawarm1.medium.search x2 over a t3.small.search data tier and 3 t3.small.search masters) -> \"Warm storage is not available for the t3.small.elasticsearch instance type. Select a different instance type.\" (ROLLBACK_COMPLETE; the service spells .search as .elasticsearch in this message); pass (the same template on m6g.large.search) not deployed (--fail-only). The denylist is t2 and t3 whole: list-instance-type-details answers WarmEnabled false for exactly t2.small, t2.medium, t3.small, t3.medium and the two ultrawarm1 types, and the catalog offers no other t2 or t3 size."
+addedOn: 2026-09-25

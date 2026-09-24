@@ -1,0 +1,12 @@
+id: pf-opensearch-node-to-node-min-version
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Node-to-node encryption needs Elasticsearch 6.0 or later"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ntn.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (Elasticsearch_5.6 on t3.small.search + gp3 with NodeToNodeEncryptionOptions.Enabled) -> \"Node to Node Encryption feature is not available for the selected ES Version\" (ROLLBACK_COMPLETE); pass (the same domain on Elasticsearch_6.0, which the catalog still offers with t3.small.search) not deployed (--fail-only). 5.6 is the highest version the service offers below 6.0 - nothing between them was ever published - so the pair puts the boundary on 6.0 itself."
+addedOn: 2026-09-25
