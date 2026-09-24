@@ -2,7 +2,7 @@ id: pf-cloudtrail-trail-aes-field-unknown
 service: cloudtrail
 benchRegion: us-east-1
 resourceTypes: [AWS::CloudTrail::Trail]
-severity: ERROR
+severity: WARN
 title: "An advanced field selector only names CloudTrail's defined fields"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-advancedfieldselector.html
 upstream: none

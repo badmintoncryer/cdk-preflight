@@ -2,6 +2,11 @@ package cdk_preflight
 
 import rego.v1
 
+# severity は WARN。サービス側の検査は eventCategory ごと（実機の文面は
+# "The following field is not allowed when the eventCategory field value equals Management: ..."）だが、
+# ここの allowlist は全カテゴリの和集合なので、カテゴリ外のフィールドは見逃す。逆に AWS が新しい
+# フィールドを足すと誤検出になるため、ERROR で止めずに警告に留める。
+
 _pf_ctfld_known := {
 	"eventCategory", "eventName", "eventSource", "eventType", "errorCode",
 	"readOnly", "resources.type", "resources.ARN",
