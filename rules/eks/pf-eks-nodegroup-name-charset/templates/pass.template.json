@@ -35,7 +35,7 @@
           "Ref": "Vpc"
         },
         "CidrBlock": "10.0.0.0/24",
-        "AvailabilityZone": "us-east-1a"
+        "AvailabilityZoneId": "use1-az2"
       }
     },
     "SubnetB": {
@@ -45,7 +45,7 @@
           "Ref": "Vpc"
         },
         "CidrBlock": "10.0.1.0/24",
-        "AvailabilityZone": "us-east-1b"
+        "AvailabilityZoneId": "use1-az4"
       }
     },
     "Main": {
