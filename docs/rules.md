@@ -2553,6 +2553,22 @@
 | `pf-sfn-logging-destination` | AWS::StepFunctions::StateMachine | LoggingConfiguration with Level other than OFF needs exactly one Destinations entry carrying CloudWatchLogsLogGroup.LogGroupArn, and a literal ARN must be a CloudWatch Logs log-group ARN ending in :* | ERROR | none |
 | `pf-sfn-logging-name-ascii` | AWS::StepFunctions::StateMachine | With CloudWatch Logs logging enabled (Level other than OFF) the StateMachineName may only contain 0-9, A-Z, a-z, . - and _ (non-ASCII names are accepted only without logging) | ERROR | none |
 | `pf-sfn-name-charset` | AWS::StepFunctions::StateMachine<br>AWS::StepFunctions::Activity | StateMachineName and Activity Name may not contain whitespace, brackets (< > { } [ ]), wildcards (? *), the special characters " # % \ ^ | ~ ` $ & , ; : / or control characters (non-ASCII letters are accepted) | ERROR | none |
+| `pf-synthetics-canary-active-tracing-runtime` | AWS::Synthetics::Canary | ActiveTracing is not available on the Python runtimes | ERROR | none |
+| `pf-synthetics-canary-code-handler-blueprint-exclusive` | AWS::Synthetics::Canary | Code.Handler cannot be combined with Code.BlueprintTypes | ERROR | none |
+| `pf-synthetics-canary-code-s3-key-required` | AWS::Synthetics::Canary | Code.S3Bucket requires Code.S3Key | ERROR | none |
+| `pf-synthetics-canary-code-script-s3-exclusive` | AWS::Synthetics::Canary | Code.Script cannot be combined with Code.S3Bucket/S3Key | ERROR | none |
+| `pf-synthetics-canary-code-source-required` | AWS::Synthetics::Canary | Code must carry the canary script somewhere | ERROR | none |
+| `pf-synthetics-canary-dependency-layer-region` | AWS::Synthetics::Canary | A canary's Lambda layer dependency must be in the deploy Region | ERROR | none |
+| `pf-synthetics-canary-env-var-reserved-key` | AWS::Synthetics::Canary | A canary's environment variables cannot use Lambda's reserved names | ERROR | none |
+| `pf-synthetics-canary-env-vars-max-4kb` | AWS::Synthetics::Canary | A canary's environment variables cannot exceed 4 KB in total | ERROR | none |
+| `pf-synthetics-canary-execution-role-account` | AWS::Synthetics::Canary | A canary's execution role must live in the deploy account | ERROR | none |
+| `pf-synthetics-canary-replica-location-not-self` | AWS::Synthetics::Canary | A canary replica cannot name the canary's own Region | ERROR | none |
+| `pf-synthetics-canary-runtime-deprecated` | AWS::Synthetics::Canary | A canary cannot be created on a deprecated runtime | ERROR | none |
+| `pf-synthetics-canary-s3-encryption-kms-key-required` | AWS::Synthetics::Canary | S3Encryption mode SSE_KMS requires KmsKeyArn | ERROR | none |
+| `pf-synthetics-canary-s3-encryption-mode-enum` | AWS::Synthetics::Canary | S3Encryption mode must be SSE_S3 or SSE_KMS | ERROR | pending-engine |
+| `pf-synthetics-canary-schedule-rate-max-1-hour` | AWS::Synthetics::Canary | A canary's rate() expression cannot ask for more than one hour | ERROR | none |
+| `pf-synthetics-canary-schedule-rate-unit` | AWS::Synthetics::Canary | A canary's rate() expression only accepts minute, minutes or hour | ERROR | none |
+| `pf-synthetics-canary-timeout-within-schedule` | AWS::Synthetics::Canary | A canary's run timeout cannot exceed its own run frequency | ERROR | none |
 | `pf-tags-aws-prefix` | * | Tag keys may not use the reserved aws: prefix | ERROR | none |
 | `pf-tags-count-max` | * | A resource may carry at most 50 tags | ERROR | none |
 | `pf-wafv2-association-config-scope` | AWS::WAFv2::WebACL | AssociationConfig.RequestBody keys must match the web ACL Scope | ERROR | none |
