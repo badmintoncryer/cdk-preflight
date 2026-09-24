@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-active-tracing-runtime
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "ActiveTracing is not available on the Python runtimes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-runconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: RuntimeVersion syn-python-selenium-12.0 with RunConfig.ActiveTracing true -> \"Resource handler returned message: \"Invalid request provided: Synthetics runtime version syn-python-selenium-12.0 does not support Active tracing.  (Service: Synthetics, Status Code: 400, Request ID: 6b108b47-3326-4cbb-867d-fa40554921c8) (SDK Attempt Count: 1)\" (RequestToken: f9f50276-22c4-c5a2-9595-a55b0de8d635, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass the same runtime without ActiveTracing -> CREATE_COMPLETE"
+addedOn: 2026-09-24

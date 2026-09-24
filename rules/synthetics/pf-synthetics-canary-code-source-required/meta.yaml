@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-code-source-required
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "Code must carry the canary script somewhere"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-code.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Code with a Handler and no Script / S3Bucket / SourceLocationArn -> \"Resource handler returned message: \"Invalid request provided: Missing source location or source code. (Service: Synthetics, Status Code: 400, Request ID: 5ec1927e-dfd5-44a3-be85-00c5d660f403) (SDK Attempt Count: 1)\" (RequestToken: 367c0f46-58b6-886c-e050-c48607f18351, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass the same Code plus Script -> CREATE_COMPLETE"
+addedOn: 2026-09-24

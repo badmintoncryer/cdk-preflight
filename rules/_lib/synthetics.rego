@@ -58,3 +58,97 @@ _pf_synlib_code_has_s3(name) if {
 	some k in ["S3Bucket", "S3Key", "S3ObjectVersion"]
 	_pf_synlib_present(name, ["Code", k])
 }
+
+# ---- slice 2 (#71) ----------------------------------------------------------
+
+# Does Code point at a script at all? Own rule body so a caller never carries two
+# `some .. in` iterations (two in one body take the whole pack down, AGENTS.md).
+_pf_synlib_code_source(name) if {
+	some k in ["Script", "S3Bucket", "SourceLocationArn"]
+	_pf_synlib_present(name, ["Code", k])
+}
+
+# The region segment of an ARN, when it names the given service.
+_pf_synlib_arn_region(v, service) := r if {
+	is_string(v)
+	parts := split(v, ":")
+	count(parts) >= 6
+	parts[0] == "arn"
+	parts[2] == service
+	r := parts[3]
+	r != ""
+}
+
+# Runtimes the deprecation table lists as deprecated. Table read 2026-09-24;
+# CloudWatch Synthetics only ever adds rows, so a stale copy under-reports and
+# never false-positives.
+_pf_synlib_deprecated_runtimes := {
+	"syn-1.0",
+	"syn-nodejs-2.0-beta",
+	"syn-nodejs-2.0",
+	"syn-nodejs-2.1",
+	"syn-nodejs-2.2",
+	"syn-nodejs-puppeteer-3.0",
+	"syn-nodejs-puppeteer-3.1",
+	"syn-nodejs-puppeteer-3.2",
+	"syn-nodejs-puppeteer-3.3",
+	"syn-nodejs-puppeteer-3.4",
+	"syn-nodejs-puppeteer-3.5",
+	"syn-nodejs-puppeteer-3.6",
+	"syn-nodejs-puppeteer-3.7",
+	"syn-nodejs-puppeteer-3.8",
+	"syn-nodejs-puppeteer-3.9",
+	"syn-nodejs-puppeteer-4.0",
+	"syn-nodejs-puppeteer-5.0",
+	"syn-nodejs-puppeteer-5.1",
+	"syn-nodejs-puppeteer-5.2",
+	"syn-nodejs-puppeteer-6.0",
+	"syn-nodejs-puppeteer-6.1",
+	"syn-nodejs-puppeteer-6.2",
+	"syn-nodejs-puppeteer-7.0",
+	"syn-python-selenium-1.0",
+	"syn-python-selenium-1.1",
+	"syn-python-selenium-1.2",
+	"syn-python-selenium-1.3",
+	"syn-python-selenium-2.0",
+	"syn-python-selenium-2.1",
+	"syn-python-selenium-3.0",
+	"syn-python-selenium-4.0",
+	"syn-python-selenium-4.1",
+	"syn-python-selenium-5.0",
+	"syn-python-selenium-5.1",
+}
+
+# Lambda's reserved environment variable names (list read 2026-09-24). A canary run
+# is a Lambda function, so RunConfig.EnvironmentVariables inherits the restriction.
+# Lambda's *unreserved* defaults (TZ, PATH, AWS_XRAY_*, NODE_OPTIONS, ...) may be set
+# and are deliberately absent.
+_pf_synlib_reserved_env := {
+	"_HANDLER",
+	"_X_AMZN_TRACE_ID",
+	"AWS_ACCESS_KEY",
+	"AWS_ACCESS_KEY_ID",
+	"AWS_DEFAULT_REGION",
+	"AWS_EXECUTION_ENV",
+	"AWS_LAMBDA_FUNCTION_MEMORY_SIZE",
+	"AWS_LAMBDA_FUNCTION_NAME",
+	"AWS_LAMBDA_FUNCTION_VERSION",
+	"AWS_LAMBDA_INITIALIZATION_TYPE",
+	"AWS_LAMBDA_LOG_GROUP_NAME",
+	"AWS_LAMBDA_LOG_STREAM_NAME",
+	"AWS_LAMBDA_MAX_CONCURRENCY",
+	"AWS_LAMBDA_METADATA_API",
+	"AWS_LAMBDA_METADATA_TOKEN",
+	"AWS_LAMBDA_RUNTIME_API",
+	"AWS_REGION",
+	"AWS_SECRET_ACCESS_KEY",
+	"AWS_SESSION_TOKEN",
+	"LAMBDA_RUNTIME_DIR",
+	"LAMBDA_TASK_ROOT",
+}
+
+# RunConfig.EnvironmentVariables as written, when it is an object.
+_pf_synlib_env(name) := e if {
+	e := object.get(_pf_synlib_props(name), ["RunConfig", "EnvironmentVariables"], null)
+	is_object(e)
+}

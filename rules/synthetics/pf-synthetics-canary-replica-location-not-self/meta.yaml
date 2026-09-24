@@ -1,0 +1,12 @@
+id: pf-synthetics-canary-replica-location-not-self
+service: synthetics
+benchRegion: us-east-1
+resourceTypes: [AWS::Synthetics::Canary]
+severity: ERROR
+title: "A canary replica cannot name the canary's own Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-replica.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-24 us-east-1: Replicas [{Location: us-east-1}] in a stack deploying to us-east-1 -> \"Resource handler returned message: \"Invalid request provided: Replica location us-east-1 cannot be the same as primary location us-east-1. (Service: Synthetics, Status Code: 400, Request ID: 86b1db4b-5ce3-4539-9fc1-9fa4e297e79d) (SDK Attempt Count: 1)\" (RequestToken: e1f3dd15-dc84-1d2f-222f-7a6efb002b3c, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass no Replicas -> CREATE_COMPLETE"
+addedOn: 2026-09-24
