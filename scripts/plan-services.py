@@ -24,7 +24,12 @@ import sys
 # msk: 実測 2026-09-13/14 us-east-1 — fail は同期拒否 8 秒 + ROLLBACK 2m51s で 1 本約 3 分、
 # うち 13 本は VPC/サブネット/SG を同一スタックに建てるぶん +2 分。52 本を逐次で回すと約 3h で
 # 目安の上限に張り付き、INCONCLUSIVE のリトライが乗ると 4h の認証期限に触れる。2 分割で 1 本 1.5h 前後。
-SHARDS = {"route53resolver": 3, "msk": 2}
+# eks: 実測 2026-09-25 us-east-1（fail-only）— fail フィクスチャが自前で EKS クラスタを建てる 39 本が
+# 約 16 分/本（クラスタの作成と削除で大半を使う）、CreateCluster が同期で拒否して
+# コントロールプレーンが起動しない 32 本が 2〜4 分/本。71 本を逐次で回すと約 12h で、
+# 認証の 4h にも timeoutMinutes 300 にも収まらない。シャードの割り当ては上の i % SHARDS
+# なので高い本は均等にばらけ、6 分割で 1 シャード 2h 前後になる。
+SHARDS = {"route53resolver": 3, "msk": 2, "eks": 6}
 
 
 def matrix(selection: str, root: str = "rules") -> list:
