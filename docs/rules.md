@@ -2149,6 +2149,71 @@
 | `pf-neptunegraph-graph-name-lowercase` | AWS::NeptuneGraph::Graph | GraphName must be lowercase and must not start with g- | ERROR | none |
 | `pf-neptunegraph-private-endpoint-subnet-vpc-match` | AWS::NeptuneGraph::PrivateGraphEndpoint<br>AWS::EC2::Subnet | PrivateGraphEndpoint SubnetIds must belong to its VpcId | ERROR | none |
 | `pf-neptunegraph-vector-dimension-range` | AWS::NeptuneGraph::Graph | VectorSearchDimension must be within 1-65536 | ERROR | none |
+| `pf-opensearch-access-policies-ip-condition-on-vpc-domain` | AWS::OpenSearchService::Domain | A VPC domain cannot carry an IP-based access policy | ERROR | none |
+| `pf-opensearch-advanced-options-unknown-key` | AWS::OpenSearchService::Domain | AdvancedOptions only accepts the documented keys | WARN | none |
+| `pf-opensearch-audit-logs-requires-fgac` | AWS::OpenSearchService::Domain | Audit log publishing requires fine-grained access control | ERROR | none |
+| `pf-opensearch-az-count-min` | AWS::OpenSearchService::Domain | A zone-aware domain needs at least one data node per Availability Zone | ERROR | none |
+| `pf-opensearch-az-count-valid` | AWS::OpenSearchService::Domain | AvailabilityZoneCount is either 2 or 3 | ERROR | none |
+| `pf-opensearch-cognito-pool-region-match` | AWS::OpenSearchService::Domain | The Cognito user pool and identity pool must be in the same Region | ERROR | none |
+| `pf-opensearch-cognito-requires-ids` | AWS::OpenSearchService::Domain | Cognito authentication needs RoleArn, UserPoolId and IdentityPoolId | ERROR | none |
+| `pf-opensearch-cognito-role-arn-account` | AWS::OpenSearchService::Domain | The Cognito access role must be in the deploying account | ERROR | none |
+| `pf-opensearch-cold-requires-warm` | AWS::OpenSearchService::Domain | Cold storage requires UltraWarm | ERROR | none |
+| `pf-opensearch-custom-endpoint-cert-account` | AWS::OpenSearchService::Domain | The custom endpoint certificate must be in the deploying account | ERROR | none |
+| `pf-opensearch-custom-endpoint-cert-region` | AWS::OpenSearchService::Domain | The custom endpoint certificate must be in the domain's Region | ERROR | none |
+| `pf-opensearch-custom-endpoint-requires-name-and-cert` | AWS::OpenSearchService::Domain | A custom endpoint needs both the name and the certificate | ERROR | none |
+| `pf-opensearch-data-nodes-without-master-max` | AWS::OpenSearchService::Domain | More than 10 data nodes need dedicated master nodes | ERROR | none |
+| `pf-opensearch-domain-name-length` | AWS::OpenSearchService::Domain | DomainName is at most 28 characters | ERROR | none |
+| `pf-opensearch-domain-name-pattern` | AWS::OpenSearchService::Domain | DomainName is lower-case letters, digits and hyphens | ERROR | none |
+| `pf-opensearch-ebs-forbidden-on-instance-store-type` | AWS::OpenSearchService::Domain | Instance-store families cannot take EBS storage | ERROR | none |
+| `pf-opensearch-ebs-gp3-iops-min` | AWS::OpenSearchService::Domain | gp3 volumes start at 3000 IOPS | ERROR | none |
+| `pf-opensearch-ebs-gp3-throughput-min` | AWS::OpenSearchService::Domain | gp3 volumes start at 125 MiB/s of throughput | ERROR | none |
+| `pf-opensearch-ebs-io1-iops-min` | AWS::OpenSearchService::Domain | io1 volumes start at 1000 IOPS | ERROR | none |
+| `pf-opensearch-ebs-iops-only-gp3-io1` | AWS::OpenSearchService::Domain | Iops belongs to gp3 and io1 volumes only | ERROR | none |
+| `pf-opensearch-ebs-required-for-ebs-only-type` | AWS::OpenSearchService::Domain | EBS-only instance families need EBSOptions | WARN | none |
+| `pf-opensearch-ebs-throughput-only-gp3` | AWS::OpenSearchService::Domain | Throughput belongs to gp3 volumes only | ERROR | none |
+| `pf-opensearch-ebs-volume-size-min` | AWS::OpenSearchService::Domain | EBS volumes start at 10 GiB | ERROR | none |
+| `pf-opensearch-ebs-volume-type-supported` | AWS::OpenSearchService::Domain | Newer instance families do not offer gp2 | ERROR | none |
+| `pf-opensearch-encryption-at-rest-min-version` | AWS::OpenSearchService::Domain | Encryption at rest needs Elasticsearch 5.1 or later | ERROR | none |
+| `pf-opensearch-encryption-not-supported-on-instance-type` | AWS::OpenSearchService::Domain | The t2 and r3 families cannot encrypt at rest | ERROR | none |
+| `pf-opensearch-engine-version-pattern` | AWS::OpenSearchService::Domain | EngineVersion must be Elasticsearch_x.y or OpenSearch_x.y | ERROR | none |
+| `pf-opensearch-fgac-internal-db-requires-name-password` | AWS::OpenSearchService::Domain | The internal user database needs a master user name and password | ERROR | none |
+| `pf-opensearch-fgac-master-user-exclusive` | AWS::OpenSearchService::Domain | MasterUserName and MasterUserARN are mutually exclusive | ERROR | none |
+| `pf-opensearch-fgac-min-version` | AWS::OpenSearchService::Domain | Fine-grained access control needs Elasticsearch 6.7 or later | ERROR | none |
+| `pf-opensearch-fgac-requires-encryption-at-rest` | AWS::OpenSearchService::Domain | Fine-grained access control requires encryption at rest | ERROR | none |
+| `pf-opensearch-fgac-requires-enforce-https` | AWS::OpenSearchService::Domain | Fine-grained access control requires EnforceHTTPS | ERROR | none |
+| `pf-opensearch-fgac-requires-master-user` | AWS::OpenSearchService::Domain | Without the internal user database a master user ARN is required | ERROR | none |
+| `pf-opensearch-fgac-requires-node-to-node` | AWS::OpenSearchService::Domain | Fine-grained access control requires node-to-node encryption | ERROR | none |
+| `pf-opensearch-iam-federation-requires-fgac` | AWS::OpenSearchService::Domain | IAM federation needs fine-grained access control | ERROR | none |
+| `pf-opensearch-ip-address-type-valid` | AWS::OpenSearchService::Domain | IPAddressType is ipv4 or dualstack | WARN | none |
+| `pf-opensearch-jwt-requires-fgac` | AWS::OpenSearchService::Domain | JWT authentication needs fine-grained access control | ERROR | none |
+| `pf-opensearch-kms-key-region` | AWS::OpenSearchService::Domain | The encryption key must live in the deploy Region | ERROR | none |
+| `pf-opensearch-log-group-arn-region` | AWS::OpenSearchService::Domain | The log group must live in the deploy Region | ERROR | none |
+| `pf-opensearch-log-publishing-requires-arn` | AWS::OpenSearchService::Domain | An enabled log type needs a log group ARN | ERROR | none |
+| `pf-opensearch-log-type-unknown` | AWS::OpenSearchService::Domain | LogPublishingOptions only accepts the five known log types | WARN | none |
+| `pf-opensearch-master-count-max` | AWS::OpenSearchService::Domain | A domain takes at most 5 dedicated master nodes | ERROR | none |
+| `pf-opensearch-master-count-min` | AWS::OpenSearchService::Domain | Dedicated master nodes come in twos or more | ERROR | none |
+| `pf-opensearch-master-options-require-enabled` | AWS::OpenSearchService::Domain | DedicatedMasterCount and DedicatedMasterType need DedicatedMasterEnabled | ERROR | none |
+| `pf-opensearch-master-type-master-capable` | AWS::OpenSearchService::Domain | Not every instance family can be a dedicated master | ERROR | none |
+| `pf-opensearch-node-to-node-min-version` | AWS::OpenSearchService::Domain | Node-to-node encryption needs Elasticsearch 6.0 or later | ERROR | none |
+| `pf-opensearch-or1-master-graviton` | AWS::OpenSearchService::Domain | OR1 domains need Graviton dedicated masters | ERROR | none |
+| `pf-opensearch-or1-min-version` | AWS::OpenSearchService::Domain | The OR1 family needs OpenSearch 2.11 or later | ERROR | none |
+| `pf-opensearch-or1-requires-encryption-at-rest` | AWS::OpenSearchService::Domain | The OR1 family needs encryption at rest | ERROR | none |
+| `pf-opensearch-saml-requires-fgac` | AWS::OpenSearchService::Domain | SAML authentication needs fine-grained access control | ERROR | none |
+| `pf-opensearch-snapshot-start-hour-max` | AWS::OpenSearchService::Domain | AutomatedSnapshotStartHour is an hour of the day | ERROR | none |
+| `pf-opensearch-standby-data-count-multiple-of-az` | AWS::OpenSearchService::Domain | With standby the data nodes divide by the Availability Zone count | ERROR | none |
+| `pf-opensearch-standby-min-version` | AWS::OpenSearchService::Domain | Multi-AZ with Standby needs OpenSearch 1.3 or later | ERROR | none |
+| `pf-opensearch-standby-requires-3-az` | AWS::OpenSearchService::Domain | Multi-AZ with Standby uses exactly 3 Availability Zones | ERROR | none |
+| `pf-opensearch-standby-requires-3-masters` | AWS::OpenSearchService::Domain | Multi-AZ with Standby uses exactly 3 dedicated masters | ERROR | none |
+| `pf-opensearch-standby-volume-type` | AWS::OpenSearchService::Domain | Multi-AZ with Standby takes gp3 or io1 volumes | ERROR | none |
+| `pf-opensearch-t3-instance-count-max` | AWS::OpenSearchService::Domain | T3 domains take at most 10 data nodes | ERROR | none |
+| `pf-opensearch-tls-policy-valid` | AWS::OpenSearchService::Domain | TLSSecurityPolicy takes one of the five published policies | WARN | none |
+| `pf-opensearch-vpc-subnet-count-requires-zone-awareness` | AWS::OpenSearchService::Domain | More than one subnet needs zone awareness | ERROR | none |
+| `pf-opensearch-warm-count-min` | AWS::OpenSearchService::Domain | UltraWarm starts at 2 nodes | ERROR | none |
+| `pf-opensearch-warm-not-supported-on-data-type` | AWS::OpenSearchService::Domain | T2 and T3 data nodes cannot carry UltraWarm | ERROR | none |
+| `pf-opensearch-warm-options-require-enabled` | AWS::OpenSearchService::Domain | WarmCount and WarmType need WarmEnabled | ERROR | none |
+| `pf-opensearch-warm-requires-master` | AWS::OpenSearchService::Domain | UltraWarm needs dedicated master nodes | ERROR | none |
+| `pf-opensearch-warm-type-family` | AWS::OpenSearchService::Domain | WarmType takes an ultrawarm1 or oi2 type | WARN | none |
+| `pf-opensearch-zone-awareness-config-requires-enabled` | AWS::OpenSearchService::Domain | ZoneAwarenessConfig needs ZoneAwarenessEnabled | ERROR | none |
 | `pf-pipes-batch-size-target-limit` | AWS::Pipes::Pipe | Source BatchSize is capped by what the target accepts per call | ERROR | none |
 | `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | ERROR | none |
 | `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | ERROR | none |
