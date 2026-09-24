@@ -142,6 +142,60 @@ sweep_global_accelerator() {
   done
 }
 
+# CloudFormation はスタックを消しても StackSet を残す。StackSet を作る fail フィクスチャは
+# ROLLBACK_FAILED で終わるので cleanup() が StackSet を retain し、スタックだけが消えて
+# 固定名の StackSet が孤児になる。翌月の同じフィクスチャは「already exists」で落ちるが、
+# AWS::CloudFormation::StackSet はそのルールの resourceTypes に載っているため
+# scaffolding_failure() が足場の失敗と見なさず、別の理由で落ちたのに verified と報告される
+# （2026-09-25、#73 のテンプレート層ルールで実測）。インスタンスが残っていると delete-stack-set が
+# 拒否するので、先に delete-stack-instances で落としてから消す。
+sweep_stack_sets() {
+  local region=$1 ss inst accts regs i
+  aws cloudformation list-stack-sets --region "$region" --status ACTIVE --no-paginate \
+    --query "Summaries[?starts_with(StackSetName,'cdkpf')].StackSetName" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r ss; do
+    [ -z "$ss" ] || [ "$ss" = "None" ] && continue
+    inst=$(aws cloudformation list-stack-instances --stack-set-name "$ss" --region "$region" \
+      --query 'Summaries[].[Account,Region]' --output text 2>/dev/null)
+    accts=$(awk 'NF{print $1}' <<<"$inst" | sort -u | tr '\n' ' ')
+    regs=$(awk 'NF{print $2}' <<<"$inst" | sort -u | tr '\n' ' ')
+    if [ -n "${accts// /}" ]; then
+      aws cloudformation delete-stack-instances --stack-set-name "$ss" --region "$region" \
+        --accounts $accts --regions $regs --no-retain-stacks >/dev/null 2>&1
+      # インスタンス削除は非同期。空になるまで待たないと delete-stack-set が not empty で拒否する
+      for i in $(seq 30); do
+        [ -z "$(aws cloudformation list-stack-instances --stack-set-name "$ss" --region "$region" \
+              --query 'Summaries[].Account' --output text 2>/dev/null)" ] && break
+        sleep 10
+      done
+    fi
+    if aws cloudformation delete-stack-set --stack-set-name "$ss" --region "$region" \
+         2>"$RECLAIM_ERR" >/dev/null; then
+      echo "sweep: reclaimed orphaned stack set $ss ($region)"
+    else
+      echo "LEFTOVER: orphaned stack set $ss ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+}
+
+# Hook のフィクスチャは hook 型をアカウントに登録したまま残す（スタックを消しても型は残る）。
+# deregister-type は "Third party types can't be deregistered" で拒否されるので deactivate-type を使う
+# （2026-09-25 実測）。残すと翌月の登録が同名で衝突し、StackSet と同じ「別の理由で落ちる」に化ける。
+sweep_hook_types() {
+  local region=$1 t
+  aws cloudformation list-types --region "$region" --type HOOK --visibility PRIVATE --no-paginate \
+    --query "TypeSummaries[?contains(TypeName,'Cdkpf')].TypeName" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r t; do
+    [ -z "$t" ] || [ "$t" = "None" ] && continue
+    if aws cloudformation deactivate-type --type HOOK --type-name "$t" --region "$region" \
+         2>"$RECLAIM_ERR" >/dev/null; then
+      echo "sweep: reclaimed orphaned hook type $t ($region)"
+    else
+      echo "LEFTOVER: orphaned hook type $t ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+}
+
 # CloudFormation はスタックを消してもフィクスチャの S3 バケットを残す。CloudTrail は
 # AWSLogs/<account>/CloudTrail/ に 0 バイトのマーカーを、AWS Config は ConfigWritabilityCheckFile を
 # 書くので、スタック削除時の DeleteBucket が必ず「空でない」で失敗し、retain 削除で切り離される
@@ -211,6 +265,8 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
   done
 
   sweep_dns_firewall "$region"
+  sweep_stack_sets "$region"
+  sweep_hook_types "$region"
 done
 
 sweep_fixture_buckets

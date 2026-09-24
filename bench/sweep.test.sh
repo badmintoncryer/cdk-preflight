@@ -10,6 +10,11 @@ cat > "$tmp/aws" <<'STUB'
 echo "$*" >> "$CDKPF_STUB_CALLS"
 case "$1 $2" in
   "cloudformation list-stacks") echo "" ;;
+  "cloudformation list-stack-sets") echo "${CDKPF_STUB_SS:-}" ;;
+  # 1 回目だけ中身を返して空にする（delete-stack-instances 後に空になる非同期を模す）
+  "cloudformation list-stack-instances")
+    if [ -s "${CDKPF_STUB_SSI:-/dev/null}" ]; then cat "$CDKPF_STUB_SSI"; : > "$CDKPF_STUB_SSI"; fi ;;
+  "cloudformation list-types") echo "${CDKPF_STUB_HOOKS:-}" ;;
   "resourcegroupstaggingapi get-resources") cat "$CDKPF_STUB_ORPHANS" ;;
   "kms describe-key") echo "${CDKPF_STUB_KEYSTATE:-Enabled}" ;;
   "route53resolver list-firewall-rule-groups") echo "${CDKPF_STUB_FRG:-}" ;;
@@ -129,5 +134,43 @@ export CDKPF_STUB_GACR=cr-1
 out=$(run "$tmp/none")
 unset CDKPF_STUB_GACR
 grep -q 'LEFTOVER: orphaned custom routing accelerator cr-1' <<<"$out" || fail "a custom routing accelerator was not reported" "$out"
+
+# StackSet はスタックを消しても残り、翌月は already exists で落ちるのに
+# AWS::CloudFormation::StackSet が resourceTypes にあるせいで verified と報告される。
+# インスタンスが残っていると delete-stack-set が拒否するので先に落とす
+export CDKPF_STUB_SS=cdkpf73-ssft-f
+printf '111111111111\tus-east-1\n' > "$tmp/ssi"
+export CDKPF_STUB_SSI="$tmp/ssi"
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable stack set was reported as leftover" "$out"
+[ "$(grep -c 'reclaimed orphaned stack set' <<<"$out")" -eq 3 ] || fail "expected 3 stack set reclaim lines (1 x 3 regions)" "$out"
+called 'delete-stack-instances --stack-set-name cdkpf73-ssft-f --region ap-northeast-1 --accounts 111111111111 --regions us-east-1 --no-retain-stacks' || fail "instances not deleted before the stack set"
+[ "$(grep -n 'delete-stack-instances' "$CDKPF_STUB_CALLS" | head -1 | cut -d: -f1)" \
+  -lt "$(grep -n 'delete-stack-set' "$CDKPF_STUB_CALLS" | head -1 | cut -d: -f1)" ] ||
+  fail "a stack set with instances cannot be deleted; instances must go first" "$out"
+
+# インスタンスが無ければ delete-stack-instances は呼ばない
+: > "$tmp/ssi"
+out=$(run "$tmp/none")
+called 'delete-stack-instances' && fail "called delete-stack-instances for an empty stack set" "$out"
+[ "$(grep -c 'reclaimed orphaned stack set' <<<"$out")" -eq 3 ] || fail "an empty stack set was not reclaimed" "$out"
+
+export CDKPF_STUB_FAIL=delete-stack-set
+out=$(run "$tmp/none")
+unset CDKPF_STUB_FAIL CDKPF_STUB_SS CDKPF_STUB_SSI
+[ "$(grep -c '^LEFTOVER: orphaned stack set' <<<"$out")" -eq 3 ] || fail "a failed stack set deletion was not reported" "$out"
+
+# Hook 型は deregister-type が "Third party types can't be deregistered" で拒否するので
+# deactivate-type で消す
+export CDKPF_STUB_HOOKS=Private::Guard::Cdkpf73Fail
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable hook type was reported as leftover" "$out"
+called 'deactivate-type --type HOOK --type-name Private::Guard::Cdkpf73Fail' || fail "hook type not deactivated"
+called 'deregister-type' && fail "deregister-type is refused for third party types; deactivate-type is the one that works" "$out"
+
+export CDKPF_STUB_FAIL=deactivate-type
+out=$(run "$tmp/none")
+unset CDKPF_STUB_FAIL CDKPF_STUB_HOOKS
+[ "$(grep -c '^LEFTOVER: orphaned hook type' <<<"$out")" -eq 3 ] || fail "a failed hook type deactivation was not reported" "$out"
 
 echo "sweep.test.sh: OK"
