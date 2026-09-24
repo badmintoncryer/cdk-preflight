@@ -13,7 +13,7 @@ _pf_ctfld_known := {
 	"sessionCredentialFromConsole", "userIdentity.arn", "vpcEndpointId",
 }
 
-violation contains make_diag_full("pf-cloudtrail-trail-aes-field-unknown", "ERROR", name,
+violation contains make_diag_full("pf-cloudtrail-trail-aes-field-unknown", "WARN", name,
 	"Properties.AdvancedEventSelectors.FieldSelectors.Field",
 	sprintf("'%v' is not a CloudTrail event record field; PutEventSelectors rejects the selector", [fld]),
 	"Use one of the documented fields (eventCategory, eventName, eventSource, eventType, errorCode, readOnly, resources.type, resources.ARN, sessionCredentialFromConsole, userIdentity.arn, vpcEndpointId)",
