@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+      "Properties": {
+        "Name": "a6rf.cdkpf67.local",
+        "Vpc": "vpc-4331593e"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        },
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "Type": "AAAA",
+              "TTL": 60
+            }
+          ]
+        }
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "custom": "v"
+        }
+      }
+    }
+  }
+}

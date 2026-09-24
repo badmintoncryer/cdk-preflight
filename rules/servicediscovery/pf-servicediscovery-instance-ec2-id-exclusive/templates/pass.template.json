@@ -1,0 +1,44 @@
+{
+  "Resources": {
+    "Ns": {
+      "Type": "AWS::ServiceDiscovery::HttpNamespace",
+      "Properties": {
+        "Name": "cdkpf67-eixp"
+      }
+    },
+    "Svc": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "Name": "backend",
+        "NamespaceId": {
+          "Ref": "Ns"
+        }
+      }
+    },
+    "Ec2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}",
+        "InstanceType": "t3.micro"
+      }
+    },
+    "Inst": {
+      "Type": "AWS::ServiceDiscovery::Instance",
+      "Properties": {
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "Svc",
+            "Id"
+          ]
+        },
+        "InstanceId": "inst1",
+        "InstanceAttributes": {
+          "AWS_EC2_INSTANCE_ID": {
+            "Ref": "Ec2"
+          },
+          "AWS_INIT_HEALTH_STATUS": "HEALTHY"
+        }
+      }
+    }
+  }
+}

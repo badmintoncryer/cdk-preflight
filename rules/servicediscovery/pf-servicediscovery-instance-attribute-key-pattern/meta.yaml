@@ -1,0 +1,12 @@
+id: pf-servicediscovery-instance-attribute-key-pattern
+service: servicediscovery
+benchRegion: us-east-1
+resourceTypes: [AWS::ServiceDiscovery::Instance]
+severity: ERROR
+title: "An instance attribute key is printable ASCII with no spaces"
+constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-23 us-east-1: attribute key 'my key' -> \"1 validation error detected: Value '{my key=v}' at 'attributes' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less than or equa [...] al to 0, Member must satisfy regular expression pattern: ^[a-zA-Z0-9!-~]+$, Member must not be null]\" (ROLLBACK_COMPLETE); pass key 'my-key' -> CREATE_COMPLETE"
+addedOn: 2026-09-23

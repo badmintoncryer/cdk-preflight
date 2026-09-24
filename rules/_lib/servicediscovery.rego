@@ -77,3 +77,28 @@ _pf_sd_printable_ascii(s) if {
 	regex.match(`^[!-~]+$`, s)
 	not startswith(s, "arn:")
 }
+
+# --- Instance (AWS::ServiceDiscovery::Instance) ---
+
+_pf_sd_attrs(inst) := a if {
+	a := object.get(_pf_sd_props(inst), "InstanceAttributes", null)
+	is_object(a)
+}
+
+_pf_sd_has_attr(inst, k) if {
+	v := object.get(_pf_sd_attrs(inst), k, "__pf_absent")
+	v != "__pf_absent"
+}
+
+# Instance が指す Service の論理 ID（同じテンプレートに居るときだけ）。
+_pf_sd_inst_svc(inst) := s if {
+	s := resolve(inst, "Properties.ServiceId")
+	s in resources_of_type("AWS::ServiceDiscovery::Service")
+}
+
+# ALIAS / EC2 インスタンスはアドレスを自分で持たず Cloud Map が導出する。
+# レコード型ごとの必須属性の検査からは外さないと、正しい登録に誤検知が出る。
+_pf_sd_derived_instance(inst) if {
+	some k in ["AWS_ALIAS_DNS_NAME", "AWS_EC2_INSTANCE_ID"]
+	_pf_sd_has_attr(inst, k)
+}
