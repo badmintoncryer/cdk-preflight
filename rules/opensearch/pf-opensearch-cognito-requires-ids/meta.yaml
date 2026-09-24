@@ -1,0 +1,12 @@
+id: pf-opensearch-cognito-requires-ids
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Cognito authentication needs RoleArn, UserPoolId and IdentityPoolId"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-cognitooptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (CognitoOptions.Enabled true and nothing else) -> \"RoleArn needs to be specified\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: an OpenSearch domain takes 15-25 min to build and the constraint is answered by CreateDomain's synchronous validation), but the base scaffold the pass fixture shares - t3.small.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, OpenSearch_2.19 - reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. The service stops at the first gap, so the diagnostic names every missing one."
+addedOn: 2026-09-25

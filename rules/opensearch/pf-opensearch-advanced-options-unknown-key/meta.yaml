@@ -1,0 +1,12 @@
+id: pf-opensearch-advanced-options-unknown-key
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: WARN
+title: "AdvancedOptions only accepts the documented keys"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/APIReference/API_CreateDomain.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (AdvancedOptions key rest.action.multi.allow_explicit_indexes, the plural misspelling of the documented key) -> \"Unrecognized advanced option 'rest.action.multi.allow_explicit_indexes' passed in advancedOptions.\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: an OpenSearch domain takes 15-25 min to build and the constraint is answered by CreateDomain's synchronous validation), but the base scaffold the pass fixture shares - t3.small.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, OpenSearch_2.19 - reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. WARN, not ERROR: the accepted key set is doc-derived - the service names the key it rejected but never lists the ones it takes - so a key AWS adds later would read as a violation."
+addedOn: 2026-09-25

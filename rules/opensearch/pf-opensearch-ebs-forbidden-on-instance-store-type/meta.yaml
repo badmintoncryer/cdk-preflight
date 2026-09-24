@@ -1,0 +1,12 @@
+id: pf-opensearch-ebs-forbidden-on-instance-store-type
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "Instance-store families cannot take EBS storage"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-ebsoptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (i3.large.search with EBSOptions gp3 100 GiB) -> \"Instance type i3.large.search does not support EBS storage\" (ROLLBACK_COMPLETE); pass (the same instance type with EBSOptions dropped) not deployed (--fail-only). The family list is a denylist taken from describe-instance-type-limits (StorageTypes [instance] only), so a family AWS adds later is a miss rather than a false positive."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-opensearch-custom-endpoint-cert-region
+service: opensearch
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchService::Domain]
+severity: ERROR
+title: "The custom endpoint certificate must be in the domain's Region"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/customendpoint.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (certificate ARN in ap-northeast-1, account matching the deploy account) -> \"Invalid certificate ARN: ... Certificate must be in 'us-east-1'.\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only), but the identical ACM scaffold reached CREATE_COMPLETE the same day under pf-opensearch-custom-endpoint-cert-account. Two caveats: the account check runs first, so the fixture's ARN carries the deploy account; and the run was made only from us-east-1, so \"same Region as the domain\" and \"us-east-1 only\" cannot be told apart. The rule takes the same-Region reading on purpose - if the truth is us-east-1 only, this rule goes quiet outside us-east-1 (a miss), whereas the other reading would flag correct templates."
+addedOn: 2026-09-25

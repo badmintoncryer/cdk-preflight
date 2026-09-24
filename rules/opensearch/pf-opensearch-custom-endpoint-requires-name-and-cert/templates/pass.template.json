@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "D": {
+      "Type": "AWS::OpenSearchService::Domain",
+      "Properties": {
+        "DomainName": "pfos-ceparts-p",
+        "EngineVersion": "OpenSearch_2.19",
+        "ClusterConfig": {
+          "InstanceType": "t3.small.search",
+          "InstanceCount": 1
+        },
+        "EBSOptions": {
+          "EBSEnabled": true,
+          "VolumeType": "gp3",
+          "VolumeSize": 10,
+          "Iops": 3000,
+          "Throughput": 125
+        },
+        "DomainEndpointOptions": {
+          "CustomEndpointEnabled": true,
+          "CustomEndpoint": "search.appnao.com",
+          "CustomEndpointCertificateArn": {
+            "Fn::Sub": "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+          },
+          "EnforceHTTPS": true
+        }
+      }
+    }
+  }
+}
