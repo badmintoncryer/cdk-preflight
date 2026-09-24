@@ -23,6 +23,7 @@ violation contains make_diag_full("pf-cloudwatch-threshold-metric-id", "ERROR", 
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
 	tmid := resolve(name, "Properties.ThresholdMetricId")
 	is_string(tmid)
+	_pf_countable_list(name, "Properties.Metrics")
 	items := [q | some q in flatten_list(name, "Properties.Metrics")]
 	count(items) > 0
 	every q in items {

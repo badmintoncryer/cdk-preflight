@@ -40,6 +40,7 @@ violation contains make_diag_full("pf-dynamodb-key-schema-shape", "ERROR", name,
 	"Model extra access patterns as global or local secondary indexes instead",
 	_pf_ddbksh_url) if {
 	some name in resources_of_type("AWS::DynamoDB::Table")
+	_pf_countable_list(name, "Properties.KeySchema")
 	n := count([1 | some _ in flatten_list(name, "Properties.KeySchema")])
 	n > 2
 }

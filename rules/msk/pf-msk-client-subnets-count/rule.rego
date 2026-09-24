@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-msk-client-subnets-count", "ERROR", name,
 	"List two or three client subnets, each in its own Availability Zone",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html") if {
 	some name in resources_of_type("AWS::MSK::Cluster")
+	_pf_countable_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets")
 	n := count(flatten_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets"))
 	n > 0
 	n < 2
@@ -22,6 +23,7 @@ violation contains make_diag_full("pf-msk-client-subnets-count", "ERROR", name,
 	"List two or three client subnets, each in its own Availability Zone",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html") if {
 	some name in resources_of_type("AWS::MSK::Cluster")
+	_pf_countable_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets")
 	n := count(flatten_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets"))
 	n > 3
 }

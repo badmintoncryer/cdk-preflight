@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-codebuild-secondary-artifacts-max-12", "ER
 	"Keep SecondaryArtifacts to 12 entries or fewer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html") if {
 	some name in resources_of_type("AWS::CodeBuild::Project")
+	_pf_countable_list(name, "Properties.SecondaryArtifacts")
 	n := count(flatten_list(name, "Properties.SecondaryArtifacts"))
 	n > 12
 }

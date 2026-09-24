@@ -10,6 +10,8 @@ violation contains make_diag_full("pf-ec2-instance-eni-exclusive", "ERROR", name
 	"Move the security groups into the NetworkInterfaces entry as GroupSet",
 	_pf_ec2ie_url) if {
 	some name in resources_of_type("AWS::EC2::Instance")
+	_pf_unconditional_list(name, "Properties.NetworkInterfaces")
 	count(flatten_list(name, "Properties.NetworkInterfaces")) > 0
+	_pf_unconditional_list(name, "Properties.SecurityGroupIds")
 	count(flatten_list(name, "Properties.SecurityGroupIds")) > 0
 }

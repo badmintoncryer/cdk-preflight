@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-elbv2-lb-attr-count-max", "ERROR", name,
 	sprintf("The load balancer declares %d attributes; ModifyLoadBalancerAttributes accepts at most 20", [n]),
 	_pf_elbacnt_fix, _pf_elbacnt_url) if {
 	some name in _pf_elb_lbs
+	_pf_countable_list(name, "Properties.LoadBalancerAttributes")
 	n := count(flatten_list(name, "Properties.LoadBalancerAttributes"))
 	n > 20
 }

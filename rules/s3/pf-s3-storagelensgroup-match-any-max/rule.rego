@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-s3-storagelensgroup-match-any-max", "ERROR
 	_pf_s3sgm_fix, _pf_s3sgm_url) if {
 	some name in resources_of_type("AWS::S3::StorageLensGroup")
 	some k in ["MatchAnyPrefix", "MatchAnySuffix", "MatchAnyTag"]
+	_pf_countable_list(name, sprintf("Properties.Filter.%v", [k]))
 	n := count(flatten_list(name, sprintf("Properties.Filter.%v", [k])))
 	n > 10
 }

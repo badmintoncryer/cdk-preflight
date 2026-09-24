@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-elbv2-listener-cert-insecure-protocol", "E
 	sprintf("A certificate is attached to a %s listener; only HTTPS and TLS listeners terminate TLS", [proto]),
 	_pf_elblci_fix, _pf_elblci_url) if {
 	some name in _pf_elb_listeners
+	_pf_unconditional_list(name, "Properties.Certificates")
 	count(flatten_list(name, "Properties.Certificates")) > 0
 	proto := object.get(_pf_elb_props(name), "Protocol", "GENEVE")
 	not proto in _pf_elb_secure

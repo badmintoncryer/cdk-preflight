@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-mrsc-lsi", "ERROR", 
 	"https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html") if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
 	_pf_ddb_mrsc(name)
+	_pf_unconditional_list(name, "Properties.LocalSecondaryIndexes")
 	n := count(flatten_list(name, "Properties.LocalSecondaryIndexes"))
 	n > 0
 }

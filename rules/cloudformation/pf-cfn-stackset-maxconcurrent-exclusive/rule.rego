@@ -6,6 +6,7 @@ import rego.v1
 # instances to operate on.
 _pf_cfnssmc_bad contains name if {
 	some name in resources_of_type("AWS::CloudFormation::StackSet")
+	_pf_unconditional_list(name, "Properties.StackInstancesGroup")
 	count(flatten_list(name, "Properties.StackInstancesGroup")) > 0
 	op := object.get(object.get(input.resources[name], "properties", {}), "OperationPreferences", {})
 	object.get(op, "MaxConcurrentCount", null) != null

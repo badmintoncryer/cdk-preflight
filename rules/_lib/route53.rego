@@ -108,6 +108,7 @@ _pf_r53lib_zone_name(logical) := _pf_r53lib_norm(n) if {
 
 # private hosted zone（VPCs が 1 件以上）
 _pf_r53lib_private_zone(logical) if {
+	_pf_unconditional_list(logical, "Properties.VPCs")
 	count(flatten_list(logical, "Properties.VPCs")) > 0
 }
 

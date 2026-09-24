@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-stream-required", "E
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-dynamodb-globaltable.html") if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
 	not _pf_ddb_mrsc(name)
+	_pf_countable_list(name, "Properties.Replicas")
 	n := count(flatten_list(name, "Properties.Replicas"))
 	n > 1
 	not _pf_ddbgst_has(name)

@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-apigw-method-authorization-scopes-cognito"
 	"Set AuthorizationType: COGNITO_USER_POOLS, or drop AuthorizationScopes",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-method.html") if {
 	some name in resources_of_type("AWS::ApiGateway::Method")
+	_pf_unconditional_list(name, "Properties.AuthorizationScopes")
 	count(flatten_list(name, "Properties.AuthorizationScopes")) > 0
 	not _pf_apgmasc_cognito(name)
 }

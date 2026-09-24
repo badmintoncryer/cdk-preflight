@@ -10,6 +10,7 @@ _pf_cdtcrlb_lists := ["ElbInfoList", "TargetGroupInfoList", "TargetGroupPairInfo
 
 _pf_cdtcrlb_has_lb(name) if {
 	some k in _pf_cdtcrlb_lists
+	_pf_unconditional_list(name, sprintf("Properties.LoadBalancerInfo.%s", [k]))
 	count(flatten_list(name, sprintf("Properties.LoadBalancerInfo.%s", [k]))) > 0
 }
 

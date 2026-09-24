@@ -31,6 +31,7 @@ violation contains make_diag_full("pf-cloudwatch-metric-query-returndata", "ERRO
 	"Set ReturnData so exactly one query returns data (two for an anomaly alarm: the metric and its ANOMALY_DETECTION_BAND)",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html") if {
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
+	_pf_countable_list(name, "Properties.Metrics")
 	items := [q | some q in flatten_list(name, "Properties.Metrics")]
 	count(items) > 0
 	every q in items {

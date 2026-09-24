@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-apigw-vpc-endpoint-ids-private-only", "ERR
 	"Set EndpointConfiguration.Types to [PRIVATE], or drop VpcEndpointIds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigateway-restapi-endpointconfiguration.html") if {
 	some name in resources_of_type("AWS::ApiGateway::RestApi")
+	_pf_unconditional_list(name, "Properties.EndpointConfiguration.VpcEndpointIds")
 	count(flatten_list(name, "Properties.EndpointConfiguration.VpcEndpointIds")) > 0
 	not _pf_apgveip_private(name)
 }

@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-batch-sp-share-distribution-max", "ERROR",
 	"Keep at most 500 share identifiers in one scheduling policy",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_ShareAttributes.html") if {
 	some name in resources_of_type("AWS::Batch::SchedulingPolicy")
+	_pf_countable_list(name, "Properties.FairsharePolicy.ShareDistribution")
 	n := count(flatten_list(name, "Properties.FairsharePolicy.ShareDistribution"))
 	n > 500
 }

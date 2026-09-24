@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-msk-express-requires-three-subnets", "ERRO
 	itype := resolve(name, "Properties.BrokerNodeGroupInfo.InstanceType")
 	is_string(itype)
 	startswith(itype, "express.")
+	_pf_countable_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets")
 	n := count(flatten_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets"))
 	n > 0
 	n != 3

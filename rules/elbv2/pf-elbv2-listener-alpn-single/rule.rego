@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-elbv2-listener-alpn-single", "ERROR", name
 	sprintf("%d ALPN policies are set; a listener negotiates with exactly one", [n]),
 	_pf_elblas_fix, _pf_elblas_url) if {
 	some name in _pf_elb_listeners
+	_pf_countable_list(name, "Properties.AlpnPolicy")
 	n := count(flatten_list(name, "Properties.AlpnPolicy"))
 	n > 1
 }
