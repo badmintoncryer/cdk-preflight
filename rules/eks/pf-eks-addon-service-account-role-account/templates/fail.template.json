@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::EKS::Addon",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-sarole",
+        "AddonName": "vpc-cni",
+        "ServiceAccountRoleArn": "arn:aws:iam::999999999999:role/cdkpf-foreign"
+      }
+    }
+  }
+}
