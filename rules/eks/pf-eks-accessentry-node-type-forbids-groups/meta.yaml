@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-node-type-forbids-groups
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "A node-type access entry cannot carry KubernetesGroups"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-accessentry.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with KubernetesGroups [\"cdkpf-viewers\"] -> ROLLBACK_COMPLETE, \"The specified kubernetesGroups is invalid: setting kubernetesGroups is not allowed when the type is \\\"EC2_LINUX\\\"\". Only EC2_LINUX and EC2_WINDOWS are judged - those are the two the CloudFormation page names, and EC2_LINUX is the one measured; FARGATE_LINUX, HYBRID_LINUX and EC2 were not tested and stay silent. fail-only; the fixture builds its own cluster with AccessConfig.AuthenticationMode API, and the principal is a role of its own (a Nodegroup would make EKS create this very access entry itself)."
+addedOn: 2026-09-25

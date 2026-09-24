@@ -1,0 +1,12 @@
+id: pf-eks-nodegroup-name-charset
+service: eks
+resourceTypes: [AWS::EKS::Nodegroup]
+benchRegion: us-east-1
+severity: ERROR
+title: NodegroupName must start with a letter or digit and hold only letters, digits, hyphens and underscores
+constraintSource: https://docs.aws.amazon.com/eks/latest/APIReference/API_CreateNodegroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail template -> \"The nodegroup name parameter contains invalid characters. It should conform to the regular expression \"^[0-9A-Za-z][A-Za-z0-9-_]*\"In other words, it should start with a number or letter, and can contain numbers, letters, dashes, and underscores.\" (ROLLBACK_COMPLETE); fail-only, and the fixture names an absent cluster instead of building one: CreateNodegroup validates this property before it looks the cluster up (phase B measured the same message against a cluster that does not exist)."
+addedOn: 2026-09-25

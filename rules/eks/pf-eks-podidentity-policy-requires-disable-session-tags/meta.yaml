@@ -1,0 +1,12 @@
+id: pf-eks-podidentity-policy-requires-disable-session-tags
+service: eks
+resourceTypes: [AWS::EKS::PodIdentityAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: "A pod identity Policy requires DisableSessionTags to be true"
+constraintSource: https://docs.aws.amazon.com/eks/latest/APIReference/API_CreatePodIdentityAssociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Policy set with DisableSessionTags left out -> ROLLBACK_COMPLETE, \"When policy is specified, disableSessionTags must be set to true\". Phase B hit \"Trust policy of the role provided is invalid.\" first until the role trusted pods.eks.amazonaws.com for both sts:AssumeRole and sts:TagSession, so the fixture role carries both. fail-only; the fixture builds its own cluster."
+addedOn: 2026-09-25

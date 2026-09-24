@@ -1,0 +1,79 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZoneId": "use1-az2"
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZoneId": "use1-az4"
+      }
+    },
+    "PodRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "eks-fargate-pods.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
+        ]
+      }
+    },
+    "Main": {
+      "Type": "AWS::EKS::FargateProfile",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-label",
+        "FargateProfileName": "cdkpf-fp",
+        "PodExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "PodRole",
+            "Arn"
+          ]
+        },
+        "Subnets": [
+          {
+            "Ref": "SubnetA"
+          }
+        ],
+        "Selectors": [
+          {
+            "Namespace": "default",
+            "Labels": [
+              {
+                "Key": "bad key!",
+                "Value": "v"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

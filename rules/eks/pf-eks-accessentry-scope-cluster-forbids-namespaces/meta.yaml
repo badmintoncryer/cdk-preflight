@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-scope-cluster-forbids-namespaces
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "A cluster-scoped access policy cannot name namespaces"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-accessentry-accessscope.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: AccessScope {Type: cluster, Namespaces: [default]} -> ROLLBACK_COMPLETE, \"accessScope should not include namespaces if the type is not set as namespace\". fail-only; the fixture builds its own cluster."
+addedOn: 2026-09-25

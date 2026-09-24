@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "Main": {
+      "Type": "AWS::EKS::AccessEntry",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-aeslr",
+        "PrincipalArn": "arn:aws:iam::123456789012:role/cdkpf-principal"
+      }
+    }
+  }
+}

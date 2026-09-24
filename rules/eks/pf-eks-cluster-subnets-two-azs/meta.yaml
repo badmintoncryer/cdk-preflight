@@ -1,0 +1,12 @@
+id: pf-eks-cluster-subnets-two-azs
+service: eks
+resourceTypes: [AWS::EKS::Cluster, AWS::EC2::Subnet]
+benchRegion: us-east-1
+severity: ERROR
+title: "A cluster's subnets must cover at least two availability zones"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: two subnets pinned to the same AvailabilityZoneId (use1-az2) plus a second cluster given a single subnet -> ROLLBACK_COMPLETE, \"Subnets specified must be in at least two different AZs\" (HandlerErrorCode: InvalidRequest). Phase B measured the same message for both shapes straight against CreateCluster on 2026-09-24, which is why one rule covers them. fail-only, no cluster created."
+addedOn: 2026-09-25

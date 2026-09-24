@@ -1,0 +1,12 @@
+id: pf-eks-cluster-remote-network-rfc1918
+service: eks
+resourceTypes: [AWS::EKS::Cluster]
+benchRegion: us-east-1
+severity: ERROR
+title: "Remote node and pod networks must be private address space"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-remotenetworkconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: RemoteNodeNetworks CIDR 11.0.0.0/16 -> ROLLBACK_COMPLETE, \"Invalid remote node network: CIDR 11.0.0.0/16 is not part of RFC 1918 or CGNAT\" (HandlerErrorCode: InvalidRequest); 10.200.0.0/16 reaches the next check. The allowed set was closed the same day straight against CreateCluster: 10.0.0.0/8 exactly and 100.64.0.0/10 exactly are both accepted, 100.64.0.0/9 and 10.200.0.0/7 draw this same message - so the check is containment in 10/8, 172.16/12, 192.168/16 and 100.64/10, not a prefix-length range. fail-only, no cluster created."
+addedOn: 2026-09-25

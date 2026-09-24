@@ -1,0 +1,12 @@
+id: pf-eks-nodegroup-lt-forbids-lt-instance-type
+service: eks
+resourceTypes: [AWS::EKS::Nodegroup, AWS::EC2::LaunchTemplate]
+benchRegion: us-east-1
+severity: ERROR
+title: InstanceTypes cannot be set when the launch template already sets InstanceType
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail template -> \"Cannot specify instance types in launch template and API request\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+addedOn: 2026-09-25

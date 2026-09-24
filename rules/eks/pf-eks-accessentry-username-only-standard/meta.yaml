@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-username-only-standard
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "A node-type access entry cannot carry a Username"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with Username \"cdkpf-node\" -> ROLLBACK_COMPLETE, \"The specified username is invalid: setting username is not allowed when the type is \\\"EC2_LINUX\\\"\". The user guide says STANDARD is the only type that takes a username, but only EC2_LINUX was measured, so the rule is limited to the two node types the CloudFormation page names. fail-only; the fixture builds its own cluster."
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-eks-nodegroup-label-key-format
+service: eks
+resourceTypes: [AWS::EKS::Nodegroup]
+benchRegion: us-east-1
+severity: ERROR
+title: Labels keys must be Kubernetes qualified names
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-nodegroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail template -> \"Invalid value: bad key! : field must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName', or 'my.name', or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+addedOn: 2026-09-25

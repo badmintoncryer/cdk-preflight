@@ -1,0 +1,12 @@
+id: pf-eks-addon-configuration-values-json
+service: eks
+resourceTypes: [AWS::EKS::Addon]
+benchRegion: us-east-1
+severity: ERROR
+title: "ConfigurationValues that opens as a JSON object must parse"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-addon.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: ConfigurationValues '{\"replicaCount\": 1' (unclosed) -> ROLLBACK_COMPLETE, \"The ConfigurationValues provided is not in valid YAML or JSON format.\" (HandlerErrorCode: InvalidRequest). The property also accepts YAML, so the rule only checks strings that open with '{\"'; an unclosed flow mapping is invalid in both grammars. fail-only, and the fixture names an absent cluster instead of building one: CreateAddon validates this property before it looks the cluster up."
+addedOn: 2026-09-25

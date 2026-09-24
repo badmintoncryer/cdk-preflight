@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-groups-reserved-prefix
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "An access entry KubernetesGroups name may not start with a prefix EKS reserves"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: KubernetesGroups [\"system:cdkpf\"] -> ROLLBACK_COMPLETE, \"The kubernetes group name system:cdkpf is invalid, it cannot start with system:\". eks:, aws:, amazon: and iam: were measured the same day against CreateAccessEntry and rejected the same way; a group named \"system\" without the colon reaches the cluster lookup. fail-only, and the fixture names an absent cluster instead of building one: the check runs before the cluster lookup."
+addedOn: 2026-09-25

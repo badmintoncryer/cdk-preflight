@@ -1,0 +1,94 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZoneId": "use1-az2"
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZoneId": "use1-az4"
+      }
+    },
+    "ClusterRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "eks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+        ]
+      }
+    },
+    "Cluster": {
+      "Type": "AWS::EKS::Cluster",
+      "Properties": {
+        "Name": "cdkpf-c1-rnsvc",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "ClusterRole",
+            "Arn"
+          ]
+        },
+        "ResourcesVpcConfig": {
+          "SubnetIds": [
+            {
+              "Ref": "SubnetA"
+            },
+            {
+              "Ref": "SubnetB"
+            }
+          ]
+        },
+        "AccessConfig": {
+          "AuthenticationMode": "API"
+        },
+        "KubernetesNetworkConfig": {
+          "ServiceIpv4Cidr": "10.100.0.0/16"
+        },
+        "RemoteNetworkConfig": {
+          "RemoteNodeNetworks": [
+            {
+              "Cidrs": [
+                "10.200.0.0/16"
+              ]
+            }
+          ],
+          "RemotePodNetworks": [
+            {
+              "Cidrs": [
+                "192.168.0.0/16"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

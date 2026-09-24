@@ -1,0 +1,12 @@
+id: pf-eks-nodegroup-lt-id-xor-name
+service: eks
+resourceTypes: [AWS::EKS::Nodegroup, AWS::EC2::LaunchTemplate]
+benchRegion: us-east-1
+severity: ERROR
+title: LaunchTemplate must carry Id or Name, never both
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-nodegroup-launchtemplatespecification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail template -> \"Either provide launch template ID or launch template name in the request.\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+addedOn: 2026-09-25

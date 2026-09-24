@@ -1,0 +1,12 @@
+id: pf-eks-nodegroup-lt-forbids-subnet-id
+service: eks
+resourceTypes: [AWS::EKS::Nodegroup, AWS::EC2::LaunchTemplate]
+benchRegion: us-east-1
+severity: ERROR
+title: A managed node group's launch template must not pin a subnet on a network interface
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail template -> \"You must not specify a subnet in your launch template. All subnets must be specified in the API.\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+addedOn: 2026-09-25

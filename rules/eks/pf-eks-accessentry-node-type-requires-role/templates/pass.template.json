@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "NodeRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Main": {
+      "Type": "AWS::EKS::AccessEntry",
+      "Properties": {
+        "ClusterName": "cdkpf-eks-absent-aerole",
+        "Type": "EC2_LINUX",
+        "PrincipalArn": {
+          "Fn::GetAtt": [
+            "NodeRole",
+            "Arn"
+          ]
+        }
+      }
+    }
+  }
+}

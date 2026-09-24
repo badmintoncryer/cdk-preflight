@@ -1,0 +1,12 @@
+id: pf-eks-podidentity-duplicate
+service: eks
+resourceTypes: [AWS::EKS::PodIdentityAssociation]
+benchRegion: us-east-1
+severity: ERROR
+title: "One cluster, namespace and service account may hold only one pod identity association"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-podidentityassociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: two AWS::EKS::PodIdentityAssociation on one cluster with the same Namespace and ServiceAccount -> ROLLBACK_COMPLETE, \"Association already exists: a-zarudjcsdvajnhwsg (Status Code: 409)\". The association id is service-generated, so unlike the access entry duplicate this one is caught by EKS rather than by CloudFormation primary-id check. The second association carries DependsOn. fail-only; the fixture builds its own cluster and a role trusting pods.eks.amazonaws.com for sts:AssumeRole and sts:TagSession."
+addedOn: 2026-09-25

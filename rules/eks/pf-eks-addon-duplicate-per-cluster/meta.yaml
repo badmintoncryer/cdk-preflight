@@ -1,0 +1,12 @@
+id: pf-eks-addon-duplicate-per-cluster
+service: eks
+resourceTypes: [AWS::EKS::Addon]
+benchRegion: us-east-1
+severity: ERROR
+title: "The same add-on cannot be installed twice on one cluster"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-eks-addon.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: two AWS::EKS::Addon resources naming vpc-cni on one cluster -> ROLLBACK_COMPLETE, \"Cluster-fSvdCJ2AiS5w|vpc-cni already exists in stack .../cdkpf-pf-eks-addon-duplicate-per-cluster-fail\". CloudFormation's own duplicate-primary-identifier check (the id is <ClusterName>|<AddonName>) reports it before the EKS message phase B measured straight on the API (ResourceInUseException \"Addon already exists.\", 2026-09-24); the deploy fails either way. The bundled engine does not see it - the duplicate guard calls the fail fixture clean. fail-only, and the fixture builds its own EKS cluster: CreateAddon reads this only after it has found the cluster, so a fixture pointing at a literal probe cluster would go INCONCLUSIVE the day that cluster is deleted."
+addedOn: 2026-09-25

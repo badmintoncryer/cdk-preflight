@@ -1,0 +1,97 @@
+{
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZoneId": "use1-az2"
+      }
+    },
+    "SubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZoneId": "use1-az4"
+      }
+    },
+    "ClusterRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "eks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+        ]
+      }
+    },
+    "Cluster": {
+      "Type": "AWS::EKS::Cluster",
+      "Properties": {
+        "Name": "cdkpf-c1-am3",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "ClusterRole",
+            "Arn"
+          ]
+        },
+        "ResourcesVpcConfig": {
+          "SubnetIds": [
+            {
+              "Ref": "SubnetA"
+            },
+            {
+              "Ref": "SubnetB"
+            }
+          ]
+        },
+        "AccessConfig": {
+          "AuthenticationMode": "API"
+        },
+        "ComputeConfig": {
+          "Enabled": true,
+          "NodePools": [
+            "general-purpose"
+          ],
+          "NodeRoleArn": {
+            "Fn::GetAtt": [
+              "ClusterRole",
+              "Arn"
+            ]
+          }
+        },
+        "KubernetesNetworkConfig": {
+          "ElasticLoadBalancing": {
+            "Enabled": true
+          }
+        },
+        "StorageConfig": {
+          "BlockStorage": {
+            "Enabled": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -96,3 +96,5 @@ pf-synthetics-canary-env-vars-max-4kb  しきい値と突き合わせるのは E
 pf-opensearch-node-to-node-min-version  しきい値 600 はバージョン文字列 Elasticsearch_6.0 を major*100+minor に直した値で、テンプレートには 600 も 506 も数値として現れない。fail は 6.0 未満で現存する最上位の Elasticsearch_5.6、pass は境界そのものの Elasticsearch_6.0 に乗せてある
 pf-opensearch-or1-min-version  しきい値 211 はバージョン文字列 OpenSearch_2.11 を major*100+minor に直した値で、テンプレートには 210 も 211 も数値として現れない。2.10 は発行されたことがないので、fail は 2.11 未満で現存する最上位の OpenSearch_2.9、pass は境界そのものの OpenSearch_2.11 に乗せてある
 pf-opensearch-standby-min-version  しきい値 103 はバージョン文字列 OpenSearch_1.3 を major*100+minor に直した値で、テンプレートには 102 も 103 も数値として現れない。fail は 1.3 の 1 つ下の OpenSearch_1.2、pass は境界そのものの OpenSearch_1.3 に乗せてある
+pf-eks-addon-namespace-config-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは文字種のほう。長さの上限そのものではないので境界の対象外
+pf-eks-fargate-selector-namespace-format  同上。count(ns) <= 63 は書式チェックを長すぎる文字列に当てないためのガードで、上限そのものは見ていない

@@ -1,0 +1,12 @@
+id: pf-eks-accessentry-principal-arn-service-linked-role
+service: eks
+resourceTypes: [AWS::EKS::AccessEntry]
+benchRegion: us-east-1
+severity: ERROR
+title: "An access entry principal cannot be a service-linked role"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/creating-access-entries.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: PrincipalArn arn:aws:iam::123456789012:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS -> ROLLBACK_COMPLETE, \"The caller is not allowed to modify access entries with a principalArn value of a Service Linked Role\". Measured the same day for the deploy account own SLR and for a foreign one, and for STANDARD as well as EC2_LINUX: the check is on the ARN shape alone. fail-only, no cluster built."
+addedOn: 2026-09-25
