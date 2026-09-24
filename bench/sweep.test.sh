@@ -26,6 +26,8 @@ case "$1 $2" in
   "globalaccelerator list-listeners") echo "${CDKPF_STUB_GAL:-}" ;;
   "globalaccelerator list-endpoint-groups") echo "${CDKPF_STUB_GAEG:-}" ;;
   "globalaccelerator describe-accelerator") echo "${CDKPF_STUB_GASTATUS:-DEPLOYED}" ;;
+  "iot list-domain-configurations") echo "${CDKPF_STUB_DC:-}" ;;
+  "iot describe-domain-configuration") echo "${CDKPF_STUB_DCSTATUS:-ENABLED}" ;;
   *)
     if [ -n "${CDKPF_STUB_FAIL:-}" ] && grep -q -- "$CDKPF_STUB_FAIL" <<<"$*"; then
       echo "${CDKPF_STUB_ERR:-An error occurred: stub refused $2}" >&2; exit 254
@@ -172,5 +174,40 @@ export CDKPF_STUB_FAIL=deactivate-type
 out=$(run "$tmp/none")
 unset CDKPF_STUB_FAIL CDKPF_STUB_HOOKS
 [ "$(grep -c '^LEFTOVER: orphaned hook type' <<<"$out")" -eq 3 ] || fail "a failed hook type deactivation was not reported" "$out"
+
+# IoT の DomainConfiguration は名前がリージョン一意で、AWS マネージドのものは DISABLED に
+# してから 7 日経たないと消せない。CFN はスタック削除時にこれで転ぶので孤児が残り、
+# 翌月の再検証が同じ名前で ResourceAlreadyExists になる
+export CDKPF_STUB_DC=arn:aws:iot:us-east-1:1:domainconfiguration/cdkpf270dc6/wlfxr
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable domain configuration was reported as leftover" "$out"
+[ "$(grep -c 'reclaimed orphaned domain configuration' <<<"$out")" -eq 3 ] ||
+  fail "expected 3 domain configuration reclaim lines (1 x 3 regions)" "$out"
+called "starts_with(domainConfigurationName,'cdkpf')" ||
+  fail "the cdkpf filter is what keeps iot:Data-ATS (the account data endpoint) out of the sweep" "$out"
+called 'iot update-domain-configuration --domain-configuration-name cdkpf270dc6' ||
+  fail "an ENABLED domain configuration was not disabled first" "$out"
+called 'iot delete-domain-configuration --domain-configuration-name cdkpf270dc6' ||
+  fail "domain configuration not deleted" "$out"
+
+# DISABLED のものに DISABLED を書き直すと lastStatusChangeDate が動いて 7 日が永遠に来ない
+export CDKPF_STUB_DCSTATUS=DISABLED
+out=$(run "$tmp/none")
+unset CDKPF_STUB_DCSTATUS
+called 'iot update-domain-configuration' &&
+  fail "re-disabling a DISABLED configuration restarts the 7 day clock" "$out"
+
+# 7 日待ちの拒否は消せる回が来るまで毎月出る。LEFTOVER にすると report.sh が毎月 issue を立てる
+export CDKPF_STUB_FAIL=delete-domain-configuration
+export CDKPF_STUB_ERR='An error occurred (InvalidRequestException): AWS Managed Domain Configuration must be disabled for at least 7 days before it can be deleted'
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "the 7 day wait is expected and must not be reported as leftover" "$out"
+
+# それ以外の失敗は見えなくしない
+export CDKPF_STUB_ERR='An error occurred (ThrottlingException): Rate exceeded'
+out=$(run "$tmp/none")
+unset CDKPF_STUB_FAIL CDKPF_STUB_ERR CDKPF_STUB_DC
+[ "$(grep -c '^LEFTOVER: orphaned domain configuration' <<<"$out")" -eq 3 ] ||
+  fail "a failed domain configuration deletion was not reported" "$out"
 
 echo "sweep.test.sh: OK"

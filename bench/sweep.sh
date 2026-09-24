@@ -33,11 +33,23 @@ reclaim() {
       # stream 単体は消せないので、ARN からテーブル名を切り出してテーブルごと消す
       name=${res#table/}; name=${name%%/*}
       aws dynamodb delete-table --table-name "$name" --region "$region" >/dev/null ;;
+    iot/domainconfiguration)
+      # AWS マネージドの構成は「DISABLED にしてから 7 日」経たないと消せない（2026-09-25 us-east-1 実測:
+      # InvalidRequestException: AWS Managed Domain Configuration must be disabled for at least 7 days
+      # before it can be deleted）。毎回無条件に DISABLED を書くと lastStatusChangeDate が動いて
+      # 7 日が永遠に来ないので、ENABLED のときだけ落とす。あとは待つだけなので下の grep で回収済み扱い
+      name=${res#domainconfiguration/}; name=${name%%/*}
+      [ "$(aws iot describe-domain-configuration --domain-configuration-name "$name" \
+            --region "$region" --query domainConfigurationStatus --output text)" = ENABLED ] &&
+        aws iot update-domain-configuration --domain-configuration-name "$name" \
+          --region "$region" --domain-configuration-status DISABLED >/dev/null
+      aws iot delete-domain-configuration --domain-configuration-name "$name" \
+        --region "$region" >/dev/null ;;
     *) return 1 ;;
   esac 2>"$RECLAIM_ERR" && return 0
   # タグ索引には既に消えたリソースの行が残ることがある（Cognito のプールは削除後も、
   # ECS のクラスタは INACTIVE のまま返る）。存在しないものは回収済みとして扱う
-  grep -qE 'NotFoundException|does not exist' "$RECLAIM_ERR"
+  grep -qE 'NotFoundException|does not exist|disabled for at least 7 days' "$RECLAIM_ERR"
 }
 
 # 失敗理由を 1 行に畳んで返す。取れなかったら手作業を促す既定文
@@ -196,6 +208,27 @@ sweep_hook_types() {
   done
 }
 
+# AWS IoT の DomainConfiguration は名前がリージョン一意で、削除も 7 日待ち（reclaim を見よ）。
+# CFN はスタック削除時にこれで転ぶので孤児が残り、翌月の再検証が同じ名前で
+# ResourceAlreadyExists になる（#266 のスタックセット / フック型と同じ自家中毒）。
+# verify-rule.sh は create-stack に --tags を渡さないのでタグ索引には載らない。名前で引く。
+# AWS 組み込みの iot:Data-ATS / iot:Jobs / iot:CredentialProvider を消すとアカウントの
+# データエンドポイントが死ぬので、cdkpf 接頭辞の絞り込みは外さないこと。
+sweep_domain_configs() {
+  local region=$1 arn
+  aws iot list-domain-configurations --region "$region" \
+    --query "domainConfigurations[?starts_with(domainConfigurationName,'cdkpf')].domainConfigurationArn" \
+    --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r arn; do
+    [ -z "$arn" ] || [ "$arn" = "None" ] && continue
+    if reclaim "$arn" "$region"; then
+      echo "sweep: reclaimed orphaned domain configuration $arn ($region)"
+    else
+      echo "LEFTOVER: orphaned domain configuration $arn ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+}
+
 # CloudFormation はスタックを消してもフィクスチャの S3 バケットを残す。CloudTrail は
 # AWSLogs/<account>/CloudTrail/ に 0 バイトのマーカーを、AWS Config は ConfigWritabilityCheckFile を
 # 書くので、スタック削除時の DeleteBucket が必ず「空でない」で失敗し、retain 削除で切り離される
@@ -267,6 +300,7 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
   sweep_dns_firewall "$region"
   sweep_stack_sets "$region"
   sweep_hook_types "$region"
+  sweep_domain_configs "$region"
 done
 
 sweep_fixture_buckets
