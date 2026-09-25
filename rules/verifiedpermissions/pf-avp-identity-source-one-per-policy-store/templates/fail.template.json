@@ -1,0 +1,55 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        }
+      }
+    },
+    "I1": {
+      "Type": "AWS::VerifiedPermissions::IdentitySource",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Configuration": {
+          "OpenIdConnectConfiguration": {
+            "Issuer": "https://accounts.google.com",
+            "TokenSelection": {
+              "IdentityTokenOnly": {
+                "ClientIds": [
+                  "abc"
+                ]
+              }
+            }
+          }
+        },
+        "PrincipalEntityType": "MyApp::User"
+      }
+    },
+    "I2": {
+      "Type": "AWS::VerifiedPermissions::IdentitySource",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Configuration": {
+          "OpenIdConnectConfiguration": {
+            "Issuer": "https://appleid.apple.com",
+            "TokenSelection": {
+              "IdentityTokenOnly": {
+                "ClientIds": [
+                  "abc"
+                ]
+              }
+            }
+          }
+        },
+        "PrincipalEntityType": "MyApp::User"
+      },
+      "DependsOn": "I1"
+    }
+  }
+}

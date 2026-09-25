@@ -114,3 +114,36 @@ _pf_cedarlib_slots(part) := regex.find_n(`\?[A-Za-z_][A-Za-z_0-9]*`, part, -1)
 _pf_cedarlib_semicolons(s) := count(split(c, ";")) - 1 if {
 	c := _pf_cedarlib_code(s)
 }
+
+# Template-linked policies: [policy logical id, template logical id, the
+# placeholders the linked template actually declares]. A template-linked policy
+# has to supply exactly those placeholders - Verified Permissions rejects both
+# a missing one and a spare one (probe 2026-09-25) - so the four
+# pf-avp-template-linked-* rules compare this list against what
+# Definition.TemplateLinked spells out. `slots` is bound here, not called
+# inline from the rules: a helper that declines would invert under `not` and
+# make the two "unexpected" rules fire on everything (AGENTS.md, #268 / #280).
+_pf_cedarlib_links contains [name, tname, slots] if {
+	some name in resources_of_type("AWS::VerifiedPermissions::Policy")
+	tname := resolve(name, "Properties.Definition.TemplateLinked.PolicyTemplateId")
+	is_string(tname)
+	tname in resources_of_type("AWS::VerifiedPermissions::PolicyTemplate")
+	some [tname2, _, st] in _pf_cedarlib_template
+	tname2 == tname
+	slots := _pf_cedarlib_slots(_pf_cedarlib_code(st))
+}
+
+# The raw Definition.TemplateLinked object, for the absence proofs the link
+# rules need (resolve() cannot tell an absent Principal from an unresolvable
+# one). PolicyTemplateId is mandatory there and no intrinsic marker object
+# carries that key, so an Fn::If wrapped around Definition or TemplateLinked
+# declines here instead of reading as "Principal is absent" - which is what
+# resolve() collapsing the same Fn::If to its true branch would otherwise turn
+# into a false positive on every conditional template-linked policy.
+_pf_cedarlib_tl(name) := tl if {
+	props := input.resources[name].properties
+	is_object(props)
+	tl := object.get(props, ["Definition", "TemplateLinked"], null)
+	is_object(tl)
+	object.get(tl, "PolicyTemplateId", "__pf_absent") != "__pf_absent"
+}

@@ -1,0 +1,12 @@
+id: pf-avp-policy-store-strict-requires-schema
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::PolicyStore, AWS::VerifiedPermissions::Policy, AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "A STRICT policy store with policies in the same stack declares at least one action"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-verifiedpermissions-policystore-validationsettings.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition: for policy `policy0`, unable to find an applicable action given the policy scope constraints.\"; pass (one STRICT store carrying a schema with one action, and the same policy) -> CREATE_COMPLETE. The fail template carries both shapes as two stores and describe-stack-events shows both policies CREATE_FAILED: Pol, against a STRICT store with no Schema at all, \"At /definition: No schema present - automatically failing all validation.\"; and Pol2, against a STRICT store whose Schema.CedarJson is {} (the reason above). A schema that declares entityTypes but an empty actions map is rejected the same way (api 2026-09-26 us-east-1), which is why the rule counts declared actions rather than namespaces."
+addedOn: 2026-09-26

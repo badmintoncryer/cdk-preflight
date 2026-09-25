@@ -174,3 +174,28 @@ _pf_avpsch_t5 contains [name, nsname, sprintf("%v.%v", [p, q]), c] if {
 # a seventh level of Record-in-Record is not inspected (hand-written Cedar
 # schemas rarely pass three).
 _pf_avpsch_types := ((_pf_avpsch_t0 | _pf_avpsch_t1) | (_pf_avpsch_t2 | _pf_avpsch_t3)) | (_pf_avpsch_t4 | _pf_avpsch_t5)
+
+# An entity UID naming an action, with the namespace and the action id as
+# capture groups: MyApp::Action::"view" -> ["MyApp", "view"].
+_pf_avpsch_actionuid := `([A-Za-z_][A-Za-z_0-9]*(?:::[A-Za-z_][A-Za-z_0-9]*)*)::Action::"([^"]*)"`
+
+# [statement logical id, property path, statement, store logical id] for every
+# static policy or policy template whose PolicyStoreId is a Ref to a STRICT
+# policy store in the same template that spells its schema out. Cedar's
+# semantic checks - unrecognized entity type, unrecognized action, a scope that
+# matches no action's appliesTo - run only in exactly that situation (phase A,
+# probe-out-2: the same statements are accepted under Mode=OFF), so a literal
+# store id (an imported store), a store in another stack, Mode=OFF, and a
+# CedarJson this template cannot resolve all leave this set empty and the
+# three pf-avp-policy-*-in-schema rules silent. A resolvable intrinsic is a
+# different matter: resolve() hands back the substituted text and the rules
+# read it, the way every other rule in the pack reads a resolved value.
+_pf_avpsch_strict contains [name, path, s, store] if {
+	some [name, path, s] in _pf_cedarlib_all
+	store := resolve(name, "Properties.PolicyStoreId")
+	is_string(store)
+	store in resources_of_type("AWS::VerifiedPermissions::PolicyStore")
+	resolve(store, "Properties.ValidationSettings.Mode") == "STRICT"
+	some [store2, _] in _pf_avpsch_parsed
+	store2 == store
+}

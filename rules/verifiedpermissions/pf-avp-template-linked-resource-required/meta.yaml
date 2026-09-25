@@ -1,0 +1,12 @@
+id: pf-avp-template-linked-resource-required
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::Policy, AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "A template-linked policy supplies Resource when the template uses ?resource"
+constraintSource: https://docs.aws.amazon.com/verifiedpermissions/latest/userguide/policy-templates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition/templateLinked/resource: Invalid Parameter: resource.\"; pass (the same policy with Resource added) -> CREATE_COMPLETE."
+addedOn: 2026-09-26

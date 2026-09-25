@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        }
+      }
+    },
+    "Alias": {
+      "Type": "AWS::VerifiedPermissions::PolicyStoreAlias",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "AliasName": "policy-store-alias/my-alias"
+      }
+    }
+  }
+}

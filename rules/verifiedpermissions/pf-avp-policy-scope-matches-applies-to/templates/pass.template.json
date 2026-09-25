@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "STRICT"
+        },
+        "Schema": {
+          "CedarJson": "{\"MyApp\": {\"entityTypes\": {\"User\": {}, \"Photo\": {}}, \"actions\": {\"view\": {\"appliesTo\": {\"principalTypes\": [\"User\"], \"resourceTypes\": [\"Photo\"]}}}}}"
+        }
+      }
+    },
+    "Pol": {
+      "Type": "AWS::VerifiedPermissions::Policy",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Definition": {
+          "Static": {
+            "Statement": "permit(principal == MyApp::User::\"u\", action == MyApp::Action::\"view\", resource == MyApp::Photo::\"p\");"
+          }
+        }
+      }
+    }
+  }
+}
