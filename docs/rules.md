@@ -3020,6 +3020,7 @@
 | `pf-avp-schema-shape-must-be-record` | AWS::VerifiedPermissions::PolicyStore | An entity type's shape is a Record | ERROR | none |
 | `pf-avp-schema-valid-json-object` | AWS::VerifiedPermissions::PolicyStore | Schema.CedarJson parses as a JSON object | ERROR | none |
 | `pf-avp-static-policy-no-placeholder` | AWS::VerifiedPermissions::Policy | A static policy carries no ?principal or ?resource | ERROR | none |
+| `pf-avp-template-linked-id-not-ref` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy names its policy template with Fn::GetAtt PolicyTemplateId, not Ref | ERROR | none |
 | `pf-avp-template-linked-principal-required` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Principal when the template uses ?principal | ERROR | none |
 | `pf-avp-template-linked-principal-unexpected` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Principal only when the template uses ?principal | ERROR | none |
 | `pf-avp-template-linked-resource-required` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Resource when the template uses ?resource | ERROR | none |

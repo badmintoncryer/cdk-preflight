@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3063-blue" alt="3063 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3064-blue" alt="3064 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -230,7 +230,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **SSM** | `Association` (3), `Document` (3), `MaintenanceWindow` (2), `MaintenanceWindowTarget` (1), `MaintenanceWindowTask` (1), `Parameter` (5) |
 | **StepFunctions** | `Activity` (3), `StateMachine` (26) |
 | **Synthetics** | `Canary` (16) |
-| **VerifiedPermissions** | `IdentitySource` (3), `Policy` (25), `PolicyStore` (23), `PolicyStoreAlias` (1), `PolicyTemplate` (28) |
+| **VerifiedPermissions** | `IdentitySource` (3), `Policy` (26), `PolicyStore` (23), `PolicyStoreAlias` (1), `PolicyTemplate` (29) |
 | **WAFv2** | `IPSet` (3), `LoggingConfiguration` (3), `RegexPatternSet` (3), `RuleGroup` (18), `WebACL` (23), `WebACLAssociation` (2) |
 | **XRay** | `Group` (1), `ResourcePolicy` (3), `SamplingRule` (6) |
 
