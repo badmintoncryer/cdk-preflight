@@ -2976,6 +2976,58 @@
 | `pf-synthetics-canary-timeout-within-schedule` | AWS::Synthetics::Canary | A canary's run timeout cannot exceed its own run frequency | ERROR | none |
 | `pf-tags-aws-prefix` | * | Tag keys may not use the reserved aws: prefix | ERROR | none |
 | `pf-tags-count-max` | * | A resource may carry at most 50 tags | ERROR | none |
+| `pf-avp-alias-name-prefix` | AWS::VerifiedPermissions::PolicyStoreAlias | AliasName starts with policy-store-alias/ | ERROR | none |
+| `pf-avp-identity-source-one-per-policy-store` | AWS::VerifiedPermissions::IdentitySource | A policy store has at most one identity source | ERROR | none |
+| `pf-avp-oidc-issuer-no-query-or-fragment` | AWS::VerifiedPermissions::IdentitySource | An OIDC Issuer carries no query string or fragment | ERROR | none |
+| `pf-avp-oidc-requires-principal-entity-type` | AWS::VerifiedPermissions::IdentitySource | An OIDC identity source sets PrincipalEntityType | ERROR | none |
+| `pf-avp-policy-action-in-schema` | AWS::VerifiedPermissions::PolicyStore<br>AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A policy scope names an action the STRICT store's schema declares | ERROR | none |
+| `pf-avp-policy-action-no-is-operator` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | The action element has no is operator | ERROR | none |
+| `pf-avp-policy-balanced-braces` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | Braces and parentheses in a statement are balanced | ERROR | none |
+| `pf-avp-policy-comment-syntax` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | Cedar comments start with // , never with # | ERROR | none |
+| `pf-avp-policy-condition-keyword` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A condition clause starts with when or unless | ERROR | none |
+| `pf-avp-policy-condition-not-empty` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A when or unless clause is not empty | ERROR | none |
+| `pf-avp-policy-effect-keyword` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A Cedar statement starts with permit or forbid | ERROR | none |
+| `pf-avp-policy-entity-id-quoted` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | An entity UID quotes its identifier | ERROR | none |
+| `pf-avp-policy-entity-type-in-schema` | AWS::VerifiedPermissions::PolicyStore<br>AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A policy scope names an entity type the STRICT store's schema declares | ERROR | none |
+| `pf-avp-policy-equality-operator` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A policy scope compares with == , in or is | ERROR | none |
+| `pf-avp-policy-like-pattern-string` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | The right operand of like is a string pattern | ERROR | none |
+| `pf-avp-policy-reserved-identifier` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A reserved word is not a namespace or type name | ERROR | none |
+| `pf-avp-policy-scope-is-with-equals` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | is combines with in, never with == | ERROR | none |
+| `pf-avp-policy-scope-matches-applies-to` | AWS::VerifiedPermissions::PolicyStore<br>AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A policy scope's principal and resource types match the action's appliesTo | ERROR | none |
+| `pf-avp-policy-scope-order` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A policy scope is ordered principal, action, resource | ERROR | none |
+| `pf-avp-policy-scope-three-elements` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A policy scope holds exactly three elements | ERROR | none |
+| `pf-avp-policy-single-statement` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | One Cedar policy per Statement property | ERROR | none |
+| `pf-avp-policy-store-strict-requires-schema` | AWS::VerifiedPermissions::PolicyStore<br>AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A STRICT policy store with policies in the same stack declares at least one action | ERROR | none |
+| `pf-avp-policy-trailing-semicolon` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A Cedar statement ends with a semicolon | ERROR | none |
+| `pf-avp-policy-unary-operator-depth` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | At most four unary operators in a row | ERROR | none |
+| `pf-avp-schema-action-memberof-declared` | AWS::VerifiedPermissions::PolicyStore | An action's memberOf names an action group the namespace declares | ERROR | none |
+| `pf-avp-schema-appliesto-principaltypes-declared` | AWS::VerifiedPermissions::PolicyStore | appliesTo.principalTypes names entity types the schema declares | ERROR | none |
+| `pf-avp-schema-appliesto-resourcetypes-declared` | AWS::VerifiedPermissions::PolicyStore | appliesTo.resourceTypes names entity types the schema declares | ERROR | none |
+| `pf-avp-schema-attribute-entity-name-declared` | AWS::VerifiedPermissions::PolicyStore | An Entity attribute names an entity type the schema declares | ERROR | none |
+| `pf-avp-schema-attribute-type-known` | AWS::VerifiedPermissions::PolicyStore | A type name is a Cedar built-in or something the schema declares | ERROR | none |
+| `pf-avp-schema-entity-type-identifier` | AWS::VerifiedPermissions::PolicyStore | An entity type name is a Cedar identifier | ERROR | none |
+| `pf-avp-schema-entity-type-not-action` | AWS::VerifiedPermissions::PolicyStore | Action is not declared in entityTypes | ERROR | none |
+| `pf-avp-schema-entity-type-reserved-word` | AWS::VerifiedPermissions::PolicyStore | An entity type name is not a Cedar reserved word | ERROR | none |
+| `pf-avp-schema-extension-name-known` | AWS::VerifiedPermissions::PolicyStore | An Extension type names an extension Cedar has | ERROR | none |
+| `pf-avp-schema-memberoftypes-declared` | AWS::VerifiedPermissions::PolicyStore | memberOfTypes names an entity type the schema declares | ERROR | none |
+| `pf-avp-schema-namespace-identifier` | AWS::VerifiedPermissions::PolicyStore | A namespace name is a Cedar path | ERROR | none |
+| `pf-avp-schema-namespace-length` | AWS::VerifiedPermissions::PolicyStore | A namespace name is 1 to 100 bytes long | ERROR | none |
+| `pf-avp-schema-namespace-requires-actions` | AWS::VerifiedPermissions::PolicyStore | Every namespace in the schema declares actions | ERROR | none |
+| `pf-avp-schema-namespace-requires-entitytypes` | AWS::VerifiedPermissions::PolicyStore | Every namespace in the schema declares entityTypes | ERROR | none |
+| `pf-avp-schema-namespace-reserved-cedar` | AWS::VerifiedPermissions::PolicyStore | __cedar is not a namespace name | ERROR | none |
+| `pf-avp-schema-namespace-unknown-key` | AWS::VerifiedPermissions::PolicyStore | A namespace body holds only commonTypes, entityTypes, actions and annotations | ERROR | none |
+| `pf-avp-schema-set-requires-element` | AWS::VerifiedPermissions::PolicyStore | A Set type declares its element type | ERROR | none |
+| `pf-avp-schema-shape-must-be-record` | AWS::VerifiedPermissions::PolicyStore | An entity type's shape is a Record | ERROR | none |
+| `pf-avp-schema-valid-json-object` | AWS::VerifiedPermissions::PolicyStore | Schema.CedarJson parses as a JSON object | ERROR | none |
+| `pf-avp-static-policy-no-placeholder` | AWS::VerifiedPermissions::Policy | A static policy carries no ?principal or ?resource | ERROR | none |
+| `pf-avp-template-linked-principal-required` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Principal when the template uses ?principal | ERROR | none |
+| `pf-avp-template-linked-principal-unexpected` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Principal only when the template uses ?principal | ERROR | none |
+| `pf-avp-template-linked-resource-required` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Resource when the template uses ?resource | ERROR | none |
+| `pf-avp-template-linked-resource-unexpected` | AWS::VerifiedPermissions::Policy<br>AWS::VerifiedPermissions::PolicyTemplate | A template-linked policy supplies Resource only when the template uses ?resource | ERROR | none |
+| `pf-avp-template-no-action-placeholder` | AWS::VerifiedPermissions::PolicyTemplate | ?principal and ?resource are the only placeholders | ERROR | none |
+| `pf-avp-template-placeholder-in-scope-only` | AWS::VerifiedPermissions::PolicyTemplate | A placeholder appears only in the policy scope | ERROR | none |
+| `pf-avp-template-placeholder-slot-match` | AWS::VerifiedPermissions::PolicyTemplate | ?principal sits in the principal element, ?resource in the resource element | ERROR | none |
+| `pf-avp-template-requires-placeholder` | AWS::VerifiedPermissions::PolicyTemplate | A policy template uses at least one placeholder | ERROR | none |
 | `pf-wafv2-association-config-scope` | AWS::WAFv2::WebACL | AssociationConfig.RequestBody keys must match the web ACL Scope | ERROR | none |
 | `pf-wafv2-association-resource-arn` | AWS::WAFv2::WebACLAssociation | ResourceArn must be a supported protected-resource ARN in the deploy account and region | ERROR | none |
 | `pf-wafv2-association-webacl-arn` | AWS::WAFv2::WebACLAssociation | WebACLArn must be the ARN of a web ACL in the deploy region | ERROR | none |
