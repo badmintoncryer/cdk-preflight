@@ -1,0 +1,12 @@
+id: pf-networkfirewall-tls-ca-max-one
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::TLSInspectionConfiguration]
+severity: ERROR
+title: "A TLS inspection configuration takes exactly one ServerCertificateConfiguration"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: two ServerCertificateConfigurations -> \"InvalidRequestException: Exactly one ServerCertificateConfiguration must be set\", with or without a CertificateAuthorityArn in them, so the quota page's \"one CA certificate per TLS inspection configuration\" is really a limit on the list itself; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Exactly one ServerCertificateConfiguration must be set (Service: NetworkFirewall, Status Code: 400, Request ID: cb45aca8-273a-46a9-b9d5-7b937c6f1331) (SDK Attempt Count: 1)\" (RequestToken: ab946b3b-b793-840d-4d33-3067ba4c14f4, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

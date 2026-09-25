@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-stateless-default-action-standard
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "A firewall policy needs exactly one standard StatelessDefaultActions entry"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_FirewallPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): StatelessDefaultActions [aws:pass, aws:drop] -> \"StatelessDefaultActions cannot exist together, parameter: [aws:pass, aws:drop], context: StatelessDefaultActions\"; [MyAct] with MyAct defined -> \"StatelessDefaultActions cannot be null or empty\"; [aws:pass, MyAct] accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatelessDefaultActions cannot be null or empty, context: StatelessDefaultActions (Service: NetworkFirewall, Status Code: 400, Request ID: 42ec40a9-6bdd-4fb5-875b-190e86961122) (SDK Attempt Count: 1)\" (RequestToken: 8c39cd0a-bf52-c39b-65ed-4f972671791b, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

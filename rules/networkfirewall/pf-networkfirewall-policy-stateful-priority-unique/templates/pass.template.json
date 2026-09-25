@@ -1,0 +1,73 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfpu-pa",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          },
+          "StatefulRuleOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          }
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfpu-pb",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          },
+          "StatefulRuleOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfpu-p",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulEngineOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          },
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "A",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "B",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 2
+            }
+          ]
+        }
+      }
+    }
+  }
+}

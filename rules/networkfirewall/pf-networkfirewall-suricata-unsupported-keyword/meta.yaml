@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-unsupported-keyword
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "Network Firewall rejects the dataset, datarep, iprep, lua, luajit and filestore keywords"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-limitations-caveats.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): dataset / datarep / iprep / lua / luajit / filestore each answer \"reason: RuleOptions <keyword> is not supported\", while the documented threshold / tag:host / xbits track ip_src and the file keywords filename / fileext / filesize are accepted, so only the six measured keywords are in the set; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: pass tcp any any -> any any (msg:\"m\"; content:\"a\"; dataset:set,s1,type string,save s1.lst; sid:1; gid:1234567890;), reason: RuleOptions dataset is not supported (Service: NetworkFirewall, Status Code: 400, Request ID: 6ee08ab7-f045-482f-bb8c-542fa55dd171) (SDK Attempt Count: 1)\" (RequestToken: 9157107f-8535-1fba-9b21-455a56c0d4c5, HandlerErrorCode: I... (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

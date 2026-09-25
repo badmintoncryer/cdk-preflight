@@ -1,0 +1,47 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-frgdef-fa",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:pass",
+            "aws:drop"
+          ]
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-frgdef-fb",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "MyAct"
+          ],
+          "StatelessCustomActions": [
+            {
+              "ActionName": "MyAct",
+              "ActionDefinition": {
+                "PublishMetricAction": {
+                  "Dimensions": [
+                    {
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

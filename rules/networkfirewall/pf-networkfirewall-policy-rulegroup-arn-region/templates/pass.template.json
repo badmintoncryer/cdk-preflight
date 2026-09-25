@@ -1,0 +1,41 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-parg-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-parg-p",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

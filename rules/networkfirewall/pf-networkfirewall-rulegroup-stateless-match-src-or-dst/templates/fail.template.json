@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slmatch-f",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Protocols": [
+                        6
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

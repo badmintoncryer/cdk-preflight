@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sdod-f",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulEngineOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          },
+          "StatefulDefaultActions": [
+            "aws:drop_strict",
+            "aws:drop_established"
+          ]
+        }
+      }
+    }
+  }
+}

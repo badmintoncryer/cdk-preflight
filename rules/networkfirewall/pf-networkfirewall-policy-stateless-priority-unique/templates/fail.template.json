@@ -1,0 +1,100 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slpu-fa",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slpu-fb",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-slpu-f",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "A",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "B",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

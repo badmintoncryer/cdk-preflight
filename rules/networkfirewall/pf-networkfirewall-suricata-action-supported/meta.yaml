@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-action-supported
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A Suricata rule action must be pass, drop, reject or alert"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-limitations-caveats.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): log / rejectsrc / rejectdst / rejectboth / activate / dynamic and an invented word all answer \"reason: Action <word> is not supported\", while pass / drop / reject / alert are accepted, so the allow-list is closed; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: log tcp any any -> any any (msg:\"m\"; sid:1; gid:1234567890;), reason: Action log is not supported (Service: NetworkFirewall, Status Code: 400, Request ID: ff422139-39ac-421d-b3d5-802aa4b1f59e) (SDK Attempt Count: 1)\" (RequestToken: 657a934a-223c-465a-c512-75a00a262da7, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

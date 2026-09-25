@@ -1,0 +1,49 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slpp-f",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ],
+                      "Destinations": [
+                        {
+                          "AddressDefinition": "0.0.0.0/0"
+                        }
+                      ],
+                      "Protocols": [
+                        1
+                      ],
+                      "SourcePorts": [
+                        {
+                          "FromPort": 80,
+                          "ToPort": 80
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

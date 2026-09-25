@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-frgdef-p",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:pass",
+            "MyAct"
+          ],
+          "StatelessCustomActions": [
+            {
+              "ActionName": "MyAct",
+              "ActionDefinition": {
+                "PublishMetricAction": {
+                  "Dimensions": [
+                    {
+                      "Value": "v"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

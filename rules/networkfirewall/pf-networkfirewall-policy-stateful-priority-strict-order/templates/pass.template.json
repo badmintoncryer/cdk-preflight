@@ -1,0 +1,85 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfpso-ps",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          },
+          "StatefulRuleOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          }
+        }
+      }
+    },
+    "D": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfpso-pd",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "A": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfpso-pa",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulEngineOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          },
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "S",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            }
+          ]
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfpso-pb",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "D",
+                  "RuleGroupArn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

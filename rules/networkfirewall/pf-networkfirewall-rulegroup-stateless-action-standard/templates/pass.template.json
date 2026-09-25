@@ -1,0 +1,71 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slact-p",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ],
+                      "Protocols": [
+                        6
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Priority": 2,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:drop",
+                      "cdkpfca"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ],
+                      "Protocols": [
+                        17
+                      ]
+                    }
+                  }
+                }
+              ],
+              "CustomActions": [
+                {
+                  "ActionName": "cdkpfca",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

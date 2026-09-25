@@ -89,6 +89,7 @@ pf-wafv2-logging-destination  count(parts) >= 7 は ARN を割った断片数の
 pf-wafv2-managed-rule-group  ExemptUriRegularExpressions の 1..5 はヘルパー述語（_pf_wafmrg_bad_count(n) if n > 5）の引数で、検出器は呼び出し側の値まで辿れない。フィクスチャは 6 / 5 本に乗せてある
 pf-docdb-serverless-min-le-max  MinCapacity / MaxCapacity は 0.5 DCU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 8.5/8 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 8/8 で限界そのものに乗っている（pf-rds-serverless-v2-capacity と同型）
 pf-neptune-serverless-min-le-max  MinCapacity / MaxCapacity は 0.5 NCU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 3.0/2.5 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 2.5/2.5 で限界そのものに乗せてある
+pf-networkfirewall-tls-server-certs-max  pass を上限ちょうどの 10 枚に乗せるには実在する ACM 証明書が 10 枚要る（実機ゲートの pass は CREATE_COMPLETE しなければならず、架空の ARN は存在確認で先に落ちる）。fail は境界の 11 枚に乗せてあり、pass は常設証明書 1 枚
 pf-opensearch-encryption-at-rest-min-version  しきい値 501 はバージョン文字列 Elasticsearch_5.1 を major*100+minor に直した値で、テンプレートには 500 も 501 も数値として現れない。5.0 は発行されたことがないので、fail は 5.1 未満で現存する最上位の Elasticsearch_2.3、pass は境界そのものの Elasticsearch_5.1 に乗せてある（実機で 2.3 が ROLLBACK、5.1 が CREATE_COMPLETE）
 pf-opensearch-fgac-min-version  しきい値 607 はバージョン文字列 Elasticsearch_6.7 を major*100+minor に直した値で、テンプレートには 606 も 607 も数値として現れない。6.6 は発行されたことがないので、fail は 6.7 未満で現存する最上位の Elasticsearch_6.5、pass は境界そのものの Elasticsearch_6.7 に乗せてある（実機で 6.5 が ROLLBACK、6.7 が CREATE_COMPLETE）
 pf-redshiftserverless-max-capacity-ge-base  BaseCapacity / MaxCapacity は 8 RPU 刻み（8-512）なので、最も近い違反値の差は 8 であって 1 ではない（fail は 32/24 に乗せてある。B の api-probe も同じ値で "The base capacity can't be more than 24 RPUs."）。pass は 32/32 で同値に乗っている
@@ -98,3 +99,4 @@ pf-opensearch-or1-min-version  しきい値 211 はバージョン文字列 Open
 pf-opensearch-standby-min-version  しきい値 103 はバージョン文字列 OpenSearch_1.3 を major*100+minor に直した値で、テンプレートには 102 も 103 も数値として現れない。fail は 1.3 の 1 つ下の OpenSearch_1.2、pass は境界そのものの OpenSearch_1.3 に乗せてある
 pf-eks-addon-namespace-config-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは文字種のほう。長さの上限そのものではないので境界の対象外
 pf-eks-fargate-selector-namespace-format  同上。count(ns) <= 63 は書式チェックを長すぎる文字列に当てないためのガードで、上限そのものは見ていない
+pf-networkfirewall-policy-stateless-capacity-sum  しきい値はテンプレートに現れない。制約は「参照している各ステートレスルールグループの Capacity の合計 > 30000」で、fail は 30000 と 1 の 2 本（合計 30001 = 限界に最も近い違反値）だが、30001 という数字はどこにも書かれていない。pass は 30000 ちょうどを 1 本で持っている

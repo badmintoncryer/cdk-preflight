@@ -1,0 +1,820 @@
+{
+  "Resources": {
+    "G0": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p0",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G1": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p1",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G2": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p2",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G3": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p3",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G4": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p4",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G5": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p5",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G6": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p6",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G7": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p7",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G8": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p8",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G9": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p9",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G10": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p10",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G11": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p11",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G12": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p12",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G13": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p13",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G14": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p14",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G15": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p15",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G16": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p16",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G17": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p17",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G18": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p18",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "G19": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-p19",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-slrm-p",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G0",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G1",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 2
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G2",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 3
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G3",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 4
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G4",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 5
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G5",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 6
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G6",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 7
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G7",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 8
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G8",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 9
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G9",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 10
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G10",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 11
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G11",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 12
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G12",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 13
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G13",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 14
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G14",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 15
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G15",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 16
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G16",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 17
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G17",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 18
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G18",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 19
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G19",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 20
+            }
+          ]
+        }
+      }
+    }
+  }
+}

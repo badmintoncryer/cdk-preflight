@@ -1,0 +1,153 @@
+{
+  "Resources": {
+    "PL0": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl0",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.0.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "PL1": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl1",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.1.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "PL2": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl2",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.2.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "PL3": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl3",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.3.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "PL4": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl4",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.4.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "PL5": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl5",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.5.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-ipsetmax-f",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          },
+          "ReferenceSets": {
+            "IPSetReferences": {
+              "ref0": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL0",
+                    "Arn"
+                  ]
+                }
+              },
+              "ref1": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL1",
+                    "Arn"
+                  ]
+                }
+              },
+              "ref2": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL2",
+                    "Arn"
+                  ]
+                }
+              },
+              "ref3": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL3",
+                    "Arn"
+                  ]
+                }
+              },
+              "ref4": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL4",
+                    "Arn"
+                  ]
+                }
+              },
+              "ref5": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL5",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

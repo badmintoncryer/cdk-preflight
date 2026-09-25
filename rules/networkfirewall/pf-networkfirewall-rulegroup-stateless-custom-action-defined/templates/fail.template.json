@@ -1,0 +1,53 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slcadef-f",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass",
+                      "undefinedCA"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ],
+                      "Protocols": [
+                        6
+                      ]
+                    }
+                  }
+                }
+              ],
+              "CustomActions": [
+                {
+                  "ActionName": "definedCA",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

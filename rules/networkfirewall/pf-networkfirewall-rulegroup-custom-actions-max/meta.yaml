@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-custom-actions-max
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A stateless rule group takes at most 10 custom actions"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): 11 CustomActions -> \"ActionDefinition limit exceeded, parameter: [11], context: StatelessRulesAndCustomActions.CustomActions\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"ActionDefinition limit exceeded, parameter: [11], context: StatelessRulesAndCustomActions.CustomActions (Service: NetworkFirewall, Status Code: 400, Request ID: f718d4a9-4995-417f-8ff2-f9cb7ed9b8d7) (SDK Attempt Count: 1)\" (RequestToken: fcc1d0d5-7a1d-a79b-14ad-2800e050bf88, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

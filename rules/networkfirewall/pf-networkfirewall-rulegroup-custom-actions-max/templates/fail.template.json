@@ -1,0 +1,172 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-camax-f",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ],
+                      "Protocols": [
+                        6
+                      ]
+                    }
+                  }
+                }
+              ],
+              "CustomActions": [
+                {
+                  "ActionName": "ca0",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca1",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca2",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca3",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca4",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca5",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca6",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca7",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca8",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca9",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "ActionName": "ca10",
+                  "ActionDefinition": {
+                    "PublishMetricAction": {
+                      "Dimensions": [
+                        {
+                          "Value": "v"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

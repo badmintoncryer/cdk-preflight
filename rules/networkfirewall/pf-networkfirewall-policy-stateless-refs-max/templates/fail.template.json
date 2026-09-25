@@ -1,0 +1,240 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slrm-f",
+        "Type": "STATELESS",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-slrm-f",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 2
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 3
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 4
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 5
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 6
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 7
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 8
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 9
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 10
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 11
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 12
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 13
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 14
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 15
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 16
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 17
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 18
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 19
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 20
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 21
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-slnoopt-f",
+        "Type": "STATELESS",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/16"
+                        }
+                      ],
+                      "Protocols": [
+                        6
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "RuleVariables": {
+            "IPSets": {
+              "NET": {
+                "Definition": [
+                  "10.0.0.0/16"
+                ]
+              }
+            }
+          },
+          "StatefulRuleOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          }
+        }
+      }
+    }
+  }
+}

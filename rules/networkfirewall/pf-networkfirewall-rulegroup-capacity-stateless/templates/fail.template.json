@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-capsl-f",
+        "Type": "STATELESS",
+        "Capacity": 5,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatelessRulesAndCustomActions": {
+              "StatelessRules": [
+                {
+                  "Priority": 1,
+                  "RuleDefinition": {
+                    "Actions": [
+                      "aws:pass"
+                    ],
+                    "MatchAttributes": {
+                      "Sources": [
+                        {
+                          "AddressDefinition": "10.0.0.0/24"
+                        },
+                        {
+                          "AddressDefinition": "10.0.1.0/24"
+                        },
+                        {
+                          "AddressDefinition": "10.0.2.0/24"
+                        }
+                      ],
+                      "Protocols": [
+                        6,
+                        17
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

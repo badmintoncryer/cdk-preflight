@@ -1,0 +1,80 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::NetworkFirewall::TLSInspectionConfiguration",
+      "Properties": {
+        "TLSInspectionConfigurationName": "cdkpf280-tlscerts-f",
+        "TLSInspectionConfiguration": {
+          "ServerCertificateConfigurations": [
+            {
+              "ServerCertificates": [
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000000-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000001-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000002-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000003-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000004-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000005-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000006-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000007-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000008-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000009-2222-3333-4444-555555555555"
+                },
+                {
+                  "ResourceArn": "arn:aws:acm:us-east-1:123456789012:certificate/00000010-2222-3333-4444-555555555555"
+                }
+              ],
+              "Scopes": [
+                {
+                  "Sources": [
+                    {
+                      "AddressDefinition": "10.0.0.0/16"
+                    }
+                  ],
+                  "Destinations": [
+                    {
+                      "AddressDefinition": "0.0.0.0/0"
+                    }
+                  ],
+                  "SourcePorts": [
+                    {
+                      "FromPort": 0,
+                      "ToPort": 65535
+                    }
+                  ],
+                  "DestinationPorts": [
+                    {
+                      "FromPort": 443,
+                      "ToPort": 443
+                    }
+                  ],
+                  "Protocols": [
+                    6
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

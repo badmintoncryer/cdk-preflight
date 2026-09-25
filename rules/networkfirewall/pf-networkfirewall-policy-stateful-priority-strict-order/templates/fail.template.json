@@ -1,0 +1,85 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfpso-fs",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          },
+          "StatefulRuleOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          }
+        }
+      }
+    },
+    "D": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfpso-fd",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "A": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfpso-fa",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulEngineOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          },
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "S",
+                  "RuleGroupArn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "B": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfpso-fb",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "D",
+                  "RuleGroupArn"
+                ]
+              },
+              "Priority": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

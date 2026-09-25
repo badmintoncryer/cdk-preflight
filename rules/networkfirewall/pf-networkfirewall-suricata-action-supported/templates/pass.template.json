@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-action-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "alert tcp any any -> any any (msg:\"a\"; sid:1;)\ndrop tcp any any -> any any (msg:\"b\"; sid:2;)"
+          }
+        }
+      }
+    }
+  }
+}

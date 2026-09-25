@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sidreq-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)\ndrop tcp any any -> any any (msg:\"b\"; sid:2;)"
+          }
+        }
+      }
+    }
+  }
+}

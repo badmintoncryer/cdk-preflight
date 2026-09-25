@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-stateless-action-standard
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A stateless rule needs exactly one standard action"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-action.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Actions [aws:pass, aws:drop] -> \"Actions cannot exist together, parameter: [aws:pass, aws:drop], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.Actions\"; Actions holding only a custom action -> \"Actions cannot be null or empty, context: ...RuleDefinition.Actions\", so a custom action does not stand in for a standard one; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Actions cannot exist together, parameter: [aws:drop], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.Actions (Service: NetworkFirewall, Status Code: 400, Request ID: 51a180cf-8fcd-437f-8a6a-792ebfd0aab6) (SDK Attempt Count: 1)\" (RequestToken: 246231d2-017f-0dbf-45c2-cb6d90d60c3a, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

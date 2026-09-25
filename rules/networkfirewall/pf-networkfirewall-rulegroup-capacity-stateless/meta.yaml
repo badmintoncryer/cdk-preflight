@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-capacity-stateless
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A STATELESS rule group needs capacity for the product of its match settings"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/nwfw-rule-group-capacity.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Capacity 5 with one rule of 3 Sources x 2 Protocols -> \"StatelessRules capacity exceeded, parameter: [6], context: StatelessRulesAndCustomActions.StatelessRules\", which pins the product formula; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatelessRules capacity exceeded, parameter: [6], context: StatelessRulesAndCustomActions.StatelessRules (Service: NetworkFirewall, Status Code: 400, Request ID: 3c6e9d7f-bcd0-4850-8f58-e44961d4cdfd) (SDK Attempt Count: 1)\" (RequestToken: debb3747-f251-c0c6-d9c3-b3681a6492dc, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

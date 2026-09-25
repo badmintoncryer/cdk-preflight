@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-sid-unique
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "Two Suricata rules in one rule group cannot share a sid"
+constraintSource: https://docs.suricata.io/en/suricata-8.0.3/rules/meta.html#sid
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): two rules carrying sid:1 -> \"InvalidRequestException: stateful rule is invalid, reason: Duplicate signature ...\" even though their msg differs; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, reason: Duplicate signature \"pass udp any any -> any any (msg:\"b\"; sid:1; gid:1234567890;)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

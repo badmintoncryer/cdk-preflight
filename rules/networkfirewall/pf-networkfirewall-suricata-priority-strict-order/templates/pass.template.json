@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-strictord-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)\npass tcp any any -> any any (msg:\"b\"; sid:2;)"
+          },
+          "StatefulRuleOptions": {
+            "RuleOrder": "STRICT_ORDER"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-type-source-match
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A rule group's Type must match the kind of RulesSource it carries"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-group-settings.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): STATEFUL with StatelessRulesAndCustomActions -> \"StatelessRulesAndCustomActions is invalid, context: RulesSource.StatelessRulesAndCustomActions\"; STATELESS with RulesString -> \"StatelessRulesAndCustomActions cannot be null, context: RulesSource.StatelessRulesAndCustomActions\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatelessRulesAndCustomActions cannot be null, context: RulesSource.StatelessRulesAndCustomActions (Service: NetworkFirewall, Status Code: 400, Request ID: 88ea1437-f8bf-48c8-894a-8e3cdbf31631) (SDK Attempt Count: 1)\" (RequestToken: 8d832c9d-59fe-5af7-e5e9-ca4cc4baf507, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

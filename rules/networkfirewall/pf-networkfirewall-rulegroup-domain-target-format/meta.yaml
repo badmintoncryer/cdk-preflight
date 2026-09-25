@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-domain-target-format
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A domain list target is a plain name or a leading-dot wildcard"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_RulesSourceList.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Targets [*.example.com] -> \"Targets has invalid format, parameter: [*.example.com], context: RulesSource.RulesSourceList.Targets[0]\"; Targets [https://example.com] answers the same with its own parameter; .example.com and example.com were both accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Targets has invalid format, parameter: [*.example.com], context: RulesSource.RulesSourceList.Targets[0] (Service: NetworkFirewall, Status Code: 400, Request ID: eb5e9de7-4e58-428a-8a24-68033b6a9a22) (SDK Attempt Count: 1)\" (RequestToken: e4927992-93aa-f65f-a91c-2b50b0985883, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

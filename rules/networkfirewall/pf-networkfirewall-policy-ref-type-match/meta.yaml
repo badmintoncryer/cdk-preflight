@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-ref-type-match
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy, AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A rule group reference must point at a rule group of its own kind"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_StatefulRuleGroupReference.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): a STATELESS rule group under StatefulRuleGroupReferences -> \"rule group ARN is of incorrect entity type, parameter: [arn:...:stateless-rulegroup/...]\"; the other way round the same; an ARN with the wrong segment answers this before \"rule group ARN does not exist\", so the segment alone decides; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"rule group ARN is of incorrect entity type, parameter: [arn:aws:network-firewall:us-east-1:214794239830:stateless-rulegroup/cdkpf280-rtm-fsl] (Service: NetworkFirewall, Status Code: 400, Request ID: d6700dc4-6de0-4501-b794-c876d5927833) (SDK Attempt Count: 1)\" (RequestToken: c23d0ff5-60a6-75a0-c9f9-5687a5a23446, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

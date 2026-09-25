@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-geoip-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; geoip:src,US; sid:1;)\npass tcp any any -> any any (msg:\"b\"; geoip:any,!CN,JP; sid:2;)"
+          }
+        }
+      }
+    }
+  }
+}

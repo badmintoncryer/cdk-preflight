@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-rulegroup-arn-region
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "A firewall policy can only reference rule groups in its own region"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): a us-west-2 rule group ARN on a us-east-1 policy -> \"rule group ARN is invalid, parameter: [arn:aws:network-firewall:us-west-2:...]\", where a us-east-1 ARN that does not exist answers \"rule group ARN does not exist\" instead; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"rule group ARN is invalid, parameter: [arn:aws:network-firewall:us-west-2:214794239830:stateful-rulegroup/cdkpf280-elsewhere] (Service: NetworkFirewall, Status Code: 400, Request ID: a6233087-8189-4a85-965c-a2b97f367c44) (SDK Attempt Count: 1)\" (RequestToken: dcd4bd0f-16a9-187d-7101-47e28704b4a2, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-stateful-default-one-drop
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "A firewall policy takes at most one stateful default drop action"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): [aws:drop_strict, aws:drop_established] -> \"StatefulDefaultActions cannot exist together, parameter: [aws:drop_strict, aws:drop_established]\"; [aws:drop_strict, aws:drop_established_app_layer] the same; [aws:drop_strict, aws:alert_established] accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatefulDefaultActions cannot exist together, parameter: [aws:drop_strict, aws:drop_established], context: StatefulDefaultActions (Service: NetworkFirewall, Status Code: 400, Request ID: 3792f864-8175-4dc5-bbb4-9253717f626a) (SDK Attempt Count: 1)\" (RequestToken: e5e6a777-6bbc-dffd-a328-0ccaea3356c7, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

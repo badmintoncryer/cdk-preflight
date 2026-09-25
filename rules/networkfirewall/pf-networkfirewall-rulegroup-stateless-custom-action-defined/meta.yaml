@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-stateless-custom-action-defined
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A custom action named by a stateless rule must be defined in the same rules source"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-action.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Actions [aws:pass, undefinedCA] -> \"Actions is invalid, parameter: [undefinedCA], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.Actions\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Actions is invalid, parameter: [undefinedCA], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.Actions (Service: NetworkFirewall, Status Code: 400, Request ID: 9522f59c-c91e-430c-b3ac-ac6b12784a26) (SDK Attempt Count: 1)\" (RequestToken: ed24f5eb-c6b0-bf55-8492-cfac472ab2e9, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

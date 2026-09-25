@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-stateless-priority-unique
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "Stateless rule priorities must be unique inside a rule group"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/stateless-rule-groups-standard.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): two stateless rules at Priority 100 -> \"Priority has duplicate values, parameter: [100], context: StatelessRulesAndCustomActions.StatelessRules[Priority=100]\"; 100 and 101 accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Priority has duplicate values, parameter: [100], context: StatelessRulesAndCustomActions.StatelessRules[Priority=100] (Service: NetworkFirewall, Status Code: 400, Request ID: 74154260-0bb2-4438-b926-dff4adf35eed) (SDK Attempt Count: 1)\" (RequestToken: 17ea286c-d8a1-3ad1-eb14-df332385b4b9, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

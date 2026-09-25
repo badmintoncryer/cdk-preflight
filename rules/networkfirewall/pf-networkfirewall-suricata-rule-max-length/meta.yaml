@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-rule-max-length
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A single Suricata rule is limited to 8,175 characters"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): an 8176-character rule -> \"reason: Rule exceeds max length (8192), Length: 8192.\" — the service appends \" gid:1234567890;\" (16 characters) and rejects at 8192 rather than above it, and a user-written gid is refused outright (\"GIDs are not allowed\"), so the 16 are always added; the same rule at 8175 characters was accepted with ConsumedCapacity 1; bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE, but the stack event is CloudFormation's own wrapper rather than the handler text, because the handler echoes the whole 8176-character rule and that overflows StatusReason: \"1 validation error detected: Value 'stateful rule is invalid, rule: pass tcp any any -> any any (msg:\\\"xxx...' ...\" (this is the only one of the 18 rules whose stack event is not the API message verbatim); pass (8175 characters) -> CREATE_COMPLETE"
+addedOn: 2026-09-25

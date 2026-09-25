@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-rule-order-match
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy, AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A policy and the stateful rule groups it references must agree on the rule order"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): policy DEFAULT_ACTION_ORDER referencing a STRICT_ORDER rule group -> \"ResourceArn has invalid rule order, context: StatefulRuleGroupReferences[0].ResourceArn\"; policy STRICT_ORDER referencing a rule group that omits StatefulRuleOptions, or sets DEFAULT_ACTION_ORDER, answers the same; STRICT_ORDER on both sides accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"ResourceArn has invalid rule order, parameter: [arn:aws:network-firewall:us-east-1:214794239830:stateful-rulegroup/cdkpf280-rom-f], context: StatefulRuleGroupReferences[0].ResourceArn (Service: NetworkFirewall, Status Code: 400, Request ID: afb19e39-69f4-4607-b7c4-acc1b2ffae93) (SDK Attempt Count: 1)\" (RequestToken: 0d245ad2-2111-9c76-4889-f3af7e5ed922, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

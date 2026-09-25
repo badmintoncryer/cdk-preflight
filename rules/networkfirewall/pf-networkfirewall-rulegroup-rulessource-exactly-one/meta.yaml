@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-rulessource-exactly-one
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A rule group needs exactly one kind of RulesSource"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_RulesSource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): RulesString and RulesSourceList together -> \"InvalidRequestException: RulesString, RulesSourceList, StatefulRules must set exactly one of them, context: RulesSource\"; an empty RulesSource {} answers the same, so the rule fires on any count other than 1; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"RulesString, RulesSourceList, StatefulRules must set exactly one of them, context: RulesSource (Service: NetworkFirewall, Status Code: 400, Request ID: eb6fd2d2-32e3-4015-a17a-d473983482bb) (SDK Attempt Count: 1)\" (RequestToken: 2784c8ee-799a-4c2b-1979-ce76ce5f1ae4, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25
