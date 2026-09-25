@@ -16,6 +16,5 @@ violation contains make_diag_full("pf-cloudfront-cache-policy-header-behavior-no
 	is_object(sc)
 	bh := object.get(sc, "HeaderBehavior", null)
 	bh in {"none"}
-	_pf_unconditional_items(object.get(sc, "Headers", []))
 	count(object.get(sc, "Headers", [])) > 0
 }
