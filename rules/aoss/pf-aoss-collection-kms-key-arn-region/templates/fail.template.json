@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "C": {
+      "Type": "AWS::OpenSearchServerless::Collection",
+      "Properties": {
+        "Name": "probe-kms-region",
+        "Type": "SEARCH",
+        "EncryptionConfig": {
+          "AWSOwnedKey": false,
+          "KmsKeyArn": {
+            "Fn::Sub": "arn:aws:kms:eu-west-1:${AWS::AccountId}:key/93fd6da4-a317-4c17-bfe9-382b5d988b36"
+          }
+        }
+      }
+    }
+  }
+}

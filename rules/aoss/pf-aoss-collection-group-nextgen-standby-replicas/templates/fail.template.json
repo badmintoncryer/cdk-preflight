@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::OpenSearchServerless::CollectionGroup",
+      "Properties": {
+        "Name": "cdkpf-cg-standby",
+        "Generation": "NEXTGEN",
+        "StandbyReplicas": "DISABLED",
+        "CapacityLimits": {
+          "MinIndexingCapacityInOcu": 0,
+          "MaxIndexingCapacityInOcu": 2,
+          "MinSearchCapacityInOcu": 0,
+          "MaxSearchCapacityInOcu": 2
+        }
+      }
+    }
+  }
+}

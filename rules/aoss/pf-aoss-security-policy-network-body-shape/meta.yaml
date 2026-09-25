@@ -1,0 +1,12 @@
+id: pf-aoss-security-policy-network-body-shape
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "A network security policy body must be a JSON array without encryption keys"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-opensearchserverless-securitypolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateSecurityPolicy, one variable each off an ACCEPTED array control: the block handed over as an object -> \"Policy json is invalid, error: [$: object found, array expected]\"; the array plus AWSOwnedKey -> \"[$[0].AWSOwnedKey: is not defined in the schema and the schema does not allow additional properties]\", plus KmsARN -> the same sentence for $[0].KmsARN. bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-25

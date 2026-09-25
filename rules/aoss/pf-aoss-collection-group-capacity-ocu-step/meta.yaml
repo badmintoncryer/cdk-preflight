@@ -1,0 +1,12 @@
+id: pf-aoss-collection-group-capacity-ocu-step
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::CollectionGroup]
+severity: ERROR
+title: "Collection group OCU limits must be 2, 4, 8, 16 or a multiple of 16"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-scaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateCollectionGroup, one field at a time off an ACCEPTED control (NEXTGEN, ENABLED, min 0 / max 2 on both pairs): MaxIndexingCapacityInOcu 3 -> \"Invalid value for maxIndexingCapacityInOCU. Allowed values are: 0, 2, 4, 8, 16, or any multiple of 16\"; MaxSearchCapacityInOcu 3 -> the same for maxSearchCapacityInOCU; MaxIndexingCapacityInOcu 20 (a value between 16 and 32 that is not a multiple of 16) -> the same message. The accepted set is NOT the same on both generations: a CLASSIC minimum of 0 is refused with \"Allowed values are: 1, 2, 4, 8, 16, ...\", which is why the rule leaves 0 and 1 alone in both directions. bench 2026-09-25 us-east-1: fail (3 and 20 in one group) -> ROLLBACK_COMPLETE; pass (2 and 16, minima 0, no collections, so $0 while it stands) -> CREATE_COMPLETE."
+addedOn: 2026-09-25

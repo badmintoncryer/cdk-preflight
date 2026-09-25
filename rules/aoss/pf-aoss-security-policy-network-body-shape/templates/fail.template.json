@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P1": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-shape-a",
+        "Type": "network",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c2\"]}],\"AllowFromPublic\":true}"
+      }
+    },
+    "P2": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-shape-b",
+        "Type": "network",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c3\"]}],\"AllowFromPublic\":true,\"AWSOwnedKey\":true}]"
+      }
+    }
+  }
+}

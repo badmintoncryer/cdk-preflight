@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-mismatch",
+        "Type": "encryption",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/other-prefix*\"]}],\"AWSOwnedKey\":true}"
+      }
+    },
+    "C": {
+      "Type": "AWS::OpenSearchServerless::Collection",
+      "DependsOn": "P",
+      "Properties": {
+        "Name": "probe-mismatch",
+        "Type": "SEARCH"
+      }
+    }
+  }
+}

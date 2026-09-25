@@ -1,0 +1,12 @@
+id: pf-aoss-security-config-saml-session-timeout
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityConfig]
+severity: ERROR
+title: "SamlOptions.SessionTimeout must be between 5 and 720 minutes"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-saml.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateSecurityConfig, both ends pinned one step out: 721 -> \"Value '721' at 'samlOptions.sessionTimeout' failed to satisfy constraint: Member must have value less than or equal to 720\" and 720 -> ACCEPTED; 4 -> \"...must have value greater than or equal to 5\" and 5 -> ACCEPTED (phase B). bench 2026-09-25 us-east-1: fail (721 and 4 in one template) -> ROLLBACK_COMPLETE; pass (720 and 5) -> CREATE_COMPLETE."
+addedOn: 2026-09-25

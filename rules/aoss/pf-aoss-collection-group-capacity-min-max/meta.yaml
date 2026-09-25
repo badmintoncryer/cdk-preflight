@@ -1,0 +1,12 @@
+id: pf-aoss-collection-group-capacity-min-max
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::CollectionGroup]
+severity: ERROR
+title: "A collection group minimum OCU must not exceed its maximum"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-scaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateCollectionGroup, one pair at a time off an ACCEPTED control (NEXTGEN, ENABLED, min 0 / max 2 on both pairs): MinIndexingCapacityInOcu 4 with MaxIndexingCapacityInOcu 2 (both legal OCU steps, so nothing else is wrong with them) -> \"Invalid capacity range: minIndexingCapacityInOCU (4.0) exceeds maxIndexingCapacityInOCU (2.0)\"; the same on the search pair -> \"Invalid capacity range: minSearchCapacityInOCU (4.0) exceeds maxSearchCapacityInOCU (2.0)\". bench 2026-09-25 us-east-1: fail (both pairs inverted) -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE. The pass fixture keeps both minima at 0 rather than making them equal to the maxima: an equal pair would provision that many OCUs for as long as the group stands, and bench/sweep.sh has no aoss reclaim path."
+addedOn: 2026-09-25

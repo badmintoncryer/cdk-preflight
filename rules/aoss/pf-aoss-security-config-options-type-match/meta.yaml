@@ -1,0 +1,12 @@
+id: pf-aoss-security-config-options-type-match
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityConfig]
+severity: ERROR
+title: "A security config must carry the options block its Type names"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-opensearchserverless-securityconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateSecurityConfig, against an ACCEPTED control (saml + SamlOptions with real IdP metadata): saml without SamlOptions -> \"Saml Config type options should be present for SAML type\" (phase B); iamidentitycenter without IamIdentityCenterOptions -> \"IAM Identity Center options should be present for iamidentitycenter type\"; iamfederation without IamFederationOptions -> \"Either User or Group attribute must be present for iam federation security config\", and iamfederation WITH IamFederationOptions {GroupAttribute} -> ACCEPTED. Extra blocks do not matter: saml + SamlOptions + IamIdentityCenterOptions -> ACCEPTED, so the rule only asks for the matching block. bench 2026-09-25 us-east-1: fail (all three arms in one template) -> ROLLBACK_COMPLETE, with CloudFormation reporting the iamfederation arm (\"Invalid request provided: CreateSecurityConfigRequest(Type=iamfederation, Name=sc-opt-c), Either User or Group attribute must be present for iam federation security config\") - it returns one resource's reason, and the other two arms are backed by the API runs above; pass (the saml arm only, because a deployable iamidentitycenter control needs a real IAM Identity Center instance and iamfederation is quota-limited to one per account) -> CREATE_COMPLETE."
+addedOn: 2026-09-25

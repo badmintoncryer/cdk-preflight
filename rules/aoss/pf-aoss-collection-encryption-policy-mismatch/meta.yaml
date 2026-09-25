@@ -1,0 +1,12 @@
+id: pf-aoss-collection-encryption-policy-mismatch
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::Collection, AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "A collection must be covered by an encryption policy its template declares"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-opensearchserverless-collection.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1 --fail-only: fail (encryption policy covering collection/other-prefix* only, collection probe-mismatch with no EncryptionConfig) -> \"No matching security policy of encryption type found for collection name: probe-mismatch. Please create security policy of encryption type for this collection.\" (ROLLBACK_COMPLETE). CreateCollection refuses synchronously, so no collection and no OCU is ever allocated. THE PASS TEMPLATE MUST NEVER BE DEPLOYED: its policy does match, so the collection would be created and would bill at its OCU floor around $0.5-1/hr, and bench/sweep.sh has no aoss reclaim path. api 2026-09-25 us-east-1 reproduced the same rejection directly (phase B)."
+addedOn: 2026-09-25

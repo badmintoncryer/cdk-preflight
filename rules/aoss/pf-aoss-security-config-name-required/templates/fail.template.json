@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "S": {
+      "Type": "AWS::OpenSearchServerless::SecurityConfig",
+      "Properties": {
+        "Type": "saml",
+        "SamlOptions": {
+          "Metadata": "<?xml version=\"1.0\"?><EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"https://example.com/idp\"><IDPSSODescriptor protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\"><KeyDescriptor use=\"signing\"><KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><X509Data><X509Certificate>MIIC8DCCAdigAwIBAgIQf3sJLgw7dLxDm0Q1A5Kd0TANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDEwlsb2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMzQwMTAxMDAwMDAwWjAUMRIwEAYDVQQDEwlsb2NhbGhvc3Q=</X509Certificate></X509Data></KeyInfo></KeyDescriptor><SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://example.com/sso\"/></IDPSSODescriptor></EntityDescriptor>"
+        }
+      }
+    }
+  }
+}

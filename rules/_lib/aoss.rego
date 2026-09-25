@@ -156,3 +156,52 @@ _pf_aoss_arn_region(s) := r if {
 	r := parts[3]
 	r != ""
 }
+
+# Keys the OTHER SecurityPolicy type owns. CreateSecurityPolicy answers
+# "$.<key>: is not defined in the schema and the schema does not allow
+# additional properties" for each one that turns up on the wrong type
+# (2026-09-25, us-east-1).
+_pf_aoss_net_only_keys := {"AllowFromPublic", "SourceVPCEs", "SourceServices"}
+
+_pf_aoss_enc_only_keys := {"AWSOwnedKey", "KmsARN"}
+
+# Every resource that carries a Policy string, for the shared 10,240-byte limit.
+_pf_aoss_policy_names := ((_pf_aoss_enc | _pf_aoss_net) | _pf_aoss_data) | _pf_aoss_life
+
+# The options block CreateSecurityConfig demands for each Type.
+_pf_aoss_sc_options := {
+	"saml": "SamlOptions",
+	"iamidentitycenter": "IamIdentityCenterOptions",
+	"iamfederation": "IamFederationOptions",
+}
+
+# Raw Properties, for the presence checks resolve() cannot make: resolve is
+# undefined both for "the property is absent" and for "the property is a token",
+# and a required-property rule must not confuse the two.
+_pf_aoss_props(name) := object.get(input.resources[name], "properties", {})
+
+# Does an encryption policy Resource pattern cover this collection name?
+# collection/* takes everything, a trailing * is a prefix, anything else is the
+# exact name (the server's own pattern allows only those three shapes).
+_pf_aoss_covers(res, cn) if {
+	pat := _pf_aoss_pattern(res)
+	pat == "*"
+}
+
+_pf_aoss_covers(res, cn) if {
+	pat := _pf_aoss_pattern(res)
+	endswith(pat, "*")
+	startswith(cn, trim_suffix(pat, "*"))
+}
+
+_pf_aoss_covers(res, cn) if {
+	pat := _pf_aoss_pattern(res)
+	not endswith(pat, "*")
+	pat == cn
+}
+
+_pf_aoss_pattern(res) := p if {
+	is_string(res)
+	startswith(res, "collection/")
+	p := trim_prefix(res, "collection/")
+}

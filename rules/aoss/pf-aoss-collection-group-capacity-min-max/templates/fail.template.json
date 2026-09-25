@@ -1,0 +1,18 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::OpenSearchServerless::CollectionGroup",
+      "Properties": {
+        "Name": "cdkpf-cg-minmax",
+        "Generation": "NEXTGEN",
+        "StandbyReplicas": "ENABLED",
+        "CapacityLimits": {
+          "MinIndexingCapacityInOcu": 4,
+          "MaxIndexingCapacityInOcu": 2,
+          "MinSearchCapacityInOcu": 4,
+          "MaxSearchCapacityInOcu": 2
+        }
+      }
+    }
+  }
+}
