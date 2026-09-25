@@ -1,0 +1,12 @@
+id: pf-avp-schema-namespace-length
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::PolicyStore]
+severity: ERROR
+title: "A namespace name is 1 to 100 bytes long"
+constraintSource: https://docs.aws.amazon.com/verifiedpermissions/latest/userguide/schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /schema: Namespace lengths must be at least 1 and at most 100 bytes in size, but '' is 0 bytes in size.\"; pass (the same PolicyStore with only the schema corrected) -> CREATE_COMPLETE. The store is ValidationSettings.Mode=OFF in both fixtures, so what rejects the fail template is the Cedar schema parser and not the STRICT policy validator. The fail template carries both ends as two policy stores and both are CREATE_FAILED: Store (0 bytes, the reason above) and Store2 (101 bytes, \"At /schema: Namespace lengths must be at least 1 and at most 100 bytes in size, but 'Nxxx...xxx' is 101 bytes in size.\"). The pass store's namespace is 100 bytes, the limit itself."
+addedOn: 2026-09-25

@@ -29,6 +29,7 @@ pf-appsync-api-key-expires-max  実際の上限は「作成日から 365 日」�
 pf-appsync-api-key-expires-past  実際の下限は「作成日から 1 日」で固定値では書けない。ルールが見ている 1000000000（2001-09-09）より前はどの日付でも過去になる部分集合で、pass をその値に乗せると実機に拒否される。fail は 999999999 に乗せ、pass は Expires を省略してある
 pf-asg-desired-capacity-range  ルールが持つ 3 つ目の比較 `MinSize <= MaxSize` は違反条件ではなく、DesiredCapacity を見る前の前提ガード。同値の fail も 1 差の pass も意味を持たない。DesiredCapacity の両端はフィクスチャを境界に置いてある（fail 3/max 2 と 1/min 2、pass 2==max と 0==min）
 pf-asg-tt-period-max-60  CloudWatch の Period は 10 / 30 / 60 か 60 の倍数しか取れないので、61 は「60 を超えている」ではなく「無効な Period」で落ちる（2026-09-13 us-east-1: 61 と 90 は "Invalid period value"、120 と 180 が "A metric period greater than 60 isn't supported"）。60 を超える中で最小の有効な値は 120 で、fail はそこに乗せてある
+pf-avp-schema-namespace-length  名前空間名は Schema.CedarJson という 1 本の JSON 文字列の中にあるキーなので、検出器の文字列長プール（テンプレート上の各文字列の長さ）には現れず、CedarJson 全体の長さしか見えない。境界は手で置いてある: fail は 0 バイト（Verified Permissions は Cedar 本家と違って空の名前空間を拒否する）と 101 バイトの 2 リソース、pass は 100 バイトちょうど
 pf-batch-ce-eks-namespace-format  count(ns) <= 63 は「DNS-1123 ラベルとして見るに足る長さか」というガードで、このルールが見ているのは書式のほう。長さの上限そのものではないので境界の対象外
 pf-cloudtrail-trail-aes-conditions-max  しきい値と突き合わせるのは AdvancedEventSelectors をまたいだ条件値の合計で、どの配列長とも一致しない。フィクスチャは 2 セレクタで合計 501 / 500 に乗せてある
 pf-cloudtrail-trail-data-resources-max  しきい値と突き合わせるのは EventSelectors をまたいだ DataResources.Values の合計で、どの配列長とも一致しない。フィクスチャは 5 セレクタで合計 251 / 250 に乗せてある（実機も分割した形で上限を返す）
