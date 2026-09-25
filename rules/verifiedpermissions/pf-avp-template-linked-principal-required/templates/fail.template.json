@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        }
+      }
+    },
+    "Tpl": {
+      "Type": "AWS::VerifiedPermissions::PolicyTemplate",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Statement": "permit(principal == ?principal, action, resource == ?resource);"
+      }
+    },
+    "Pol": {
+      "Type": "AWS::VerifiedPermissions::Policy",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Definition": {
+          "TemplateLinked": {
+            "PolicyTemplateId": {
+              "Fn::GetAtt": [
+                "Tpl",
+                "PolicyTemplateId"
+              ]
+            },
+            "Resource": {
+              "EntityType": "MyApp::Photo",
+              "EntityId": "p1"
+            }
+          }
+        }
+      }
+    }
+  }
+}

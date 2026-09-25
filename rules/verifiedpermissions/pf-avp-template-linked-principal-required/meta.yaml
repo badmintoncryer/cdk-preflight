@@ -1,0 +1,12 @@
+id: pf-avp-template-linked-principal-required
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::Policy, AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "A template-linked policy supplies Principal when the template uses ?principal"
+constraintSource: https://docs.aws.amazon.com/verifiedpermissions/latest/userguide/policy-templates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition/templateLinked/principal: Invalid Parameter: principal.\"; pass (the same policy with Principal added) -> CREATE_COMPLETE. The fixture's policy template declares both ?principal and ?resource and the policy supplies only Resource, because supplying neither is rejected with a generic \"No principal and no resource was provided. At least one must be provided\" that names no property (bench 2026-09-26 us-east-1)."
+addedOn: 2026-09-26

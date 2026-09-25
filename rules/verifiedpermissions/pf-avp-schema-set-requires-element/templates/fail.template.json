@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        },
+        "Schema": {
+          "CedarJson": "{\"MyApp\": {\"entityTypes\": {\"User\": {\"shape\": {\"type\": \"Record\", \"attributes\": {\"s\": {\"type\": \"Set\"}}}}}, \"actions\": {}}}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "STRICT"
+        }
+      }
+    },
+    "Pol": {
+      "Type": "AWS::VerifiedPermissions::Policy",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Definition": {
+          "Static": {
+            "Statement": "permit(principal, action, resource);"
+          }
+        }
+      }
+    },
+    "Store2": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "STRICT"
+        },
+        "Schema": {
+          "CedarJson": "{}"
+        }
+      }
+    },
+    "Pol2": {
+      "Type": "AWS::VerifiedPermissions::Policy",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store2"
+        },
+        "Definition": {
+          "Static": {
+            "Statement": "permit(principal, action, resource);"
+          }
+        }
+      }
+    }
+  }
+}

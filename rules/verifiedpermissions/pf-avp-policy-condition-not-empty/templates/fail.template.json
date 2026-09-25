@@ -1,0 +1,34 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        }
+      }
+    },
+    "Pol": {
+      "Type": "AWS::VerifiedPermissions::Policy",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Definition": {
+          "Static": {
+            "Statement": "permit(principal, action, resource) when { };"
+          }
+        }
+      }
+    },
+    "Tpl": {
+      "Type": "AWS::VerifiedPermissions::PolicyTemplate",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Statement": "permit(principal == ?principal, action, resource) when { };"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-avp-policy-unary-operator-depth
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::Policy, AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "At most four unary operators in a row"
+constraintSource: https://docs.cedarpolicy.com/policies/syntax-grammar.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (five \"!\" in a row, the tightest violation) -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /template/statement: too many occurrences of `!`.\"; pass (exactly four \"!\", the limit) -> CREATE_COMPLETE. Both resources in the fail template are rejected - the static policy at /definition/static/statement and the template at /template/statement - which is how the one rule is shown to cover both resource types. The policy store is Mode=OFF in both fixtures, so the check is the Cedar parser and not the STRICT schema validator (api 2026-09-25 us-east-1, phase A probe-out-1, rejected the same statement against a Mode=OFF policy store)."
+addedOn: 2026-09-25

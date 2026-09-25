@@ -1,0 +1,12 @@
+id: pf-avp-alias-name-prefix
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::PolicyStoreAlias]
+severity: ERROR
+title: "AliasName starts with policy-store-alias/"
+constraintSource: https://docs.aws.amazon.com/verifiedpermissions/latest/apireference/API_CreatePolicyStoreAlias.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At aliasName: Invalid format.\"; pass (the same alias with the policy-store-alias/ prefix added) -> CREATE_COMPLETE."
+addedOn: 2026-09-26

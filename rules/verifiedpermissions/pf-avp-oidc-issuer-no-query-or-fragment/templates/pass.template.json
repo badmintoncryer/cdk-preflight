@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        }
+      }
+    },
+    "I": {
+      "Type": "AWS::VerifiedPermissions::IdentitySource",
+      "Properties": {
+        "PolicyStoreId": {
+          "Ref": "Store"
+        },
+        "Configuration": {
+          "OpenIdConnectConfiguration": {
+            "Issuer": "https://accounts.google.com",
+            "TokenSelection": {
+              "IdentityTokenOnly": {
+                "ClientIds": [
+                  "abc"
+                ]
+              }
+            }
+          }
+        },
+        "PrincipalEntityType": "MyApp::User"
+      }
+    }
+  }
+}

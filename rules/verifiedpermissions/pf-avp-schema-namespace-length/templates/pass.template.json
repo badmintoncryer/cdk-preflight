@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        },
+        "Schema": {
+          "CedarJson": "{\"Nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\": {\"entityTypes\": {\"User\": {}, \"Photo\": {}}, \"actions\": {\"view\": {\"appliesTo\": {\"principalTypes\": [\"User\"], \"resourceTypes\": [\"Photo\"]}}}}}"
+        }
+      }
+    }
+  }
+}

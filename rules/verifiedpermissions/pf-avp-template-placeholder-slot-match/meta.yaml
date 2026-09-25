@@ -1,0 +1,12 @@
+id: pf-avp-template-placeholder-slot-match
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "?principal sits in the principal element, ?resource in the resource element"
+constraintSource: https://docs.aws.amazon.com/verifiedpermissions/latest/userguide/policy-templates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (placeholders swapped between the two elements) -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /template/statement: expected an entity uid or matching template slot, found ?resource instead of ?principal. At /template/statement: expected an entity uid or matching template slot, found ?principal instead of ?resource.\"; pass (the same template with only the offending statement corrected) -> CREATE_COMPLETE. The policy store is Mode=OFF in both fixtures, so the check is the Cedar parser and not the STRICT schema validator (api 2026-09-25 us-east-1, phase A probe-out-1, rejected the same statement against a Mode=OFF policy store)."
+addedOn: 2026-09-25

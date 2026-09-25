@@ -1,0 +1,12 @@
+id: pf-avp-oidc-issuer-no-query-or-fragment
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::IdentitySource]
+severity: ERROR
+title: "An OIDC Issuer carries no query string or fragment"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-verifiedpermissions-identitysource.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Failed to deserialize discovery document from issuer: https://accounts.google.com?a=b/.well-known/openid-configuration (Service: VerifiedPermissions, Status Code: 400).\"; pass (the same identity source with the query string removed) -> CREATE_COMPLETE. Attribution rests on the control pair: the service message names the mangled discovery URL rather than the Issuer property, and reaching it needs the external IdP (https://accounts.google.com) to be resolvable, so this one rule's monthly verify can fail for reasons outside AWS."
+addedOn: 2026-09-26

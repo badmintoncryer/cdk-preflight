@@ -1,0 +1,12 @@
+id: pf-avp-policy-action-in-schema
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::PolicyStore, AWS::VerifiedPermissions::Policy, AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "A policy scope names an action the STRICT store's schema declares"
+constraintSource: https://docs.cedarpolicy.com/policies/validation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition: for policy `policy0`, unrecognized action `MyApp::Action::\"delete\"`. At /definition: for policy `policy0`, unable to find an applicable action given the policy scope constraints.\"; pass (the same policy with the action corrected to a declared one) -> CREATE_COMPLETE."
+addedOn: 2026-09-26

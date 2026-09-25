@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "Store": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        },
+        "Schema": {
+          "CedarJson": "{\"\": {\"entityTypes\": {\"User\": {}}, \"actions\": {}}}"
+        }
+      }
+    },
+    "Store2": {
+      "Type": "AWS::VerifiedPermissions::PolicyStore",
+      "Properties": {
+        "ValidationSettings": {
+          "Mode": "OFF"
+        },
+        "Schema": {
+          "CedarJson": "{\"Nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\": {\"entityTypes\": {\"User\": {}}, \"actions\": {}}}"
+        }
+      }
+    }
+  }
+}

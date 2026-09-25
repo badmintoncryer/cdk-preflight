@@ -1,0 +1,12 @@
+id: pf-avp-schema-valid-json-object
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::PolicyStore]
+severity: ERROR
+title: "Schema.CedarJson parses as a JSON object"
+constraintSource: https://docs.cedarpolicy.com/schema/json-schema.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /schema: Provided schema is not a valid JSON object.\"; pass (the same PolicyStore with only the schema corrected) -> CREATE_COMPLETE. The store is ValidationSettings.Mode=OFF in both fixtures, so what rejects the fail template is the Cedar schema parser and not the STRICT policy validator."
+addedOn: 2026-09-25
