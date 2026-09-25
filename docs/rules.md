@@ -1956,6 +1956,39 @@
 | `pf-iam-trust-policy-principal-star-string` | AWS::IAM::Role | A trust policy needs a typed principal, not a bare "*" | ERROR | none |
 | `pf-iam-trust-policy-service-principal` | AWS::IAM::Role | Service principals live under amazonaws.com | ERROR | none |
 | `pf-iam-trust-policy-service-wildcard` | AWS::IAM::Role | A service principal cannot be a wildcard | ERROR | none |
+| `pf-iot-authorizer-function-region` | AWS::IoT::Authorizer | An authorizer's Lambda must live in the authorizer's region | ERROR | none |
+| `pf-iot-authorizer-name-charset` | AWS::IoT::Authorizer | AuthorizerName accepts only [A-Za-z0-9_=,@-] | ERROR | none |
+| `pf-iot-authorizer-signing-keys` | AWS::IoT::Authorizer | An authorizer with token signing on needs TokenKeyName | ERROR | none |
+| `pf-iot-certificate-mode-combo` | AWS::IoT::Certificate | A certificate must use one of the three accepted property combinations | ERROR | none |
+| `pf-iot-certificateprovider-lambda-region` | AWS::IoT::CertificateProvider | A certificate provider's Lambda must live in the provider's region | ERROR | none |
+| `pf-iot-command-namespace-combo` | AWS::IoT::Command | An AWS-IoT command needs a Payload and refuses MandatoryParameters | ERROR | none |
+| `pf-iot-domainconfiguration-auth-combo` | AWS::IoT::DomainConfiguration | AuthenticationType needs ApplicationProtocol, and CUSTOM_AUTH needs an AuthorizerConfig | ERROR | none |
+| `pf-iot-domainconfiguration-name-charset` | AWS::IoT::DomainConfiguration | DomainConfigurationName accepts only [A-Za-z0-9_.-] | ERROR | cfn-schema |
+| `pf-iot-domainconfiguration-service-type` | AWS::IoT::DomainConfiguration | Only the DATA service type can be created | ERROR | none |
+| `pf-iot-jobtemplate-abort-threshold` | AWS::IoT::JobTemplate | AbortCriteria ThresholdPercentage must be greater than 0 | ERROR | none |
+| `pf-iot-jobtemplate-document-exactly-one` | AWS::IoT::JobTemplate | A job template needs exactly one of Document and DocumentSource | ERROR | none |
+| `pf-iot-jobtemplate-rate-increase-criteria` | AWS::IoT::JobTemplate | RateIncreaseCriteria takes one of the two thing counts | ERROR | none |
+| `pf-iot-mitigationaction-params-exactly-one` | AWS::IoT::MitigationAction | ActionParams carries exactly one parameter type | ERROR | none |
+| `pf-iot-policy-document-effect` | AWS::IoT::Policy | A policy statement's Effect must be Allow or Deny | ERROR | none |
+| `pf-iot-policy-document-statement` | AWS::IoT::Policy | An IoT policy document must carry at least one statement | ERROR | none |
+| `pf-iot-policy-document-version` | AWS::IoT::Policy | An IoT policy document's Version must be 2012-10-17 | ERROR | none |
+| `pf-iot-policy-name-charset` | AWS::IoT::Policy | PolicyName accepts only [A-Za-z0-9_+=,.@-] | ERROR | none |
+| `pf-iot-policyprincipal-principal-format` | AWS::IoT::PolicyPrincipalAttachment | A PolicyPrincipalAttachment principal must be a certificate ARN or a Cognito identity | ERROR | none |
+| `pf-iot-provisioningtemplate-body-json` | AWS::IoT::ProvisioningTemplate | TemplateBody must be parseable JSON | ERROR | none |
+| `pf-iot-provisioningtemplate-hook-region` | AWS::IoT::ProvisioningTemplate | A pre-provisioning hook's Lambda must live in the template's region | ERROR | none |
+| `pf-iot-provisioningtemplate-policy-exclusive` | AWS::IoT::ProvisioningTemplate | A policy inside TemplateBody takes PolicyName or PolicyDocument, not both | ERROR | none |
+| `pf-iot-rolealias-name-charset` | AWS::IoT::RoleAlias | RoleAlias accepts only [A-Za-z0-9_=,@-] | ERROR | none |
+| `pf-iot-scheduledaudit-frequency-day` | AWS::IoT::ScheduledAudit | Frequency decides which day property is required | ERROR | none |
+| `pf-iot-sql-from-topic-filter` | AWS::IoT::TopicRule | A rule's FROM topic filter must use # only as the last level and + alone in its level | ERROR | none |
+| `pf-iot-sql-version-functions` | AWS::IoT::TopicRule | encode() needs AwsIotSqlVersion 2016-03-23 | ERROR | none |
+| `pf-iot-sql-version-value` | AWS::IoT::TopicRule | AwsIotSqlVersion must be 2015-10-08, 2016-03-23, 2016-03-23-beta or beta | ERROR | none |
+| `pf-iot-thing-attribute-count` | AWS::IoT::Thing | A thing may carry at most 3 attributes | ERROR | none |
+| `pf-iot-thinggroup-attribute-count` | AWS::IoT::ThingGroup | A thing group may carry at most 50 attributes | ERROR | none |
+| `pf-iot-thinggroup-parent-query-exclusive` | AWS::IoT::ThingGroup | A thing group cannot have both a parent and a QueryString | ERROR | none |
+| `pf-iot-topicrule-action-exactly-one` | AWS::IoT::TopicRule | Each entry of a topic rule's Actions must define exactly one action | ERROR | none |
+| `pf-iot-topicrule-role-account` | AWS::IoT::TopicRule | A topic rule action's RoleArn must live in the deploy account | ERROR | none |
+| `pf-iot-topicruledestination-exactly-one` | AWS::IoT::TopicRuleDestination | A topic rule destination must carry exactly one of HttpUrlProperties / VpcProperties | ERROR | none |
+| `pf-iot-topicruledestination-https` | AWS::IoT::TopicRuleDestination | A topic rule destination's ConfirmationUrl must be https | ERROR | none |
 | `pf-kinesis-consumer-duplicate-name` | AWS::Kinesis::StreamConsumer | Two consumers of one stream cannot share a ConsumerName | ERROR | none |
 | `pf-kinesis-consumer-stream-region` | AWS::Kinesis::StreamConsumer | A stream consumer must reference a stream in its own region | ERROR | none |
 | `pf-kinesis-encryption-key-region` | AWS::Kinesis::Stream | The stream encryption key must live in the stream region | ERROR | none |
