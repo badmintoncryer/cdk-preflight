@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::NetworkFirewall::TLSInspectionConfiguration",
+      "Properties": {
+        "TLSInspectionConfigurationName": "cdkpf280-tlsscope-f",
+        "TLSInspectionConfiguration": {
+          "ServerCertificateConfigurations": [
+            {
+              "ServerCertificates": [
+                {
+                  "ResourceArn": {
+                    "Fn::Sub": "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "T2": {
+      "Type": "AWS::NetworkFirewall::TLSInspectionConfiguration",
+      "Properties": {
+        "TLSInspectionConfigurationName": "cdkpf280-tlsscope-f2",
+        "TLSInspectionConfiguration": {
+          "ServerCertificateConfigurations": [
+            {
+              "ServerCertificates": [
+                {
+                  "ResourceArn": {
+                    "Fn::Sub": "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+                  }
+                }
+              ],
+              "Scopes": [
+                {}
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

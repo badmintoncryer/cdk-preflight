@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-reject-tcp-only
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "reject only works for tcp and the TCP application protocols the service implements"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-action.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): \"reject udp\" -> \"reason: udp reject is not supported\", and StatefulRules with Action REJECT over Header.Protocol IP answers \"reason: ip reject is not supported\" in the same words; 33 protocol words were measured one by one and only tcp, http, tls, smb, ssh, smtp and dcerpc were taken - http2, ssl, telnet, rdp, ftp and imap are TCP-based and still refused, so the documented \"TCP only\" is not the whole rule; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: reject udp any any -> any any (msg:\"m\"; sid:1; gid:1234567890;), reason: udp reject is not supported (Service: NetworkFirewall, Status Code: 400, Request ID: a41187e2-1eaa-4b24-a41c-894ae4504228) (SDK Attempt Count: 1)\" (RequestToken: b1895d49-1298-4e26-c5a8-d5bd0ac0bf56, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-variable-defined
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A $variable used by a Suricata rule must be declared in RuleVariables"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-limitations-caveats.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): $MYNET with no declaration -> \"MYNET cannot be null or empty, context: RuleVariables.IPSets.MYNET\"; HTTP_PORTS, HTTPS_PORTS, SSH_PORTS, DNS_SERVERS and 13 other Suricata defaults were each rejected the same way, so HOME_NET and EXTERNAL_NET are the only built-ins; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"MYNET cannot be null or empty, context: RuleVariables.IPSets.MYNET (Service: NetworkFirewall, Status Code: 400, Request ID: 433af8fc-4c5c-4a74-b398-18909cf140aa) (SDK Attempt Count: 1)\" (RequestToken: 9fa9b031-c910-ac8b-45b3-9c47bb076cd3, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

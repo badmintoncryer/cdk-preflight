@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-reject-f",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "reject udp any any -> any any (msg:\"m\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "R2": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-reject-f2",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatefulRules": [
+              {
+                "Action": "REJECT",
+                "Header": {
+                  "Protocol": "IP",
+                  "Source": "ANY",
+                  "SourcePort": "ANY",
+                  "Direction": "ANY",
+                  "Destination": "ANY",
+                  "DestinationPort": "ANY"
+                },
+                "RuleOptions": [
+                  {
+                    "Keyword": "sid",
+                    "Settings": [
+                      "1"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

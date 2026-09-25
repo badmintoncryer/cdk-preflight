@@ -1,0 +1,12 @@
+id: pf-networkfirewall-tls-revocation-requires-ca
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::TLSInspectionConfiguration]
+severity: ERROR
+title: "CheckCertificateRevocationStatus needs a CertificateAuthorityArn beside it"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_ServerCertificateConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CheckCertificateRevocationStatus beside ServerCertificates only -> \"InvalidRequestException: CertificateAuthorityArn is required when enabling CheckCertificateRevocationStatus.\", raised before the certificate ARNs are resolved; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"CertificateAuthorityArn is required when enabling CheckCertificateRevocationStatus. (Service: NetworkFirewall, Status Code: 400, Request ID: 54e9f237-0448-4d6e-8b73-0b1542fe7d46) (SDK Attempt Count: 1)\" (RequestToken: 3398dbf7-b79d-0893-da2a-831bff1f764a, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

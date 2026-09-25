@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::NetworkFirewall::TLSInspectionConfiguration",
+      "Properties": {
+        "TLSInspectionConfigurationName": "cdkpf280-tlsnocert-f",
+        "TLSInspectionConfiguration": {
+          "ServerCertificateConfigurations": [
+            {
+              "Scopes": [
+                {
+                  "Sources": [
+                    {
+                      "AddressDefinition": "10.0.0.0/16"
+                    }
+                  ],
+                  "Destinations": [
+                    {
+                      "AddressDefinition": "0.0.0.0/0"
+                    }
+                  ],
+                  "SourcePorts": [
+                    {
+                      "FromPort": 0,
+                      "ToPort": 65535
+                    }
+                  ],
+                  "DestinationPorts": [
+                    {
+                      "FromPort": 443,
+                      "ToPort": 443
+                    }
+                  ],
+                  "Protocols": [
+                    6
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

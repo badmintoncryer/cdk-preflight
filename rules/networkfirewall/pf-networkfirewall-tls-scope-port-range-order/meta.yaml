@@ -1,0 +1,12 @@
+id: pf-networkfirewall-tls-scope-port-range-order
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::TLSInspectionConfiguration]
+severity: ERROR
+title: "A TLS inspection scope port range needs FromPort <= ToPort"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_PortRange.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (against the account's permanent *.appnao.com certificate): FromPort 443 with ToPort 80 -> \"InvalidRequestException: FromPort, ToPort is not within the bound, parameter: [443, 80], context: ServerCertificateConfigurations[0].Scopes[0].SourcePorts[0]\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"FromPort, ToPort is not within the bound, parameter: [444, 443], context: ServerCertificateConfigurations[0].Scopes[0].DestinationPorts[0] (Service: NetworkFirewall, Status Code: 400, Request ID: f84a16bd-a904-43a4-a786-1a99619b4ecc) (SDK Attempt Count: 1)\" (RequestToken: 7871c74e-67e0-dbda-f656-cfd3de60e15c, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

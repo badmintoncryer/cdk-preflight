@@ -1,0 +1,12 @@
+id: pf-networkfirewall-suricata-geoip-country-code
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A geoip keyword takes ISO 3166-1 alpha-2 country codes"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-groups-geo-ip-filtering.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): geoip:src,ZZ -> \"reason: Rule contains an incorrect country code\", and UK / USA / EU / AP / AN / TP / YU / CS / SU / AC / TA / IC / EA / XX / QQ / ZZZ were each refused the same way, while one rule group carrying all 250 codes of this set was accepted with ConsumedCapacity 250; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: pass tcp any any -> any any (msg:\"m\"; geoip:src,ZZ; sid:1; gid:1234567890;), reason: Rule contains an incorrect country code (Service: NetworkFirewall, Status Code: 400, Request ID: 45f05724-6273-46c8-8294-3503a0963120) (SDK Attempt Count: 1)\" (RequestToken: 2dc568f0-c8a1-bf59-d185-dff5ebb7bc4b, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

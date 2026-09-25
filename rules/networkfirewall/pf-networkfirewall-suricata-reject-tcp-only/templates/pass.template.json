@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-reject-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "reject tcp any any -> any any (msg:\"a\"; sid:1;)\nreject http any any -> any any (msg:\"b\"; sid:2;)"
+          }
+        }
+      }
+    },
+    "R2": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-reject-p2",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "StatefulRules": [
+              {
+                "Action": "REJECT",
+                "Header": {
+                  "Protocol": "TCP",
+                  "Source": "ANY",
+                  "SourcePort": "ANY",
+                  "Direction": "ANY",
+                  "Destination": "ANY",
+                  "DestinationPort": "ANY"
+                },
+                "RuleOptions": [
+                  {
+                    "Keyword": "sid",
+                    "Settings": [
+                      "1"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

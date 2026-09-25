@@ -1,0 +1,12 @@
+id: pf-networkfirewall-tls-scopes-required
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::TLSInspectionConfiguration]
+severity: ERROR
+title: "A ServerCertificateConfiguration needs a scope that names sources or destinations"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/tls-inspection-settings.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (against the account's permanent *.appnao.com certificate, since a made-up ARN is refused earlier with \"Certificate ... does not exist\"): no Scopes -> \"InvalidRequestException: Scopes cannot be null or empty, context: ServerCertificateConfigurations[0].Scopes\"; an empty scope object -> \"Sources, Destinations cannot be null or empty, context: ServerCertificateConfigurations[0].Scopes[0]\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Sources, Destinations cannot be null or empty, context: ServerCertificateConfigurations[0].Scopes[0] (Service: NetworkFirewall, Status Code: 400, Request ID: 97bfc1a9-e2d5-417c-a561-745f734e9bc4) (SDK Attempt Count: 1)\" (RequestToken: 45887730-b702-b041-5829-c6512fea3769, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

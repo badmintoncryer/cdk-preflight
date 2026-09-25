@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-badkw-p",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; content:\"a\"; sid:1;)\npass http any any -> any any (msg:\"b\"; fileext:\"exe\"; sid:2;)"
+          }
+        }
+      }
+    }
+  }
+}
