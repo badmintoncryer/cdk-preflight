@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2890-blue" alt="2890 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-2922-blue" alt="2922 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -155,7 +155,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>370 resource types across 68 services</b> — click to expand</summary>
+<summary><b>376 resource types across 69 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -208,6 +208,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **MSK** | `BatchScramSecret` (2), `Cluster` (31), `ClusterPolicy` (1), `Configuration` (4), `Replicator` (10), `ServerlessCluster` (4) |
 | **Neptune** | `DBCluster` (11), `DBClusterParameterGroup` (1), `DBInstance` (3), `DBSubnetGroup` (1), `GlobalCluster` (1) |
 | **NeptuneGraph** | `Graph` (2), `PrivateGraphEndpoint` (1) |
+| **OpenSearchServerless** | `AccessPolicy` (7), `Collection` (2), `CollectionGroup` (3), `LifecyclePolicy` (4), `SecurityConfig` (5), `SecurityPolicy` (14) |
 | **OpenSearchService** | `Domain` (65) |
 | **Pipes** | `Pipe` (9) |
 | **RDS** | `DBCluster` (19), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |

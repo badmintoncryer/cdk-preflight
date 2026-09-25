@@ -8,6 +8,38 @@
 | `pf-acm-domain-validation-option-known-domain` | AWS::CertificateManager::Certificate | Every DomainValidationOptions entry must name the certificate's own DomainName or a SubjectAlternativeName | ERROR | none |
 | `pf-acm-public-key-algorithm` | AWS::CertificateManager::Certificate | A public ACM certificate takes only RSA_2048, EC_prime256v1 or EC_secp384r1 | ERROR | none |
 | `pf-acm-validation-domain-superdomain` | AWS::CertificateManager::Certificate | An email-validated certificate's ValidationDomain must be a superdomain of the domain it validates | ERROR | none |
+| `pf-aoss-access-policy-index-resource-segments` | AWS::OpenSearchServerless::AccessPolicy | An index resource is index/<collection>/<index> | ERROR | none |
+| `pf-aoss-access-policy-permission-resource-type` | AWS::OpenSearchServerless::AccessPolicy | A data access permission belongs to its rule ResourceType | ERROR | none |
+| `pf-aoss-access-policy-permission-unknown` | AWS::OpenSearchServerless::AccessPolicy | A data access permission must be a known aoss action | ERROR | none |
+| `pf-aoss-access-policy-principal-account` | AWS::OpenSearchServerless::AccessPolicy | Data access principals live in the deploy account | ERROR | none |
+| `pf-aoss-access-policy-resource-type-prefix` | AWS::OpenSearchServerless::AccessPolicy | A data access Resource starts with its own ResourceType | ERROR | none |
+| `pf-aoss-access-policy-top-level-array` | AWS::OpenSearchServerless::AccessPolicy | A data access policy is a JSON array | ERROR | none |
+| `pf-aoss-collection-encryption-policy-mismatch` | AWS::OpenSearchServerless::Collection<br>AWS::OpenSearchServerless::SecurityPolicy | A collection must be covered by an encryption policy its template declares | ERROR | none |
+| `pf-aoss-collection-group-capacity-min-max` | AWS::OpenSearchServerless::CollectionGroup | A collection group minimum OCU must not exceed its maximum | ERROR | none |
+| `pf-aoss-collection-group-capacity-ocu-step` | AWS::OpenSearchServerless::CollectionGroup | Collection group OCU limits must be 2, 4, 8, 16 or a multiple of 16 | ERROR | none |
+| `pf-aoss-collection-group-nextgen-standby-replicas` | AWS::OpenSearchServerless::CollectionGroup | A NEXTGEN collection group must enable standby replicas | ERROR | none |
+| `pf-aoss-collection-kms-key-arn-region` | AWS::OpenSearchServerless::Collection | A collection KmsKeyArn must name the deploy Region | ERROR | none |
+| `pf-aoss-encryption-policy-duplicate-resource` | AWS::OpenSearchServerless::SecurityPolicy | Two encryption policies must not claim the same resource pattern | ERROR | none |
+| `pf-aoss-encryption-policy-kms-arn-region` | AWS::OpenSearchServerless::SecurityPolicy | An encryption policy KmsARN must name the deploy Region | ERROR | none |
+| `pf-aoss-encryption-policy-kms-arn-required` | AWS::OpenSearchServerless::SecurityPolicy | AWSOwnedKey false needs a KmsARN | ERROR | none |
+| `pf-aoss-encryption-policy-resource-type` | AWS::OpenSearchServerless::SecurityPolicy | An encryption policy rule only covers collection/<name> | ERROR | none |
+| `pf-aoss-lifecycle-resource-type` | AWS::OpenSearchServerless::LifecyclePolicy | A retention policy rule only covers index/<collection>/<index> | ERROR | none |
+| `pf-aoss-lifecycle-retention` | AWS::OpenSearchServerless::LifecyclePolicy | MinIndexRetention is 24h-87600h or 1d-3650d | ERROR | none |
+| `pf-aoss-lifecycle-retention-exclusive` | AWS::OpenSearchServerless::LifecyclePolicy | MinIndexRetention and NoMinIndexRetention are exclusive | ERROR | none |
+| `pf-aoss-network-policy-allow-from-public-required` | AWS::OpenSearchServerless::SecurityPolicy | Every network policy block needs AllowFromPublic | ERROR | none |
+| `pf-aoss-network-policy-private-source-required` | AWS::OpenSearchServerless::SecurityPolicy | A private network policy block needs a source | ERROR | none |
+| `pf-aoss-network-policy-public-source-exclusive` | AWS::OpenSearchServerless::SecurityPolicy | A network policy block cannot combine AllowFromPublic with a private source | ERROR | none |
+| `pf-aoss-network-policy-resource-type` | AWS::OpenSearchServerless::SecurityPolicy | A network policy rule covers collection or dashboard, and always collection/<name> | ERROR | none |
+| `pf-aoss-network-policy-source-service-valid` | AWS::OpenSearchServerless::SecurityPolicy | bedrock.amazonaws.com is the only SourceServices value | ERROR | none |
+| `pf-aoss-network-policy-vpce-id-format` | AWS::OpenSearchServerless::SecurityPolicy | SourceVPCEs holds VPC endpoint ids | ERROR | none |
+| `pf-aoss-policy-document-size` | AWS::OpenSearchServerless::SecurityPolicy<br>AWS::OpenSearchServerless::AccessPolicy<br>AWS::OpenSearchServerless::LifecyclePolicy | A policy document must not exceed 10,240 bytes once minified | ERROR | none |
+| `pf-aoss-security-config-name-required` | AWS::OpenSearchServerless::SecurityConfig | A security config must name itself | ERROR | none |
+| `pf-aoss-security-config-options-type-match` | AWS::OpenSearchServerless::SecurityConfig | A security config must carry the options block its Type names | ERROR | none |
+| `pf-aoss-security-config-saml-metadata-shape` | AWS::OpenSearchServerless::SecurityConfig | SamlOptions.Metadata must be IdP metadata with an SSO endpoint and a certificate | ERROR | none |
+| `pf-aoss-security-config-saml-session-timeout` | AWS::OpenSearchServerless::SecurityConfig | SamlOptions.SessionTimeout must be between 5 and 720 minutes | ERROR | none |
+| `pf-aoss-security-config-type-required` | AWS::OpenSearchServerless::SecurityConfig | A security config must declare its Type | ERROR | none |
+| `pf-aoss-security-policy-encryption-body-shape` | AWS::OpenSearchServerless::SecurityPolicy | An encryption security policy body must be a JSON object without network keys | ERROR | none |
+| `pf-aoss-security-policy-network-body-shape` | AWS::OpenSearchServerless::SecurityPolicy | A network security policy body must be a JSON array without encryption keys | ERROR | none |
 | `pf-apigw-access-log-format-request-id` | AWS::ApiGateway::Stage | Access log format must include a request id variable | ERROR | none |
 | `pf-apigw-api-key-value-length` | AWS::ApiGateway::ApiKey | An API key value is at least 20 characters | ERROR | none |
 | `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | ERROR | none |
