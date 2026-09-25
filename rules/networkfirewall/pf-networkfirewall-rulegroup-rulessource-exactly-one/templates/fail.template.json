@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-rsone-f",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)",
+            "RulesSourceList": {
+              "Targets": [
+                ".example.com"
+              ],
+              "TargetTypes": [
+                "TLS_SNI"
+              ],
+              "GeneratedRulesType": "DENYLIST"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-stateless-ports-protocol
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "Stateless port matching needs TCP or UDP among the protocols"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_MatchAttributes.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Protocols [1] with SourcePorts (80, 80) -> \"SourcePorts, Protocols cannot exist together, parameter: [(80, 80), 1], context: ...MatchAttributes.SourcePorts\"; the same rule with Protocols [6] was accepted. MatchAttributes must carry Sources or Destinations for this to surface - an empty one is rejected first; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"SourcePorts, Protocols cannot exist together, parameter: [(80, 80), 1], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes.SourcePorts (Service: NetworkFirewall, Status Code: 400, Request ID: 80a911d0-d1a2-4e3c-9aa8-d62cdd7147e8) (SDK Attempt Count: 1)\" (RequestToken: ecbf4fb4-60f4-a2a9-182c-a88d1a55304b, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

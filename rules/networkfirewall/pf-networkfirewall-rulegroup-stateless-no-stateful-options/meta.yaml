@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-stateless-no-stateful-options
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A STATELESS rule group takes neither RuleVariables nor StatefulRuleOptions"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/stateful-rule-group-options.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): STATELESS + RuleVariables -> \"RuleVariables cannot be provided, context: RuleVariables\"; STATELESS + StatefulRuleOptions -> \"StatefulRuleOptions cannot be provided, context: StatefulRuleOptions\"; STATELESS + ReferenceSets was accepted (ConsumedCapacity 1), so the claim names two keys and not the doc's three; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"RuleVariables cannot be provided, context: RuleVariables (Service: NetworkFirewall, Status Code: 400, Request ID: a01ca5d1-c1b8-4dc5-9d52-eac56a7e2739) (SDK Attempt Count: 1)\" (RequestToken: d2d4eec6-3623-1196-bd0a-a923a60e8444, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

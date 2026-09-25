@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-ipset-reference-arn-unique
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "Two IP set references cannot point at the same prefix list"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-groups-ip-set-references.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): two IPSetReferences keys pointing at one prefix list -> \"IPSetReferences is invalid, parameter: [arn:aws:ec2:us-east-1:...:prefix-list/pl-0239f13be3b46869f], context: ReferenceSets\"; five keys on five distinct prefix lists accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"IPSetReferences is invalid, parameter: [arn:aws:ec2:us-east-1:214794239830:prefix-list/pl-01d0be8a07558038d], context: ReferenceSets (Service: NetworkFirewall, Status Code: 400, Request ID: ac988d5d-45fe-460b-99a8-f2f980442734) (SDK Attempt Count: 1)\" (RequestToken: 48564c92-b4f2-a6f3-a495-53008a08ed42, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

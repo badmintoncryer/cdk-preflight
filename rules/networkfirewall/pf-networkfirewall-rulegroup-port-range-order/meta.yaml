@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-port-range-order
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A stateless port range needs FromPort <= ToPort"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_PortRange.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): FromPort 443 with ToPort 80 -> \"FromPort, ToPort is not within the bound, parameter: [443, 80], context: ...MatchAttributes.SourcePorts[0]\"; 443/443 accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"FromPort, ToPort is not within the bound, parameter: [444, 443], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes.DestinationPorts[0] (Service: NetworkFirewall, Status Code: 400, Request ID: 4ab59192-cd3d-4188-ba0b-913905168cf1) (SDK Attempt Count: 1)\" (RequestToken: a978a590-5270-6a12-04c3-59d45dffd077, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

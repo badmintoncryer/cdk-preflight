@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-tcpflags-subset-of-masks
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "TCP Flags must be a subset of the Masks they are inspected under"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/stateless-rule-groups-standard.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Flags [SYN, ACK] under Masks [SYN] -> \"Flags is unmasked, parameter: [ACK], context: ...MatchAttributes.TCPFlags[0].Flags\"; the service names the flag that falls outside the mask; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Flags is unmasked, parameter: [ACK], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes.TCPFlags[0].Flags (Service: NetworkFirewall, Status Code: 400, Request ID: 9675e90c-c2a6-4212-b1e7-5761e961cfa8) (SDK Attempt Count: 1)\" (RequestToken: 227ba559-3efc-9eee-a9c7-5552ff4bf03e, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-networkfirewall-rulegroup-capacity-stateful
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::RuleGroup]
+severity: ERROR
+title: "A STATEFUL rule group needs one capacity unit per rule"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/nwfw-rule-group-capacity.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Capacity 1 with a two-rule RulesString -> \"StatefulRules capacity exceeded, parameter: [2], context: RulesSource.StatefulRules\"; the same rules at Capacity 2 were accepted. RulesSourceList is left out on purpose: its cost is Targets x TargetTypes + TargetTypes + 1 (measured at 4 points); bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatefulRules capacity exceeded, parameter: [2], context: RulesSource.StatefulRules (Service: NetworkFirewall, Status Code: 400, Request ID: 0b19eab3-16ae-4e3b-ac9e-95cdc504223e) (SDK Attempt Count: 1)\" (RequestToken: c50b0409-17fe-e71f-2d40-7eeccb62bdef, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

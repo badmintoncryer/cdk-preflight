@@ -196,3 +196,45 @@ _pf_nfwlib_tls_scope contains [name, ci, si, sc] if {
 	is_object(sc)
 	not _pf_ll_conditional(sc)
 }
+
+# --- stateless rules and the capacity they consume ---------------------------
+
+# Every element of RulesSource.StatelessRulesAndCustomActions.StatelessRules[],
+# as [resource, index, rule].
+_pf_nfwlib_stateless_rules contains [name, i, r] if {
+	some name in resources_of_type("AWS::NetworkFirewall::RuleGroup")
+	rs := object.get(_pf_nfwlib_props(name), ["RuleGroup", "RulesSource", "StatelessRulesAndCustomActions", "StatelessRules"], null)
+	is_array(rs)
+	some i, r in rs
+	is_object(r)
+	not _pf_ll_conditional(r)
+}
+
+# The capacity a stateless rule group consumes: per rule the product of the
+# element counts of Sources, Destinations, SourcePorts, DestinationPorts and
+# Protocols (an unset match setting counts as 1), summed over the rules. This is
+# a different formula from the stateful one (one unit per rule) and from the
+# domain list one (Targets * TargetTypes + TargetTypes + 1).
+# Measured against CreateRuleGroup (DryRun, us-east-1, 2026-09-25): one rule with
+# three Sources and two Protocols answers "StatelessRules capacity exceeded,
+# parameter: [6]". Undefined as soon as one list cannot be counted, so a
+# template the count cannot be read out of is left alone.
+_pf_nfwlib_stateless_cost(name) := sum(costs) if {
+	rules := object.get(_pf_nfwlib_props(name), ["RuleGroup", "RulesSource", "StatelessRulesAndCustomActions", "StatelessRules"], null)
+	_pf_countable_items(rules)
+	costs := [c |
+		some r in rules
+		ma := object.get(r, ["RuleDefinition", "MatchAttributes"], {})
+		is_object(ma)
+		not _pf_ll_conditional(ma)
+		dims := [n |
+			some key in ["Sources", "Destinations", "SourcePorts", "DestinationPorts", "Protocols"]
+			v := object.get(ma, key, [])
+			_pf_countable_items(v)
+			n := max([1, count(v)])
+		]
+		count(dims) == 5
+		c := (((dims[0] * dims[1]) * dims[2]) * dims[3]) * dims[4]
+	]
+	count(costs) == count(rules)
+}

@@ -1,0 +1,51 @@
+{
+  "Resources": {
+    "PL0": {
+      "Type": "AWS::EC2::PrefixList",
+      "Properties": {
+        "PrefixListName": "cdkpf280pl0",
+        "AddressFamily": "IPv4",
+        "MaxEntries": 1,
+        "Entries": [
+          {
+            "Cidr": "10.0.0.0/16",
+            "Description": "probe"
+          }
+        ]
+      }
+    },
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-refuniq-f",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          },
+          "ReferenceSets": {
+            "IPSetReferences": {
+              "ref0": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL0",
+                    "Arn"
+                  ]
+                }
+              },
+              "ref1": {
+                "ReferenceArn": {
+                  "Fn::GetAtt": [
+                    "PL0",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
