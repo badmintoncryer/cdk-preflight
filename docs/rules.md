@@ -2285,6 +2285,62 @@
 | `pf-neptunegraph-graph-name-lowercase` | AWS::NeptuneGraph::Graph | GraphName must be lowercase and must not start with g- | ERROR | none |
 | `pf-neptunegraph-private-endpoint-subnet-vpc-match` | AWS::NeptuneGraph::PrivateGraphEndpoint<br>AWS::EC2::Subnet | PrivateGraphEndpoint SubnetIds must belong to its VpcId | ERROR | none |
 | `pf-neptunegraph-vector-dimension-range` | AWS::NeptuneGraph::Graph | VectorSearchDimension must be within 1-65536 | ERROR | none |
+| `pf-networkfirewall-policy-custom-action-defined` | AWS::NetworkFirewall::FirewallPolicy | A custom action named in a default-action list must be defined on the policy | ERROR | none |
+| `pf-networkfirewall-policy-fragment-default-action-standard` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy needs exactly one standard StatelessFragmentDefaultActions entry | ERROR | none |
+| `pf-networkfirewall-policy-override-managed-only` | AWS::NetworkFirewall::FirewallPolicy | Override only works on a managed rule group reference | ERROR | none |
+| `pf-networkfirewall-policy-ref-type-match` | AWS::NetworkFirewall::FirewallPolicy<br>AWS::NetworkFirewall::RuleGroup | A rule group reference must point at a rule group of its own kind | ERROR | none |
+| `pf-networkfirewall-policy-rule-order-match` | AWS::NetworkFirewall::FirewallPolicy<br>AWS::NetworkFirewall::RuleGroup | A policy and the stateful rule groups it references must agree on the rule order | ERROR | none |
+| `pf-networkfirewall-policy-rulegroup-arn-region` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy can only reference rule groups in its own region | ERROR | none |
+| `pf-networkfirewall-policy-session-holding-requires-tls` | AWS::NetworkFirewall::FirewallPolicy | TLS session holding needs a TLS inspection configuration | ERROR | none |
+| `pf-networkfirewall-policy-stateful-default-compatible` | AWS::NetworkFirewall::FirewallPolicy | Established and application-layer stateful default actions are mutually exclusive | ERROR | none |
+| `pf-networkfirewall-policy-stateful-default-one-drop` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy takes at most one stateful default drop action | ERROR | none |
+| `pf-networkfirewall-policy-stateful-default-strict-order` | AWS::NetworkFirewall::FirewallPolicy | StatefulDefaultActions needs the strict rule order | ERROR | none |
+| `pf-networkfirewall-policy-stateful-priority-strict-order` | AWS::NetworkFirewall::FirewallPolicy | A stateful rule group reference needs a Priority exactly under the strict rule order | ERROR | none |
+| `pf-networkfirewall-policy-stateful-priority-unique` | AWS::NetworkFirewall::FirewallPolicy | Stateful rule group reference priorities must be unique inside a policy | ERROR | none |
+| `pf-networkfirewall-policy-stateful-refs-max` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy references at most 20 stateful rule groups | ERROR | none |
+| `pf-networkfirewall-policy-stateless-capacity-sum` | AWS::NetworkFirewall::FirewallPolicy<br>AWS::NetworkFirewall::RuleGroup | The stateless rule groups a policy references may total 30,000 capacity | ERROR | none |
+| `pf-networkfirewall-policy-stateless-default-action-standard` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy needs exactly one standard StatelessDefaultActions entry | ERROR | none |
+| `pf-networkfirewall-policy-stateless-priority-unique` | AWS::NetworkFirewall::FirewallPolicy | Stateless rule group reference priorities must be unique inside a policy | ERROR | none |
+| `pf-networkfirewall-policy-stateless-refs-max` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy references at most 20 stateless rule groups | ERROR | none |
+| `pf-networkfirewall-policy-variables-home-net-only` | AWS::NetworkFirewall::FirewallPolicy | A firewall policy can only override HOME_NET | ERROR | none |
+| `pf-networkfirewall-rulegroup-capacity-max` | AWS::NetworkFirewall::RuleGroup | A rule group's Capacity tops out at 30,000 | ERROR | none |
+| `pf-networkfirewall-rulegroup-capacity-stateful` | AWS::NetworkFirewall::RuleGroup | A STATEFUL rule group needs one capacity unit per rule | ERROR | none |
+| `pf-networkfirewall-rulegroup-capacity-stateless` | AWS::NetworkFirewall::RuleGroup | A STATELESS rule group needs capacity for the product of its match settings | ERROR | none |
+| `pf-networkfirewall-rulegroup-custom-actions-max` | AWS::NetworkFirewall::RuleGroup | A stateless rule group takes at most 10 custom actions | ERROR | none |
+| `pf-networkfirewall-rulegroup-domain-target-format` | AWS::NetworkFirewall::RuleGroup | A domain list target is a plain name or a leading-dot wildcard | ERROR | none |
+| `pf-networkfirewall-rulegroup-domain-target-unique` | AWS::NetworkFirewall::RuleGroup | Domain list targets must stay unique once the wildcard dot is stripped | ERROR | none |
+| `pf-networkfirewall-rulegroup-ipset-reference-arn-unique` | AWS::NetworkFirewall::RuleGroup | Two IP set references cannot point at the same prefix list | ERROR | none |
+| `pf-networkfirewall-rulegroup-ipset-references-max` | AWS::NetworkFirewall::RuleGroup | A rule group takes at most 5 IP set references | ERROR | none |
+| `pf-networkfirewall-rulegroup-port-range-order` | AWS::NetworkFirewall::RuleGroup | A stateless port range needs FromPort <= ToPort | ERROR | none |
+| `pf-networkfirewall-rulegroup-rulessource-exactly-one` | AWS::NetworkFirewall::RuleGroup | A rule group needs exactly one kind of RulesSource | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-action-standard` | AWS::NetworkFirewall::RuleGroup | A stateless rule needs exactly one standard action | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-custom-action-defined` | AWS::NetworkFirewall::RuleGroup | A custom action named by a stateless rule must be defined in the same rules source | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-match-src-or-dst` | AWS::NetworkFirewall::RuleGroup | A stateless rule must match on a source or a destination address | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-no-stateful-options` | AWS::NetworkFirewall::RuleGroup | A STATELESS rule group takes neither RuleVariables nor StatefulRuleOptions | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-ports-protocol` | AWS::NetworkFirewall::RuleGroup | Stateless port matching needs TCP or UDP among the protocols | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-priority-unique` | AWS::NetworkFirewall::RuleGroup | Stateless rule priorities must be unique inside a rule group | ERROR | none |
+| `pf-networkfirewall-rulegroup-stateless-tcpflags-protocol` | AWS::NetworkFirewall::RuleGroup | Stateless TCP flag matching needs TCP among the protocols | ERROR | none |
+| `pf-networkfirewall-rulegroup-tcpflags-subset-of-masks` | AWS::NetworkFirewall::RuleGroup | TCP Flags must be a subset of the Masks they are inspected under | ERROR | none |
+| `pf-networkfirewall-rulegroup-type-source-match` | AWS::NetworkFirewall::RuleGroup | A rule group's Type must match the kind of RulesSource it carries | ERROR | none |
+| `pf-networkfirewall-suricata-action-supported` | AWS::NetworkFirewall::RuleGroup | A Suricata rule action must be pass, drop, reject or alert | ERROR | none |
+| `pf-networkfirewall-suricata-geoip-country-code` | AWS::NetworkFirewall::RuleGroup | A geoip keyword takes ISO 3166-1 alpha-2 country codes | ERROR | none |
+| `pf-networkfirewall-suricata-gid-not-allowed` | AWS::NetworkFirewall::RuleGroup | A Suricata rule cannot set its own gid | ERROR | none |
+| `pf-networkfirewall-suricata-ipset-reference-defined` | AWS::NetworkFirewall::RuleGroup | An @reference used by a Suricata rule must be declared in ReferenceSets | ERROR | none |
+| `pf-networkfirewall-suricata-pcre-companion-keyword` | AWS::NetworkFirewall::RuleGroup | pcre needs content, tls.sni, http.host, dns.query or http.uri in the same rule | ERROR | none |
+| `pf-networkfirewall-suricata-priority-strict-order` | AWS::NetworkFirewall::RuleGroup | A STRICT_ORDER rule group cannot use the priority or classtype keywords | ERROR | none |
+| `pf-networkfirewall-suricata-reject-tcp-only` | AWS::NetworkFirewall::RuleGroup | reject only works for tcp and the TCP application protocols the service implements | ERROR | none |
+| `pf-networkfirewall-suricata-rule-max-length` | AWS::NetworkFirewall::RuleGroup | A single Suricata rule is limited to 8,175 characters | ERROR | none |
+| `pf-networkfirewall-suricata-sid-required` | AWS::NetworkFirewall::RuleGroup | Every Suricata rule in a RulesString needs a sid | ERROR | none |
+| `pf-networkfirewall-suricata-sid-unique` | AWS::NetworkFirewall::RuleGroup | Two Suricata rules in one rule group cannot share a sid | ERROR | none |
+| `pf-networkfirewall-suricata-unsupported-keyword` | AWS::NetworkFirewall::RuleGroup | Network Firewall rejects the dataset, datarep, iprep, lua, luajit and filestore keywords | ERROR | none |
+| `pf-networkfirewall-suricata-variable-defined` | AWS::NetworkFirewall::RuleGroup | A $variable used by a Suricata rule must be declared in RuleVariables | ERROR | none |
+| `pf-networkfirewall-tls-ca-max-one` | AWS::NetworkFirewall::TLSInspectionConfiguration | A TLS inspection configuration takes exactly one ServerCertificateConfiguration | ERROR | none |
+| `pf-networkfirewall-tls-cert-or-ca-required` | AWS::NetworkFirewall::TLSInspectionConfiguration | A ServerCertificateConfiguration needs ServerCertificates or a CertificateAuthorityArn | ERROR | none |
+| `pf-networkfirewall-tls-revocation-requires-ca` | AWS::NetworkFirewall::TLSInspectionConfiguration | CheckCertificateRevocationStatus needs a CertificateAuthorityArn beside it | ERROR | none |
+| `pf-networkfirewall-tls-scope-port-range-order` | AWS::NetworkFirewall::TLSInspectionConfiguration | A TLS inspection scope port range needs FromPort <= ToPort | ERROR | none |
+| `pf-networkfirewall-tls-scope-protocol-tcp` | AWS::NetworkFirewall::TLSInspectionConfiguration | A TLS inspection scope can only name protocol 6 (TCP) | ERROR | none |
+| `pf-networkfirewall-tls-scopes-required` | AWS::NetworkFirewall::TLSInspectionConfiguration | A ServerCertificateConfiguration needs a scope that names sources or destinations | ERROR | none |
+| `pf-networkfirewall-tls-server-certs-max` | AWS::NetworkFirewall::TLSInspectionConfiguration | A TLS inspection configuration takes at most 10 server certificates | ERROR | none |
 | `pf-opensearch-access-policies-ip-condition-on-vpc-domain` | AWS::OpenSearchService::Domain | A VPC domain cannot carry an IP-based access policy | ERROR | none |
 | `pf-opensearch-advanced-options-unknown-key` | AWS::OpenSearchService::Domain | AdvancedOptions only accepts the documented keys | WARN | none |
 | `pf-opensearch-audit-logs-requires-fgac` | AWS::OpenSearchService::Domain | Audit log publishing requires fine-grained access control | ERROR | none |
