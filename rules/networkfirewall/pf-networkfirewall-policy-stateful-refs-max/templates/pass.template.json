@@ -1,0 +1,440 @@
+{
+  "Resources": {
+    "G0": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p0",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G1": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p1",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G2": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p2",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G3": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p3",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G4": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p4",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G5": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p5",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G6": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p6",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G7": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p7",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G8": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p8",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G9": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p9",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G10": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p10",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G11": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p11",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G12": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p12",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G13": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p13",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G14": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p14",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G15": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p15",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G16": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p16",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G17": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p17",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G18": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p18",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "G19": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-p19",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfrm-p",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G0",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G1",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G2",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G3",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G4",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G5",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G6",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G7",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G8",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G9",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G10",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G11",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G12",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G13",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G14",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G15",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G16",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G17",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G18",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G19",
+                  "RuleGroupArn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

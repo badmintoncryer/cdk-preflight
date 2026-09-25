@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-stateful-default-strict-order
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "StatefulDefaultActions needs the strict rule order"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_FirewallPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): StatefulDefaultActions [aws:drop_strict] with no StatefulEngineOptions -> \"StatefulDefaultActions has invalid rule order, parameter: [DEFAULT_ACTION_ORDER], context: StatefulDefaultActions\"; the same policy with RuleOrder STRICT_ORDER accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatefulDefaultActions has invalid rule order, parameter: [DEFAULT_ACTION_ORDER], context: StatefulDefaultActions (Service: NetworkFirewall, Status Code: 400, Request ID: 8e1bb98b-1783-4207-97da-48c78e48da26) (SDK Attempt Count: 1)\" (RequestToken: eb47e3d9-c889-a54f-d2fd-17dfcf60a61d, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-stateful-default-compatible
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "Established and application-layer stateful default actions are mutually exclusive"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): [aws:drop_established, aws:alert_established_app_layer] -> \"StatefulDefaultActions cannot exist together, parameter: [aws:drop_established, aws:alert_established_app_layer]\"; [aws:drop_established_app_layer, aws:alert_established] and [aws:alert_established, aws:alert_established_app_layer] the same; [aws:drop_established, aws:alert_established] and [aws:drop_established_app_layer, aws:alert_established_app_layer] both accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatefulDefaultActions cannot exist together, parameter: [aws:drop_established, aws:alert_established_app_layer], context: StatefulDefaultActions (Service: NetworkFirewall, Status Code: 400, Request ID: 33db4230-d1c5-4144-81de-5fa1292e86cb) (SDK Attempt Count: 1)\" (RequestToken: 129748b5-012f-19b9-3ae6-d05be0288746, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

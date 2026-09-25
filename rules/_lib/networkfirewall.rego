@@ -238,3 +238,86 @@ _pf_nfwlib_stateless_cost(name) := sum(costs) if {
 	]
 	count(costs) == count(rules)
 }
+
+# --- firewall policy ---------------------------------------------------------
+
+_pf_nfwlib_fp(name) := p if {
+	p := object.get(_pf_nfwlib_props(name), "FirewallPolicy", {})
+	is_object(p)
+	not _pf_ll_conditional(p)
+}
+
+# The three standard stateless actions. A default-action list may also name a
+# custom action, but the service still wants exactly one of these three in it
+# (measured 2026-09-25: ["MyAct"] with MyAct defined answers "cannot be null or
+# empty", ["aws:pass", "MyAct"] is accepted).
+_pf_nfwlib_std_actions := {"aws:pass", "aws:drop", "aws:forward_to_sfe"}
+
+# How many standard actions one of the two stateless default-action lists holds;
+# undefined when the list cannot be read as a literal array.
+_pf_nfwlib_std_action_count(name, key) := n if {
+	acts := object.get(_pf_nfwlib_fp(name), key, null)
+	_pf_countable_items(acts)
+
+	# every entry has to be a literal: a Ref to a parameter with no default stays
+	# a marker object here and could be any of the three standard actions, so a
+	# list holding one says nothing about how many the deployed policy has
+	count([a | some a in acts; is_string(a)]) == count(acts)
+	n := count([a |
+		some a in acts
+		a in _pf_nfwlib_std_actions
+	])
+}
+
+# Every rule group reference of every policy, as [policy, kind, index, ref]
+# with kind "Stateful" or "Stateless".
+_pf_nfwlib_policy_ref contains [name, kind, i, ref] if {
+	some name in resources_of_type("AWS::NetworkFirewall::FirewallPolicy")
+	some kind in ["Stateful", "Stateless"]
+	refs := object.get(_pf_nfwlib_fp(name), sprintf("%sRuleGroupReferences", [kind]), null)
+	is_array(refs)
+	some i, ref in refs
+	is_object(ref)
+	not _pf_ll_conditional(ref)
+}
+
+# What the i-th reference points at: the logical id of an in-template rule group
+# (Ref / Fn::GetAtt both resolve to it) or a literal ARN.
+_pf_nfwlib_ref_arn(name, kind, i) := resolve(name, sprintf("Properties.FirewallPolicy.%sRuleGroupReferences.%d.ResourceArn", [kind, i]))
+
+# The rule order in force. Both sides default to DEFAULT_ACTION_ORDER when the
+# key is absent, and both are undefined when it is there but not a literal, so a
+# rule comparing them says nothing about a template it cannot read.
+# Measured 2026-09-25: a STRICT_ORDER policy rejects a rule group that omits
+# StatefulRuleOptions exactly as it rejects an explicit DEFAULT_ACTION_ORDER one.
+# An Fn::If anywhere on the way to the key takes both bodies down together.
+# resolve() collapses Fn::If to its true branch while the raw lookup sees a
+# marker object with no RuleOrder key in it, so the two bodies would answer
+# STRICT_ORDER and DEFAULT_ACTION_ORDER for the same input - and a complete rule
+# with two outputs is an eval error that silences the whole pack for that
+# template, not just this rule (measured 2026-09-25).
+_pf_nfwlib_policy_rule_order(name) := o if {
+	eo := object.get(_pf_nfwlib_fp(name), "StatefulEngineOptions", {})
+	not _pf_ll_conditional(eo)
+	not _pf_ll_conditional(object.get(eo, "RuleOrder", null))
+	o := _pf_nfwlib_lit(name, "Properties.FirewallPolicy.StatefulEngineOptions.RuleOrder")
+}
+
+_pf_nfwlib_policy_rule_order(name) := "DEFAULT_ACTION_ORDER" if {
+	eo := object.get(_pf_nfwlib_fp(name), "StatefulEngineOptions", {})
+	not _pf_ll_conditional(eo)
+	object.get(eo, "RuleOrder", "__pf_absent") == "__pf_absent"
+}
+
+_pf_nfwlib_group_rule_order(name) := o if {
+	so := object.get(_pf_nfwlib_props(name), ["RuleGroup", "StatefulRuleOptions"], {})
+	not _pf_ll_conditional(so)
+	not _pf_ll_conditional(object.get(so, "RuleOrder", null))
+	o := _pf_nfwlib_rule_order(name)
+}
+
+_pf_nfwlib_group_rule_order(name) := "DEFAULT_ACTION_ORDER" if {
+	so := object.get(_pf_nfwlib_props(name), ["RuleGroup", "StatefulRuleOptions"], {})
+	not _pf_ll_conditional(so)
+	object.get(so, "RuleOrder", "__pf_absent") == "__pf_absent"
+}

@@ -1,0 +1,28 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-povr-p",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::Sub": "arn:aws:network-firewall:${AWS::Region}:aws-managed:stateful-rulegroup/ThreatSignaturesPhishingActionOrder"
+              },
+              "Override": {
+                "Action": "DROP_TO_ALERT"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

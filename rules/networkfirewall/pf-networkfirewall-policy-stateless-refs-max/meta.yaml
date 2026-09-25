@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-stateless-refs-max
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "A firewall policy references at most 20 stateless rule groups"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): 21 StatelessRuleGroupReferences -> \"StatelessRuleGroupReferences limit exceeded, parameter: [21], context: StatelessRuleGroupReferences\"; 20 distinct rule groups accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatelessRuleGroupReferences limit exceeded, parameter: [21], context: StatelessRuleGroupReferences (Service: NetworkFirewall, Status Code: 400, Request ID: 97b364e1-a152-47be-899a-feb390313279) (SDK Attempt Count: 1)\" (RequestToken: dddc090f-efd7-2c26-ca8f-ab3e8e63fc8c, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

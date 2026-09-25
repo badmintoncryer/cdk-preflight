@@ -1,0 +1,27 @@
+package cdk_preflight
+
+import rego.v1
+
+# StatelessFragmentDefaultActions is a plain array of strings in the schema, so neither
+# "not one standard action in it" nor "two of them" is visible below the service.
+# A custom action name may sit next to the one standard action, but on its own it
+# still answers "cannot be null or empty" (measured 2026-09-25: ["MyAct"] with
+# MyAct defined is rejected, ["aws:pass", "MyAct"] is accepted).
+violation contains make_diag_full("pf-networkfirewall-policy-fragment-default-action-standard", "ERROR", name,
+	"Properties.FirewallPolicy.StatelessFragmentDefaultActions",
+	"StatelessFragmentDefaultActions names none of aws:pass / aws:drop / aws:forward_to_sfe; CreateFirewallPolicy answers \"StatelessFragmentDefaultActions cannot be null or empty, context: StatelessFragmentDefaultActions\"",
+	"Name exactly one of aws:pass, aws:drop or aws:forward_to_sfe in StatelessFragmentDefaultActions",
+	"https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_FirewallPolicy.html") if {
+	some name in resources_of_type("AWS::NetworkFirewall::FirewallPolicy")
+	_pf_nfwlib_std_action_count(name, "StatelessFragmentDefaultActions") == 0
+}
+
+violation contains make_diag_full("pf-networkfirewall-policy-fragment-default-action-standard", "ERROR", name,
+	"Properties.FirewallPolicy.StatelessFragmentDefaultActions",
+	sprintf("StatelessFragmentDefaultActions names %d of aws:pass / aws:drop / aws:forward_to_sfe; CreateFirewallPolicy answers \"StatelessFragmentDefaultActions cannot exist together, context: StatelessFragmentDefaultActions\"", [n]),
+	"Name exactly one of aws:pass, aws:drop or aws:forward_to_sfe in StatelessFragmentDefaultActions",
+	"https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_FirewallPolicy.html") if {
+	some name in resources_of_type("AWS::NetworkFirewall::FirewallPolicy")
+	n := _pf_nfwlib_std_action_count(name, "StatelessFragmentDefaultActions")
+	n > 1
+}

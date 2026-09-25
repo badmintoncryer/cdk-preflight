@@ -1,0 +1,26 @@
+{
+  "Resources": {
+    "R": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-dtu-f",
+        "Type": "STATEFUL",
+        "Capacity": 100,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesSourceList": {
+              "Targets": [
+                ".example.com",
+                "example.com"
+              ],
+              "TargetTypes": [
+                "TLS_SNI"
+              ],
+              "GeneratedRulesType": "DENYLIST"
+            }
+          }
+        }
+      }
+    }
+  }
+}

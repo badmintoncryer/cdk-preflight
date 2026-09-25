@@ -1,0 +1,12 @@
+id: pf-networkfirewall-policy-custom-action-defined
+service: networkfirewall
+benchRegion: us-east-1
+resourceTypes: [AWS::NetworkFirewall::FirewallPolicy]
+severity: ERROR
+title: "A custom action named in a default-action list must be defined on the policy"
+constraintSource: https://docs.aws.amazon.com/network-firewall/latest/developerguide/rule-action.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): StatelessFragmentDefaultActions [aws:forward_to_sfe, NotDefined] -> \"StatelessFragmentDefaultActions is invalid, parameter: [NotDefined], context: StatelessFragmentDefaultActions\"; the same list with the action defined in StatelessCustomActions accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"StatelessFragmentDefaultActions is invalid, parameter: [NotDefined], context: StatelessFragmentDefaultActions (Service: NetworkFirewall, Status Code: 400, Request ID: db54ba61-fc91-4763-9bfd-27532898c8ef) (SDK Attempt Count: 1)\" (RequestToken: 91c92996-35dc-4edd-ec53-cab84fac7468, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

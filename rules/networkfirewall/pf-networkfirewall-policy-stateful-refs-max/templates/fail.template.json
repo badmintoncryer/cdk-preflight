@@ -1,0 +1,201 @@
+{
+  "Resources": {
+    "G": {
+      "Type": "AWS::NetworkFirewall::RuleGroup",
+      "Properties": {
+        "RuleGroupName": "cdkpf280-sfrm-f",
+        "Type": "STATEFUL",
+        "Capacity": 1,
+        "RuleGroup": {
+          "RulesSource": {
+            "RulesString": "pass tcp any any -> any any (msg:\"a\"; sid:1;)"
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::NetworkFirewall::FirewallPolicy",
+      "Properties": {
+        "FirewallPolicyName": "cdkpf280-sfrm-f",
+        "FirewallPolicy": {
+          "StatelessDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatelessFragmentDefaultActions": [
+            "aws:forward_to_sfe"
+          ],
+          "StatefulRuleGroupReferences": [
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            },
+            {
+              "ResourceArn": {
+                "Fn::GetAtt": [
+                  "G",
+                  "RuleGroupArn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
