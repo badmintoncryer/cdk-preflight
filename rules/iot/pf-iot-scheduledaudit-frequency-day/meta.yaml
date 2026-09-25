@@ -1,0 +1,12 @@
+id: pf-iot-scheduledaudit-frequency-day
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::ScheduledAudit]
+severity: ERROR
+title: "Frequency decides which day property is required"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-scheduledaudit.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateScheduledAudit MONTHLY with no dayOfMonth, WEEKLY with no dayOfWeek, and DAILY with dayOfWeek all answered \"InvalidRequestException: Invalid combination of frequency and day-of-week/day-of-month\"; DAILY on its own was accepted (#270 phase B). BIWEEKLY is folded in with WEEKLY from the documented table, not measured; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid combination of frequency and day-of-week/day-of-month (Service: Iot, Status Code: 400, Request ID: 7d6686be-374f-4c6a-9f8a-250267a0df06) (SDK Attempt Count: 1)\\\" (RequestToken: 937241e0-28f6-857e-8deb-dd82868ec425, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

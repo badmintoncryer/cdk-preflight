@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "cdkpf270dcsvc": {
+      "Type": "AWS::IoT::DomainConfiguration",
+      "Properties": {
+        "ServiceType": "DATA"
+      }
+    }
+  }
+}

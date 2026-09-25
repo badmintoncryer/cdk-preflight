@@ -1,0 +1,66 @@
+{
+  "Resources": {
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Hook": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "cdkpf270-cpreg-p",
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return {\"allowProvisioning\": True}\n"
+        }
+      }
+    },
+    "HookPerm": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "Hook",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "iot.amazonaws.com"
+      }
+    },
+    "Cp": {
+      "Type": "AWS::IoT::CertificateProvider",
+      "Properties": {
+        "CertificateProviderName": "cdkpf270cpregp",
+        "LambdaFunctionArn": {
+          "Fn::GetAtt": [
+            "Hook",
+            "Arn"
+          ]
+        },
+        "AccountDefaultForOperations": [
+          "CreateCertificateFromCsr"
+        ]
+      }
+    }
+  }
+}

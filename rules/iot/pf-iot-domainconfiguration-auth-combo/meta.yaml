@@ -1,0 +1,12 @@
+id: pf-iot-domainconfiguration-auth-combo
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::DomainConfiguration]
+severity: ERROR
+title: "AuthenticationType needs ApplicationProtocol, and CUSTOM_AUTH needs an AuthorizerConfig"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateDomainConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateDomainConfiguration with authenticationType CUSTOM_AUTH and no applicationProtocol -> \"InvalidRequestException: The domain must configure a supported ApplicationProtocol when configuring an AuthenticationType.\"; the same call with applicationProtocol SECURE_MQTT but no authorizerConfig -> \"InvalidRequestException: The domain configuration must have a valid AuthorizerConfig configured when using CUSTOM_AUTH as the AuthenticationType.\" (#270 phase B; the checks are ordered, so the second fixture has to carry the protocol); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: The domain configuration must have a valid AuthorizerConfig configured when using CUSTOM_AUTH as the AuthenticationType. Please refer to <https://docs.aws.amazon.com/iot/latest/developerguide/protocols.html> for supported combinations and try again. (Service: Iot, Status Code: 400, Request ID: 661d2d66-621d-49c5-83c7-0f1cd8f1ba46) (SDK Attempt Count: 1)\\\" (RequestToken: ccdba712-70bb-eb9a-78cd-6a026844e18d, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE (the same two-resource fail fixture answered the other branch on an earlier run the same day: \"The domain must configure a supported ApplicationProtocol when configuring an AuthenticationType.\" - whichever of the two resources CloudFormation reports last); the pass fixture leaves its DomainConfiguration behind (\"LEFTOVER: ... deleted with retained resources\"): an AWS-managed domain configuration has to be disabled for 7 days before it can be deleted, so the fixture lets CloudFormation generate the name - a fixed one would collide on the next run. The logical id is spelled cdkpf270dc... on purpose: CloudFormation names the resource <LogicalId>-<random> and bench/sweep.sh only reclaims domain configurations whose name starts with cdkpf. The monthly check runs --fail-only and creates nothing"
+addedOn: 2026-09-25

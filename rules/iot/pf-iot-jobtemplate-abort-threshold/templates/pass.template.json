@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "Jt": {
+      "Type": "AWS::IoT::JobTemplate",
+      "Properties": {
+        "JobTemplateId": "cdkpf270-abort-p",
+        "Description": "cdk-preflight fixture",
+        "Document": "{\"steps\":[]}",
+        "AbortConfig": {
+          "CriteriaList": [
+            {
+              "Action": "CANCEL",
+              "FailureType": "FAILED",
+              "MinNumberOfExecutedThings": 10,
+              "ThresholdPercentage": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

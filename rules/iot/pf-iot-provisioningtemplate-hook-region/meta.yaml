@@ -1,0 +1,12 @@
+id: pf-iot-provisioningtemplate-hook-region
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::ProvisioningTemplate]
+severity: ERROR
+title: "A pre-provisioning hook's Lambda must live in the template's region"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_ProvisioningHook.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateProvisioningTemplate with preProvisioningHook.targetArn in eu-west-1 -> \"InvalidRequestException: Invalid arguments in the call\"; the same ARN spelled us-east-1 got a different answer, \"Access denied during lambda validation: arn:aws:lambda:us-east-1:...\", so the two calls differ only in the region and only the cross-region one is rejected before the function is looked at (#270 phase B). The sentence never names the region, which is why the pair is the evidence; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Invalid arguments in the call (Service: Iot, Status Code: 400, Request ID: 284f2f40-ea66-461c-957c-1aff3e86058f) (SDK Attempt Count: 1)\\\" (RequestToken: 6c2e16c8-6636-4c68-f161-04c380b847ba, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

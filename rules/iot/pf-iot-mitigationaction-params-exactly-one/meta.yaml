@@ -1,0 +1,12 @@
+id: pf-iot-mitigationaction-params-exactly-one
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::MitigationAction]
+severity: ERROR
+title: "ActionParams carries exactly one parameter type"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_MitigationActionParams.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateMitigationAction with updateDeviceCertificateParams and updateCACertificateParams together -> \"InvalidRequestException: Expected only one action parameter to be set\"; with an empty actionParams -> the same sentence (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Expected only one action parameter to be set (Service: Iot, Status Code: 400, Request ID: 849bd3c4-a278-43df-baac-c46cbfc498ab) (SDK Attempt Count: 1)\\\" (RequestToken: 46ee368a-10c6-3be9-5412-612fd5921592, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

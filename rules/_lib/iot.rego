@@ -116,3 +116,36 @@ _pf_iotlib_opaque_doc(d) if {
 	some k in object.keys(d)
 	startswith(k, "__")
 }
+
+# --- ProvisioningTemplate ---------------------------------------------------
+
+# The provisioning template's own document, which rides inside a CloudFormation
+# string property. Same two doors as PolicyDocument: an object (rare, but the
+# L1 takes one) or the JSON string everybody actually writes.
+_pf_iotlib_template_body(name) := d if {
+	d := object.get(_pf_iotlib_props(name), "TemplateBody", null)
+	is_object(d)
+	not _pf_iotlib_opaque_doc(d)
+}
+
+_pf_iotlib_template_body(name) := d if {
+	s := _pf_iotlib_lit(name, "Properties.TemplateBody")
+	json.is_valid(s)
+	d := json.unmarshal(s)
+	is_object(d)
+}
+
+# --- ARNs ------------------------------------------------------------------
+
+# The region of a literal ARN for a given service. Undefined for everything
+# else - a Ref/GetAtt resolves to a logical id, an unresolvable intrinsic stays
+# a marker object - so the three region rules skip whatever they cannot read.
+_pf_iotlib_arn_region(arn, service) := r if {
+	is_string(arn)
+	parts := split(arn, ":")
+	count(parts) >= 7
+	parts[0] == "arn"
+	parts[2] == service
+	r := parts[3]
+	r != ""
+}

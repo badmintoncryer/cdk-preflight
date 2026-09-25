@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "Both": {
+      "Type": "AWS::IoT::JobTemplate",
+      "Properties": {
+        "JobTemplateId": "cdkpf270-doc-f1",
+        "Description": "cdk-preflight fixture",
+        "Document": "{\"steps\":[]}",
+        "DocumentSource": "https://s3.amazonaws.com/cdkpf270/doc.json"
+      }
+    },
+    "Neither": {
+      "Type": "AWS::IoT::JobTemplate",
+      "Properties": {
+        "JobTemplateId": "cdkpf270-doc-f2",
+        "Description": "cdk-preflight fixture"
+      }
+    }
+  }
+}

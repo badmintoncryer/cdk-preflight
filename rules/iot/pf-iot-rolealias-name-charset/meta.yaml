@@ -1,0 +1,12 @@
+id: pf-iot-rolealias-name-charset
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::RoleAlias]
+severity: ERROR
+title: "RoleAlias accepts only [A-Za-z0-9_=,@-]"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateRoleAlias.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateRoleAlias roleAlias \"テスト用\" -> \"InvalidRequestException: 1 validation error detected: Value at 'roleAlias' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w=,@-]+\" (#270 phase B). Narrower than PolicyName - no dot, no plus - and the service's \\\\w is ASCII while the engine's Rust regex \\\\w is not, so the range is spelled out; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: 1 validation error detected: Value at 'roleAlias' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w=,@-]+ (Service: Iot, Status Code: 400, Request ID: 6f74841b-9699-4e4d-bf5f-5d0d6caa1483) (SDK Attempt Count: 1)\\\" (RequestToken: d7fdb946-0c01-8553-8991-156296d03365, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Sa": {
+      "Type": "AWS::IoT::ScheduledAudit",
+      "Properties": {
+        "ScheduledAuditName": "cdkpf270_sa_p",
+        "Frequency": "WEEKLY",
+        "DayOfWeek": "MON",
+        "TargetCheckNames": [
+          "CA_CERTIFICATE_EXPIRING_CHECK"
+        ]
+      }
+    }
+  }
+}

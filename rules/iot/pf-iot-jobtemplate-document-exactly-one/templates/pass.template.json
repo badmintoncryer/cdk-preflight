@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "Jt": {
+      "Type": "AWS::IoT::JobTemplate",
+      "Properties": {
+        "JobTemplateId": "cdkpf270-doc-p",
+        "Description": "cdk-preflight fixture",
+        "Document": "{\"steps\":[]}"
+      }
+    }
+  }
+}

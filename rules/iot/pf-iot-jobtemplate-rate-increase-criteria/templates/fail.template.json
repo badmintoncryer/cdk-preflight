@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "Jt": {
+      "Type": "AWS::IoT::JobTemplate",
+      "Properties": {
+        "JobTemplateId": "cdkpf270-ric-f",
+        "Description": "cdk-preflight fixture",
+        "Document": "{\"steps\":[]}",
+        "JobExecutionsRolloutConfig": {
+          "MaximumPerMinute": 10,
+          "ExponentialRolloutRate": {
+            "BaseRatePerMinute": 1,
+            "IncrementFactor": 2,
+            "RateIncreaseCriteria": {
+              "NumberOfNotifiedThings": 10,
+              "NumberOfSucceededThings": 10
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "Ra": {
+      "Type": "AWS::IoT::RoleAlias",
+      "Properties": {
+        "RoleAlias": "cdkpf270ranameテスト",
+        "RoleArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf270-nope"
+        }
+      }
+    }
+  }
+}
