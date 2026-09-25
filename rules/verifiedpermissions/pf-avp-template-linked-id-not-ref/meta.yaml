@@ -1,0 +1,12 @@
+id: pf-avp-template-linked-id-not-ref
+service: verifiedpermissions
+benchRegion: us-east-1
+resourceTypes: [AWS::VerifiedPermissions::Policy, AWS::VerifiedPermissions::PolicyTemplate]
+severity: ERROR
+title: "A template-linked policy names its policy template with Fn::GetAtt PolicyTemplateId, not Ref"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-verifiedpermissions-policytemplate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (PolicyTemplateId: {\"Ref\": \"Tpl\"}) -> ROLLBACK_COMPLETE, AWS::VerifiedPermissions::Policy \"Properties validation failed for resource Pol with message: #/Definition/TemplateLinked/PolicyTemplateId: failed validation constraint for keyword [pattern]\" (the Definition oneOf also emits three generic lines above it); pass (the same template with Fn::GetAtt [Tpl, PolicyTemplateId]) -> CREATE_COMPLETE. The composite <policyStoreId>|<policyTemplateId> that Ref returns is read off the type's two-element primaryIdentifier (describe-type AWS::VerifiedPermissions::PolicyTemplate, 2026-09-26); the stack event proves only that the value breaks the pattern ^[a-zA-Z0-9-]*$."
+addedOn: 2026-09-26
