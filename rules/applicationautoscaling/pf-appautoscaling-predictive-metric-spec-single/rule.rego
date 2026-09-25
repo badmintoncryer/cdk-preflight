@@ -16,6 +16,7 @@ violation contains make_diag_full("pf-appautoscaling-predictive-metric-spec-sing
 	is_object(cfg)
 	specs := object.get(cfg, "MetricSpecifications", "__pf_absent")
 	is_array(specs)
+	_pf_countable_items(specs)
 	n := count(specs)
 	n != 1
 }

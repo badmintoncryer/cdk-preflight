@@ -73,6 +73,7 @@ violation contains make_diag_full("pf-events-target-ecs-parameters", "ERROR", na
 	some t in _pf_evecs_targets(name)
 	subnets := object.get(_pf_evecs_awsvpc(_pf_evecs_params(t)), "Subnets", [])
 	is_array(subnets)
+	_pf_countable_items(subnets)
 	count(subnets) > 16
 }
 
@@ -85,6 +86,7 @@ violation contains make_diag_full("pf-events-target-ecs-parameters", "ERROR", na
 	some t in _pf_evecs_targets(name)
 	sgs := object.get(_pf_evecs_awsvpc(_pf_evecs_params(t)), "SecurityGroups", [])
 	is_array(sgs)
+	_pf_countable_items(sgs)
 	count(sgs) > 5
 }
 

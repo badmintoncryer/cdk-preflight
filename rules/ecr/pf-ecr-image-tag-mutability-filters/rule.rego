@@ -11,6 +11,7 @@ _pf_ecrtag_exclusion := {"MUTABLE_WITH_EXCLUSION", "IMMUTABLE_WITH_EXCLUSION"}
 _pf_ecrtag_has_filters(name) if {
 	f := object.get(input.resources[name].properties, "ImageTagMutabilityExclusionFilters", null)
 	is_array(f)
+	_pf_unconditional_items(f)
 	count(f) > 0
 }
 

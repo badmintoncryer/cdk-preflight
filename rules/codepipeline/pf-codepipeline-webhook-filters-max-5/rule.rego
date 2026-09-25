@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-codepipeline-webhook-filters-max-5", "ERRO
 	"Keep the webhook to 5 filters or fewer",
 	"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_PutWebhook.html") if {
 	some name in resources_of_type("AWS::CodePipeline::Webhook")
+	_pf_countable_items(object.get(_pf_cplib_props(name), "Filters", []))
 	n := count(object.get(_pf_cplib_props(name), "Filters", []))
 	n > 5
 }

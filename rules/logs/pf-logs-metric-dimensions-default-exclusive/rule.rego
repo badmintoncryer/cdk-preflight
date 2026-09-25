@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-logs-metric-dimensions-default-exclusive",
 	object.get(t.value, "DefaultValue", "__pf_absent") != "__pf_absent"
 	dims := object.get(t.value, "Dimensions", null)
 	is_array(dims)
+	_pf_unconditional_items(dims)
 	count(dims) > 0
 }

@@ -17,5 +17,6 @@ violation contains make_diag_full("pf-agentcore-memory-strategy-namespaces-count
 	is_object(strat)
 	ns := object.get(strat, "Namespaces", [])
 	is_array(ns)
+	_pf_countable_items(ns)
 	count(ns) > 1
 }

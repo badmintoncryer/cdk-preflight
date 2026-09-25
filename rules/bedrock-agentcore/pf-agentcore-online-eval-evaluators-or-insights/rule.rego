@@ -8,6 +8,7 @@ import rego.v1
 _pf_oeevs_nonempty(props, key) if {
 	v := object.get(props, key, null)
 	is_array(v)
+	_pf_unconditional_items(v)
 	count(v) > 0
 }
 

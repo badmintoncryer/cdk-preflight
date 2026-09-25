@@ -27,5 +27,6 @@ violation contains make_diag_full("pf-glue-partition-values-match-partition-keys
 	is_array(vals)
 	t := _pf_gluepvk_table(name)
 	keys := _pf_gluepvk_keys(t)
+	_pf_countable_items(vals)
 	count(vals) != count(keys)
 }

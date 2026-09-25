@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-codepipeline-trigger-filters-max-3", "ERRO
 	g := _pf_cplib_get(t, "GitConfiguration")
 	_pf_cplib_plain(g)
 	some kind in ["Push", "PullRequest"]
+	_pf_countable_items(object.get(g, kind, []))
 	n := count(object.get(g, kind, []))
 	n > 3
 }

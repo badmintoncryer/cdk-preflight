@@ -15,6 +15,7 @@ _pf_dshl_cfg(name) := h if {
 
 _pf_dshl_levels(name) := [parent, child] if {
 	ls := object.get(_pf_dshl_cfg(name), "LevelConfigurations", [])
+	_pf_countable_items(ls)
 	count(ls) == 2
 	parent := to_number(ls[0].MaxTokens)
 	child := to_number(ls[1].MaxTokens)

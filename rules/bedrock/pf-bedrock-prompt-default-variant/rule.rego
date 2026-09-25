@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-bedrock-prompt-default-variant", "ERROR", 
 	is_string(dv)
 	vs := object.get(_pf_bedrocklib_props(name), "Variants", [])
 	is_array(vs)
+	_pf_unconditional_items(vs)
 	count(vs) > 0
 	names := {v.Name | some v in vs; is_object(v); is_string(v.Name)}
 	count(names) == count(vs)

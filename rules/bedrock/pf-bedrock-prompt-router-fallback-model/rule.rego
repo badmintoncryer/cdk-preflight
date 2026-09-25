@@ -16,6 +16,7 @@ violation contains make_diag_full("pf-bedrock-prompt-router-fallback-model", "ER
 	is_string(fb)
 	ms := object.get(p, "Models", [])
 	is_array(ms)
+	_pf_unconditional_items(ms)
 	count(ms) > 0
 	arns := {m.ModelArn | some m in ms; is_object(m); is_string(m.ModelArn)}
 	count(arns) == count(ms)

@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-route53-hostedzone-querylogging-private-zo
 	p := _pf_r53z_props(name)
 	_pf_r53z_has(p, "QueryLoggingConfig")
 	v := object.get(p, "VPCs", [])
+	_pf_unconditional_items(v)
 	count(v) > 0
 }

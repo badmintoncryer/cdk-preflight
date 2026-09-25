@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-route53-healthcheck-childhealthchecks-quot
 	some name in resources_of_type("AWS::Route53::HealthCheck")
 	cfg := _pf_r53z_hcc(name)
 	_pf_r53z_str(cfg, "Type") == "CALCULATED"
+	_pf_countable_items(object.get(cfg, "ChildHealthChecks", []))
 	n := count(object.get(cfg, "ChildHealthChecks", []))
 	n > 255
 }

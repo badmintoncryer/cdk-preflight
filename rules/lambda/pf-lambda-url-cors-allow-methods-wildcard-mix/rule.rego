@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-lambda-url-cors-allow-methods-wildcard-mix
 	cors := _pf_lam_obj(_pf_lam_props(name), "Cors")
 	vs := _pf_lam_list(object.get(cors, "AllowMethods", []))
 	"*" in vs
+	_pf_countable_items(vs)
 	count(vs) > 1
 }

@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-batch-jd-ecs-essential-required", "ERROR",
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	some t in _pf_batch_ecs_tasks(name)
 	cs := object.get(t.value, "Containers", [])
+	_pf_unconditional_items(cs)
 	count(cs) > 0
 	count([1 | some c in cs; object.get(c, "Essential", true) == false]) == count(cs)
 }

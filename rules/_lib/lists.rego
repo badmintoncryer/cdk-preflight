@@ -44,6 +44,29 @@ _pf_unconditional_list(name, path) if {
 	]) == 0
 }
 
+# マップのキー数を数えるルール用（`Attributes` のように「リストではなく辞書」で
+# 上限が決まるもの）。値が Fn::If でデプロイ時に消えるとキーごと消えるので、
+# 条件つきの値が 1 つでもあれば降りる。マーカーそのものを渡されたときも降りる。
+_pf_countable_entries(o) if {
+	is_object(o)
+	not _pf_ll_conditional(o)
+	count([1 |
+		some _, v in o
+		_pf_ll_conditional(v)
+	]) == 0
+}
+
+# _pf_unconditional_list の値版。生の properties から取り出した値をそのまま数える
+# ゲート（`count(object.get(x, "K", [])) > 0`）用。Ref / Fn::Split は個数こそ
+# 分からないが「在る」ことは確かなので通し、Fn::If が絡んだときだけ降りる。
+_pf_unconditional_items(l) if {
+	not _pf_ll_conditional(l)
+	count([1 |
+		some it in _pf_ll_elems(l)
+		_pf_ll_conditional(it)
+	]) == 0
+}
+
 _pf_ll_elems(l) := l if {
 	is_array(l)
 }

@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-cloudfront-staging-requires-no-aliases", "
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	cfg := _pf_cflib_config(name)
 	object.get(cfg, "Staging", false) == true
+	_pf_unconditional_items(object.get(cfg, "Aliases", []))
 	count(object.get(cfg, "Aliases", [])) > 0
 }

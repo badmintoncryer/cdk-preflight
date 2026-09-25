@@ -67,6 +67,7 @@ violation contains make_diag_full("pf-wafv2-regex-syntax", "ERROR", name, "Prope
 	some name in resources_of_type("AWS::WAFv2::RegexPatternSet")
 	l := input.resources[name].properties.RegularExpressionList
 	is_array(l)
+	_pf_countable_items(l)
 	count(l) > 10
 }
 

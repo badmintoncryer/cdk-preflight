@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-cloudfront-function-kvs-requires-runtime-2
 	some name in resources_of_type("AWS::CloudFront::Function")
 	fc := _pf_cflib_props(name, "FunctionConfig")
 	is_object(fc)
+	_pf_unconditional_items(object.get(fc, "KeyValueStoreAssociations", []))
 	count(object.get(fc, "KeyValueStoreAssociations", [])) > 0
 	rt := object.get(fc, "Runtime", null)
 	is_string(rt)

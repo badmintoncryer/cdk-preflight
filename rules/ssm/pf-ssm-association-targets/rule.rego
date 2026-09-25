@@ -14,6 +14,7 @@ _pf_ssmat_props(name) := props if {
 _pf_ssmat_targets(name) := t if {
 	t := object.get(_pf_ssmat_props(name), "Targets", null)
 	is_array(t)
+	_pf_unconditional_items(t)
 	count(t) > 0
 }
 

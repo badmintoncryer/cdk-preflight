@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-kinesis-shard-level-metrics-all", "ERROR",
 	ms := object.get(_pf_kinlib_props(name), "DesiredShardLevelMetrics", null)
 	is_array(ms)
 	"ALL" in ms
+	_pf_countable_items(ms)
 	count(ms) > 1
 }

@@ -21,6 +21,7 @@ violation contains make_diag_full("pf-wafv2-token-domains", "ERROR", name, "Prop
 	some name in resources_of_type("AWS::WAFv2::WebACL")
 	tds := input.resources[name].properties.TokenDomains
 	is_array(tds)
+	_pf_countable_items(tds)
 	count(tds) > 10
 }
 

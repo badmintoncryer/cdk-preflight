@@ -16,5 +16,6 @@ violation contains make_diag_full("pf-s3-lifecycle-abort-mpu-with-tag-filter", "
 	object.get(rule.value, "AbortIncompleteMultipartUpload", "__pf_absent") != "__pf_absent"
 	tags := object.get(rule.value, "TagFilters", [])
 	is_array(tags)
+	_pf_unconditional_items(tags)
 	count(tags) > 0
 }

@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-servicediscovery-service-attributes-max-en
 	some name in resources_of_type("AWS::ServiceDiscovery::Service")
 	a := object.get(_pf_sd_props(name), "ServiceAttributes", null)
 	is_object(a)
+	_pf_countable_entries(a)
 	count(a) > 30
 }

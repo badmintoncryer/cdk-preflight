@@ -16,5 +16,6 @@ violation contains make_diag_full("pf-glue-crawler-non-catalog-target-database-n
 	some k in _pf_gluecrdb_other
 	arr := object.get(_pf_gluelib_targets(name), k, [])
 	is_array(arr)
+	_pf_unconditional_items(arr)
 	count(arr) > 0
 }

@@ -8,6 +8,7 @@ _pf_fhpc_count(c) := n if {
 	coerce_to_bool(object.get(pc, "Enabled", false)) == true
 	ps := object.get(pc, "Processors", [])
 	is_array(ps)
+	_pf_countable_items(ps)
 	n := count(ps)
 }
 

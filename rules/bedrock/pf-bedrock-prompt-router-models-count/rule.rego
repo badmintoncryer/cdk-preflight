@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-bedrock-prompt-router-models-count", "ERRO
 	some name in resources_of_type("AWS::Bedrock::IntelligentPromptRouter")
 	ms := object.get(_pf_bedrocklib_props(name), "Models", [])
 	is_array(ms)
+	_pf_countable_items(ms)
 	n := count(ms)
 	n != 2
 }

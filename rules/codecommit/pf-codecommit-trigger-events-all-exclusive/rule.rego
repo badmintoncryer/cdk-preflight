@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-codecommit-trigger-events-all-exclusive", 
 	ev := object.get(t, "Events", [])
 	is_array(ev)
 	"all" in ev
+	_pf_countable_items(ev)
 	count(ev) > 1
 }

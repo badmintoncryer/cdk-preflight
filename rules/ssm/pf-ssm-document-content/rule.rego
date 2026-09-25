@@ -71,6 +71,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 _pf_ssmdc_has_steps(c) if {
 	s := object.get(c, "mainSteps", null)
 	is_array(s)
+	_pf_unconditional_items(s)
 	count(s) > 0
 }
 
@@ -293,6 +294,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 	is_object(pc)
 	eq := object.get(pc, "StringEquals", null)
 	is_array(eq)
+	_pf_countable_items(eq)
 	count(eq) == 2
 	eq[0] == "platformType"
 	v := eq[1]

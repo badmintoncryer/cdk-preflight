@@ -30,6 +30,7 @@ violation contains make_diag_full("pf-dynamodb-gsi-projection-nonkey", "ERROR", 
 	proj := object.get(g.value, "Projection", null)
 	is_object(proj)
 	object.get(proj, "ProjectionType", null) == "ALL"
+	_pf_unconditional_items(object.get(proj, "NonKeyAttributes", []))
 	count(object.get(proj, "NonKeyAttributes", [])) > 0
 	iname := object.get(g.value, "IndexName", "<unnamed>")
 }

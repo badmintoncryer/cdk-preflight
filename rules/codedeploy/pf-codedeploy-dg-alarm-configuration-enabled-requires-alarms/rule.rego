@@ -7,6 +7,7 @@ import rego.v1
 _pf_cdalarm_one(ac) if {
 	a := object.get(ac, "Alarms", null)
 	is_array(a)
+	_pf_unconditional_items(a)
 	count(a) > 0
 }
 

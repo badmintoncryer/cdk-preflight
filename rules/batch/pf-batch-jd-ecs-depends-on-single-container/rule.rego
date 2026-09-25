@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-batch-jd-ecs-depends-on-single-container",
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	some t in _pf_batch_ecs_tasks(name)
 	cs := object.get(t.value, "Containers", [])
+	_pf_countable_items(cs)
 	count(cs) == 1
 	some c in cs
 	_pf_batch_ohas(c, "DependsOn")

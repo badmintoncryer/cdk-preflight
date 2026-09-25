@@ -34,6 +34,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-projection-nonkey", 
 	pt := object.get(proj, "ProjectionType", null)
 	is_string(pt)
 	pt != "INCLUDE"
+	_pf_unconditional_items(object.get(proj, "NonKeyAttributes", []))
 	count(object.get(proj, "NonKeyAttributes", [])) > 0
 	iname := object.get(ix.value, "IndexName", "<unnamed>")
 }
