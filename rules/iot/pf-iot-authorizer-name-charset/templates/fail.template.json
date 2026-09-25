@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::IoT::Authorizer",
+      "Properties": {
+        "AuthorizerName": "cdkpf270authnameテスト",
+        "AuthorizerFunctionArn": {
+          "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf270-nope"
+        },
+        "SigningDisabled": true,
+        "Status": "INACTIVE"
+      }
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "iot.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Hook": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "cdkpf270-hook-p",
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return {\"allowProvisioning\": True}\n"
+        }
+      }
+    },
+    "HookPerm": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "Hook",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "iot.amazonaws.com"
+      }
+    },
+    "Pt": {
+      "Type": "AWS::IoT::ProvisioningTemplate",
+      "Properties": {
+        "TemplateName": "cdkpf270-hook-p",
+        "ProvisioningRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "TemplateBody": "{\"Parameters\":{\"SerialNumber\":{\"Type\":\"String\"}},\"Resources\":{\"cert\":{\"Type\":\"AWS::IoT::Certificate\",\"Properties\":{\"CertificateId\":{\"Ref\":\"AWS::IoT::Certificate::Id\"},\"Status\":\"Active\"}},\"pol\":{\"Type\":\"AWS::IoT::Policy\",\"Properties\":{\"PolicyName\":\"cdkpf270pol\"}}}}",
+        "PreProvisioningHook": {
+          "TargetArn": {
+            "Fn::GetAtt": [
+              "Hook",
+              "Arn"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

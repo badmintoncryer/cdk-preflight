@@ -1,0 +1,12 @@
+id: pf-iot-thinggroup-attribute-count
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::ThingGroup]
+severity: ERROR
+title: "A thing group may carry at most 50 attributes"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-thinggroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateThingGroup with 51 attributes -> \"InvalidRequestException: Too many attributes specified. The maximum number of attributes allowed for a thing group is 50\"; 50 accepted (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Too many attributes specified. The maximum number of attributes allowed for a thing group is 50 (Service: Iot, Status Code: 400, Request ID: 468bc0cb-620c-4606-8eba-23427fd46765) (SDK Attempt Count: 1)\\\" (RequestToken: 7a4f6bcb-1a7a-71a8-1018-f3ef0f81a274, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Xacct": {
+      "Type": "AWS::IoT::TopicRule",
+      "Properties": {
+        "RuleName": "cdkpf270_racct_f1",
+        "TopicRulePayload": {
+          "Sql": "SELECT * FROM 'a/b'",
+          "Actions": [
+            {
+              "Republish": {
+                "RoleArn": "arn:aws:iam::999999999999:role/cdkpf-nosuch-role",
+                "Topic": "cdkpf270out/t"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-iot-jobtemplate-rate-increase-criteria
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::JobTemplate]
+severity: ERROR
+title: "RateIncreaseCriteria takes one of the two thing counts"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_RateIncreaseCriteria.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateJobTemplate with rateIncreaseCriteria carrying both numberOfNotifiedThings and numberOfSucceededThings -> \"InvalidRequestException: Provide only one of NumberOfNotifiedThings or NumberOfSucceededThings when RateIncreaseCriteria is defined\"; the same shape with one of them was accepted (#270 phase B). The first attempt answered \"Provide MaximumPerMinute value when ExponentialRate is defined\" instead, so both fixtures carry MaximumPerMinute and the exclusivity is the only thing left to fail on; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Provide only one of NumberOfNotifiedThings or NumberOfSucceededThings when RateIncreaseCriteria is defined (Service: Iot, Status Code: 400, Request ID: 795fcd6d-1df2-4552-8639-c003ce1bb402) (SDK Attempt Count: 1)\\\" (RequestToken: 91e9ecd3-4fd1-bc9c-e776-e8e7a32a37e6, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Two": {
+      "Type": "AWS::IoT::MitigationAction",
+      "Properties": {
+        "ActionName": "cdkpf270_ma_f1",
+        "RoleArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf270-nope"
+        },
+        "ActionParams": {
+          "UpdateDeviceCertificateParams": {
+            "Action": "DEACTIVATE"
+          },
+          "UpdateCACertificateParams": {
+            "Action": "DEACTIVATE"
+          }
+        }
+      }
+    },
+    "Zero": {
+      "Type": "AWS::IoT::MitigationAction",
+      "Properties": {
+        "ActionName": "cdkpf270_ma_f2",
+        "RoleArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf270-nope"
+        },
+        "ActionParams": {}
+      }
+    }
+  }
+}

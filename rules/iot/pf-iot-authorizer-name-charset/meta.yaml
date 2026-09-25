@@ -1,0 +1,12 @@
+id: pf-iot-authorizer-name-charset
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Authorizer]
+severity: ERROR
+title: "AuthorizerName accepts only [A-Za-z0-9_=,@-]"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateAuthorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateAuthorizer authorizerName \"テスト用\" -> \"InvalidRequestException: 1 validation error detected: Value at 'authorizerName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w=,@-]+\" (#270 phase B). The service's \\\\w is Java's ASCII class and the set is narrower than PolicyName's - no . and no + - so the rule spells the range out rather than reusing \\\\w, which is Unicode-aware in the engine's Rust regex; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: 1 validation error detected: Value at 'authorizerName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w=,@-]+ (Service: Iot, Status Code: 400, Request ID: 2b59e4f4-588f-4310-8835-b196637aa423) (SDK Attempt Count: 1)\\\" (RequestToken: d3b75e5f-f41f-a5b5-8ec6-f208ef4ce21b, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

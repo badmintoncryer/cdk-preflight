@@ -1,0 +1,12 @@
+id: pf-iot-certificate-mode-combo
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Certificate]
+severity: ERROR
+title: "A certificate must use one of the three accepted property combinations"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-certificate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "handler-only check (#270 phase B): the CloudFormation handler for AWS::IoT::Certificate defaults CertificateMode to DEFAULT and then picks one of three registration calls - SNI_ONLY + CertificatePem (RegisterCertificateWithoutCA), DEFAULT + CertificateSigningRequest (CreateCertificateFromCsr), DEFAULT + CertificatePem + CACertificatePem (RegisterCertificate) - and rejects every other shape before it calls anything. No IoT API can express the combination, so an API probe cannot see it; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: For certificate mode SNI_ONLY, the following combination must be specified exactly: [CertificatePem]\\\" (RequestToken: c04a3423-e1dc-47ca-2d7b-f18553ef5b9b, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; the second fail resource (DEFAULT with CertificatePem and no CACertificatePem) was re-run on its own the same day and answered \"Resource handler returned message: \\\"Invalid request provided: For certificate mode Default, one of the following combinations must be specified exactly: [CertificatePem and CACertificatePem] OR [CertificateSigningRequest]\\\"\", which is what pins the DEFAULT half of the rule. Both fail certificates carry a deliberately unparseable PEM: the shape check runs before any registration call, so the PEM never has to be real"
+addedOn: 2026-09-25

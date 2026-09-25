@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "T": {
+      "Type": "AWS::IoT::Thing",
+      "Properties": {
+        "ThingName": "cdkpf270-thattr-p",
+        "AttributePayload": {
+          "Attributes": {
+            "a0": "v",
+            "a1": "v",
+            "a2": "v"
+          }
+        }
+      }
+    }
+  }
+}

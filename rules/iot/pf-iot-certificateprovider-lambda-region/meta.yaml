@@ -1,0 +1,12 @@
+id: pf-iot-certificateprovider-lambda-region
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::CertificateProvider]
+severity: ERROR
+title: "A certificate provider's Lambda must live in the provider's region"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateCertificateProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateCertificateProvider with a eu-west-1 lambdaFunctionArn -> \"InvalidRequestException: arn:aws:lambda:eu-west-1:...:function:cdkpf270-nope does not contain expected region, us-east-1\"; the same ARN spelled us-east-1 got past the region check and failed later on the function itself (\"Access denied during lambda validation\"), so the region is checked first and on its own (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: arn:aws:lambda:eu-west-1:214794239830:function:cdkpf270-nope does not contain expected region, us-east-1 (Service: Iot, Status Code: 400, Request ID: fa326091-d795-4081-917d-0d70fc683803) (SDK Attempt Count: 1)\\\" (RequestToken: e8fbe735-9418-1221-7542-eb996e99ac1c, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

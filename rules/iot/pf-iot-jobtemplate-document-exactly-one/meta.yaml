@@ -1,0 +1,12 @@
+id: pf-iot-jobtemplate-document-exactly-one
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::JobTemplate]
+severity: ERROR
+title: "A job template needs exactly one of Document and DocumentSource"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateJobTemplate.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateJobTemplate with both document and documentSource -> \"InvalidRequestException: Job document and job document source cannot be specified at the same time.\"; with neither -> \"InvalidRequestException: Neither job document nor job document source is specified.\" (#270 phase B; the S3 object behind documentSource is never fetched during this check, so a fake URL cannot confound the fixture); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Neither job document nor job document source is specified. (Service: Iot, Status Code: 400, Request ID: a4dcbcdd-2048-4f33-86c0-16256bcae96d) (SDK Attempt Count: 1)\\\" (RequestToken: 4cdb740c-8e52-6c27-e0ee-82a4f743ca31, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

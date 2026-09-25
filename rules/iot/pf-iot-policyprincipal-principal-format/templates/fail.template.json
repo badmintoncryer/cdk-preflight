@@ -1,0 +1,29 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-ppfmt-f",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "iot:Connect",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "A": {
+      "Type": "AWS::IoT::PolicyPrincipalAttachment",
+      "Properties": {
+        "PolicyName": {
+          "Ref": "P"
+        },
+        "Principal": "not-an-arn"
+      }
+    }
+  }
+}

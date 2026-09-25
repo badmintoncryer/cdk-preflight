@@ -1,0 +1,66 @@
+{
+  "Resources": {
+    "IotRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "iot.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Encoded": {
+      "Type": "AWS::IoT::TopicRule",
+      "Properties": {
+        "RuleName": "cdkpf270_sqlfn_p1",
+        "TopicRulePayload": {
+          "Sql": "SELECT encode(*, 'base64') AS d FROM 'a/b'",
+          "Actions": [
+            {
+              "Republish": {
+                "RoleArn": {
+                  "Fn::GetAtt": [
+                    "IotRole",
+                    "Arn"
+                  ]
+                },
+                "Topic": "cdkpf270out/t"
+              }
+            }
+          ],
+          "AwsIotSqlVersion": "2016-03-23"
+        }
+      }
+    },
+    "Plain": {
+      "Type": "AWS::IoT::TopicRule",
+      "Properties": {
+        "RuleName": "cdkpf270_sqlfn_p2",
+        "TopicRulePayload": {
+          "Sql": "SELECT * FROM 'a/b'",
+          "Actions": [
+            {
+              "Republish": {
+                "RoleArn": {
+                  "Fn::GetAtt": [
+                    "IotRole",
+                    "Arn"
+                  ]
+                },
+                "Topic": "cdkpf270out/t"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

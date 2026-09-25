@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "Pt": {
+      "Type": "AWS::IoT::ProvisioningTemplate",
+      "Properties": {
+        "TemplateName": "cdkpf270-body-f",
+        "ProvisioningRoleArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf270-nope"
+        },
+        "TemplateBody": "not json at all"
+      }
+    }
+  }
+}

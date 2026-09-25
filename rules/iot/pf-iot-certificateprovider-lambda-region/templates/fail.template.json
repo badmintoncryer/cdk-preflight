@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "Cp": {
+      "Type": "AWS::IoT::CertificateProvider",
+      "Properties": {
+        "CertificateProviderName": "cdkpf270cpregf",
+        "LambdaFunctionArn": {
+          "Fn::Sub": "arn:aws:lambda:eu-west-1:${AWS::AccountId}:function:cdkpf270-nope"
+        },
+        "AccountDefaultForOperations": [
+          "CreateCertificateFromCsr"
+        ]
+      }
+    }
+  }
+}

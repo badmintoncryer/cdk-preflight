@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "NoPayload": {
+      "Type": "AWS::IoT::Command",
+      "Properties": {
+        "CommandId": "cdkpf270cmdnsf1",
+        "Namespace": "AWS-IoT"
+      }
+    },
+    "WithParams": {
+      "Type": "AWS::IoT::Command",
+      "Properties": {
+        "CommandId": "cdkpf270cmdnsf2",
+        "Namespace": "AWS-IoT",
+        "Payload": {
+          "Content": "eyJhIjoxfQ==",
+          "ContentType": "application/json"
+        },
+        "MandatoryParameters": [
+          {
+            "Name": "p",
+            "DefaultValue": {
+              "S": "v"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

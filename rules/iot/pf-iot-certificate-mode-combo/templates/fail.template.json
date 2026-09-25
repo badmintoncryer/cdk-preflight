@@ -1,0 +1,21 @@
+{
+  "Resources": {
+    "Sni": {
+      "Type": "AWS::IoT::Certificate",
+      "Properties": {
+        "CertificateMode": "SNI_ONLY",
+        "CertificatePem": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----",
+        "CACertificatePem": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----",
+        "Status": "INACTIVE"
+      }
+    },
+    "Dflt": {
+      "Type": "AWS::IoT::Certificate",
+      "Properties": {
+        "CertificateMode": "DEFAULT",
+        "CertificatePem": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----",
+        "Status": "INACTIVE"
+      }
+    }
+  }
+}

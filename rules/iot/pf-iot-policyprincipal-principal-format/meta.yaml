@@ -1,0 +1,12 @@
+id: pf-iot-policyprincipal-principal-format
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::PolicyPrincipalAttachment]
+severity: ERROR
+title: "A PolicyPrincipalAttachment principal must be a certificate ARN or a Cognito identity"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_AttachPrincipalPolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: AttachPrincipalPolicy principal \"not-an-arn\" -> \"InvalidRequestException: Invalid principal type\" (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Invalid principal type (Service: AWSIot; Status Code: 400; Error Code: InvalidRequestException; Request ID: 9ffd1d85-c7d9-4345-8ecf-9cdc76d6d3fa; Proxy: null)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

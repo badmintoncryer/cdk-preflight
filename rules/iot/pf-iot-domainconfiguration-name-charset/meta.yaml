@@ -1,0 +1,12 @@
+id: pf-iot-domainconfiguration-name-charset
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::DomainConfiguration]
+severity: ERROR
+title: "DomainConfigurationName accepts only [A-Za-z0-9_.-]"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateDomainConfiguration.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateDomainConfiguration domainConfigurationName \"テスト用\" -> \"InvalidRequestException: 1 validation error detected: Value at 'domainConfigurationName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w.-]+\" (#270 phase B). The narrowest of the four IoT name sets - no = , @ + - and the service's \\\\w is ASCII while the engine's Rust regex \\\\w is not, so the range is spelled out; bench 2026-09-25 us-east-1: fail -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only); this one lands in the cfn-schema band: the raw registry schema carries the pattern, so CloudFormation stops the deploy at CreateStack and names no property - the developer has to call DescribeEvents to find out which one - while the bundled engine stays silent (duplicate guard clean) and the rule fails synth with the property path instead. The pass fixture is deliberately never deployed: the rule can only read a name the template writes, and a DomainConfiguration that is created cannot be deleted for 7 days, so this rule runs --fail-only (an invalid name is rejected before anything is created)"
+addedOn: 2026-09-25

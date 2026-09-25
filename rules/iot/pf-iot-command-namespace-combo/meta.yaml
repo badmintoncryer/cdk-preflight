@@ -1,0 +1,12 @@
+id: pf-iot-command-namespace-combo
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Command]
+severity: ERROR
+title: "An AWS-IoT command needs a Payload and refuses MandatoryParameters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-command.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateCommand namespace AWS-IoT without payload -> \"ValidationException: The 'payload' field of the command is required when using the 'AWS-IoT' namespace.\"; with payload plus mandatoryParameters -> \"ValidationException: AWS-IoT namespace does not support 'mandatoryParameters' with 'payload' option.\" (#270 phase B). The AWS-IoT-FleetWise half of the original claim was dropped: that namespace answers \"The command namespace AWS-IoT-FleetWise is unsupported.\" in this account; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"AWS-IoT namespace does not support 'mandatoryParameters' with 'payload' option. (Service: Iot, Status Code: 400, Request ID: 2c1e9b21-72c5-41af-ba28-b2bfc6d3d8fd) (SDK Attempt Count: 1)\\\" (RequestToken: 0650692b-c5de-e570-92c3-0b6db665083a, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

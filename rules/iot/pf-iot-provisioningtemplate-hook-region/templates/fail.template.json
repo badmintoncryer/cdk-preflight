@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "iot.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "Pt": {
+      "Type": "AWS::IoT::ProvisioningTemplate",
+      "Properties": {
+        "TemplateName": "cdkpf270-hook-f",
+        "ProvisioningRoleArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "TemplateBody": "{\"Parameters\":{\"SerialNumber\":{\"Type\":\"String\"}},\"Resources\":{\"cert\":{\"Type\":\"AWS::IoT::Certificate\",\"Properties\":{\"CertificateId\":{\"Ref\":\"AWS::IoT::Certificate::Id\"},\"Status\":\"Active\"}},\"pol\":{\"Type\":\"AWS::IoT::Policy\",\"Properties\":{\"PolicyName\":\"cdkpf270pol\"}}}}",
+        "PreProvisioningHook": {
+          "TargetArn": {
+            "Fn::Sub": "arn:aws:lambda:eu-west-1:${AWS::AccountId}:function:cdkpf270-nope"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-iot-provisioningtemplate-body-json
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::ProvisioningTemplate]
+severity: ERROR
+title: "TemplateBody must be parseable JSON"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/provision-template.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateProvisioningTemplate templateBody \"not json at all\" -> \"InvalidRequestException: The template body is invalid\"; the same call with a JSON body carrying Parameters and Resources was accepted (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: The template body is invalid (Service: Iot, Status Code: 400, Request ID: 8926a094-e83d-4711-919b-a37a2b3cfc6d) (SDK Attempt Count: 1)\\\" (RequestToken: 2d0a4abf-4053-10cc-637e-2131efc99f05, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

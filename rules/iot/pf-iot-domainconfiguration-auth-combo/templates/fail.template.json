@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "NoProto": {
+      "Type": "AWS::IoT::DomainConfiguration",
+      "Properties": {
+        "AuthenticationType": "CUSTOM_AUTH"
+      }
+    },
+    "NoAuthz": {
+      "Type": "AWS::IoT::DomainConfiguration",
+      "Properties": {
+        "AuthenticationType": "CUSTOM_AUTH",
+        "ApplicationProtocol": "SECURE_MQTT"
+      }
+    }
+  }
+}

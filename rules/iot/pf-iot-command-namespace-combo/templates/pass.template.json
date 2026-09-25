@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "Ok": {
+      "Type": "AWS::IoT::Command",
+      "Properties": {
+        "CommandId": "cdkpf270cmdnsp1",
+        "Namespace": "AWS-IoT",
+        "Payload": {
+          "Content": "eyJhIjoxfQ==",
+          "ContentType": "application/json"
+        }
+      }
+    }
+  }
+}

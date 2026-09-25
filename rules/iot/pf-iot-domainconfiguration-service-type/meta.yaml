@@ -1,0 +1,12 @@
+id: pf-iot-domainconfiguration-service-type
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::DomainConfiguration]
+severity: ERROR
+title: "Only the DATA service type can be created"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateDomainConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateDomainConfiguration serviceType CREDENTIAL_PROVIDER -> \"InvalidRequestException: CreateDomainConfiguration only supports DATA Service Type\"; serviceType JOBS -> \"InvalidRequestException: Invalid Service Type\" (#270 phase B). The JOBS and CREDENTIAL_PROVIDER entries an account already has are the three AWS-managed endpoints, which nobody creates; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Invalid Service Type (Service: Iot, Status Code: 400, Request ID: ad288251-133f-4c5b-8ca1-582d70a2ed47) (SDK Attempt Count: 1)\\\" (RequestToken: e683be6f-94d1-2227-d3df-d485a5ebde57, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; the pass fixture leaves its DomainConfiguration behind (\"LEFTOVER: ... deleted with retained resources\"): an AWS-managed domain configuration has to be disabled for 7 days before it can be deleted, so the fixture lets CloudFormation generate the name - a fixed one would collide on the next run. The logical id is spelled cdkpf270dc... on purpose: CloudFormation names the resource <LogicalId>-<random> and bench/sweep.sh only reclaims domain configurations whose name starts with cdkpf. The monthly check runs --fail-only and creates nothing"
+addedOn: 2026-09-25

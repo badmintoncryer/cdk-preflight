@@ -1,0 +1,12 @@
+id: pf-iot-sql-from-topic-filter
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::TopicRule]
+severity: ERROR
+title: "A rule's FROM topic filter must use # only as the last level and + alone in its level"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/topics.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRule \"SELECT * FROM 'a/#/b'\" -> \"InvalidRequestException: The MQTT topic you provided is invalid.\", same for 'a/x#', 'a/x+/c', '#/a', 'a/b+', '+a'; the controls 'a/#', 'a/+/b', '+', 'a/b/#' and 'a/b/c/d/e/f/g/h/i' were all accepted, so there is no limit on the number of levels; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"The MQTT topic you provided is invalid. (Service: Iot, Status Code: 400, Request ID: a7c4593a-85a7-4925-80e5-6b22c7f34a1f) (SDK Attempt Count: 1)\\\" (RequestToken: b291cba0-c803-d14b-01b8-ae0e33169641, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-polver-p1",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "iot:Connect",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "S": {
+      "Type": "AWS::IoT::Policy",
+      "Properties": {
+        "PolicyName": "cdkpf270-polver-p2",
+        "PolicyDocument": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": \"iot:Connect\", \"Resource\": \"*\"}, {\"Effect\": \"Deny\", \"Action\": \"iot:Publish\", \"Resource\": \"*\"}]}"
+      }
+    }
+  }
+}

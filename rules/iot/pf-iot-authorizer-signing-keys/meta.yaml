@@ -1,0 +1,12 @@
+id: pf-iot-authorizer-signing-keys
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Authorizer]
+severity: ERROR
+title: "An authorizer with token signing on needs TokenKeyName"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/custom-authorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateAuthorizer --no-signing-disabled with no token key -> \"InvalidRequestException: Token key name for authorizer cdkpf270au2 cannot be null\"; the same call with --signing-disabled was accepted (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Token key name for authorizer cdkpf270authsignf cannot be null (Service: Iot, Status Code: 400, Request ID: d9ad9716-92eb-43ba-b8de-bd29c38539f4) (SDK Attempt Count: 1)\\\" (RequestToken: 045b3482-4641-bced-bd88-f5230790c7b0, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

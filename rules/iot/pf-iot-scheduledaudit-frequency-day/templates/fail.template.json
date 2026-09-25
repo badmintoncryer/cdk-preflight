@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "Monthly": {
+      "Type": "AWS::IoT::ScheduledAudit",
+      "Properties": {
+        "ScheduledAuditName": "cdkpf270_sa_f1",
+        "Frequency": "MONTHLY",
+        "TargetCheckNames": [
+          "CA_CERTIFICATE_EXPIRING_CHECK"
+        ]
+      }
+    },
+    "Weekly": {
+      "Type": "AWS::IoT::ScheduledAudit",
+      "Properties": {
+        "ScheduledAuditName": "cdkpf270_sa_f2",
+        "Frequency": "WEEKLY",
+        "TargetCheckNames": [
+          "CA_CERTIFICATE_EXPIRING_CHECK"
+        ]
+      }
+    },
+    "Daily": {
+      "Type": "AWS::IoT::ScheduledAudit",
+      "Properties": {
+        "ScheduledAuditName": "cdkpf270_sa_f3",
+        "Frequency": "DAILY",
+        "DayOfWeek": "MON",
+        "TargetCheckNames": [
+          "CA_CERTIFICATE_EXPIRING_CHECK"
+        ]
+      }
+    }
+  }
+}

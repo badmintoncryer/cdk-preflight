@@ -1,0 +1,45 @@
+{
+  "Resources": {
+    "Both": {
+      "Type": "AWS::IoT::TopicRuleDestination",
+      "Properties": {
+        "HttpUrlProperties": {
+          "ConfirmationUrl": "https://cdkpf270.example.com/trd1f"
+        },
+        "VpcProperties": {
+          "VpcId": "vpc-0123456789abcdef0",
+          "SubnetIds": [
+            "subnet-0123456789abcdef0"
+          ],
+          "RoleArn": {
+            "Fn::GetAtt": [
+              "IotRole",
+              "Arn"
+            ]
+          }
+        }
+      }
+    },
+    "Neither": {
+      "Type": "AWS::IoT::TopicRuleDestination",
+      "Properties": {}
+    },
+    "IotRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "iot.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

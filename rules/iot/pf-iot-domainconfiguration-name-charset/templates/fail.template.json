@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Dc": {
+      "Type": "AWS::IoT::DomainConfiguration",
+      "Properties": {
+        "DomainConfigurationName": "cdkpf270dcnameテスト"
+      }
+    }
+  }
+}

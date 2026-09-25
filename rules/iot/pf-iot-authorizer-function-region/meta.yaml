@@ -1,0 +1,12 @@
+id: pf-iot-authorizer-function-region
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::Authorizer]
+severity: ERROR
+title: "An authorizer's Lambda must live in the authorizer's region"
+constraintSource: https://docs.aws.amazon.com/iot/latest/apireference/API_CreateAuthorizer.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateAuthorizer with authorizerFunctionArn in eu-west-1 -> \"InvalidRequestException: Lambda function region must be same as authorizer cdkpf270au1 region\"; the same call with a us-east-1 ARN naming a function that does not exist was accepted, so the region is the only thing checked and a missing function cannot confound the fixture (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: Lambda function region must be same as authorizer cdkpf270authregf region (Service: Iot, Status Code: 400, Request ID: 458417df-7281-4d98-b124-c3485a4e1d8c) (SDK Attempt Count: 1)\\\" (RequestToken: b37327fd-3bdc-a56c-27f2-09fb9071f1cf, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

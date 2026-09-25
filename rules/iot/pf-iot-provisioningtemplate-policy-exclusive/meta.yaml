@@ -1,0 +1,12 @@
+id: pf-iot-provisioningtemplate-policy-exclusive
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::ProvisioningTemplate]
+severity: ERROR
+title: "A policy inside TemplateBody takes PolicyName or PolicyDocument, not both"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/provision-template.html#policy-resources
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateProvisioningTemplate with a templateBody whose policy resource carried both PolicyName and PolicyDocument -> \"InvalidRequestException: The template body is invalid: Policy resources must define one property: PolicyName or PolicyDocument\"; the same body with PolicyName alone was accepted, and the named policy does not have to exist (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Invalid request provided: The template body is invalid: Policy resources must define one property: PolicyName or PolicyDocument (Service: Iot, Status Code: 400, Request ID: b3868da0-f359-424c-a007-fb5a63682d29) (SDK Attempt Count: 1)\\\" (RequestToken: 93f20b01-6342-9766-80b3-93502a430676, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25

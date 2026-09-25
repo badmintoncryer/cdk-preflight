@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "Authz": {
+      "Type": "AWS::IoT::Authorizer",
+      "Properties": {
+        "AuthorizerName": "cdkpf270dcauthz",
+        "AuthorizerFunctionArn": {
+          "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf270-nope"
+        },
+        "SigningDisabled": true,
+        "Status": "ACTIVE"
+      }
+    },
+    "cdkpf270dcauth": {
+      "Type": "AWS::IoT::DomainConfiguration",
+      "Properties": {
+        "AuthenticationType": "CUSTOM_AUTH",
+        "ApplicationProtocol": "SECURE_MQTT",
+        "AuthorizerConfig": {
+          "DefaultAuthorizerName": {
+            "Ref": "Authz"
+          }
+        }
+      }
+    }
+  }
+}

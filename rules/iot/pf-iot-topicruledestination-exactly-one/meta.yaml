@@ -1,0 +1,12 @@
+id: pf-iot-topicruledestination-exactly-one
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::TopicRuleDestination]
+severity: ERROR
+title: "A topic rule destination must carry exactly one of HttpUrlProperties / VpcProperties"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-topicruledestination.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRuleDestination with both httpUrlConfiguration and vpcConfiguration -> \"InvalidRequestException: Must provide exactly one of [HttpUrlConfiguration, VpcConfiguration, InfluxDBConfiguration]\" (#270 phase B). CloudFormation exposes only the first two of those three, so the rule reads exactly-one over HttpUrlProperties / VpcProperties; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Must provide exactly one of [HttpUrlConfiguration, VpcConfiguration, InfluxDBConfiguration] (Service: Iot, Status Code: 400, Request ID: 9c9b44f4-a729-4fdc-bda2-7a70964fabc0) (SDK Attempt Count: 1)\\\" (RequestToken: 2f0de0ca-ca00-9963-fd22-0c3db3994158, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE - the fail fixture carries both branches (one destination with both properties, one with neither) and the message is the same for both"
+addedOn: 2026-09-25

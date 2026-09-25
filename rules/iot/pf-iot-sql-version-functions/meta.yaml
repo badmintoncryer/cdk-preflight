@@ -1,0 +1,12 @@
+id: pf-iot-sql-version-functions
+service: iot
+benchRegion: us-east-1
+resourceTypes: [AWS::IoT::TopicRule]
+severity: ERROR
+title: "encode() needs AwsIotSqlVersion 2016-03-23"
+constraintSource: https://docs.aws.amazon.com/iot/latest/developerguide/iot-sql-functions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRule \"SELECT encode(*, 'base64') AS d FROM 'a/b'\" with awsIotSqlVersion omitted and with \"2015-10-08\" -> \"InvalidRequestException: Errors encountered while validating query. ERROR: Function 'encode' is only supported in sql version 2016-03-23-beta and above. You can use the new version by specifying \\\"awsIotSqlVersion\\\": \\\"version\\\" when creating or updating a rule.\"; the same statement with \"2016-03-23\" was accepted. The doc lists 15 functions as \"Supported by SQL version 2016-03-23 and later\" but only encode is actually gated: decode, get_dynamodb, get_or_default, get_thing_shadow, indexof, isNull, isUndefined, length, numbytes, parse_time, sourceip, time_to_epoch and transform were all accepted at 2015-10-08 (get_registry_data is rejected at both versions, for its API argument), so the rule names encode alone; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Errors encountered while validating query. ERROR: Function 'encode' is only supported in sql version 2016-03-23-beta and above. You can use the new version by specifying \\\"awsIotSqlVersion\\\": \\\"version\\\" when creating or updating a rule. (Service: Iot, Status Code: 400, Request ID: 43392dcc-6be8-4bdd-b78e-2a7020da09b7) (SDK Attempt Count: 1)\\\" (RequestToken: db3d9b71-2692-ac5d-a530-59befae53641, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+addedOn: 2026-09-25
