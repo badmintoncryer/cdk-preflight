@@ -19,6 +19,7 @@ violation contains make_diag_full("pf-codepipeline-trigger-filter-patterns-max-8
 	s := object.get(f, scope, {})
 	_pf_cplib_plain(s)
 	some side in ["Includes", "Excludes"]
+	_pf_countable_items(object.get(s, side, []))
 	n := count(object.get(s, side, []))
 	n > 8
 }

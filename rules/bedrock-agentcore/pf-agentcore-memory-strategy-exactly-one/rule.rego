@@ -30,5 +30,6 @@ violation contains make_diag_full("pf-agentcore-memory-strategy-exactly-one", "E
 	is_object(custom)
 	cfg := object.get(custom, "Configuration", null)
 	is_object(cfg)
+	_pf_countable_entries(cfg)
 	count(cfg) > 1
 }

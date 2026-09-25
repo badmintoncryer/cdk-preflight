@@ -13,8 +13,10 @@ violation contains make_diag_full("pf-cloudfront-trusted-key-groups-excludes-tru
 	some b in _pf_cflib_behaviors(name)
 	kg := object.get(b.value, "TrustedKeyGroups", [])
 	is_array(kg)
+	_pf_unconditional_items(kg)
 	count(kg) > 0
 	sg := object.get(b.value, "TrustedSigners", [])
 	is_array(sg)
+	_pf_unconditional_items(sg)
 	count(sg) > 0
 }

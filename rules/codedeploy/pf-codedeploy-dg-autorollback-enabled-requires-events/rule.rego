@@ -7,6 +7,7 @@ import rego.v1
 _pf_cdroll_one(rc) if {
 	e := object.get(rc, "Events", null)
 	is_array(e)
+	_pf_unconditional_items(e)
 	count(e) > 0
 }
 

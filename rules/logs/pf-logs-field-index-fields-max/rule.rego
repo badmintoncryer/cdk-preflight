@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-logs-field-index-fields-max", "ERROR", nam
 	is_object(pol)
 	fields := object.get(pol, "Fields", null)
 	is_array(fields)
+	_pf_countable_items(fields)
 	n := count(fields)
 	n > 20
 }

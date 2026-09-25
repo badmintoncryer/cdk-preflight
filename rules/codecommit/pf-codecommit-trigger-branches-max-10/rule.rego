@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-codecommit-trigger-branches-max-10", "ERRO
 	is_object(t)
 	br := object.get(t, "Branches", [])
 	is_array(br)
+	_pf_countable_items(br)
 	count(br) > 10
 }

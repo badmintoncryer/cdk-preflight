@@ -9,6 +9,7 @@ _pf_cfnssou_bad contains [name, idx] if {
 	object.get(object.get(input.resources[name], "properties", {}), "PermissionModel", "SELF_MANAGED") == "SELF_MANAGED"
 	some g in flatten_list(name, "Properties.StackInstancesGroup")
 	ous := object.get(object.get(g.value, "DeploymentTargets", {}), "OrganizationalUnitIds", [])
+	_pf_unconditional_items(ous)
 	count(ous) > 0
 	idx := g.index
 }

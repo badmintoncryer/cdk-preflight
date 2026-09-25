@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-codepipeline-variables-max-50", "ERROR", n
 	"Keep the pipeline to 50 variables or fewer",
 	"https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-types.html") if {
 	some name in resources_of_type("AWS::CodePipeline::Pipeline")
+	_pf_countable_items(object.get(_pf_cplib_props(name), "Variables", []))
 	n := count(object.get(_pf_cplib_props(name), "Variables", []))
 	n > 50
 }

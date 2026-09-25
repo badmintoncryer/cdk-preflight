@@ -32,6 +32,7 @@ _pf_dsel_size(name, path) := n if {
 _pf_dsel_size(name, path) := n if {
 	path == _pf_dsel_paths[2]
 	ls := object.get(object.get(_pf_dsel_cc(name), "HierarchicalChunkingConfiguration", {}), "LevelConfigurations", [])
+	_pf_countable_items(ls)
 	count(ls) == 2
 	n := to_number(ls[1].MaxTokens)
 }

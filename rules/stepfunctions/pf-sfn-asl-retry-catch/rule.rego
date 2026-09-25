@@ -12,6 +12,7 @@ _pf_sfnrc_entry contains [name, p, sname, field, i, e, n] if {
 	some field in ["Retry", "Catch"]
 	arr := object.get(st, field, null)
 	is_array(arr)
+	_pf_countable_items(arr)
 	n := count(arr)
 	some i, e in arr
 	is_object(e)
@@ -43,6 +44,7 @@ violation contains make_diag_full("pf-sfn-asl-retry-catch", "ERROR", name,
 	ee := object.get(e, "ErrorEquals", null)
 	is_array(ee)
 	"States.ALL" in ee
+	_pf_countable_items(ee)
 	count(ee) > 1
 }
 

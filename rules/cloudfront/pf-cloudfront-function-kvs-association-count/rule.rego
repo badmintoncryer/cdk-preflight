@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-cloudfront-function-kvs-association-count"
 	fc := _pf_cflib_props(name, "FunctionConfig")
 	is_object(fc)
 	kvs := object.get(fc, "KeyValueStoreAssociations", [])
+	_pf_countable_items(kvs)
 	count(kvs) > 1
 }

@@ -15,6 +15,7 @@ violation contains make_diag_full("pf-firehose-opensearch-type-name", "ERROR", n
 	path in {"Properties.AmazonopensearchserviceDestinationConfiguration", "Properties.ElasticsearchDestinationConfiguration"}
 	tn := object.get(c, "TypeName", null)
 	_pf_fhlib_lit(tn)
+	_pf_unconditional_items(tn)
 	count(tn) > 0
 	target := resolve(name, sprintf("%s.DomainARN", [path]))
 	target in resources_of_type("AWS::OpenSearchService::Domain")

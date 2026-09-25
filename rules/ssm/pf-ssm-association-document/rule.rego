@@ -120,6 +120,7 @@ violation contains make_diag_full("pf-ssm-association-document", "ERROR", name,
 	_pf_ssmad_doctype(d) == "Automation"
 	t := object.get(_pf_ssmad_props(name), "Targets", null)
 	is_array(t)
+	_pf_unconditional_items(t)
 	count(t) > 0
 	object.get(_pf_ssmad_props(name), "AutomationTargetParameterName", "__pf_absent") == "__pf_absent"
 }

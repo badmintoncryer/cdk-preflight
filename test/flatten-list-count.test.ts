@@ -8,6 +8,12 @@
  * ルールは `rules/_lib/lists.rego` の述語で降りる。ここは黙ることと、**リテラルの個数では
  * 従来どおり鳴ること**（偽陰性を入れていないこと）の両方を押さえる。
  *
+ * 生のプロパティを `object.get` で読んでそのまま `count()` する経路（#272）もここに置く。
+ * `count()` はオブジェクトに対して**キーの数**を返すので、`Fn::If` のマーカー
+ * （`__conditional` / `__if_true` / `__if_false`）は「3 要素」、解決できない `Ref`
+ * （`__dynamic`）は「1 要素」に化ける。`flatten_list` 越しと違って配列かどうかすら
+ * 確かめていないぶん、こちらのほうが素通りしやすい。
+ *
  * 各ルールの fail / pass フィクスチャは触っていないので、実機ゲートで取った証拠はそのまま有効。
  */
 import { diagnoseTemplate } from './rule-table';
@@ -155,6 +161,129 @@ describe('flatten_list() の個数と実デプロイの個数がずれる形 (#2
 
     test('1 個 + Fn::If -> AWS::NoValue は黙る', () => {
       expect(fires(service([{ Port: 80 }, { 'Fn::If': ['C', { Port: 81 }, NO_VALUE] }], { Conditions: COND }), ID)).toBe(false);
+    });
+  });
+});
+
+describe('生のプロパティを count() する形 (#272)', () => {
+  const pipeline = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
+    ...extra,
+    Resources: { P: { Type: 'AWS::CodePipeline::Pipeline', Properties: { RoleArn: 'arn:aws:iam::123456789012:role/r', Stages: [], ...props } } },
+  });
+  const variable = (i: number) => ({ Name: `v${i}`, DefaultValue: 'd' });
+
+  describe('存在ゲート: count(object.get(...)) > 0', () => {
+    // V1 パイプラインに Variables があると鳴る。Fn::If のマーカーはキーが 3 つあるので
+    // 修正前は「変数が 3 つある」と読めて素通りしていた。
+    const ID = 'pf-codepipeline-v1-variables';
+    const v1 = (variables: unknown, extra?: Record<string, unknown>) =>
+      pipeline({ PipelineType: 'V1', Variables: variables }, extra);
+
+    test('リテラル 1 個は鳴る', () => {
+      expect(fires(v1([variable(1)]), ID)).toBe(true);
+    });
+
+    test('リスト全体が Fn::If -> AWS::NoValue なら黙る（マーカーのキーを数えない）', () => {
+      expect(fires(v1({ 'Fn::If': ['C', [variable(1)], NO_VALUE] }, { Conditions: COND }), ID)).toBe(false);
+    });
+
+    test('リスト全体が Ref でも鳴る（個数は不明でも「在る」ことは確か）', () => {
+      expect(fires(v1({ Ref: 'Vars' }, { Parameters: { Vars: { Type: 'CommaDelimitedList' } } }), ID)).toBe(true);
+    });
+  });
+
+  describe('閾値: count(object.get(...)) > N', () => {
+    // 50 個までは通る。51 個目が Fn::If なら条件次第で消えるので数えてはいけない。
+    const ID = 'pf-codepipeline-variables-max-50';
+    const vars = (n: number) => Array.from({ length: n }, (_, i) => variable(i));
+
+    test('リテラル 51 個は鳴る', () => {
+      expect(fires(pipeline({ PipelineType: 'V2', Variables: vars(51) }), ID)).toBe(true);
+    });
+
+    test('リテラル 50 個は黙る', () => {
+      expect(fires(pipeline({ PipelineType: 'V2', Variables: vars(50) }), ID)).toBe(false);
+    });
+
+    test('50 個 + Fn::If -> AWS::NoValue は黙る', () => {
+      const withCond = [...vars(50), { 'Fn::If': ['C', variable(50), NO_VALUE] }];
+      expect(fires(pipeline({ PipelineType: 'V2', Variables: withCond }, { Conditions: COND }), ID)).toBe(false);
+    });
+  });
+
+  describe('等値: count(object.get(...)) != N', () => {
+    // 予測スケーリングの MetricSpecifications はちょうど 1 個。条件つきの 2 個目を
+    // 数えると「1 個であるべきなのに 2 個ある」と読めてしまう。
+    const ID = 'pf-appautoscaling-predictive-metric-spec-single';
+    const spec = (i: number) => ({ TargetValue: 50 + i, PredefinedMetricPairSpecification: { PredefinedMetricType: 'ECSServiceCPUUtilization' } });
+    const policy = (specs: unknown, extra: Record<string, unknown> = {}) => ({
+      ...extra,
+      Resources: {
+        P: {
+          Type: 'AWS::ApplicationAutoScaling::ScalingPolicy',
+          Properties: {
+            PolicyName: 'p',
+            PolicyType: 'PredictiveScaling',
+            PredictiveScalingPolicyConfiguration: { MetricSpecifications: specs },
+          },
+        },
+      },
+    });
+
+    test('リテラル 1 個は黙る', () => {
+      expect(fires(policy([spec(0)]), ID)).toBe(false);
+    });
+
+    test('リテラル 2 個は鳴る', () => {
+      expect(fires(policy([spec(0), spec(1)]), ID)).toBe(true);
+    });
+
+    test('1 個 + Fn::If -> AWS::NoValue は黙る（消えればちょうど 1 個）', () => {
+      const withCond = [spec(0), { 'Fn::If': ['C', spec(1), NO_VALUE] }];
+      expect(fires(policy(withCond, { Conditions: COND }), ID)).toBe(false);
+    });
+  });
+
+  describe('マップのキー数: count(object.get(...)) > N', () => {
+    // Attributes はリストではなく辞書。値が Fn::If -> AWS::NoValue ならキーごと消えるので、
+    // 数える前に降りる（配列を要求する _pf_countable_items では通らない形）。
+    const ID = 'pf-xray-samplingrule-attributes-max-5';
+    const rule = (attributes: unknown, extra: Record<string, unknown> = {}) => ({
+      ...extra,
+      Resources: {
+        R: {
+          Type: 'AWS::XRay::SamplingRule',
+          Properties: {
+            SamplingRule: {
+              RuleName: 'r',
+              Priority: 9004,
+              FixedRate: 0.05,
+              ReservoirSize: 1,
+              Host: '*',
+              HTTPMethod: '*',
+              URLPath: '*',
+              ServiceName: '*',
+              ServiceType: '*',
+              ResourceARN: '*',
+              Version: 1,
+              Attributes: attributes,
+            },
+          },
+        },
+      },
+    });
+    const attrs = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`a${i}`, 'v']));
+
+    test('リテラル 6 個は鳴る', () => {
+      expect(fires(rule(attrs(6)), ID)).toBe(true);
+    });
+
+    test('リテラル 5 個は黙る', () => {
+      expect(fires(rule(attrs(5)), ID)).toBe(false);
+    });
+
+    test('5 個 + 値が Fn::If -> AWS::NoValue のキーは黙る', () => {
+      expect(fires(rule({ ...attrs(5), a5: { 'Fn::If': ['C', 'v', NO_VALUE] } }, { Conditions: COND }), ID)).toBe(false);
     });
   });
 });

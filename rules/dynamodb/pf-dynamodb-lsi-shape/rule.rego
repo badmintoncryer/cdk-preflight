@@ -27,6 +27,7 @@ violation contains make_diag_full("pf-dynamodb-lsi-shape", "ERROR", name,
 	some name in resources_of_type("AWS::DynamoDB::Table")
 	some l in flatten_list(name, "Properties.LocalSecondaryIndexes")
 	ks := object.get(l.value, "KeySchema", [])
+	_pf_unconditional_items(ks)
 	count(ks) > 0
 	_pf_ddblsh_resolvable_all(ks)
 	not "RANGE" in _pf_ddblsh_keytypes(ks)

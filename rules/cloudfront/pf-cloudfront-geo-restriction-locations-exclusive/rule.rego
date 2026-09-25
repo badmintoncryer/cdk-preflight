@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-cloudfront-geo-restriction-locations-exclu
 	gr := object.get(rs, "GeoRestriction", null)
 	is_object(gr)
 	object.get(gr, "RestrictionType", null) == "none"
+	_pf_unconditional_items(object.get(gr, "Locations", []))
 	count(object.get(gr, "Locations", [])) > 0
 }

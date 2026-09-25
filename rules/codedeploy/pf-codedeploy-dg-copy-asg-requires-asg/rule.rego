@@ -8,6 +8,7 @@ import rego.v1
 _pf_cdcasg_one(name) if {
 	a := object.get(_pf_codedeploylib_props(name), "AutoScalingGroups", null)
 	is_array(a)
+	_pf_countable_items(a)
 	count(a) == 1
 }
 

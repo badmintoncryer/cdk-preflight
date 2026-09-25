@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-dynamodb-projection-nonkey-limit", "ERROR"
 	some ix in flatten_list(name, sprintf("Properties.%s", [prop]))
 	proj := object.get(ix.value, "Projection", null)
 	is_object(proj)
+	_pf_countable_items(object.get(proj, "NonKeyAttributes", []))
 	n := count(object.get(proj, "NonKeyAttributes", []))
 	n > 20
 	iname := object.get(ix.value, "IndexName", "<unnamed>")

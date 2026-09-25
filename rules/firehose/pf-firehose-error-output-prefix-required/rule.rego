@@ -5,6 +5,7 @@ import rego.v1
 _pf_fherop_set(c) if {
 	e := object.get(c, "ErrorOutputPrefix", "")
 	is_string(e)
+	_pf_unconditional_items(e)
 	count(e) > 0
 }
 

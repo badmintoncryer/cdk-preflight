@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-cloudfront-continuous-deployment-staging-d
 	some name in resources_of_type("AWS::CloudFront::ContinuousDeploymentPolicy")
 	cfgv := _pf_cflib_props(name, "ContinuousDeploymentPolicyConfig")
 	ns := object.get(cfgv, "StagingDistributionDnsNames", [])
+	_pf_countable_items(ns)
 	count(ns) > 1
 }

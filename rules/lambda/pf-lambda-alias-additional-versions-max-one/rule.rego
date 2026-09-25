@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-lambda-alias-additional-versions-max-one",
 	props := _pf_lam_props(name)
 	rc := _pf_lam_obj(props, "RoutingConfig")
 	ws := _pf_lam_list(object.get(rc, "AdditionalVersionWeights", []))
+	_pf_countable_items(ws)
 	count(ws) > 1
 }

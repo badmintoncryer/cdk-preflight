@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-opensearch-vpc-subnet-count-requires-zone-
 	some name in _pf_os_domains
 	ids := object.get(_pf_os_obj(_pf_os_at(name, "VPCOptions")), "SubnetIds", [])
 	is_array(ids)
+	_pf_countable_items(ids)
 	count(ids) > 1
 	not _pf_os_on(name, "ClusterConfig", "ZoneAwarenessEnabled")
 }

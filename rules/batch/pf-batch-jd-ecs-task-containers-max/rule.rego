@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-batch-jd-ecs-task-containers-max", "ERROR"
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsProperties.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	some t in _pf_batch_ecs_tasks(name)
+	_pf_countable_items(object.get(t.value, "Containers", []))
 	n := count(object.get(t.value, "Containers", []))
 	n > 10
 }

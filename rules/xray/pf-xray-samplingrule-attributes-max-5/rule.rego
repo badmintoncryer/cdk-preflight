@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-xray-samplingrule-attributes-max-5", "ERRO
 	sr := _pf_xraylib_sr(name)
 	attrs := object.get(sr, "Attributes", null)
 	is_object(attrs)
+	_pf_countable_entries(attrs)
 	n := count(attrs)
 	n > 5
 	msg := sprintf("SamplingRule.Attributes has %d entries; CreateSamplingRule rejects more than 5 (\"Member must have length less than or equal to 5\")", [n])
