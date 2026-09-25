@@ -1,0 +1,12 @@
+id: pf-aoss-policy-document-size
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy, AWS::OpenSearchServerless::AccessPolicy, AWS::OpenSearchServerless::LifecyclePolicy]
+severity: ERROR
+title: "A policy document must not exceed 10,240 bytes once minified"
+constraintSource: https://docs.aws.amazon.com/general/latest/gr/opensearch-service.html#opensearch-limits-serverless
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (encryption policy body exactly 10,241 bytes minified) -> ROLLBACK_COMPLETE with HandlerErrorCode InvalidRequest; pass (exactly 10,240) -> CREATE_COMPLETE. CloudFormation truncates that StatusReason - the handler echoes the whole 10,241-byte body back - so the limit sentence itself comes from calling the API directly. api 2026-09-25 us-east-1 pinned the same boundary for all four policy kinds: 10,240 ACCEPTED / 10,241 REJECTED for encryption, network, data and retention (the message names the kind: network-policy-max-size-bytes, data-policy-max-size-bytes, retention-policy-max-size-bytes). The limit is on the minified body - raw 16,078 / minified 10,000 was ACCEPTED - so the rule measures json.marshal of the parsed document, not the template string."
+addedOn: 2026-09-25

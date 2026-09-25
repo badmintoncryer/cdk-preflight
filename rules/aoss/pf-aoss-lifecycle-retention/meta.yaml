@@ -1,0 +1,12 @@
+id: pf-aoss-lifecycle-retention
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::LifecyclePolicy]
+severity: ERROR
+title: "MinIndexRetention is 24h-87600h or 1d-3650d"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-lifecycle.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail carries both ends, one rule each - MinIndexRetention 23h and 3651d -> \"Policy json is invalid, error: [$.Rules[0].MinIndexRetention: does not match the regex pattern ^(?:[1-9]|[1-9][0-9]|[1-9][0-9]{2}|[1-2][0-9]{3}|[3][0-5][0-9]{2}|[3][6][0-4][0-9]|3650)d$, ... $.Rules[1].MinIndexRetention: ...]\" (ROLLBACK_COMPLETE); pass (24h and 3650d, the limits themselves) -> CREATE_COMPLETE. api 2026-09-25 us-east-1 walked the ends one at a time: 0d and 23h rejected, 1d and 25h accepted, 87601h and 3651d rejected, 87600h and 3650d accepted."
+addedOn: 2026-09-25

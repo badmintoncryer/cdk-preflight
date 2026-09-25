@@ -1,0 +1,12 @@
+id: pf-aoss-encryption-policy-duplicate-resource
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "Two encryption policies must not claim the same resource pattern"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-encryption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (two encryption policies both claiming collection/probe-e) -> \"Given encryption policy is conflicting with the existing encryption policies\" (ROLLBACK_COMPLETE); pass (collection/probe-e and collection/probe-f) not deployed (--fail-only). api 2026-09-25 us-east-1 pinned the scope: with collection/probe-e live a second policy claiming collection/probe* was ACCEPTED, so only an exact repeat conflicts - the rule compares whole patterns, never prefixes."
+addedOn: 2026-09-25

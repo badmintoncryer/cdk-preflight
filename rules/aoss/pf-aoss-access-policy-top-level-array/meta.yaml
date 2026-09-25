@@ -1,0 +1,12 @@
+id: pf-aoss-access-policy-top-level-array
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::AccessPolicy]
+severity: ERROR
+title: "A data access policy is a JSON array"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-data-access.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (the data access document written as a JSON object) -> \"Policy json is invalid, error: [$: object found, array expected]\" (ROLLBACK_COMPLETE). pass not deployed (--fail-only: the policy resources are free, but the run is kept to the fail side; api 2026-09-25 us-east-1 deployed the matching control through CreateAccessPolicy/CreateSecurityPolicy/CreateLifecyclePolicy and it was ACCEPTED)"
+addedOn: 2026-09-25

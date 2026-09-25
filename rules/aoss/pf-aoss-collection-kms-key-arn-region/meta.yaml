@@ -1,0 +1,12 @@
+id: pf-aoss-collection-kms-key-arn-region
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::Collection]
+severity: ERROR
+title: "A collection KmsKeyArn must name the deploy Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-opensearchserverless-collection-encryptionconfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1 --fail-only: fail (KmsKeyArn in eu-west-1, the deploy account, only the Region differs) -> \"Invalid kmsKeyId arn:aws:kms:eu-west-1:214794239830:key/93fd6da4-a317-4c17-bfe9-382b5d988b36\" (ROLLBACK_COMPLETE). CreateCollection rejects the ARN synchronously, before the key is looked up and before any OCU is allocated, so the fixture needs no real CMK and the run costs nothing. THE PASS TEMPLATE MUST NEVER BE DEPLOYED: a collection that is accepted bills at its OCU floor around $0.5-1/hr and bench/sweep.sh has no aoss reclaim path. api 2026-09-25 us-east-1 CreateCollection with a real key confirmed the single variable: same ARN in us-east-1 -> ACCEPTED, Region swapped -> the same \"Invalid kmsKeyId\" (phase B)."
+addedOn: 2026-09-25

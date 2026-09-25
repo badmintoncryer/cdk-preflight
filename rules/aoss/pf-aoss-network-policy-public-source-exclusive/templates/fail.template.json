@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-pub-src",
+        "Type": "network",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c2\"]}],\"AllowFromPublic\":true,\"SourceVPCEs\":[\"vpce-0123456789abcdef0\"]},{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c3\"]}],\"AllowFromPublic\":true,\"SourceServices\":[\"bedrock.amazonaws.com\"]}]"
+      }
+    }
+  }
+}

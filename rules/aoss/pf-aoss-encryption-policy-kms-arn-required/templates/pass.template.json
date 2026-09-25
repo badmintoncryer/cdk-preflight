@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-kms-req",
+        "Type": "encryption",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c\"]}],\"AWSOwnedKey\":true}"
+      }
+    }
+  }
+}

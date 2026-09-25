@@ -1,0 +1,12 @@
+id: pf-aoss-network-policy-public-source-exclusive
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityPolicy]
+severity: ERROR
+title: "A network policy block cannot combine AllowFromPublic with a private source"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-network.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateSecurityPolicy, one variable off an ACCEPTED control (AllowFromPublic false + SourceVPCEs vpce-0123456789abcdef0 -> ACCEPTED): flipping only AllowFromPublic to true -> \"Policy json is invalid, error: [$[0].AllowFromPublic: must be a constant value false, $[0]: should not be valid to the schema \\\"not\\\" : {\\\"anyOf\\\":[{\\\"required\\\":[\\\"SourceVPCEs\\\"]},{\\\"required\\\":[\\\"SourceServices\\\"]}]}]\"; the same with SourceServices bedrock.amazonaws.com -> the same sentence. bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE."
+addedOn: 2026-09-25

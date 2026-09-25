@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-permunk",
+        "Type": "data",
+        "Policy": {
+          "Fn::Sub": "[{\"Rules\":[{\"ResourceType\":\"index\",\"Resource\":[\"index/probe-t/logs\"],\"Permission\":[\"aoss:ReadDocument\"]}],\"Principal\":[\"arn:aws:iam::${AWS::AccountId}:role/probe\"]}]"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-aoss-access-policy-index-resource-segments
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::AccessPolicy]
+severity: ERROR
+title: "An index resource is index/<collection>/<index>"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-data-access.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (ResourceType index over the two-segment index/probe-r) -> \"Policy json is invalid, error: [... $[0].Rules[0].Resource[0]: does not match the regex pattern ^index/(?:[a-z][a-z0-9_-]{2,63}\\\\*?|\\\\*)/([a-z;0-9&$%][+.\\\\-_a-z;0-9&$%]*\\\\*?|\\\\*)$]\" (ROLLBACK_COMPLETE). pass not deployed (--fail-only: the policy resources are free, but the run is kept to the fail side; api 2026-09-25 us-east-1 deployed the matching control through CreateAccessPolicy/CreateSecurityPolicy/CreateLifecyclePolicy and it was ACCEPTED)"
+addedOn: 2026-09-25

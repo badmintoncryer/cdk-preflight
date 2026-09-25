@@ -1,0 +1,12 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "net-vpce-fmt",
+        "Type": "network",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-m\"]}],\"AllowFromPublic\":false,\"SourceVPCEs\":[\"vpce-0123456789abcdef0\"]}]"
+      }
+    }
+  }
+}

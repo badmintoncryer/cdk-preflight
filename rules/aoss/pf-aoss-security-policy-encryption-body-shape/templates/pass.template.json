@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "P1": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-shape-a",
+        "Type": "encryption",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c2\"]}],\"AWSOwnedKey\":true}"
+      }
+    },
+    "P2": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-shape-b",
+        "Type": "encryption",
+        "Policy": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-c3\"]}],\"AWSOwnedKey\":true}"
+      }
+    }
+  }
+}

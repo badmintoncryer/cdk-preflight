@@ -1,0 +1,12 @@
+id: pf-aoss-lifecycle-resource-type
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::LifecyclePolicy]
+severity: ERROR
+title: "A retention policy rule only covers index/<collection>/<index>"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-lifecycle.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail carries two policies, each one variable off the pass. ResourceType index over collection/probe-y -> \"Policy json is invalid, error: [$.Rules[0].Resource[0]: does not match the regex pattern ^index/(?:[a-z][a-z0-9_-]{2,63}\\\\*?|\\\\*)/([a-z;0-9&$%][+.~=\\\\-_a-z;0-9&$%]*\\\\*?|\\\\*)$]\" (ROLLBACK_COMPLETE). The other arm (ResourceType collection over index/probe-y/logs) is proven alone by api 2026-09-25 us-east-1 CreateLifecyclePolicy: \"[$.Rules[0].ResourceType: must be a constant value index]\". pass not deployed (--fail-only: the policy resources are free, but the run is kept to the fail side; api 2026-09-25 us-east-1 deployed the matching control through CreateAccessPolicy/CreateSecurityPolicy/CreateLifecyclePolicy and it was ACCEPTED)"
+addedOn: 2026-09-25

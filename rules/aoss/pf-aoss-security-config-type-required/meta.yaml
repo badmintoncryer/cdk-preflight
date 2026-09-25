@@ -1,0 +1,12 @@
+id: pf-aoss-security-config-type-required
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::SecurityConfig]
+severity: ERROR
+title: "A security config must declare its Type"
+constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/ServerlessAPIReference/API_CreateSecurityConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-25 us-east-1: fail (SecurityConfig with Name and valid SamlOptions but no Type) -> the CloudFormation handler's own \"Type cannot be empty\" (ROLLBACK_COMPLETE, HandlerErrorCode InvalidRequest); pass (the same plus Type: saml) -> CREATE_COMPLETE. The handler does not infer the type from the options block, which is what phase B could not decide from the API alone (there it answers \"1 validation error detected: Value null at 'type' failed to satisfy constraint: Member must not be null\")."
+addedOn: 2026-09-25

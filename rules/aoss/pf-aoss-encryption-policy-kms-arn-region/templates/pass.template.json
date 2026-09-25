@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "P": {
+      "Type": "AWS::OpenSearchServerless::SecurityPolicy",
+      "Properties": {
+        "Name": "enc-kms-region",
+        "Type": "encryption",
+        "Policy": {
+          "Fn::Sub": "{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-a\"]}],\"AWSOwnedKey\":false,\"KmsARN\":\"arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/93fd6da4-a317-4c17-bfe9-382b5d988b36\"}"
+        }
+      }
+    }
+  }
+}

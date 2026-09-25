@@ -1,0 +1,12 @@
+id: pf-aoss-collection-group-nextgen-standby-replicas
+service: aoss
+benchRegion: us-east-1
+resourceTypes: [AWS::OpenSearchServerless::CollectionGroup]
+severity: ERROR
+title: "A NEXTGEN collection group must enable standby replicas"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-opensearchserverless-collectiongroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "api 2026-09-25 us-east-1 CreateCollectionGroup, one variable off an ACCEPTED control (Generation NEXTGEN, StandbyReplicas ENABLED, CapacityLimits min 0 / max 2 on both pairs -> ACCEPTED, and the group came back with numberOfCollections 0 and minIndexing/minSearch 0.0): the same call with StandbyReplicas DISABLED -> \"StandbyReplicas cannot be set to DISABLED for NEXTGEN collection groups.\" bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE. Both fixtures keep both minimum OCU values at 0 and hold no collections, which is what makes the accepted group cost nothing while it stands (serverless-scaling: \"If the minimum is set to 0, no OCUs are needed when idle\")."
+addedOn: 2026-09-25

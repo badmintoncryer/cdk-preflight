@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "A1": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-princ-acct-a",
+        "Type": "data",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-o\"],\"Permission\":[\"aoss:DescribeCollectionItems\"]}],\"Principal\":[\"arn:aws:iam::210987654321:role/probe\"]}]"
+      }
+    },
+    "A2": {
+      "Type": "AWS::OpenSearchServerless::AccessPolicy",
+      "Properties": {
+        "Name": "ap-princ-acct-b",
+        "Type": "data",
+        "Policy": "[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/probe-p\"],\"Permission\":[\"aoss:DescribeCollectionItems\"]}],\"Principal\":[\"saml/210987654321/myprovider/user/Annie\"]}]"
+      }
+    }
+  }
+}
