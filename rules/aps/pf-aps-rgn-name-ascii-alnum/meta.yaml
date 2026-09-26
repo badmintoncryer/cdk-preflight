@@ -1,0 +1,12 @@
+id: pf-aps-rgn-name-ascii-alnum
+service: aps
+resourceTypes: [AWS::APS::RuleGroupsNamespace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A namespace name contains at least one ASCII alphanumeric"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-aps-rulegroupsnamespace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (Name ---) -> ROLLBACK_COMPLETE \"ValidationException: Invalid name: Member must satisfy regular expression pattern: .*[0-9A-Za-z][-.0-9A-Z_a-z]*.*\"; pass (Name cdkpf-rgn-name-ascii-alnum) not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

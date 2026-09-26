@@ -1,0 +1,12 @@
+id: pf-grafana-ws-description-charset
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace description avoids the symbol category"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-grafana-workspace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (Description \"CPU > 80\", where every other character is a letter, separator or number so only the symbol is at issue) -> ROLLBACK_COMPLETE, the handler passing the service sentence through verbatim: Resource handler returned message: \"The workspaceDescription should satisfy the pattern ^[\\p{L}\\p{Z}\\p{N}\\p{P}]{0,2048}$. (Service: Grafana, Status Code: 400, Request ID: 58af3e3b-f3f5-477a-9245-5ae31a2d8989)\". The length end of that pattern is the registry schema's and is deliberately left out of the rule's expression (principle 1); Go's regexp also rejects a repeat count above 1000 outright. pass (Description \"CPU over 80\") not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

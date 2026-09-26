@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "CdkpfGfWsCurrent": {
+      "Type": "AWS::Grafana::Workspace",
+      "Properties": {
+        "Name": "cdkpf-gf-role-a",
+        "AccountAccessType": "CURRENT_ACCOUNT",
+        "AuthenticationProviders": [
+          "SAML"
+        ],
+        "PermissionType": "SERVICE_MANAGED",
+        "RoleArn": "arn:aws:iam::214794239830:role/cdkpf-grafana"
+      }
+    },
+    "CdkpfGfWsCustomer": {
+      "Type": "AWS::Grafana::Workspace",
+      "Properties": {
+        "Name": "cdkpf-gf-role-b",
+        "AccountAccessType": "ORGANIZATION",
+        "AuthenticationProviders": [
+          "SAML"
+        ],
+        "PermissionType": "SERVICE_MANAGED",
+        "OrganizationalUnits": [
+          "ou-abcd-11111111"
+        ]
+      }
+    }
+  }
+}

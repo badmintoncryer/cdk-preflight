@@ -1,0 +1,12 @@
+id: pf-aps-ws-log-group-arn-region
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A logging destination's log group is in the workspace's region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-workspace-loggingconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (LogGroupArn in ap-northeast-1 while the stack deploys into us-east-1) -> ROLLBACK_COMPLETE \"ValidationException: Invalid log group ARN - region: ap-northeast-1 (expected: us-east-1)\"; pass (the same ARN in us-east-1) not deployed (--fail-only) and silent under rule-check Extended to QueryLoggingConfiguration on 2026-09-26 (stack cdkpf-c2b-qlrgn, us-east-1): an ap-northeast-1 log group under QueryLoggingConfiguration.Destinations[0].CloudWatchLogs.LogGroupArn -> CREATE_FAILED \"ValidationException: Invalid log group ARN - region: ap-northeast-1 (expected: us-east-1)\" -- the identical sentence."
+addedOn: 2026-09-26

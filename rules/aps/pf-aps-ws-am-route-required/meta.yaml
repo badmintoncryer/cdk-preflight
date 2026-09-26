@@ -1,0 +1,12 @@
+id: pf-aps-ws-am-route-required
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "An Alertmanager definition declares a route"
+constraintSource: https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-alertmanager-config.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (alertmanager_config with receivers: only, no route:) -> ROLLBACK_COMPLETE \"AlertManagerDefinition status: CREATION_FAILED. Reason: status=400, message=error validating Alertmanager config: no routes provided\"; pass (route: receiver: r1 added) not deployed (--fail-only) and silent under rule-check; the control for the asynchronous band (a bare receiver \"receivers: [{name: r1}]\" with a matching route, stack cdkpf-c2a-am-ctl) -> CREATE_COMPLETE with the definition ACTIVE, so the base config is valid and the AWS::APS::Workspace handler does stabilize on the definition status"
+addedOn: 2026-09-26

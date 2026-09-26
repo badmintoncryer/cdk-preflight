@@ -1,0 +1,12 @@
+id: pf-aps-rgn-data-group-name-required
+service: aps
+resourceTypes: [AWS::APS::RuleGroupsNamespace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A rule group name must not be empty"
+constraintSource: https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-Ruler-Config.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (- name: (empty string)) -> ROLLBACK_COMPLETE \"AlreadyExists: In-flight idempotent request already exists.\"; pass (- name: g1) not deployed (--fail-only) and silent under rule-check; the CloudFormation handler retries the rejected CreateRuleGroupsNamespace with the same clientToken, so CloudFormation reports \"AlreadyExists: In-flight idempotent request already exists.\" instead of the service sentence; the control (this rule's pass Data in the same two-resource shape, stack cdkpf-probe-rgn-control) -> CREATE_COMPLETE, and the service names the constraint one layer down: aws amp create-rule-groups-namespace us-east-1 -> \"Invalid RuleGroupsNamespace data: [0:0: Groupname must not be empty]\""
+addedOn: 2026-09-26

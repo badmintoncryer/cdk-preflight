@@ -1,0 +1,12 @@
+id: pf-grafana-ws-current-account-requires-role-arn
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace that needs a RoleArn has one"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-grafana-workspace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: two stacks, one per rule body, because a multi-resource fail stack records only the first failure. fail (ORGANIZATION + PermissionType CUSTOMER_MANAGED + OrganizationalUnits, no RoleArn) -> ROLLBACK_COMPLETE, Resource handler returned message: \"When the permissionType is CUSTOMER_MANAGED a Workspace Role ARN should be provided. (Service: Grafana, Status Code: 400, Request ID: 0e948939-1a4d-4573-b0a9-d6d4667705ff)\". The fail template's other resource (CURRENT_ACCOUNT + SERVICE_MANAGED, no RoleArn) was deployed on its own as stack cdkpf-c3-role1 -> CREATE_FAILED, Resource handler returned message: \"When the accountAccessType is CURRENT_ACCOUNT a Workspace Role ARN should be provided. (Service: Grafana, Status Code: 400, Request ID: ee9643f4-8dba-4293-a3ee-6a8ca2b40628)\" -- so each of the two conditions rejects on its own. The whole 2x2 matrix was measured at the API layer in phase B: only ORGANIZATION + SERVICE_MANAGED creates without a RoleArn, and that is the pass template's second resource. pass not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

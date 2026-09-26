@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-rgn-data-rule-record-or-alert-required"
+      }
+    },
+    "CdkpfApsRgn": {
+      "Type": "AWS::APS::RuleGroupsNamespace",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Name": "cdkpf-rgn-data-rule-record-or-alert-required",
+        "Data": "groups:\n  - name: g1\n    rules:\n      - expr: avg(up)\n"
+      }
+    }
+  }
+}

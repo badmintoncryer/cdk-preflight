@@ -1,0 +1,22 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-rp-policy-resource-workspace"
+      }
+    },
+    "CdkpfApsRp": {
+      "Type": "AWS::APS::ResourcePolicy",
+      "Properties": {
+        "WorkspaceArn": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "PolicyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::214794239830:root\"},\"Action\":[\"aps:RemoteWrite\"],\"Resource\":\"arn:aws:aps:us-east-1:214794239830:workspace/ws-11111111-1111-1111-1111-111111111111\"}]}"
+      }
+    }
+  }
+}

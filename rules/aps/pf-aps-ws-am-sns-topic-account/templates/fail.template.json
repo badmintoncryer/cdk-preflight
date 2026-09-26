@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ws-am-sns-topic-account",
+        "AlertManagerDefinition": "alertmanager_config: |\n  route:\n    receiver: r1\n  receivers:\n    - name: r1\n      sns_configs:\n        - topic_arn: arn:aws:sns:us-east-1:000000000000:cdkpf-t\n"
+      }
+    }
+  }
+}

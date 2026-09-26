@@ -1,0 +1,11 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ws-am-config-root-key",
+        "AlertManagerDefinition": "route:\n  receiver: r1\nreceivers:\n  - name: r1\n"
+      }
+    }
+  }
+}

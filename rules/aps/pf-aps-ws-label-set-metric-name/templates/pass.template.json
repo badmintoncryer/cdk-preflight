@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ws-label-set-metric-name",
+        "WorkspaceConfiguration": {
+          "LimitsPerLabelSets": [
+            {
+              "LabelSet": [
+                {
+                  "Name": "__name__",
+                  "Value": "my_metric"
+                }
+              ],
+              "Limits": {
+                "MaxSeries": 1000
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

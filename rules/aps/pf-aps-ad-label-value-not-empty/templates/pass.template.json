@@ -1,0 +1,33 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ad-label-value"
+      }
+    },
+    "CdkpfApsAd": {
+      "Type": "AWS::APS::AnomalyDetector",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Alias": "cdkpf-ad-label-value",
+        "Configuration": {
+          "RandomCutForest": {
+            "Query": "avg(up)"
+          }
+        },
+        "Labels": [
+          {
+            "Key": "team",
+            "Value": "i"
+          }
+        ]
+      }
+    }
+  }
+}

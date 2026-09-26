@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "CdkpfGfWs": {
+      "Type": "AWS::Grafana::Workspace",
+      "Properties": {
+        "Name": "cdkpf-gf-nac",
+        "AccountAccessType": "CURRENT_ACCOUNT",
+        "AuthenticationProviders": [
+          "SAML"
+        ],
+        "PermissionType": "CUSTOMER_MANAGED",
+        "RoleArn": "arn:aws:iam::214794239830:role/cdkpf-grafana",
+        "NetworkAccessControl": {
+          "PrefixListIds": [
+            "pl-1a2b3c4d"
+          ],
+          "VpceIds": [
+            "vpce-1a2b3c4d"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-grafana-ws-organization-access-requires-ous
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "Organization-wide account access lists the organizational units"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-grafana-workspace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (AccountAccessType ORGANIZATION with no OrganizationalUnits) -> ROLLBACK_COMPLETE, Resource handler returned message: \"When the accountAccessType is ORGANIZATION a list of Organizational Units should be provided. (Service: Grafana, Status Code: 400, Request ID: 777d8f92-d795-4b8f-bb12-ff689103ef28)\". pass (the same workspace with OrganizationalUnits []) not deployed (--fail-only) and silent under rule-check: an empty list is genuinely accepted, measured at the API layer in phase B (ORGANIZATION with workspaceOrganizationalUnits=[] reached ACTIVE, workspaceId g-4836943b7f), which is why the rule reports absence only and not an empty list"
+addedOn: 2026-09-26

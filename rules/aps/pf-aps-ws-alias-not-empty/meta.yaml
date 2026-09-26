@@ -1,0 +1,12 @@
+id: pf-aps-ws-alias-not-empty
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace alias, when present, is not empty"
+constraintSource: https://docs.aws.amazon.com/prometheus/latest/APIReference/API_CreateWorkspace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (Alias \"\") -> ROLLBACK_COMPLETE \"InvalidParameter: 1 validation error(s) found. minimum field size of 1, CreateWorkspaceInput.Alias.\"; pass (Alias \"a\" (the 1-character minimum)) not deployed (--fail-only) and silent under rule-check; the API layer words the same rejection differently (aws amp create-workspace --alias \"\" -> \"Invalid alias: Member must have length greater than or equal to 1\"), so the sentence above is the one a CloudFormation user sees"
+addedOn: 2026-09-26

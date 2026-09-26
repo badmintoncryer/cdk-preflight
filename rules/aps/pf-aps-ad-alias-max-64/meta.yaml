@@ -1,0 +1,12 @@
+id: pf-aps-ad-alias-max-64
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "An anomaly detector alias is at most 64 characters"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-aps-anomalydetector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (65-character Alias) -> ROLLBACK_COMPLETE \"ValidationException: Invalid alias: Member must have length less than or equal to 64\"; pass (64-character Alias) not deployed (--fail-only) and silent under rule-check. The CloudFormation schema stops 129 characters (F3033), so 65..128 is the gap"
+addedOn: 2026-09-26

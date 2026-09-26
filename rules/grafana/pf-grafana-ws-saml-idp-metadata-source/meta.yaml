@@ -1,0 +1,12 @@
+id: pf-grafana-ws-saml-idp-metadata-source
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A SAML identity provider names exactly one metadata source"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-grafana-workspace-idpmetadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-27 us-east-1: fail (SamlConfiguration.IdpMetadata {}) -> ROLLBACK_COMPLETE after 8m38s, because CreateWorkspace has no samlConfiguration parameter at all: CloudFormation brings the workspace to ACTIVE and only then calls UpdateWorkspaceAuthentication, which answers Resource handler returned message: \"Invalid request body, please refer to Amazon Managed Grafana CloudFormation docs to see required parameters\" (RequestToken 737e293a-26c9-dbfc-4d21-5134480ffdbc, HandlerErrorCode: InvalidRequest). The second body (both Url and Xml) was measured in its own stack cdkpf-c3-samlboth with --on-failure ROLLBACK so CloudFormation deletes the workspace it had created -> ROLLBACK_COMPLETE with the identical sentence (RequestToken 811eb5ef-47ca-d91c-bf10-ba3c2115a5a6). The sentence names no property either way, so attribution rests on the controlled pair, measured at the API layer in phase B on that same UpdateWorkspaceAuthentication call: idpMetadata {} rejected, idpMetadata {url, xml} rejected, idpMetadata {url} alone accepted. and the pass shape was then confirmed on the CloudFormation path itself: the pass fixture deployed as stack cdkpf-c3-samlctl reached CREATE_COMPLETE in 6m16s (workspace g-9e2f582a99, deleted with the stack), so the handler wants nothing beyond IdpMetadata and both rejections are attributable to IdpMetadata alone. pass is otherwise not deployed by the gate (--fail-only) and is silent under rule-check"
+addedOn: 2026-09-26

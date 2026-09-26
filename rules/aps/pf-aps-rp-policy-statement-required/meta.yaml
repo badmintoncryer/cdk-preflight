@@ -1,0 +1,12 @@
+id: pf-aps-rp-policy-statement-required
+service: aps
+resourceTypes: [AWS::APS::ResourcePolicy]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace resource policy has a Statement"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-aps-resourcepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (a PolicyDocument with Version and no Statement) -> ROLLBACK_COMPLETE \"ValidationException: Workspace resource policy cannot be malformed\"; pass (the same document plus one Statement) not deployed (--fail-only) and silent under rule-check; the message names no property, so attribution is a controlled pair on the probe workspace (PutResourcePolicy us-east-1: Version alone -> ValidationException \"Workspace resource policy cannot be malformed\", Version plus one Allow statement -> policyStatus CREATING)"
+addedOn: 2026-09-26
