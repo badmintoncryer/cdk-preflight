@@ -285,6 +285,15 @@ aoss_reclaim() {
 
 sweep_aoss() {
   local region=$1 id name lst del key t i spec
+  # 下の一覧はどれも 2>/dev/null なので、権限が無いと AccessDenied を飲んで「空のアカウント」と
+  # 同じ出力になる。月次は bench (214794239830) ではなく 502761806921 の cdkpf-monthly-verify
+  # ロールで走るため、そこに aoss:List*/Delete* が無いと回収経路がまるごと黙って空振りする。
+  # それは「経路が無い」より悪い（無いことには気づけるが、空振りには気づけない）。先に 1 回試す
+  if ! aws opensearchserverless list-collections --region "$region" \
+         --query 'length(collectionSummaries)' --output text 2>"$RECLAIM_ERR" >/dev/null; then
+    echo "LEFTOVER: aoss sweep could not list anything ($region) — $(reclaim_err)"
+    return 0
+  fi
   # コレクションが先。1 枚でも残っているとグループの削除が拒否される
   aws opensearchserverless list-collections --region "$region" \
     --query 'collectionSummaries[].[id,name]' --output text 2>/dev/null |

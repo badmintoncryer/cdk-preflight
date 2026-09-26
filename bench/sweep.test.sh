@@ -31,6 +31,7 @@ case "$1 $2" in
   # 削除の一覧と、グループ削除前の待ちの一覧は同じサブコマンドを叩く。待ちの方（starts_with 付き）は
   # 常に空を返して、スタブでも待ちループが 1 周で抜けるようにする
   "opensearchserverless list-collections")
+    if [ -n "${CDKPF_STUB_AOSSDENY:-}" ]; then echo "An error occurred (AccessDeniedException): no aoss" >&2; exit 254; fi
     case "$*" in *starts_with*) ;; *) echo "${CDKPF_STUB_COLL:-}" ;; esac ;;
   "opensearchserverless list-collection-groups") echo "${CDKPF_STUB_CG:-}" ;;
   # --type ごとに呼ばれる。フィクスチャにある型だけ返す（回収行の本数を素直に数えられるように）
@@ -289,5 +290,17 @@ called 'delete-security-config' && fail "deleted a security config that is not a
 [ "$(grep -c '^LEFTOVER: orphaned aoss saml security config' <<<"$out")" -eq 3 ] ||
   fail "a non-cdkpf security config must still be reported" "$out"
 unset CDKPF_STUB_SCF
+
+# 一覧が権限で落ちたら、空のアカウントと同じ顔をせずに LEFTOVER で言う。月次は別アカウントの
+# ロールで走るので、aoss:List* が無いと回収経路まるごとが黙って空振りする
+export CDKPF_STUB_AOSSDENY=1 CDKPF_STUB_CG=$'cg-1\tcdkpf-cg-minmax'
+out=$(run "$tmp/none")
+unset CDKPF_STUB_AOSSDENY CDKPF_STUB_CG
+[ "$(grep -c '^LEFTOVER: aoss sweep could not list anything' <<<"$out")" -eq 3 ] ||
+  fail "a denied aoss list must be reported, not read as an empty account" "$out"
+grep -q 'could not list anything (ap-northeast-1) — .*AccessDenied' <<<"$out" ||
+  fail "the denial reason was not carried onto the leftover line" "$out"
+called 'delete-collection-group' &&
+  fail "kept deleting after the list was denied (the listing is what the deletes are based on)" "$out"
 
 echo "sweep.test.sh: OK"
