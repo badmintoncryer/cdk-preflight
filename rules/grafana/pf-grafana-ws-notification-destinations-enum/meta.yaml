@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate"
+  evidence: "bench 2026-09-26 us-east-1: fail (NotificationDestinations [\"EMAIL\"]) -> ROLLBACK_COMPLETE at CloudFormation's server-side validation, before the handler runs: \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" -- the same generic sentence as the DataSources enum, naming neither the resource nor the property (the sibling rule's fixture was redeployed with --on-failure DO_NOTHING on 2026-09-27 to confirm no resource-level event exists on this path). The service's own answer, measured at the API layer in phase B, is BadRequestException: Invalid request body and never appears on the CloudFormation path. The bundled engine sees the enum as W3030/WARN only, so nothing blocks the deploy: upstream: pending-engine, not cfn-schema. pass (NotificationDestinations [\"SNS\"]) not deployed (--fail-only) and silent under rule-check"
 addedOn: 2026-09-26

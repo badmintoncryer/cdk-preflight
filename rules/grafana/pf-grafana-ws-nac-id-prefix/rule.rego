@@ -20,3 +20,17 @@ violation contains make_diag_full("pf-grafana-ws-nac-id-prefix", "ERROR", name,
 	some id in _pf_grafana_strings(_pf_gfnac(name), "PrefixListIds")
 	not regex.match(`^pl-[a-z0-9_]{1,32}$`, id)
 }
+
+# VpceIds is quoted with its own, different pattern: hexadecimal only, where the
+# prefix list's admits letters and underscores. The doc calls both "the format
+# vpce-1a2b3c4d" and says nothing about the charset; this one was measured on
+# 2026-09-27, so the two bodies do not share a pattern.
+violation contains make_diag_full("pf-grafana-ws-nac-id-prefix", "ERROR", name,
+	"Properties.NetworkAccessControl.VpceIds",
+	sprintf("VpceIds entry \"%v\" is not a VPC endpoint id; CreateWorkspace fails with \"The VPC endpoint should satisfy the pattern ^vpce-[0-9a-f]{1,32}$.\"", [id]),
+	"Pass the interface endpoint's Id (vpce-...), not its name or its DNS entry",
+	"DOCNAC") if {
+	some name in resources_of_type("AWS::Grafana::Workspace")
+	some id in _pf_grafana_strings(_pf_gfnac(name), "VpceIds")
+	not regex.match(`^vpce-[0-9a-f]{1,32}$`, id)
+}

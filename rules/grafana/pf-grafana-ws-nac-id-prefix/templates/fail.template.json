@@ -14,7 +14,9 @@
           "PrefixListIds": [
             "not-a-prefix-list"
           ],
-          "VpceIds": []
+          "VpceIds": [
+            "not-a-vpc-endpoint"
+          ]
         }
       }
     }

@@ -14,7 +14,9 @@
           "PrefixListIds": [
             "pl-1a2b3c4d"
           ],
-          "VpceIds": []
+          "VpceIds": [
+            "vpce-1a2b3c4d"
+          ]
         }
       }
     }

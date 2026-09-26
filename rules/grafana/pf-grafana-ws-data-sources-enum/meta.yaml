@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate"
+  evidence: "bench 2026-09-26 us-east-1: fail (DataSources [\"FOO\"]) -> ROLLBACK_COMPLETE at CloudFormation's server-side validation, before the handler runs: \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" The same fixture redeployed on 2026-09-27 as stack cdkpf-c3-dsenum with --on-failure DO_NOTHING left three events and not one of them is about a resource, so neither the resource nor the property is ever named. The service's own answer, measured at the API layer in phase B, is BadRequestException: Invalid request body and never appears on the CloudFormation path at all. The bundled engine does see this enum, but only as W3030/WARN, which blocks nothing (strict promotes ERROR/FATAL alone), so this is upstream: pending-engine and not cfn-schema. pass (DataSources [\"CLOUDWATCH\"]) not deployed (--fail-only) and silent under rule-check"
 addedOn: 2026-09-26

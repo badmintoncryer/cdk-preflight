@@ -8,5 +8,5 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate"
+  evidence: "bench 2026-09-26 us-east-1: fail (AccountAccessType ORGANIZATION with no OrganizationalUnits) -> ROLLBACK_COMPLETE, Resource handler returned message: \"When the accountAccessType is ORGANIZATION a list of Organizational Units should be provided. (Service: Grafana, Status Code: 400, Request ID: 777d8f92-d795-4b8f-bb12-ff689103ef28)\". pass (the same workspace with OrganizationalUnits []) not deployed (--fail-only) and silent under rule-check: an empty list is genuinely accepted, measured at the API layer in phase B (ORGANIZATION with workspaceOrganizationalUnits=[] reached ACTIVE, workspaceId g-4836943b7f), which is why the rule reports absence only and not an empty list"
 addedOn: 2026-09-26
