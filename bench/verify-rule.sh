@@ -172,11 +172,14 @@ create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれ�
   # 頭だけ見ると型が、末尾だけ見ると "Member must have length less than or equal to 51200" が
   # 落ちる。全文は $LOG にある。
   msg=$(tr '\n' ' ' <<<"$out")
+  [ ${#msg} -gt 400 ] && msg="${msg:0:200} […] ${msg: -200}"
   # 期待どおりの同期拒否なら、それを証拠として受け取る（#264）。同期拒否はスタックイベントが
   # 1 件も出ない代わりに**足場の崩壊が混ざらない**ので、本来いちばん強い証拠。文面の照合は
   # fail 側だけ: pass テンプレートが弾かれたのはフィクスチャが汚いというだけで、制約の証拠ではない。
   # 照合前に空白を 1 つに潰す — API のメッセージは折り返して届くことがあり、行単位で見ると
-  # 期待文が行境界をまたいで一致しなくなる。
+  # 期待文が行境界をまたいで一致しなくなる。**照合は truncate 前の $out に当てる**（$msg では
+  # なく）: 弾かれた値をまるごと echo し返すエラー（param-value-max は 4097 文字返す）では
+  # 期待文が真ん中に来て、両端だけ残す要約から落ちる。ログに載せるのは $msg のほう。
   if [ "$3" = fail ] && [ -n "$EXPECT_API_ERROR" ]; then
     case "$(tr -s '[:space:]' ' ' <<<"$out")" in
       *"$EXPECT_API_ERROR"*)
@@ -186,7 +189,6 @@ create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれ�
         return 9 ;;
     esac
   fi
-  [ ${#msg} -gt 400 ] && msg="${msg:0:200} […] ${msg: -200}"
   echo "!! INCONCLUSIVE: $3 create-stack API error: $msg" | tee -a "$LOG"
   cleanup "$1"
   exit 4
