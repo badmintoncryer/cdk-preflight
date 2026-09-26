@@ -188,4 +188,43 @@ expect 0 "$got" "a failed wait on an already-deleted stack still verifies"
 grep -q "LEFTOVER" "$tmp/out" \
   && { echo "FAIL: a stack that is actually gone was logged as a leftover"; cat "$tmp/out"; exit 1; }
 
-echo "ok: verify-rule.sh scaffolding guard + create-stack rejection + unreadable status/events + leftover noise"
+# イベントの絞り込みで親スタックを外すのは**論理 ID**で。型（AWS::CloudFormation::Stack）で
+# 外すと入れ子スタックも一緒に落ちるので、残るのは道連れで倒れたリソースだけになり、
+# "Resource creation cancelled" が理由として報告される（2026-09-25 の月次で 2 本が
+# それで verified になった）。スタブは JMESPath を解釈しないのでクエリ文そのものを見る。
+got=$(run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+expect 0 "$got" "sanity before inspecting the events query"
+grep -q "LogicalResourceId!='cdkpf-$RULE-fail'" "$tmp/calls" \
+  || { echo "FAIL: stack events were not filtered by logical id"; cat "$tmp/calls"; exit 1; }
+! grep -q "ResourceType!='AWS::CloudFormation::Stack'" "$tmp/calls" \
+  || { echo "FAIL: filtering events by type drops nested stacks too"; cat "$tmp/calls"; exit 1; }
+
+# meta.repro.expectApiError がある帯は、同期拒否の文面が一致したらそれを証拠として受け取る
+# （#264）。同期拒否はスタックイベントが出ない代わりに足場の崩壊が混ざらない。
+rr() { # rr <rule> <create-stack のエラー文> -> exit code
+  rm -f "$tmp/calls" "$tmp/calls.F" "$tmp/calls.P"; : > "$tmp/calls"
+  CDKPF_STUB_FCREATE_ERR="$2" CDKPF_REGION=us-east-1 CDKPF_POLL_BUDGET=60 \
+    bash bench/verify-rule.sh "$1" --fail-only > "$tmp/out" 2>&1
+  echo $?
+}
+EXPECTED_RULE=pf-cfn-export-name-max # expectApiError: "must not be longer than 256 characters"
+REJ256='An error occurred (ValidationError) when calling the CreateStack operation: Template format error: Output A is malformed. The Name field of every Export member must not be longer than 256 characters.'
+got=$(rr "$EXPECTED_RULE" "$REJ256")
+expect 0 "$got" "the rejection meta.repro.expectApiError names is evidence, not INCONCLUSIVE"
+grep -q "fail: finalStatus=API_REJECTED" "$tmp/out" \
+  || { echo "FAIL: the accepted rejection was not recorded as API_REJECTED"; cat "$tmp/out"; exit 1; }
+grep -q "fail: reason=.*256 characters" "$tmp/out" \
+  || { echo "FAIL: the rejection text was not kept as the reason"; cat "$tmp/out"; exit 1; }
+
+# 文面が違えば従来どおり判定不能。境界値ごと substring に入れてあるので、AWS が上限を
+# 動かしたら verified ではなく INCONCLUSIVE に落ちる（ドリフトが見える向き）。
+got=$(rr "$EXPECTED_RULE" "${REJ256/256 characters/255 characters}")
+expect 4 "$got" "a rejection that does not match expectApiError stays INCONCLUSIVE"
+
+# expectApiError が照合するのは fail 側だけ。pass が弾かれたのはフィクスチャが汚いだけで、
+# 制約の証拠ではない
+got=$(CDKPF_STUB_PCREATE_ERR="$REJ256" CDKPF_STUB_FCREATE_ERR="$REJ256" CDKPF_REGION=us-east-1 \
+      CDKPF_POLL_BUDGET=60 bash bench/verify-rule.sh "$EXPECTED_RULE" > "$tmp/out" 2>&1; echo $?)
+expect 4 "$got" "expectApiError must not whitelist a rejected pass template"
+
+echo "ok: verify-rule.sh scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + expectApiError"

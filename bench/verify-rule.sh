@@ -14,6 +14,10 @@ DIR=$(find rules -maxdepth 2 -type d -name "$RULE" | head -1)
 [ -z "$DIR" ] && { echo "rule not found: $RULE"; exit 1; }
 META_REGION=$(grep -E '^benchRegion:' "$DIR/meta.yaml" | awk '{print $2}')
 RTYPES=$(grep -E '^resourceTypes:' "$DIR/meta.yaml")
+# meta.repro.expectApiError: create-stack が同期的に断る帯のルールが、そのとき返るべき文面。
+# 二重引用符で囲んだ 1 行だけを読む。書き方を外した（引用符無し・複数行）ときは空になり、
+# 従来どおり INCONCLUSIVE に落ちる — 安全な向きに倒れる。
+EXPECT_API_ERROR=$(sed -n 's/^[[:space:]]*expectApiError:[[:space:]]*"\(.*\)"[[:space:]]*$/\1/p' "$DIR/meta.yaml" | head -1)
 REGION="${CDKPF_REGION:-${META_REGION:-ap-northeast-1}}"
 mkdir -p bench/logs
 LOG="bench/logs/$RULE.log"
@@ -83,9 +87,20 @@ events_query() { # <stack> <jmespath> -> 値を stdout。読めなければ rc 1
   echo "$v"
 }
 
+# 1 本目のクエリが外したいのは「スタック自身のイベント」なので、除外は型ではなく論理 ID で
+# 見る。型で外すと**入れ子スタックも一緒に落ちる**（親と同じ AWS::CloudFormation::Stack なので）。
+# そうなると残るのは道連れで倒れた他のリソースだけで、その理由は "Resource creation cancelled" —
+# 本体がなぜ倒れたかを何も語らない文面が理由として報告される（2026-09-25 の月次で
+# pf-cfn-nested-templateurl-scheme と pf-cfn-nested-notificationarns-region の 2 本が
+# これで `OK: verified` になった。入れ子スタックは即座に弾かれ、同じスタックの
+# AWS::SNS::Topic がまだ作成中だったので道連れの CREATE_FAILED がそれだけ残った）。
+# 論理 ID はルートスタックのイベントだけがスタック名と一致するので、入れ子を持たない
+# フィクスチャでは型で外すのと完全に同じ結果になる。
+# なお `|[-1]` は describe-stack-events が新しい順に返すので**いちばん古い** CREATE_FAILED、
+# つまり最初に倒れたリソース。道連れより先に本体を拾うのはこれが効いている。
 reason_of() { # リソースの CREATE_FAILED を優先。無ければスタックレベル（早期検証の失敗はこちらにしか出ない）
   local q r
-  for q in "ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack'" "ResourceStatus=='CREATE_FAILED'"; do
+  for q in "ResourceStatus=='CREATE_FAILED' && LogicalResourceId!='$1'" "ResourceStatus=='CREATE_FAILED'"; do
     r=$(events_query "$1" "StackEvents[?$q]|[-1].ResourceStatusReason") || return 1
     [ -n "$r" ] && [ "$r" != "None" ] && { echo "$r"; return 0; }
   done
@@ -94,7 +109,7 @@ reason_of() { # リソースの CREATE_FAILED を優先。無ければスタッ�
 
 failed_type() { # スタックの中で最初に CREATE_FAILED になったリソースの型
   events_query "$1" \
-    "StackEvents[?ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack']|[-1].ResourceType"
+    "StackEvents[?ResourceStatus=='CREATE_FAILED' && LogicalResourceId!='$1']|[-1].ResourceType"
 }
 
 # フィクスチャは検査対象の周りに足場（VPC、ロール、バケット）を建てる。足場のほうが
@@ -157,6 +172,20 @@ create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれ�
   # 頭だけ見ると型が、末尾だけ見ると "Member must have length less than or equal to 51200" が
   # 落ちる。全文は $LOG にある。
   msg=$(tr '\n' ' ' <<<"$out")
+  # 期待どおりの同期拒否なら、それを証拠として受け取る（#264）。同期拒否はスタックイベントが
+  # 1 件も出ない代わりに**足場の崩壊が混ざらない**ので、本来いちばん強い証拠。文面の照合は
+  # fail 側だけ: pass テンプレートが弾かれたのはフィクスチャが汚いというだけで、制約の証拠ではない。
+  # 照合前に空白を 1 つに潰す — API のメッセージは折り返して届くことがあり、行単位で見ると
+  # 期待文が行境界をまたいで一致しなくなる。
+  if [ "$3" = fail ] && [ -n "$EXPECT_API_ERROR" ]; then
+    case "$(tr -s '[:space:]' ' ' <<<"$out")" in
+      *"$EXPECT_API_ERROR"*)
+        echo "fail: finalStatus=API_REJECTED" | tee -a "$LOG"
+        echo "fail: reason=$msg" | tee -a "$LOG"
+        cleanup "$1"
+        return 9 ;;
+    esac
+  fi
   [ ${#msg} -gt 400 ] && msg="${msg:0:200} […] ${msg: -200}"
   echo "!! INCONCLUSIVE: $3 create-stack API error: $msg" | tee -a "$LOG"
   cleanup "$1"
@@ -166,33 +195,40 @@ create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれ�
 echo "=== $RULE: fail template ($REGION) ===" | tee -a "$LOG"
 FSTACK="cdkpf-$RULE-fail"
 create_stack "$FSTACK" "$DIR/templates/fail.template.json" fail
-FSTATUS=$(poll_terminal "$FSTACK")
-READ_FAILED=0
-REASON=$(reason_of "$FSTACK") || READ_FAILED=1
-FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
-echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
-echo "fail: reason=$REASON" | tee -a "$LOG"
-cleanup "$FSTACK"
-if scaffolding_failure "$FTYPE" "$REASON"; then
-  echo "!! INCONCLUSIVE: the fixture's $FTYPE failed before the constraint could fire: $REASON" | tee -a "$LOG"
-  exit 4
-fi
-case "$FSTATUS" in
-  CREATE_COMPLETE)
-    echo "!! BROKEN-EXPECTATION: fail template deployed successfully — the constraint may have drifted" | tee -a "$LOG"
-    exit 2 ;;
-  UNREADABLE)
-    echo "!! INCONCLUSIVE: could not read the fail stack's status — see $LOG" | tee -a "$LOG"
-    exit 4 ;;
-  GONE|TIMEOUT)
-    echo "!! INCONCLUSIVE: fail stack ended $FSTATUS — cannot judge the constraint" | tee -a "$LOG"
-    exit 4 ;;
-esac
-# ここまで来たのはスタックが倒れたとき。倒れた理由が読めないまま先に進むと、足場が倒れた
-# だけのロールバックを足場ガードが素通しして verified になる。
-if [ "$READ_FAILED" = 1 ]; then
-  echo "!! INCONCLUSIVE: could not read the fail stack's events — the scaffolding guard cannot run" | tee -a "$LOG"
-  exit 4
+FAIL_CREATE_RC=$?
+# 9 = 期待どおりの同期拒否（expectApiError が一致した）。スタックは 1 つも作られていないので、
+# ポーリングも理由の読み出しも足場ガードも見るものが無い（回せば GONE を拾って INCONCLUSIVE
+# に落ちる）。証拠はすでに create_stack が fail: reason= に書いている。
+FSTATUS=API_REJECTED
+if [ "$FAIL_CREATE_RC" -ne 9 ]; then
+  FSTATUS=$(poll_terminal "$FSTACK")
+  READ_FAILED=0
+  REASON=$(reason_of "$FSTACK") || READ_FAILED=1
+  FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
+  echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
+  echo "fail: reason=$REASON" | tee -a "$LOG"
+  cleanup "$FSTACK"
+  if scaffolding_failure "$FTYPE" "$REASON"; then
+    echo "!! INCONCLUSIVE: the fixture's $FTYPE failed before the constraint could fire: $REASON" | tee -a "$LOG"
+    exit 4
+  fi
+  case "$FSTATUS" in
+    CREATE_COMPLETE)
+      echo "!! BROKEN-EXPECTATION: fail template deployed successfully — the constraint may have drifted" | tee -a "$LOG"
+      exit 2 ;;
+    UNREADABLE)
+      echo "!! INCONCLUSIVE: could not read the fail stack's status — see $LOG" | tee -a "$LOG"
+      exit 4 ;;
+    GONE|TIMEOUT)
+      echo "!! INCONCLUSIVE: fail stack ended $FSTATUS — cannot judge the constraint" | tee -a "$LOG"
+      exit 4 ;;
+  esac
+  # ここまで来たのはスタックが倒れたとき。倒れた理由が読めないまま先に進むと、足場が倒れた
+  # だけのロールバックを足場ガードが素通しして verified になる。
+  if [ "$READ_FAILED" = 1 ]; then
+    echo "!! INCONCLUSIVE: could not read the fail stack's events — the scaffolding guard cannot run" | tee -a "$LOG"
+    exit 4
+  fi
 fi
 
 if [ "$FAIL_ONLY" != "--fail-only" ]; then
