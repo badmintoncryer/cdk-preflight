@@ -33,6 +33,7 @@ eval "dfails=\${CDKPF_STUB_${w}DESCRIBE_FAILS:-0}"
 eval "dfrom=\${CDKPF_STUB_${w}DESCRIBE_FROM:-1}"
 eval "eerr=\${CDKPF_STUB_${w}EVENTS_ERR:-}"
 eval "wfail=\${CDKPF_STUB_${w}WAIT_FAIL:-}"
+eval "pages=\${CDKPF_STUB_${w}PAGES:-1}"
 case "$args" in
   *"describe-stacks"*"StackStatus"*)
     n=$(cat "$CDKPF_STUB_CALLS.$w" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$CDKPF_STUB_CALLS.$w"
@@ -43,10 +44,16 @@ case "$args" in
     # クエリで答えを変える。スタブは JMESPath を評価しないので、フィルタが外すはずの文面
     # （巻き添えの取り消しなど）を返させると、ハーネス側の最後の砦だけが試される
     case "$args" in
-      *ROLLBACK_IN_PROGRESS*) echo "$sreason" ;; # スタック自身のロールバック開始の行
-      *"LogicalResourceId=="*) echo None ;;      # スタック自身の CREATE_FAILED
-      *".ResourceType"*) echo "$ftype" ;;
-      *) echo "$reason" ;;                       # リソースの CREATE_FAILED
+      *ROLLBACK_IN_PROGRESS*) ans=$sreason ;; # スタック自身のロールバック開始の行
+      *"LogicalResourceId=="*) ans=None ;;    # スタック自身の CREATE_FAILED
+      *".ResourceType"*) ans=$ftype ;;
+      *) ans=$reason ;;                       # リソースの CREATE_FAILED
+    esac
+    # 本物の CLI は --output text だとページ（100 件）ごとにクエリを当て、答えをページの数だけ
+    # 返す。json は全ページをまとめてから当てる
+    case "$args" in
+      *"--output json"*) if [ "$ans" = None ]; then echo null; else printf '%s' "$ans" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; fi ;;
+      *) echo "$ans"; i=1; while [ "$i" -lt "$pages" ]; do echo None; i=$((i + 1)); done ;;
     esac ;;
   *"describe-stack-resources"*) echo "" ;;
   *"wait"*"stack-delete-complete"*) [ -z "$wfail" ] || exit 255 ;;
@@ -231,6 +238,11 @@ grep -qF "fail: reason=$EXPORT_MAX" "$tmp/out" \
 # 同じ行でも、リソースの失敗を並べ直しただけのまとめ文は証拠ではない
 got=$(CDKPF_STUB_FSTACKREASON="The following resource(s) failed to create: [S, Pad]. Rollback requested by user." run "None" "")
 expect 4 "$got" "the rollback summary line is not evidence"
+
+# イベントが 100 件を超えるスタック: --output text はページごとにクエリを当てるので、どのページにも
+# 理由が無いと "None" がページの数だけ並び、1 つの "None" と見分けられずに OK になっていた
+got=$(CDKPF_STUB_FPAGES=2 run "None" "None")
+expect 4 "$got" "a stack whose events span two pages with no reason on either must not verify"
 
 # repro.expect があれば、理由がそれを逐語で含むときだけ verified
 got=$(RULE=pf-t-expect run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")

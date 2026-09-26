@@ -78,12 +78,16 @@ poll_terminal() { # stack -> echo final status
 # 無いのかが空文字に潰れると、下の足場ガードが無言で no-op になり、足場が倒れただけの
 # ロールバックがそのまま "OK: verified" になる（= 嘘の証拠が meta.yaml に焼き付く）。
 # 読めなかったことは戻り値で伝え、呼び出し側で判定を降りる。
-events_query() { # <stack> <jmespath> -> 値を stdout。読めなければ rc 1
+# --output text は使わない。CLI は text のときだけクエリをページ（100 件）ごとに当てるので、イベントが
+# 100 件を超えるスタックでは [-1] がページの数だけ答えを返し、どのページにも理由が無いと "None" が
+# 複数行並んで 1 つの "None" と見分けられなくなる。json は全ページをまとめてから当てる（2026-09-27
+# 実測、aws-cli 2.34: 116 件のスタックで length(StackEvents) が text は 100 と 16、json は 116）。
+events_query() { # <stack> <jmespath> -> 値を stdout（null は None）。読めなければ rc 1
   local v
   v=$(aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
-    --query "$2" --output text 2>"$ERRF")
+    --query "$2" --output json 2>"$ERRF")
   [ $? -eq 0 ] || { cat "$ERRF" >> "$LOG"; return 1; }
-  echo "$v"
+  python3 -c 'import json, sys; v = json.load(sys.stdin); print("None" if v is None else v)' <<<"$v"
 }
 
 # 最初に倒れたリソース。スタック自身の行は LogicalResourceId（= スタック名）で外す。ResourceType で
