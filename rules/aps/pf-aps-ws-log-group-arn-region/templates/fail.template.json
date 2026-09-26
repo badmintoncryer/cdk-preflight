@@ -1,0 +1,13 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ws-log-group-arn-region",
+        "LoggingConfiguration": {
+          "LogGroupArn": "arn:aws:logs:ap-northeast-1:214794239830:log-group:/aws/vendedlogs/cdkpf:*"
+        }
+      }
+    }
+  }
+}

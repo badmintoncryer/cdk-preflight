@@ -1,0 +1,12 @@
+id: pf-aps-ws-label-set-metric-name
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A __name__ label limit names a metric Prometheus accepts"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-workspace-limitsperlabelset.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (LabelSet [{Name: __name__, Value: my-metric}]) -> ROLLBACK_COMPLETE \"ValidationException: __name__ label value must satisfy regular expression pattern [a-zA-Z_:][a-zA-Z0-9_:]*\"; pass (Value my_metric) not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

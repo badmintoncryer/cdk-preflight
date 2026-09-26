@@ -1,0 +1,12 @@
+id: pf-aps-ws-am-receiver-type
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "An Alertmanager receiver notifies through sns_configs only"
+constraintSource: https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-alertmanager-config.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (a receiver with email_configs) -> ROLLBACK_COMPLETE \"ValidationException: Invalid Alertmanager receiver type: [email_configs]\"; pass (the same receiver with sns_configs) not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

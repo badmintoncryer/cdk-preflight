@@ -100,3 +100,53 @@ _pf_aps_policy_strings(statement, key) := {v |
 	some v in ({x | is_string(raw); x := raw} | {x | is_array(raw); some x in raw})
 	is_string(v)
 }
+
+# ---- block-style YAML, nesting (added for Workspace.AlertManagerDefinition) --
+
+# The line number where the block opened by `start` ends: the first line at its
+# own depth or shallower. The sentinel keeps the minimum defined for a block that
+# runs to the end of the body.
+_pf_aps_yaml_block_end(lines, start) := min({e |
+	some line in lines
+	line.n > start.n
+	line.indent <= start.indent
+	e := line.n
+} | {1000000})
+
+# Every key nested anywhere under `start`, however deeply. Reading the whole
+# subtree rather than one level keeps the reader indifferent to the indent width
+# the author chose: a key found deeper than expected only makes a rule stay
+# quiet, never fire.
+_pf_aps_yaml_block_keys(lines, start) := {line.key |
+	some line in lines
+	line.n > start.n
+	line.indent > start.indent
+	line.n < _pf_aps_yaml_block_end(lines, start)
+}
+
+# The key of the block that directly encloses `line`: the nearest earlier line
+# that is shallower. Undefined at the root (max of an empty set), so it is only
+# ever compared for equality, never negated. This is what tells a receivers: item
+# apart from the sns_configs: item nested inside it — both are `- ` lines.
+_pf_aps_yaml_parent(lines, line) := k if {
+	shallower := {l.n | some l in lines; l.n < line.n; l.indent < line.indent}
+	some p in lines
+	p.n == max(shallower)
+	k := p.key
+}
+
+# ---- WorkspaceConfiguration -------------------------------------------------
+
+# The LabelSet of every per-label-set limit, as arrays of {Name, Value} objects.
+# Every level is type-guarded: an Fn::If marker lands here as an object whose
+# keys are none of these, so the comprehension yields nothing.
+_pf_aps_label_sets(name) := [labels |
+	config := object.get(input.resources[name].properties, "WorkspaceConfiguration", {})
+	is_object(config)
+	list := object.get(config, "LimitsPerLabelSets", [])
+	is_array(list)
+	some item in list
+	is_object(item)
+	labels := object.get(item, "LabelSet", [])
+	is_array(labels)
+]

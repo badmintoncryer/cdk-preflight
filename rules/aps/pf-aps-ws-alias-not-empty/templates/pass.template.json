@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "a"
+      }
+    }
+  }
+}

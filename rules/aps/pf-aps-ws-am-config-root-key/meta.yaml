@@ -1,0 +1,12 @@
+id: pf-aps-ws-am-config-root-key
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "An Alertmanager definition nests everything under alertmanager_config"
+constraintSource: https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-alertmanager-config.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (an Alertmanager definition whose route:/receivers: sit at the root, with no alertmanager_config key) -> ROLLBACK_COMPLETE \"ValidationException: Empty Alertmanager definition.\"; pass (the same content nested under alertmanager_config: |) not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

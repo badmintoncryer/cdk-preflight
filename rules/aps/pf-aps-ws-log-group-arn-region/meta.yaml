@@ -1,0 +1,12 @@
+id: pf-aps-ws-log-group-arn-region
+service: aps
+resourceTypes: [AWS::APS::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A rules-logging log group lives in the workspace's own region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-workspace-loggingconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (LogGroupArn in ap-northeast-1 while the stack deploys into us-east-1) -> ROLLBACK_COMPLETE \"ValidationException: Invalid log group ARN - region: ap-northeast-1 (expected: us-east-1)\"; pass (the same ARN in us-east-1) not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26
