@@ -28,6 +28,20 @@ case "$1 $2" in
   "globalaccelerator describe-accelerator") echo "${CDKPF_STUB_GASTATUS:-DEPLOYED}" ;;
   "iot list-domain-configurations") echo "${CDKPF_STUB_DC:-}" ;;
   "iot describe-domain-configuration") echo "${CDKPF_STUB_DCSTATUS:-ENABLED}" ;;
+  # 削除の一覧と、グループ削除前の待ちの一覧は同じサブコマンドを叩く。待ちの方（starts_with 付き）は
+  # 常に空を返して、スタブでも待ちループが 1 周で抜けるようにする
+  "opensearchserverless list-collections")
+    if [ -n "${CDKPF_STUB_AOSSDENY:-}" ]; then echo "An error occurred (AccessDeniedException): no aoss" >&2; exit 254; fi
+    case "$*" in *starts_with*) ;; *) echo "${CDKPF_STUB_COLL:-}" ;; esac ;;
+  "opensearchserverless list-collection-groups") echo "${CDKPF_STUB_CG:-}" ;;
+  # --type ごとに呼ばれる。フィクスチャにある型だけ返す（回収行の本数を素直に数えられるように）
+  "opensearchserverless list-security-policies")
+    case "$*" in *"--type encryption"*) echo "${CDKPF_STUB_SP:-}" ;; esac ;;
+  "opensearchserverless list-access-policies") echo "${CDKPF_STUB_AP:-}" ;;
+  "opensearchserverless list-lifecycle-policies") echo "${CDKPF_STUB_LP:-}" ;;
+  "opensearchserverless list-security-configs")
+    case "$*" in *"--type saml"*) echo "${CDKPF_STUB_SCF:-}" ;; esac ;;
+  "opensearchserverless list-vpc-endpoints") echo "${CDKPF_STUB_VPCE:-}" ;;
   *)
     if [ -n "${CDKPF_STUB_FAIL:-}" ] && grep -q -- "$CDKPF_STUB_FAIL" <<<"$*"; then
       echo "${CDKPF_STUB_ERR:-An error occurred: stub refused $2}" >&2; exit 254
@@ -209,5 +223,84 @@ out=$(run "$tmp/none")
 unset CDKPF_STUB_FAIL CDKPF_STUB_ERR CDKPF_STUB_DC
 [ "$(grep -c '^LEFTOVER: orphaned domain configuration' <<<"$out")" -eq 3 ] ||
   fail "a failed domain configuration deletion was not reported" "$out"
+
+# OpenSearch Serverless は課金物（コレクション / コレクショングループ）を建てるのに回収経路が無かった。
+# スタックタグは AOSS に伝播しないのでタグ索引では拾えず、名前で引く
+export CDKPF_STUB_CG=$'cg-1\tcdkpf-cg-minmax'
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable collection group was reported as leftover" "$out"
+[ "$(grep -c 'reclaimed orphaned aoss collection group' <<<"$out")" -eq 3 ] ||
+  fail "expected 3 collection group reclaim lines (1 x 3 regions)" "$out"
+called 'opensearchserverless delete-collection-group --id cg-1' || fail "collection group not deleted" "$out"
+
+# コレクションが 1 枚でも残っているとグループの削除が拒否されるので、コレクションを先に消す
+export CDKPF_STUB_COLL=$'c-1\tcdkpf-c1'
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable collection was reported as leftover" "$out"
+called 'opensearchserverless delete-collection --id c-1' || fail "collection not deleted" "$out"
+[ "$(grep -n 'delete-collection --id' "$CDKPF_STUB_CALLS" | head -1 | cut -d: -f1)" \
+  -lt "$(grep -n 'delete-collection-group --id' "$CDKPF_STUB_CALLS" | head -1 | cut -d: -f1)" ] ||
+  fail "a group holding collections cannot be deleted; collections must go first" "$out"
+
+# cdkpf- が付いていないものは消さない（#268 のフィクスチャは Collection が probe-*、
+# ポリシー類が enc-* / sc-* で接頭辞を持たない）。ただし見えなくはしない
+export CDKPF_STUB_COLL=$'c-2\tprobe-mismatch'
+out=$(run "$tmp/none")
+called 'opensearchserverless delete-collection --id c-2' &&
+  fail "deleted a collection that is not a cdkpf- fixture" "$out"
+[ "$(grep -c '^LEFTOVER: orphaned aoss collection probe-mismatch' <<<"$out")" -eq 3 ] ||
+  fail "a non-cdkpf collection must still be reported" "$out"
+grep -q 'LEFTOVER: orphaned aoss collection probe-mismatch (c-2) (ap-northeast-1, \$0.5〜1/h)' <<<"$out" ||
+  fail "the collection leftover line must carry its hourly cost" "$out"
+unset CDKPF_STUB_COLL CDKPF_STUB_CG
+
+# 削除の失敗は理由ごと LEFTOVER に落ちる
+export CDKPF_STUB_CG=$'cg-1\tcdkpf-cg-minmax' CDKPF_STUB_FAIL=delete-collection-group
+out=$(run "$tmp/none")
+unset CDKPF_STUB_FAIL CDKPF_STUB_CG
+[ "$(grep -c '^LEFTOVER: orphaned aoss collection group' <<<"$out")" -eq 3 ] ||
+  fail "a failed collection group deletion was not reported" "$out"
+grep -q 'could not delete: .*stub refused' <<<"$out" ||
+  fail "the failure reason was not carried onto the collection group leftover line" "$out"
+
+# $0 の帯。消し残すと翌月の同名フィクスチャが already exists で落ち、制約とは別の理由の失敗になる
+export CDKPF_STUB_SP=cdkpf-enc CDKPF_STUB_AP=cdkpf-ap CDKPF_STUB_LP=cdkpf-lc CDKPF_STUB_VPCE=$'vpce-1\tcdkpf-vpce'
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable aoss policy was reported as leftover" "$out"
+called 'delete-security-policy --type encryption --name cdkpf-enc' || fail "encryption policy not deleted" "$out"
+called 'delete-access-policy --type data --name cdkpf-ap' || fail "access policy not deleted" "$out"
+called 'delete-lifecycle-policy --type retention --name cdkpf-lc' || fail "lifecycle policy not deleted" "$out"
+called 'delete-vpc-endpoint --id vpce-1' || fail "vpc endpoint not deleted" "$out"
+export CDKPF_STUB_SP=enc-dup-1
+out=$(run "$tmp/none")
+called 'delete-security-policy' && fail "deleted a policy that is not a cdkpf- fixture" "$out"
+[ "$(grep -c '^LEFTOVER: orphaned aoss encryption policy enc-dup-1' <<<"$out")" -eq 3 ] ||
+  fail "a non-cdkpf encryption policy must still be reported" "$out"
+unset CDKPF_STUB_SP CDKPF_STUB_AP CDKPF_STUB_LP CDKPF_STUB_VPCE
+
+# SecurityConfig は summaries に name が無く、id が <type>/<account>/<name>。
+# 接頭辞は最後のセグメントで見る（真ん中はアカウント ID なので starts_with では引けない）
+export CDKPF_STUB_SCF=saml/111111111111/cdkpf-sc
+out=$(run "$tmp/none")
+grep -q LEFTOVER <<<"$out" && fail "a reclaimable security config was reported as leftover" "$out"
+called 'delete-security-config --id saml/111111111111/cdkpf-sc' || fail "security config not deleted" "$out"
+export CDKPF_STUB_SCF=saml/111111111111/sc-md-a
+out=$(run "$tmp/none")
+called 'delete-security-config' && fail "deleted a security config that is not a cdkpf- fixture" "$out"
+[ "$(grep -c '^LEFTOVER: orphaned aoss saml security config' <<<"$out")" -eq 3 ] ||
+  fail "a non-cdkpf security config must still be reported" "$out"
+unset CDKPF_STUB_SCF
+
+# 一覧が権限で落ちたら、空のアカウントと同じ顔をせずに LEFTOVER で言う。月次は別アカウントの
+# ロールで走るので、aoss:List* が無いと回収経路まるごとが黙って空振りする
+export CDKPF_STUB_AOSSDENY=1 CDKPF_STUB_CG=$'cg-1\tcdkpf-cg-minmax'
+out=$(run "$tmp/none")
+unset CDKPF_STUB_AOSSDENY CDKPF_STUB_CG
+[ "$(grep -c '^LEFTOVER: aoss sweep could not list anything' <<<"$out")" -eq 3 ] ||
+  fail "a denied aoss list must be reported, not read as an empty account" "$out"
+grep -q 'could not list anything (ap-northeast-1) — .*AccessDenied' <<<"$out" ||
+  fail "the denial reason was not carried onto the leftover line" "$out"
+called 'delete-collection-group' &&
+  fail "kept deleting after the list was denied (the listing is what the deletes are based on)" "$out"
 
 echo "sweep.test.sh: OK"
