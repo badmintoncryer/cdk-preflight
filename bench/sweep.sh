@@ -260,6 +260,92 @@ sweep_fixture_buckets() {
   done
 }
 
+# OpenSearch Serverless の残骸を回収する。#268 のフィクスチャは CollectionGroup を実機に建てるので
+# 課金物（コレクションもグループも、アイドルでも容量下限ぶん OCU が課金される）がスタック削除に
+# 失敗したまま残り得るが、スタックタグは AOSS に伝播しないので上のタグ索引では拾えない。名前で引く。
+# cdkpf- 接頭辞が付いているものだけ消す。接頭辞が無いものは消さずに LEFTOVER で報告する
+# （#268 のフィクスチャは cdkpf- が付いているのが CollectionGroup 3 本だけで、Collection は probe-*、
+#  ポリシーと SecurityConfig は enc-* / net-* / ap-* / lc-* / sc-*。消してよいと決められないので、
+#  見えなくしないところまでやる。GA のカスタムルーティングと同じ扱い）。
+# 引数: <region> <種別> <表示名> <接頭辞を判定する名前> <課金の注記> <削除コマンド...>
+aoss_reclaim() {
+  local region=$1 kind=$2 label=$3 name=$4 cost=$5; shift 5
+  case "$name" in
+    cdkpf-*) ;;
+    *) echo "LEFTOVER: orphaned aoss $kind $label ($region$cost) — not a cdkpf- fixture, remove by hand"
+       return 0 ;;
+  esac
+  : > "$RECLAIM_ERR"
+  if "$@" >/dev/null 2>"$RECLAIM_ERR"; then
+    echo "sweep: reclaimed orphaned aoss $kind $label ($region)"
+  else
+    echo "LEFTOVER: orphaned aoss $kind $label ($region$cost) — could not delete: $(reclaim_err)"
+  fi
+}
+
+sweep_aoss() {
+  local region=$1 id name lst del key t i spec
+  # コレクションが先。1 枚でも残っているとグループの削除が拒否される
+  aws opensearchserverless list-collections --region "$region" \
+    --query 'collectionSummaries[].[id,name]' --output text 2>/dev/null |
+    while IFS=$'\t' read -r id name; do
+    { [ -z "$id" ] || [ "$id" = "None" ]; } && continue
+    aoss_reclaim "$region" collection "$name ($id)" "$name" ', $0.5〜1/h' \
+      aws opensearchserverless delete-collection --id "$id" --region "$region"
+  done
+  # 削除は非同期。消え終わるまで待たないとグループの削除が not empty で拒否される。
+  # 待つのは cdkpf- のものだけ（報告しかしていない probe-* が残っていると毎月上限まで空回りする）
+  for i in $(seq 30); do
+    [ -z "$(aws opensearchserverless list-collections --region "$region" \
+          --query "collectionSummaries[?starts_with(name,'cdkpf-')].id" --output text 2>/dev/null)" ] && break
+    sleep 10
+  done
+  # グループは Generation と容量下限次第で課金が変わる。NEXTGEN + StandbyReplicas ENABLED の
+  # min 0 なら空でアイドル $0 だが、下限を上げた形が残ると月 $350+ になる（#268 実測）
+  aws opensearchserverless list-collection-groups --region "$region" \
+    --query 'collectionGroupSummaries[].[id,name]' --output text 2>/dev/null |
+    while IFS=$'\t' read -r id name; do
+    { [ -z "$id" ] || [ "$id" = "None" ]; } && continue
+    aoss_reclaim "$region" "collection group" "$name ($id)" "$name" ', 容量下限 > 0 なら $350+/月' \
+      aws opensearchserverless delete-collection-group --id "$id" --region "$region"
+  done
+  # ここから下は $0。消し残しても課金しないが、翌月の同名フィクスチャが already exists で落ちて
+  # 制約とは別の理由の失敗になる（#266 の StackSet / フック型と同じ自家中毒）。
+  # 表は「list のサブコマンド : delete のサブコマンド : 出力のキー : --type」の順
+  for spec in security-policies:security-policy:securityPolicySummaries:encryption \
+              security-policies:security-policy:securityPolicySummaries:network \
+              access-policies:access-policy:accessPolicySummaries:data \
+              lifecycle-policies:lifecycle-policy:lifecyclePolicySummaries:retention; do
+    IFS=: read -r lst del key t <<<"$spec"
+    aws opensearchserverless "list-$lst" --type "$t" --region "$region" \
+      --query "$key[].name" --output text 2>/dev/null |
+      tr '\t' '\n' | while read -r name; do
+      { [ -z "$name" ] || [ "$name" = "None" ]; } && continue
+      aoss_reclaim "$region" "$t policy" "$name" "$name" '' \
+        aws opensearchserverless "delete-$del" --type "$t" --name "$name" --region "$region"
+    done
+  done
+  # SecurityConfig は summaries に name が無く、id が <type>/<account>/<name>（saml 以外も同じ形。
+  # #268 実測）。接頭辞は最後のセグメントで判定する。--type は必須なので enum を回す
+  for t in saml iamidentitycenter iamfederation; do
+    aws opensearchserverless list-security-configs --type "$t" --region "$region" \
+      --query 'securityConfigSummaries[].id' --output text 2>/dev/null |
+      tr '\t' '\n' | while read -r id; do
+      { [ -z "$id" ] || [ "$id" = "None" ]; } && continue
+      aoss_reclaim "$region" "$t security config" "$id" "${id##*/}" '' \
+        aws opensearchserverless delete-security-config --id "$id" --region "$region"
+    done
+  done
+  # VPC エンドポイントはフィクスチャで使っていないが、出たときに見えるようにしておく
+  aws opensearchserverless list-vpc-endpoints --region "$region" \
+    --query 'vpcEndpointSummaries[].[id,name]' --output text 2>/dev/null |
+    while IFS=$'\t' read -r id name; do
+    { [ -z "$id" ] || [ "$id" = "None" ]; } && continue
+    aoss_reclaim "$region" "vpc endpoint" "$name ($id)" "$name" '' \
+      aws opensearchserverless delete-vpc-endpoint --id "$id" --region "$region"
+  done
+}
+
 # us-west-2 は Global Accelerator のフィクスチャ用（GA は us-west-2 にしか作れない）
 for region in ap-northeast-1 us-east-1 us-west-2; do
   aws cloudformation list-stacks --region "$region" \
@@ -301,6 +387,7 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
   sweep_stack_sets "$region"
   sweep_hook_types "$region"
   sweep_domain_configs "$region"
+  sweep_aoss "$region"
 done
 
 sweep_fixture_buckets
