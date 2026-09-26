@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe: none (#66 phase B BENCH); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The availability zone requested is not supported by the DB Cluster.  Available options: [us-east-1b, us-east-1c, us-east-1d] (Service: Neptune, Status Code: 400, Request ID: 07e32be0-2944-4461-a6cd-7acb340248e5) (SDK Attempt Count: 1)  (RequestToken: 38cccf48-3e27\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "The availability zone requested is not supported by the DB Cluster.  Available options"
 benchRegion: us-east-1
 addedOn: 2026-09-22

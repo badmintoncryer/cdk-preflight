@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Unable to publish test message to notification target arn:aws:sqs:us-east-1:214794239830:cdkpf-lh-cdkpf-pf-asg-lh-fifo-queue-unsupported-fail.fifo using IAM role arn:aws:iam::214794239830:role/cdkpf-pf-asg-lh-fifo-queue-unsupported-fail-Role-twbGdaxTM9iz. Ple… -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Unable to publish test message to notification target"
 addedOn: 2026-09-09

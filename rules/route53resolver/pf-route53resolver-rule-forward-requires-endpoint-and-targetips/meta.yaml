@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00706] Resolver endpoint ID and target IP are required for FORWARD type resolver rule. (ROLLBACK_COMPLETE)"
+  expect: "RSLVR-00706] Resolver endpoint ID and target IP are required for FORWARD type resolver rule"
 addedOn: 2026-09-10

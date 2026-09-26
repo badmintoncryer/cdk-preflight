@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): DefinitionString 'not json {' -> CloudFormation CREATE_FAILED: Invalid request provided: Could not parse DefinitionString to valid flow resource definition; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-definition-string-json.log"
+  expect: "Could not parse DefinitionString to valid flow resource definition"
 addedOn: 2026-09-06

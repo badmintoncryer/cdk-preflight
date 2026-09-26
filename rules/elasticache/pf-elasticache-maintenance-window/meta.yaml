@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 59 minute window (sun:23:00-sun:23:59) -> \"Maintenance window must be at least 60 minutes.\" ROLLBACK_COMPLETE (the chained group carries a malformed window); pass sun:23:00-mon:00:00, exactly 60 minutes -> CREATE_COMPLETE."
+  expect: "Maintenance window must be at least 60 minutes"
 addedOn: 2026-09-06

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): both blocks -> CREATE_FAILED (BedrockAgentCoreControl 400: Invalid request provided: AgentArtifact must have exactly one configuration.); empty AgentRuntimeArtifact {} -> same message; both ROLLBACK_COMPLETE. verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted; the pass template pulls public.ecr.aws/docker/library/python:3.12-slim through a stack-owned ECR pull-through cache rule, so no pre-pushed image is needed. Log: bench/logs/pf-agentcore-runtime-artifact-exactly-one.log"
+  expect: "AgentArtifact must have exactly one configuration"
 addedOn: 2026-09-05

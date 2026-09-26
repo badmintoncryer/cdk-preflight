@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): the rejection names both keywords, so the rule watches priority and classtype, not priority alone; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"RulesString has invalid keywords. Rule groups that use strict order can't have rules that contain the keywords `priority` or `classtype`, parameter: [pass tcp any any -> any any (msg:\"a\"; priority:2; sid:1;)], context: RulesSource.RulesString (Service: NetworkFirewall, Status Code: 400, Request ID: 1387e158-ab8f-4ed9-90d0-cfb2f772de45) (SDK Attempt Count: 1)\" (RequestToken: 4899ab7... (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "RulesString has invalid keywords. Rule groups that use strict order can't have rules that contain the keywords `priority` or `classtype`, parameter: [pass tcp any any -> any any (msg"
 addedOn: 2026-09-25

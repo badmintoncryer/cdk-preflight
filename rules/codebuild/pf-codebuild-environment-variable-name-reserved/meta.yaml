@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Environment.EnvironmentVariables entry named CODEBUILD_MY_VAR) -> \"No user environment variables can start with CODEBUILD_\" (ROLLBACK_COMPLETE); pass template (the same entry named MY_VAR) -> CREATE_COMPLETE."
+  expect: "No user environment variables can start with CODEBUILD_"
 addedOn: 2026-09-14

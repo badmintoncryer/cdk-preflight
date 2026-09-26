@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (S3 target crawler with no DatabaseName) -> \"You must provide the DatabaseName parameter when you specify a non-catalog targeted crawler. Specify the parameter.\" (ROLLBACK_COMPLETE); pass template (the same crawler with DatabaseName) -> CREATE_COMPLETE. CreateCrawler the same day accepts a catalog-target crawler with no DatabaseName, which is why only the other target kinds are judged."
+  expect: "You must provide the DatabaseName parameter when you specify a non-catalog targeted crawler. Specify the parameter"
 addedOn: 2026-09-14

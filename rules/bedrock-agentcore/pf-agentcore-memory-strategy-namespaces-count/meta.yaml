@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): Namespaces with 2 entries -> CREATE_FAILED (BedrockAgentCoreControl 400: Value at 'memoryStrategies.1.member.semanticMemoryStrategy.namespaces' failed to satisfy constraint: Member must have length less than or equal to 1) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-strategy-namespaces-count.log"
+  expect: "Value at 'memoryStrategies.1.member.semanticMemoryStrategy.namespaces' failed to satisfy constraint: Member must have length less than or equal to 1"
 addedOn: 2026-09-05

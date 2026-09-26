@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (EncryptionKey arn:aws:kms:eu-west-1:...:key/... on a stack deploying to us-east-1) -> \"Invalid encryption key: region does not match current region\" (ROLLBACK_COMPLETE); pass template (arn:aws:kms:us-east-1:...:alias/aws/s3) -> CREATE_COMPLETE."
+  expect: "Invalid encryption key: region does not match current region"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"You can select events by using either EventSelectors or AdvancedEventSelectors, but not both.\"; pass -> CREATE_COMPLETE"
+  expect: "You can select events by using either EventSelectors or AdvancedEventSelectors, but not both"
 addedOn: 2026-09-24

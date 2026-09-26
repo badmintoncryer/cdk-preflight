@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: StepAdjustments [lower 0 / upper 20, lower 10 / no upper] - the two intervals both cover 10..20 -> \"Step adjustment intervals cannot overlap\" (ROLLBACK_COMPLETE); pass the same pair made contiguous at 20 [lower 0 / upper 20, lower 20 / no upper] -> CREATE_COMPLETE (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  expect: "Step adjustment intervals cannot overlap"
 addedOn: 2026-09-24

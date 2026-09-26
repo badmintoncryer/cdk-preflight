@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: LoggingInfo.BrokerLogs as an empty object -> \"You must define one or more of the following broker log types: CloudWatch Logs, Kinesis Data Firehose, Amazon S3. ... 'brokerLogs'\" (ROLLBACK_COMPLETE); pass BrokerLogs carrying an S3 entry -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
+  expect: "You must define one or more of the following broker log types: CloudWatch Logs, Kinesis Data Firehose, Amazon S3"
 addedOn: 2026-09-14

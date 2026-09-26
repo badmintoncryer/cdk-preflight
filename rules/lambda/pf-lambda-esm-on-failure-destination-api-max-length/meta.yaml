@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 351-character OnFailure destination -> \"1 validation error detected: ... Member must have length less than or equal to 350\" (ROLLBACK_COMPLETE); pass a real 40-character queue ARN -> CREATE_COMPLETE (no valid ARN reaches 350 characters, so the pass side cannot sit on the limit)"
+  expect: "Member must have length less than or equal to 350"
 addedOn: 2026-09-07

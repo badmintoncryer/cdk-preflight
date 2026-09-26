@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Source.Type CODEPIPELINE with Artifacts.Type NO_ARTIFACTS, and Source.Type NO_SOURCE with Artifacts.Type CODEPIPELINE) -> \"Invalid input: when using CodePipeline both sourceType, and artifactType must be set to: CODEPIPELINE\" (ROLLBACK_COMPLETE; CreateProject returns that same message for either direction); pass template (both types CODEPIPELINE) -> CREATE_COMPLETE."
+  expect: "Invalid input: when using CodePipeline both sourceType, and artifactType must be set to: CODEPIPELINE"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [Changing wildcard NS record sets are not supported. No changes made., Tried to delete resource record set [name='\\052.cdkpf-example.com.', type='NS'] but it was not found] (ROLLBACK_COMPLETE)"
+  expect: "No changes made., Tried to delete resource record set"
 addedOn: 2026-09-10

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Container dependency can not be used in a single-container job.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Container dependency can not be used in a single-container job"
 addedOn: 2026-09-12

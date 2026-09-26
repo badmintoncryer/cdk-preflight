@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 ap-northeast-1: a log group whose name does not start with aws-waf-logs- -> \"Error reason: The ARN isn't valid. A valid ARN begins with arn: and includes other information separated by colons or slashes., field: LOG_DESTINATION\" (ROLLBACK_COMPLETE); pass an aws-waf-logs- log group -> CREATE_COMPLETE"
+  expect: "Error reason: The ARN isn't valid. A valid ARN begins with arn: and includes other information separated by colons or slashes., field: LOG_DESTINATION"
 addedOn: 2026-09-05

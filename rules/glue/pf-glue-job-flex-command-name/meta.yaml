@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: fail template (gluestreaming, ExecutionClass FLEX) -> \"Flex job is supported for ETL jobs only\" (ROLLBACK_COMPLETE); pass template (glueetl, ExecutionClass FLEX) -> CREATE_COMPLETE."
+  expect: "Flex job is supported for ETL jobs only"
 addedOn: 2026-09-13

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: NumberOfRetries 301 -> \"Number of retries for lambda must be between 0 and 300.\" ROLLBACK_COMPLETE; pass 300 and 0 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDeliveryStream: 301 and -1 are rejected with that message, 300 and 0 are accepted."
+  expect: "Number of retries for lambda must be between 0 and 300"
 addedOn: 2026-09-10

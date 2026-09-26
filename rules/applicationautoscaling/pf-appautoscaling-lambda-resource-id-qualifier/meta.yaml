@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: ResourceId function:cdkpf-aas-lrq-f:$LATEST -> \"Resource handler returned message: \"$LATEST is not a supported qualifier for Auto Scaling (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 608c1776-2449-4643-8ea8-8ace73db8c07) (SDK Attempt Count: 1)\" (RequestToken: 8df97387-96ce-6647-48a1-15bd862cf319, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass function:cdkpf-aas-lrq-p:live on a real function with a published version and an alias, MinCapacity 0 -> CREATE_COMPLETE (0 allocates no provisioned concurrency, so the pass costs nothing)"
+  expect: "$LATEST is not a supported qualifier for Auto Scaling"
 addedOn: 2026-09-24

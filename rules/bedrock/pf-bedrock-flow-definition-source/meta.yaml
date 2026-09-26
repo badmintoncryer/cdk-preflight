@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Definition and DefinitionString both set -> CloudFormation CREATE_FAILED: Invalid request provided: For resource AWS::Bedrock::Flow you can only specify one of Definition, DefinitionString or DefinitionS3Location. 2 of these were specified; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-definition-source.log"
+  expect: "For resource AWS::Bedrock::Flow you can only specify one of Definition, DefinitionString or"
 addedOn: 2026-09-06

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 ap-northeast-1: Provide either the Elasticsearch cluster endpoint or domain arn. Must specify cluster endpoint for cross account Elasticsearch cluster. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: neither DomainARN nor ClusterEndpoint -> InvalidArgumentException \"Provide either the Elasticsearch cluster endpoint or domain arn. Must specify cluster endpoint for cross account Elasticsearch cluster.\""
+  expect: "Provide either the Elasticsearch cluster endpoint or domain arn. Must specify cluster endpoint for cross account Elasticsearch cluster"
 addedOn: 2026-09-10

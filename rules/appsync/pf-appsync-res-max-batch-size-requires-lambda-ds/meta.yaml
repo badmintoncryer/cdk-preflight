@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"maxBatchSize is not supported for this data source. (Service: AppSync, Status Code: 400, Request ID: ce0c7e04-b4b1-4b0d-b894-86483b355ede) (SDK Attempt Count: 1)\" (RequestToken: 4cc20367-bc5b-f1f2-d324-1ca27e95810f, HandlerErrorCode: InvalidRequest)"
+  expect: "maxBatchSize is not supported for this data source"
 addedOn: 2026-09-12

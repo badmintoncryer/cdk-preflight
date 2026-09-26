@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: CapacityUnit VCPU -> \"VCPU is unknown capacity unit in [ml.r7i.16xlarge, ml.m4.4xlarge, ...]\" \u2014 the service echoes its whole SageMaker instance type list (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "VCPU is unknown capacity unit in"
 addedOn: 2026-09-12

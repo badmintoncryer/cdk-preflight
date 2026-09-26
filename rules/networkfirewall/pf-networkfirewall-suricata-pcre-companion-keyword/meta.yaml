@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): a bare pcre -> \"reason: Using \\\"pcre\\\" without one of the following options is not allowed: [tls.sni, http.host, dns.query, http.uri, content].\"; each of the five listed keywords was accepted and http.method, file.data and the legacy http_uri were not, so the companion set is exactly the five the message names (http.uri is undocumented); bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: pass tcp any any -> any any (msg:\"m\"; pcre:\"/abc/\"; sid:1; gid:1234567890;), reason: Using \"pcre\" without one of the following options is not allowed: [tls.sni, http.host, dns.query, http.uri, content]. (Service: NetworkFirewall, Status Code: 400, Request ID: 6188185d-0583-4715-90a0-eb05f67b089a) (SDK Attempt Count: 1)\" (RequestToken: 98b1b6e2-aa24-9... (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "stateful rule is invalid, rule: pass tcp any any -> any any (msg"
 addedOn: 2026-09-25

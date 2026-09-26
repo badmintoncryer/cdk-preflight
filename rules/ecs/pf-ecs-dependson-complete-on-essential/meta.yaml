@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: A dependency container with SUCCESS or COMPLETE condition cannot be an essential container), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-dependson-complete-on-essential.log"
+  expect: "Create TaskDefinition: A dependency container with SUCCESS or COMPLETE condition cannot be an essential container"
 addedOn: 2026-09-08

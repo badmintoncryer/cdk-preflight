@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: RoleArn arn:aws:iam::999999999999:role/cdkpf-foreign -> ROLLBACK_COMPLETE, \"Cross-account pass role is not allowed.\" (Status Code 403, HandlerErrorCode: AccessDenied); a Fn::GetAtt at a role in the same template reaches the next check. fail-only, no cluster created: CreateCluster refuses the request synchronously."
+  expect: "Cross-account pass role is not allowed"
 addedOn: 2026-09-25

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"You cannot have both 'target_health_state.unhealthy.connection_termination.enabled' and 'target_health_state.unhealthy.draining_interval_seconds' enabled on a target group\"; the pass template reached CREATE_COMPLETE."
+  expect: "You cannot have both 'target_health_state.unhealthy.connection_termination.enabled' and 'target_health_state.unhealthy.draining_interval_seconds' enabled on a target group"
 addedOn: 2026-09-08

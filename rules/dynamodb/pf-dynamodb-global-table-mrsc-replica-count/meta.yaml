@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Unsupported replica count for global tables with MultiRegionConsistency set to STRONG\"; pass -> CREATE_COMPLETE."
+  expect: "Unsupported replica count for global tables with MultiRegionConsistency set to STRONG"
 addedOn: 2026-09-08

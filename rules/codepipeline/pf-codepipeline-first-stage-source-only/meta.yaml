@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with an Approval action in the first stage -> \"InvalidStructureException: Pipeline should start with a stage that only contains source actions\"; bench 2026-09-14 us-east-1: fail -> \"Pipeline should start with a stage that only contains source actions\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Pipeline should start with a stage that only contains source actions"
 addedOn: 2026-09-14

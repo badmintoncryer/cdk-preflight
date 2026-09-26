@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail carries two policies, one per principal shape. Principal arn:aws:iam::210987654321:role/probe -> \"Cross account principal(s) are not allowed in policy. Please update the policy and retry\" (ROLLBACK_COMPLETE). The SAML arm (saml/210987654321/myprovider/user/Annie) answers with the same sentence - api 2026-09-25 us-east-1 CreateAccessPolicy rejected it on its own. pass not deployed (--fail-only); api 2026-09-25 us-east-1 accepted a principal in the deploy account even though that role does not exist, so the rule is about the account segment and nothing else."
+  expect: "Cross account principal(s) are not allowed in policy. Please update the policy and retry"
 addedOn: 2026-09-25

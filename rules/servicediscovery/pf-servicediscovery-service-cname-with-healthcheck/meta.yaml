@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'Health check config must not be used. Health checks are not supported for CNAME (Service: ServiceDiscovery, Status Code: 400, Request ID: 12934871-f013-405c-93a0-4bb6bb9fd249) (SDK Attempt Count: 1)' (RequestToken: d8db0ff9-fb19-c718-3049-738e799615b2, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Health check config must not be used. Health checks are not supported for CNAME"
 addedOn: 2026-09-22

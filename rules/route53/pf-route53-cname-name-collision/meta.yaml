@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet of type A with DNS name x.cdkpf-example.com. is not permitted because a conflicting RRSet of type CNAME with the same DNS name already exists in zone cdkpf-example.com.] (ROLLBACK_COMPLETE)"
+  expect: "is not permitted because a conflicting RRSet of type CNAME with the same DNS name already exists in zone"
 addedOn: 2026-09-10

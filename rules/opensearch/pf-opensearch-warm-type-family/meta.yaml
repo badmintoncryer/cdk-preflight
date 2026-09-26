@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (WarmType m6g.large.search) -> \"Member must satisfy enum value set: [ultrawarm1.xlarge.search, ultrawarm1.large.search, ultrawarm1.2xlarge.search, oi2.8xlarge.search, oi2.large.search, ultrawarm1.medium.search, oi2.4xlarge.search, oi2.2xlarge.search, oi2.16xlarge.search, oi2.24xlarge.search, oi2.12xlarge.search, oi2.xlarge.search]\" (ROLLBACK_COMPLETE); pass (ultrawarm1.medium.search) not deployed (--fail-only). WARN, not ERROR: the allowlist is the 12 types the service printed, and AWS adds UltraWarm sizes without touching the documentation."
+  expect: "Member must satisfy enum value set"
 addedOn: 2026-09-25

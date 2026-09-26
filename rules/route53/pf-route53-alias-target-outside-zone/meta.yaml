@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [Tried to create an alias that targets other.example.net., type A in zone Z05721166C54H3K0WCKA, but the alias target name does not lie within the target zone, Tried to create an alias that targets other.example.net., type A in zone Z05721166C54H3K0WCKA, but the alias target name does not lie within the target zone] (ROLLBACK_COMPLETE)"
+  expect: "but the alias target name does not lie within the target zone, Tried to create an alias that targets other.example.net., type A in zone"
 addedOn: 2026-09-10

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: StepAdjustments [upper -1, upper 0, lower 0] - two adjustments with no MetricIntervalLowerBound -> \"At most one step adjustment may have an unspecified lower bound\" (ROLLBACK_COMPLETE); pass the same policy with one open-bottom adjustment [upper 0, lower 0] -> CREATE_COMPLETE (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  expect: "At most one step adjustment may have an unspecified lower bound"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Required ''topics'' parameter is missing.'
+  expect: "Required 'topics' parameter is missing"
 addedOn: 2026-09-07

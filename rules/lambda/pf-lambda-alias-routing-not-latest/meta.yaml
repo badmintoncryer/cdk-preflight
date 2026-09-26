@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateAlias (us-east-1, 2026-09-07): "$LATEST is not supported for an alias pointing to more than 1 version"'
+  expect: "$LATEST is not supported for an alias pointing to more than 1 version"
 addedOn: 2026-09-07

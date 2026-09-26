@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Channel namespace auth type must be present in the API's auth providers. (Service: AppSync, Status Code: 400, Request ID: 3201f1a9-2985-4ade-aefa-6b60ee66858e) (SDK Attempt Count: 1)\" (RequestToken: bb42340f-f8b1-bf83-0d12-db371483ba6f, HandlerErrorCode: InvalidRequest)"
+  expect: "Channel namespace auth type must be present in the API's auth providers"
 addedOn: 2026-09-12

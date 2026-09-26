@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: MaximumConcurrency 6 against ReservedConcurrentExecutions 5 -> \"MaximumConcurrency: 6 is greater than Function Reserved Concurrency: 5\" (ROLLBACK_COMPLETE); pass 100 against 100 -> CREATE_COMPLETE."
+  expect: "MaximumConcurrency: 6 is greater than Function Reserved Concurrency: 5"
 addedOn: 2026-09-07

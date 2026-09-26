@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Elastic IPs are not supported for load balancers with type 'application'\"; the pass template reached CREATE_COMPLETE."
+  expect: "Elastic IPs are not supported for load balancers with type 'application"
 addedOn: 2026-09-08

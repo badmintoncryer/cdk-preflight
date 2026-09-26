@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (Alias \"\") -> ROLLBACK_COMPLETE \"InvalidParameter: 1 validation error(s) found. minimum field size of 1, CreateWorkspaceInput.Alias.\"; pass (Alias \"a\" (the 1-character minimum)) not deployed (--fail-only) and silent under rule-check; the API layer words the same rejection differently (aws amp create-workspace --alias \"\" -> \"Invalid alias: Member must have length greater than or equal to 1\"), so the sentence above is the one a CloudFormation user sees"
+  expect: "InvalidParameter: 1 validation error(s) found. minimum field size of 1, CreateWorkspaceInput.Alias"
 addedOn: 2026-09-26

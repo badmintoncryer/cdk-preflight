@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: maxReceiveCount 1001 -> \"Value {...} for parameter RedrivePolicy is invalid. Reason: Invalid value for maxReceiveCount.\" ROLLBACK_COMPLETE (the chained second queue carries 0); pass 1000 and 1 -> CREATE_COMPLETE."
+  expect: "for parameter RedrivePolicy is invalid. Reason: Invalid value for maxReceiveCount"
 addedOn: 2026-09-05

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two conditions named cond1 -> CreateFlow 400 ValidationException: Condition name cond1 must be unique in node Cond1; two conditions with the same expression -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The condition node 'Cond1' has multiple conditions with the same expression…]; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-condition-unique.log"
+  expect: "failed to stabilize. Validation messages: [The condition node 'Cond1' has multiple conditions with the same expression"
 addedOn: 2026-09-06

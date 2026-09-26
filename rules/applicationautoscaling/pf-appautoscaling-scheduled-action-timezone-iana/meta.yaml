@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: Timezone 'JST' -> \"Invalid schedule timezone: JST\" (ROLLBACK_COMPLETE); pass Timezone Asia/Tokyo and US/Pacific -> CREATE_COMPLETE, i.e. the tzdata backward links are accepted too, which is why the embedded name set keeps them. api-probe 2026-09-24 (#68 phase B) also saw GMT+9 and Not/A_Zone refused and Etc/GMT+9 accepted"
+  expect: "Invalid schedule timezone: JST"
 addedOn: 2026-09-24

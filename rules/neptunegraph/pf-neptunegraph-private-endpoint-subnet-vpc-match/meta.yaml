@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe: none (#66 phase B BENCH); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Subnets [subnet-02b968350870b1032] are not in VPC vpc-0a7d5f67016524822. Your specified network configurations must be in the same VPC. (Service: NeptuneGraph, Status Code: 400, Request ID: 6bf48007-a91f-45be-acee-c990d85b5cda) (SDK Attempt Count: 1)  (RequestToke\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Your specified network configurations must be in the same VPC"
 benchRegion: us-east-1
 addedOn: 2026-09-22

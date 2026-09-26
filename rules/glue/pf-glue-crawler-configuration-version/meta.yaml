@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Configuration without Version) -> \"Crawler configuration not valid: Crawler configuration missing required key: Version.\" (ROLLBACK_COMPLETE); pass template (same JSON with \"Version\": 1.0) -> CREATE_COMPLETE"
+  expect: "Crawler configuration not valid: Crawler configuration missing required key: Version"
 addedOn: 2026-09-14

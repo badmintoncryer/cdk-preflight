@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"All attached Compute Environments must be of types [EC2, SPOT] or types [FARGATE_SPOT, FARGATE] or types [ECS_MANAGED_INSTANCES], not mixed.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "All attached Compute Environments must be of types"
 addedOn: 2026-09-12

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: RemoteNetworkConfig carrying only RemotePodNetworks -> ROLLBACK_COMPLETE, \"remoteNodeNetworks are required when specifying remoteNetworkConfig.\" (HandlerErrorCode: InvalidRequest); adding RemoteNodeNetworks reaches the next check. Node networks on their own are accepted (phase B measured a CreateCluster with node networks and no pod networks succeeding on 2026-09-24), so the requirement runs one way only. fail-only, no cluster created."
+  expect: "remoteNodeNetworks are required when specifying remoteNetworkConfig"
 addedOn: 2026-09-25

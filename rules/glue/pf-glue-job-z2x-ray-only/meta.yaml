@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: fail template (glueetl, WorkerType Z.2X) -> \"Worker type can be null, empty or one of supported types [Standard, G.025X, G.1X, G.2X, G.4X, G.8X, G.12X, G.16X, R.1X, R.2X, R.4X, R.8X].\" (ROLLBACK_COMPLETE) — Z.2X is absent from the list CreateJob accepts for non-Ray commands; pass template (glueetl, WorkerType G.1X) -> CREATE_COMPLETE."
+  expect: "Worker type can be null, empty or one of supported types"
 addedOn: 2026-09-13

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A target group with HTTP protocol does not support the attribute lambda.headers.multiple_values.enabled\"; the pass template reached CREATE_COMPLETE."
+  expect: "A target group with HTTP protocol does not support the attribute lambda.headers.multiple_values.enabled"
 addedOn: 2026-09-08

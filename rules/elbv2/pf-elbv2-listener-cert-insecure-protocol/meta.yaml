@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A certificate cannot be specified for HTTP listeners\"; the pass template reached CREATE_COMPLETE."
+  expect: "A certificate cannot be specified for HTTP listeners"
 addedOn: 2026-09-08

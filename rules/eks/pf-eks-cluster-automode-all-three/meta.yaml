@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: ComputeConfig.Enabled true with no ElasticLoadBalancing and no BlockStorage -> ROLLBACK_COMPLETE, \"For EKS Auto Mode, please ensure that all required configs, including computeConfig, kubernetesNetworkConfig, and blockStorage are all either fully enabled or fully disabled.\" (HandlerErrorCode: InvalidRequest); the same template with all three Enabled true reaches the next check. fail-only, no cluster created."
+  expect: "For EKS Auto Mode, please ensure that all required configs, including computeConfig, kubernetesNetworkConfig, and blockStorage are all either fully enabled or fully disabled"
 addedOn: 2026-09-25

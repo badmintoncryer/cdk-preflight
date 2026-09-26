@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: two stages named \"Same\" -> \"InvalidStageDeclarationException: Stage name 'Same' is used more than once\" (ROLLBACK_COMPLETE); pass with distinct names -> CREATE_COMPLETE"
+  expect: "Stage name 'Same' is used more than once"
 addedOn: 2026-09-14

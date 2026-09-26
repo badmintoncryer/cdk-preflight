@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Instance type bundles (e.g. optimal, default_x86_64) are not allowed for BEST_FIT_PROGRESSIVE_ORDERED allocation strategy. Specify instance families or types directly.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Instance type bundles (e.g. optimal, default_x86_64) are not allowed for BEST_FIT_PROGRESSIVE_ORDERED allocation strategy. Specify instance families or types directly"
 addedOn: 2026-09-12

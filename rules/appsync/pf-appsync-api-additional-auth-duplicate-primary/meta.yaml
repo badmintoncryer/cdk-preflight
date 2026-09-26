@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Authentication type AWS_IAM for additional authentication provider 1 already specified on the API. It can only be specified once. (Service: AWSAppSync; Status Code: 400; Error Code: BadRequestException; Request ID: 87d7134b-b2ad-4248-9674-a84b782e5bc7; Proxy: null)\" (RequestToken: 7babf233-0ab0-475b-8f43-642d94178849)"
+  expect: "Authentication type AWS_IAM for additional authentication provider 1 already specified on the API. It can only be specified once"
 addedOn: 2026-09-12

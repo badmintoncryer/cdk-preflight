@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (ListOfTags[0].ConditionType \"STRINGLIKE\") -> \"Invalid tag selection: 'cdkpf-no-such-key-69':'no-such-*'. Invalid operator 'STRINGLIKE'.\" (ROLLBACK_COMPLETE); pass (STRINGEQUALS) -> CREATE_COMPLETE"
+  expect: "Invalid operator 'STRINGLIKE"
 addedOn: 2026-09-24

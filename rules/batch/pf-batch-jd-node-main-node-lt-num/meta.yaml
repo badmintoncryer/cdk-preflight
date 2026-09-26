@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: MainNode 2 with NumNodes 2 -> \"Main node index is out of range, must be less than numNodes.\" (ROLLBACK_COMPLETE — the index is zero-based, so equal is the closest violating value); pass MainNode 1 with NumNodes 2 -> CREATE_COMPLETE."
+  expect: "Main node index is out of range, must be less than numNodes"
 addedOn: 2026-09-12

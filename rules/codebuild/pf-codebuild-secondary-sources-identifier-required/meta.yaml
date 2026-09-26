@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (one SecondarySources entry with Type S3 and a Location but no SourceIdentifier) -> \"Invalid input: sourceIdentifier is required for secondary sources\" (ROLLBACK_COMPLETE); pass template (the same entry carrying SourceIdentifier \"s0\") -> CREATE_COMPLETE."
+  expect: "Invalid input: sourceIdentifier is required for secondary sources"
 addedOn: 2026-09-14

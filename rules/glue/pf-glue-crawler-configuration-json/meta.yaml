@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Configuration \"{Version: 1.0\") -> \"Crawler configuration not valid: Error parsing JSON: Received JsonParseException: Unexpected character ('V' (code 86))...\" (ROLLBACK_COMPLETE); pass template (Configuration {\"Version\":1.0}) -> CREATE_COMPLETE"
+  expect: "Crawler configuration not valid: Error parsing JSON: Received JsonParseException: Unexpected character ('V' (code 86"
 addedOn: 2026-09-14

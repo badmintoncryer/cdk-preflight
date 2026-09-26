@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: ServiceIpv4Cidr 10.100.0.0/16 with RemoteNodeNetworks 10.100.0.0/24 -> ROLLBACK_COMPLETE, \"Invalid remote node network: CIDR 10.100.0.0/24 overlaps with service CIDR 10.100.0.0/16\" (HandlerErrorCode: InvalidRequest); moving the remote network to 10.200.0.0/16 reaches the next check. fail-only, no cluster created."
+  expect: "Invalid remote node network: CIDR 10.100.0.0/24 overlaps with service CIDR 10.100.0.0/16"
 addedOn: 2026-09-25

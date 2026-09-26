@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At aliasName: Invalid format.\"; pass (the same alias with the policy-store-alias/ prefix added) -> CREATE_COMPLETE."
+  expect: "At aliasName: Invalid format"
 addedOn: 2026-09-26

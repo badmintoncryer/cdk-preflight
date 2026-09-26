@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: an SQS queue as Enrichment -> ROLLBACK_COMPLETE \"Invalid pipe enrichment.\" Measured the same day via pipes:CreatePipe: lambda, states, execute-api and events (API destination) are accepted; sqs and sns are refused."
+  expect: "Invalid pipe enrichment"
 addedOn: 2026-09-07

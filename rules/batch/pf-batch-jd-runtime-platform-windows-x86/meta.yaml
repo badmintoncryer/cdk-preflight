@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Windows supported only by X86_64 cpuArchitecture\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Windows supported only by X86_64 cpuArchitecture"
 addedOn: 2026-09-12

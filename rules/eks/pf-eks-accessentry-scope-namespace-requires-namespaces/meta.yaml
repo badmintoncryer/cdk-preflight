@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: AccessScope {Type: namespace} with Namespaces left out -> ROLLBACK_COMPLETE, \"At least 1 namespace must be provided if the type is set as namespace\"; the pass fixture sits on the boundary with exactly one namespace. fail-only; the fixture builds its own cluster."
+  expect: "At least 1 namespace must be provided if the type is set as namespace"
 addedOn: 2026-09-25

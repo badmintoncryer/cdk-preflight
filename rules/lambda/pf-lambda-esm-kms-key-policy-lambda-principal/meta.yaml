@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy'
+  expect: "Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy"
 addedOn: 2026-09-07

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: a MetricSpecification carrying only PredefinedScalingMetricSpecification, with no load metric and no pair -> \"The metric specification is invalid. A policy must have either one scaling metric and one load metric or one metric pair.\" (ROLLBACK_COMPLETE); pass the same specification with PredefinedLoadMetricSpecification added -> CREATE_COMPLETE. api-probe 2026-09-24 us-east-1 (#68 phase B): a pair plus a scaling and a load metric, and an entry with no metric member at all (the folded pf-appautoscaling-predictive-metric-spec-missing candidate), draw the identical sentence (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  expect: "The metric specification is invalid. A policy must have either one scaling metric and one load metric or one metric pair"
 addedOn: 2026-09-24

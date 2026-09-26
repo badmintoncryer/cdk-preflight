@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateEventSubscription -> \"InvalidParameterCombination: If SourceType is null, SourceId must also be null.\" (#66 phase B TARGET); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid request provided: Invalid specification of event subscription. Source type must be present if either of source ids or event categories are specified.  (RequestToken: bf4beb8a-236b-4a4f-6504-af46d5174a8b, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Invalid specification of event subscription. Source type must be present if either of source ids or event categories are specified"
 addedOn: 2026-09-22

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: fail template (GlueVersion 2.0, the newest end-of-life version) -> \"The Glue version selected for the job is no longer available. Select a newer Glue version.\" (ROLLBACK_COMPLETE); pass template (GlueVersion 3.0, the oldest supported version) -> CREATE_COMPLETE."
+  expect: "The Glue version selected for the job is no longer available. Select a newer Glue version"
 addedOn: 2026-09-13

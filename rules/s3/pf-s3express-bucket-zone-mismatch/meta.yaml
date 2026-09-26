@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid Name value for Location configuration.\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid Name value for Location configuration"
 addedOn: 2026-09-06

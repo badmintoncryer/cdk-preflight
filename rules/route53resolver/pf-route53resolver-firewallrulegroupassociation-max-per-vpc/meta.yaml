@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: six rule groups associated to one VPC -> \"Limit exceeded for resource of type 'AWS::Route53Resolver::FirewallRuleGroupAssociation'. Reason: LimitExceededException: [RSLVR-02304] This VPC has reached the limit of the number of DNS Firewall rule groups it can be associated to.\" ROLLBACK_COMPLETE; pass five -> CREATE_COMPLETE. The quota (L-15219E1D \"DNS Firewall rule group associations per VPC\", 5) is not adjustable, so the five is a hard limit (principle 6)."
+  expect: "LimitExceededException: [RSLVR-02304] This VPC has reached the limit of the number of DNS Firewall rule groups it can be associated to"
 addedOn: 2026-09-10

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: CreateManagedPrefixList --address-family IPv4 with an IPv6 entry -> \"InvalidParameterCombination: An (IPv4) prefix list cannot contain an (2001:db8::/32) CIDR.\"; the same entry under IPv6 created cleanly. bench 2026-09-08 ap-northeast-1: AddressFamily IPv4 with an IPv6 entry -> ROLLBACK_COMPLETE with the same message; IPv6 -> CREATE_COMPLETE."
+  expect: "An (IPv4) prefix list cannot contain an (2001:db8::/32) CIDR"
 addedOn: 2026-09-08

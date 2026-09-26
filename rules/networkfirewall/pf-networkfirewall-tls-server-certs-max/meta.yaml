@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1: 11 ServerCertificates -> \"InvalidRequestException: Certificates limit exceeded\"; the message carries neither the limit nor a context, so the number comes from the probe (11 entries fail) read together with the quota page (10). Made-up certificate ARNs are enough because the count is checked before the certificates are resolved; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Certificates limit exceeded (Service: NetworkFirewall, Status Code: 400, Request ID: 9e412e97-d797-436d-85b4-6145f854e912) (SDK Attempt Count: 1)\" (RequestToken: 4861fd64-ab39-cdb1-ec4a-3bee7f387c6f, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Certificates limit exceeded"
 addedOn: 2026-09-25

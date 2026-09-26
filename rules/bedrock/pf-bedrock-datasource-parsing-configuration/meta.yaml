@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): ParsingStrategy BEDROCK_FOUNDATION_MODEL without the block -> CreateDataSource 400 ValidationException: Bedrock Foundation Model Configuration is required for this parsing strategy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-parsing-configuration.log"
+  expect: "Bedrock Foundation Model Configuration is required for this parsing strategy"
 addedOn: 2026-09-06

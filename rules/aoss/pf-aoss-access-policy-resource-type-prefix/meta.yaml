@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (ResourceType collection over index/probe-q/logs) -> \"Policy json is invalid, error: [... $[0].Rules[0].Resource[0]: does not match the regex pattern ^collection/(?:[a-z][a-z0-9_-]{2,63}\\\\*?|\\\\*)$]\" (ROLLBACK_COMPLETE); the message lists every oneOf branch (collection / index / model / agent), which is why the rule only compares the Resource's first segment to ResourceType. pass not deployed (--fail-only: the policy resources are free, but the run is kept to the fail side; api 2026-09-25 us-east-1 deployed the matching control through CreateAccessPolicy/CreateSecurityPolicy/CreateLifecyclePolicy and it was ACCEPTED)"
+  expect: "$[0].Rules[0].Resource[0]: does not match the regex pattern ^collection/(?:[a-z][a-z0-9_-]{2,63"
 addedOn: 2026-09-25

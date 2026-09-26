@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: an AWS::EKS::Cluster with no AccessConfig at all (the CloudFormation default, CONFIG_MAP) plus an access entry -> ROLLBACK_COMPLETE, \"The cluster's authentication mode must be set to one of [API, API_AND_CONFIG_MAP] to perform this operation.\" The fail fixture leaves AccessConfig out rather than writing CONFIG_MAP, because that is the shape a template lands in by accident. fail-only; the fixture builds its own cluster."
+  expect: "The cluster's authentication mode must be set to one of"
 addedOn: 2026-09-25

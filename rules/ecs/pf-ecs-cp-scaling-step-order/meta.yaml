@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: MinimumScalingStepSize 11 against MaximumScalingStepSize 10 -> \"CreateCapacityProvider error: The minimum or maximum scaling step size value is invalid.\" (ROLLBACK_COMPLETE); pass 10 / 10 -> CREATE_COMPLETE."
+  expect: "CreateCapacityProvider error: The minimum or maximum scaling step size value is invalid"
 addedOn: 2026-09-08

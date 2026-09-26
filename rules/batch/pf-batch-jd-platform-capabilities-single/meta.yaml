@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Exactly 1 capability must be provided.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Exactly 1 capability must be provided"
 addedOn: 2026-09-12

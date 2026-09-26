@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: CreateVolume gp2 with --throughput -> \"The throughput parameter is not supported for gp2 volumes.\"; gp3 with the same throughput passed validation. bench 2026-09-08 ap-northeast-1: gp2 with Throughput -> ROLLBACK_COMPLETE with the same message; gp3 -> CREATE_COMPLETE."
+  expect: "The throughput parameter is not supported for gp2 volumes"
 addedOn: 2026-09-08

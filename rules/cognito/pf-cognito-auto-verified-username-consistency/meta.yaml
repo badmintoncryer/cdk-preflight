@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"SMS configuration is required when phone_number is selected for auto verification\"; pass template -> CREATE_COMPLETE"
+  expect: "SMS configuration is required when phone_number is selected for auto verification"
 addedOn: 2026-09-08

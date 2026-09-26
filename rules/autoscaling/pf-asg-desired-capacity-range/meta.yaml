@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: two groups, DesiredCapacity 3 over MaxSize 2 and DesiredCapacity 1 under MinSize 2 -> \"Desired capacity:3 must be between the specified min size:0 and max size:2\" (ROLLBACK_COMPLETE; AutoScaling reports the first group, so the lower end stays behind it); pass one group at DesiredCapacity 2 == MaxSize 2 and one at 0 == MinSize 0 -> CREATE_COMPLETE. The pass groups sit at zero or at a maximum of zero so that no instance is launched."
+  expect: "Desired capacity:3 must be between the specified min size:0 and max size:2"
 addedOn: 2026-09-03

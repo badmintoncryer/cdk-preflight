@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid identity source expression: header.Authorization. The source must be a request header, request querystring, stage variable or context parameter\" (ROLLBACK_COMPLETE)"
+  expect: "Invalid identity source expression: header.Authorization. The source must be a request header, request querystring, stage variable or context parameter"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with InternalUserDatabaseEnabled false and no MasterUserOptions) -> \"If you don't enable the internal user database, you must provide a master user ARN.\" (ROLLBACK_COMPLETE); pass (the same domain with MasterUserOptions.MasterUserARN set to an IAM role in the deploy account) not deployed (--fail-only: the pass needs that role to exist, which the bench account does not keep)."
+  expect: "t enable the internal user database, you must provide a master user ARN"
 addedOn: 2026-09-25

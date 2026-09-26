@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (WarmCount 1 with WarmType ultrawarm1.medium.search on an m6g.large.search domain with 3 masters) -> \"Warm storage node count must be between 2 and 150.\" (ROLLBACK_COMPLETE); pass (the same template at 2, the boundary itself) not deployed (--fail-only; UltraWarm plus 3 masters is the priciest scaffold in this slice)."
+  expect: "Warm storage node count must be between 2 and 150"
 addedOn: 2026-09-25

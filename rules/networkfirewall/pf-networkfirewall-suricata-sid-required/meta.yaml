@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): a rule without sid -> \"InvalidRequestException: stateful rule is invalid, rule: pass tcp any any -> any any (msg:\\\"no sid\\\"; gid:1234567890;), reason: sid not assigned\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: pass tcp any any -> any any (msg:\"no sid\"; gid:1234567890;), reason: sid not assigned (Service: NetworkFirewall, Status Code: 400, Request ID: 31e695a0-ea69-43f1-9735-8c0460b9efaf) (SDK Attempt Count: 1)\" (RequestToken: d5f474d0-eea2-34bb-34d9-3625443ab2e1, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "stateful rule is invalid, rule: pass tcp any any -> any any (msg"
 addedOn: 2026-09-25

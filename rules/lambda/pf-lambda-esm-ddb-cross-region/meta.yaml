@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Event source region must match Lambda region us-east-1'
+  expect: "Event source region must match Lambda region"
 addedOn: 2026-09-07

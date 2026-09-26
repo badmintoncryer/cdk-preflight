@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 ap-northeast-1: SubRecordType has to be one of JSON, DELIMITED -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: SubRecordType \"CSV\" -> InvalidArgumentException \"SubRecordType has to be one of JSON, DELIMITED\"."
+  expect: "SubRecordType has to be one of JSON, DELIMITED"
 addedOn: 2026-09-10

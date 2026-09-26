@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Size of a tmpfs is invalid. The size is required and must be a positive integer.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Size of a tmpfs is invalid. The size is required and must be a positive integer"
 addedOn: 2026-09-12

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 254-character record name -> \"FATAL problem: DomainNameTooLong (Domain name is too long)\" (ROLLBACK_COMPLETE); pass 253-character name -> CREATE_COMPLETE. ChangeResourceRecordSets takes 253 and turns 254 away, so the limit is 253 characters once the trailing dot is dropped - not the 255 the Route 53 doc quotes."
+  expect: "FATAL problem: DomainNameTooLong (Domain name is too long"
 addedOn: 2026-09-10

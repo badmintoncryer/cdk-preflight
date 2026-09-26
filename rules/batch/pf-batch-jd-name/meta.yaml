@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: JobDefinitionName '\u30c6\u30b9\u30c8\u7528' -> \"Error executing request, Exception : Job definition name should match a valid pattern.\" ROLLBACK_COMPLETE."
+  expect: "Error executing request, Exception : Job definition name should match a valid pattern"
 addedOn: 2026-09-04

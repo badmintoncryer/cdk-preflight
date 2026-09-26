@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Provided MAIL-FROM domain <unrelated-xyz.example.com> is not subdomain of the domain of the identity <pf-ses-mailfrom.appnao.com>.\"; pass template (MailFromDomain mail.<identity>) -> CREATE_COMPLETE. api 2026-09-24 us-east-1: the identity's own domain is rejected with the same sentence, so the constraint is a strict subdomain rather than \"subdomain or equal\"."
+  expect: "Provided MAIL-FROM domain <unrelated-xyz.example.com> is not subdomain of the domain of the identity <pf-ses-mailfrom.appnao.com>"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): seven SemanticMemoryStrategy entries -> CREATE_FAILED (BedrockAgentCoreControl 400: Validation failed during CreateMemory: Only one strategy of each type is allowed. Found multiple strategies of type: semanticMemoryStrategy) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-strategy-type-unique.log"
+  expect: "Validation failed during CreateMemory: Only one strategy of each type is allowed. Found multiple strategies of type: semanticMemoryStrategy"
 addedOn: 2026-09-05

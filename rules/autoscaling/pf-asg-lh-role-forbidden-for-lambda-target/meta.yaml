@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: 'RoleARN' parameter should not be specified when 'NotificationTargetARN' is a Lambda function. Remove 'RoleARN' from your request and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE. The pass template notifies an SNS topic: a Lambda-target hook cannot be deployed here at all (\"Unable to publish test message\" even with a lambda:InvokeFunction permission)."
+  expect: "RoleARN' parameter should not be specified when 'NotificationTargetARN' is a Lambda function. Remove 'RoleARN' from your request and try again"
 addedOn: 2026-09-09

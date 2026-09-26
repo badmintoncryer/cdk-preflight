@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-23 us-east-1: custom attribute key AWS_MY_ATTR -> \"Invalid attribute: [AWS_MY_ATTR]. [aws_] prefix is reserved for AWS attributes.\" (ROLLBACK_COMPLETE); pass key MY_ATTR -> CREATE_COMPLETE"
+  expect: "Invalid attribute: [AWS_MY_ATTR]. [aws_] prefix is reserved for AWS attributes"
 addedOn: 2026-09-23

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (CopyActions[0].DestinationBackupVaultArn \"cdkpf-not-an-arn-69\") -> \"Invalid backup vault ARN\" (ROLLBACK_COMPLETE); pass (arn:aws:backup:us-east-1:214794239830:backup-vault:cdkpf-copy-destination-vault-arn2, a vault created by the same stack) -> CREATE_COMPLETE"
+  expect: "Invalid backup vault ARN"
 addedOn: 2026-09-24

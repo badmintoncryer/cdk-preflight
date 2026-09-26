@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'AddLayerVersionPermission (us-east-1, 2026-09-07): "If organization id is specified then principal should be *"'
+  expect: "If organization id is specified then principal should be *"
 addedOn: 2026-09-07

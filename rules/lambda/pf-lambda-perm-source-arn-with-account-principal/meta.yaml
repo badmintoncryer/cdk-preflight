@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: 'AddPermission (us-east-1, 2026-09-07): "The provided principal was invalid. Please check the principal and try again." CONFOUND: the IAM role principal does not exist in the bench account, so Lambda rejects the principal before it considers SourceArn.'
+  expect: "The provided principal was invalid. Please check the principal and try again"
 addedOn: 2026-09-07

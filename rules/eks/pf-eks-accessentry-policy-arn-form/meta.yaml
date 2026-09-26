@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: AccessPolicies PolicyArn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy -> ROLLBACK_COMPLETE, \"The policyArn parameter format is not valid\". EKS access policies are managed by EKS rather than IAM, so their ARNs carry no account and sit under the eks service. fail-only; the fixture builds its own cluster."
+  expect: "The policyArn parameter format is not valid"
 addedOn: 2026-09-25

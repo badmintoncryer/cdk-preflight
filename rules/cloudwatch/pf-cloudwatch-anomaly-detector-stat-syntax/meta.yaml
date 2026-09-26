@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Property validation failure: [Value for property {/SingleMetricAnomalyDetector/Stat} does not match pattern {^(Minimum|Maximum|Sum|Average|SampleCount|(p|tm)[0-9]{1,2}|(p|tm)[0-9]{1,2}.[0-9]{1,2}|(p|tm)100)$}]\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutAnomalyDetector with Stat \"Avg\" -> \"Value 'Avg' at 'stat' failed to satisfy constraint: Member must satisfy regular expression pattern: (SampleCount|Average|...)\". Bare engine clean (the schema types Stat as a plain string)."
+  expect: "Property validation failure"
 addedOn: 2026-09-08

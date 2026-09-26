@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'Resource of type 'AWS::ServiceDiscovery::Service' with identifier 'backend' already exists.' (RequestToken: 0775037b-d793-be9c-00cd-6d1cb3cdc104, HandlerErrorCode: AlreadyExists)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; the two services are named 'Backend' and 'backend' in a namespace the same stack creates, so nothing else could collide; the CFN handler reports the API's case-insensitive ServiceAlreadyExists as its own generic AlreadyExists. The second service carries a DependsOn: without it CloudFormation creates both at once and the loser gets an unnamed 500 (GeneralServiceException)"
+  expect: "Resource of type 'AWS::ServiceDiscovery::Service' with identifier 'backend' already exists"
 addedOn: 2026-09-22

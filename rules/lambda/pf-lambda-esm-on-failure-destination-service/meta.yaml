@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): The service specified by the TargetArn isn''t supported as a destination.'
+  expect: "The service specified by the TargetArn isn't supported as a destination"
 addedOn: 2026-09-07

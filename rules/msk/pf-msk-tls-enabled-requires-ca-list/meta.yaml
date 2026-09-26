@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: one cluster with only Tls.Enabled and one with only Tls.CertificateAuthorityArnList -> \"Enabled and CertificateAuthorityArnList fields must both be defined for TLS. 'TLS'\" (ROLLBACK_COMPLETE; the resource handler rejects this before it calls Kafka); pass a cluster with no Tls block -> CREATE_COMPLETE"
+  expect: "Enabled and CertificateAuthorityArnList fields must both be defined for TLS. 'TLS"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: DBSubnetGroupDescription '\u30c6\u30b9\u30c8\u7528' -> \"The parameter DBSubnetGroupDescription must not contain non-printable control characters.\"; DBParameterGroup Description '\u30c6\u30b9\u30c8\u7528' -> the same message for Description. Both ROLLBACK_COMPLETE - RDS classifies non-ASCII text as non-printable. The engine has no pattern for either property."
+  expect: "Description must not contain non-printable control characters"
 addedOn: 2026-09-04

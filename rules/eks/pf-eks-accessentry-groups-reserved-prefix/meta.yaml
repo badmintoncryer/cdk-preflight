@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: KubernetesGroups [\"system:cdkpf\"] -> ROLLBACK_COMPLETE, \"The kubernetes group name system:cdkpf is invalid, it cannot start with system:\". eks:, aws:, amazon: and iam: were measured the same day against CreateAccessEntry and rejected the same way; a group named \"system\" without the colon reaches the cluster lookup. fail-only, and the fixture names an absent cluster instead of building one: the check runs before the cluster lookup."
+  expect: "is invalid, it cannot start with system"
 addedOn: 2026-09-25

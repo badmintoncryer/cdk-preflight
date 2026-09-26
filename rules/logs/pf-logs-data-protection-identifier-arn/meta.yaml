@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"EmailAddress is not a valid Data Identifier\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutDataProtectionPolicy with DataIdentifier [\"EmailAddress\"] -> \"EmailAddress is not a valid Data Identifier\". The bare name is not accepted; the ARN form is. Bare engine clean."
+  expect: "EmailAddress is not a valid Data Identifier"
 addedOn: 2026-09-08

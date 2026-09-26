@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: ArtifactConfig.S3Encryption.EncryptionMode SSE_KMS with no KmsKeyArn -> \"Resource handler returned message: \"Invalid request provided: KmsKeyArn must be specified with SSE_KMS encryption mode (Service: Synthetics, Status Code: 400, Request ID: 09a656d0-45c3-4698-95f8-c5de235d412a) (SDK Attempt Count: 1)\" (RequestToken: 266ffc0b-af00-15f6-af1a-240f5a14b686, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass SSE_S3 -> CREATE_COMPLETE"
+  expect: "KmsKeyArn must be specified with SSE_KMS encryption mode"
 addedOn: 2026-09-24

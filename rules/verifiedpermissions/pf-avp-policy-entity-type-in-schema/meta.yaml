@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition: for policy `policy0`, unrecognized entity type `MyApp::Widget`. At /definition: for policy `policy0`, unable to find an applicable action given the policy scope constraints.\"; pass (the same policy with the entity type corrected to a declared one) -> CREATE_COMPLETE."
+  expect: "At /definition: for policy `policy0`, unrecognized entity type `MyApp::Widget`. At /definition: for policy `policy0`, unable to find an applicable action given the policy scope constraints"
 addedOn: 2026-09-26

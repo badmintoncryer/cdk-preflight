@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: Schedule.Expression rate(61 minutes) -> \"Resource handler returned message: \"Invalid request provided: Invalid Schedule Expression. (Service: Synthetics, Status Code: 400, Request ID: deb684c3-87ec-4238-a06f-bdb714d10830) (SDK Attempt Count: 1)\" (RequestToken: ac13bf51-3118-256c-f9f5-e926f228b1a5, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass rate(60 minutes) -> CREATE_COMPLETE"
+  expect: "Invalid Schedule Expression"
 addedOn: 2026-09-24

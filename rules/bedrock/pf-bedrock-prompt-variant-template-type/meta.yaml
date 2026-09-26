@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): TemplateType CHAT with a Text configuration -> CreatePrompt 400 ValidationException: chatTemplateConfig cannot be null when PromptTemplateType is CHAT; TEXT with a Chat configuration -> textTemplateConfig cannot be null when PromptTemplateType is TEXT; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-variant-template-type.log"
+  expect: "chatTemplateConfig cannot be null when PromptTemplateType is CHAT"
 addedOn: 2026-09-06

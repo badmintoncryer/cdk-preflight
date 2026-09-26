@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (a PolicyDocument with Version and no Statement) -> ROLLBACK_COMPLETE \"ValidationException: Workspace resource policy cannot be malformed\"; pass (the same document plus one Statement) not deployed (--fail-only) and silent under rule-check; the message names no property, so attribution is a controlled pair on the probe workspace (PutResourcePolicy us-east-1: Version alone -> ValidationException \"Workspace resource policy cannot be malformed\", Version plus one Allow statement -> policyStatus CREATING)"
+  expect: "ValidationException: Workspace resource policy cannot be malformed"
 addedOn: 2026-09-26

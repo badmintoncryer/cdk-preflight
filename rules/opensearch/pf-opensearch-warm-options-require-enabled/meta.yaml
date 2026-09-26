@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (WarmType ultrawarm1.medium.search and WarmCount 2 with no WarmEnabled) -> \"WarmEnabled must be set to true to specify WarmCount and WarmType.\" (ROLLBACK_COMPLETE); pass (the same options with WarmEnabled true and 3 dedicated masters) not deployed (--fail-only). One rule for both properties: the service answers that same sentence for a count-only template and for a type-only template, probed separately on 2026-09-24."
+  expect: "WarmEnabled must be set to true to specify WarmCount and WarmType"
 addedOn: 2026-09-25

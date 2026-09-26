@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 6 CapacityLimits entries -> \"Number of capacity limits exceeds 5.\" (ROLLBACK_COMPLETE); pass 5 -> CREATE_COMPLETE"
+  expect: "Number of capacity limits exceeds 5"
 addedOn: 2026-09-12

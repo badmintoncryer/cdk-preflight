@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunctionUrlConfig (us-east-1, 2026-09-07): "You can''t specify additional fields for AllowOrigins because you already specified the wildcard character (*)."'
+  expect: "You can't specify additional fields for AllowOrigins because you already specified the wildcard character (*"
 addedOn: 2026-09-07

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: VersioningConfiguration Status must be 'Enabled' to specify ReplicationConfiguration\"; pass template -> CREATE_COMPLETE"
+  expect: "VersioningConfiguration Status must be 'Enabled' to specify ReplicationConfiguration"
 addedOn: 2026-09-06

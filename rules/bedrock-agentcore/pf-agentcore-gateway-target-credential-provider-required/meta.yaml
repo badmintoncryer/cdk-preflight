@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): OAUTH without CredentialProvider, and OAUTH with only ApiKeyCredentialProvider -> CREATE_FAILED (BedrockAgentCoreControl 400: OAuth credential provider is required for OAUTH credential provider type); API_KEY without CredentialProvider -> 400: API key credential provider is required for API_KEY credential provider type; all ROLLBACK_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-credential-provider-required.log"
+  expect: "OAuth credential provider is required for OAUTH credential provider type"
 addedOn: 2026-09-05

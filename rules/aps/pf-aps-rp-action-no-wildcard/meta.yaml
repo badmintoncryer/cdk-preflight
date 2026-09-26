@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (Action aps:*) -> ROLLBACK_COMPLETE \"ValidationException: Resource policy contains actions that are not supported\"; pass (Action aps:RemoteWrite) not deployed (--fail-only) and silent under rule-check; aps:QueryMetrics*, aps:RemoteWrite* and * are rejected with the same sentence while the five spelled-out aps: actions are accepted (PutResourcePolicy us-east-1 on the probe workspace)"
+  expect: "ValidationException: Resource policy contains actions that are not supported"
 addedOn: 2026-09-26

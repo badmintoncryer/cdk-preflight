@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with a single artifactStore and a Deploy action in us-west-2 -> \"ValidationException: Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' ...\"; the same action with Region us-east-1 was accepted; bench 2026-09-14 us-east-1: fail -> \"Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' to declare an artifact store, such as an artifact bucket, for each region where you have an action.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Your pipeline contains actions in more than one region. Use 'pipeline.artifactStores' instead of 'pipeline.artifactStore' to declare an artifact store, such as an artifact bucket, for each region where you have an action"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (one action with both JobName and CrawlerName) -> \"Both JobName or CrawlerName cannot be set together in an action\" (ROLLBACK_COMPLETE); pass template (the same two names split over two actions) -> CREATE_COMPLETE"
+  expect: "Both JobName or CrawlerName cannot be set together in an action"
 addedOn: 2026-09-14

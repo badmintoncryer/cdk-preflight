@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 65 character key -> \"1 validation error detected: Value '{AAA...A=v}' at 'environmentVariables' failed to satisfy constraint: Map keys must satisfy constraint: [Member must have length less than or equal to 64, Member must have length greater than or equal to 2, Member must satisfy regular expression pattern: ^[A-Za-z]+\\w*$]\" ROLLBACK_COMPLETE; pass a 64 character key -> CREATE_COMPLETE. The bare engine is clean on 65."
+  expect: "at 'environmentVariables' failed to satisfy constraint: Map keys must satisfy constraint"
 addedOn: 2026-09-12

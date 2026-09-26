@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A load balancer cannot be attached to multiple subnets in the same Availability Zone\"; the pass template reached CREATE_COMPLETE."
+  expect: "A load balancer cannot be attached to multiple subnets in the same Availability Zone"
 addedOn: 2026-09-08

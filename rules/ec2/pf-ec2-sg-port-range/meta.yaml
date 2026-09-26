@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-13 us-east-1: AuthorizeSecurityGroupIngress tcp FromPort=65536 -> \"TCP/UDP (from) port (65536) out of range\", FromPort=-1 -> the same for (-1), 65535:65534 -> \"Invalid TCP/UDP port range(65535:65534)\"; 0-65535 and 65535:65535 accepted. A 3-entry list reports only the first entry. bench 2026-09-13 us-east-1: fail (embedded 65536/65536 and -1/80, standalone 65535/65534) -> ROLLBACK_COMPLETE \"TCP/UDP (from) port (65536) out of range\", which masks the other two branches; pass 0-65535 -> CREATE_COMPLETE. The ordering violation sits on the standalone resource because the engine's E9002 already owns FromPort>ToPort for an embedded ingress entry (but not for embedded egress or for the standalone resources)."
+  expect: "TCP/UDP (from) port (65536) out of range"
 addedOn: 2026-09-01

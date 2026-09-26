@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateAlias (us-east-1, 2026-09-07): "Provisioned Concurrency Configs cannot be applied to unpublished function versions."'
+  expect: "Provisioned Concurrency Configs cannot be applied to unpublished function versions"
 addedOn: 2026-09-07

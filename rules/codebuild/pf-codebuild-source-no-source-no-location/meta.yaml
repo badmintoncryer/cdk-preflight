@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Source.Type NO_SOURCE carrying Location cdkpf-codesuite-63) -> \"Invalid input: source location must be empty for source type NO_SOURCE\" (ROLLBACK_COMPLETE); pass template (NO_SOURCE with no Location) -> CREATE_COMPLETE."
+  expect: "Invalid input: source location must be empty for source type NO_SOURCE"
 addedOn: 2026-09-14

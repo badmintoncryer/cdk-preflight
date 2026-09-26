@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): guardrail with only Name and the two blocked messages -> CreateGuardrail 400 ValidationException: Guardrail must have at least one policy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-policy-required.log"
+  expect: "Guardrail must have at least one policy"
 addedOn: 2026-09-06

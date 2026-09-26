@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 129 character AuthToken -> \"Invalid AuthToken provided.\" ROLLBACK_COMPLETE (the chained groups carry a 15 character token and a token with TransitEncryptionEnabled false); pass 128 and 16 characters -> CREATE_COMPLETE. The length branch only reaches the service inside a VPC - with TransitEncryptionEnabled true and no subnet group the create fails first with \"Redis Auth can only be enabled within an Amazon VPC\", so the fixture carries its own VPC, two subnets and an ElastiCache subnet group."
+  expect: "Invalid AuthToken provided"
 addedOn: 2026-09-06

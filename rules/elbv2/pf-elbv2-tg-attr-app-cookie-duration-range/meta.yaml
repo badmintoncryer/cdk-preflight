@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'stickiness.app_cookie.duration_seconds' value '700000' must be between '1-604800' inclusive\"; the pass template reached CREATE_COMPLETE."
+  expect: "stickiness.app_cookie.duration_seconds' value"
 addedOn: 2026-09-08

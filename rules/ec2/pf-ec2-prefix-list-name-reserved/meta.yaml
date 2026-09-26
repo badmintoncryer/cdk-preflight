@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: CreateManagedPrefixList --prefix-list-name com.amazonaws.cdkpf -> \"The prefix list name cannot begin with (com.amazonaws., com.amazon., com.aws.).\" The rule carries all three prefixes the message names, not just the one in the survey. bench 2026-09-08 ap-northeast-1: PrefixListName com.amazonaws.cdkpf -> ROLLBACK_COMPLETE; a plain name -> CREATE_COMPLETE."
+  expect: "The prefix list name cannot begin with (com.amazonaws., com.amazon., com.aws"
 addedOn: 2026-09-08

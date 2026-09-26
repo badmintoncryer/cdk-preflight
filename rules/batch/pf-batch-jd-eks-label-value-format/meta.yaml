@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 64-character pod label value -> \"The pod label value aaa... does not match a valid pattern.\" (ROLLBACK_COMPLETE); pass 63 characters -> CREATE_COMPLETE"
+  expect: "does not match a valid pattern"
 addedOn: 2026-09-12

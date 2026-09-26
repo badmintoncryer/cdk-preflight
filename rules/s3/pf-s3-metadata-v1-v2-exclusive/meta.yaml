@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: Specifying S3 MetadataTable and Metadata configuration schemas at the same time isn't supported. You can specify either the MetadataTableConfiguration schema or the MetadataConfiguration schema.\"; pass template -> CREATE_COMPLETE"
+  expect: "Specifying S3 MetadataTable and Metadata configuration schemas at the same time isn't supported. You can specify either the MetadataTableConfiguration schema or the MetadataConfiguration schema"
 addedOn: 2026-09-06

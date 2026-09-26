@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: an 81 character state name -> \"Invalid State Machine Definition: 'INVALID_STATE_NAME: Invalid State name: ...'\" ROLLBACK_COMPLETE (the same definition carries a 41 character Map Label); pass 80 characters and a 40 character Label -> CREATE_COMPLETE."
+  expect: "Invalid State Machine Definition: 'INVALID_STATE_NAME: Invalid State name"
 addedOn: 2026-09-05

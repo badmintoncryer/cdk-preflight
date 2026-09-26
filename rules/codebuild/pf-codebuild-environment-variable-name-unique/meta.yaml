@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (two EnvironmentVariables both named DUP, with different values) -> \"EnvironmentVariable name cannot be duplicated\" (ROLLBACK_COMPLETE); pass template (the same two entries named ONE and TWO) -> CREATE_COMPLETE."
+  expect: "EnvironmentVariable name cannot be duplicated"
 addedOn: 2026-09-14

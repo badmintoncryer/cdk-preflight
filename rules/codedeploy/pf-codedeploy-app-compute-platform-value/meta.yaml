@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: ComputePlatform EC2 -> \"ComputePlatform 'EC2' is not valid. Valid values are [Server, Lambda, ECS, Kubernetes]\" (ROLLBACK_COMPLETE); pass ComputePlatform Lambda -> CREATE_COMPLETE. Kubernetes is a fourth valid value the bundled engine's enum does not know (it reports W3030 only), but this account cannot create one (AccessDeniedException: feature not available in us-east-1), so the pass fixture uses Lambda."
+  expect: "ComputePlatform 'EC2' is not valid. Valid values are"
 addedOn: 2026-09-14

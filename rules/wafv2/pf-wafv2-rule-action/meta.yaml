@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: A reference in your rule statement is not valid., field: RULE, parameter: Statement\"; pass template -> CREATE_COMPLETE"
+  expect: "Error reason: A reference in your rule statement is not valid., field: RULE, parameter: Statement"
 addedOn: 2026-09-05

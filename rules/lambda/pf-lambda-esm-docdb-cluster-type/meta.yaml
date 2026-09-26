@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unrecognized event source. Unsupported source arn : arn:aws:docdb-elastic:us-east-1:214794239830:cluster/11111111-1111-1111-1111-111111111111'
+  expect: "Unrecognized event source. Unsupported source arn"
 addedOn: 2026-09-07

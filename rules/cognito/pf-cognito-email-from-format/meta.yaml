@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Provided From email address is invalid\"; pass template -> CREATE_COMPLETE"
+  expect: "Provided From email address is invalid"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-14 us-east-1: CreateCustomActionType with inputArtifactDetails min 2 / max 1 -> \"InvalidActionTypeException: Maximum Number of Artifacts (1) has to be greater than or equal to minimum (2).\"; bench 2026-09-14 us-east-1: fail -> \"Maximum Number of Artifacts (1) has to be greater than or equal to minimum (2).\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE The pass fixture names the custom action type after the stack id's GUID because DeleteCustomActionType burns the Category/Provider/Version triple permanently (re-creating it returns \"... has been deleted. Create a new version of the action type.\"); the fail fixture creates nothing, so the monthly --fail-only run is unaffected."
+  expect: "Maximum Number of Artifacts (1) has to be greater than or equal to minimum (2"
 addedOn: 2026-09-14

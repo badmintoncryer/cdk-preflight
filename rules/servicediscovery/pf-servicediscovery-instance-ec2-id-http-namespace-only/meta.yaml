@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-23 us-east-1: AWS_EC2_INSTANCE_ID in a PublicDnsNamespace service -> \"AWS_EC2_INSTANCE_ID provided in namespace type DNS_PUBLIC. It is only supported in HTTP namespace\" (ROLLBACK_COMPLETE); pass same attribute in an HttpNamespace service, real t3.micro -> CREATE_COMPLETE"
+  expect: "AWS_EC2_INSTANCE_ID provided in namespace type DNS_PUBLIC. It is only supported in HTTP namespace"
 addedOn: 2026-09-23

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-14 us-east-1: CreatePipeline with each required key dropped in turn over the 13 Category/Provider pairs in the table -> \"InvalidActionDeclarationException: Action configuration for action 'X' is missing required configuration '<key>'\"; bench 2026-09-14 us-east-1: fail -> \"Action configuration for action 'Dep' is missing required configuration 'BucketName'\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Action configuration for action 'Dep' is missing required configuration 'BucketName"
 addedOn: 2026-09-14

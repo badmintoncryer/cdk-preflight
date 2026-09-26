@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: ComputePlatform Lambda with no TrafficRoutingConfig -> \"Traffic routing configuration cannot be null nor empty for deployment configurations on this platform.\" (ROLLBACK_COMPLETE); pass the same with TrafficRoutingConfig Type AllAtOnce -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: ECS is rejected the same way."
+  expect: "Traffic routing configuration cannot be null nor empty for deployment configurations on this platform"
 addedOn: 2026-09-14

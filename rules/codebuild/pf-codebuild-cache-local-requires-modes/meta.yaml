@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Cache.Type LOCAL with no Modes) -> \"At least one mode must be provided for cache type: LOCAL\" (ROLLBACK_COMPLETE); pass template (Cache.Type LOCAL with Modes [LOCAL_CUSTOM_CACHE]) -> CREATE_COMPLETE."
+  expect: "At least one mode must be provided for cache type: LOCAL"
 addedOn: 2026-09-14

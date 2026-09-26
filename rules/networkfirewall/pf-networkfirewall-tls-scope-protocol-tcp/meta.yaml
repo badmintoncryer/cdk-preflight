@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (against the account's permanent *.appnao.com certificate): Protocols [17] -> \"InvalidRequestException: Protocols is unsupported, parameter: [17], context: ServerCertificateConfigurations[0].Scopes[0].Protocols\", while [6] is accepted. The developer guide never states this; it was a phase-A hypothesis the API confirmed; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Protocols is unsupported, parameter: [17], context: ServerCertificateConfigurations[0].Scopes[0].Protocols (Service: NetworkFirewall, Status Code: 400, Request ID: 128b0cb7-4c80-423d-a38a-4e1ef94b40c3) (SDK Attempt Count: 1)\" (RequestToken: 16405638-5605-2ab9-b6b0-2147e7368edc, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Protocols is unsupported, parameter"
 addedOn: 2026-09-25

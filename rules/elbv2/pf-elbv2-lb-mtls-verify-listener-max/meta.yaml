@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"You have reached the maximum number of listeners with mutual authentication with verify mode that you can associate with load balancer 'arn:aws:elasticloadbalancing:us-east-1:214794239830:loadbalancer/app/cdkpf-pf--LB-Wx67pnXepoms/bbde31c80d575307': [2]\"; the pass template reached CREATE_COMPLETE."
+  expect: "You have reached the maximum number of listeners with mutual authentication with verify mode that you can associate with load balancer"
 addedOn: 2026-09-08

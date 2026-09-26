@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Request and Response mapping templates can not be supplied with provided resolver runtime.\" (RequestToken: a1dc1814-e1cd-9033-8f36-ac5a97e02f5b, HandlerErrorCode: InvalidRequest)"
+  expect: "Request and Response mapping templates can not be supplied with provided resolver runtime"
 addedOn: 2026-09-12

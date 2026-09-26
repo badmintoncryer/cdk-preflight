@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Latitude 90.01 -> \"Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; cvc-pattern-valid: Value '90.01' is not facet-valid with respect to pattern '[-+]?(90|[0-8]{0,1}[0-9](\\.[0-9]{0,2})?)' for type 'Latitude'\" (ROLLBACK_COMPLETE); pass Latitude 90 -> CREATE_COMPLETE. The XSD allows 90 exactly or 0-89 with at most two decimals, so 90.01 is the closest violating value there is — the machine check in test/structure.test.ts asks for the integer 91 instead and the rule is listed in rules/_boundary-exceptions.txt for that."
+  expect: "cvc-pattern-valid: Value '90.01' is not facet-valid with respect to pattern '[-+]?(90|[0-8]{0,1}[0-9"
 addedOn: 2026-09-10

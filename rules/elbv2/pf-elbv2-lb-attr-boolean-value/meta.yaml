@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The value of 'deletion_protection.enabled' must be 'true' or 'false', but was 'yes'\"; the pass template reached CREATE_COMPLETE."
+  expect: "The value of 'deletion_protection.enabled' must be 'true' or 'false', but was 'yes"
 addedOn: 2026-09-08

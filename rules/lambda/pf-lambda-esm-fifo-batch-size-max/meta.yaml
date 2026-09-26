@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: BatchSize 11 on a .fifo queue -> \"Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10\"; adding that window turns it into \"Batching window is not supported for FIFO queues\", so 11 is unreachable either way (ROLLBACK_COMPLETE); pass BatchSize 10 -> CREATE_COMPLETE"
+  expect: "Maximum batch window in seconds must be greater than 0 if maximum batch size is greater than 10"
 addedOn: 2026-09-07

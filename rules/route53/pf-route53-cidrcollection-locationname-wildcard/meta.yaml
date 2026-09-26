@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 154; cvc-pattern-valid: Value '*' is not facet-valid with respect to pattern '[0-9A-Za-z_\\-]+' for type 'CidrLocationNameDefaultNotAllowed'. (ROLLBACK_COMPLETE)"
+  expect: "Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 154; cvc-pattern-valid: Value '*' is not facet-valid with respect to pattern '[0-9A-Za-z_"
 addedOn: 2026-09-10

@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Request requires one of \"MinSize\", \"MaxSize\", \"DesiredCapacity\"; none found\" (RequestToken: 78a8e0ad-9cee-278e-b5f4-fbb9999b263d, HandlerErrorCode: InvalidRequest) -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Request requires one of"
 addedOn: 2026-09-09

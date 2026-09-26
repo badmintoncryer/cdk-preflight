@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): Evaluators: [] and no Insights -> CREATE_FAILED (AgentCoreEvaluationControlPlane 400 ValidationException: Exactly one of evaluators or insights must be provided) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-online-eval-evaluators-or-insights.log"
+  expect: "Exactly one of evaluators or insights must be provided"
 addedOn: 2026-09-05

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Text of 101 chars -> CreateGuardrail 400 ValidationException: The custom word length in this Word policy exceeds quota limit; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-word-length.log"
+  expect: "The custom word length in this Word policy exceeds quota limit"
 addedOn: 2026-09-06

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"1 validation error detected: Value '999' at 'putGatewayResponseInput.statusCode' failed to satisfy constraint: Member must satisfy regular expression pattern: [1-5]\\d\\d\" (ROLLBACK_COMPLETE)"
+  expect: "1 validation error detected: Value '999' at 'putGatewayResponseInput.statusCode' failed to satisfy constraint: Member must satisfy regular expression pattern: [1-5"
 addedOn: 2026-09-08

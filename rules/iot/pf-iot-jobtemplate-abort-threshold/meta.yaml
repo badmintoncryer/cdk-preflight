@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1: CreateJobTemplate abortConfig criteriaList thresholdPercentage 0 -> \"InvalidRequestException: ThresholdPercentage value 0.0 for AbortCriteria must have value greater than 0\" (#270 phase B). Only the floor is here: the documented ceiling of 100 has never been measured, so the rule does not guess at it; bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"ThresholdPercentage value 0.0 for AbortCriteria must have value greater than 0 (Service: Iot, Status Code: 400, Request ID: 0f1388df-341c-4ebe-83e8-224b8423b2f6) (SDK Attempt Count: 1)\\\" (RequestToken: 624c70a7-7539-2176-8b1f-2c08cd6d3ddf, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "ThresholdPercentage value 0.0 for AbortCriteria must have value greater than 0"
 addedOn: 2026-09-25

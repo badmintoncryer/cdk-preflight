@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Policy set with DisableSessionTags left out -> ROLLBACK_COMPLETE, \"When policy is specified, disableSessionTags must be set to true\". Phase B hit \"Trust policy of the role provided is invalid.\" first until the role trusted pods.eks.amazonaws.com for both sts:AssumeRole and sts:TagSession, so the fixture role carries both. fail-only; the fixture builds its own cluster."
+  expect: "When policy is specified, disableSessionTags must be set to true"
 addedOn: 2026-09-25

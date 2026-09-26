@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: SpotInstancePools option is only available with the lowest-price allocation strategy. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "SpotInstancePools option is only available with the lowest-price allocation strategy"
 addedOn: 2026-09-09

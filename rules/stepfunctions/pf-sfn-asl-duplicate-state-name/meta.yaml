@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'DUPLICATE_STATE_NAME: Duplicate State name: X at /States/P/Branches[1]/States/X'\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid State Machine Definition: 'DUPLICATE_STATE_NAME: Duplicate State name: X at /States/P/Branches[1]/States/X"
 addedOn: 2026-09-05

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: a ThingGroup with ParentGroupName plus QueryString -> \"Resource handler returned message: \\\"Thing group cannot have a QueryString and a ParentGroup\\\" (HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); the same group with ParentGroupName only -> CREATE_COMPLETE. This one is a handler-only check: CreateDynamicThingGroup has no parentGroupName argument, so the API cannot express the combination (#270 phase B handed it to C unresolved)"
+  expect: "Thing group cannot have a QueryString and a ParentGroup"
 addedOn: 2026-09-25

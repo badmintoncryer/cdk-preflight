@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: ReplicationConfig State ENABLED with no RoleArn -> ROLLBACK_COMPLETE \"When replication is enabled, role cannot be empty.\""
+  expect: "When replication is enabled, role cannot be empty"
 addedOn: 2026-09-07

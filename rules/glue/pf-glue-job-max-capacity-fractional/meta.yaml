@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: fail template (glueetl, MaxCapacity 2.5) -> \"Max Capacity with precision currently not supported for glueetl.\" (ROLLBACK_COMPLETE); pass template (MaxCapacity 2) -> CREATE_COMPLETE."
+  expect: "Max Capacity with precision currently not supported for glueetl"
 addedOn: 2026-09-13

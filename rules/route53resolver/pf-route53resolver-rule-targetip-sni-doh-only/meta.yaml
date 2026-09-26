@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00728] Cannot provide Server Name Indication for Resolver Rule Target that is not DoH (ROLLBACK_COMPLETE)"
+  expect: "RSLVR-00728] Cannot provide Server Name Indication for Resolver Rule Target that is not DoH"
 addedOn: 2026-09-10

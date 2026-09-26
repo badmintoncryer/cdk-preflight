@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Currently, only $default is supported as a RouteResponseKey. The creation of the RouteResponse with a key of $default will indicate to API Gateway that this Route is intended to handle two-way communication.\" (ROLLBACK_COMPLETE)"
+  expect: "Currently, only $default is supported as a RouteResponseKey. The creation of the RouteResponse with a key of $default will indicate to API Gateway that this Route is intended to handle two-way communication"
 addedOn: 2026-09-08

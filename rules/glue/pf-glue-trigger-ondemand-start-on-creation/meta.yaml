@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Type ON_DEMAND, StartOnCreation true) -> \"Starting trigger on create is not supported for ON_DEMAND trigger type.\" (ROLLBACK_COMPLETE); pass template (StartOnCreation false) -> CREATE_COMPLETE"
+  expect: "Starting trigger on create is not supported for ON_DEMAND trigger type"
 addedOn: 2026-09-14

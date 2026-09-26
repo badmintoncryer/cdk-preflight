@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: 9 FilePaths.Includes patterns -> \"Value at 'pipeline.triggers.1.member.gitConfiguration.push.1.member.filePaths.includes' failed to satisfy constraint: Member must have length less than or equal to 8\" (ROLLBACK_COMPLETE); pass 8 patterns -> CREATE_COMPLETE"
+  expect: "Value at 'pipeline.triggers.1.member.gitConfiguration.push.1.member.filePaths.includes' failed to satisfy constraint: Member must have length less than or equal to 8"
 addedOn: 2026-09-14

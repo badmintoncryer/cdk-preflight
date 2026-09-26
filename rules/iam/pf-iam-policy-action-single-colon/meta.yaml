@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 ap-northeast-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: 'Actions/Condition can contain only one colon. (Service: Iam, Status Code: 400, Request ID: 2b468b01-4e1f-4922-981d-6e6af49ab80d) (SDK Attempt Count: 1)' (RequestToken: 4c448690-1f38-d50d-b44c-632ab47355db, HandlerErrorCode: InvalidRequest)\"; pass -> CREATE_COMPLETE. api 2026-09-07: PutRolePolicy with \"Action\": \"s3:Get:Object\" -> MalformedPolicyDocument \"Actions/Condition can contain only one colon.\""
+  expect: "Actions/Condition can contain only one colon"
 addedOn: 2026-09-07

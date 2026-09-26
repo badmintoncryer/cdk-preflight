@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): EmbeddingDataType BINARY with S3_VECTORS storage -> CreateKnowledgeBase 400 ValidationException: The embedding type provided BINARY is invalid for storage type S3_VECTORS; BINARY with Titan Embeddings G1 - Text -> embeddingDataType BINARY not supported for embedding model amazon.titan-embed-text-v1; FLOAT32 deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-embedding-binary.log"
+  expect: "The embedding type provided BINARY is invalid for storage type S3_VECTORS"
 addedOn: 2026-09-06

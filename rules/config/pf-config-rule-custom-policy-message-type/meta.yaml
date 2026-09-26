@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"The provided SourceDetails are not valid. The SourceDetails should be null/empty if the owner is AWS. The SourceDetails should be provided if the owner is CUSTOM_LAMBDA or CUSTOM_POLICY. Only ConfigurationItemChangeNotification or OversizedConfigurationItemChangeNotification is allowed when the owner is CUSTOM_POLICY.\"; pass -> CREATE_COMPLETE"
+  expect: "The provided SourceDetails are not valid. The SourceDetails should be null/empty if the owner is AWS. The SourceDetails should be provided if the owner is CUSTOM_LAMBDA or CUSTOM_POLICY. Only ConfigurationItemChangeNotification or OversizedConfigurationItemChangeNotification is allowed when the owner is CUSTOM_POLICY"
 addedOn: 2026-09-24

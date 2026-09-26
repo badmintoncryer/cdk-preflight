@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (ReportGroup ExportConfig S3 with no S3Destination) -> \"Failed to call CreateReportGroup, reason: S3 export config is required when export config type is S3\" (ROLLBACK_COMPLETE); pass template (ExportConfigType S3 with S3Destination bucket cdkpf-codesuite-63) -> CREATE_COMPLETE."
+  expect: "Failed to call CreateReportGroup, reason: S3 export config is required when export config type is S3"
 addedOn: 2026-09-14

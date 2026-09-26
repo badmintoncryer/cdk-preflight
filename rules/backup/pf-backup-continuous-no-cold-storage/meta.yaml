@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (EnableContinuousBackup true + Lifecycle.MoveToColdStorageAfterDays 30, no DeleteAfterDays) -> \"Error in some rules due to : Invalid lifecycle. MoveToColdStorageAfterDays is unavailable\" (ROLLBACK_COMPLETE); pass (EnableContinuousBackup true + DeleteAfterDays 35, no cold storage) -> CREATE_COMPLETE"
+  expect: "Error in some rules due to : Invalid lifecycle. MoveToColdStorageAfterDays is unavailable"
 addedOn: 2026-09-24

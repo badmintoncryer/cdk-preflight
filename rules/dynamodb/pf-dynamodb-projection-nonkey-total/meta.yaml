@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 101 projected non-key attributes, spread over six INCLUDE indexes of at most 20 each, rolled back with \"One or more parameter values were invalid: Number of projected attributes in all indexes exceeds limit of 100, number of projected attributes:101\"; the pass template projects exactly 100 over five indexes and reached CREATE_COMPLETE. The spread matters: 20 per index is its own limit (pf-dynamodb-projection-nonkey-limit), so a wider index would fail for that reason instead."
+  expect: "One or more parameter values were invalid: Number of projected attributes in all indexes exceeds limit of 100, number of projected attributes:101"
 addedOn: 2026-09-08

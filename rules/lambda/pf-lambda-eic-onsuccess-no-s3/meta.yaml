@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'PutFunctionEventInvokeConfig (us-east-1, 2026-09-07): "The provided destination config DestinationConfig(onSuccess=OnSuccess(destination=arn:aws:s3:::my-bucket), onFailure=OnFailure(destination=)) is invalid."'
+  expect: "The provided destination config DestinationConfig(onSuccess=OnSuccess(destination="
 addedOn: 2026-09-07

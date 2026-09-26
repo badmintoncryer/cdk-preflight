@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (SelectionWindowDays 366) -> \"Restore testing selection window days must be between [1] and [365].\" (ROLLBACK_COMPLETE); pass (SelectionWindowDays 365) -> CREATE_COMPLETE. The rule only checks the 365 upper bound; the lower bound was not deployed"
+  expect: "Restore testing selection window days must be between [1] and [365"
 addedOn: 2026-09-24

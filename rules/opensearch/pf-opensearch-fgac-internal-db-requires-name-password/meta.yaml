@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (AdvancedSecurityOptions with InternalUserDatabaseEnabled true and an empty MasterUserOptions) -> \"You must provide a master username and password when the internal user database is enabled.\" (ROLLBACK_COMPLETE); pass (the same domain with MasterUserName and MasterUserPassword filled in) not deployed (--fail-only), but that exact FGAC scaffold - OpenSearch_2.19, m6g.large.search, gp3 10 GiB, encryption at rest + node-to-node + EnforceHTTPS + internal user database - reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+  expect: "You must provide a master username and password when the internal user database is enabled"
 addedOn: 2026-09-25

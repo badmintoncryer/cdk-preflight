@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with Username \"cdkpf-node\" -> ROLLBACK_COMPLETE, \"The specified username is invalid: setting username is not allowed when the type is \\\"EC2_LINUX\\\"\". The user guide says STANDARD is the only type that takes a username, but only EC2_LINUX was measured, so the rule is limited to the two node types the CloudFormation page names. fail-only; the fixture builds its own cluster."
+  expect: "The specified username is invalid: setting username is not allowed when the type is"
 addedOn: 2026-09-25

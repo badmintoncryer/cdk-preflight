@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Version \"1.36.0\" -> ROLLBACK_COMPLETE, \"unsupported Kubernetes version 1.36.0\" (HandlerErrorCode: InvalidRequest). The fail template also carries the retired-minor end (1.29); CloudFormation cancels the sibling once the first cluster fails, so that end was measured the same day straight against CreateCluster: 1.22 through 1.29 each drew \"unsupported Kubernetes version 1.2x\", while 1.30 passed the version check and moved on. 1.30 is therefore the floor the rule uses - it only ever rises, so the rule goes stale quietly rather than wrong. fail-only, no cluster created."
+  expect: "unsupported Kubernetes version 1.36.0"
 addedOn: 2026-09-25

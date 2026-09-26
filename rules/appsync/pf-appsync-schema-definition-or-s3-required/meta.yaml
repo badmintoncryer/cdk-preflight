@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Both the Definition and the DefinitionS3Location cannot be null.\" (RequestToken: f04e501c-6b79-4197-bac7-dc1d279cc093)"
+  expect: "Both the Definition and the"
 addedOn: 2026-09-12

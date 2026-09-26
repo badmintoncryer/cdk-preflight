@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> 1 validation error detected: Value 'AAA' at 'startRecordType' failed to satisfy constraint: Member must satisfy enum value set: [AAAA, A, SVCB, CAA, NS, SOA, TLSA, SPF, HTTPS, MX, PTR, CNAME, DS, TXT, SSHFP, SRV, NAPTR] (ROLLBACK_COMPLETE)"
+  expect: "1 validation error detected: Value 'AAA' at 'startRecordType' failed to satisfy constraint: Member must satisfy enum value set"
 addedOn: 2026-09-10

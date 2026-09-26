@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Role and event source must be in the same account as the cloud function'
+  expect: "Role and event source must be in the same account as the cloud function"
 addedOn: 2026-09-07

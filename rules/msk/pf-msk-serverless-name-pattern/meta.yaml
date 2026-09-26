@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: ClusterName \"cdkpf_slsname_fail\" -> \"The parameter value contains one or more characters that are not valid. ... 'clusterName'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: a serverless pass needs a VPC with real subnets, and the bench account shares a 10-VPC quota with other services running in parallel)"
+  expect: "The parameter value contains one or more characters that are not valid"
 addedOn: 2026-09-13

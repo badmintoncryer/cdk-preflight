@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: a TargetTrackingScaling policy carrying both PredefinedMetricSpecification and CustomizedMetricSpecification, on an ECS service registered in the same stack -> \"Only one of PredefinedMetricSpecification or CustomizedMetricSpecification can be set for target tracking scaling.\" (ROLLBACK_COMPLETE); pass the same policy with only the predefined spec -> CREATE_COMPLETE"
+  expect: "Only one of PredefinedMetricSpecification or CustomizedMetricSpecification can be set for target tracking scaling"
 addedOn: 2026-09-24

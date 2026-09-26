@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'WEIGHTED routing policy must be used with DNS Record Type CNAME (Service: ServiceDiscovery, Status Code: 400, Request ID: 604c9eba-d38b-4b6a-8ff1-8f004f58c890) (SDK Attempt Count: 1)' (RequestToken: 360dca28-f684-526e-c7e3-fe9bcc636b21, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "WEIGHTED routing policy must be used with DNS Record Type CNAME"
 addedOn: 2026-09-22

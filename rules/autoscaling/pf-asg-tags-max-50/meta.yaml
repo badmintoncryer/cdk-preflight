@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: You tried to create more tags than allowed -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "You tried to create more tags than allowed"
 addedOn: 2026-09-09

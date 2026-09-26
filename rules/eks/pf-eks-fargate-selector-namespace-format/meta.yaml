@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Selectors[0].Namespace \"bad_ns\" -> ROLLBACK_COMPLETE, \"The namespace provided is invalid.\" (HandlerErrorCode: InvalidRequest). fail-only, and the fixture names an absent cluster instead of building one: CreateFargateProfile validates this property before it looks the cluster up. Each fail fixture needs its own cluster name - the physical id is \"<clusterName>|<name>\" and CloudFormation refuses an id another stack holds."
+  expect: "The namespace provided is invalid"
 addedOn: 2026-09-25

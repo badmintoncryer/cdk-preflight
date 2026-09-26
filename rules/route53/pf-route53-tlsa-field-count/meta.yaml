@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='TLSA'] but it was not found, Invalid Resource Record: 'FATAL problem: TLSAMissingFields (Missing fields, needs: certificate usage, selector, matching type, certificate association data) encountered with '3 1 1''] (ROLLBACK_COMPLETE)"
+  expect: "type='TLSA'] but it was not found, Invalid Resource Record: 'FATAL problem: TLSAMissingFields (Missing fields, needs: certificate usage, selector, matching type, certificate association data) encountered with '3 1 1"
 addedOn: 2026-09-10

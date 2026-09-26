@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (AuthType OAUTH on a GITHUB credential) -> \"OAUTH is not supported by the CodeBuild API. To connect to your account with OAUTH, use the AWS CodeBuild console.\" (ROLLBACK_COMPLETE); pass template (the same credential with AuthType PERSONAL_ACCESS_TOKEN) -> CREATE_COMPLETE."
+  expect: "OAUTH is not supported by the CodeBuild API. To connect to your account with OAUTH, use the AWS CodeBuild console"
 addedOn: 2026-09-14

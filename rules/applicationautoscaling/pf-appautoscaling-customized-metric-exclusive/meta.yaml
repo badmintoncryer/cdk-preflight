@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: a CustomizedMetricSpecification carrying the metric-math Metrics array together with MetricName / Namespace / Statistic, on an ECS service -> \"The customized metric specification is not valid. You can use a specification with metric math or a specification without metric math, but not a combination of both.\" (ROLLBACK_COMPLETE); pass the same specification with MetricName / Namespace / Statistic only -> CREATE_COMPLETE. The fixture is on ECS on purpose: a DynamoDB dimension refuses CustomizedMetricSpecification outright with a different sentence"
+  expect: "The customized metric specification is not valid. You can use a specification with metric math or a specification without metric math, but not a combination of both"
 addedOn: 2026-09-24

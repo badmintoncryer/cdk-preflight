@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"The following errors are found in Access Log Format: Access Log format must include either $context.requestId or $context.extendedRequestId : '$context.stage'\" (ROLLBACK_COMPLETE)"
+  expect: "The following errors are found in Access Log Format: Access Log format must include either $context.requestId or $context.extendedRequestId : '$context.stage"
 addedOn: 2026-09-08

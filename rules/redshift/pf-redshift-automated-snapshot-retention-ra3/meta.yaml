@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "api-probe: none (#66 phase B BENCH, ra3 billing_risk high, create-* not called; fail is rejected at CreateCluster, pass creates one ra3.large single-node cluster); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  You can't disable automated snapshots for ra3.large node types. Set the automated retention period from 1-35 days. (Service: Redshift, Status Code: 400, Request ID: b9eff1b2-3bb4-470b-a45c-6cf22e47cd03) (SDK Attempt Count: 1)  (RequestToken: 9db0e347-22b9-9e5e-e7f\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "You can't disable automated snapshots for ra3.large node types. Set the automated retention period from 1-35 days"
 addedOn: 2026-09-22

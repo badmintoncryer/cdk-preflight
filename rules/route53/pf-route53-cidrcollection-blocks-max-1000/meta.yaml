@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 1001 CIDR blocks in one location -> \"cvc-complex-type.2.4.d: Invalid content was found starting with element 'Cidr'. No child element is expected at this point\" (ROLLBACK_COMPLETE, the API's XML schema bound on a single CidrList); pass 1000 -> CREATE_COMPLETE. 2026-09-14 に ChangeCidrCollection を直叩きしても 1 リクエスト 1000 個は成功、1001 個は同じスキーマエラー。コレクション全体の 1000 は別物で、2 ロケーションに分けて 1001 個目を足すと LimitsExceeded が返る（引き上げ可能なクォータ L-945D15E5）ので数えない（原則 6）。"
+  expect: "cvc-complex-type.2.4.d: Invalid content was found starting with element 'Cidr'. No child element is expected at this point"
 addedOn: 2026-09-10

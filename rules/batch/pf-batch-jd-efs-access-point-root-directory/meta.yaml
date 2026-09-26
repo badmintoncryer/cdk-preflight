@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"When using an EFS access point, the root directory must either be set to \"/\" or be omitted.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "When using an EFS access point, the root directory must either be set to"
 addedOn: 2026-09-12

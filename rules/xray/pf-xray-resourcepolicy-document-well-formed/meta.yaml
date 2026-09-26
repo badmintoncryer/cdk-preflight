@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-24 us-east-1: PutResourcePolicy with the truncated document {\"Version\":\"2012-10-17\",\"Statement\":[ -> MalformedPolicyDocumentException (empty message body), and with a well-formed document whose statement has no Principal -> MalformedPolicyDocumentException (#71 phase B); bench 2026-09-24 us-east-1: fail (one policy with unparsable JSON plus one whose statement has no Principal) -> \"Invalid request provided: Service returned error code MalformedPolicyDocumentException (Service: XRay, Status Code: 400)\" (ROLLBACK_COMPLETE); pass (Principal {Service: sns.amazonaws.com}) -> CREATE_COMPLETE. The service never fills the message body, so the exception type is the whole of what it says."
+  expect: "Service returned error code MalformedPolicyDocumentException"
 addedOn: 2026-09-24

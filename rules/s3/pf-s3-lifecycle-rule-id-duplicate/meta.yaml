@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Rule ID must be unique. Found same ID for more than one rule\"; pass template -> CREATE_COMPLETE"
+  expect: "Rule ID must be unique. Found same ID for more than one rule"
 addedOn: 2026-09-06

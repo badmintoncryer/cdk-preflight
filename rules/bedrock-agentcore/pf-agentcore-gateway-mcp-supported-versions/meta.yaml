@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): CREATE_FAILED (BedrockAgentCoreControl 400: Unsupported MCP Version(s) are provided in request: [1999-01-01]. Update request with supported version(s) [2025-11-25, 2026-07-28, 2025-03-26, 2025-06-18] and retry.) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-mcp-supported-versions.log. Time-varying: refresh the list when the service adds a version"
+  expect: "Update request with supported version(s"
 addedOn: 2026-09-05

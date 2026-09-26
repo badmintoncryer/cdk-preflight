@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (ColdStorageOptions.Enabled on m6g.large.search x1 with 3 dedicated masters, no WarmEnabled) -> \"To use cold storage, you must have UltraWarm enabled.\" (ROLLBACK_COMPLETE); pass (the same template plus WarmEnabled / ultrawarm1.medium.search / WarmCount 2) not deployed (--fail-only; UltraWarm plus 3 masters is the priciest scaffold in this slice)."
+  expect: "To use cold storage, you must have UltraWarm enabled"
 addedOn: 2026-09-25

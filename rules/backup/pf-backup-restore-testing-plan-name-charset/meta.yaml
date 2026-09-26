@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (RestoreTestingPlanName \"cdkpf-rtpname-69\") -> \"Invalid restore testing plan name.\" (ROLLBACK_COMPLETE; the message does not say why); pass (RestoreTestingPlanName \"cdkpf_rtpname_69\", one property apart) -> CREATE_COMPLETE"
+  expect: "Invalid restore testing plan name"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: GLACIER at 89 days behind STANDARD_IA at 90 -> \"'Days' in the 'Transition' action for StorageClass 'GLACIER' for filter '(prefix=)' must be greater than 'Days' in the 'Transition' action for StorageClass 'STANDARD_IA'\" (ROLLBACK_COMPLETE); pass STANDARD_IA 30, GLACIER 90 -> CREATE_COMPLETE. The pass cannot sit on the limit (the two transitions on the same day): S3 wants the later class strictly later and at least 30 days after an IA transition, so the exact limit is not a deployable template — see rules/_boundary-exceptions.txt."
+  expect: "Days' in the 'Transition' action for StorageClass 'GLACIER' for filter '(prefix=)' must be greater than 'Days' in the 'Transition' action for StorageClass 'STANDARD_IA"
 addedOn: 2026-09-06

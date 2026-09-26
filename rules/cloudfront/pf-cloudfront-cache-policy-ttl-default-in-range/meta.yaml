@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: two cache policies, DefaultTTL 9 under MinTTL 10 and DefaultTTL 101 over MaxTTL 100 -> \"MinTTL, MaxTTL and DefaultTTL should follow order MinTTL less than or equal to DefaultTTL less than or equal to MaxTTL\" (ROLLBACK_COMPLETE); pass with all three at 10 -> CREATE_COMPLETE, which puts the pass on both limits at once."
+  expect: "MinTTL, MaxTTL and DefaultTTL should follow order MinTTL less than or equal to DefaultTTL less than or equal to MaxTTL"
 addedOn: 2026-09-08
 benchRegion: us-east-1

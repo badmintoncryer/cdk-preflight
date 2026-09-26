@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"The provided RecordingMode is invalid. Recording mode overrides contains types currently not supported.\"; pass -> CREATE_COMPLETE"
+  expect: "The provided RecordingMode is invalid. Recording mode overrides contains types currently not supported"
 addedOn: 2026-09-24

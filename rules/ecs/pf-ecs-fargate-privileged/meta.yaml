@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Fargate requires that the ?privileged? setting be ?false? at the container level.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-fargate-privileged.log"
+  expect: "Create TaskDefinition: Fargate requires that the ?privileged? setting be ?false? at the container level"
 addedOn: 2026-09-08

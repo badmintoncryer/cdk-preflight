@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: the 33-character name rolled back with \"Target group name 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' cannot be longer than '32' characters\"; the 32-character name that starts and ends with a hyphen is masked by the DependsOn order and answers \"Value '-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-' at 'targetGroupName' failed to satisfy constraint: Member must satisfy regular expression pattern: (?!^-)(?!.*-$)^[A-Za-z0-9-]+$\". The pass template's 32-character name reached CREATE_COMPLETE."
+  expect: "Target group name 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' cannot be longer than '32' characters"
 addedOn: 2026-09-04

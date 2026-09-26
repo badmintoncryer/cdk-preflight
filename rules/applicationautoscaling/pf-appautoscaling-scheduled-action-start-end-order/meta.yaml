@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: StartTime 2035-01-01T00:00:01Z with EndTime 2035-01-01T00:00:00Z (one second apart) -> \"StartTime must be before EndTime\" (ROLLBACK_COMPLETE); pass the same action with the two swapped -> CREATE_COMPLETE. Equal timestamps were not measured, so the rule only fires on a strict inversion"
+  expect: "StartTime must be before EndTime"
 addedOn: 2026-09-24

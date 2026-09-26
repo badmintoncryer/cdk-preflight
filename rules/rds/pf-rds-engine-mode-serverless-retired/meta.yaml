@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The engine mode serverless you requested is currently unavailable.\" ROLLBACK_COMPLETE"
+  expect: "The engine mode serverless you requested is currently unavailable"
 addedOn: 2026-09-08

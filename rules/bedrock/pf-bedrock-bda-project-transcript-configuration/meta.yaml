@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Audio TypeConfiguration.Transcript with Types [AUDIO_CONTENT_MODERATION] -> CreateDataAutomationProject 400 ValidationException: Invalid Project Configuration. Type configuration requires TRANSCRIPT type to be selected in the extraction types; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-transcript-configuration.log"
+  expect: "Invalid Project Configuration. Type configuration requires TRANSCRIPT type to be selected in the extraction types"
 addedOn: 2026-09-06

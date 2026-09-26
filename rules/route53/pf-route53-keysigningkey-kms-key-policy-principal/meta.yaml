@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> The customer managed KMS key with the ARN 'arn:aws:kms:us-east-1:214794239830:key/b0bd8b8e-d74e-4e78-9f2e-2749d9dc3c09' does not grant all the required permissions for DNSSEC usage. Please review the key policy, and verify that you and Route 53 have permissions for the following actions: DescribeKey, GetPublicKey, and Sign. After you make sure that you have the right permissions in place, activate the key-signing key again. (ROLLBACK_COMPLETE)"
+  expect: "does not grant all the required permissions for DNSSEC usage. Please review the key policy, and verify that you and Route 53 have permissions for the following actions: DescribeKey, GetPublicKey, and Sign. After you make sure that you have the right permissions in place, activate the key-signing key again"
 addedOn: 2026-09-10

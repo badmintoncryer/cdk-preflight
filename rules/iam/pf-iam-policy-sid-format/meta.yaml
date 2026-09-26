@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: an inline role policy with Sid 'allow-s3-read' -> \"Statement IDs (SID) must be alpha-numeric. Check that your input satisfies the regular expression [0-9A-Za-z]*\" ROLLBACK_COMPLETE; Sid 'allow s3 read' produced the same message. The engine has no IAM policy-document semantics at all (probed clean), and CDK's PolicyStatement accepts any string for sid."
+  expect: "Statement IDs (SID) must be alpha-numeric. Check that your input satisfies the regular expression [0-9A-Za-z]*"
 addedOn: 2026-09-04

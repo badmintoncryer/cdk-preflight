@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-25 us-east-1 CreateSecurityPolicy, one variable each off an ACCEPTED control: the same body wrapped in an array -> \"Policy json is invalid, error: [$: array found, object expected]\"; the object body plus AllowFromPublic -> \"[$.AllowFromPublic: is not defined in the schema and the schema does not allow additional properties]\" (phase B). bench 2026-09-25 us-east-1: fail (both arms in one template) -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE."
+  expect: "Policy json is invalid, error"
 addedOn: 2026-09-25

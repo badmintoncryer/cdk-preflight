@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid mapping expression specified: Validation Result: warnings : [], errors : [Invalid Response Actioned Parameter destination specified: badaction:header.x]\" (ROLLBACK_COMPLETE)"
+  expect: "Invalid mapping expression specified: Validation Result: warnings"
 addedOn: 2026-09-08

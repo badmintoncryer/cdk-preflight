@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: ScalableTargetAction MinCapacity 2 / MaxCapacity 1 -> \"Maximum capacity cannot be less than minimum capacity\" (ROLLBACK_COMPLETE); pass 1/1 (equal) and 1/2 -> CREATE_COMPLETE"
+  expect: "Maximum capacity cannot be less than minimum capacity"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='DS'] but it was not found, Invalid Resource Record: 'FATAL problem: DSRRDATAInvalidValue (Invalid value for field \"RData\") encountered with 'Wrong format or it doesn't contain all fields.''] (ROLLBACK_COMPLETE)"
+  expect: "type='DS'] but it was not found, Invalid Resource Record: 'FATAL problem: DSRRDATAInvalidValue (Invalid value for field"
 addedOn: 2026-09-10

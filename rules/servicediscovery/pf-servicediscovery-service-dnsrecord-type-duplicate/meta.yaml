@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'Duplicate resource record typeAin DNS config is not expected (Service: ServiceDiscovery, Status Code: 400, Request ID: 4447f4d8-9901-4166-a538-abebbfad77ad) (SDK Attempt Count: 1)' (RequestToken: 4490eaf9-fda8-772f-f44b-2dc30915d33f, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Duplicate resource record typeAin DNS config is not expected"
 addedOn: 2026-09-22

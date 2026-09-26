@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"The container target of a dependency can not have condition COMPLETE if the target container main is essential.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "The container target of a dependency can not have condition COMPLETE if the target container main is essential"
 addedOn: 2026-09-12

@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter gRPC only supports HTTP/2. (Service: CloudFront, Status Code: 400, Request ID: d9abe7d7-b860-4710-9700-99e3e5aa802d) (SDK Attempt Count: 1)" (RequestToken: 7397c561-4d32-62cc-a405-f07929929079, HandlerErrorCode: InvalidRequest)'
+  expect: "AWS::CloudFront::Distribution: The parameter gRPC only supports HTTP/2"
 addedOn: 2026-09-08
 benchRegion: us-east-1

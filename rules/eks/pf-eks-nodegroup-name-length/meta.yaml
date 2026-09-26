@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail template -> \"nodeGroupName can't be longer than 63 characters!\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+  expect: "nodeGroupName can't be longer than 63 characters!"
 addedOn: 2026-09-25

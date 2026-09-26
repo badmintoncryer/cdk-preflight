@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: PredictiveScalingPolicyConfiguration with MaxCapacityBreachBehavior HonorMaxCapacity and MaxCapacityBuffer 10 -> \"You cannot specify MaxCapacityBuffer when using HonorMaxCapacity.\" (ROLLBACK_COMPLETE); pass the same policy without MaxCapacityBuffer -> CREATE_COMPLETE (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  expect: "You cannot specify MaxCapacityBuffer when using HonorMaxCapacity"
 addedOn: 2026-09-24

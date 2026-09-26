@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter: TopicArn Reason: An ARN must have at least 6 elements, not 1\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid parameter: TopicArn Reason: An ARN must have at least 6 elements, not 1"
 addedOn: 2026-09-05

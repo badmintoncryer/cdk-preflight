@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"keyId cannot be provided with the AWS_OWNED_KEY keyType.\"; pass template -> CREATE_COMPLETE"
+  expect: "keyId cannot be provided with the AWS_OWNED_KEY keyType"
 addedOn: 2026-09-06

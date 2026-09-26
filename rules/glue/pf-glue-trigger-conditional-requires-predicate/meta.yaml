@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Type CONDITIONAL, no Predicate) -> \"Predicate cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (one condition on an upstream job) -> CREATE_COMPLETE"
+  expect: "Predicate cannot be null or empty"
 addedOn: 2026-09-14

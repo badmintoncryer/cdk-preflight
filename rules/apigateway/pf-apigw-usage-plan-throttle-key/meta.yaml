@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid method {resourcePath: badkey,method: } specified\" (ROLLBACK_COMPLETE)"
+  expect: "Invalid method {resourcePath: badkey,method: } specified"
 addedOn: 2026-09-08

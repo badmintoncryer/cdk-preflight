@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1: AttachPrincipalPolicy principal \"not-an-arn\" -> \"InvalidRequestException: Invalid principal type\" (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Invalid principal type (Service: AWSIot; Status Code: 400; Error Code: InvalidRequestException; Request ID: 9ffd1d85-c7d9-4345-8ecf-9cdc76d6d3fa; Proxy: null)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Invalid principal type"
 addedOn: 2026-09-25

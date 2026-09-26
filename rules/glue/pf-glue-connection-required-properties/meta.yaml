@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (JDBC without JDBC_CONNECTION_URL, KAFKA without KAFKA_BOOTSTRAP_SERVERS, MONGODB without CONNECTION_URL, CUSTOM and MARKETPLACE without CONNECTOR_URL) -> \"Validation for connection properties failed\" (ROLLBACK_COMPLETE); pass template (the same five connections with the entry filled in) -> CREATE_COMPLETE. The service answers the same generic sentence for every type, so each entry was attributed with a CreateConnection probe the same day: the complete input is accepted and removing exactly one key flips it to the rejection."
+  expect: "Validation for connection properties failed"
 addedOn: 2026-09-14

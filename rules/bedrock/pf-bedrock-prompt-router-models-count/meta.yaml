@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Models with one entry -> CreatePromptRouter 400 ValidationException: Prompt router limited to 2 models exactly; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-router-models-count.log"
+  expect: "Prompt router limited to 2 models exactly"
 addedOn: 2026-09-06

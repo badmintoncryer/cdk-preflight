@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"Trail name or ARN cannot have adjacent periods (.), hyphens (-), or underscores (_).\"; pass -> CREATE_COMPLETE"
+  expect: "Trail name or ARN cannot have adjacent periods (.), hyphens (-), or underscores (_"
 addedOn: 2026-09-24

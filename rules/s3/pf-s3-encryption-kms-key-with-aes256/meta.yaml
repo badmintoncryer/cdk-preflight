@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"a KMSMasterKeyID is not applicable if the default sse algorithm is not aws:kms or aws:kms:dsse\"; pass template -> CREATE_COMPLETE"
+  expect: "a KMSMasterKeyID is not applicable if the default sse algorithm is not aws:kms or aws:kms:dsse"
 addedOn: 2026-09-06

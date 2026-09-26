@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unsupported LoggingConfig parameter for given event source mapping type.'
+  expect: "Unsupported LoggingConfig parameter for given event source mapping type"
 addedOn: 2026-09-07

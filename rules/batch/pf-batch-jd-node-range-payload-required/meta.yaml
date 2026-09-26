@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Must specify container for node range 0:1.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Must specify container for node range 0:1"
 addedOn: 2026-09-12

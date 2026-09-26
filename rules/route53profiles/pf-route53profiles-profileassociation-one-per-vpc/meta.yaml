@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> VPC [vpc-0189a223fc09f3817] exceeded its maximum profile association limit. (ROLLBACK_COMPLETE)"
+  expect: "exceeded its maximum profile association limit"
 addedOn: 2026-09-10

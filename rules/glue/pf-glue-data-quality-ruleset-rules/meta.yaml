@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (one ruleset \"Rules = []\" and one ruleset \"RowCount > 0\" with no Rules list) -> \"DataQuality rules cannot be parsed\" (ROLLBACK_COMPLETE); pass template (\"Rules = [ RowCount > 0 ]\") -> CREATE_COMPLETE. CreateDataQualityRuleset probes the same day: both fail shapes and a lower-case \"rules = [...]\" are rejected with that sentence, a multi-line ruleset is accepted, and the target table has to exist. An Analyzers block replaces the Rules list - \"Analyzers = [ RowCount ]\" on its own and \"Rules = [] Analyzers = [ RowCount ]\" are both accepted - so a ruleset with an Analyzers block is never judged."
+  expect: "DataQuality rules cannot be parsed"
 addedOn: 2026-09-14

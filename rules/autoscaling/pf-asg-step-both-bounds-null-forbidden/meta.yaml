@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Both lower and upper bounds of a StepAdjustment cannot be left unspecified. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Both lower and upper bounds of a StepAdjustment cannot be left unspecified"
 addedOn: 2026-09-09

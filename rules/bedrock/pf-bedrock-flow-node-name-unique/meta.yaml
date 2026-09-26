@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two nodes named FlowOutputNode -> CreateFlow 400 ValidationException: Node name FlowOutputNode must be unique; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-node-name-unique.log"
+  expect: "Node name FlowOutputNode must be unique"
 addedOn: 2026-09-06

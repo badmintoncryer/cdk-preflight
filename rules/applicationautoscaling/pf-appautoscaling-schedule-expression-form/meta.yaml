@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: Schedule '0 8 1 * ? *' (a cron body with no cron() wrapper) -> \"Invalid schedule expression. Details: Schedule expressions must have the following syntax: rate(<number>\\s?(minutes?|hours?|days?)), cron(<cron_expression>) or at(yyyy-MM-dd'T'HH:mm:ss).\" (ROLLBACK_COMPLETE); pass cron(0 8 1 * ? *) and at(2035-06-01T00:00:00) -> CREATE_COMPLETE"
+  expect: "Invalid schedule expression. Details: Schedule expressions must have the following syntax: rate(<number>"
 addedOn: 2026-09-24

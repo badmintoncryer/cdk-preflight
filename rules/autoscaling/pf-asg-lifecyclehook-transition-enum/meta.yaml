@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: 'LifecycleTransition' must be one of: autoscaling:EC2_INSTANCE_LAUNCHING, autoscaling:EC2_INSTANCE_TERMINATING -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "LifecycleTransition' must be one of: autoscaling:EC2_INSTANCE_LAUNCHING, autoscaling:EC2_INSTANCE_TERMINATING"
 addedOn: 2026-09-09

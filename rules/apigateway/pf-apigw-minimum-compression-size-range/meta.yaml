@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: MinimumCompressionSize 10485761 -> \"Invalid minimum compression size, must be between 0 and 10485760\" (ROLLBACK_COMPLETE); pass 10485760 -> CREATE_COMPLETE"
+  expect: "Invalid minimum compression size, must be between 0 and"
 addedOn: 2026-09-08

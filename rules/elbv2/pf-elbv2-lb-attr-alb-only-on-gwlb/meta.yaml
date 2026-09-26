@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Load balancer attribute key 'access_logs.s3.enabled' is not recognized\"; the pass template reached CREATE_COMPLETE."
+  expect: "Load balancer attribute key 'access_logs.s3.enabled' is not recognized"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: OutputLocation is not a valid S3 path.\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: OutputLocation is not a valid S3 path.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "OutputLocation is not a valid S3 path"
 addedOn: 2026-09-13

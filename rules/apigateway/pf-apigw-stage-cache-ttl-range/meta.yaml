@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: CacheTtlInSeconds 3601 -> \"Invalid time-to-live setting, must be an integer no greater than 3600\" (ROLLBACK_COMPLETE); pass 3600 -> CREATE_COMPLETE"
+  expect: "Invalid time-to-live setting, must be an integer no greater than 3600"
 addedOn: 2026-09-08

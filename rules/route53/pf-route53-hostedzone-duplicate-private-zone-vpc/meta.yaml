@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Error occurred: ConflictingDomainExistsException - The VPC vpc-070f6a65fe7c4d1a5 in region us-east-1 has already been associated with the hosted zone Z0888062NRR9QBO3XK7 with the same domain name. (ROLLBACK_COMPLETE)"
+  expect: "Error occurred: ConflictingDomainExistsException - The VPC"
 addedOn: 2026-09-10

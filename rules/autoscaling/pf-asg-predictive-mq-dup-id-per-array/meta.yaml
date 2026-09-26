@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: The MetricDataQuery object for the customized load metric has a problem or incorrect syntax. Verify that the object is valid by using the CloudWatch GetMetricData API to investigate the issue and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "The MetricDataQuery object for the customized load metric has a problem or incorrect syntax. Verify that the object is valid by using the CloudWatch GetMetricData API to investigate the issue and try again"
 addedOn: 2026-09-09

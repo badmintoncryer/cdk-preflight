@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): 6 distinct prefix list ARNs -> \"IPSetReferences limit exceeded, parameter: [6], context: ReferenceSets\"; 5 distinct ARNs accepted. The 6 must be distinct: a repeated ARN is rejected earlier by pf-networkfirewall-rulegroup-ipset-reference-arn-unique's constraint; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"IPSetReferences limit exceeded, parameter: [6], context: ReferenceSets (Service: NetworkFirewall, Status Code: 400, Request ID: 8f27fcfd-5a1e-47f4-b61d-a97a8d20e666) (SDK Attempt Count: 1)\" (RequestToken: f13ef09d-4af9-afbd-307e-e0443c329d4d, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "IPSetReferences limit exceeded, parameter"
 addedOn: 2026-09-25

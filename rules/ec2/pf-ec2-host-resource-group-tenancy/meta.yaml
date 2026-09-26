@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: RunInstances with HostResourceGroupArn and Tenancy=default -> \"InvalidParameterValue: Invalid value 'default' for tenancy. When HostResourceGroupArn is specified, tenancy must be set to 'host'\". bench 2026-09-08 ap-northeast-1: HostResourceGroupArn with Tenancy default -> ROLLBACK_COMPLETE with the same message; no host resource group -> CREATE_COMPLETE."
+  expect: "Invalid value 'default' for tenancy. When HostResourceGroupArn is specified, tenancy must be set to 'host"
 addedOn: 2026-09-08

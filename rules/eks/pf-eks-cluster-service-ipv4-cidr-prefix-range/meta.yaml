@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: ServiceIpv4Cidr 10.100.0.0/25 -> ROLLBACK_COMPLETE, \"Invalid Cluster Service Ipv4 CIDR 10.100.0.0/25 for the cluster cdkpf-c1-svcq, must have netmask size between /12 and /24 inclusive\" (HandlerErrorCode: InvalidRequest). The fail template also carries the low end (10.0.0.0/11); CloudFormation cancels the sibling once the first cluster fails, so that end was measured the same day straight against CreateCluster: /11 drew the same message, while /12 and /24 both passed the check and moved on to the next one. fail-only, no cluster created."
+  expect: "Invalid Cluster Service Ipv4 CIDR 10.100.0.0/25 for the cluster"
 addedOn: 2026-09-25

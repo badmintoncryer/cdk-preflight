@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: container Memory 513 against task Memory 512 -> \"Create TaskDefinition: The 'memory' setting for container 'app' is greater than for the task.\" (ROLLBACK_COMPLETE); pass container Memory 512 against task Memory 512 -> CREATE_COMPLETE, so equal is the limit and 513 the closest violating value."
+  expect: "Create TaskDefinition: The 'memory' setting for container 'app' is greater than for the task"
 addedOn: 2026-09-02

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: SoftLimit 1025 against HardLimit 1024 -> \"Create TaskDefinition: Soft limit exceeds hard limit for ulimit nofile\" (ROLLBACK_COMPLETE); pass SoftLimit 1024 against HardLimit 1024 -> CREATE_COMPLETE."
+  expect: "Create TaskDefinition: Soft limit exceeds hard limit for ulimit nofile"
 addedOn: 2026-09-08

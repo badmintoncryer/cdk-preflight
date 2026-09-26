@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: ConfigurationValues '{\"replicaCount\": 1' (unclosed) -> ROLLBACK_COMPLETE, \"The ConfigurationValues provided is not in valid YAML or JSON format.\" (HandlerErrorCode: InvalidRequest). The property also accepts YAML, so the rule only checks strings that open with '{\"'; an unclosed flow mapping is invalid in both grammars. fail-only, and the fixture names an absent cluster instead of building one: CreateAddon validates this property before it looks the cluster up."
+  expect: "The ConfigurationValues provided is not in valid YAML or JSON format"
 addedOn: 2026-09-25

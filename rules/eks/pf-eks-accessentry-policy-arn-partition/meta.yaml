@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: AccessPolicies PolicyArn arn:aws-cn:eks::aws:cluster-access-policy/AmazonEKSViewPolicy on a stack deploying to the aws partition -> ROLLBACK_COMPLETE, \"The specified policyArn could not be found. You can view your available access policies with 'list-access-policies'\". The message never names the partition, so this reads as a typo in the policy name; the same ARN with arn:aws deploys. fail-only; the fixture builds its own cluster."
+  expect: "The specified policyArn could not be found. You can view your available access policies with 'list-access-policies"
 addedOn: 2026-09-25

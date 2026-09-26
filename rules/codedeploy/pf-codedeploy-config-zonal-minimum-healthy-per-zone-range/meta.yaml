@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: ZonalConfig.MinimumHealthyHostsPerZone FLEET_PERCENT 100 -> \"The value of the 'Minimum health hosts per zone' setting when configured with a 'Type' value of 'FLEET_PERCENT' must be positive and less than 100.\" (ROLLBACK_COMPLETE); pass FLEET_PERCENT 99 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: 0 is accepted, so 100 is the only bound."
+  expect: "The value of the 'Minimum health hosts per zone' setting when configured with a 'Type' value of 'FLEET_PERCENT' must be positive and less than 100"
 addedOn: 2026-09-14

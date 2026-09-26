@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: StartDate/EndDate written as 2030-01-01T00:00:00Z -> ROLLBACK_COMPLETE \"Invalid request provided: EndDate needs to follow the format yyyy-MM-ddTHH:mm:ss.SSSZ\"; the same dates with .000Z deploy. This is a CloudFormation-handler constraint only -- scheduler:CreateSchedule accepts the second-precision form directly (measured the same day), so no API probe surfaces it. Only the fraction-less shape is reported, leaving other spellings alone."
+  expect: "EndDate needs to follow the format yyyy-MM-ddTHH:mm:ss.SSSZ"
 addedOn: 2026-09-07

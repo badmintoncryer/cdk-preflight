@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 ap-northeast-1: BacktrackWindow 259201 on aurora-mysql -> \"The specified value (259201) is not a valid Backtrack Window. Allowed values are within the range of 0 to 259200\" (ROLLBACK_COMPLETE); pass 259200 -> CREATE_COMPLETE. The engine branch (BacktrackWindow on anything but aurora-mysql) is the other half of this rule and is not what the fixture reports."
+  expect: "is not a valid Backtrack Window. Allowed values are within the range of 0 to"
 addedOn: 2026-09-03

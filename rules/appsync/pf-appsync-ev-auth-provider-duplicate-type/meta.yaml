@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Event API configuration contains a duplicate auth type. (Service: AppSync, Status Code: 400, Request ID: a97e008f-bc0a-4b16-8a0e-ea9ef7369a0a) (SDK Attempt Count: 1)\" (RequestToken: 6b967e1f-5394-c96f-4323-4ff48165c5f5, HandlerErrorCode: InvalidRequest)"
+  expect: "Event API configuration contains a duplicate auth type"
 addedOn: 2026-09-12

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: BufferIntervalInSeconds 901 -> \"BufferIntervalInSeconds for lambda processor must be between 0 and 900.\" ROLLBACK_COMPLETE; pass 900 and 0 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDeliveryStream: 901 and -1 are rejected with that message, 900 and 0 are accepted. Both BufferSizeInMBs and BufferIntervalInSeconds have to be present or the create fails first with \"Both BufferSizeInMBs and BufferIntervalInSeconds are required to configure buffering for lambda processor.\" - a fixture that carries only one of them reproduces the wrong error."
+  expect: "BufferIntervalInSeconds for lambda processor must be between 0 and 900"
 addedOn: 2026-09-10

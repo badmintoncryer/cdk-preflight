@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): two tools named t1 -> target FAILED (GatewayTarget failed to stabilize, reason: Duplicate tool found in target configuration: tgt___t1) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-lambda-tool-name-unique.log"
+  expect: "reason: Duplicate tool found in target configuration"
 addedOn: 2026-09-05

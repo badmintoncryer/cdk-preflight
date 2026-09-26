@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (SecurityConfig with Name and valid SamlOptions but no Type) -> the CloudFormation handler's own \"Type cannot be empty\" (ROLLBACK_COMPLETE, HandlerErrorCode InvalidRequest); pass (the same plus Type: saml) -> CREATE_COMPLETE. The handler does not infer the type from the options block, which is what phase B could not decide from the API alone (there it answers \"1 validation error detected: Value null at 'type' failed to satisfy constraint: Member must not be null\")."
+  expect: "Type cannot be empty"
 addedOn: 2026-09-25

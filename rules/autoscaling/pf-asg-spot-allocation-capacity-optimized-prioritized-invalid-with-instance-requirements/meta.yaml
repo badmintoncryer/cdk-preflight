@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: The specified SpotAllocationStrategy is not valid. The capacity-optimized-prioritized allocation strategy is not compatible with instance requirements. Valid options are [lowest-price, capacity-optimized, price-capacity-optimized]. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "The specified SpotAllocationStrategy is not valid. The capacity-optimized-prioritized allocation strategy is not compatible with instance requirements. Valid options are"
 addedOn: 2026-09-09

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (DomainName 'PF-Probe-Domain') -> \"Value 'PF-Probe-Domain' at 'domainName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-z][a-z0-9\\\\-]+\" (ROLLBACK_COMPLETE); pass ('pf-probe-domain') not deployed (--fail-only). The bundled engine's schema carries neither the pattern nor the length, so both templates are clean under the duplicate guard."
+  expect: "Value 'PF-Probe-Domain' at 'domainName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-z][a-z0-9"
 addedOn: 2026-09-25

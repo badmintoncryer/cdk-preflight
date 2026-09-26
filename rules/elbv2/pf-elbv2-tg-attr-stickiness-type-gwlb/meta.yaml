@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'source_ip' must be one of [source_ip_dest_ip_proto, source_ip_dest_ip]\"; the pass template reached CREATE_COMPLETE."
+  expect: "source_ip' must be one of"
 addedOn: 2026-09-08

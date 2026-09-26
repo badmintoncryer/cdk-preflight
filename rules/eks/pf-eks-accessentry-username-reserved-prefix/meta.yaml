@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Username \"system:cdkpf\" -> ROLLBACK_COMPLETE, \"The username must not begin with system:\" (HandlerErrorCode: InvalidRequest). The other four prefixes were measured the same day straight against CreateAccessEntry: eks:, aws:, amazon: and iam: each come back naming the prefix, while \"sts:foo\" reaches the cluster lookup - so the list of five is closed, not a guess. fail-only, and the fixture names an absent cluster instead of building one: CreateAccessEntry validates the username before it looks the cluster up."
+  expect: "The username must not begin with system"
 addedOn: 2026-09-25

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: two subnets pinned to the same AvailabilityZoneId (use1-az2) plus a second cluster given a single subnet -> ROLLBACK_COMPLETE, \"Subnets specified must be in at least two different AZs\" (HandlerErrorCode: InvalidRequest). Phase B measured the same message for both shapes straight against CreateCluster on 2026-09-24, which is why one rule covers them. fail-only, no cluster created."
+  expect: "Subnets specified must be in at least two different AZs"
 addedOn: 2026-09-25

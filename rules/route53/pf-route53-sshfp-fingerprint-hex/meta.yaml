@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='SSHFP'] but it was not found, Invalid Resource Record: 'FATAL problem: SSHFPInvalidValue (Invalid value for field \"Fingerprint\") encountered with 'Invalid fingerprint hexstring value: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''] (ROLLBACK_COMPLETE)"
+  expect: "type='SSHFP'] but it was not found, Invalid Resource Record: 'FATAL problem: SSHFPInvalidValue (Invalid value for field"
 addedOn: 2026-09-10

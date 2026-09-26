@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (one transform with WorkerType only and one with NumberOfWorkers only) -> \"Both WorkerType and NumberOfWorkers should be set\" (ROLLBACK_COMPLETE; the stack reports the first failing resource, and CreateMLTransform gives the same sentence for the other half); pass template (both set) -> CREATE_COMPLETE."
+  expect: "Both WorkerType and NumberOfWorkers should be set"
 addedOn: 2026-09-14

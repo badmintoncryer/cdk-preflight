@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: Input '{not json' -> ROLLBACK_COMPLETE \"JSON syntax error in input for target t1\". Measured the same day via events:PutTargets: a bare word ('hello') is refused, a quoted string ('\\\"hello\\\"') is accepted, so the check is JSON validity and not object-ness."
+  expect: "JSON syntax error in input for target t1"
 addedOn: 2026-09-07

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> FATAL problem: UnsupportedCharacter (Value contains unsupported characters) encountered with ' ' (ROLLBACK_COMPLETE)"
+  expect: "FATAL problem: UnsupportedCharacter (Value contains unsupported characters) encountered with"
 addedOn: 2026-09-10

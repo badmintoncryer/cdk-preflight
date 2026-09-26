@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Weight factor should be between 0.0001 and 999.9999.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Weight factor should be between 0.0001 and 999.9999"
 addedOn: 2026-09-12

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"kubernetesNamespace cannot be the default Kubernetes namespace.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "kubernetesNamespace cannot be the default Kubernetes namespace"
 addedOn: 2026-09-12

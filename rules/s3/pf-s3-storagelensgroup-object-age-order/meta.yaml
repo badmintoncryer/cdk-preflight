@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: DaysGreaterThan 30 with DaysLessThan 30 -> \"This object age combination isn't valid.\" (ROLLBACK_COMPLETE); pass 29 / 30 -> CREATE_COMPLETE."
+  expect: "This object age combination isn't valid"
 addedOn: 2026-09-06

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): a rule carrying gid:9999 -> \"GIDs are not allowed. Illegal option(s): [gid:9999]\", a different message from the \"RuleOptions <kw> is not supported\" the unsupported keywords get; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"stateful rule is invalid, rule: pass tcp any any -> any any (msg:\"m\"; gid:9999; sid:1;), reason: GIDs are not allowed. Illegal option(s): [gid:9999] (Service: NetworkFirewall, Status Code: 400, Request ID: fcc4ad09-0259-4ad8-9c52-68e91a5daec3) (SDK Attempt Count: 1)\" (RequestToken: 2466240d-a1a4-dc74-3b1f-499f5b15ca45, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "gid:9999; sid:1;), reason: GIDs are not allowed. Illegal option(s): [gid:9999"
 addedOn: 2026-09-25

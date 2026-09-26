@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: PipelineType V1 with a Commands action -> \"InvalidActionDeclarationException: Commands Action can only be used with V2 pipelines.\" (ROLLBACK_COMPLETE); api-probe 2026-09-14 us-east-1: the same error for ECRBuildAndPublish and EKS; pass V2 -> CREATE_COMPLETE"
+  expect: "Commands Action can only be used with V2 pipelines"
 addedOn: 2026-09-14

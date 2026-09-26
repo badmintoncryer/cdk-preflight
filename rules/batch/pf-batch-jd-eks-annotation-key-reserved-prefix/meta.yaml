@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"The prefix batch.amazonaws.com of the pod annotation key cannot contain terms from the following [kubernetes.io, k8s.io, batch.amazonaws.com].\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "The prefix batch.amazonaws.com of the pod annotation key cannot contain terms from the following"
 addedOn: 2026-09-12

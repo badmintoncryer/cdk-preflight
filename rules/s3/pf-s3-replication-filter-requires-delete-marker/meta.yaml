@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Priority must be specified for this version of Cross Region Replication configuration schema. Please refer to S3 Developer Guide for more information.\"; pass template -> CREATE_COMPLETE"
+  expect: "Priority must be specified for this version of Cross Region Replication configuration schema. Please refer to S3 Developer Guide for more information"
 addedOn: 2026-09-06

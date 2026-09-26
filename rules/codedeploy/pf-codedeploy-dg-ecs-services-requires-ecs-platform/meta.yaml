@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Server application, deployment group with ECSServices -> \"Server Deployment Groups should not define a value for ecsServices, eksClusters, or targetGroupPairInfoList\" (ROLLBACK_COMPLETE); pass the same group without ECSServices -> CREATE_COMPLETE. The sentence also names targetGroupPairInfoList, but that is not part of the check: api-probe 2026-09-14 us-east-1 accepted a Server group carrying only a TargetGroupPairInfoList, so the rule does not claim it."
+  expect: "Server Deployment Groups should not define a value for ecsServices, eksClusters, or targetGroupPairInfoList"
 addedOn: 2026-09-14

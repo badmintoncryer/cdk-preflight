@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: SecurityGroup with an inline ingress rule Description of '\u30c6\u30b9\u30c8\u7528' -> \"Invalid rule description. Valid descriptions are strings less than 256 characters from the following set:  a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*\" ROLLBACK_COMPLETE; the same message for a standalone AWS::EC2::SecurityGroupIngress and for a 256-character ASCII description. The sibling GroupDescription is already blocked by the engine (F3031) - the rule-level Description is not, which is exactly where CDK's addIngressRule(peer, port, description) puts user text. Egress is unbenched (same API validator)."
+  expect: "Invalid rule description. Valid descriptions are strings less than 256 characters from the following set:  a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*"
 addedOn: 2026-09-04

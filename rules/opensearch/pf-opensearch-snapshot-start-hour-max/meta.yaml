@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (SnapshotOptions.AutomatedSnapshotStartHour 24) -> \"AutomatedSnapshotStartHour specified, 24, is not a valid hour of the day. Please specify a number between 0 and 23.\" (ROLLBACK_COMPLETE); pass (the same template at 23, the boundary itself) not deployed (--fail-only). Only the upper end is checked: a negative hour was never probed, so the rule does not claim it."
+  expect: "AutomatedSnapshotStartHour specified, 24, is not a valid hour of the day. Please specify a number between 0 and 23"
 addedOn: 2026-09-25

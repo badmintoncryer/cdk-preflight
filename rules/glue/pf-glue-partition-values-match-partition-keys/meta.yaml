@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (table with one PartitionKey, partition with two Values) -> \"The number of partition keys do not match the number of partition values\" (ROLLBACK_COMPLETE); pass template (one key, one value) -> CREATE_COMPLETE."
+  expect: "The number of partition keys do not match the number of partition values"
 addedOn: 2026-09-14

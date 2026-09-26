@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): Lambda target with OAUTH / API_KEY / JWT_PASSTHROUGH / CALLER_IAM_CREDENTIALS -> CREATE_FAILED (BedrockAgentCoreControl 400: Lambda target only supports GATEWAY_IAM_ROLE credential provider type) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-lambda-credential-type.log"
+  expect: "Lambda target only supports GATEWAY_IAM_ROLE credential provider type"
 addedOn: 2026-09-05

@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (2-character Delimiter \"||\" and 2-character QuoteSymbol \"^^\") -> \"Member must have length less than or equal to 1\" (ROLLBACK_COMPLETE); pass template (1-character \"|\" and \"^\") -> CREATE_COMPLETE. Both keys carry the constraint - CreateClassifier reports four validation errors for the fail input, two per key."
+  expect: "Member must have length less than or equal to 1"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: Family '\u30c6\u30b9\u30c8\u7528' -> \"Invalid request provided: Create TaskDefinition: Family contains invalid characters.\" ROLLBACK_COMPLETE."
+  expect: "Create TaskDefinition: Family contains invalid characters"
 addedOn: 2026-09-04

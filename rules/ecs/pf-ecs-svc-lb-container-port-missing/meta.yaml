@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The container app did not have a container port 8080 defined.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-lb-container-port-missing.log"
+  expect: "The container app did not have a container port 8080 defined"
 addedOn: 2026-09-08

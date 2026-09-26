@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: CachePolicyConfig.Name '\u30c6\u30b9\u30c8\u7528' -> \"Invalid request provided: AWS::CloudFront::CachePolicy: The parameter Name contains characters other than alphanumericals, dashes, and underscores.\" ROLLBACK_COMPLETE. The sibling OriginRequestPolicy/ResponseHeadersPolicy names are unbenched and not claimed."
+  expect: "AWS::CloudFront::CachePolicy: The parameter Name contains characters other than alphanumericals, dashes, and underscores"
 addedOn: 2026-09-04

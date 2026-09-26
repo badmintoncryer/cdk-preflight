@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: TopicName '\u30c6\u30b9\u30c8\u7528' -> \"Invalid parameter: Topic Name\" ROLLBACK_COMPLETE. The engine enforces the 256-character maximum (F3033) but no character set. pf-sns-fifo-topic-name covers the .fifo/FifoTopic pairing."
+  expect: "Invalid parameter: Topic Name"
 addedOn: 2026-09-04

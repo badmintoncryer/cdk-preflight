@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [The request contains an invalid set of changes for a resource record set 'A www.cdkpf-example.com.'] (ROLLBACK_COMPLETE)"
+  expect: "The request contains an invalid set of changes for a resource record set 'A"
 addedOn: 2026-09-10

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (WarmEnabled with ultrawarm1.medium.search x2 and no dedicated masters) -> \"To use warm storage, your domain must have dedicated master nodes.\" (ROLLBACK_COMPLETE); pass (the same template plus 3 m6g.large.search masters) not deployed (--fail-only)."
+  expect: "To use warm storage, your domain must have dedicated master nodes"
 addedOn: 2026-09-25

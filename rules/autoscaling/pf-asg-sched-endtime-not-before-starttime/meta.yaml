@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Given end time must be after start time -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Given end time must be after start time"
 addedOn: 2026-09-09

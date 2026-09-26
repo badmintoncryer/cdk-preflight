@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid EventSourceMapping metrics. Expected values: [EventCount]'
+  expect: "Invalid EventSourceMapping metrics. Expected values: [EventCount"
 addedOn: 2026-09-07

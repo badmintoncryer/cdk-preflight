@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Scheduling policy name should match a valid pattern.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Scheduling policy name should match a valid pattern"
 addedOn: 2026-09-12

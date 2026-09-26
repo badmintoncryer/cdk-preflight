@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Health check enabled must be true for target groups with target type 'instance'\"; the pass template reached CREATE_COMPLETE."
+  expect: "Health check enabled must be true for target groups with target type 'instance"
 addedOn: 2026-09-08

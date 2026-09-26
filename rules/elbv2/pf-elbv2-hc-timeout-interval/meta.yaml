@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: HealthCheckTimeoutSeconds 5 with HealthCheckIntervalSeconds 5 -> \"Health check timeout '5' must be smaller than the interval '5'\" (ROLLBACK_COMPLETE — equal is the closest violating pair because the rule fires at `>=`); pass timeout 29 with interval 30 -> CREATE_COMPLETE. Both fixtures build their own VPC: with the made-up VpcId they carried, ELB answered \"The VPC ID 'vpc-11112222' is not found\" before it looked at the health check."
+  expect: "Health check timeout '5' must be smaller than the interval '5"
 addedOn: 2026-09-03

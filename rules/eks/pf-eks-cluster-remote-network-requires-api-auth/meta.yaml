@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: RemoteNetworkConfig with no AccessConfig at all (CloudFormation defaults AuthenticationMode to CONFIG_MAP) -> ROLLBACK_COMPLETE, \"AccessConfig AuthMode must be API_AND_CONFIG_MAP or API when remoteNetworkConfig is specified\" (HandlerErrorCode: InvalidRequest); adding AccessConfig.AuthenticationMode API reaches the next check. fail-only, no cluster created."
+  expect: "AccessConfig AuthMode must be API_AND_CONFIG_MAP or API when remoteNetworkConfig is specified"
 addedOn: 2026-09-25

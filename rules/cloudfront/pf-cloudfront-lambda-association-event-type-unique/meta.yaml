@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The event type of a function association must be unique in the cache behavior. Event type viewer-request cannot be associated with two functions: arn:aws:lambda:us-east-1:111122223333:function:g:1 and amazon.edge.datastore.entity.HookFunctionAssociation@5defb4[cacheBehaviorId=<null>,hookType=viewer-request'
+  expect: "AWS::CloudFront::Distribution: The event type of a function association must be unique in the cache behavior. Event type viewer-request cannot be associated with two functions"
 addedOn: 2026-09-08
 benchRegion: us-east-1

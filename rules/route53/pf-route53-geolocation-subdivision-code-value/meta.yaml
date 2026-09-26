@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [Cannot find location: 'country = US subdivision = ZZ'. No changes made., Cannot find location: 'country = US subdivision = ZZ'. No changes made.] (ROLLBACK_COMPLETE)"
+  expect: "No changes made., Cannot find location: 'country = US subdivision = ZZ"
 addedOn: 2026-09-10

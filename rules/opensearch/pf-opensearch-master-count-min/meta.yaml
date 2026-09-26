@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (DedicatedMasterCount 1 with DedicatedMasterType t3.small.search) -> \"Dedicated master node count should be greater than 1.\" (ROLLBACK_COMPLETE); pass (the same template at 2, the boundary itself) not deployed (--fail-only; the rejection is synchronous)."
+  expect: "Dedicated master node count should be greater than 1"
 addedOn: 2026-09-25

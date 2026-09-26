@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (RestoreTestingSelectionName \"cdkpf-rtsname-69\") -> \"Invalid restore testing selection name.\" (ROLLBACK_COMPLETE; the message does not say why); pass (RestoreTestingSelectionName \"cdkpf_rtsname_69\", one property apart) -> CREATE_COMPLETE"
+  expect: "Invalid restore testing selection name"
 addedOn: 2026-09-24

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set, found MetricMathAnomalyDetector, single metric attributes.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutAnomalyDetector with MetricMathAnomalyDetector plus a top-level Namespace -> \"Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set, found MetricMathAnomalyDetector, single metric attributes\". Bare engine clean."
+  expect: "Either single metric attributes, SingleMetricAnomalyDetector or MetricMathAnomalyDetector can be set, found MetricMathAnomalyDetector, single metric attributes"
 addedOn: 2026-09-08

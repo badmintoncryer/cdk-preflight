@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (LogsConfig.S3Logs Status ENABLED with no Location) -> \"Invalid logsConfig: s3Logs location must be provided if status is 'ENABLED'\" (ROLLBACK_COMPLETE); pass template (the same S3Logs with Location cdkpf-codesuite-63/logs) -> CREATE_COMPLETE."
+  expect: "Invalid logsConfig: s3Logs location must be provided if status is 'ENABLED"
 addedOn: 2026-09-14

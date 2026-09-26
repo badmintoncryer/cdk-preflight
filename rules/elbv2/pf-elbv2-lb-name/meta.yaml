@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: the 33-character name rolled back with \"The load balancer name 'internal-aaaaaaaaaaaaaaaaaaaaaa_-' cannot be longer than '32' characters\". The length answers first, so the internal- prefix, the trailing hyphen, the underscore and the second load balancer's leading hyphen are all masked; CreateLoadBalancer reports three of them on their own (\"cannot begin with 'internal-'\", \"cannot end with a hyphen(-)\", \"can only contain characters that are alphanumeric characters and hyphens(-)\"); the leading-hyphen form could not be probed through the CLI, which parses it as a missing argument. The pass template's 32-character name reached CREATE_COMPLETE."
+  expect: "The load balancer name 'internal-aaaaaaaaaaaaaaaaaaaaaa_-' cannot be longer than '32' characters"
 addedOn: 2026-09-03

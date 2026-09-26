@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: ServiceIpv4Cidr 11.0.0.0/16 -> ROLLBACK_COMPLETE, \"Invalid Cluster Service Ipv4 CIDR 11.0.0.0/16 for the cluster cdkpf-c1-svcr, must be within RFC1918 range\" (HandlerErrorCode: InvalidRequest); 10.100.0.0/16 reaches the next check. 11.0.0.0/16 is the block adjacent to 10.0.0.0/8, so the boundary is the RFC 1918 edge itself. fail-only, no cluster created."
+  expect: "Invalid Cluster Service Ipv4 CIDR 11.0.0.0/16 for the cluster"
 addedOn: 2026-09-25

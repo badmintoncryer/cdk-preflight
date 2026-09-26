@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Amazon S3 AccessPoint can only be created for bucket in the same AZ\"; pass template -> CREATE_COMPLETE"
+  expect: "Amazon S3 AccessPoint can only be created for bucket in the same AZ"
 addedOn: 2026-09-06

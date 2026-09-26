@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (AdvancedBackupSettings[0].ResourceType \"RDS\" with BackupOptions {WindowsVSS: enabled}) -> \"Invalid Resource Type : RDS\" (ROLLBACK_COMPLETE); pass (ResourceType \"EC2\") -> CREATE_COMPLETE"
+  expect: "Invalid Resource Type : RDS"
 addedOn: 2026-09-24

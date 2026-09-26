@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"CreateJobQueue requires either setting computeEnvironmentOrder or setting serviceEnvironmentOrder along with a supported jobQueueType. The jobQueueType provided is ECS, which is incompatible with the provided serviceEnvironmentOrder.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "CreateJobQueue requires either setting computeEnvironmentOrder or setting serviceEnvironmentOrder along with a supported jobQueueType. The jobQueueType provided is ECS, which is incompatible with the provided serviceEnvironmentOrder"
 addedOn: 2026-09-12

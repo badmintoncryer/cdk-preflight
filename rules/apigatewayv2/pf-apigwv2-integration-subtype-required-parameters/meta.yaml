@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping: [Detail, DetailType, Source]\" (ROLLBACK_COMPLETE)"
+  expect: "Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping"
 addedOn: 2026-09-08

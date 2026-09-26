@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): project with only ProjectName -> CloudFormation CREATE_FAILED: 1 validation error detected: Value at 'standardOutputConfiguration' failed to satisfy constraint: Member must not be null; an empty {} block deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-standard-output-required.log"
+  expect: "1 validation error detected: Value at 'standardOutputConfiguration' failed to satisfy constraint: Member must not be null"
 addedOn: 2026-09-06

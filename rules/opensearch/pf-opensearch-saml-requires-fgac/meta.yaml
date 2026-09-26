@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (AdvancedSecurityOptions.SAMLOptions.Enabled with AdvancedSecurityOptions.Enabled false) -> \"Advanced security option must be enabled to configure SAML.\" (ROLLBACK_COMPLETE); pass (the same domain with SAMLOptions dropped) not deployed (--fail-only; CreateDomain answers this synchronously)."
+  expect: "Advanced security option must be enabled to configure SAML"
 addedOn: 2026-09-25

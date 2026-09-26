@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (BackupSelection with Conditions only, no Resources and no ListOfTags) -> \"Invalid backup selection. Either 'ListOfTags' or 'Resources' section must be non-empty.\" (ROLLBACK_COMPLETE); pass (the same selection with ListOfTags) -> CREATE_COMPLETE"
+  expect: "Invalid backup selection. Either 'ListOfTags' or 'Resources' section must be non-empty"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: A customized metric specification with 'Metrics' specified cannot have any of ['Dimensions', 'MetricName', 'Namespace', 'Statistic', 'Unit', 'Period'] specified as well. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "A customized metric specification with 'Metrics' specified cannot have any of"
 addedOn: 2026-09-09

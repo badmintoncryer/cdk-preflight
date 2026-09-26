@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-beab791bfc1e4674:content-VIOLENCE_AND_HATE_SPEECH, FirewallRuleGroupId=rslvr-frg-beab791bfc1e4674, FirewallDomainListId=rslvr-fdl-a752c062462644b8, Priority=101, Action=ALERT, Name=rule-for-content-VIOLENCE_AND_HATE_SPEECH, FirewallRuleType=FirewallRuleType(FirewallAdvancedContentCategory=FirewallAdvancedContentCategoryConfig(Category=VIOLENCE_AND_HATE_SPEECH))) (ROLLBACK_COMPLETE)"
+  expect: "Priority=101, Action=ALERT, Name=rule-for-content-VIOLENCE_AND_HATE_SPEECH, FirewallRuleType=FirewallRuleType(FirewallAdvancedContentCategory=FirewallAdvancedContentCategoryConfig(Category=VIOLENCE_AND_HATE_SPEECH"
 addedOn: 2026-09-10

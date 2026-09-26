@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-05012] Resource properties are required. (ROLLBACK_COMPLETE)"
+  expect: "RSLVR-05012] Resource properties are required"
 addedOn: 2026-09-10

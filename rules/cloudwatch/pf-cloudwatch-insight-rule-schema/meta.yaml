@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"INVALID_RULE_BODY: InvalidSchema encountered at Schema in the RuleBody.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with Schema.Version 2 -> \"INVALID_RULE_BODY: InvalidSchema encountered at Schema in the RuleBody.\"; the same error comes back for a wrong Schema.Name. Bare engine clean."
+  expect: "INVALID_RULE_BODY: InvalidSchema encountered at Schema in the RuleBody"
 addedOn: 2026-09-08

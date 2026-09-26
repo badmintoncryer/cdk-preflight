@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): ProjectType SYNC with StandardOutputConfiguration.Audio -> CreateDataAutomationProject 400 ValidationException: Sync project does not support video/audio modality in Standard Output Configuration; same for Video; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-sync-modalities.log"
+  expect: "Sync project does not support video/audio modality in Standard Output Configuration"
 addedOn: 2026-09-06
