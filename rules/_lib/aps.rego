@@ -191,3 +191,21 @@ _pf_aps_ad_ignore_near(name) := [[prop, member, v] |
 	v := object.get(block, member, null)
 	is_number(v)
 ]
+
+# Every QueryLoggingConfiguration.Destinations[].CloudWatchLogs.LogGroupArn that
+# resolved to a literal string. The service applies the same ARN pattern and the
+# same region binding here as on LoggingConfiguration.LogGroupArn, only under a
+# different name (destinations.N.member.cloudWatchLogs.logGroupArn). Guarded at
+# each level, so an Fn::If marker or an unresolved Ref yields nothing.
+_pf_aps_query_log_group_arns(name) := [arn |
+	config := object.get(input.resources[name].properties, "QueryLoggingConfiguration", {})
+	is_object(config)
+	list := object.get(config, "Destinations", [])
+	is_array(list)
+	some dest in list
+	is_object(dest)
+	logs := object.get(dest, "CloudWatchLogs", {})
+	is_object(logs)
+	arn := object.get(logs, "LogGroupArn", null)
+	is_string(arn)
+]

@@ -8,6 +8,24 @@
           "LogGroupArn": "arn:aws:logs:ap-northeast-1:214794239830:log-group:/aws/vendedlogs/cdkpf:*"
         }
       }
+    },
+    "CdkpfApsWsQl": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ql-region",
+        "QueryLoggingConfiguration": {
+          "Destinations": [
+            {
+              "CloudWatchLogs": {
+                "LogGroupArn": "arn:aws:logs:ap-northeast-1:214794239830:log-group:/aws/vendedlogs/cdkpf:*"
+              },
+              "Filters": {
+                "QspThreshold": 1000
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
