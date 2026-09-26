@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: TemplateURL s3://cdkpf-bench-layers/cfn73/child.json -> the nested AWS::CloudFormation::Stack CREATE_FAILED \"The location for an Amazon S3 bucket must start with https://\" (ROLLBACK_COMPLETE); the https:// form of the same object -> CREATE_COMPLETE."
+  expect: "The location for an Amazon S3 bucket must start with https://"
 addedOn: 2026-09-25

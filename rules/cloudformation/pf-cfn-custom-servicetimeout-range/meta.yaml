@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: ServiceTimeout \"0\" and \"14401\" on AWS::CloudFormation::CustomResource -> \"ServiceTimeout must be an integer between 1 and 14400 seconds\" (ROLLBACK_COMPLETE); the same fixture with ServiceTimeout \"14400\" and an inline Lambda that answers the custom-resource request -> CREATE_COMPLETE. The documented ceiling of 3600 is wrong - 3601 and 14400 are both accepted (measured the same day)."
+  expect: "ServiceTimeout must be an integer between 1 and 14400 seconds"
 addedOn: 2026-09-25

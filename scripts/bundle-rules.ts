@@ -15,7 +15,7 @@ interface Meta {
   title: string;
   constraintSource: string;
   upstream: string;
-  repro?: { method: string; evidence?: string };
+  repro?: { method: string; evidence?: string; expect?: string };
   addedOn?: string;
   /** Region the fixture harness evaluates this rule's templates in (default us-east-1). */
   fixtureRegion?: string;
@@ -58,6 +58,31 @@ export function evidenceProblem(repro: { method: string; evidence?: string }): s
   if (!ISO_DATE.test(ev) || !AWS_REGION.test(ev)) {
     return 'meta.repro.method=real-deploy requires evidence quoting the bench run, with a YYYY-MM-DD date and a region (e.g. "bench 2026-09-03 ap-northeast-1: ... -> ROLLBACK_COMPLETE")';
   }
+  return undefined;
+}
+
+/**
+ * repro.expect は fail の拒否文が逐語で含むべき断片で、bench/verify-rule.sh が毎月これと照合する
+ * （#264。倒れたことだけを見ていた頃は、別の理由で倒れても verified になった）。月次ランナーには
+ * YAML パーサが無く sed で読むので、書式を 1 行の `expect: "<断片>"` に縛って " と \ を禁じる。
+ * 値は evidence に逐語で含まれること: 実機で見た文面であって、書き手の言い換えではない。
+ */
+export const EXPECT_REQUIRED_FROM = '2026-09-27';
+export function expectProblem(
+  repro: { method: string; evidence?: string; expect?: unknown },
+  addedOn: unknown,
+  raw: string,
+): string | undefined {
+  const ex = repro.expect;
+  if (ex === undefined) {
+    if (repro.method !== 'real-deploy' || String(addedOn ?? '') < EXPECT_REQUIRED_FROM) return undefined;
+    return `meta.repro.expect is required for real-deploy rules added on or after ${EXPECT_REQUIRED_FROM}: quote the part of the observed rejection that names the constraint`;
+  }
+  if (typeof ex !== 'string' || /["\\\n]/.test(ex) || raw.match(/^\s+expect:\s*"(.*)"\s*$/m)?.[1] !== ex) {
+    return 'meta.repro.expect must be written on one line as expect: "<fragment>" with no " or \\ inside (bench/verify-rule.sh reads it with sed)';
+  }
+  if (ex.trim().length < 8) return 'meta.repro.expect is too short to tell the constraint apart from any other failure';
+  if (!repro.evidence?.includes(ex)) return 'meta.repro.expect must appear verbatim in meta.repro.evidence';
   return undefined;
 }
 
@@ -430,7 +455,8 @@ export function collectRules(root: string): BundledRule[] {
       if (!fs.existsSync(regoPath)) throw new Error(`${rdir}: missing rule.rego`);
       if (!fs.existsSync(metaPath)) throw new Error(`${rdir}: missing meta.yaml`);
       const rego = fs.readFileSync(regoPath, 'utf8');
-      const meta = YAML.parse(fs.readFileSync(metaPath, 'utf8')) as Meta;
+      const metaRaw = fs.readFileSync(metaPath, 'utf8');
+      const meta = YAML.parse(metaRaw) as Meta;
       for (const f of ['fail.template.json', 'pass.template.json']) {
         const p = path.join(rdir, 'templates', f);
         if (!fs.existsSync(p)) throw new Error(`${id}: missing templates/${f}`);
@@ -445,6 +471,8 @@ export function collectRules(root: string): BundledRule[] {
       }
       const evProblem = evidenceProblem(meta.repro);
       if (evProblem) throw new Error(`${id}: ${evProblem}`);
+      const exProblem = expectProblem(meta.repro, meta.addedOn, metaRaw);
+      if (exProblem) throw new Error(`${id}: ${exProblem}`);
       if (!meta.constraintSource) throw new Error(`${id}: meta.constraintSource (doc URL) is required`);
       if (!Array.isArray(meta.resourceTypes) || meta.resourceTypes.length === 0) {
         throw new Error(`${id}: meta.resourceTypes must be a non-empty list`);

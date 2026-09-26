@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: research-case
-  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): {\"Fn::ImportValue\": {\"Fn::GetAtt\": [\"T\", \"TopicName\"]}} -> An error occurred (ValidationError) when calling the CreateStack operation: Template error: the attribute in Fn::ImportValue must not depend on any resources, imported values, or Fn::GetAZs"
+  evidence: "bench 2026-09-27 us-east-1: DisplayName {\"Fn::ImportValue\": {\"Fn::GetAtt\": [\"Pad\", \"TopicName\"]}} -> CreateStack rejected synchronously (API_REJECTED): \"Template error: the attribute in Fn::ImportValue must not depend on any resources, imported values, or Fn::GetAZs\". Stays research-case because no pass fixture can deploy on its own: importing a literal export name needs that export to exist already (the pass template rolls back with \"No export named cdkpf73-ivref-p found\"), and exporting it from the same template is the self-import pf-cfn-importvalue-self-export rejects."
+  expect: "the attribute in Fn::ImportValue must not depend on any resources"
 addedOn: 2026-09-25

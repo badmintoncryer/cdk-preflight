@@ -10,11 +10,14 @@ set -u
 cd "$(dirname "$0")/.."
 RULE="${1:?usage: verify-rule.sh <rule-id> [--fail-only]}"
 FAIL_ONLY="${2:-}"
-DIR=$(find rules -maxdepth 2 -type d -name "$RULE" | head -1)
+DIR=$(find "${CDKPF_RULES_DIR:-rules}" -maxdepth 2 -type d -name "$RULE" | head -1) # 差し替えは自己テスト用
 [ -z "$DIR" ] && { echo "rule not found: $RULE"; exit 1; }
 META_REGION=$(grep -E '^benchRegion:' "$DIR/meta.yaml" | awk '{print $2}')
 RTYPES=$(grep -E '^resourceTypes:' "$DIR/meta.yaml")
 REGION="${CDKPF_REGION:-${META_REGION:-ap-northeast-1}}"
+# repro.expect: fail の拒否文が逐語で含むべき断片（#264）。bundle-rules が 1 行のダブルクォート
+# 文字列（" と \ を含まない）に縛っているので、YAML パーサの無い月次ランナーでも sed で読める。
+EXPECT=$(sed -nE 's/^[[:space:]]+expect:[[:space:]]*"(.*)"[[:space:]]*$/\1/p' "$DIR/meta.yaml" | head -1)
 mkdir -p bench/logs
 LOG="bench/logs/$RULE.log"
 : > "$LOG"
@@ -75,27 +78,38 @@ poll_terminal() { # stack -> echo final status
 # 無いのかが空文字に潰れると、下の足場ガードが無言で no-op になり、足場が倒れただけの
 # ロールバックがそのまま "OK: verified" になる（= 嘘の証拠が meta.yaml に焼き付く）。
 # 読めなかったことは戻り値で伝え、呼び出し側で判定を降りる。
-events_query() { # <stack> <jmespath> -> 値を stdout。読めなければ rc 1
+# --output text は使わない。CLI は text のときだけクエリをページ（100 件）ごとに当てるので、イベントが
+# 100 件を超えるスタックでは [-1] がページの数だけ答えを返し、どのページにも理由が無いと "None" が
+# 複数行並んで 1 つの "None" と見分けられなくなる。json は全ページをまとめてから当てる（2026-09-27
+# 実測、aws-cli 2.34: 116 件のスタックで length(StackEvents) が text は 100 と 16、json は 116）。
+events_query() { # <stack> <jmespath> -> 値を stdout（null は None）。読めなければ rc 1
   local v
   v=$(aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" \
-    --query "$2" --output text 2>"$ERRF")
+    --query "$2" --output json 2>"$ERRF")
   [ $? -eq 0 ] || { cat "$ERRF" >> "$LOG"; return 1; }
-  echo "$v"
+  python3 -c 'import json, sys; v = json.load(sys.stdin); print("None" if v is None else v)' <<<"$v"
 }
 
-reason_of() { # リソースの CREATE_FAILED を優先。無ければスタックレベル（早期検証の失敗はこちらにしか出ない）
+# 最初に倒れたリソース。スタック自身の行は LogicalResourceId（= スタック名）で外す。ResourceType で
+# 外していた頃は入れ子スタック（AWS::CloudFormation::Stack）の本物の失敗まで消え、隣のリソースの
+# 巻き添えの "Resource creation cancelled" を理由として拾って verified にしていた（#264）。
+root_failure() { echo "ResourceStatus=='CREATE_FAILED' && LogicalResourceId!='$1' && ResourceStatusReason!='Resource creation cancelled'"; }
+
+# 理由を探す順: 最初に倒れたリソース → スタック自身の CREATE_FAILED（早期検証の失敗はここにしか
+# 出ない）→ スタック自身の ROLLBACK_IN_PROGRESS（Outputs の Export のようにリソースに紐づかない
+# 失敗は、既定のロールバックだとここにしか載らない。まとめ文は外す）。2026-09-26 に dev の実イベント
+# 3,110 スタックで確かめた: 3 段目まで要るのは 3 本、2 段目で止まるのは 52 本。
+reason_of() {
   local q r
-  for q in "ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack'" "ResourceStatus=='CREATE_FAILED'"; do
+  for q in "$(root_failure "$1")" "ResourceStatus=='CREATE_FAILED' && LogicalResourceId=='$1'" \
+    "ResourceStatus=='ROLLBACK_IN_PROGRESS' && LogicalResourceId=='$1' && !starts_with(ResourceStatusReason || '', 'The following resource(s) failed to create')"; do
     r=$(events_query "$1" "StackEvents[?$q]|[-1].ResourceStatusReason") || return 1
     [ -n "$r" ] && [ "$r" != "None" ] && { echo "$r"; return 0; }
   done
   echo "$r"
 }
 
-failed_type() { # スタックの中で最初に CREATE_FAILED になったリソースの型
-  events_query "$1" \
-    "StackEvents[?ResourceStatus=='CREATE_FAILED' && ResourceType!='AWS::CloudFormation::Stack']|[-1].ResourceType"
-}
+failed_type() { events_query "$1" "StackEvents[?$(root_failure "$1")]|[-1].ResourceType"; }
 
 # フィクスチャは検査対象の周りに足場（VPC、ロール、バケット）を建てる。足場のほうが
 # 倒れた場合 — アカウントのクォータ、前回の消し残り、スロットリング — でもスタックは
@@ -150,13 +164,17 @@ create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれ�
   rc=$?
   echo "$out" >> "$LOG"
   [ "$rc" -eq 0 ] && return 0
-  # ponytail: API レベルの拒否は throttle/認証エラーと本物の制約発火を区別できないので
-  # 一律 INCONCLUSIVE。毎月これに落ち続けるルールが出たら期待エラー文の白判定を個別に足す。
+  msg=$(tr '\n' ' ' <<<"$out")
+  # 同期拒否は足場が倒れる余地が無いぶん一番強い証拠だが、throttle や認証切れと見分けられるのは
+  # repro.expect を名指ししたときだけ（#264）。pass 側の同期拒否はフィクスチャが通らなかっただけ。
+  if [ "$3" = fail ] && [ -n "$EXPECT" ] && grep -qF -- "$EXPECT" <<<"$msg"; then
+    API_REJECTED=$msg
+    return 0
+  fi
   # 要約は 1 行に潰して両端を残す: templateBody の長さ超過はエラー文に弾かれたテンプレートが
   # まるごと載って複数行 52KB になり（2026-09-13、pf-batch-sp-share-distribution-max の pass）、
   # 頭だけ見ると型が、末尾だけ見ると "Member must have length less than or equal to 51200" が
   # 落ちる。全文は $LOG にある。
-  msg=$(tr '\n' ' ' <<<"$out")
   [ ${#msg} -gt 400 ] && msg="${msg:0:200} […] ${msg: -200}"
   echo "!! INCONCLUSIVE: $3 create-stack API error: $msg" | tee -a "$LOG"
   cleanup "$1"
@@ -165,11 +183,16 @@ create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれ�
 
 echo "=== $RULE: fail template ($REGION) ===" | tee -a "$LOG"
 FSTACK="cdkpf-$RULE-fail"
+API_REJECTED=
 create_stack "$FSTACK" "$DIR/templates/fail.template.json" fail
-FSTATUS=$(poll_terminal "$FSTACK")
 READ_FAILED=0
-REASON=$(reason_of "$FSTACK") || READ_FAILED=1
-FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
+if [ -n "$API_REJECTED" ]; then
+  FSTATUS=API_REJECTED REASON=$API_REJECTED FTYPE=None
+else
+  FSTATUS=$(poll_terminal "$FSTACK")
+  REASON=$(reason_of "$FSTACK") || READ_FAILED=1
+  FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
+fi
 echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
 echo "fail: reason=$REASON" | tee -a "$LOG"
 cleanup "$FSTACK"
@@ -192,6 +215,17 @@ esac
 # だけのロールバックを足場ガードが素通しして verified になる。
 if [ "$READ_FAILED" = 1 ]; then
   echo "!! INCONCLUSIVE: could not read the fail stack's events — the scaffolding guard cannot run" | tee -a "$LOG"
+  exit 4
+fi
+# 倒れたことは証拠ではない。理由が読めない、または巻き添えの文しか無いまま OK を出していた
+# （2026-09-25 の cloudformation の月次で 21 本中 5 本。#264）。
+case "$REASON" in
+  "" | None | "Resource creation cancelled" | "The following resource(s) failed to create"*)
+    echo "!! INCONCLUSIVE: no reason on the fail stack names why it fell over (got: ${REASON:-empty})" | tee -a "$LOG"
+    exit 4 ;;
+esac
+if [ -n "$EXPECT" ] && ! grep -qF -- "$EXPECT" <<<"$REASON"; then
+  echo "!! INCONCLUSIVE: the fail stack fell for a different reason than repro.expect (\"$EXPECT\")" | tee -a "$LOG"
   exit 4
 fi
 

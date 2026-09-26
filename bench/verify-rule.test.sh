@@ -1,11 +1,22 @@
 #!/bin/bash
-# verify-rule.sh の「足場が倒れただけ」判定の自己チェック。aws をスタブに差し替えて
-# 実際の API は叩かない。使い方: bash bench/verify-rule.test.sh
+# verify-rule.sh の判定の自己チェック。aws をスタブに差し替えて実際の API は叩かない。
+# ルールも一時ディレクトリに作る: 実在ルールの meta.yaml に repro.expect が入ると判定が
+# 変わってしまうので、テストは自前のルールだけを見る。使い方: bash bench/verify-rule.test.sh
 set -u
 cd "$(dirname "$0")/.."
-RULE=pf-batch-ce-state-enabled # resourceTypes: [AWS::Batch::ComputeEnvironment]
+RULE=pf-t-plain # resourceTypes: [AWS::Batch::ComputeEnvironment]、repro.expect なし
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect"
+cat > "$tmp/rules/t/pf-t-plain/meta.yaml" <<'YAML'
+id: pf-t-plain
+resourceTypes: ["AWS::Batch::ComputeEnvironment"]
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-27 us-east-1: Compute Environment must be created in ENABLED state."
+YAML
+sed 's/pf-t-plain/pf-t-expect/' "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-expect/meta.yaml"
+echo '  expect: "must be created in ENABLED state"' >> "$tmp/rules/t/pf-t-expect/meta.yaml"
 cat > "$tmp/aws" <<'STUB'
 #!/bin/bash
 # fail スタックと pass スタックで別の答えを返す（名前で見分ける）
@@ -14,6 +25,7 @@ echo "$args" >> "$CDKPF_STUB_CALLS"
 case "$args" in *-pass*) w=P ;; *) w=F ;; esac
 eval "status=\${CDKPF_STUB_${w}STATUS:-}"
 eval "reason=\${CDKPF_STUB_${w}REASON:-}"
+eval "sreason=\${CDKPF_STUB_${w}STACKREASON:-None}"
 eval "ftype=\${CDKPF_STUB_${w}TYPE:-None}"
 eval "cerr=\${CDKPF_STUB_${w}CREATE_ERR:-}"
 eval "derr=\${CDKPF_STUB_${w}DESCRIBE_ERR:-}"
@@ -21,13 +33,28 @@ eval "dfails=\${CDKPF_STUB_${w}DESCRIBE_FAILS:-0}"
 eval "dfrom=\${CDKPF_STUB_${w}DESCRIBE_FROM:-1}"
 eval "eerr=\${CDKPF_STUB_${w}EVENTS_ERR:-}"
 eval "wfail=\${CDKPF_STUB_${w}WAIT_FAIL:-}"
+eval "pages=\${CDKPF_STUB_${w}PAGES:-1}"
 case "$args" in
   *"describe-stacks"*"StackStatus"*)
     n=$(cat "$CDKPF_STUB_CALLS.$w" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$CDKPF_STUB_CALLS.$w"
     [ -n "$derr" ] && [ "$n" -ge "$dfrom" ] && [ "$n" -le "$dfails" ] && { echo "$derr" >&2; exit 255; }
     echo "${status:-ROLLBACK_COMPLETE}" ;;
-  *"describe-stack-events"*ResourceStatusReason*) [ -z "$eerr" ] || { echo "$eerr" >&2; exit 255; }; echo "$reason" ;;
-  *"describe-stack-events"*ResourceType*) [ -z "$eerr" ] || { echo "$eerr" >&2; exit 255; }; echo "$ftype" ;;
+  *"describe-stack-events"*)
+    [ -z "$eerr" ] || { echo "$eerr" >&2; exit 255; }
+    # クエリで答えを変える。スタブは JMESPath を評価しないので、フィルタが外すはずの文面
+    # （巻き添えの取り消しなど）を返させると、ハーネス側の最後の砦だけが試される
+    case "$args" in
+      *ROLLBACK_IN_PROGRESS*) ans=$sreason ;; # スタック自身のロールバック開始の行
+      *"LogicalResourceId=="*) ans=None ;;    # スタック自身の CREATE_FAILED
+      *".ResourceType"*) ans=$ftype ;;
+      *) ans=$reason ;;                       # リソースの CREATE_FAILED
+    esac
+    # 本物の CLI は --output text だとページ（100 件）ごとにクエリを当て、答えをページの数だけ
+    # 返す。json は全ページをまとめてから当てる
+    case "$args" in
+      *"--output json"*) if [ "$ans" = None ]; then echo null; else printf '%s' "$ans" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; fi ;;
+      *) echo "$ans"; i=1; while [ "$i" -lt "$pages" ]; do echo None; i=$((i + 1)); done ;;
+    esac ;;
   *"describe-stack-resources"*) echo "" ;;
   *"wait"*"stack-delete-complete"*) [ -z "$wfail" ] || exit 255 ;;
   *"create-stack"*) [ -z "$cerr" ] || { echo "$cerr" >&2; exit 254; } ;;
@@ -42,7 +69,7 @@ export PATH="$tmp:$PATH" CDKPF_STUB_CALLS="$tmp/calls"
 run() { # run <failed type> <reason> [--fail-only 以外を渡すと pass 側も回す] -> exit code
   rm -f "$tmp/calls" "$tmp/calls.F" "$tmp/calls.P"; : > "$tmp/calls"
   # 予算は保険。リトライの打ち切りが壊れたら 1 時間ではなく 1 分で落ちるように
-  CDKPF_STUB_FTYPE="$1" CDKPF_STUB_FREASON="$2" CDKPF_REGION=us-east-1 CDKPF_POLL_BUDGET=60 \
+  CDKPF_STUB_FTYPE="$1" CDKPF_STUB_FREASON="$2" CDKPF_RULES_DIR="$tmp/rules" CDKPF_REGION=us-east-1 CDKPF_POLL_BUDGET=60 \
     bash bench/verify-rule.sh "$RULE" "${3---fail-only}" > "$tmp/out" 2>&1
   echo $?
 }
@@ -188,4 +215,58 @@ expect 0 "$got" "a failed wait on an already-deleted stack still verifies"
 grep -q "LEFTOVER" "$tmp/out" \
   && { echo "FAIL: a stack that is actually gone was logged as a leftover"; cat "$tmp/out"; exit 1; }
 
-echo "ok: verify-rule.sh scaffolding guard + create-stack rejection + unreadable status/events + leftover noise"
+# --- 倒れた理由が制約を名指ししているか（#264）---
+# 倒れたことだけでは証拠にならない。理由が読めない、または巻き添えの文しか無いのに OK を
+# 出していた（2026-09-25 の cloudformation の月次で 21 本中 5 本）。
+got=$(run "None" "")
+expect 4 "$got" "a fallen stack with no readable reason must not verify"
+grep -q "no reason on the fail stack" "$tmp/out" \
+  || { echo "FAIL: a missing reason was not reported as such"; cat "$tmp/out"; exit 1; }
+
+# 入れ子スタックの本物の失敗を読み飛ばし、隣の巻き添えの取り消しを理由として拾っていた
+got=$(run "AWS::SNS::Topic" "Resource creation cancelled")
+expect 4 "$got" "a collateral cancellation is not evidence"
+
+# リソースに紐づかない失敗（Outputs の Export など）は、既定のロールバックだとスタック自身の
+# ロールバック開始の行にしか理由が載らない
+EXPORT_MAX="Cannot export output A with length 1025. Max length of 1024 exceeded.. Rollback requested by user."
+got=$(CDKPF_STUB_FSTACKREASON="$EXPORT_MAX" run "None" "")
+expect 0 "$got" "a stack-level failure verifies on the reason from the rollback event"
+grep -qF "fail: reason=$EXPORT_MAX" "$tmp/out" \
+  || { echo "FAIL: the stack-level reason was not read"; cat "$tmp/out"; exit 1; }
+
+# 同じ行でも、リソースの失敗を並べ直しただけのまとめ文は証拠ではない
+got=$(CDKPF_STUB_FSTACKREASON="The following resource(s) failed to create: [S, Pad]. Rollback requested by user." run "None" "")
+expect 4 "$got" "the rollback summary line is not evidence"
+
+# イベントが 100 件を超えるスタック: --output text はページごとにクエリを当てるので、どのページにも
+# 理由が無いと "None" がページの数だけ並び、1 つの "None" と見分けられずに OK になっていた
+got=$(CDKPF_STUB_FPAGES=2 run "None" "None")
+expect 4 "$got" "a stack whose events span two pages with no reason on either must not verify"
+
+# repro.expect があれば、理由がそれを逐語で含むときだけ verified
+got=$(RULE=pf-t-expect run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+expect 0 "$got" "a reason that contains repro.expect verifies"
+got=$(RULE=pf-t-expect run "AWS::Batch::ComputeEnvironment" "Role arn:aws:iam::111111111111:role/cdkpf-probe does not exist")
+expect 4 "$got" "falling over on the rule's own type for another reason is not evidence"
+grep -q "fell for a different reason than repro.expect" "$tmp/out" \
+  || { echo "FAIL: the mismatch was not reported as such"; cat "$tmp/out"; exit 1; }
+
+# create-stack の同期拒否: 足場が倒れる余地が無いぶん一番強い証拠だが、スロットルや認証切れと
+# 見分けられるのは repro.expect を名指ししたときだけ
+SYNC="An error occurred (ValidationError) when calling the CreateStack operation: Compute Environment must be created in ENABLED state."
+got=$(RULE=pf-t-expect CDKPF_STUB_FCREATE_ERR="$SYNC" run "None" "")
+expect 0 "$got" "a synchronous rejection that names repro.expect verifies"
+grep -qF "fail: reason=$SYNC" "$tmp/out" \
+  || { echo "FAIL: the synchronous rejection was not written up as the reason"; cat "$tmp/out"; exit 1; }
+got=$(RULE=pf-t-expect CDKPF_STUB_FCREATE_ERR="$APIERR" run "None" "")
+expect 4 "$got" "a synchronous rejection that does not name repro.expect stays INCONCLUSIVE"
+# fail を同期拒否で確かめたあとも pass 側は普通に回る
+got=$(RULE=pf-t-expect CDKPF_STUB_FCREATE_ERR="$SYNC" CDKPF_STUB_PSTATUS=CREATE_COMPLETE run "None" "" "")
+expect 0 "$got" "a synchronously rejected fail template still runs the pass side"
+# pass 側の同期拒否は、期待文を含んでいてもフィクスチャが通らなかったことに変わりない
+got=$(RULE=pf-t-expect CDKPF_STUB_PCREATE_ERR="$SYNC" \
+      run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
+expect 4 "$got" "a synchronous rejection of the pass template is never evidence"
+
+echo "ok: verify-rule.sh scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint"
