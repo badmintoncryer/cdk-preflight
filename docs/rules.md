@@ -294,6 +294,42 @@
 | `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | cfn-schema |
 | `pf-appsync-source-api-merged-not-source` | AWS::AppSync::SourceApiAssociation | A merged API cannot be a source API | ERROR | none |
 | `pf-appsync-source-api-not-merged-target` | AWS::AppSync::SourceApiAssociation | The association target must be a MERGED API | ERROR | none |
+| `pf-aps-ad-alias-charset` | AWS::APS::AnomalyDetector | An anomaly detector alias starts alphanumeric and stays in the allowed charset | ERROR | none |
+| `pf-aps-ad-alias-max-64` | AWS::APS::AnomalyDetector | An anomaly detector alias is at most 64 characters | ERROR | none |
+| `pf-aps-ad-evaluation-interval-range` | AWS::APS::AnomalyDetector | An anomaly detector evaluation interval is between 30 and 86400 seconds | ERROR | none |
+| `pf-aps-ad-ignore-near-expected-non-negative` | AWS::APS::AnomalyDetector | An ignore-near-expected amount or ratio is not negative | ERROR | none |
+| `pf-aps-ad-ignore-near-expected-not-empty` | AWS::APS::AnomalyDetector | An ignore-near-expected block specifies an amount or a ratio | ERROR | cfn-schema |
+| `pf-aps-ad-label-key-format` | AWS::APS::AnomalyDetector | An anomaly detector label key is a Prometheus label name | ERROR | none |
+| `pf-aps-ad-label-value-not-empty` | AWS::APS::AnomalyDetector | An anomaly detector label value is not empty | ERROR | none |
+| `pf-aps-ad-missing-data-action-not-empty` | AWS::APS::AnomalyDetector | A missing-data action specifies MarkAsAnomaly or Skip | ERROR | cfn-schema |
+| `pf-aps-ad-query-aggregation-operator` | AWS::APS::AnomalyDetector | A Random Cut Forest query is wrapped by a supported aggregation operator | ERROR | none |
+| `pf-aps-rgn-data-duration-format` | AWS::APS::RuleGroupsNamespace | Durations in a rules file carry a unit | ERROR | none |
+| `pf-aps-rgn-data-group-name-required` | AWS::APS::RuleGroupsNamespace | A rule group name must not be empty | ERROR | none |
+| `pf-aps-rgn-data-group-name-unique` | AWS::APS::RuleGroupsNamespace | Rule group names are unique within one rules file | ERROR | none |
+| `pf-aps-rgn-data-group-unknown-field` | AWS::APS::RuleGroupsNamespace | A rule group carries only the documented keys | ERROR | none |
+| `pf-aps-rgn-data-groups-key` | AWS::APS::RuleGroupsNamespace | A rules file declares only the groups key at the top level | ERROR | none |
+| `pf-aps-rgn-data-recording-rule-alert-fields` | AWS::APS::RuleGroupsNamespace | A recording rule carries no alerting-only fields | ERROR | none |
+| `pf-aps-rgn-data-rule-expr-required` | AWS::APS::RuleGroupsNamespace | Every rule item sets expr | ERROR | none |
+| `pf-aps-rgn-data-rule-record-alert-exclusive` | AWS::APS::RuleGroupsNamespace | A rule item sets either record or alert, never both | ERROR | none |
+| `pf-aps-rgn-data-rule-record-or-alert-required` | AWS::APS::RuleGroupsNamespace | Every rule item sets record or alert | ERROR | none |
+| `pf-aps-rgn-name-ascii-alnum` | AWS::APS::RuleGroupsNamespace | A namespace name contains at least one ASCII alphanumeric | ERROR | none |
+| `pf-aps-rp-action-no-wildcard` | AWS::APS::ResourcePolicy | A workspace resource policy spells out every action | ERROR | none |
+| `pf-aps-rp-policy-document-json` | AWS::APS::ResourcePolicy | A workspace resource policy is parseable JSON | ERROR | none |
+| `pf-aps-rp-policy-principal-required` | AWS::APS::ResourcePolicy | Every statement of a workspace resource policy names a Principal | ERROR | none |
+| `pf-aps-rp-policy-resource-workspace` | AWS::APS::ResourcePolicy | A workspace resource policy only grants on its own workspace | ERROR | none |
+| `pf-aps-rp-policy-statement-required` | AWS::APS::ResourcePolicy | A workspace resource policy has a Statement | ERROR | none |
+| `pf-aps-ws-alias-not-empty` | AWS::APS::Workspace | A workspace alias, when present, is not empty | ERROR | none |
+| `pf-aps-ws-am-config-root-key` | AWS::APS::Workspace | An Alertmanager definition nests everything under alertmanager_config | ERROR | none |
+| `pf-aps-ws-am-receiver-name-required` | AWS::APS::Workspace | Every Alertmanager receiver carries a non-empty name | ERROR | none |
+| `pf-aps-ws-am-receiver-name-unique` | AWS::APS::Workspace | Alertmanager receiver names are distinct | ERROR | none |
+| `pf-aps-ws-am-receiver-type` | AWS::APS::Workspace | An Alertmanager receiver notifies through sns_configs only | ERROR | none |
+| `pf-aps-ws-am-root-route-receiver` | AWS::APS::Workspace | The root Alertmanager route names a default receiver | ERROR | none |
+| `pf-aps-ws-am-route-receiver-defined` | AWS::APS::Workspace | Every Alertmanager route points at a receiver that is declared | ERROR | none |
+| `pf-aps-ws-am-route-required` | AWS::APS::Workspace | An Alertmanager definition declares a route | ERROR | none |
+| `pf-aps-ws-am-sns-topic-account` | AWS::APS::Workspace | An Alertmanager SNS topic belongs to the workspace's own account | ERROR | none |
+| `pf-aps-ws-label-set-metric-name` | AWS::APS::Workspace | A __name__ label limit names a metric Prometheus accepts | ERROR | none |
+| `pf-aps-ws-log-group-arn-format` | AWS::APS::Workspace | A logging destination is a log-group ARN ending in :* | ERROR | none |
+| `pf-aps-ws-log-group-arn-region` | AWS::APS::Workspace | A logging destination's log group is in the workspace's region | ERROR | none |
 | `pf-athena-dc-glue-requires-catalog-id` | AWS::Athena::DataCatalog | A GLUE data catalog requires the catalog-id parameter | ERROR | none |
 | `pf-athena-dc-hive-requires-metadata-function` | AWS::Athena::DataCatalog | A HIVE data catalog requires the metadata-function parameter | ERROR | none |
 | `pf-athena-dc-lambda-function-xor-split` | AWS::Athena::DataCatalog | A Lambda data catalog uses 'function' or the metadata/record pair, never both | ERROR | none |
@@ -1910,6 +1946,13 @@
 | `pf-glue-user-defined-function-owner-type` | AWS::Glue::UserDefinedFunction | A user-defined function needs an OwnerType of USER, ROLE or GROUP | ERROR | pending-engine |
 | `pf-glue-user-defined-function-resource-uri-type` | AWS::Glue::UserDefinedFunction | A function ResourceUri needs a ResourceType of JAR, FILE or ARCHIVE | ERROR | cfn-schema |
 | `pf-glue-workflow-max-concurrent-runs-min` | AWS::Glue::Workflow | A workflow needs at least one concurrent run | ERROR | pending-engine |
+| `pf-grafana-ws-current-account-requires-role-arn` | AWS::Grafana::Workspace | A workspace that needs a RoleArn has one | ERROR | none |
+| `pf-grafana-ws-data-sources-enum` | AWS::Grafana::Workspace | DataSources names a service Grafana can read | ERROR | pending-engine |
+| `pf-grafana-ws-description-charset` | AWS::Grafana::Workspace | A workspace description avoids the symbol category | ERROR | none |
+| `pf-grafana-ws-nac-id-prefix` | AWS::Grafana::Workspace | A network access control list holds prefix-list ids | ERROR | none |
+| `pf-grafana-ws-notification-destinations-enum` | AWS::Grafana::Workspace | NotificationDestinations names SNS | ERROR | pending-engine |
+| `pf-grafana-ws-organization-access-requires-ous` | AWS::Grafana::Workspace | Organization-wide account access lists the organizational units | ERROR | none |
+| `pf-grafana-ws-saml-idp-metadata-source` | AWS::Grafana::Workspace | A SAML identity provider names exactly one metadata source | ERROR | none |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
 | `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | none |
