@@ -1,0 +1,12 @@
+id: pf-grafana-ws-nac-id-prefix
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A network access control list holds prefix-list ids"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-grafana-workspace-networkaccesscontrol.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING real-deploy gate"
+addedOn: 2026-09-26

@@ -1,0 +1,12 @@
+id: pf-grafana-ws-saml-idp-metadata-source
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A SAML identity provider names exactly one metadata source"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-grafana-workspace-idpmetadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING real-deploy gate"
+addedOn: 2026-09-26

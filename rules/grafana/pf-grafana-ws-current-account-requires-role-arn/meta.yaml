@@ -1,0 +1,12 @@
+id: pf-grafana-ws-current-account-requires-role-arn
+service: grafana
+resourceTypes: [AWS::Grafana::Workspace]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace that needs a RoleArn has one"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-grafana-workspace.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING real-deploy gate"
+addedOn: 2026-09-26

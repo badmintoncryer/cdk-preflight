@@ -1,0 +1,16 @@
+{
+  "Resources": {
+    "CdkpfGfWs": {
+      "Type": "AWS::Grafana::Workspace",
+      "Properties": {
+        "Name": "cdkpf-gf-ous",
+        "AccountAccessType": "ORGANIZATION",
+        "AuthenticationProviders": [
+          "SAML"
+        ],
+        "PermissionType": "CUSTOMER_MANAGED",
+        "RoleArn": "arn:aws:iam::214794239830:role/cdkpf-grafana"
+      }
+    }
+  }
+}
