@@ -1,0 +1,44 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ad-query"
+      }
+    },
+    "CdkpfApsAd": {
+      "Type": "AWS::APS::AnomalyDetector",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Alias": "cdkpf-ad-q-root",
+        "Configuration": {
+          "RandomCutForest": {
+            "Query": "rate(up[5m])"
+          }
+        }
+      }
+    },
+    "CdkpfApsAd2": {
+      "Type": "AWS::APS::AnomalyDetector",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Alias": "cdkpf-ad-q-by",
+        "Configuration": {
+          "RandomCutForest": {
+            "Query": "sum(up) by (job)"
+          }
+        }
+      }
+    }
+  }
+}

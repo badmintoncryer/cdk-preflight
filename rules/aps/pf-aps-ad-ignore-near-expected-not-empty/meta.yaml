@@ -1,0 +1,12 @@
+id: pf-aps-ad-ignore-near-expected-not-empty
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "An ignore-near-expected block specifies an amount or a ratio"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-anomalydetector-ignorenearexpected.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (IgnoreNearExpectedFromAbove {}) -> ROLLBACK_COMPLETE at CloudFormation's early property validation, before the handler runs: \"Properties validation failed for resource CdkpfApsAd with message: #/Configuration/RandomCutForest/IgnoreNearExpectedFromAbove: #: only 1 subschema matches out of 2 / #: 0 subschemas matched instead of one / required key [Amount] not found / required key [Ratio] not found\". The registry schema carries the union's oneOf but the bundled engine is silent on the zero-member side (it does stop both members at once, F3018), hence upstream: cfn-schema. The service sentence was measured at the API layer in phase B: \"Invalid ignoreNearExpectedFromAbove, must specify an action\". pass (Ratio 0.1) not deployed (--fail-only) and silent under rule-check. cdk renders { ratio: undefined } as {}, so plain CDK reaches this"
+addedOn: 2026-09-26

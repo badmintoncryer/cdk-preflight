@@ -1,0 +1,12 @@
+id: pf-aps-ad-evaluation-interval-range
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "An anomaly detector evaluation interval is between 30 and 86400 seconds"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-aps-anomalydetector.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail template (two detectors, 29 and 86401) -> ROLLBACK_COMPLETE \"InvalidParameter: 1 validation error(s) found. minimum field value of 30, CreateAnomalyDetectorInput.EvaluationIntervalInSeconds.\" -- the SDK validates the minimum client-side, so the handler never sees 29 and the stack terminated on that event alone. The maximum was measured on its own stack cdkpf-c2b-evalhi the same day: 86401 -> CREATE_FAILED \"ValidationException: Invalid evaluationIntervalInSeconds: Member must have value less than or equal to 86400\" (the service, not the SDK). pass (30 and 86400) not deployed (--fail-only) and silent under rule-check. The CloudFormation schema has no Minimum or Maximum here, while the sibling SampleSize does (F3034 stops 100)"
+addedOn: 2026-09-26

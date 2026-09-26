@@ -1,0 +1,12 @@
+id: pf-aps-ad-ignore-near-expected-non-negative
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "An ignore-near-expected amount or ratio is not negative"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-anomalydetector-ignorenearexpected.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (IgnoreNearExpectedFromAbove {Ratio: -1}) -> ROLLBACK_COMPLETE \"ValidationException: Invalid configuration.randomCutForest.ignoreNearExpectedFromAbove.ratio: Member must have value greater than or equal to 0\"; pass (Ratio 0) not deployed (--fail-only) and silent under rule-check. The CloudFormation schema has no Minimum for Amount or Ratio"
+addedOn: 2026-09-26

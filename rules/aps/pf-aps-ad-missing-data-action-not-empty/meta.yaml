@@ -1,0 +1,12 @@
+id: pf-aps-ad-missing-data-action-not-empty
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "A missing-data action specifies MarkAsAnomaly or Skip"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-anomalydetector-missingdataaction.html
+upstream: cfn-schema
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (MissingDataAction {}) -> ROLLBACK_COMPLETE at CloudFormation's early property validation, before the handler runs: \"Properties validation failed for resource CdkpfApsAd with message: #/MissingDataAction: #: only 1 subschema matches out of 2 / #: 0 subschemas matched instead of one / required key [MarkAsAnomaly] not found / required key [Skip] not found\". The registry schema carries the union's oneOf but the bundled engine is silent on the zero-member side (it does stop both members at once, F3018), hence upstream: cfn-schema. The service sentence was measured at the API layer in phase B: \"Invalid missingDataAction, must specify an action\". pass (Skip true) not deployed (--fail-only) and silent under rule-check. cdk renders { skip: undefined } as {}, so plain CDK reaches this"
+addedOn: 2026-09-26

@@ -150,3 +150,44 @@ _pf_aps_label_sets(name) := [labels |
 	labels := object.get(item, "LabelSet", [])
 	is_array(labels)
 ]
+
+# ---- AnomalyDetector (added for AWS::APS::AnomalyDetector) -------------------
+
+# A property value, but only when it resolved to a literal number. to_number is
+# deliberately not used: to_number(null) is 0 in the engine's Rego build, which
+# would turn a missing property into a violation of every lower bound.
+_pf_aps_num(name, path) := n if {
+	n := resolve(name, path)
+	is_number(n)
+}
+
+# The {Key, Value} entries of Labels. CloudFormation takes a list here and the
+# handler turns it into the API's map. Type-guarded at both levels, so an Fn::If
+# marker (an object whose keys are none of these) yields nothing.
+_pf_aps_ad_labels(name) := [label |
+	list := object.get(input.resources[name].properties, "Labels", [])
+	is_array(list)
+	some label in list
+	is_object(label)
+]
+
+# Configuration.RandomCutForest. Always an object when the property chain is
+# there at all, so it can be indexed with object.get by its callers.
+_pf_aps_ad_rcf(name) := forest if {
+	config := object.get(input.resources[name].properties, "Configuration", {})
+	is_object(config)
+	forest := object.get(config, "RandomCutForest", {})
+	is_object(forest)
+}
+
+# The numbers under RandomCutForest.IgnoreNearExpectedFromAbove and
+# ...FromBelow, as [property, member, value] triples. A non-numeric value (an
+# Fn::If marker, a Ref) yields nothing.
+_pf_aps_ad_ignore_near(name) := [[prop, member, v] |
+	some prop in ["IgnoreNearExpectedFromAbove", "IgnoreNearExpectedFromBelow"]
+	block := object.get(_pf_aps_ad_rcf(name), prop, null)
+	is_object(block)
+	some member in ["Amount", "Ratio"]
+	v := object.get(block, member, null)
+	is_number(v)
+]

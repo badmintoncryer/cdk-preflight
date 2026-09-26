@@ -1,0 +1,12 @@
+id: pf-aps-ad-label-key-format
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "An anomaly detector label key is a Prometheus label name"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-anomalydetector-label.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (one detector with two labels, Key team-name and Key __name__) -> ROLLBACK_COMPLETE \"ValidationException: Invalid labels: Map keys must satisfy constraint: [Member must have length less than or equal to 7168, Member must have length greater than or equal to 1, Member must satisfy regular expression pattern: (?!__)[a-zA-Z_][a-zA-Z0-9_]*]\"; pass (Keys team_name and _name) not deployed (--fail-only) and silent under rule-check. RE2 has no lookahead, so the charset and the reserved __ prefix are two checks"
+addedOn: 2026-09-26

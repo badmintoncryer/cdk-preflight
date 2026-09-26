@@ -1,0 +1,12 @@
+id: pf-aps-ad-query-aggregation-operator
+service: aps
+resourceTypes: [AWS::APS::AnomalyDetector]
+benchRegion: us-east-1
+severity: ERROR
+title: "A Random Cut Forest query is wrapped by a supported aggregation operator"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-aps-anomalydetector-randomcutforestconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail template (two detectors: Query rate(up[5m]), a non-aggregating root, and Query \"sum(up) by (job)\", a postfix clause) -> ROLLBACK_COMPLETE \"ValidationException: Unsupported PromQL expression for RandomCutForest, expression root's aggregation operator cannot include a by or without clause\"; the stack terminates on the first event, so the root branch was measured on its own stack cdkpf-c2b-qroot the same day: Query rate(up[5m]) -> CREATE_FAILED \"ValidationException: Unsupported PromQL expression for RandomCutForest, expression's root must be a supported aggregation operator\". avg(up), avg (up), quantile(0.9, up) and sum(rate(up[5m])) are all accepted (phase B, CreateAnomalyDetector), and so are topk(3, up), sum(up)+1 and sum without (job) (up) rejected. pass (Query sum(rate(up[5m])) and sum(up)) not deployed (--fail-only) and silent under rule-check"
+addedOn: 2026-09-26

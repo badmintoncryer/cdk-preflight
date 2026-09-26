@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-ad-ine-neg"
+      }
+    },
+    "CdkpfApsAd": {
+      "Type": "AWS::APS::AnomalyDetector",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Alias": "cdkpf-ad-ine-neg",
+        "Configuration": {
+          "RandomCutForest": {
+            "Query": "avg(up)",
+            "IgnoreNearExpectedFromAbove": {
+              "Ratio": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
