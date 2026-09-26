@@ -1,0 +1,12 @@
+id: pf-aps-rp-action-no-wildcard
+service: aps
+resourceTypes: [AWS::APS::ResourcePolicy]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace resource policy spells out every action"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-aps-resourcepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (Action aps:*) -> ROLLBACK_COMPLETE \"ValidationException: Resource policy contains actions that are not supported\"; pass (Action aps:RemoteWrite) not deployed (--fail-only) and silent under rule-check; aps:QueryMetrics*, aps:RemoteWrite* and * are rejected with the same sentence while the five spelled-out aps: actions are accepted (PutResourcePolicy us-east-1 on the probe workspace)"
+addedOn: 2026-09-26

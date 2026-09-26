@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-rgn-data-group-unknown-field"
+      }
+    },
+    "CdkpfApsRgn": {
+      "Type": "AWS::APS::RuleGroupsNamespace",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Name": "cdkpf-rgn-data-group-unknown-field",
+        "Data": "groups:\n  - name: g1\n    interva: 60s\n    rules:\n      - record: job:up:avg\n        expr: avg(up)\n"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+id: pf-aps-rp-policy-resource-workspace
+service: aps
+resourceTypes: [AWS::APS::ResourcePolicy]
+benchRegion: us-east-1
+severity: ERROR
+title: "A workspace resource policy only grants on its own workspace"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-aps-resourcepolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-09-26 us-east-1: fail (a Resource naming another workspace while the policy attaches to the workspace this template creates) -> ROLLBACK_COMPLETE \"ValidationException: Resource in policy does not match workspace resource ARN\"; pass (an imported workspace ARN with the identical Resource) not deployed (--fail-only) and silent under rule-check; Resource \"*\" is rejected with the same sentence (PutResourcePolicy us-east-1 on the probe workspace)"
+addedOn: 2026-09-26

@@ -1,0 +1,23 @@
+{
+  "Resources": {
+    "CdkpfApsWs": {
+      "Type": "AWS::APS::Workspace",
+      "Properties": {
+        "Alias": "cdkpf-rgn-data-duration-format"
+      }
+    },
+    "CdkpfApsRgn": {
+      "Type": "AWS::APS::RuleGroupsNamespace",
+      "Properties": {
+        "Workspace": {
+          "Fn::GetAtt": [
+            "CdkpfApsWs",
+            "Arn"
+          ]
+        },
+        "Name": "cdkpf-rgn-data-duration-format",
+        "Data": "groups:\n  - name: g1\n    rules:\n      - alert: HighUp\n        expr: avg(up) > 1\n        for: 10s\n"
+      }
+    }
+  }
+}
