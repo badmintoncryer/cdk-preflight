@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"One or more LifecyclePolicy objects specified are malformed.\"; pass template -> CREATE_COMPLETE"
+  expect: "One or more LifecyclePolicy objects specified are malformed"
 addedOn: 2026-09-06

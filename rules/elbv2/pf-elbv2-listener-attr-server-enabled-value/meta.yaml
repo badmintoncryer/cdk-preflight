@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The value of 'routing.http.response.server.enabled' must be 'true' or 'false', but was 'on'\"; the pass template reached CREATE_COMPLETE."
+  expect: "The value of 'routing.http.response.server.enabled' must be 'true' or 'false', but was 'on"
 addedOn: 2026-09-08

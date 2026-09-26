@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Schedule.ScheduleExpression \"cron(0 10 1 * MON 2099)\") -> \"Invalid schedule cron expression: cron(0 10 1 * MON 2099)\" (ROLLBACK_COMPLETE); pass template (\"cron(0 10 1 * ? 2099)\", far enough out that the bench never starts a crawl) -> CREATE_COMPLETE. CreateCrawler the same day rejects \"cron(0 10 ? * ? 2099)\" the same way, so exactly one of the two fields has to be \"?\" - the same rule the scheduled triggers follow."
+  expect: "Invalid schedule cron expression: cron(0 10 1 * MON 2099"
 addedOn: 2026-09-14

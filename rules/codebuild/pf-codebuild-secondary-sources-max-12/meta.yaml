@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (13 SecondarySources entries, each with its own Location) -> \"Invalid input: the maximum number of secondary sources is 12\" (ROLLBACK_COMPLETE); pass template (12 entries) -> CREATE_COMPLETE."
+  expect: "Invalid input: the maximum number of secondary sources is 12"
 addedOn: 2026-09-14

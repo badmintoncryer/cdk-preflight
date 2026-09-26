@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): CREATE_FAILED (BedrockAgentCoreControl 400: Only one interceptor configuration per interception point can be defined) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-interceptor-point-unique.log"
+  expect: "Only one interceptor configuration per interception point can be defined"
 addedOn: 2026-09-05

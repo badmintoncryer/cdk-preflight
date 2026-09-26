@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 254-character name -> \"Error occurred: InvalidDomainNameException - FATAL problem: DomainNameTooLong (Domain name is too long)\" (ROLLBACK_COMPLETE); pass 253-character name -> CREATE_COMPLETE. CreateHostedZone turns 254 away and takes 253 both with and without the trailing dot, so the limit is 253 characters of labels and separators - not the 255 the Route 53 doc quotes."
+  expect: "Error occurred: InvalidDomainNameException - FATAL problem: DomainNameTooLong (Domain name is too long"
 addedOn: 2026-09-10

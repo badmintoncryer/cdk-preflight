@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (PolicyTemplateId: {\"Ref\": \"Tpl\"}) -> ROLLBACK_COMPLETE, AWS::VerifiedPermissions::Policy \"Properties validation failed for resource Pol with message: #/Definition/TemplateLinked/PolicyTemplateId: failed validation constraint for keyword [pattern]\" (the Definition oneOf also emits three generic lines above it); pass (the same template with Fn::GetAtt [Tpl, PolicyTemplateId]) -> CREATE_COMPLETE. The composite <policyStoreId>|<policyTemplateId> that Ref returns is read off the type's two-element primaryIdentifier (describe-type AWS::VerifiedPermissions::PolicyTemplate, 2026-09-26); the stack event proves only that the value breaks the pattern ^[a-zA-Z0-9-]*$."
+  expect: "#/Definition/TemplateLinked/PolicyTemplateId: failed validation constraint for keyword [pattern"
 addedOn: 2026-09-26

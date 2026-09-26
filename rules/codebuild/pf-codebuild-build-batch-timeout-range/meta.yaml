@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (BuildBatchConfig.TimeoutInMins 4 and 2161) -> \"TimeoutInMins must be between 5 and 2160\" (ROLLBACK_COMPLETE; CreateProject returns that same message for either end); pass template (5 and 2160) -> CREATE_COMPLETE."
+  expect: "TimeoutInMins must be between 5 and 2160"
 addedOn: 2026-09-14

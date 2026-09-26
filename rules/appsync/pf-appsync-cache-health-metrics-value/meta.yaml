@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/HealthMetricsConfig} does not match pattern {(ENABLED|DISABLED)}]"
+  expect: "Property validation failure: [Value for property {/HealthMetricsConfig} does not match pattern {(ENABLED|DISABLED"
 addedOn: 2026-09-12

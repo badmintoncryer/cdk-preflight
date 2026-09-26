@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two EMAIL entries -> CreateGuardrail 400 ValidationException: The PII entity configs cannot have duplicates; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-pii-entity-unique.log"
+  expect: "The PII entity configs cannot have duplicates"
 addedOn: 2026-09-06

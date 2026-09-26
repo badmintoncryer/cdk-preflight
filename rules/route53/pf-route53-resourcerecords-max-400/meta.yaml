@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='A'] but it was not found, Cannot have more than 400 records in a RRSet.] (ROLLBACK_COMPLETE)"
+  expect: "type='A'] but it was not found, Cannot have more than 400 records in a RRSet"
 addedOn: 2026-09-10

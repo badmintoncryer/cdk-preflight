@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail template (MatchingEventTypes []) -> ROLLBACK_COMPLETE with \"At least one event type must be specified.\"; pass template (exactly one type, the boundary) -> CREATE_COMPLETE."
+  expect: "At least one event type must be specified"
 addedOn: 2026-09-24

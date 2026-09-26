@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Policy document contains more than 20 fields.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutIndexPolicy with 21 fields -> \"Policy document contains more than 20 fields.\" Bare engine clean (the policy is typed as Json)."
+  expect: "Policy document contains more than 20 fields"
 addedOn: 2026-09-08

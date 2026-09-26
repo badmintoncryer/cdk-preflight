@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Duplicate Tag Keys are not allowed.\"; pass template -> CREATE_COMPLETE"
+  expect: "Duplicate Tag Keys are not allowed"
 addedOn: 2026-09-06

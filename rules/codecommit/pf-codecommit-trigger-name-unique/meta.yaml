@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail two triggers both named dup -> \"Duplicate repository trigger names are not allowed\" (ROLLBACK_COMPLETE); pass two triggers named t0 and t1 -> CREATE_COMPLETE"
+  expect: "Duplicate repository trigger names are not allowed"
 addedOn: 2026-09-14

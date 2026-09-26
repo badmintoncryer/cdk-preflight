@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "LogLevel is not supported when LogFormat is set to "Text". Remove LogLevel from your request or change the LogFormat to "JSON" and try again." CONFOUND: the service names LogLevel rather than the capacity provider, because Lambda sets a log level for managed-instance functions itself.'
+  expect: "Remove LogLevel from your request or change the LogFormat to"
 addedOn: 2026-09-07

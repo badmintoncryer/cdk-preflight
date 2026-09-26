@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: KMS Customer Master Key ID is null or empty\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: KMS Customer Master Key ID is null or empty\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "KMS Customer Master Key ID is null or empty"
 addedOn: 2026-09-13

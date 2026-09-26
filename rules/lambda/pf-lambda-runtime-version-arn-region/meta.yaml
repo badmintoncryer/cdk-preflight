@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Invalid runtime version ARN (arn:aws:lambda:eu-west-1::runtime:8b993aab9f05546fb8bbd006aab4afa21b3df8ffc81cb18683800e55613267c7). Check the runtime version ARN and retry the request."'
+  expect: "Check the runtime version ARN and retry the request"
 addedOn: 2026-09-07

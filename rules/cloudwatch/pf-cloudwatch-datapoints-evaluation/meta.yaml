@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: DatapointsToAlarm 4 with EvaluationPeriods 3 -> \"DatapointsToAlarm must be less than or equal to EvaluationPeriods\" (ROLLBACK_COMPLETE); pass 5 / 5 -> CREATE_COMPLETE."
+  expect: "DatapointsToAlarm must be less than or equal to EvaluationPeriods"
 addedOn: 2026-09-02

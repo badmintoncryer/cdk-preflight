@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Invalid request provided: For hibernation, the root device volume must be encrypted. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "For hibernation, the root device volume must be encrypted"
 addedOn: 2026-09-09

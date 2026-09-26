@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail template (MatchingEventTypes [SEND, BOGUS_EVENT]) -> ROLLBACK_COMPLETE with \"The event destination contains an invalid event type.\" - the message does not echo the offending value, so the rule names it itself; pass template (SEND, DELIVERY) -> CREATE_COMPLETE."
+  expect: "The event destination contains an invalid event type"
 addedOn: 2026-09-24

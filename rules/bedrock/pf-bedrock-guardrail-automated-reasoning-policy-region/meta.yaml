@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): policy ARN in us-west-2 (a real policy) attached from us-east-1 -> CreateGuardrail 400 ValidationException: The provided automated reasoning policy ARN is invalid for the service region. Silent in warn mode and in Region-agnostic apps (needs deploy_region); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-automated-reasoning-policy-region.log"
+  expect: "The provided automated reasoning policy ARN is invalid for the service region"
 addedOn: 2026-09-06

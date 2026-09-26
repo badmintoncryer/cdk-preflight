@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "SnapStart is not supported for functions enabled with tenancy configuration."'
+  expect: "SnapStart is not supported for functions enabled with tenancy configuration"
 addedOn: 2026-09-07

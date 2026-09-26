@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Data source not found. (Service: AppSync, Status Code: 404, Request ID: 1d67c789-dac5-4b56-b88c-5f6bb73d5b29) (SDK Attempt Count: 1)\" (RequestToken: 6922ff96-26f5-993b-b0ae-66a167f87d81, HandlerErrorCode: NotFound)"
+  expect: "Data source not found"
 addedOn: 2026-09-12

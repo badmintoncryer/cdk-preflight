@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (aoss:ReadDocument, an index permission, inside a ResourceType collection rule) -> \"Policy json is invalid, error: [... $[0].Rules[0].Permission[0]: does not have a value in the enumeration [aoss:CreateCollectionItems, aoss:DeleteCollectionItems, aoss:UpdateCollectionItems, aoss:DescribeCollectionItems, aoss:RestoreSnapshot, aoss:DescribeSnapshot, aoss:*]]\" (ROLLBACK_COMPLETE). pass not deployed (--fail-only: the policy resources are free, but the run is kept to the fail side; api 2026-09-25 us-east-1 deployed the matching control through CreateAccessPolicy/CreateSecurityPolicy/CreateLifecyclePolicy and it was ACCEPTED)"
+  expect: "$[0].Rules[0].Permission[0]: does not have a value in the enumeration"
 addedOn: 2026-09-25

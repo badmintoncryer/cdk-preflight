@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (StartWindowMinutes 120 / CompletionWindowMinutes 179) -> \"Error in some rules due to : CompleteWindowMinutes must be at least 60 minutes greater than StartWindowMinutes\" (ROLLBACK_COMPLETE); pass (120 / 180) -> CREATE_COMPLETE"
+  expect: "Error in some rules due to : CompleteWindowMinutes must be at least 60 minutes greater than StartWindowMinutes"
 addedOn: 2026-09-24

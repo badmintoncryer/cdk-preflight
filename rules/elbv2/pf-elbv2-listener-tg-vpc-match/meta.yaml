@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The following target groups are in a different VPC than load balancer 'arn:aws:elasticloadbalancing:us-east-1:214794239830:loadbalancer/app/cdkpf-pf--LB-UxSLyc6gvWjD/c04c0afa1e5119ce': arn:aws:elasticloadbalancing:us-east-1:214794239830:targetgroup/cdkpf-pf-TG-I7DQZQ8GFEAB/bbf5f96c7a786414\"; the pass template reached CREATE_COMPLETE."
+  expect: "The following target groups are in a different VPC than load balancer"
 addedOn: 2026-09-08

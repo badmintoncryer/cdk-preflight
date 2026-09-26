@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid authorizer type. Only REQUEST authorizer type is supported on WEBSOCKET protocol Apis.\" (ROLLBACK_COMPLETE)"
+  expect: "Invalid authorizer type. Only REQUEST authorizer type is supported on WEBSOCKET protocol Apis"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'Date' must be at midnight GMT\"; pass template -> CREATE_COMPLETE"
+  expect: "Date' must be at midnight GMT"
 addedOn: 2026-09-06

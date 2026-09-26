@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid State Machine Definition: 'SCHEMA_VALIDATION_FAILED: Value must be a valid JSONPath. at /States/A/InputPath'\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid State Machine Definition: 'SCHEMA_VALIDATION_FAILED: Value must be a valid JSONPath. at /States/A/InputPath"
 addedOn: 2026-09-05

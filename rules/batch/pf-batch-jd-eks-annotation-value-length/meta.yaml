@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 256-character pod annotation value -> \"Metadata annotation value aaa... is invalid\" (ROLLBACK_COMPLETE); pass 255 characters -> CREATE_COMPLETE"
+  expect: "Metadata annotation value"
 addedOn: 2026-09-12

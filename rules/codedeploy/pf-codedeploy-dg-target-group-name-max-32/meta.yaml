@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: TargetGroupInfoList with a 33-character Name -> \"The target group name ttttttttttttttttttttttttttttttttt specified in targetGroupInfoList exceeds the maximum allowed length of 32 characters.\" (ROLLBACK_COMPLETE); pass the same list with a 32-character Name -> CREATE_COMPLETE. The ARN form is the same check: a target group ARN passed as Name is refused with the identical message naming the ARN (probe A5, 2026-09-14 us-east-1), which is why -info-not-arn is not a separate rule. The check does not depend on DeploymentStyle - probes A1 (no DeploymentStyle), A3 (WITHOUT_TRAFFIC_CONTROL) and A4 (WITH_TRAFFIC_CONTROL) all refuse the 33-character name, and the load balancer itself need not exist."
+  expect: "The target group name ttttttttttttttttttttttttttttttttt specified in targetGroupInfoList exceeds the maximum allowed length of 32 characters"
 addedOn: 2026-09-14

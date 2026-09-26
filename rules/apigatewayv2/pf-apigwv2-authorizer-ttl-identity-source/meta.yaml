@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: AuthorizerResultTtlInSeconds 1 with an empty IdentitySource -> \"Identity source must be set if authorizer caching is enabled (TTL is greater than 0)\" (ROLLBACK_COMPLETE); pass same TTL with one identity source -> CREATE_COMPLETE"
+  expect: "Identity source must be set if authorizer caching is enabled (TTL is greater than 0"
 addedOn: 2026-09-08

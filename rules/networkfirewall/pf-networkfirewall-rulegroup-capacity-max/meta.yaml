@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Capacity 30001 -> \"Capacity capacity exceeded, parameter: [30001], context: Capacity\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Capacity capacity exceeded, parameter: [30001], context: Capacity (Service: NetworkFirewall, Status Code: 400, Request ID: 4f668582-f131-4875-b3d2-6f7badb3bcfc) (SDK Attempt Count: 1)\" (RequestToken: c59466a2-6753-2489-ff40-5cdf1fd6ea64, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Capacity capacity exceeded, parameter"
 addedOn: 2026-09-25

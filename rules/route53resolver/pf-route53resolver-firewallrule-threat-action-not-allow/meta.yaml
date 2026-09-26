@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-5bac83496e3546fc:DGA-LOW, FirewallRuleGroupId=rslvr-frg-5bac83496e3546fc, Priority=101, Action=ALLOW, Name=rule-for-DGA-LOW, DnsThreatProtection=DGA, ConfidenceThreshold=LOW) (ROLLBACK_COMPLETE)"
+  expect: "Priority=101, Action=ALLOW, Name=rule-for-DGA-LOW, DnsThreatProtection=DGA, ConfidenceThreshold=LOW"
 addedOn: 2026-09-10

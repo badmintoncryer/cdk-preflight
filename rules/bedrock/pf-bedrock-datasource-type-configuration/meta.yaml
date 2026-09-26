@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type S3 without S3Configuration -> CreateDataSource 400 ValidationException: s3Configuration is required when data source type is S3; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-type-configuration.log"
+  expect: "s3Configuration is required when data source type is S3"
 addedOn: 2026-09-06

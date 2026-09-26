@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: one cluster with 1 client subnet and one with 4 -> \"Specify either two or three client subnets. ... 'brokerNodeGroupInfo'\" (ROLLBACK_COMPLETE); pass one cluster with 2 client subnets and one with 3 -> CREATE_COMPLETE (real cluster, default-VPC subnets)"
+  expect: "Specify either two or three client subnets"
 addedOn: 2026-09-14

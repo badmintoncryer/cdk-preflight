@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: 51 pipeline variables -> \"Value at 'pipeline.variables' failed to satisfy constraint: Member must have length less than or equal to 50\" (ROLLBACK_COMPLETE); pass 50 variables -> CREATE_COMPLETE"
+  expect: "Value at 'pipeline.variables' failed to satisfy constraint: Member must have length less than or equal to 50"
 addedOn: 2026-09-14

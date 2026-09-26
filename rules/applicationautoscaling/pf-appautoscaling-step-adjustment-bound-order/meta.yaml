@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: StepAdjustments [lower 10 / upper 10, lower 10 / no upper] - equal bounds on the first adjustment -> \"Lower bound must be less than upper bound for a step adjustment\" (ROLLBACK_COMPLETE); pass the same shape with upper 11 [lower 10 / upper 11, lower 11 / no upper] -> CREATE_COMPLETE, so equal bounds are the closest violating pair and a difference of 1 the limit (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  expect: "Lower bound must be less than upper bound for a step adjustment"
 addedOn: 2026-09-24

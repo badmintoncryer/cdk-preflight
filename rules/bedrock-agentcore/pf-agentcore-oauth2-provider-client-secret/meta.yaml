@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): no ClientSecret (MANAGED/default) -> CREATE_FAILED (Bedrock AgentCore Control 400: clientSecret is required for CLIENT_SECRET_BASIC and CLIENT_SECRET_POST authentication methods); ClientSecretSource EXTERNAL without ClientSecretConfig -> 400: clientSecretConfig is required for CLIENT_SECRET_BASIC and CLIENT_SECRET_POST authentication methods; EXTERNAL with ClientSecret -> 400: ClientSecret must not be provided when secret source is EXTERNAL. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-oauth2-provider-client-secret.log"
+  expect: "clientSecret is required for CLIENT_SECRET_BASIC and CLIENT_SECRET_POST authentication methods"
 addedOn: 2026-09-05

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (EngineVersion \"OpenSearch2.19\", the underscore dropped) -> \"Value 'OpenSearch2.19' at 'engineVersion' failed to satisfy constraint: Member must satisfy regular expression pattern: ^Elasticsearch_[0-9]{1}\\.[0-9]{1,2}$|^OpenSearch_[0-9]{1,2}\\.[0-9]{1,2}$\" (ROLLBACK_COMPLETE); pass (\"OpenSearch_2.19\") not deployed (--fail-only), but that exact scaffold reached CREATE_COMPLETE the same day under pf-opensearch-ebs-gp3-iops-min. The rule carries the server's own pattern verbatim."
+  expect: "Value 'OpenSearch2.19' at 'engineVersion' failed to satisfy constraint: Member must satisfy regular expression pattern: ^Elasticsearch_[0-9]{1"
 addedOn: 2026-09-25

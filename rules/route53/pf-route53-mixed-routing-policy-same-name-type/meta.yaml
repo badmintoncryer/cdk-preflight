@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s2, and Region Name=us-east-1 cannot be created because a non-latency RRSet with the same name and type already exists.] (ROLLBACK_COMPLETE)"
+  expect: "cannot be created because a non-latency RRSet with the same name and type already exists"
 addedOn: 2026-09-10

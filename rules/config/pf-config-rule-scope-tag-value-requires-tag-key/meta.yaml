@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Tag key should not be empty when tag value is provided in scope\"; pass -> CREATE_COMPLETE"
+  expect: "Tag key should not be empty when tag value is provided in scope"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateFirewallPolicy DryRun): STRICT_ORDER with a reference that has no Priority -> \"Priority cannot be null, context: StatefulRuleGroupReferences[0].Priority\"; DEFAULT_ACTION_ORDER with Priority 1 -> \"Priority cannot be provided, parameter: [1], context: StatefulRuleGroupReferences[0][Priority=1]\"; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Priority cannot be null, context: StatefulRuleGroupReferences[0].Priority (Service: NetworkFirewall, Status Code: 400, Request ID: ab3ee44f-db16-45a6-96f2-876aee831540) (SDK Attempt Count: 1)\" (RequestToken: 29b9bae0-ad99-5126-31c0-fb3f5b0a53f5, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Priority cannot be null, context: StatefulRuleGroupReferences[0].Priority"
 addedOn: 2026-09-25

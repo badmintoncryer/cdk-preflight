@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (gp3 10 GiB with Throughput 124 on t3.small.search) -> \"Throughput must be between 125 and 260\" (ROLLBACK_COMPLETE); pass (the same volume at 125) not deployed (--fail-only), but the identical scaffold at 125 reached CREATE_COMPLETE under pf-opensearch-ebs-gp3-iops-min. The upper end is the instance type's; only the floor is shared by every type."
+  expect: "Throughput must be between 125 and 260"
 addedOn: 2026-09-25

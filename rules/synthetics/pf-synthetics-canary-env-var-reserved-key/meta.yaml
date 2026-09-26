@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: RunConfig.EnvironmentVariables {AWS_REGION: us-east-1} -> \"Resource handler returned message: \"Invalid request provided: Invalid environment variable key value. Environment variable keys cannot be reserved strings (Service: Synthetics, Status Code: 400, Request ID: 4368fda1-dd02-4c92-b936-5b857611eb0c) (SDK Attempt Count: 1)\" (RequestToken: cb68448a-509a-475e-ac58-b1e95187f31d, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass the same value under the key MY_REGION -> CREATE_COMPLETE"
+  expect: "Invalid environment variable key value. Environment variable keys cannot be reserved strings"
 addedOn: 2026-09-24

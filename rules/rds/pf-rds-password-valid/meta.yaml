@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 ap-northeast-1: a 7-character MasterUserPassword -> \"The parameter MasterUserPassword is not a valid password because it is shorter than 8 characters.\" (ROLLBACK_COMPLETE); pass 8 characters -> CREATE_COMPLETE. The character-set branch (\"/\", \"@\", \"\\\"\" and spaces are not allowed) is the other half of this rule and is not what the fixture reports."
+  expect: "The parameter MasterUserPassword is not a valid password because it is shorter than 8 characters"
 addedOn: 2026-09-03

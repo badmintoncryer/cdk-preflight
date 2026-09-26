@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: The use of a cross-zone disabled load balancer with zonal shift enabled for an Auto Scaling group is not supported. Enable cross-zone load balancing for your ELB or set SkipZonalShiftValidation to true to override this validation. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "The use of a cross-zone disabled load balancer with zonal shift enabled for an Auto Scaling group is not supported. Enable cross-zone load balancing for your ELB or set SkipZonalShiftValidation to true to override this validation"
 addedOn: 2026-09-09

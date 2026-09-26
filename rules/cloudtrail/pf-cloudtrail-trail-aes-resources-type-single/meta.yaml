@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"A duplicate event selector was found for at least one field. Only one selector is allowed per field.\"; pass -> CREATE_COMPLETE"
+  expect: "A duplicate event selector was found for at least one field. Only one selector is allowed per field"
 addedOn: 2026-09-24

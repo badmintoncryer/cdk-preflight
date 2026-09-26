@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The redirect configuration is not valid because it creates a loop.\"; the pass template reached CREATE_COMPLETE."
+  expect: "The redirect configuration is not valid because it creates a loop"
 addedOn: 2026-09-08

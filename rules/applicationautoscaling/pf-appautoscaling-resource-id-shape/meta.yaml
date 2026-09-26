@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: ScalableDimension dynamodb:table:ReadCapacityUnits with the bare ResourceId 'cdkpf-aas-ris-f' -> \"Resource handler returned message: \"Unsupported service namespace, resource type or scalable dimension (Service: ApplicationAutoScaling, Status Code: 400, Request ID: 2acd3e4a-1198-4296-9329-6ab2d0352790) (SDK Attempt Count: 1)\" (RequestToken: c0502ce0-a12e-c041-79db-d511ad8f0b13, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass the same target with ResourceId table/cdkpf-aas-ris-p on a real table -> CREATE_COMPLETE. The sentence covers three branches, but namespace and dimension are both valid and agree in the fixture, so only the resource-type branch can fire"
+  expect: "Unsupported service namespace, resource type or scalable dimension"
 addedOn: 2026-09-24

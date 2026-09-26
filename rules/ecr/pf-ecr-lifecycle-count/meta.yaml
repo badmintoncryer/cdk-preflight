@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: instance failed to match exactly one schema (matched 0 out of 4)\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid parameter at 'LifecyclePolicyText' failed to satisfy constraint: 'Lifecycle policy validation failure: instance failed to match exactly one schema (matched 0 out of 4"
 addedOn: 2026-09-06

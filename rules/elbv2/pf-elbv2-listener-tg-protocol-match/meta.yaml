@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The listener and the following target groups have incompatible protocols: arn:aws:elasticloadbalancing:us-east-1:214794239830:targetgroup/cdkpf-pf-TG-FONFZQWW54H9/f459761e8c18f68d\"; the pass template reached CREATE_COMPLETE."
+  expect: "The listener and the following target groups have incompatible protocols"
 addedOn: 2026-09-08

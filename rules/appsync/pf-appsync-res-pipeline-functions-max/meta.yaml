@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 11 functions -> \"A resolver can only be composed of 10 functions.\" ROLLBACK_COMPLETE; pass 10 real AWS::AppSync::FunctionConfiguration resources -> CREATE_COMPLETE. The count is checked before the function ids are resolved, which is why the fail template can list placeholder ids."
+  expect: "A resolver can only be composed of 10 functions"
 addedOn: 2026-09-12

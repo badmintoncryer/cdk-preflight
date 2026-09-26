@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::ContinuousDeploymentPolicy: The parameter StagingDistributionDnsNames is not a default CloudFront domain name. (Service: CloudFront, Status Code: 400, Request ID: 69d1e776-c4f6-4acd-9359-dbdc8141ce5f) (SDK Attempt Count: 1)" (RequestToken: be2bd87e-9e2b-6297-1257-0450b9f9ca10, HandlerErrorCode: InvalidRequest)'
+  expect: "AWS::CloudFront::ContinuousDeploymentPolicy: The parameter StagingDistributionDnsNames is not a default CloudFront domain name"
 addedOn: 2026-09-08
 benchRegion: us-east-1

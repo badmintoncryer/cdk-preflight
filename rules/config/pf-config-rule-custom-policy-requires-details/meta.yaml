@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"CustomPolicyDetails is required when Owner is CUSTOM_POLICY\"; pass -> CREATE_COMPLETE"
+  expect: "CustomPolicyDetails is required when Owner is CUSTOM_POLICY"
 addedOn: 2026-09-24

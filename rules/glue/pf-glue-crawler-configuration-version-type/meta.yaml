@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Configuration {\"Version\":\"1.0\"}) -> \"Crawler configuration not valid: Version type invalid: expected Double, received String.\" (ROLLBACK_COMPLETE); pass template (Configuration {\"Version\":1.0}) -> CREATE_COMPLETE. The neighbouring rule only sees the key being absent, which is a different sentence."
+  expect: "Crawler configuration not valid: Version type invalid: expected Double, received String"
 addedOn: 2026-09-14

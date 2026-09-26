@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (EnableContinuousBackup true + DeleteAfterDays 36) -> \"Error in some rules due to : Invalid lifecycle. DeleteAfterDays cannot be less than 1 or more than 36500 days.\" (ROLLBACK_COMPLETE); pass (same rule with DeleteAfterDays 35) -> CREATE_COMPLETE. The quoted ceiling of 36500 is wrong - the 36/35 pair is what fixes the continuous-backup limit at 35 days"
+  expect: "Error in some rules due to : Invalid lifecycle. DeleteAfterDays cannot be less than 1 or more than 36500 days"
 addedOn: 2026-09-24

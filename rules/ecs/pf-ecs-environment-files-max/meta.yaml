@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: The maximum number of environment files was exceeded. Specify ten or less and try again.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-environment-files-max.log"
+  expect: "Create TaskDefinition: The maximum number of environment files was exceeded. Specify ten or less and try again"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"AuthorizerUri is a required field in an Authorizer\" (ROLLBACK_COMPLETE)"
+  expect: "AuthorizerUri is a required field in an Authorizer"
 addedOn: 2026-09-08

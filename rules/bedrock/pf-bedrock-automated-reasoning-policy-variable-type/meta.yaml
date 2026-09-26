@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Variable of Type Foo with no Types -> CreateAutomatedReasoningPolicy 400 ValidationException: Variable \"vv\" uses a type that is not defined; bool/int/real/string are refused the same way; a variable of a declared custom type deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-automated-reasoning-policy-variable-type.log"
+  expect: "uses a type that is not defined"
 addedOn: 2026-09-06

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: OnFailure with both Result and Conditions -> \"InvalidStageDeclarationException: The following stage cannot have a failure exit gate configured with both top level result and conditions: 'Deploy\" (ROLLBACK_COMPLETE); pass with Conditions only -> CREATE_COMPLETE"
+  expect: "The following stage cannot have a failure exit gate configured with both top level result and conditions: 'Deploy"
 addedOn: 2026-09-14

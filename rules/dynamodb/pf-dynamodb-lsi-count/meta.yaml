@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: six local secondary indexes rolled back with \"One or more parameter values were invalid: Number of LocalSecondaryIndexes exceeds per-table limit of 5\"; the pass template carries five and reached CREATE_COMPLETE. Unlike the GSI count this limit is not adjustable."
+  expect: "One or more parameter values were invalid: Number of LocalSecondaryIndexes exceeds per-table limit of 5"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail template (DomainSigningSelector alone) -> ROLLBACK_COMPLETE with \"Invalid request provided: When using Bring Your Own DKIM, you must provide both DomainSigningSelector and DomainSigningPrivateKey.\"; pass template (Easy DKIM) -> CREATE_COMPLETE. The CloudFormation handler names both attributes even though the service API answers the same request with the generic \"Invalid identity configuration. please ensure to provide the required Attributes.\" (api 2026-09-24 us-east-1, for the key alone as well). The pass template uses Easy DKIM on purpose: an accepted BYODKIM identity needs a real RSA private key, which must not be committed."
+  expect: "When using Bring Your Own DKIM, you must provide both DomainSigningSelector and DomainSigningPrivateKey"
 addedOn: 2026-09-24

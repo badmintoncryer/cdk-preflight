@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition: for policy `policy0`, unable to find an applicable action given the policy scope constraints.\"; pass (one STRICT store carrying a schema with one action, and the same policy) -> CREATE_COMPLETE. The fail template carries both shapes as two stores and describe-stack-events shows both policies CREATE_FAILED: Pol, against a STRICT store with no Schema at all, \"At /definition: No schema present - automatically failing all validation.\"; and Pol2, against a STRICT store whose Schema.CedarJson is {} (the reason above). A schema that declares entityTypes but an empty actions map is rejected the same way (api 2026-09-26 us-east-1), which is why the rule counts declared actions rather than namespaces."
+  expect: "At /definition: for policy `policy0`, unable to find an applicable action given the policy scope constraints"
 addedOn: 2026-09-26

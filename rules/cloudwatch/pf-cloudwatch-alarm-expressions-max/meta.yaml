@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 11 math expressions -> \"Too many expressions in alarm, maximum is 10\" ROLLBACK_COMPLETE; pass 10 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutMetricAlarm: 11 expressions are rejected with that message and 10 are accepted. The count is checked before the rest of the request, so an 11-expression call is rejected even when EvaluationPeriods is missing."
+  expect: "Too many expressions in alarm, maximum is 10"
 addedOn: 2026-09-08

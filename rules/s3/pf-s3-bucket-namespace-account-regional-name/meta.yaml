@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The requested bucket name did not include the account-regional namespace suffix, but the provided x-amz-bucket-namespace header value is account-regional. Specify -[accountId]-[region]-an as the bucket name suffix to create a bucket in your account-regional namespace, or remove the header.\"; pass template -> CREATE_COMPLETE"
+  expect: "The requested bucket name did not include the account-regional namespace suffix, but the provided x-amz-bucket-namespace header value is account-regional. Specify -[accountId]-[region]-an as the bucket name suffix to create a bucket in your account-regional namespace, or remove the header"
 addedOn: 2026-09-06

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'AddPermission (us-east-1, 2026-09-07): "FunctionUrlAuthType is only supported for lambda:InvokeFunctionUrl action"'
+  expect: "FunctionUrlAuthType is only supported for lambda:InvokeFunctionUrl action"
 addedOn: 2026-09-07

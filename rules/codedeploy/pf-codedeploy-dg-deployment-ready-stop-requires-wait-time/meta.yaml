@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: DeploymentReadyOption STOP_DEPLOYMENT with WaitTimeInMinutes 0 -> \"Deployment ready action cannot be set to STOP_DEPLOYMENT when timeout is set to 0 minutes.\" (ROLLBACK_COMPLETE); pass STOP_DEPLOYMENT with WaitTimeInMinutes 1 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: leaving WaitTimeInMinutes out gives the same message as writing 0."
+  expect: "Deployment ready action cannot be set to STOP_DEPLOYMENT when timeout is set to 0 minutes"
 addedOn: 2026-09-14

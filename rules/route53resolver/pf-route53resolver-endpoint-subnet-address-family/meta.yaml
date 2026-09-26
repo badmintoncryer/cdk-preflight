@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00500] The subnet, \"subnet-02bada4f69d2c0d24, subnet-01803e7dcb5c2403b\" does not support \"IPV6\" resolver endpoint type. (ROLLBACK_COMPLETE)"
+  expect: "RSLVR-00500] The subnet"
 addedOn: 2026-09-10

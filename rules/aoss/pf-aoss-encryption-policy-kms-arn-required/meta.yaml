@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (AWSOwnedKey false and no KmsARN) -> \"Policy json is invalid, error: [$.AWSOwnedKey: must be a constant value true]\" (ROLLBACK_COMPLETE); pass (the same policy with AWSOwnedKey true) -> CREATE_COMPLETE"
+  expect: "Policy json is invalid, error: [$.AWSOwnedKey: must be a constant value true"
 addedOn: 2026-09-25

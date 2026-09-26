@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail Branches [bad branch] -> \"Service returned error code InvalidRepositoryTriggerBranchNameException\" (ROLLBACK_COMPLETE); pass Branches [main] -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1 (PutRepositoryTriggers, 42 names): rejected a space or tab, '..', '//', '@{', ~^:?*[ and backslash, a leading '/' or '.', a trailing '/' or '.', and a '.lock' suffix; accepted ;,'()&%#!+=<|\"` , a leading '-', a bare '@', non-ASCII and a 255-character name - only the rejected set is encoded."
+  expect: "Service returned error code InvalidRepositoryTriggerBranchNameException"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The specified listener protocol 'UDP' is not supported on load balancers using the 'dualstack' IP address type when 'EnablePrefixForIpv6SourceNat' is set to 'off'\"; the pass template reached CREATE_COMPLETE."
+  expect: "The specified listener protocol 'UDP' is not supported on load balancers using the 'dualstack' IP address type when"
 addedOn: 2026-09-08

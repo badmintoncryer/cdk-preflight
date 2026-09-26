@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (ReportGroup ExportConfig NO_EXPORT carrying an S3Destination) -> \"Failed to call CreateReportGroup, reason: S3 export config should not be specified when export config type is NO_EXPORT\" (ROLLBACK_COMPLETE); pass template (NO_EXPORT with no S3Destination) -> CREATE_COMPLETE."
+  expect: "Failed to call CreateReportGroup, reason: S3 export config should not be specified when export config type is NO_EXPORT"
 addedOn: 2026-09-14

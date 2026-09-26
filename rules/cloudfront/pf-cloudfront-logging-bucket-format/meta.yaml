@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::Distribution: The parameter Logging Bucket does not refer to a valid S3 bucket. (Service: CloudFront, Status Code: 400, Request ID: 40389fa9-e5c0-4f87-bdbf-646f7492d292) (SDK Attempt Count: 1)" (RequestToken: 2225d999-835f-0d00-0e6b-ed325064a61c, HandlerErrorCode: InvalidRequest)'
+  expect: "AWS::CloudFront::Distribution: The parameter Logging Bucket does not refer to a valid S3 bucket"
 addedOn: 2026-09-08
 benchRegion: us-east-1

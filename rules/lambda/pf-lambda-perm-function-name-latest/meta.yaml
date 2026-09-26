@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'AddPermission (us-east-1, 2026-09-07): "We currently do not support adding policies for $LATEST."'
+  expect: "We currently do not support adding policies for $LATEST"
 addedOn: 2026-09-07

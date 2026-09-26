@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: MinValue 2 with MaxValue 1 -> \"Attribute custom:n2 cannot have a max value smaller than it's min value\" (ROLLBACK_COMPLETE); pass MinValue 1 with MaxValue 1 -> CREATE_COMPLETE."
+  expect: "Attribute custom:n2 cannot have a max value smaller than it's min value"
 addedOn: 2026-09-08

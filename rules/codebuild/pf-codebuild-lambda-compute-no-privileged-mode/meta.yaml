@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (LINUX_LAMBDA_CONTAINER with BUILD_LAMBDA_1GB and PrivilegedMode true) -> \"Cannot specify privilegedMode for lambda compute\" (ROLLBACK_COMPLETE); pass template (the same Lambda environment without PrivilegedMode) -> CREATE_COMPLETE."
+  expect: "Cannot specify privilegedMode for lambda compute"
 addedOn: 2026-09-14

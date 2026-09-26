@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Resource label should not be specified for predefined metric type ASGAverageCPUUtilization -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Resource label should not be specified for predefined metric type ASGAverageCPUUtilization"
 addedOn: 2026-09-09

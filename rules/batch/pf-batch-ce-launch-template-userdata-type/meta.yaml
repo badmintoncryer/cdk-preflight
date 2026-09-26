@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"The userdataType attribute is only allowed when the launch template has an imageId. Launch template lt-0e5a5dcf8982b87bd version 1 does not have an imageId.\" (ROLLBACK_COMPLETE); pass template not deployed: an EKS compute environment needs a live (billable) cluster, so this rule is gated with --fail-only."
+  expect: "The userdataType attribute is only allowed when the launch template has an imageId. Launch template"
 addedOn: 2026-09-12

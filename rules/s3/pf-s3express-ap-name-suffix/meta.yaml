@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"The provided token is malformed or otherwise invalid.\"; pass template -> CREATE_COMPLETE. CONFOUND: S3Control reports the malformed name generically; fail and pass differ only in the --<zone>--xa-s3 suffix"
+  expect: "The provided token is malformed or otherwise invalid"
 addedOn: 2026-09-06

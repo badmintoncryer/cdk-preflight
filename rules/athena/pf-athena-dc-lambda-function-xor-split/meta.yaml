@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both.\"; bench 2026-09-13 us-east-1: fail -> \"Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Lambda catalogs require that either the metadata-function and record-function parameters or the function parameter be set, but not both"
 addedOn: 2026-09-13

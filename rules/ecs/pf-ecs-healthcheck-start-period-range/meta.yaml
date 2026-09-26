@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Health check startPeriod must be less than or equal to the maximum allowed value 300 for container 'app'), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-healthcheck-start-period-range.log"
+  expect: "Create TaskDefinition: Health check startPeriod must be less than or equal to the maximum allowed value 300 for container 'app"
 addedOn: 2026-09-08

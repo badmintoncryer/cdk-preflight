@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Please provide a source for function code."'
+  expect: "Please provide a source for function code"
 addedOn: 2026-09-07

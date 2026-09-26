@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Lambda application, deployment group BLUE_GREEN + WITH_TRAFFIC_CONTROL carrying a complete BlueGreenDeploymentConfiguration -> \"For Lambda deployment group, blueGreenDeploymentConfiguration can not be specified\" (ROLLBACK_COMPLETE); pass the same group without the block -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: an ECS group is the opposite (\"For ECS deployment group, blueGreenDeploymentConfiguration must be specified\"), so the rule names Lambda only."
+  expect: "For Lambda deployment group, blueGreenDeploymentConfiguration can not be specified"
 addedOn: 2026-09-14

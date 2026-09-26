@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): FallbackModel not in Models -> CreatePromptRouter 400 ValidationException: The fallback model is not present in the list of models for routing; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-router-fallback-model.log"
+  expect: "The fallback model is not present in the list of models for routing"
 addedOn: 2026-09-06

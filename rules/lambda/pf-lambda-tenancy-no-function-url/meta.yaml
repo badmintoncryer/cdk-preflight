@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Function URL is not supported for functions enabled with tenancy configuration."'
+  expect: "Function URL is not supported for functions enabled with tenancy configuration"
 addedOn: 2026-09-07

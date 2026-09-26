@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: 6 selectors -> ROLLBACK_COMPLETE, \"Request contains more than 5 Selectors\" (HandlerErrorCode: InvalidRequest); the pass fixture sits on the limit with 5. fail-only, and the fixture builds its own EKS cluster: CreateFargateProfile reads this only after it has found the cluster, so a fixture pointing at a literal probe cluster would go INCONCLUSIVE the day that cluster is deleted."
+  expect: "Request contains more than 5 Selectors"
 addedOn: 2026-09-25

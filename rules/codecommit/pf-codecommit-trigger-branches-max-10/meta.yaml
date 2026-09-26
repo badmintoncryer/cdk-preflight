@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail one trigger with 11 branches -> \"A repository trigger cannot have more than 10 branches.\" (ROLLBACK_COMPLETE); pass 10 branches -> CREATE_COMPLETE"
+  expect: "A repository trigger cannot have more than 10 branches"
 addedOn: 2026-09-14

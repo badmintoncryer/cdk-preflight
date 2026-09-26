@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Valid metrics granularity type is: [1Minute]. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Valid metrics granularity type is: [1Minute"
 addedOn: 2026-09-09

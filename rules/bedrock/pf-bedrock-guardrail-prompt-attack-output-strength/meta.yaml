@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): PROMPT_ATTACK filter with OutputStrength HIGH -> CreateGuardrail 400 ValidationException: PROMPT ATTACK content filter strength for response must be NONE; OutputStrength NONE deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-prompt-attack-output-strength.log"
+  expect: "PROMPT ATTACK content filter strength for response must be NONE"
 addedOn: 2026-09-06

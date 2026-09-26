@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 ap-northeast-1: gp3 with Iops 12000 and AllocatedStorage 399 -> \"You can't specify IOPS or storage throughput for engine postgres and a storage size less than 400.\" (ROLLBACK_COMPLETE); pass the same with 400 -> CREATE_COMPLETE"
+  expect: "You can't specify IOPS or storage throughput for engine postgres and a storage size less than 400"
 addedOn: 2026-09-03

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Type EVENT, no WorkflowName) -> \"Workflow name cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (EVENT trigger in a workflow created by the same stack) -> CREATE_COMPLETE"
+  expect: "Workflow name cannot be null or empty"
 addedOn: 2026-09-14

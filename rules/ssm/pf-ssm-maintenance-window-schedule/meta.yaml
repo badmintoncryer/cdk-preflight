@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid CRON expression: error at position 0, details: Specifying both a day-of-week AND a day-of-month parameter is not supported.\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid CRON expression: error at position 0, details: Specifying both a day-of-week AND a day-of-month parameter is not supported"
 addedOn: 2026-09-05

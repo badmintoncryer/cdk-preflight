@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'Days' in the 'Transition' action for StorageClass 'DEEP_ARCHIVE' for filter '(prefix=)' must be 90 days more than 'filter '(prefix=)'' in the 'Transition' action for StorageClass 'GLACIER_IR'\"; pass template -> CREATE_COMPLETE"
+  expect: "Days' in the 'Transition' action for StorageClass 'DEEP_ARCHIVE' for filter '(prefix=)' must be 90 days more than 'filter '(prefix=)'' in the 'Transition' action for StorageClass 'GLACIER_IR"
 addedOn: 2026-09-06

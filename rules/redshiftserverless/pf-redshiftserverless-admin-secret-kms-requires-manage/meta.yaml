@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateNamespace with adminPasswordSecretKmsKeyId and no manageAdminPassword -> \"ValidationException: The AdminPasswordSecretKmsKeyId parameter cannot be provided unless ManagedAdminPassword is true.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The AdminPasswordSecretKmsKeyId parameter cannot be provided unless ManagedAdminPassword is true. (Service: RedshiftServerless, Status Code: 400, Request ID: a88f2b34-b624-4fbc-a8ba-cd80e8f45b5b) (SDK Attempt Count: 1)  (RequestToken: 6d6f29fd-4f7a-46d9-af4c-dc027\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "The AdminPasswordSecretKmsKeyId parameter cannot be provided unless ManagedAdminPassword is true"
 addedOn: 2026-09-22

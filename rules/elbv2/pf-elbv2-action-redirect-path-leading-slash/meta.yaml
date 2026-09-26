@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The Path parameter must be a valid path, should start with a '/', and may contain up to one of each of these placeholders: '#{path}', '#{host}', '#{port}'.\"; the pass template reached CREATE_COMPLETE."
+  expect: "The Path parameter must be a valid path, should start with a '/', and may contain up to one of each of these placeholders: '#{path}', '#{host}', '#{port"
 addedOn: 2026-09-08

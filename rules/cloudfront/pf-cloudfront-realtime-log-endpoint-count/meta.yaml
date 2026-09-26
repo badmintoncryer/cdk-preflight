@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Access denied for operation ''AWS::CloudFront::RealtimeLogConfig''." (RequestToken: 485c532e-db4f-56e6-5ade-29b78ec97970, HandlerErrorCode: AccessDenied)'
+  expect: "Access denied for operation 'AWS::CloudFront::RealtimeLogConfig"
 addedOn: 2026-09-08
 benchRegion: us-east-1

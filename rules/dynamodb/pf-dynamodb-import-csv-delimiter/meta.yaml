@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"2 validation errors detected: Value '##' at 'inputFormatOptions.csv.delimiter' failed to satisfy constraint: Member must have length less than or equal to 1; Value '##' at 'inputFormatOptions.csv.delimiter' failed to satisfy constraint: Member must satisfy regular expression pattern: [,;:|\\t ]\"; pass -> CREATE_COMPLETE. The S3 bucket in the fixture does not exist; the delimiter check fires before the source is read. The pass fixture is a plain table (a successful import needs a populated bucket)."
+  expect: "2 validation errors detected: Value '##' at 'inputFormatOptions.csv.delimiter' failed to satisfy constraint: Member must have length less than or equal to 1; Value '##' at 'inputFormatOptions.csv.delimiter' failed to satisfy constraint: Member must satisfy regular expression pattern"
 addedOn: 2026-09-08

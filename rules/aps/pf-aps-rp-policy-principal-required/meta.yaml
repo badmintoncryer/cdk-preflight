@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (a statement with Effect/Action and no Principal) -> ROLLBACK_COMPLETE \"ValidationException: Resource policy cannot contain invalid arguments\"; pass (the same statement plus Principal) not deployed (--fail-only) and silent under rule-check; the message names no property, so attribution is a controlled pair on the probe workspace (PutResourcePolicy us-east-1: the statement without Principal -> ValidationException \"Resource policy cannot contain invalid arguments\" with and without Resource alike; the same statement plus Principal -> policyStatus CREATING)"
+  expect: "ValidationException: Resource policy cannot contain invalid arguments"
 addedOn: 2026-09-26

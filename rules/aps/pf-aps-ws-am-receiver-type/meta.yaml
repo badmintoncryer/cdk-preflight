@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (a receiver with email_configs) -> ROLLBACK_COMPLETE \"ValidationException: Invalid Alertmanager receiver type: [email_configs]\"; pass (the same receiver with sns_configs) not deployed (--fail-only) and silent under rule-check"
+  expect: "ValidationException: Invalid Alertmanager receiver type: [email_configs"
 addedOn: 2026-09-26

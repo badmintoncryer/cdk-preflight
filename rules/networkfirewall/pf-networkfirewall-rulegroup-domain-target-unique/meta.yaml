@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Targets [.example.com, example.com] -> \"Targets has duplicate values, parameter: [example.com], context: RulesSource.RulesSourceList.Targets[1]\"; [.a.example.com, a.example.com] the same; [Example.com, example.com] and [.example.com, other.com] both accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Targets has duplicate values, parameter: [example.com], context: RulesSource.RulesSourceList.Targets[1] (Service: NetworkFirewall, Status Code: 400, Request ID: dc9674d1-dbd2-4126-b218-e2f3c703d011) (SDK Attempt Count: 1)\" (RequestToken: a023d690-3c95-3180-4115-4609ea40cbe5, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Targets has duplicate values, parameter"
 addedOn: 2026-09-25

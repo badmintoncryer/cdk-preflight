@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: AttributeName property of TimeToLiveSpecification is required when TTL status is enabled or when enabling TTL.\"; pass -> CREATE_COMPLETE."
+  expect: "AttributeName property of TimeToLiveSpecification is required when TTL status is enabled or when enabling TTL"
 addedOn: 2026-09-08

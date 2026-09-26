@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Valid range for the number of secondary IP addresses is from '0-7'\"; the pass template reached CREATE_COMPLETE."
+  expect: "Valid range for the number of secondary IP addresses is from '0-7"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): OpenAPI target + GATEWAY_IAM_ROLE without CredentialProvider.IamCredentialProvider -> CREATE_FAILED (BedrockAgentCoreControl 400: IamCredentialProvider is required for openApiSchema targets using IAM authentication); McpServer target same shape -> 400: IamCredentialProvider is required for mcpServer targets using IAM authentication; OpenAPI target with IamCredentialProvider.Service=execute-api CREATE_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-iam-credential-provider.log"
+  expect: "IamCredentialProvider is required for openApiSchema targets using IAM authentication"
 addedOn: 2026-09-05

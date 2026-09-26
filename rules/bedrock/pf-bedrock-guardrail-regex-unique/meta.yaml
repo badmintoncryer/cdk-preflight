@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two regexes with the same name -> CreateGuardrail 400 ValidationException: All regex patterns must be unique. All regex names must be unique; two names with the same pattern -> All regex patterns must be unique; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-regex-unique.log"
+  expect: "All regex names must be unique"
 addedOn: 2026-09-06

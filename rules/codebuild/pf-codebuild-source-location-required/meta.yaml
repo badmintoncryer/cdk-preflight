@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (two projects, one with Source.Type S3 and no Location, one with a SecondarySources entry of Type S3 and no Location) -> \"Project source location is required\" (ROLLBACK_COMPLETE; CreateProject answers both halves with that same bare message, so the primary source and the secondary sources go through one check); pass template (both carrying a Location) -> CREATE_COMPLETE. CODEPIPELINE and NO_SOURCE are the two types that take no Location."
+  expect: "Project source location is required"
 addedOn: 2026-09-14

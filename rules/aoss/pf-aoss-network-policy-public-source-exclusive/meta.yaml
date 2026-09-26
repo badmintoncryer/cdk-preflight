@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-25 us-east-1 CreateSecurityPolicy, one variable off an ACCEPTED control (AllowFromPublic false + SourceVPCEs vpce-0123456789abcdef0 -> ACCEPTED): flipping only AllowFromPublic to true -> \"Policy json is invalid, error: [$[0].AllowFromPublic: must be a constant value false, $[0]: should not be valid to the schema \\\"not\\\" : {\\\"anyOf\\\":[{\\\"required\\\":[\\\"SourceVPCEs\\\"]},{\\\"required\\\":[\\\"SourceServices\\\"]}]}]\"; the same with SourceServices bedrock.amazonaws.com -> the same sentence. bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE."
+  expect: "AllowFromPublic: must be a constant value false, $"
 addedOn: 2026-09-25

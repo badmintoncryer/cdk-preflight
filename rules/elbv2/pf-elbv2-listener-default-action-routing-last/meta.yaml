@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"An action of type 'forward' must have a higher order than all other actions\"; the pass template reached CREATE_COMPLETE."
+  expect: "An action of type 'forward' must have a higher order than all other actions"
 addedOn: 2026-09-08

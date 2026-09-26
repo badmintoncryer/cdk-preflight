@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The weight for each target group must be between 0 and 999, inclusive\"; the pass template reached CREATE_COMPLETE."
+  expect: "The weight for each target group must be between 0 and 999, inclusive"
 addedOn: 2026-09-08

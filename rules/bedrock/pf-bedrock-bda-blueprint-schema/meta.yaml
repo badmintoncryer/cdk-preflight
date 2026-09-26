@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Schema {} / a schema without class / a schema without properties -> CreateBlueprint 400 ValidationException: Request has invalid blueprint schema; a schema with class, description, type object and one property deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-blueprint-schema.log"
+  expect: "Request has invalid blueprint schema"
 addedOn: 2026-09-06

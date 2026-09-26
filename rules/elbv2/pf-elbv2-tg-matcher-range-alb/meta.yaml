@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Health check matcher HTTP code '599' must be within '200-499' inclusive\"; the pass template reached CREATE_COMPLETE."
+  expect: "Health check matcher HTTP code '599' must be within '200-499' inclusive"
 addedOn: 2026-09-08

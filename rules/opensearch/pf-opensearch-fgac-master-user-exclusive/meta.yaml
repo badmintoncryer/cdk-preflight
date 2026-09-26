@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (MasterUserOptions carrying MasterUserName, MasterUserPassword and MasterUserARN together) -> \"You must provide either a master username or a master user ARN but not together.\" (ROLLBACK_COMPLETE); pass (the same domain with MasterUserARN dropped) not deployed (--fail-only), but that FGAC scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+  expect: "You must provide either a master username or a master user ARN but not together"
 addedOn: 2026-09-25

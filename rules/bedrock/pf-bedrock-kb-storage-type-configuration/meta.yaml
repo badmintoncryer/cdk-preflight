@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type RDS with only S3VectorsConfiguration -> CreateKnowledgeBase 400 ValidationException: RdsConfiguration is required when storage type is RDS; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-storage-type-configuration.log"
+  expect: "when storage type is RDS"
 addedOn: 2026-09-06

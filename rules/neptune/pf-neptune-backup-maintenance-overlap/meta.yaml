@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: The backup window and maintenance window must not overlap.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The backup window and maintenance window must not overlap. (Service: Neptune, Status Code: 400, Request ID: f4702d2f-5b65-4013-86be-dae81b3cfcf6) (SDK Attempt Count: 1)  (RequestToken: 35484fa2-6d90-206d-85e7-0825836d3618, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "The backup window and maintenance window must not overlap"
 benchRegion: us-east-1
 addedOn: 2026-09-22

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (S3 target Path \"/data/in\") -> \"Invalid S3 Target Path\" (ROLLBACK_COMPLETE); pass template (Path s3://cdkpf-glue-probe-214794239830/in/) -> CREATE_COMPLETE"
+  expect: "Invalid S3 Target Path"
 addedOn: 2026-09-14

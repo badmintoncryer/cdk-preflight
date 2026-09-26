@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: Timeout.AttemptDurationSeconds 59 -> \"AttemptDurationSeconds in Timeout must be at least 60 seconds.\" (ROLLBACK_COMPLETE); pass 60 -> CREATE_COMPLETE"
+  expect: "AttemptDurationSeconds in Timeout must be at least 60 seconds"
 addedOn: 2026-09-03

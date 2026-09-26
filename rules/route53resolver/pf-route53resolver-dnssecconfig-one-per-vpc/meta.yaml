@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> the DNSSEC config with ResourceId vpc-03b6c2d3abb3f8aa9 already exists (ROLLBACK_COMPLETE)"
+  expect: "the DNSSEC config with ResourceId"
 addedOn: 2026-09-10

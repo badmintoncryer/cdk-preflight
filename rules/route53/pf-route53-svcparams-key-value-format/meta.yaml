@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='HTTPS'] but it was not found, Invalid Resource Record: 'FATAL problem: SVCBInvalidFieldValue (Invalid value for field \"SVC Params\") encountered with 'SVCParam Key alpn must have non-empty value: ''] (ROLLBACK_COMPLETE)"
+  expect: "type='HTTPS'] but it was not found, Invalid Resource Record: 'FATAL problem: SVCBInvalidFieldValue (Invalid value for field"
 addedOn: 2026-09-10

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: RecordExpiration Days 6 -> \"When RecordExpiration is set to ENABLED, the Days value must be specified. This value must be a whole number from 7 to 2147483647.\" ROLLBACK_COMPLETE; pass 7 -> CREATE_COMPLETE."
+  expect: "When RecordExpiration is set to ENABLED, the Days value must be specified. This value must be a whole number from 7 to"
 addedOn: 2026-09-06

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 11 sourceQueueArns -> \"Value {...} for parameter RedriveAllowPolicy is invalid.\" ROLLBACK_COMPLETE (the chained second queue sets redrivePermission byQueue with no sourceQueueArns at all); pass 10 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 SetQueueAttributes: 11 ARNs are rejected and 10 are accepted, and the ARNs do not have to point at existing queues."
+  expect: "for parameter RedriveAllowPolicy is invalid"
 addedOn: 2026-09-05

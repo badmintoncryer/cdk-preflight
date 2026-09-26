@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Unsupported starting position for arn type: arn:aws:dynamodb:us-east-1:214794239830:table/cdkpf-pf-lambda-esm-ddb-at-timestamp-unsupported-fail-T-1BCEPEPOAWOV2/stream/2026-09-07T04:55:10.784'
+  expect: "Unsupported starting position for arn type"
 addedOn: 2026-09-07

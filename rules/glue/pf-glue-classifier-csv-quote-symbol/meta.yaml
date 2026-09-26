@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Delimiter \",\" with QuoteSymbol \",\") -> \"Parameters Delimiter and QuoteSymbol cannot be equal.\" (ROLLBACK_COMPLETE); pass template (Delimiter \",\" with the default double-quote QuoteSymbol) -> CREATE_COMPLETE."
+  expect: "Parameters Delimiter and QuoteSymbol cannot be equal"
 addedOn: 2026-09-14

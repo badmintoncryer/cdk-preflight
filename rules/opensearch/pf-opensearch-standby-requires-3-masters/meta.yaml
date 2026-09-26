@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (standby over 3 AZ with 4 dedicated masters) -> \"Domains with standby must have 3 nodes that are eligible to be master nodes.\" (ROLLBACK_COMPLETE); pass (the same template at 3 masters) not deployed (--fail-only). 4 rather than 5 so the fixture sits one node off the only accepted count."
+  expect: "Domains with standby must have 3 nodes that are eligible to be master nodes"
 addedOn: 2026-09-25

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Quota Management feature is only supported for SageMaker Training job queues.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Quota Management feature is only supported for SageMaker Training job queues"
 addedOn: 2026-09-12

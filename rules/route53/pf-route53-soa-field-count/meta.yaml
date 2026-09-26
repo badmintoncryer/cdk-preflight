@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [Invalid Resource Record: 'FATAL problem: SOARRDATANotSevenFields (SOA record doesn't have 7 fields) encountered with 'ns-2048.awsdns-64.net. hostmaster.example.com. 1 7200 900 1209600'', A HostedZone must contain exactly one SOA record.] (ROLLBACK_COMPLETE)"
+  expect: "Invalid Resource Record: 'FATAL problem: SOARRDATANotSevenFields (SOA record doesn't have 7 fields) encountered with 'ns-2048.awsdns-64.net. hostmaster.example.com. 1 7200 900"
 addedOn: 2026-09-10

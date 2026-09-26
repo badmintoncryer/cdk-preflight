@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: UnusedAccountValidityDays 366 -> \"Value '366' at 'adminCreateUserConfig.unusedAccountValidityDays' failed to satisfy constraint: Member must have value less than or equal to 365\" (ROLLBACK_COMPLETE); pass 365 -> CREATE_COMPLETE"
+  expect: "Value '366' at 'adminCreateUserConfig.unusedAccountValidityDays' failed to satisfy constraint: Member must have value less than or equal to 365"
 addedOn: 2026-09-08

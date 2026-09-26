@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: Exactly one of [AcmCertificateArn, CloudFrontDefaultCertificate, IamCertificateId] needs to be specified" (RequestToken: 9b478016-2081-5f20-b874-88d534930066, HandlerErrorCode: InvalidRequest)'
+  expect: "Exactly one of [AcmCertificateArn, CloudFrontDefaultCertificate, IamCertificateId] needs to be specified"
 addedOn: 2026-09-08
 benchRegion: us-east-1

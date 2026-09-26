@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: 4 push filters -> \"Value at 'pipeline.triggers.1.member.gitConfiguration.push' failed to satisfy constraint: Member must have length less than or equal to 3\" (ROLLBACK_COMPLETE); pass 3 filters -> CREATE_COMPLETE"
+  expect: "Value at 'pipeline.triggers.1.member.gitConfiguration.push' failed to satisfy constraint: Member must have length less than or equal to 3"
 addedOn: 2026-09-14

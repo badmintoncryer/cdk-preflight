@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (ControlScope.Tags with 2 pairs) -> \"Invalid control scope ControlScope(complianceResourceIds=null, complianceResourceTypes=null, tags={cdkpf-a-69=1, cdkpf-b-69=2}). The control scope can include one or more resource types, a single tag key/value pair, or a combination of one resource type and one resource ID.\" (ROLLBACK_COMPLETE); --fail-only: the 1-pair pass template is not deployed because a framework needs a ConfigurationRecorder to reach DeploymentStatus=COMPLETED"
+  expect: "The control scope can include one or more resource types, a single tag key/value pair, or a combination of one resource type and one resource ID"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Incorrect S3 bucket policy is detected for bucket: cdkpf-pf-cloudtrail-trail-s3-bucket-policy--bucket-gamal4vsvoww\"; pass -> CREATE_COMPLETE"
+  expect: "Incorrect S3 bucket policy is detected for bucket"
 addedOn: 2026-09-24

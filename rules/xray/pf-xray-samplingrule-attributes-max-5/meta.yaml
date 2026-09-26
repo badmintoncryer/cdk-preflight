@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (6 attributes) -> \"1 validation error detected: Value '{a1=v, a2=v, a3=v, a4=v, a5=v, a6=v}' at 'samplingRule.attributes' failed to satisfy constraint: Member must have length less than or equal to 5 (Service: XRay, Status Code: 400)\" (ROLLBACK_COMPLETE); pass (5 attributes) -> CREATE_COMPLETE. The CloudFormation schema carries no count limit on Attributes."
+  expect: "1 validation error detected: Value '{a1=v, a2=v, a3=v, a4=v, a5=v, a6=v}' at 'samplingRule.attributes' failed to satisfy constraint: Member must have length less than or equal to 5"
 addedOn: 2026-09-24

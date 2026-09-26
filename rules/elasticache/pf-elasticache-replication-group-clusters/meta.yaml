@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: AutomaticFailoverEnabled with NumCacheClusters 1 -> \"Automatic failover requires 2 or more cache clusters. Create more cache clusters or disable automatic failover.\" ROLLBACK_COMPLETE; pass AutomaticFailoverEnabled with NumCacheClusters 2 -> CREATE_COMPLETE. The old pass had failover disabled, which the rule cannot fire on whatever the cluster count is."
+  expect: "Automatic failover requires 2 or more cache clusters. Create more cache clusters or disable automatic failover"
 addedOn: 2026-09-06

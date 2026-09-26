@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: TTL 2147483648 -> \"1 validation error detected: Value '2147483648' at 'changeBatch.changes.1.member.resourceRecordSet.tTL' failed to satisfy constraint: Member must have value less than or equal to 2147483647\" (ROLLBACK_COMPLETE); pass TTL 2147483647 -> CREATE_COMPLETE. Range is schema-expressible; engine silent (1.7.0-beta) -> upstream: pending-engine."
+  expect: "at 'changeBatch.changes.1.member.resourceRecordSet.tTL' failed to satisfy constraint: Member must have value less than or equal to"
 addedOn: 2026-09-02

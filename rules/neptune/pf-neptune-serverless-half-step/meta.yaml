@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateDBCluster -> \"InvalidParameterValue: Serverless v2 capacity value 4.3 is not valid. It must be a multiple of 0.5.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Serverless v2 capacity value 4.3 is not valid. It must be a multiple of 0.5. (Service: Neptune, Status Code: 400, Request ID: d6930769-ab6a-4289-89a1-829b7fb54afc) (SDK Attempt Count: 1)  (RequestToken: 2a3f82b7-8186-c57a-7e29-95492c0349c7, HandlerErrorCode: Inval\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Serverless v2 capacity value 4.3 is not valid. It must be a multiple of 0.5"
 benchRegion: us-east-1
 addedOn: 2026-09-22

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Log groups starting with AWS/ are reserved for AWS. Update the LogGroup value and try again."'
+  expect: "Log groups starting with AWS/ are reserved for AWS. Update the LogGroup value and try again"
 addedOn: 2026-09-07

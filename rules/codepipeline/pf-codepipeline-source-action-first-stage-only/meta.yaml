@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: a source action in stage 3 -> \"InvalidStructureException: Source actions can only be included in the first stage of the pipeline\" (ROLLBACK_COMPLETE); pass with both source actions in stage 1 -> CREATE_COMPLETE"
+  expect: "Source actions can only be included in the first stage of the pipeline"
 addedOn: 2026-09-14

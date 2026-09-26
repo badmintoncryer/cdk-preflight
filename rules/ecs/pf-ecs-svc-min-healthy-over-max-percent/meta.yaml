@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: MinimumHealthyPercent 100 with MaximumPercent 100 -> \"Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments.\" (ROLLBACK_COMPLETE — equal is the closest violating pair because the rule fires at `>=`); pass 99 / 100 -> CREATE_COMPLETE."
+  expect: "Both maximumPercent and minimumHealthyPercent cannot be 100 as this will block deployments"
 addedOn: 2026-09-08

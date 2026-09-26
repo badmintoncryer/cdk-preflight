@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe, on a Gateway ARN): non-JSON -> CREATE_FAILED (Bedrock AgentCore Control 400 ValidationException: This policy contains invalid Json); no Statement -> 400: Policy has no statements; statement without Principal -> 400: Missing required field Principal; Action s3:GetObject -> 400: Policy has invalid action; Resource '*' -> 400: Policy statement block must contain exactly one resource ARN that matches the provided resource ARN; all ROLLBACK_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-resource-policy-document.log"
+  expect: "Policy statement block must contain exactly one resource ARN that matches the provided resource ARN"
 addedOn: 2026-09-05

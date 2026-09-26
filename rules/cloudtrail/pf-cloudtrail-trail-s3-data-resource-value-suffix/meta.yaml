@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_FAILED \"Value arn:aws:s3:::cdkpf-ct69-b0 for DataResources.Values is invalid.\"; pass -> CREATE_COMPLETE"
+  expect: "for DataResources.Values is invalid"
 addedOn: 2026-09-24

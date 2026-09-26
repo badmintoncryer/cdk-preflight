@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: a Server deployment group whose Deployment names an S3 revision with BundleType YAML -> \"BundleType must be either tar, zip or tgz\" (ROLLBACK_COMPLETE); pass the same deployment group without the Deployment property -> CREATE_COMPLETE. The bundle type is checked before the bucket is read, so the fail fixture names a bucket that does not exist and depends on no object anywhere (probe F1, 2026-09-14 us-east-1). The pass cannot carry a legal bundle type instead: a legal revision starts a real deployment, and a deployment to a group with no instances ends Failed in about 6 seconds, which CloudFormation reports as \"Deployment d-... failed. Status=Failed\" and rolls back (measured 2026-09-14, stack cdkpf-c6m1)."
+  expect: "BundleType must be either tar, zip or tgz"
 addedOn: 2026-09-14

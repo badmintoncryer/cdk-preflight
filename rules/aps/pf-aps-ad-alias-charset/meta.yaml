@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (Alias -cdkpf-ad, a leading hyphen: every character is in the pattern's trailing class, so only a full match rejects it) -> ROLLBACK_COMPLETE \"ValidationException: Invalid alias: Member must satisfy regular expression pattern: [0-9A-Za-z][-.0-9A-Z_a-z]*\"; pass (Alias cdkpf-ad) not deployed (--fail-only) and silent under rule-check"
+  expect: "ValidationException: Invalid alias: Member must satisfy regular expression pattern: [0-9A-Za-z][-.0-9A-Z_a-z]*"
 addedOn: 2026-09-26

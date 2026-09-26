@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: AlarmConfiguration Enabled true with no Alarms -> \"Deployment Groups need to have at least one alarms attached if they are monitored.\" (ROLLBACK_COMPLETE); pass Enabled true with one alarm -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: the raw CreateDeploymentGroup separates the two shapes - an absent list is \"Alarm list cannot be null.\", an empty one gets the sentence above; CloudFormation's handler normalises the absent list, so both reach the same message."
+  expect: "Deployment Groups need to have at least one alarms attached if they are monitored"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"No field named nosuchfield found on type Query (Service: AppSync, Status Code: 404, Request ID: 2bb1e607-6dff-44e8-942a-37a1ddd7fc7e) (SDK Attempt Count: 1)\" (RequestToken: cdfa62bd-d0c1-5097-ebeb-2a20a19479b3, HandlerErrorCode: NotFound)"
+  expect: "No field named nosuchfield found on type Query"
 addedOn: 2026-09-12

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Code signing is not supported for functions created with container images."'
+  expect: "Code signing is not supported for functions created with container images"
 addedOn: 2026-09-07

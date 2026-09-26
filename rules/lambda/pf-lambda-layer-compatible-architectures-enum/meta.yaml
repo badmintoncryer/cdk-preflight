@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: 'PublishLayerVersion (us-east-1, 2026-09-07): "1 validation error detected: Value ''[null]'' at ''compatibleArchitectures'' failed to satisfy constraint: Member must satisfy constraint: [Member must satisfy enum value set: [x86_64, arm64], Member must not be null]"'
+  expect: "1 validation error detected: Value '[null]' at 'compatibleArchitectures' failed to satisfy constraint: Member must satisfy constraint"
 addedOn: 2026-09-07

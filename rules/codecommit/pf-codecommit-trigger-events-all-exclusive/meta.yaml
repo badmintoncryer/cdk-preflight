@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail Events [all, createReference] -> \"Repository trigger events cannot contain 'all' and additional event types simultaneously\" (ROLLBACK_COMPLETE); pass Events [all] -> CREATE_COMPLETE"
+  expect: "Repository trigger events cannot contain 'all' and additional event types simultaneously"
 addedOn: 2026-09-14

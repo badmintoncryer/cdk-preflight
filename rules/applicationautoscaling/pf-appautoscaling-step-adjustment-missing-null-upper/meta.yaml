@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: StepAdjustments [upper 0, lower 0 / upper 1] - the highest bound is 1 and no adjustment is open at the top -> \"There must be a step adjustment with an unspecified upper bound when one step adjustment has a positive upper bound\" (ROLLBACK_COMPLETE); pass a single adjustment whose highest bound is exactly 0 [upper 0] -> CREATE_COMPLETE, so 1 is the closest violating value and 0 the limit (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  expect: "There must be a step adjustment with an unspecified upper bound when one step adjustment has a positive upper bound"
 addedOn: 2026-09-24

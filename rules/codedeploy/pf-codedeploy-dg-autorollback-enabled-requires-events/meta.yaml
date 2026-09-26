@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: AutoRollbackConfiguration Enabled true with no Events -> \"Deployment Groups need to have at least one event specified when auto rollback is enabled\" (ROLLBACK_COMPLETE); pass Enabled true with Events [DEPLOYMENT_FAILURE] -> CREATE_COMPLETE."
+  expect: "Deployment Groups need to have at least one event specified when auto rollback is enabled"
 addedOn: 2026-09-14

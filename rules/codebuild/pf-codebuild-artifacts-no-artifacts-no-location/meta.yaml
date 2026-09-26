@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Artifacts.Type NO_ARTIFACTS with a Location) -> \"Invalid artifacts: artifact type NO_ARTIFACTS should have null location\" (ROLLBACK_COMPLETE); pass template (Artifacts.Type S3 with the same Location) -> CREATE_COMPLETE. CreateProject accepts Artifacts.Type CODEPIPELINE together with a Location, so the rule covers NO_ARTIFACTS only."
+  expect: "Invalid artifacts: artifact type NO_ARTIFACTS should have null location"
 addedOn: 2026-09-14

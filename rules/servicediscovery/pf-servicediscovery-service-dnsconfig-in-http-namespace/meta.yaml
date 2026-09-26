@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'When you create a service using a namespace that has a type of HTTP, you can't include a DnsConfig element. (Service: ServiceDiscovery, Status Code: 400, Request ID: aa0c0bf6-6979-4f3f-894b-d3b34ef2c920) (SDK Attempt Count: 1)' (RequestToken: 77576b92-bcac-6648-5df6-292498871658, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "When you create a service using a namespace that has a type of HTTP, you can't include a DnsConfig element"
 addedOn: 2026-09-22

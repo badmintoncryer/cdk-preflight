@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: two resource associations at priority 100 and 9900 -> \"[RSLVR-02017] The priority value you provided is reserved. Provide a number between \\\"100\\\" and \\\"9900\\\".\" (ROLLBACK_COMPLETE); pass with the same two associations at 101 and 9899 -> CREATE_COMPLETE. Both ends need their own association because one association carries one priority. The range lives in _pf_r53r_outside_101_9899 in rules/_lib/route53resolver.rego, which boundaryProblem never sees (it is handed rule.rego only)."
+  expect: "RSLVR-02017] The priority value you provided is reserved. Provide a number between"
 addedOn: 2026-09-10

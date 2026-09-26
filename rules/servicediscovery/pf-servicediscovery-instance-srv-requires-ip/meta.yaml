@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-23 us-east-1: SRV-record service, AWS_INSTANCE_PORT only -> \"At least one of AWS_INSTANCE_IPV4 AWS_INSTANCE_IPV6 is required.\" (ROLLBACK_COMPLETE); pass port + AWS_INSTANCE_IPV4 -> CREATE_COMPLETE"
+  expect: "At least one of AWS_INSTANCE_IPV4 AWS_INSTANCE_IPV6 is required"
 addedOn: 2026-09-23

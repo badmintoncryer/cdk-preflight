@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The parameter group cdkpf-pf-rds-parameter-group-family-engine-fail-pg-aa0pu93nbyqt with DBParameterGroupFamily postgres16 can't be used for this instance. Use a parameter group with DBParameterGroupFamily mysql8.4.\" ROLLBACK_COMPLETE"
+  expect: "with DBParameterGroupFamily postgres16 can't be used for this instance. Use a parameter group with DBParameterGroupFamily mysql8.4"
 addedOn: 2026-09-08

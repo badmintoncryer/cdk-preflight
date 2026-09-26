@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (LockConfiguration ChangeableForDays 2) -> \"Backup vault Lock configuration changeable days must be between 3 and 36,500.\" (ROLLBACK_COMPLETE, no vault created); --fail-only: ChangeableForDays 3 would create a compliance-mode lock, so the pass template is not deployed"
+  expect: "Backup vault Lock configuration changeable days must be between 3 and 36,500"
 addedOn: 2026-09-24

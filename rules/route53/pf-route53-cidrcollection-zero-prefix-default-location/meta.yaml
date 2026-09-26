@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Cidr prefix length must not be 0 (ROLLBACK_COMPLETE)"
+  expect: "Cidr prefix length must not be 0"
 addedOn: 2026-09-10

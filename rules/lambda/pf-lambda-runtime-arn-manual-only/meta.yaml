@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Unexpected runtime version ARN when UpdateRuntimeVersionOn=Auto. Remove the runtime version ARN and retry the request."'
+  expect: "Unexpected runtime version ARN when UpdateRuntimeVersionOn=Auto. Remove the runtime version ARN and retry the request"
 addedOn: 2026-09-07

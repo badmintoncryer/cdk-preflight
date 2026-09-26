@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): IntermediateStorage URI on the same bucket as S3Configuration.BucketArn -> CreateDataSource 400 ValidationException: A custom transformation configuration cannot have the same s3 bucket for intermediate storage as the data source; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-transformation-bucket.log"
+  expect: "A custom transformation configuration cannot have the same s3 bucket for intermediate storage as the data source"
 addedOn: 2026-09-06

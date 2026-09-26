@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 ap-northeast-1: 256.0.0.0/8 -> \"Error reason: The parameter contains formatting that is not valid., field: IP_ADDRESS, parameter: 256.0.0.0/8\" (ROLLBACK_COMPLETE); pass 255.255.255.0/24 -> CREATE_COMPLETE"
+  expect: "Error reason: The parameter contains formatting that is not valid., field: IP_ADDRESS, parameter: 256.0.0.0/8"
 addedOn: 2026-09-05

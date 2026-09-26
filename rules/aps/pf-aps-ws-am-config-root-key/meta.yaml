@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (an Alertmanager definition whose route:/receivers: sit at the root, with no alertmanager_config key) -> ROLLBACK_COMPLETE \"ValidationException: Empty Alertmanager definition.\"; pass (the same content nested under alertmanager_config: |) not deployed (--fail-only) and silent under rule-check"
+  expect: "ValidationException: Empty Alertmanager definition"
 addedOn: 2026-09-26

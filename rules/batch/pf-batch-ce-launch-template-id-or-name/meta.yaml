@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"One of LaunchTemplateId and LaunchTemplateName or LaunchTemplate.Overrides is required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "One of LaunchTemplateId and LaunchTemplateName or LaunchTemplate.Overrides is required"
 addedOn: 2026-09-12

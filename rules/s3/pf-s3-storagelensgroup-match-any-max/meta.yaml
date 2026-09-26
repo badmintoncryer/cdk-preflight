@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 11 MatchAnyPrefix entries -> \"Only 10 prefixes are allowed.\" ROLLBACK_COMPLETE; pass 10 -> CREATE_COMPLETE."
+  expect: "Only 10 prefixes are allowed"
 addedOn: 2026-09-06

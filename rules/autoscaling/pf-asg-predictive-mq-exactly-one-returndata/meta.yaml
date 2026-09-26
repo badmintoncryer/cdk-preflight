@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: One or more MetricDataQuery objects in the customized load metric specification isn?t valid. Any expressions used must create exactly one time series. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "One or more MetricDataQuery objects in the customized load metric specification isn?t valid. Any expressions used must create exactly one time series"
 addedOn: 2026-09-09

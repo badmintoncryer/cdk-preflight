@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (ScheduleExpression \"rate(1 day)\") -> \"Error in some rules due to : Cron expression is not valid: Invalid cron expression\" (ROLLBACK_COMPLETE); pass (ScheduleExpression \"cron(0 0 1 1 ? 2035)\") -> CREATE_COMPLETE"
+  expect: "Error in some rules due to : Cron expression is not valid: Invalid cron expression"
 addedOn: 2026-09-24

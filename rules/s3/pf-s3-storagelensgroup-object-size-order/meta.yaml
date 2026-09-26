@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: BytesGreaterThan 1000 with BytesLessThan 1000 -> \"This object size combination isn't valid.\" (ROLLBACK_COMPLETE); pass 999 / 1000 -> CREATE_COMPLETE."
+  expect: "This object size combination isn't valid"
 addedOn: 2026-09-06

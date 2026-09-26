@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'EnablePrefixForIpv6SourceNat' can only be specified when using IpAddressType 'dualstack'.\"; the pass template reached CREATE_COMPLETE."
+  expect: "can only be specified when using IpAddressType 'dualstack"
 addedOn: 2026-09-08

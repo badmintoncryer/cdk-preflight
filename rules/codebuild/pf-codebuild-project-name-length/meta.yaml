@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (151-character Name) -> \"Project name length cannot be greater than 150 characters\" (ROLLBACK_COMPLETE); pass template (150-character Name) -> CREATE_COMPLETE. Only the upper bound is ruled on: the documented 2-character minimum cannot be reached through CreateProject, whose own parameter validation rejects a 1-character name before the service sees it."
+  expect: "Project name length cannot be greater than 150 characters"
 addedOn: 2026-09-14

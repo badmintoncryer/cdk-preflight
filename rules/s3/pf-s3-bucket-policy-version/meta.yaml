@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The policy must contain a valid version string\"; pass template -> CREATE_COMPLETE"
+  expect: "The policy must contain a valid version string"
 addedOn: 2026-09-06

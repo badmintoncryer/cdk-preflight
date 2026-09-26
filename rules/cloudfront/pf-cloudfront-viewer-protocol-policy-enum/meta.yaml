@@ -8,5 +8,6 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: 1 validation error detected: Value ''http-only'' at ''distributionConfigWithTags.distributionConfig.defaultCacheBehavior.viewerProtocolPolicy'' failed to satisfy constraint: Member must satisfy enum value set: [redirect-to-https, https-only, allow-all] (Service: CloudFront, Status Code: 400, Request ID: fdad7533-2591-467c-bf6e-426e7119fe0c)'
+  expect: "1 validation error detected: Value 'http-only' at 'distributionConfigWithTags.distributionConfig.defaultCacheBehavior.viewerProtocolPolicy' failed to satisfy constraint: Member must satisfy enum value set"
 addedOn: 2026-09-08
 benchRegion: us-east-1

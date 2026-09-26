@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: VpcConnectivity SASL/IAM enabled -> \"When creating a cluster, all vpcConnectivity auth schemes must be disabled ('enabled' : false). You can enable auth schemes after the cluster is created. ... 'vpcConnectivity.clientAuthentication'\" (ROLLBACK_COMPLETE); pass the same VpcConnectivity with the auth scheme false -> CREATE_COMPLETE"
+  expect: "When creating a cluster, all vpcConnectivity auth schemes must be disabled ('enabled' : false). You can enable auth schemes after the cluster is created"
 addedOn: 2026-09-14

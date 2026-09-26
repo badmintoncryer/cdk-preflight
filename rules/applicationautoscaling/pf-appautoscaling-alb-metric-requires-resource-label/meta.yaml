@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: PredefinedMetricType ALBRequestCountPerTarget with no ResourceLabel, on an ECS service registered in the same stack -> \"Resource label should be specified for predefined metric type ALBRequestCountPerTarget\" (ROLLBACK_COMPLETE); pass template not deployed: a deployable ResourceLabel needs a live (hourly-billed) Application Load Balancer with a target group attached to the service, so this rule is gated with --fail-only"
+  expect: "Resource label should be specified for predefined metric type ALBRequestCountPerTarget"
 addedOn: 2026-09-24

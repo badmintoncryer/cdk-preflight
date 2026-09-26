@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): AWS_IAM + AuthorizerConfiguration -> CREATE_FAILED (BedrockAgentCoreControl 400: AuthorizerConfiguration should be null for AWS_IAM AuthorizerType.); NONE + AuthorizerConfiguration -> CREATE_FAILED (400: AuthorizerConfiguration should be null for NONE AuthorizerType.); AUTHENTICATE_ONLY without AuthorizerConfiguration deployed clean (not covered). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-authorizer-config-unexpected.log"
+  expect: "AuthorizerConfiguration should be null for AWS_IAM AuthorizerType"
 addedOn: 2026-09-05

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (MinRetentionDays 6 / MaxRetentionDays 30) -> \"LogicallyAirGappedBackup vault Lock configuration retention days must be between 7 and 36,500, and minimum must be less than or equal to maximum.\" (ROLLBACK_COMPLETE, no vault created; 6 <= 30 holds, so the 7-day floor is the only constraint the template violates); --fail-only: an air-gapped vault is compliance-locked the moment it exists, so the MinRetentionDays 7 pass template is not deployed"
+  expect: "LogicallyAirGappedBackup vault Lock configuration retention days must be between 7 and 36,500, and minimum must be less than or equal to maximum"
 addedOn: 2026-09-24

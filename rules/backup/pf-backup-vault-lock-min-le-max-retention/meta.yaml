@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (LockConfiguration MinRetentionDays 8 / MaxRetentionDays 7) -> \"Backup vault Lock configuration retention days must be between 1 and 36,500, and minimum must be less than or equal to maximum.\" (ROLLBACK_COMPLETE, no vault created); --fail-only: the 7/7 pass template is not deployed because a locked vault cannot be thrown away"
+  expect: "Backup vault Lock configuration retention days must be between 1 and 36,500, and minimum must be less than or equal to maximum"
 addedOn: 2026-09-24

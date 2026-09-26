@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (ECS ClientException: Fargate only supports network mode 'awsvpc'.), pass template CREATE_COMPLETE; NetworkMode-absent branch reproduced the same error via direct RegisterTaskDefinition on 2026-09-01. Log: bench/logs/pf-ecs-fargate-network-mode.log"
+  expect: "Fargate only supports network mode"
 addedOn: 2026-09-01

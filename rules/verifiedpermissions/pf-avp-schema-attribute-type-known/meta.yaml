@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /schema: failed to resolve type: Integer.\"; pass (the same PolicyStore with only the schema corrected) -> CREATE_COMPLETE. The store is ValidationSettings.Mode=OFF in both fixtures, so what rejects the fail template is the Cedar schema parser and not the STRICT policy validator."
+  expect: "At /schema: failed to resolve type: Integer"
 addedOn: 2026-09-25

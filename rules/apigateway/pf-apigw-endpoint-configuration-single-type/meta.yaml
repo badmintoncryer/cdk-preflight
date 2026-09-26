@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Cannot create a RestApi with multiple Endpoint Types.\" (ROLLBACK_COMPLETE)"
+  expect: "Cannot create a RestApi with multiple Endpoint Types"
 addedOn: 2026-09-08

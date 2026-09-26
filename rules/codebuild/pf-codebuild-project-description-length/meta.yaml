@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (256-character Description) -> \"Max description length is 255\" (ROLLBACK_COMPLETE); pass template (255-character Description) -> CREATE_COMPLETE."
+  expect: "Max description length is 255"
 addedOn: 2026-09-14

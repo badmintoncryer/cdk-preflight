@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with one AccessPolicies entry (AmazonEKSViewPolicy, cluster scope) -> ROLLBACK_COMPLETE, \"This operation can only be performed on Access Entries with a type of \\\"STANDARD\\\"\". Judged for EC2_LINUX and EC2_WINDOWS only, as with the groups rule. fail-only; the fixture builds its own cluster."
+  expect: "This operation can only be performed on Access Entries with a type of"
 addedOn: 2026-09-25

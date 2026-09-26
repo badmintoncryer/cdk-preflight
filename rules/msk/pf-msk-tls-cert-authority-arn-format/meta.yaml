@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: an ACM certificate ARN in CertificateAuthorityArnList -> \"One or more of the certificate authority ARNs provided in the request are invalid. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE). Verified fail-only: the pass fixture needs a real AWS Private CA, which costs $400/month"
+  expect: "One or more of the certificate authority ARNs provided in the request are invalid"
 addedOn: 2026-09-14

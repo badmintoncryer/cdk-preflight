@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: LogConfiguration with Level INFO and no destination -> ROLLBACK_COMPLETE \"Must provide at least 1 log destination in LogConfiguration\". Level OFF with no destination is accepted. Measured the same day via pipes:CreatePipe: S3LogDestination.OutputFormat 'w3c' gives \"w3c and plain output formats are not supported by Pipes\" while 'json' is accepted -- the CloudFormation schema allows all three values, so the schema and the service disagree."
+  expect: "Must provide at least 1 log destination in LogConfiguration"
 addedOn: 2026-09-07

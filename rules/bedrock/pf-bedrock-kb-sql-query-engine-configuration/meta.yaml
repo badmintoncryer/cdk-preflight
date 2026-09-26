@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): QueryEngineConfiguration Type SERVERLESS with only ProvisionedConfiguration -> CreateKnowledgeBase 400 ValidationException: KnowledgeBase type SQL with query engine type REDSHIFT with SERVERLESS type must provide serverlessConfiguration (checked before any Redshift resource is looked up); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-sql-query-engine-configuration.log"
+  expect: "KnowledgeBase type SQL with query engine type REDSHIFT with SERVERLESS type must provide serverlessConfiguration"
 addedOn: 2026-09-06

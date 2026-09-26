@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='SPF'] but it was not found, Invalid Resource Record: 'FATAL problem: InvalidCharacterString (Value should be enclosed in quotation marks) encountered with 'v=spf1 ip4:192.0.2.0/24 -all''] (ROLLBACK_COMPLETE)"
+  expect: "type='SPF'] but it was not found, Invalid Resource Record: 'FATAL problem: InvalidCharacterString (Value should be enclosed in quotation marks) encountered with 'v=spf1 ip4:192.0.2.0/24 -all"
 addedOn: 2026-09-10

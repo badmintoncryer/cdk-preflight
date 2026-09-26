@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: KubernetesNamespace \"CDKPF_Batch\" -> \"kubernetesNamespace must be a valid Kubernetes namespace.\" (ROLLBACK_COMPLETE); pass not deployed: an EKS compute environment needs a live (billable) cluster, so this rule stays gated with --fail-only - the fixture's cluster ARN points at nothing and the pass side answers \"No cluster found for name: cdkpf-probe\". The namespace is validated before the cluster is looked up, which is why the fail side reproduces."
+  expect: "kubernetesNamespace must be a valid Kubernetes namespace"
 addedOn: 2026-09-12

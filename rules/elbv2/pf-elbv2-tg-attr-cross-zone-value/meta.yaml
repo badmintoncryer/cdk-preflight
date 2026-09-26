@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'load_balancing.cross_zone.enabled' must be one of use_load_balancer_configuration,true,false\"; the pass template reached CREATE_COMPLETE."
+  expect: "load_balancing.cross_zone.enabled' must be one of use_load_balancer_configuration,true,false"
 addedOn: 2026-09-08

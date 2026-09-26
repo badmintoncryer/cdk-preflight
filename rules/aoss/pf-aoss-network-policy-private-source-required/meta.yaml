@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (AllowFromPublic false with neither SourceVPCEs nor SourceServices) -> \"Policy json is invalid, error: [$[0].AllowFromPublic: must be a constant value true]\" (ROLLBACK_COMPLETE). pass not deployed (--fail-only: the policy resources are free, but the run is kept to the fail side; api 2026-09-25 us-east-1 deployed the matching control through CreateAccessPolicy/CreateSecurityPolicy/CreateLifecyclePolicy and it was ACCEPTED)"
+  expect: "Policy json is invalid, error: [$[0].AllowFromPublic: must be a constant value true"
 addedOn: 2026-09-25

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateNamespace defaultIamRoleArn role/pf66-a with iamRoles [role/pf66-b] -> \"ValidationException: Invalid default IAM Role 'arn:aws:iam::...:role/pf66-a'. The IAM roles list isnt specified or it doesnt contain a default IAM Role: [arn:aws:iam::...:role/pf66-b].\" (#66 phase B; the fixtures create the two roles with a redshift / redshift-serverless trust policy so the service reaches this check); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  Invalid default IAM Role 'arn:aws:iam::214794239830:role/cdkpf-pf-redshiftserverless-default-iam-role--RoleA-mbRXM6pS5uUB'. The IAM roles list isnt specified or it doesnt contain a default IAM Role: [arn:aws:iam::214794239830:role/cdkpf-pf-redshiftserverless-defau\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "The IAM roles list isnt specified or it doesnt contain a default IAM Role"
 addedOn: 2026-09-22

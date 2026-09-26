@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 31 geoproximity record sets for one name and type -> \"[Exceeded limit on number of geo-proximity RRSets for www.cdkpf-example.com., type A in this zone.]\" (ROLLBACK_COMPLETE); pass 30 -> CREATE_COMPLETE"
+  expect: "Exceeded limit on number of geo-proximity RRSets for"
 addedOn: 2026-09-10

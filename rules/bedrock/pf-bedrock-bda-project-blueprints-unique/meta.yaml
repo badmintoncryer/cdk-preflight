@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): CustomOutputConfiguration.Blueprints with the same blueprint ARN twice -> CreateDataAutomationProject 400 ValidationException: Invalid Project Configuration. Cannot contain more than 1 version of 1 Blueprint or duplicate Blueprints; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-project-blueprints-unique.log"
+  expect: "Invalid Project Configuration. Cannot contain more than 1 version of 1 Blueprint or duplicate Blueprints"
 addedOn: 2026-09-06

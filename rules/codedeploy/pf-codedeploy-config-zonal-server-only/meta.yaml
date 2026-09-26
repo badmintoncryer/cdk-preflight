@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: ComputePlatform Lambda + ZonalConfig MonitorDurationInSeconds 60 -> \"Zonal deployments are only supported with EC2 deployments.\" (ROLLBACK_COMPLETE); pass ComputePlatform Server + the same ZonalConfig -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: ECS is rejected the same way."
+  expect: "Zonal deployments are only supported with EC2 deployments"
 addedOn: 2026-09-14

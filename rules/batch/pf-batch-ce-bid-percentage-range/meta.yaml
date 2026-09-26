@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Bid percentage must be between 0 to 100.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Bid percentage must be between 0 to 100"
 addedOn: 2026-09-12

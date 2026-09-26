@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 1001 ResourceRecords values over three record sets -> \"[Number of records limit of 1000 exceeded.]\" (ROLLBACK_COMPLETE); pass 1000 -> CREATE_COMPLETE. The values have to be spread over several record sets either way - one record set takes at most 400."
+  expect: "Number of records limit of 1000 exceeded"
 addedOn: 2026-09-10

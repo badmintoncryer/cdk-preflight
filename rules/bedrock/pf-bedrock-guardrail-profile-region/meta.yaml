@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): GuardrailProfileArn with Region us-west-2 deployed in us-east-1 -> CreateGuardrail 400 ValidationException: The provided ARN is invalid for the service region; the same profile with the deploy Region deploys. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-profile-region.log"
+  expect: "The provided ARN is invalid for the service region"
 addedOn: 2026-09-06

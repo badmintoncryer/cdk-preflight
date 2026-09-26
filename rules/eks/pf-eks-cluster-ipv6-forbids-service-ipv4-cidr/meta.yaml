@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: IpFamily ipv6 with ServiceIpv4Cidr 10.100.0.0/16 -> ROLLBACK_COMPLETE, \"serviceIpv4Cidr cannot be specified when creating an \\\"ipv6\\\" cluster\" (HandlerErrorCode: InvalidRequest); the same template without ServiceIpv4Cidr reaches the next check. fail-only, no cluster created (CreateCluster refuses synchronously)."
+  expect: "serviceIpv4Cidr cannot be specified when creating an"
 addedOn: 2026-09-25

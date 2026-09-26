@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): MatchAttributes {} -> \"Sources, Destinations cannot be null or empty, context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes\"; Sources-only and Destinations-only were both accepted (ConsumedCapacity 1); bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"Sources, Destinations cannot be null or empty, context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes (Service: NetworkFirewall, Status Code: 400, Request ID: be3dbc6e-9f0f-4d44-80dd-965b7171e832) (SDK Attempt Count: 1)\" (RequestToken: fd43aad5-57ad-be1d-b47f-8f18ed7d4329, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Sources, Destinations cannot be null or empty, context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes"
 addedOn: 2026-09-25

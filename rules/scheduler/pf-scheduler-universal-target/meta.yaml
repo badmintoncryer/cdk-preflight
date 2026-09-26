@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: a universal target calling listQueues -> ROLLBACK_COMPLETE \"listQueues API is not supported.\" Measured the same day via scheduler:CreateSchedule: getQueueUrl and describeInstances give the same error while sendMessage and startInstances deploy; an ARN carrying a Region and account gives \"scheduler is not a supported service for a target\"; and omitting Input gives \"You must provide an input to set this target for your schedule\"."
+  expect: "listQueues API is not supported"
 addedOn: 2026-09-07

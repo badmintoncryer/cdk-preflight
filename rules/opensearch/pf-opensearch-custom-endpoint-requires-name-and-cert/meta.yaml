@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (CustomEndpointEnabled true with EnforceHTTPS and neither the name nor the certificate) -> \"Please provide both CustomEndpoint and CustomEndpointCertificateArn fields to create a custom endpoint.\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only), but the same fixture with both fields set reached CREATE_COMPLETE under pf-opensearch-custom-endpoint-cert-account."
+  expect: "Please provide both CustomEndpoint and CustomEndpointCertificateArn fields to create a custom endpoint"
 addedOn: 2026-09-25

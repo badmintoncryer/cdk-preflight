@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Invalid permission: EXECUTE for device /dev/null\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Invalid permission: EXECUTE for device /dev/null"
 addedOn: 2026-09-12

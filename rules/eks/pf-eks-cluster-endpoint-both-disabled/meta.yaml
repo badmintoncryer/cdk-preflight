@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: EndpointPublicAccess false + EndpointPrivateAccess false -> ROLLBACK_COMPLETE, \"Private and public endpoint access cannot be false\" (HandlerErrorCode: InvalidRequest). fail-only, and no cluster is ever created: CreateCluster refuses the request synchronously, so the fail stack costs nothing."
+  expect: "Private and public endpoint access cannot be false"
 addedOn: 2026-09-25

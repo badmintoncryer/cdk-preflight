@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail template (selector \"-sel\", with a pattern-valid base64 string as the key so the key check cannot fire first) -> ROLLBACK_COMPLETE with \"1 validation error detected: Value at 'dkimSigningAttributes.domainSigningSelector' failed to satisfy constraint: Member must satisfy regular expression pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]))$\" (api 2026-09-24 us-east-1 returns the same sentence); pass template (Easy DKIM) -> CREATE_COMPLETE. The service pattern carries no length bound, so the rule claims none - the 63-octet half of the original hypothesis is not covered by this evidence."
+  expect: "1 validation error detected: Value at 'dkimSigningAttributes.domainSigningSelector' failed to satisfy constraint: Member must satisfy regular expression pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9"
 addedOn: 2026-09-24

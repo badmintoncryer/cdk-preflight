@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: Type EC2_LINUX with PrincipalArn in account 999999999999 -> ROLLBACK_COMPLETE, \"AccessEntry principalArn must be from the same account as the cluster when using types [EC2_LINUX, EC2_WINDOWS, FARGATE_LINUX, HYBRID_LINUX, EC2]\". The same foreign ARN with Type STANDARD reaches the cluster lookup instead (measured the same day against CreateAccessEntry), which is why the rule is gated on the type. fail-only, no cluster built."
+  expect: "AccessEntry principalArn must be from the same account as the cluster when using types"
 addedOn: 2026-09-25

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Ec2TagFilters carrying a KEY_ONLY filter with a Value and a VALUE_ONLY filter with a Key -> \"Values must not be provided for key-only filters.\" (ROLLBACK_COMPLETE); pass the same two filters with only the half their Type matches -> CREATE_COMPLETE. The mirror half is the same check from the other side: VALUE_ONLY with a Key alone is refused with \"Keys must not be provided for value-only filters.\" (probe D2, 2026-09-14 us-east-1). The tag sets are checked too (probe D7, same message) and so are the on-premises filters, though those come back as an InvalidTagException with an empty message (probes D5/D6), which is why the fixtures use the EC2 form the service names."
+  expect: "Values must not be provided for key-only filters"
 addedOn: 2026-09-14

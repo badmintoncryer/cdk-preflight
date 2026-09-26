@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (GrokPattern \"%{PF_UNDEFINED:a}\" with no CustomPatterns) -> \"Grok pattern cannot be compiled.\" (ROLLBACK_COMPLETE); pass template (\"%{GREEDYDATA:a} %{PF_MINE:b}\" with CustomPatterns \"PF_MINE .*\") -> CREATE_COMPLETE. The built-in set was measured against CreateClassifier the same day: all 74 names the user guide prints compile, one at a time and in a single combined pattern; the guide stray line \"E\" does not; and 25 logstash names outside the list (DATESTAMP, JAVACLASS, NGINXACCESS, RUBY_LOGGER, ...) are all rejected with the same sentence."
+  expect: "Grok pattern cannot be compiled"
 addedOn: 2026-09-14

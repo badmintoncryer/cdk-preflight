@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"IPv6 address 2600:1f13:1::1 does not belong to the cidr block associated with the subnet\"; the pass template reached CREATE_COMPLETE."
+  expect: "IPv6 address 2600:1f13:1::1 does not belong to the cidr block associated with the subnet"
 addedOn: 2026-09-08

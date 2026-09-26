@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (ReportTemplate CONTROL_COMPLIANCE_REPORT, no FrameworkArns) -> \"A collection of framework ARNs is required.\" (ROLLBACK_COMPLETE); pass (ReportTemplate BACKUP_JOB_REPORT, no FrameworkArns) -> CREATE_COMPLETE. RESOURCE_COMPLIANCE_REPORT returns the same message from CreateReportPlan (CLI, same day), which is why the rule covers both compliance templates"
+  expect: "A collection of framework ARNs is required"
 addedOn: 2026-09-24

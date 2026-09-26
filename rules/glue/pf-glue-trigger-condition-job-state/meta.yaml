@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (State RUNNING) -> \"JobRunState should be any of: [SUCCEEDED, STOPPED, FAILED, TIMEOUT]\" (ROLLBACK_COMPLETE); pass template (State SUCCEEDED) -> CREATE_COMPLETE"
+  expect: "JobRunState should be any of"
 addedOn: 2026-09-14

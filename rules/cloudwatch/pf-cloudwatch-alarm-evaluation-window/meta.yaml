@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: Period 3600 x EvaluationPeriods 169 (608400 seconds) -> \"Metrics cannot be checked across more than a week (EvaluationPeriods * Period must be <= 604800) for alarms using period >= 3600\" ROLLBACK_COMPLETE (the chained second alarm carries Period 60 x 1441); pass 3600 x 168 (604800) and 60 x 1440 (86400) -> CREATE_COMPLETE. api 2026-09-13 us-east-1 PutMetricAlarm: 3600 x 169 and 60 x 1441 are rejected and the two budgets exactly are accepted; below an hourly period the message reads \"more than a day (EvaluationPeriods * Period must be <= 86400)\"."
+  expect: "Metrics cannot be checked across more than a week (EvaluationPeriods * Period must be <="
 addedOn: 2026-09-08

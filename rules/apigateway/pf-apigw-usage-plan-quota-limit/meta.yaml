@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: Quota.Limit 0 -> \"Usage Plan quota limit must be a non-negative numeric\" (ROLLBACK_COMPLETE); pass Limit 1 -> CREATE_COMPLETE"
+  expect: "Usage Plan quota limit must be a non-negative numeric"
 addedOn: 2026-09-08

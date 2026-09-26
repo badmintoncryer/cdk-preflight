@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): GoogleOauth2 with only CustomOauth2ProviderConfig -> CREATE_FAILED (Bedrock AgentCore Control 400: Provided configuration does not match selected type: GoogleOauth2); OktaOauth2 with only CustomOauth2ProviderConfig -> 400: Provided configuration does not match selected type: OktaOauth2; CustomOauth2 with Custom+Google blocks CREATE_COMPLETE (extra blocks are ignored). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-oauth2-provider-vendor-config.log"
+  expect: "Provided configuration does not match selected type: GoogleOauth2"
 addedOn: 2026-09-05

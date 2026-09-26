@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"Share identifier UserA1 matches another share identifier UserA*.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "Share identifier UserA1 matches another share identifier UserA*"
 addedOn: 2026-09-12

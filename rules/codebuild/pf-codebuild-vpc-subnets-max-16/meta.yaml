@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (VpcConfig naming 17 subnets) -> \"Invalid vpc config: the maximum number of subnets is 16\" (ROLLBACK_COMPLETE); pass template (a VPC, 16 subnets, 5 security groups and a service role built in the same stack, all named by VpcConfig) -> CREATE_COMPLETE. The count is checked before the ids are resolved, so the fail template gets away with made-up ids."
+  expect: "Invalid vpc config: the maximum number of subnets is 16"
 addedOn: 2026-09-14

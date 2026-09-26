@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Model validation failed (#/FunctionResponseTypes: #: only 1 subschema matches out of 2) #/FunctionResponseTypes/0: #: only 1 subschema matches out of 2 (#/FunctionResponseTypes/0)'
+  expect: "#/FunctionResponseTypes/0: #: only 1 subschema matches out of 2 (#/FunctionResponseTypes/0"
 addedOn: 2026-09-07

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Resource handler returned message: \"Invalid request provided: The request is not valid because a value for MaxEventSize is missing. You must set the value of MaxEventSize to Large before you can set values for ContextKeySelectors.\" (RequestToken: d507cd5e-802d-d55b-c25e-c190833b3ecf, HandlerErrorCode: InvalidRequest)\"; pass not deployed (--fail-only) (the pass fixture is not deployable: CreateEventDataStore answers \"CloudTrail Lake is no longer accepting new customers\" once this check passes)"
+  expect: "The request is not valid because a value for MaxEventSize is missing. You must set the value of MaxEventSize to Large before you can set values for ContextKeySelectors"
 addedOn: 2026-09-24

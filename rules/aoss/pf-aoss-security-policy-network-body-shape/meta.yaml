@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-25 us-east-1 CreateSecurityPolicy, one variable each off an ACCEPTED array control: the block handed over as an object -> \"Policy json is invalid, error: [$: object found, array expected]\"; the array plus AWSOwnedKey -> \"[$[0].AWSOwnedKey: is not defined in the schema and the schema does not allow additional properties]\", plus KmsARN -> the same sentence for $[0].KmsARN. bench 2026-09-25 us-east-1: fail -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE."
+  expect: "Policy json is invalid, error"
 addedOn: 2026-09-25

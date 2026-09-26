@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Fargate compatible task definitions do not support devices), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-fargate-devices.log"
+  expect: "Create TaskDefinition: Fargate compatible task definitions do not support devices"
 addedOn: 2026-09-08

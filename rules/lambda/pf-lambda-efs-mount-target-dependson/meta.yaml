@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "EFS file system arn:aws:elasticfilesystem:us-east-1:214794239830:file-system/fs-0d2c8a81f59be7555 referenced by access point arn:aws:elasticfilesystem:us-east-1:214794239830:access-point/fsap-0e7a04072316c374b has mount targets created in all availability zones the function will execute in, but not all are in the available life cycle state yet. Please wait for them to become available and try the request again."'
+  expect: "has mount targets created in all availability zones the function will execute in, but not all are in the available life cycle state yet. Please wait for them to become available and try the request again"
 addedOn: 2026-09-07

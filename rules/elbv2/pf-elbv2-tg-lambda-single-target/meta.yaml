@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Up to '1' Lambda function target(s) can be registered, but '2' were specified\"; the pass template reached CREATE_COMPLETE."
+  expect: "Up to '1' Lambda function target(s) can be registered, but '2' were specified"
 addedOn: 2026-09-08

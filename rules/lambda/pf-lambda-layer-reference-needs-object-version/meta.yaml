@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'PublishLayerVersion (us-east-1, 2026-09-07): "Lambda is unable to access the specified S3 object. Verify that your bucket policy grants the Lambda service principal s3:GetObjectVersion on the object, with aws:SourceAccount scoped to your account."'
+  expect: "Lambda is unable to access the specified S3 object. Verify that your bucket policy grants the Lambda service principal s3:GetObjectVersion on the object, with aws:SourceAccount scoped to your account"
 addedOn: 2026-09-07

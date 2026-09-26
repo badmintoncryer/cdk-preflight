@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: CreateDhcpOptions with five ntp-servers -> \"Value (...) for parameter value is invalid. Invalid DHCP option value.\"; four created cleanly. bench 2026-09-08 ap-northeast-1: five NtpServers -> ROLLBACK_COMPLETE; four -> CREATE_COMPLETE."
+  expect: "for parameter value is invalid. Invalid DHCP option value"
 addedOn: 2026-09-08

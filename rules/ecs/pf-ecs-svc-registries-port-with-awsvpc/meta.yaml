@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (The values specified for serviceRegistries do not require a value for 'containerPort'. Remove the value and retry. Registry: arn:aws:servicediscovery:us-east-1:214794239830:service/srv-laugkbelz6gwwvas), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-svc-registries-port-with-awsvpc.log"
+  expect: "The values specified for serviceRegistries do not require a value for 'containerPort'. Remove the value and retry. Registry"
 addedOn: 2026-09-08

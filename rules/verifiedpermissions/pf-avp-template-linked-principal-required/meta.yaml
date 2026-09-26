@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid input (Service: VerifiedPermissions, Status Code: 400). At /definition/templateLinked/principal: Invalid Parameter: principal.\"; pass (the same policy with Principal added) -> CREATE_COMPLETE. The fixture's policy template declares both ?principal and ?resource and the policy supplies only Resource, because supplying neither is rejected with a generic \"No principal and no resource was provided. At least one must be provided\" that names no property (bench 2026-09-26 us-east-1)."
+  expect: "At /definition/templateLinked/principal: Invalid Parameter: principal"
 addedOn: 2026-09-26

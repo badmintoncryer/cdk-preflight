@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (or1.medium.search + gp3 20 GiB with no EncryptionAtRestOptions) -> \"Enable encryption at rest to use the OR1 instance family\" (ROLLBACK_COMPLETE); pass (the same template plus EncryptionAtRestOptions.Enabled) not deployed here, but that exact shape on OpenSearch_2.11 reached CREATE_COMPLETE the same day under pf-opensearch-or1-min-version."
+  expect: "Enable encryption at rest to use the OR1 instance family"
 addedOn: 2026-09-25

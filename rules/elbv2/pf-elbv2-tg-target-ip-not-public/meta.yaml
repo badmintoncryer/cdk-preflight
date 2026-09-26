@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The IP address '8.8.8.8' is not allowed, as it must be an address from a VPC subnet, RFC1918, or RFC6598\"; the pass template reached CREATE_COMPLETE."
+  expect: "The IP address '8.8.8.8' is not allowed, as it must be an address from a VPC subnet, RFC1918, or RFC6598"
 addedOn: 2026-09-08

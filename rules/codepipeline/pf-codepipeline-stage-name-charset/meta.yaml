@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: a 101-character stage name -> \"Member must have length less than or equal to 100\" (ROLLBACK_COMPLETE); api-probe 2026-09-14 us-east-1: stage name \"Bad Name\" -> \"Member must satisfy regular expression pattern: [A-Za-z0-9.@\\-_]+\"; pass 100-character stage name -> CREATE_COMPLETE"
+  expect: "Member must satisfy regular expression pattern: [A-Za-z0-9.@"
 addedOn: 2026-09-14

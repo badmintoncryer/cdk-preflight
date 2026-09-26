@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"'zone_affinity' is not a valid value for 'dns_record.client_routing_policy'\"; the pass template reached CREATE_COMPLETE."
+  expect: "zone_affinity' is not a valid value for 'dns_record.client_routing_policy"
 addedOn: 2026-09-08

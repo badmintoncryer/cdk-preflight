@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail template (After \"pf-ses-no-such-rule\" on a rule set the same template creates) -> ROLLBACK_COMPLETE with \"Rule does not exist: pf-ses-no-such-rule (Service: Ses, Status Code: 400)\" (HandlerErrorCode: NotFound); pass template (a second rule whose After is a Ref to the first) -> CREATE_COMPLETE."
+  expect: "Rule does not exist: pf-ses-no-such-rule"
 addedOn: 2026-09-24

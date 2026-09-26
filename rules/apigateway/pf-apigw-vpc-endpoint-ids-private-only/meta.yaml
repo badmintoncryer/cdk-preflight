@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"VPCEndpoints can only be specified with PRIVATE apis.\" (ROLLBACK_COMPLETE)"
+  expect: "VPCEndpoints can only be specified with PRIVATE apis"
 addedOn: 2026-09-08

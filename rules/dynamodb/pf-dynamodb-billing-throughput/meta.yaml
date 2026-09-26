@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-01 us-east-1: CREATE_FAILED (DynamoDB InvalidRequest: Property ProvisionedThroughput can't be used with PAY_PER_REQUEST BillingMode.), pass template CREATE_COMPLETE. Log: bench/logs/pf-dynamodb-billing-throughput.log"
+  expect: "Property ProvisionedThroughput can't be used with PAY_PER_REQUEST BillingMode"
 addedOn: 2026-09-01

@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Requested global functionality, but global cluster identifier is not specified\" ROLLBACK_COMPLETE"
+  expect: "Requested global functionality, but global cluster identifier is not specified"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateWorkgroup baseCapacity 3 -> \"ValidationException: The base capacity can't be less than 4 RPUs.\" (#66 phase B); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  The base capacity can't be less than 4 RPUs. (Service: RedshiftServerless, Status Code: 400, Request ID: 03775c88-a003-40a7-9c2f-e7d9e1a718cd) (SDK Attempt Count: 1)  (RequestToken: f3c4fd5f-0480-c43e-8a87-1c82278b7b36, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "The base capacity can't be less than 4 RPUs"
 addedOn: 2026-09-22

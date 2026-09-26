@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutResourcePolicy with a JSON object that is not IAM-shaped -> \"Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar.\" Bare engine clean (the property is a plain string)."
+  expect: "Error occurred while parsing accessPolicy. Please check if the accessPolicy has been constructed correctly using IAM grammar"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Condition node without a condition named default -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The condition node 'Cond1' is missing a default condition. Add a default condition to ensure the flow can continue when no other conditions are met…]; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-condition-default.log"
+  expect: "failed to stabilize. Validation messages: [The condition node 'Cond1' is missing a default condition. Add a default condition to ensure the flow can continue when no other conditions are met"
 addedOn: 2026-09-06

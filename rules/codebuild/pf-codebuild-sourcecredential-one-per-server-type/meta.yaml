@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (two AWS::CodeBuild::SourceCredential resources both naming ServerType GITHUB) -> \"Access token with server type GITHUB already exists. Delete its source credential and try again.\" (HandlerErrorCode AlreadyExists, ROLLBACK_COMPLETE - CloudFormation creates the two in parallel and whichever lands second is the one that fails); pass template (one GITHUB and one BITBUCKET credential) -> CREATE_COMPLETE. ImportSourceCredentials called directly overwrites instead, so only the CloudFormation handler, which imports without shouldOverwrite, surfaces this."
+  expect: "Access token with server type GITHUB already exists. Delete its source credential and try again"
 addedOn: 2026-09-14

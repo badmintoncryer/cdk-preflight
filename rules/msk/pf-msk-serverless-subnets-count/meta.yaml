@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: one VpcConfig with 1 subnet and one with 7 -> \"The size of list should be between 2 and 6. ... 'subnetIds'\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only: the 6-subnet end of the boundary needs 6 Availability Zones, and us-east-1e/use1-az3 does not carry MSK). The list-size check runs before the subnet lookup, so fake subnet ids reach it"
+  expect: "The size of list should be between 2 and 6"
 addedOn: 2026-09-13

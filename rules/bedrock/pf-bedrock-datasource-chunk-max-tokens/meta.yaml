@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: FixedSizeChunkingConfiguration.MaxTokens 8193 -> \"1 validation error detected: Value '8193' at 'vectorIngestionConfiguration.chunkingConfiguration.fixedSizeChunkingConfiguration.maxTokens' failed to satisfy constraint\" ROLLBACK_COMPLETE; pass 8192 -> CREATE_COMPLETE."
+  expect: "1 validation error detected: Value '8193' at 'vectorIngestionConfiguration.chunkingConfiguration.fixedSizeChunkingConfiguration.maxTokens' failed to satisfy constraint"
 addedOn: 2026-09-06

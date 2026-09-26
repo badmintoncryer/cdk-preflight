@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "1 validation error detected: Value ''my group!'' at ''loggingConfig.logGroup'' failed to satisfy constraint: Member must satisfy regular expression pattern: [\.\-_/#A-Za-z0-9]+"'
+  expect: "1 validation error detected: Value 'my group!' at 'loggingConfig.logGroup' failed to satisfy constraint: Member must satisfy regular expression pattern"
 addedOn: 2026-09-07

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: order 65536 -> \"Invalid Resource Record: 'FATAL problem: NAPTRRRDATAOrderOutOfBounds (NAPTR record order value is out of bounds) encountered with '65536 50 ...''\" (ROLLBACK_COMPLETE); pass order 65535 -> CREATE_COMPLETE"
+  expect: "Invalid Resource Record: 'FATAL problem: NAPTRRRDATAOrderOutOfBounds (NAPTR record order value is out of bounds) encountered with '65536 50"
 addedOn: 2026-09-10

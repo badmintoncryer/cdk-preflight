@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Artifacts.Type NO_ARTIFACTS with EncryptionDisabled true) -> \"Invalid artifacts: artifact type NO_ARTIFACTS should have null encryptionDisabled\" (ROLLBACK_COMPLETE); pass template (Artifacts.Type S3 with a Location and EncryptionDisabled true) -> CREATE_COMPLETE."
+  expect: "Invalid artifacts: artifact type NO_ARTIFACTS should have null encryptionDisabled"
 addedOn: 2026-09-14

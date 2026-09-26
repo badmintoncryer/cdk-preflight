@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 6 entries in ConsumableResourceList -> \"Each ConsumableResourceProperty can have at most 5 consumableResources\" (ROLLBACK_COMPLETE); pass 5 -> CREATE_COMPLETE"
+  expect: "Each ConsumableResourceProperty can have at most 5 consumableResources"
 addedOn: 2026-09-12

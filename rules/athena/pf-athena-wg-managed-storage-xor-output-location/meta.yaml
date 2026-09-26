@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: ManagedQueryResultsConfiguration and ResultConfiguration cannot be set together.\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: ManagedQueryResultsConfiguration and ResultConfiguration cannot be set together.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "ManagedQueryResultsConfiguration and ResultConfiguration cannot be set together"
 addedOn: 2026-09-13

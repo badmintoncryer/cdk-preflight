@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The default redirect URI https://other.example.com/cb is not in the callback URIs list.\"; pass template -> CREATE_COMPLETE"
+  expect: "The default redirect URI https://other.example.com/cb is not in the callback URIs list"
 addedOn: 2026-09-08

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (AdvancedSecurityOptions.Enabled false with JWTOptions.Enabled true) -> \"Advanced security option must be enabled to configure JWT.\" (ROLLBACK_COMPLETE); pass (the same domain with JWTOptions dropped) not deployed (--fail-only), but the m6g.large.search + gp3 scaffold reached CREATE_COMPLETE the same day under pf-opensearch-fgac-requires-node-to-node."
+  expect: "Advanced security option must be enabled to configure JWT"
 addedOn: 2026-09-25

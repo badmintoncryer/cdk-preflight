@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): GuardrailProfileArn with another account id -> CloudFormation CREATE_FAILED: Access denied for operation 'AWS::Bedrock::Guardrail' (API: The provided resource ARN is from a different account); ${AWS::AccountId} deploys. Needs deploy_account (silent in warn mode); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-profile-account.log"
+  expect: "Access denied for operation 'AWS::Bedrock::Guardrail"
 addedOn: 2026-09-06

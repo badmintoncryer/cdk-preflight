@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: MinimumHealthyHosts FLEET_PERCENT 100 -> \"The value for the minimum healthy hosts with type of FLEET_PERCENT should be positive and less than 100\" (ROLLBACK_COMPLETE); pass FLEET_PERCENT 99 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: 0 and 1 are accepted despite the \"should be positive\" wording, so 100 is the only bound."
+  expect: "The value for the minimum healthy hosts with type of FLEET_PERCENT should be positive and less than 100"
 addedOn: 2026-09-14

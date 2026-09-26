@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail template -> \"Subnets specified must belong to the VPC: vpc-007ac805dd3508b71\" (ROLLBACK_COMPLETE); fail-only, and the fixture builds its own EKS cluster because CreateNodegroup checks that the cluster exists before it looks at this property."
+  expect: "Subnets specified must belong to the VPC"
 addedOn: 2026-09-25

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Logs::MetricFilter. Metric namespaces starting with AWS/ are reserved for AWS.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricFilter with MetricNamespace \"AWS/Custom\" -> \"Metric namespaces starting with AWS/ are reserved for AWS.\" Bare engine clean (pf-cloudwatch-metric-namespace-ascii only covers the character set)."
+  expect: "AWS::Logs::MetricFilter. Metric namespaces starting with AWS/ are reserved for AWS"
 addedOn: 2026-09-08

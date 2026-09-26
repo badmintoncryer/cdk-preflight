@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (CustomEndpointCertificateArn in account 999999999999) -> \"Invalid certificate ARN: arn:aws:acm:us-east-1:999999999999:certificate/1111... Cross-account certificate references are not allowed.\" (ROLLBACK_COMPLETE); pass (CustomEndpoint search.appnao.com with the account's own *.appnao.com certificate, written as Fn::Sub over ${AWS::Region} / ${AWS::AccountId}) -> CREATE_COMPLETE."
+  expect: "Cross-account certificate references are not allowed"
 addedOn: 2026-09-25

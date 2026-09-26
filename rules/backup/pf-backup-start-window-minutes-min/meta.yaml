@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (StartWindowMinutes 59) -> \"Error in some rules due to : StartWindowMinutes parameter is below minimum value. StartWindowMinutes minimum value is: 60 minutes\" (ROLLBACK_COMPLETE); pass (60) -> CREATE_COMPLETE"
+  expect: "Error in some rules due to : StartWindowMinutes parameter is below minimum value. StartWindowMinutes minimum value is: 60 minutes"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail Code.BranchName \"bad branch\" over s3://cdkpf-codesuite-63/cdkpf-code.zip -> \"Branch name cannot contain whitespace\" (ROLLBACK_COMPLETE); pass Code.BranchName \"main\" over the same object -> CREATE_COMPLETE. Code is applied by the CloudFormation handler, so CreateRepository never sees it. The rest of the reject set was measured on this same path the same day, one fail-only stack each: \"a..b\" -> \"Branch name cannot contain consecutive dots\", \"a.lock\" -> \"Branch name components cannot end with .lock\", \".a\" -> \"Branch name components cannot begin with a dot.\", \"a@{b\" -> \"Branch name cannot contain @{\" (all ROLLBACK_COMPLETE)."
+  expect: "Branch name cannot contain whitespace"
 addedOn: 2026-09-14

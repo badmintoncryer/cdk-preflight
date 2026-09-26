@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: LowerBound must be less than the UpperBound for StepAdjustment : StepAdjustment{MetricIntervalLowerBound=0.0,MetricIntervalUpperBound=0.0,ScalingAdjustment=1.0,ProportionalFactor=null} -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "LowerBound must be less than the UpperBound for StepAdjustment : StepAdjustment{MetricIntervalLowerBound=0.0,MetricIntervalUpperBound=0.0,ScalingAdjustment=1.0,ProportionalFactor=null"
 addedOn: 2026-09-09

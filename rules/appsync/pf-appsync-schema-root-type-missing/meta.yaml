@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema:"
+  expect: "Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema"
 addedOn: 2026-09-12

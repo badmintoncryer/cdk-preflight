@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount 2 with no ZoneAwarenessEnabled) -> \"ZoneAwarenessEnabled must be set to True to specify the ZoneAwarenessSettings\" (ROLLBACK_COMPLETE); pass (the same config with ZoneAwarenessEnabled true and 2 data nodes) not deployed (--fail-only)."
+  expect: "ZoneAwarenessEnabled must be set to True to specify the ZoneAwarenessSettings"
 addedOn: 2026-09-25

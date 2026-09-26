@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-04 us-east-1: UserPoolName '\u30c6\u30b9\u30c8\u7528' -> \"1 validation error detected: Value '????' at 'poolName' failed to satisfy constraint: Member must satisfy regular expression pattern: [\\\\w\\\\s+=,.@-]+\" ROLLBACK_COMPLETE."
+  expect: "1 validation error detected: Value '????' at 'poolName' failed to satisfy constraint: Member must satisfy regular expression pattern"
 addedOn: 2026-09-04

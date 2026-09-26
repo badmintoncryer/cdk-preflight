@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail DestinationArn arn:aws:sqs:us-east-1:214794239830:cdkpf-codesuite -> \"Unexpected service name in arn: sqs\" (ROLLBACK_COMPLETE); pass the same name as an SNS topic ARN -> CREATE_COMPLETE"
+  expect: "Unexpected service name in arn: sqs"
 addedOn: 2026-09-14

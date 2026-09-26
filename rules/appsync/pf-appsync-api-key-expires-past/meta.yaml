@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: Expires 999999999 (2001-09-09) -> \"API key must be valid for a minimum of 1 days.\" ROLLBACK_COMPLETE; pass without Expires (the API default of 7 days) -> CREATE_COMPLETE. The real floor is one day from the deploy, which no fixed value can sit on, so the rule only judges values that are in the past whatever the deploy date."
+  expect: "API key must be valid for a minimum of 1 days"
 addedOn: 2026-09-12

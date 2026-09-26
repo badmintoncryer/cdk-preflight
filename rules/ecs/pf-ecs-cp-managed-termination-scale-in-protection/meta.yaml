@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (CreateCapacityProvider error: The managed termination protection setting for the capacity provider is invalid. To enable managed termination protection for a capacity provider, the Auto Scaling group must have instance protection from scale in enabled.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-cp-managed-termination-scale-in-protection.log"
+  expect: "CreateCapacityProvider error: The managed termination protection setting for the capacity provider is invalid. To enable managed termination protection for a capacity provider, the Auto Scaling group must have instance protection from scale in enabled"
 addedOn: 2026-09-08

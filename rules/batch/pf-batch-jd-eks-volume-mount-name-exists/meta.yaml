@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"The volumeMounts name is required for eksProperties.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. The fail template does name the mount (\"other\"); the handler answers \"name is required\" when the name matches no volume. The pass template differs only by naming the declared volume."
+  expect: "The volumeMounts name is required for eksProperties"
 addedOn: 2026-09-12

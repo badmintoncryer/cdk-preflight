@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: ResponseParameters keyed by 199 and 600 -> \"Invalid mapping expression specified: Validation Result: warnings : [], errors : [Status Code 199 is not valid.]\" (ROLLBACK_COMPLETE; the service reports the first key it rejects, so the 600 end stays hidden behind it); pass keyed by 200 and 599 -> CREATE_COMPLETE."
+  expect: "Invalid mapping expression specified: Validation Result: warnings"
 addedOn: 2026-09-08

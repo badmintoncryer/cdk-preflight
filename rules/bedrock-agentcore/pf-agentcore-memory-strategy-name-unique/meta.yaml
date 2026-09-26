@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): CREATE_FAILED (BedrockAgentCoreControl 400: Validation failed during CreateMemory: Duplicate memory strategy names were provided: [s1]) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-memory-strategy-name-unique.log"
+  expect: "Validation failed during CreateMemory: Duplicate memory strategy names were provided"
 addedOn: 2026-09-05

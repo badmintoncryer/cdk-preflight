@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: container Cpu 257 against task Cpu 256 -> \"Create TaskDefinition: The sum of all container 'cpu' values cannot be greater than the value of the task 'cpu'.\" (ROLLBACK_COMPLETE); pass container Cpu 256 against task Cpu 256 -> CREATE_COMPLETE."
+  expect: "Create TaskDefinition: The sum of all container 'cpu' values cannot be greater than the value of the task 'cpu"
 addedOn: 2026-09-08

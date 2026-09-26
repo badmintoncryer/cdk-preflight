@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: AuthorizerResultTtlInSeconds 3601 -> \"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\" (ROLLBACK_COMPLETE); pass 3600 -> CREATE_COMPLETE"
+  expect: "Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds"
 addedOn: 2026-09-08

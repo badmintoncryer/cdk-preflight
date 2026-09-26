@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 64-character label -> \"FATAL problem: DomainLabelTooLong (Domain label is too long) encountered with 'aaaa...(64 a's)'\" (ROLLBACK_COMPLETE); pass 63-character label -> CREATE_COMPLETE"
+  expect: "FATAL problem: DomainLabelTooLong (Domain label is too long) encountered with"
 addedOn: 2026-09-10

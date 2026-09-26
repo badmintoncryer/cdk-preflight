@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (FileSystemLocations Location fs-01234567.efs.us-east-1.amazonaws.com, no colon, with PrivilegedMode true) -> \"Invalid Input: File System Location is invalid, should be in the form 'FileSystemDNS':'FileSystemDirectory'\" (ROLLBACK_COMPLETE); pass template (PrivilegedMode true and no FileSystemLocations) -> CREATE_COMPLETE. The format is checked before the PrivilegedMode and VpcConfig requirements, and a fake file system id passes it, so no EFS file system is created. A pass carrying a well-formed location would need VpcConfig as well."
+  expect: "Invalid Input: File System Location is invalid, should be in the form 'FileSystemDNS':'FileSystemDirectory"
 addedOn: 2026-09-14

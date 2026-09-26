@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-07 us-east-1: Sql together with Sqls -> ROLLBACK_COMPLETE \"Either RedshiftDataParameters.sql or RedshiftDataParameters.sqls\". Measured the same day via events:PutTargets: DbUser together with SecretManagerArn gives the matching message. A dynamic path embedded in a larger SQL string is accepted, so that is not reported."
+  expect: "Either RedshiftDataParameters.sql or RedshiftDataParameters.sqls"
 addedOn: 2026-09-07

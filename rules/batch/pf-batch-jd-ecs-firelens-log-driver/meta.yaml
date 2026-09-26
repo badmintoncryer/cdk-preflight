@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"When a firelensConfiguration object is specified, at least one container has to be configured with the awsfirelens log driver\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "When a firelensConfiguration object is specified, at least one container has to be configured with the awsfirelens log driver"
 addedOn: 2026-09-12

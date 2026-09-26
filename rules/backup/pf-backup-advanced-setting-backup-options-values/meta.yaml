@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (AdvancedBackupSettings[0] ResourceType \"EC2\" + BackupOptions {WindowsVSS: \"on\"}) -> \"Invalid Resource Type : EC2\" (ROLLBACK_COMPLETE); pass (the same template with WindowsVSS \"enabled\") -> CREATE_COMPLETE. The service blames ResourceType even when the rejected value is the BackupOptions map, so the pair - identical but for the WindowsVSS value - is what pins the constraint"
+  expect: "Invalid Resource Type : EC2"
 addedOn: 2026-09-24

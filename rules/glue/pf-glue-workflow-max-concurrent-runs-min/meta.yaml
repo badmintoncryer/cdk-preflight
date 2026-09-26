@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (MaxConcurrentRuns 0) -> \"MaxConcurrentRuns should be greater than or equal to 1 if present.\" (ROLLBACK_COMPLETE); pass template (MaxConcurrentRuns 1) -> CREATE_COMPLETE"
+  expect: "MaxConcurrentRuns should be greater than or equal to 1 if present"
 addedOn: 2026-09-14

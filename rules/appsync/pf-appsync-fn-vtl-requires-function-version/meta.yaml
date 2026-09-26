@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Invalid request provided: The FunctionVersion can not be null to create a function.\" (RequestToken: 293fd4f1-4aad-d2c1-468e-31da48f32c26, HandlerErrorCode: InvalidRequest)"
+  expect: "The FunctionVersion can not be null to create a function"
 addedOn: 2026-09-12

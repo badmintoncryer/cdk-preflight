@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-25 us-east-1 CreateSecurityConfig, one element removed at a time from an ACCEPTED IdP metadata document: without SingleSignOnService -> \"Policy json is invalid, error: [$.IdpURL: null found, string expected]\"; without the whole IDPSSODescriptor (so no certificate either) -> \"[$.IdpURL: null found, string expected, $.Cert: null found, string expected]\". A body that is not XML at all fails earlier with \"SAML metadata xml is invalid\". bench 2026-09-25 us-east-1: fail (both arms) -> ROLLBACK_COMPLETE; pass -> CREATE_COMPLETE."
+  expect: "Policy json is invalid, error"
 addedOn: 2026-09-25

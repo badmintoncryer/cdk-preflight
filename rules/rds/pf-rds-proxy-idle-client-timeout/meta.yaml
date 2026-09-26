@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: IdleClientTimeout 28801 -> \"Invalid IdleClientTimeout - valid range is 1 - 28800\" (ROLLBACK_COMPLETE); pass 28800 -> CREATE_COMPLETE"
+  expect: "Invalid IdleClientTimeout - valid range is 1 - 28800"
 addedOn: 2026-09-08

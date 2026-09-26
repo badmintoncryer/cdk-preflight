@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: slow_start.duration_seconds 901 rolled back with \"'slow_start.duration_seconds' value '901' must be between '30-900' inclusive\"; the 29 and -1 target groups are masked by the DependsOn order and answer the same message. The pass template carries 0 (disabled), 30 and 900 and reached CREATE_COMPLETE."
+  expect: "slow_start.duration_seconds' value '901' must be between '30-900' inclusive"
 addedOn: 2026-09-01

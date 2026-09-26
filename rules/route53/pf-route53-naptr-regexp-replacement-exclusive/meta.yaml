@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: fail template -> \"Invalid Resource Record: 'WARNING problem: NAPTRRRDATARegexpAndReplacementError (NAPTR record can have only one field in regexp and replacement) encountered with '100 50 \\\"U\\\" \\\"E2U+sip\\\" \\\"!^.*$!sip:info@example.com!\\\" replacement.example.com.''\" (ROLLBACK_COMPLETE); pass (same value with the replacement set to \".\") -> CREATE_COMPLETE"
+  expect: "Invalid Resource Record: 'WARNING problem: NAPTRRRDATARegexpAndReplacementError (NAPTR record can have only one field in regexp and replacement) encountered with '100 50"
 addedOn: 2026-09-10

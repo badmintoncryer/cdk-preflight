@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: fail (gp3 10 GiB with Iops 2999 on t3.small.search) -> \"IOPS must be between 3000 and 11800\" (ROLLBACK_COMPLETE); pass (the same volume at Iops 3000) -> CREATE_COMPLETE. The upper end in the message is the instance type's; only the floor of 3000 is shared by every type, so only the floor is in the rule."
+  expect: "IOPS must be between 3000 and 11800"
 addedOn: 2026-09-25

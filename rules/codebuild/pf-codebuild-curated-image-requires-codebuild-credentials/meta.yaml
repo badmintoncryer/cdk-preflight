@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Image aws/codebuild/amazonlinux2-x86_64-standard:5.0 with ImagePullCredentialsType SERVICE_ROLE) -> \"Invalid input: cannot use a CodeBuild curated image with imagePullCredentialsType SERVICE_ROLE\" (ROLLBACK_COMPLETE); pass template (the same image with ImagePullCredentialsType CODEBUILD) -> CREATE_COMPLETE."
+  expect: "Invalid input: cannot use a CodeBuild curated image with imagePullCredentialsType SERVICE_ROLE"
 addedOn: 2026-09-14

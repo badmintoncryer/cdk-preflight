@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-26 us-east-1: fail (sns_configs topic_arn arn:aws:sns:us-east-1:000000000000:cdkpf-t while the stack deploys into 214794239830) -> ROLLBACK_COMPLETE \"ValidationException: Invalid SNS receiver topic account ID: 000000000000\"; pass (the same ARN with the harness account 123456789012 (scripts/rule-check.ts and test/rules.test.ts both default to it)) not deployed (--fail-only) and silent under rule-check"
+  expect: "ValidationException: Invalid SNS receiver topic account ID"
 addedOn: 2026-09-26

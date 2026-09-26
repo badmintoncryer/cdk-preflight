@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateAlias (us-east-1, 2026-09-07): "1 validation error detected: Value ''{2=1.5}'' at ''routingConfig.additionalVersionWeights'' failed to satisfy constraint: Map value must satisfy constraint: [Member must have value less than or equal to 1.0, Member must have value greater than or equal to 0.0, Member must not be null]"'
+  expect: "1 validation error detected: Value '{2=1.5}' at 'routingConfig.additionalVersionWeights' failed to satisfy constraint: Map value must satisfy constraint"
 addedOn: 2026-09-07

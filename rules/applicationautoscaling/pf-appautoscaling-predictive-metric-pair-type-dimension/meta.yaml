@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: PredefinedMetricPairSpecification ECSServiceTotalCPUUtilization (a value CloudFormation's own enum accepts) on an ECS service -> \"The predefined metric pair type for scalable dimension ecs:service:DesiredCount isn't valid. The supported values are: ECSServiceMemoryUtilization, ALBRequestCount and ECSServiceCPUUtilization.\" (ROLLBACK_COMPLETE); pass the same policy with ECSServiceCPUUtilization -> CREATE_COMPLETE"
+  expect: "The predefined metric pair type for scalable dimension ecs:service:DesiredCount isn't valid. The supported values are: ECSServiceMemoryUtilization, ALBRequestCount and ECSServiceCPUUtilization"
 addedOn: 2026-09-24

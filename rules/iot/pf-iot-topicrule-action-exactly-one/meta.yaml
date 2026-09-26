@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1: CreateTopicRule with actions[0] = {republish, lambda} -> \"InvalidRequestException: Each object in the actions list can only have one action defined\"; actions[0] = {} -> \"InvalidRequestException: Empty actions are not allowed. Please define one type of action\". ErrorAction is deliberately not inspected: the same two keys in errorAction were accepted (#270 phase B); bench 2026-09-25 us-east-1: fail -> \"Resource handler returned message: \\\"Empty actions are not allowed. Please define one type of action (Service: Iot, Status Code: 400, Request ID: ca3a5043-1edf-486e-a729-81c7297a8eed) (SDK Attempt Count: 1)\\\" (RequestToken: c51438fd-ebe4-dfb6-3792-9958013f16ce, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE - CloudFormation reached the empty entry first, so the two-key branch of the fail fixture is covered by the API probe above rather than by this stack"
+  expect: "Empty actions are not allowed. Please define one type of action"
 addedOn: 2026-09-25

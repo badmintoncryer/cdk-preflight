@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'AddPermission (us-east-1, 2026-09-07): "Functions from ''us-west-2'' are not reachable in this region (''us-east-1'')"'
+  expect: "are not reachable in this region"
 addedOn: 2026-09-07

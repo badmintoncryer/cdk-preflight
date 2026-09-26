@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"Revocation contents must be specified\"; the pass template reached CREATE_COMPLETE."
+  expect: "Revocation contents must be specified"
 addedOn: 2026-09-08

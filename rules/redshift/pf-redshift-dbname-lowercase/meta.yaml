@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-15 us-east-1: CreateCluster -> \"InvalidParameterValue: DbName parameter must be lowercase, begin with a letter, contain only alphanumeric characters, underscore ('_'), plus sign ('+'), dot ('.'), at ('@'), or hyphen ('-'), and be less than 64 characters.\" (#66 phase B) (the API accepts _ + . @ - as well, so the rule judges the service's own character set, not the doc's \"alphanumeric only\"; length is not judged); bench 2026-09-22 us-east-1: fail -> \"Resource handler returned message:  DbName parameter must be lowercase, begin with a letter, contain only alphanumeric characters, underscore ('_'), plus sign ('+'), dot ('.'), at ('@'), or hyphen ('-'), and be less than 64 characters. (Service: Redshift, Status Code: 400, Request ID: 6771333b-7ff4-\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "DbName parameter must be lowercase, begin with a letter, contain only alphanumeric characters, underscore ('_'), plus sign ('+'), dot ('.'), at ('@'), or hyphen ('-'), and be less than 64 characters"
 addedOn: 2026-09-22

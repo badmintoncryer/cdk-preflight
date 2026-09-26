@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: 51 stages -> \"Pipeline has too many stages. There can only be up to 50 stages in a pipeline\" (ROLLBACK_COMPLETE); pass 50 stages -> CREATE_COMPLETE"
+  expect: "Pipeline has too many stages. There can only be up to 50 stages in a pipeline"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (ProtectedResourceType \"CDKPFNOSUCH69\") -> \"Invalid resource type. Valid options: [NEPTUNE, S3, EBS, DYNAMODB, EC2, RDS, FSX, AURORA, DOCUMENTDB, EFS].\" (ROLLBACK_COMPLETE); pass (ProtectedResourceType \"EBS\") -> CREATE_COMPLETE. Severity is WARN because AWS keeps adding restore-testing resource types to that list"
+  expect: "Invalid resource type. Valid options"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): two Data connections into FlowOutputNode.document -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The input 'document' in node 'FlowOutputNode' has multiple incoming connections. Remove all but one connection to this input…]; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-input-single-connection.log"
+  expect: "failed to stabilize. Validation messages: [The input 'document' in node 'FlowOutputNode' has multiple incoming connections. Remove all but one connection to this input"
 addedOn: 2026-09-06

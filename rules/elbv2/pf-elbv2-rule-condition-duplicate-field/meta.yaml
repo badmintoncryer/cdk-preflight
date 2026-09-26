@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A rule can only have one 'host-header' condition\"; the pass template reached CREATE_COMPLETE."
+  expect: "A rule can only have one 'host-header' condition"
 addedOn: 2026-09-08

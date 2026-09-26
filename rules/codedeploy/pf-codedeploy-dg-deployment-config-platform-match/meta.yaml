@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Server application with a sibling Lambda AWS::CodeDeploy::DeploymentConfig -> \"Compute platform of deployment config cdkpf-...-R4-zneT91LExutg does not match expected compute platform, correct compute platform should be Server.\" (ROLLBACK_COMPLETE); the second fail resource, naming the predefined CodeDeployDefault.LambdaAllAtOnce, gives the same message with that name (api-probe 2026-09-14 us-east-1, as does CodeDeployDefault.ECSAllAtOnce, and a Lambda application naming CodeDeployDefault.AllAtOnce or .OneAtATime). pass CodeDeployDefault.OneAtATime plus a sibling Server configuration -> CREATE_COMPLETE."
+  expect: "does not match expected compute platform, correct compute platform should be Server"
 addedOn: 2026-09-14

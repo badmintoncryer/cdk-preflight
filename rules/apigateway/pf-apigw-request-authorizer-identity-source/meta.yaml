@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid request identity source expression: header.Auth. The sources must be separated by comma, and each source must be either a method request parameter, matching 'method.request.querystring|header.[a-zA-Z0-9._-]+', or a stage variable, m\" (ROLLBACK_COMPLETE)"
+  expect: "Invalid request identity source expression: header.Auth. The sources must be separated by comma, and each source must be either a method request parameter, matching 'method.request.querystring|header.[a-zA-Z0-9._-]+', or a stage variable"
 addedOn: 2026-09-08

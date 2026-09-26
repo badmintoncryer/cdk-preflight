@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='HTTPS'] but it was not found, Invalid Resource Record: 'FATAL problem: SVCBInconsistentParams (Inconsistent SVC Params for SVCParam Key \"no-default-alpn\") encountered with 'When no-default-alpn is specified in an RR, alpn must also be specified''] (ROLLBACK_COMPLETE)"
+  expect: "type='HTTPS'] but it was not found, Invalid Resource Record: 'FATAL problem: SVCBInconsistentParams (Inconsistent SVC Params for SVCParam Key"
 addedOn: 2026-09-10

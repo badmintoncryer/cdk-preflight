@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Server application, DeploymentStyle BLUE_GREEN + WITHOUT_TRAFFIC_CONTROL -> \"BLUE_GREEN deployment type not supported with WITHOUT_TRAFFIC_CONTROL option\" (ROLLBACK_COMPLETE); pass BLUE_GREEN + WITH_TRAFFIC_CONTROL with a LoadBalancerInfo -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: the same shape under a Lambda application returns the Lambda message instead, which is why this rule skips Lambda groups."
+  expect: "BLUE_GREEN deployment type not supported with WITHOUT_TRAFFIC_CONTROL option"
 addedOn: 2026-09-14

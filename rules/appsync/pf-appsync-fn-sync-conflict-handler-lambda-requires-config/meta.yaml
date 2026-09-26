@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"SyncConfig can only be specified for a resolver attached to a DynamoDB data source. (Service: AppSync, Status Code: 400, Request ID: 00df587d-5dfe-40c0-965b-be2b2c6687d6) (SDK Attempt Count: 1)\" (RequestToken: 516d352c-852c-ed27-91c1-621930148874, HandlerErrorCode: GeneralServiceException)"
+  expect: "SyncConfig can only be specified for a resolver attached to a DynamoDB data source"
 addedOn: 2026-09-12

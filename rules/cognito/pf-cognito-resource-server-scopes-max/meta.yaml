@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value '1 validation error detected: Value '[ResourceServerScopeType(scopeName=s0, scopeDescription=d), ResourceServerScopeType(scopeName=s1, scopeDescription=d), ResourceServerScopeType(scopeName=s2, scopeDescription=d), ResourceServerScopeType(scopeName=s3, scopeDescrip\"; pass template -> CREATE_COMPLETE"
+  expect: "1 validation error detected: Value '1 validation error detected: Value '[ResourceServerScopeType(scopeName=s0, scopeDescription=d), ResourceServerScopeType(scopeName=s1, scopeDescription=d), ResourceServerScopeType(scopeName=s2, scopeDescription=d), ResourceServerScopeType(scopeName=s3"
 addedOn: 2026-09-08

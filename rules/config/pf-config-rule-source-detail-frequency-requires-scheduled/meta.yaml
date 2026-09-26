@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"A maximum execution frequency is not allowed if MessageType is ConfigurationItemChangeNotification or OversizedConfigurationItemChangeNotification.\"; pass -> CREATE_COMPLETE"
+  expect: "A maximum execution frequency is not allowed if MessageType is ConfigurationItemChangeNotification or OversizedConfigurationItemChangeNotification"
 addedOn: 2026-09-24

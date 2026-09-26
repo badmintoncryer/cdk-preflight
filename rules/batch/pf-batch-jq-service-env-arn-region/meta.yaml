@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: a service environment ARN in eu-west-1 -> \"Service environments must be created and valid before attaching them to a job queue.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. Same confound as pf-batch-jq-ce-arn-region: a service environment that does not exist returns the same sentence."
+  expect: "Service environments must be created and valid before attaching them to a job queue"
 addedOn: 2026-09-12

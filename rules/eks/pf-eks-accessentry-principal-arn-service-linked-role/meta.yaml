@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: PrincipalArn arn:aws:iam::123456789012:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS -> ROLLBACK_COMPLETE, \"The caller is not allowed to modify access entries with a principalArn value of a Service Linked Role\". Measured the same day for the deploy account own SLR and for a foreign one, and for STANDARD as well as EC2_LINUX: the check is on the ARN shape alone. fail-only, no cluster built."
+  expect: "The caller is not allowed to modify access entries with a principalArn value of a Service Linked Role"
 addedOn: 2026-09-25

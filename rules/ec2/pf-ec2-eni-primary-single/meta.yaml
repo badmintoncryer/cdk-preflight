@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: CreateNetworkInterface with two Primary=true entries -> \"Only one primary private IP address can be specified.\"; one primary plus one secondary created cleanly. bench 2026-09-08 ap-northeast-1: two Primary entries -> ROLLBACK_COMPLETE with the same message; one -> CREATE_COMPLETE."
+  expect: "Only one primary private IP address can be specified"
 addedOn: 2026-09-08

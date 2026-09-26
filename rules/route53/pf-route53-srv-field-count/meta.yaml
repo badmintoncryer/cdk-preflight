@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='SRV'] but it was not found, Invalid Resource Record: 'FATAL problem: SRVRRDATANotFourFields (SRV record doesn't have 4 fields) encountered with '1 10 5269''] (ROLLBACK_COMPLETE)"
+  expect: "type='SRV'] but it was not found, Invalid Resource Record: 'FATAL problem: SRVRRDATANotFourFields (SRV record doesn't have 4 fields) encountered with '1 10 5269"
 addedOn: 2026-09-10

@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: BufferSizeInMBs 3.1 -> \"BufferSizeInMBs for lambda processor must be between 0.2 and 3.\" ROLLBACK_COMPLETE; pass 3 and 0.2 -> CREATE_COMPLETE. api 2026-09-13 us-east-1 CreateDeliveryStream: 3.1 and 0.19 are rejected with that message, and so are 3.01 and 0.199 - the bounds are exact rather than rounded to one decimal; 3 and 0.2 are accepted. Both BufferSizeInMBs and BufferIntervalInSeconds have to be present or the create fails first with \"Both BufferSizeInMBs and BufferIntervalInSeconds are required to configure buffering for lambda processor.\""
+  expect: "BufferSizeInMBs for lambda processor must be between 0.2 and 3"
 addedOn: 2026-09-10

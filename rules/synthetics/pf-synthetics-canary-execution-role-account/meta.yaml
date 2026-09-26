@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: ExecutionRoleArn arn:aws:iam::999999999999:role/cdkpf-nosuch-role -> \"Resource handler returned message: \"Error occurred during operation 'Cross-account pass role is not allowed. (Service: Synthetics, Status Code: 403, Request ID: d3e82e76-d37e-4ae8-9a8c-ccf908c68cde) (SDK Attempt Count: 1)'.\" (RequestToken: 53caf99f-0a92-4af3-2075-bab77466ce1b, HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); pass a role created by the same stack -> CREATE_COMPLETE"
+  expect: "Cross-account pass role is not allowed"
 addedOn: 2026-09-24

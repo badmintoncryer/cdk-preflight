@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: To enable Kinesis Data Stream in DynamoDBTable, both the stream and table must be in the same region.\"; pass -> CREATE_COMPLETE. The pass control creates the stream in the same template, so the only variable is the stream's Region."
+  expect: "To enable Kinesis Data Stream in DynamoDBTable, both the stream and table must be in the same region"
 addedOn: 2026-09-08

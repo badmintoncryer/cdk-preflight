@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe): CREATE_FAILED (AgentCoreEvaluationControlPlane 400 ValidationException: Duplicate evaluator ids detected) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-online-eval-evaluator-unique.log"
+  expect: "Duplicate evaluator ids detected"
 addedOn: 2026-09-05

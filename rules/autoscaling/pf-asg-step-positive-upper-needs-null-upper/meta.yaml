@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: There must be a StepAdjustment with an unspecified upper bound (i.e., upper bound is null) when one StepAdjustment has a positive upper bound. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "There must be a StepAdjustment with an unspecified upper bound (i.e., upper bound is null) when one StepAdjustment has a positive upper bound"
 addedOn: 2026-09-09

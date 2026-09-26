@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Replication destination must contain both ReplicationTime and Metrics or neither.\"; pass template -> CREATE_COMPLETE"
+  expect: "Replication destination must contain both ReplicationTime and Metrics or neither"
 addedOn: 2026-09-06

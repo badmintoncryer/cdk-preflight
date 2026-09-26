@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: fail template -> \"executionRoleArn is required for Fargate jobs.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  expect: "executionRoleArn is required for Fargate jobs"
 addedOn: 2026-09-12

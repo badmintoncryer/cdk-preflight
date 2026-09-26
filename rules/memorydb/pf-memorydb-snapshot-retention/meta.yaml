@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: SnapshotRetentionLimit 36 -> \"Invalid snapshot retention limit: 36. Retention limit must be between 0 and 35.\" ROLLBACK_COMPLETE; pass 35 -> CREATE_COMPLETE."
+  expect: "Invalid snapshot retention limit: 36. Retention limit must be between 0 and 35"
 addedOn: 2026-09-06

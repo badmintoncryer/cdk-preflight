@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a WINDOWS_SERVER_2019_CORE FARGATE task definition with Cpu 512 and Memory 2048 -> \"No Fargate configuration exists for given values: 512 CPU, 2048 memory\" ROLLBACK_COMPLETE; pass Cpu 1024 with the same Windows platform -> CREATE_COMPLETE. api 2026-09-13 us-east-1 RegisterTaskDefinition: 512 is rejected and 1024 is accepted. Fargate Cpu is a fixed set (256, 512, 1024, ...), so 1023 does not exist and the tightest violating value is 512."
+  expect: "No Fargate configuration exists for given values: 512 CPU, 2048 memory"
 addedOn: 2026-09-08

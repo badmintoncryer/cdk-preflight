@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): @nosuchref -> \"nosuchref cannot be null or empty, context: ReferenceSets.IPSetReferences.nosuchref\"; the same rule with the reference declared against a customer-managed prefix list was accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"nosuchref cannot be null or empty, context: ReferenceSets.IPSetReferences.nosuchref (Service: NetworkFirewall, Status Code: 400, Request ID: b67738a3-cdcc-4e10-8941-fc661185041a) (SDK Attempt Count: 1)\" (RequestToken: 4ae907c1-79f5-c9fe-0da3-7a845d5cb964, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "nosuchref cannot be null or empty, context: ReferenceSets.IPSetReferences.nosuchref"
 addedOn: 2026-09-25

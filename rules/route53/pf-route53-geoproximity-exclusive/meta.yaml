@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: ROLLBACK_COMPLETE before provisioning, \"Properties validation failed for resource Rec with message: #: #: only 1 subschema matches out of 2\"; the same record against the Route 53 API: \"Invalid request: Expected exactly one of [AWSRegion, LocalZoneGroup, or at least one of [Coordinates, or all of [Latitude, and Longitude]]], but found more than one\". The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine."
+  expect: "#: #: only 1 subschema matches out of 2"
 addedOn: 2026-09-10

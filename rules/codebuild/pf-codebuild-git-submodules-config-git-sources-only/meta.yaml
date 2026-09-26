@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Source.GitSubmodulesConfig on an S3 source and on a CODEPIPELINE source) -> \"Git submodules config is not supported for S3 source\" (ROLLBACK_COMPLETE; CreateProject answers the CODEPIPELINE half with \"Git submodules config is not supported for CodePipeline source\"); pass template (the same GitSubmodulesConfig on a CODECOMMIT source) -> CREATE_COMPLETE. NO_SOURCE is not in the rule: CreateProject accepts GitSubmodulesConfig there."
+  expect: "Git submodules config is not supported for S3 source"
 addedOn: 2026-09-14

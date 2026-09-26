@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (AuthType CODECONNECTIONS with Token \"cdkpf-not-a-connection-arn\") -> \"Token must be a valid CodeConnections arn\" (ROLLBACK_COMPLETE); pass template (the same credential with Token arn:aws:codeconnections:us-east-1:214794239830:connection/11111111-2222-3333-4444-555555555555) -> CREATE_COMPLETE. The check is purely syntactic - that connection does not exist, and an arn:aws:codestar-connections:...:connection/... is taken too, while arn:aws:s3:::... and arn:aws:codebuild:...:project/... are rejected - so the rule only asks that the ARN name a connections service."
+  expect: "Token must be a valid CodeConnections arn"
 addedOn: 2026-09-14

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'AddPermission (us-east-1, 2026-09-07): "The provided principal was invalid. Please check the principal and try again."'
+  expect: "The provided principal was invalid. Please check the principal and try again"
 addedOn: 2026-09-07

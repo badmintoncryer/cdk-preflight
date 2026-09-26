@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: 5 Contribution.Keys -> \"RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4 \"Keys\" in the \"Contribution\".\" ROLLBACK_COMPLETE; pass 4 -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutInsightRule with 5 keys gave the same message. Filters belongs inside Contribution - a body that puts it at the top level is rejected with INVALID_RULE_BODY before the key count is looked at."
+  expect: "RULE_BODY_COMPLEXITY: A RuleBody must have no more than 4"
 addedOn: 2026-09-08

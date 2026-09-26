@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: The parameter InstanceType cannot be used in a launch template override using instance requirements. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "The parameter InstanceType cannot be used in a launch template override using instance requirements"
 addedOn: 2026-09-09

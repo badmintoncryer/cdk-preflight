@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Invalid request provided: Invalid conformance pack template provided. Errors found: [Unsupported resource type(s) provided in the template]. Fix your template and try again.\"; pass -> CREATE_COMPLETE"
+  expect: "Invalid conformance pack template provided. Errors found: [Unsupported resource type(s) provided in the template]. Fix your template and try again"
 addedOn: 2026-09-24

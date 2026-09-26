@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: BlueGreenDeploymentConfiguration with only TerminateBlueInstancesOnDeploymentSuccess -> \"Deployment ready option cannot be null for blue green deployment\" (ROLLBACK_COMPLETE); the second fail resource, with only DeploymentReadyOption, gives \"Terminate blue instances on deployment success behaviour cannot be set to null for Blue Green deployments\" (api-probe 2026-09-14 us-east-1, and the same message came back from CloudFormation on the first bench run of pf-codedeploy-dg-copy-asg-requires-asg). pass both members present -> CREATE_COMPLETE. Both are refused on a group that never declares DeploymentStyle BLUE_GREEN, so the block itself is the trigger."
+  expect: "Deployment ready option cannot be null for blue green deployment"
 addedOn: 2026-09-14

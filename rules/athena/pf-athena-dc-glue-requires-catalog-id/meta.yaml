@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: Glue catalog parameters cannot be empty.\"; bench 2026-09-13 us-east-1: fail -> \"Glue catalog parameters cannot be empty.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Glue catalog parameters cannot be empty"
 addedOn: 2026-09-13

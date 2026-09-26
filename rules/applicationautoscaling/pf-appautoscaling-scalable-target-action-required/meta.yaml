@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: a scheduled action with no ScalableTargetAction at all (CloudFormation documents it as Required: No and the engine's schema agrees) -> \"ScalableTargetAction must be set\" (ROLLBACK_COMPLETE); pass two actions that carry one -> CREATE_COMPLETE"
+  expect: "ScalableTargetAction must be set"
 addedOn: 2026-09-24

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-24 us-east-1: fail (5 selectors, 251 values in total) -> ROLLBACK_FAILED \"Specify a valid number of DataResources.Values (0 to 250) for all your selectors\"; pass (5 selectors, 250 values) -> CREATE_COMPLETE"
+  expect: "Specify a valid number of DataResources.Values (0 to 250) for all your selectors"
 addedOn: 2026-09-24

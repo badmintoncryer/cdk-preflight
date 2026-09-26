@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail Events [] -> \"Repository trigger events list cannot be empty\" (ROLLBACK_COMPLETE); pass Events [all] -> CREATE_COMPLETE"
+  expect: "Repository trigger events list cannot be empty"
 addedOn: 2026-09-14

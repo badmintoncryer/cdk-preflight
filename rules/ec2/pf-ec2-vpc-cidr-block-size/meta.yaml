@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-13 us-east-1: CreateVpc 10.98.0.0/15 -> \"The CIDR '10.98.0.0/15' is invalid.\", 10.99.0.0/29 -> the same for /29; /28 and /16 accepted. bench 2026-09-13 us-east-1: fail chains /15 then /29 and reports the /15 -> ROLLBACK_COMPLETE; pass = /28 plus /16 -> CREATE_COMPLETE, both ends measured. Write the /15 aligned (10.98.0.0/15): EC2 canonicalises the block before quoting it, so 10.99.0.0/15 comes back as 10.98.0.0/15 and the message stops matching the template."
+  expect: "The CIDR '10.98.0.0/15' is invalid"
 addedOn: 2026-09-03

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: fail template -> \"Resource handler returned message: 'Health check config cannot be applied to a service with private namespace (Service: ServiceDiscovery, Status Code: 400, Request ID: 609e0d61-e11d-468b-b3e4-d98b12d24681) (SDK Attempt Count: 1)' (RequestToken: 21220b04-edce-f93e-4316-e101ba03f669, HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "Health check config cannot be applied to a service with private namespace"
 addedOn: 2026-09-22

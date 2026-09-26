@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: Phase2LifetimeSeconds 1001 against Phase1LifetimeSeconds 1000 -> \"Invalid value specified for Phase2LifetimeSeconds.\" (ROLLBACK_COMPLETE — EC2 never names the ordering, only the field, so the message reads the same at any violating distance); pass both at 3000 -> CREATE_COMPLETE, so equal is the limit."
+  expect: "Invalid value specified for"
 addedOn: 2026-09-06

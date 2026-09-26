@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-12 us-east-1: a compute environment ARN in eu-west-1 -> \"Compute Environments must be created and valid before attaching them to a job queue\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. Confound that cannot be removed inside one region: a compute environment that does not exist returns the same sentence, so the deploy failure is certain but the wording does not name the region."
+  expect: "Compute Environments must be created and valid before attaching them to a job queue"
 addedOn: 2026-09-12

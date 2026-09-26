@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> [type='CAA'] but it was not found, Invalid Resource Record: 'FATAL problem: CAARRDATAInvalidTag (Invalid tag) encountered with 'Only issue/issuewild/iodef is allowed for non critical flags.''] (ROLLBACK_COMPLETE)"
+  expect: "type='CAA'] but it was not found, Invalid Resource Record: 'FATAL problem: CAARRDATAInvalidTag (Invalid tag) encountered with 'Only issue/issuewild/iodef is allowed for non critical flags"
 addedOn: 2026-09-10

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Error occurred: InvalidInputException - The ARN for the CloudWatch Logs log group is invalid. (ROLLBACK_COMPLETE)"
+  expect: "Error occurred: InvalidInputException - The ARN for the CloudWatch Logs log group is invalid"
 addedOn: 2026-09-10

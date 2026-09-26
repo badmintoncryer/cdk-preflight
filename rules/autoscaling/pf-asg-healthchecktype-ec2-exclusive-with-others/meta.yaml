@@ -9,4 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-09 us-east-1: Specifying EC2 in addition to other health check types is not supported. Remove EC2 from HealthCheckType and try again. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  expect: "Specifying EC2 in addition to other health check types is not supported. Remove EC2 from HealthCheckType and try again"
 addedOn: 2026-09-09

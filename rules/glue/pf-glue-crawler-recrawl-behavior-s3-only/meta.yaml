@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (CRAWL_NEW_FOLDERS_ONLY with a JDBC target whose connection the same stack creates) -> \"RecrawlBehavior \\\"Crawl new folders only\\\" can only apply to Amazon S3 target.\" (ROLLBACK_COMPLETE); pass template (CRAWL_NEW_FOLDERS_ONLY with an S3 target) -> CREATE_COMPLETE. A CreateCrawler probe the same day answered \"Only S3 targets are allowed for event based crawlers.\" for the CRAWL_EVENT_MODE half."
+  expect: "can only apply to Amazon S3 target"
 addedOn: 2026-09-14

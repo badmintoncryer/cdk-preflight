@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-11 us-east-1: fail template -> [RSLVR-00724] Delegate Resolver rules require an outbound endpoint and delegation record, but cannot include a target IP or domain name. (ROLLBACK_COMPLETE)"
+  expect: "RSLVR-00724] Delegate Resolver rules require an outbound endpoint and delegation record, but cannot include a target IP or domain name"
 addedOn: 2026-09-10

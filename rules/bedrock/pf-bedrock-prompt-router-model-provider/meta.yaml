@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Claude 3 Haiku + Nova Lite -> CreatePromptRouter 400 ValidationException: The provided model arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0 is from a different provider than the other models; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-prompt-router-model-provider.log"
+  expect: "is from a different provider than the other models"
 addedOn: 2026-09-06

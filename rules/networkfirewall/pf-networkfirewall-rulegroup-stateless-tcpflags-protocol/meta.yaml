@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-25 us-east-1 (CreateRuleGroup DryRun): Protocols [17] with TCPFlags -> \"TCPFlags, Protocols cannot exist together, parameter: [([SYN], [SYN]), [17]], context: ...MatchAttributes.TCPFlags\"; the same rule with Protocols [6] was accepted; bench 2026-09-25 us-east-1: fail -> Resource handler returned message: \"TCPFlags, Protocols cannot exist together, parameter: [([SYN], [SYN]), [17]], context: StatelessRulesAndCustomActions.StatelessRules[Priority=1].RuleDefinition.MatchAttributes.TCPFlags (Service: NetworkFirewall, Status Code: 400, Request ID: 8c296d69-e282-4279-9e62-947c626b035f) (SDK Attempt Count: 1)\" (RequestToken: 9dd934af-1d7c-f083-ae40-228d89de7b0b, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "TCPFlags, Protocols cannot exist together, parameter"
 addedOn: 2026-09-25

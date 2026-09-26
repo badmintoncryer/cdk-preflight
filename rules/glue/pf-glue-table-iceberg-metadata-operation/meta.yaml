@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (OpenTableFormatInput.IcebergInput {}) -> \"Metadata information must be present\" (ROLLBACK_COMPLETE); pass template (IcebergInput with MetadataOperation CREATE) -> CREATE_COMPLETE. CreateTable the same day: the botocore model already refuses the empty input (\"Missing required parameter in OpenTableFormatInput.IcebergInput: MetadataOperation\") and CREATE is the only accepted value."
+  expect: "Metadata information must be present"
 addedOn: 2026-09-14

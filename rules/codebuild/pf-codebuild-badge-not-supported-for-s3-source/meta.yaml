@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (BadgeEnabled true on an S3 source and on a NO_SOURCE project) -> \"Build badges are not supported for projects with no source\" (ROLLBACK_COMPLETE; CreateProject answers the S3 half with \"Build badges are not supported for S3 source\"); pass template (BadgeEnabled true on a CODECOMMIT source) -> CREATE_COMPLETE."
+  expect: "Build badges are not supported for projects with no source"
 addedOn: 2026-09-14

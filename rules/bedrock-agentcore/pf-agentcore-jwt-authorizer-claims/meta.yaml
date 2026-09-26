@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-05 us-east-1 (probe, Gateway): CREATE_FAILED (BedrockAgentCoreControl 400: At least one of allowedAudience or allowedClients or allowedScopes or CustomClaims must be defined for CUSTOM_JWT authorizer) -> ROLLBACK_COMPLETE; Runtime (probe, fail-only): CREATE_FAILED (400: Either allowedAudience, allowedClients, allowedScopes, or customClaims must be present with at least one item); Harness (probe): CREATE_FAILED (400: same message). verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-jwt-authorizer-claims.log"
+  expect: "At least one of allowedAudience or allowedClients or allowedScopes or CustomClaims must be defined for CUSTOM_JWT authorizer"
 addedOn: 2026-09-05

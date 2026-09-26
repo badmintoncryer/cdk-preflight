@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'CreateFunction (us-east-1, 2026-09-07): "Do not include S3ObjectStorageMode when the function PackageType is Image."'
+  expect: "when the function PackageType is Image"
 addedOn: 2026-09-07
