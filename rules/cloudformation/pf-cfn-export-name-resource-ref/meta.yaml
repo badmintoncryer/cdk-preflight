@@ -7,6 +7,7 @@ title: "An export name may not depend on a resource or an imported value"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "CreateStack 2026-09-25 us-east-1 (issue #73 phase B, hand-run because bench/verify-rule.sh reports every synchronous API rejection as INCONCLUSIVE): Export.Name {\"Fn::GetAtt\": [\"T\", \"TopicName\"]} on an AWS::SNS::Topic -> An error occurred (ValidationError) when calling the CreateStack operation: Template format error: Output A is malformed.  The Name field of Export must not depend on any resources, imported values, or Fn::GetAZs."
+  method: real-deploy
+  evidence: "bench 2026-09-27 us-east-1: Export.Name {\"Ref\": \"Pad\"} on an AWS::SNS::Topic -> CreateStack rejected synchronously (API_REJECTED): \"Template format error: Output A is malformed.  The Name field of Export must not depend on any resources, imported values, or Fn::GetAZs.\"; the same Output exporting the literal cdkpf73-expref-p -> CREATE_COMPLETE."
+  expect: "The Name field of Export must not depend on any resources"
 addedOn: 2026-09-25

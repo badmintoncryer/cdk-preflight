@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: DeploymentTargets carrying both Accounts and AccountsUrl -> \"Resource handler returned message: \\\"Exactly one of Accounts or AccountsURL must be specified (Service: CloudFormation, Status Code: 400)\\\" (HandlerErrorCode: InvalidRequest)\". The stack ends ROLLBACK_FAILED because the StackSet delete handler re-validates the same value; the pass fixture deploys CREATE_COMPLETE."
+  expect: "Exactly one of Accounts or AccountsURL must be specified"
 addedOn: 2026-09-25

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: a topic whose DisplayName is Fn::ImportValue of the export the same template declares -> stack-level CREATE_FAILED \"No export named cdkpf73-ivself-f found\" (ROLLBACK_COMPLETE); the same template without the self-import -> CREATE_COMPLETE."
+  expect: "No export named cdkpf73-ivself-f found"
 addedOn: 2026-09-25

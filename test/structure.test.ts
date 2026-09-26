@@ -8,7 +8,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
+import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -138,6 +138,25 @@ test('repro evidence is required, and real-deploy must quote a bench run', () =>
       evidence: 'bench 2026-09-03 ap-northeast-1: TTL 7200 -> CREATE_FAILED ROLLBACK_COMPLETE',
     }),
   ).toBeUndefined();
+});
+
+test('repro.expect is one sed-readable line quoted from the evidence, and new real-deploy rules need it', () => {
+  const evidence = 'bench 2026-09-27 us-east-1: a 1025-byte Export -> "Cannot export output A with length 1025. Max length of 1024 exceeded."';
+  const repro = (expect?: string) => ({ method: 'real-deploy', evidence, expect });
+  const raw = (line: string) => `repro:\n  method: real-deploy\n  evidence: "..."\n  ${line}\n`;
+  expect(expectProblem(repro('Max length of 1024 exceeded'), '2026-09-27', raw('expect: "Max length of 1024 exceeded"'))).toBeUndefined();
+  // 実機で見た文面でなければならない。書き手の言い換えは毎月一致せず INCONCLUSIVE になるだけ
+  expect(expectProblem(repro('Export value is too long'), '2026-09-27', raw('expect: "Export value is too long"'))).toMatch(/verbatim/);
+  // bench/verify-rule.sh の sed が読めない書き方: シングルクォート、中の "、折り返し
+  expect(expectProblem(repro('Max length of 1024 exceeded'), '2026-09-27', raw("expect: 'Max length of 1024 exceeded'"))).toMatch(/one line/);
+  expect(expectProblem(repro('length 1025. "Max'), '2026-09-27', raw('expect: "length 1025. \\"Max"'))).toMatch(/one line/);
+  expect(expectProblem(repro('Max length of 1024 exceeded'), '2026-09-27', raw('expect: "Max length of\n    1024 exceeded"'))).toMatch(/one line/);
+  // 空や短すぎる断片はどんな失敗にも一致する
+  expect(expectProblem(repro(''), '2026-09-27', raw('expect: ""'))).toMatch(/too short/);
+  // 必須になるのは切り替え日以降に足した real-deploy だけ
+  expect(expectProblem(repro(), EXPECT_REQUIRED_FROM, raw(''))).toMatch(/required/);
+  expect(expectProblem(repro(), '2026-09-26', raw(''))).toBeUndefined();
+  expect(expectProblem({ method: 'doc-only', evidence: 'schema says so' }, EXPECT_REQUIRED_FROM, raw(''))).toBeUndefined();
 });
 
 /**

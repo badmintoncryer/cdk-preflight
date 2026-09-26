@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: an Output exporting Fn::GetAtt on AWS::EC2::VPC CidrBlockAssociations -> stack-level CREATE_FAILED \"Template format error: Every Value member must be a string.\" (ROLLBACK_COMPLETE); the same Output on the string attribute CidrBlock -> CREATE_COMPLETE."
+  expect: "Every Value member must be a string"
 addedOn: 2026-09-25

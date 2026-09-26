@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: a 1025-byte exported Output value -> stack-level CREATE_FAILED \"Cannot export output A with length 1025. Max length of 1024 exceeded.\" (ROLLBACK_COMPLETE); the same Output at 1024 bytes -> CREATE_COMPLETE."
+  expect: "with length 1025. Max length of 1024 exceeded"
 addedOn: 2026-09-25

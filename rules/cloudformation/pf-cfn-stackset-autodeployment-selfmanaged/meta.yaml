@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: AutoDeployment on a SELF_MANAGED stack set -> \"Resource handler returned message: \\\"AutoDeployment is not supported (Service: CloudFormation, Status Code: 400)\\\" (HandlerErrorCode: InvalidRequest)\" (ROLLBACK_COMPLETE); the same stack set without AutoDeployment -> CREATE_COMPLETE."
+  expect: "AutoDeployment is not supported"
 addedOn: 2026-09-25
