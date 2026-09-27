@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: TargetOperations [] on AWS::CloudFormation::GuardHook -> \"Resource handler returned message: \\\"Error occurred during operation 'AWS::CloudFormation::GuardHook'.\\\" (HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); the same hook with TargetOperations [\"RESOURCE\"] -> CREATE_COMPLETE. The service never names the property, so the message alone cannot tell anyone what is wrong."
+  evidence: "bench 2026-09-27 us-east-1: TargetOperations [] on AWS::CloudFormation::GuardHook -> \"Resource handler returned message: \\\"Error occurred during operation 'AWS::CloudFormation::GuardHook'.\\\" (HandlerErrorCode: GeneralServiceException)\" (ROLLBACK_COMPLETE); the same hook with TargetOperations [\"RESOURCE\"] -> CREATE_COMPLETE. The service never names the property, so the message alone cannot tell anyone what is wrong. The fixture builds its own execution role: a role in another account fails even a valid hook with this same message (measured the same day, TargetOperations [\"RESOURCE\"] with a role from 502761806921), so the bench role the fixture used to name made the monthly run in 502761806921 a non-test (#284). A DISABLED hook never reads RuleLocation, so it points at a bucket that does not exist."
   expect: "Error occurred during operation 'AWS::CloudFormation::GuardHook'"
 addedOn: 2026-09-25

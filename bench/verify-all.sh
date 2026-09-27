@@ -16,6 +16,8 @@ case "$SPEC" in
   *.*of*) SHARD="${SPEC##*.}"; SHARDS="${SHARD##*of}"; SHARD="${SHARD%%of*}" ;;
 esac
 [ -d "rules/$SVC" ] || { echo "service not found: $SVC"; exit 1; }
+# 失敗しても止めない: そこを指すルールは repro.expect と合わない理由で倒れて INCONCLUSIVE になる
+bash bench/fixtures.sh || echo "!! bench/fixtures.sh failed — rules that read cdkpf-fixtures-<account> will be INCONCLUSIVE"
 mkdir -p bench/out
 OUT="bench/out/$SPEC.jsonl"
 : > "$OUT"

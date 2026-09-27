@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: NotificationARNs [arn:aws:sns:eu-west-1:...] on a stack in us-east-1 -> the nested AWS::CloudFormation::Stack CREATE_FAILED \"Invalid parameter: TopicArn (Service: AmazonSNS; Status Code: 400; Error Code: InvalidParameter)\" (ROLLBACK_COMPLETE); a topic ARN in the stack's own Region -> CREATE_COMPLETE. A topic that simply does not exist in the same Region answers \"Topic does not exist\" instead, so this message really is the cross-Region one."
+  evidence: "bench 2026-09-25 us-east-1: NotificationARNs [arn:aws:sns:eu-west-1:...] on a stack in us-east-1 -> the nested AWS::CloudFormation::Stack CREATE_FAILED \"Invalid parameter: TopicArn (Service: AmazonSNS; Status Code: 400; Error Code: InvalidParameter)\" (ROLLBACK_COMPLETE); a topic ARN in the stack's own Region -> CREATE_COMPLETE. A topic that simply does not exist in the same Region answers \"Topic does not exist\" instead, so this message really is the cross-Region one. Re-measured 2026-09-27 with the child template in the account's own cdkpf-fixtures-<account> bucket (the bench bucket answers \"S3 error: Access Denied\" to the monthly account, #284) and with the wrong-Region ARN naming another account (502761806921): the same message, so the literal ARN holds in either account."
   expect: "Invalid parameter: TopicArn"
 addedOn: 2026-09-25
