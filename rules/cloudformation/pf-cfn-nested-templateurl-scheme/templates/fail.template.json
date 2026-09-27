@@ -10,7 +10,9 @@
   "S": {
    "Type": "AWS::CloudFormation::Stack",
    "Properties": {
-    "TemplateURL": "s3://cdkpf-bench-layers/cfn73/child.json"
+    "TemplateURL": {
+     "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/cfn73/child.json"
+    }
    }
   }
  }

@@ -235,7 +235,7 @@ sweep_domain_configs() {
 # （2026-09-24 実測: #69 の実機ゲートで CloudTrail 33 個 / Config 32 個。月次でも同じだけ溜まる）。
 # スタックタグは S3 に伝播していないのでタグ索引では拾えない。バケット名で拾う。
 # 対象は cdkpf-pf-* だけ — ベンチのスタック名が cdkpf-<ルール id>-fail|pass で、ルール id は必ず
-# pf- で始まるため。常設の cdkpf-bench-layers と cdkpf-<service>-probe-* には構造的に当たらない。
+# pf- で始まるため。常設の cdkpf-bench-layers / cdkpf-fixtures-<account> と cdkpf-<service>-probe-* には構造的に当たらない。
 sweep_fixture_buckets() {
   local b region key vid
   aws s3api list-buckets --query "Buckets[?starts_with(Name,'cdkpf-pf-')].Name" --output text 2>/dev/null |

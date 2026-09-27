@@ -14,7 +14,9 @@
     "NT"
    ],
    "Properties": {
-    "TemplateURL": "https://cdkpf-bench-layers.s3.amazonaws.com/cfn73/child.json",
+    "TemplateURL": {
+     "Fn::Sub": "https://cdkpf-fixtures-${AWS::AccountId}.s3.amazonaws.com/cfn73/child.json"
+    },
     "NotificationARNs": [
      {
       "Fn::Sub": "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cdkpf73-narn-p"

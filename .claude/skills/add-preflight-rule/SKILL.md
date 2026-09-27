@@ -32,6 +32,7 @@ cdk-preflight のルール追加パイプライン。AGENTS.md の設計原則�
    - **evidence の拒否文から、制約を名指ししている部分を `repro.expect` に写す**（`expect: "must not be longer than 256 characters"`）。1 行のダブルクォート文字列で、中に `"` と `\` を入れない（月次ランナーは YAML パーサ無しに sed で読む）。evidence に逐語で含まれていないと `bundle-rules` が落ちる。月次はこの文面で照合し、別の理由で倒れたら INCONCLUSIVE にする（#264）。**2026-09-27 以降に足す real-deploy ルールでは必須**。サービスが汎用文しか返さない場合（`GeneralServiceException` など）は、その汎用文を写す
    - fail テンプレートがデプロイに**成功**したら、それはドキュメント側の誤り（BROKEN-EXPECTATION）。ルールを削除し、証拠を issue に残して終了する。CloudFront では明文化された制約 9 件中 3 件がこれだった（2026-09-02）
    - **予想と違う理由**で失敗した場合（他アカウントの ARN、ドメイン所有権の検証など）は証拠にならない。サービスエラーが対象の制約そのものを名指しするまでテンプレートを作り直すか、除去できない交絡は `evidence` に明記する
+   - **月次は別アカウント（`502761806921`）で fail だけを回す**ので、bench（`214794239830`）に実在するロールやバケットをフィクスチャに焼かない。ロールはテンプレートの中で作り、ARN は `Fn::Sub` の `${AWS::AccountId}` で自アカウントを指す。テンプレートに書けない S3 オブジェクト（入れ子スタックの子テンプレート等）は `bench/fixtures/` に置いて `cdkpf-fixtures-${AWS::AccountId}` を指す — 月次は `verify-all.sh` が `bench/fixtures.sh` で毎回同期する。手元で `verify-rule.sh` を直接回すなら先に 1 回 `bash bench/fixtures.sh`（#284）
    - `doc-only` は「再現に安価に作れないリソース（検証済み ACM 証明書、所有ドメイン等）が要る」場合に限る最終手段であって、まだ試していない制約への近道ではない。詳細は AGENTS.md の "A doc sentence is a hypothesis, not evidence" に従う
 6. **仕上げ**: `npx projen build` 全緑 → ブランチ作成 → **コミットするのは `rules/**` だけ**（`src/rules.generated.ts` は gitignore 済み、`docs/rules.md` と README のバッジ・リソース表は `bundle-docs` が main で書く。ここを触らないので PR 同士が衝突しない）→ conventional commit（`feat(rules): add <rule-id>`）→ PR 本文に: 制約の出典 / 重複チェック結果 / 実機再現ログ。
 
