@@ -18,7 +18,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { deployEnvironmentModule, loadEngine, mergeRuleModules, prune, templateResourceTypes } from '../src/private/enforce';
+import { deployEnvironmentModule, loadEngine, mergeRuleModules, prune, templateResourceTypes, validateTemplate } from '../src/private/enforce';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 export interface Diagnostic {
@@ -55,7 +55,7 @@ function engineInstance(region?: string): any {
 const diagCache = new Map<string, Diagnostic[]>();
 export function diagnose(templateFile: string, region: string = HARNESS_REGION): Diagnostic[] {
   if (!diagCache.has(templateFile)) {
-    const report = engineInstance(region).validateDetailed(new engine.TemplateFile(templateFile), {
+    const report = validateTemplate(engineInstance(region), new engine.TemplateFile(templateFile), {
       pseudoParameterOverrides: { accountId: '123456789012', region },
     });
     diagCache.set(templateFile, (report.diagnostics ?? []) as Diagnostic[]);
@@ -73,7 +73,7 @@ export function diagnoseTemplate(tpl: unknown, region?: string): Diagnostic[] {
   const options = region
     ? { pseudoParameterOverrides: { accountId: '123456789012', region } }
     : {};
-  const report = engineInstance(region).validateDetailed(new engine.TemplateFile(file), options);
+  const report = validateTemplate(engineInstance(region), new engine.TemplateFile(file), options);
   return (report.diagnostics ?? []) as Diagnostic[];
 }
 

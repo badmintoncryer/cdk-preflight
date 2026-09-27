@@ -11,7 +11,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { loadEngine } from '../src/private/enforce';
+import { loadEngine, validateTemplate } from '../src/private/enforce';
 import { collectRules } from './bundle-rules';
 
 interface Diagnostic {
@@ -37,7 +37,7 @@ const redundant: string[] = [];
 
 for (const rule of collectRules(root)) {
   const fail = path.join(root, 'rules', rule.service, rule.id, 'templates', 'fail.template.json');
-  const report = bare.validateDetailed(new engine.TemplateFile(fail), {});
+  const report = validateTemplate(bare, new engine.TemplateFile(fail), {});
   const blockers = ((report.diagnostics ?? []) as Diagnostic[]).filter(
     (d) => d.source !== 'CUSTOM' && (d.severity === 'ERROR' || d.severity === 'FATAL'),
   );
