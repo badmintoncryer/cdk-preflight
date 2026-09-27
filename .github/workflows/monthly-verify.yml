@@ -70,6 +70,9 @@ jobs:
       issues: write
     env:
       GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     if: always()
     steps:
       - id: auto_ba33701f
@@ -86,7 +89,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: verify-*
-          path: bench/out/
+          path: bench/
           merge-multiple: true
       - name: Sweep leftover stacks
         id: sweep_leftover_stacks
@@ -104,4 +107,5 @@ jobs:
         run: npx projen redundancy-scan | tee bench/out/redundancy.log
       - name: Report
         id: report
+        if: "!cancelled()"
         run: bash bench/report.sh

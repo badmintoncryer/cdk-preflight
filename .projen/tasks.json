@@ -314,6 +314,9 @@
       "description": "List rules the bundled engine now blocks by itself (retirement candidates)",
       "steps": [
         {
+          "spawn": "bundle-rules"
+        },
+        {
           "exec": "ts-node --project test/tsconfig.json scripts/redundancy-scan.ts"
         }
       ]
