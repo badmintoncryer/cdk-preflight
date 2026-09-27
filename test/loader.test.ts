@@ -5,13 +5,16 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_lambda as lambda, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
   PreflightEnforcePlugin,
+  compareVersions,
+  engineVersion,
   fallbackFormat,
   installEnforceGate,
+  isSuperseded,
   loadFormatter,
   mergeRuleModules,
   observePluginCached,
@@ -50,6 +53,23 @@ function addBadSecurityGroup(stack: Stack): void {
     groupDescription: 'cdk-preflight loader test',
     vpcId: vpc.ref,
     securityGroupIngress: [{ ipProtocol: 'tcp', fromPort: 99999, toPort: 99999, cidrIp: '10.0.0.0/8' }],
+  });
+}
+
+/**
+ * pf-iam-policy-version に違反するロール。このルールはエンジン 1.8.0-beta から E3510 と重複する
+ * （meta.yaml#supersededBy）ので、既定の enforce 以外では省かれる。
+ */
+function addSupersededViolation(stack: Stack): void {
+  new iam.CfnRole(stack, 'R', {
+    assumeRolePolicyDocument: {
+      Version: '2012-10-17',
+      Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }],
+    },
+    policies: [{
+      policyName: 'p',
+      policyDocument: { Version: '2012-10-18', Statement: [{ Effect: 'Allow', Action: 's3:GetObject', Resource: '*' }] },
+    }],
   });
 }
 
@@ -121,6 +141,88 @@ describe('observe mode (enforce: false)', () => {
     const rules = readReport(app).map((v) => v.ruleName);
     // pf-ec2-sg-port-range は pending-engine ではないので、この切り替えでは落ちない
     expect(rules).toContain('pf-ec2-sg-port-range');
+  });
+});
+
+// pf-iam-policy-version は meta.yaml#supersededBy でエンジン 1.8.0-beta（E3510）以降は重複と記録してある。
+// 省くのは、省いても synth の止まり方が変わらないときだけ（AGENTS.md「Rule lifecycle」）。
+describe('rules the bundled engine already covers (supersededBy)', () => {
+  const superseded = 'pf-iam-policy-version';
+
+  test('the fixture rule is recorded as superseded by this engine', () => {
+    expect(isSuperseded(BUNDLED_RULES.find((r) => r.id === superseded)!, engineVersion())).toBe(true);
+  });
+
+  test('observe mode drops it: the engine reports the same finding', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: false });
+    addSupersededViolation(new Stack(app, 'S'));
+    app.synth();
+    const rules = readReport(app).map((v) => v.ruleName);
+    expect(rules).not.toContain(superseded);
+    expect(rules).toContain('E3510');
+  });
+
+  test('default enforce keeps it: the CDK downgrades the engine finding to a warning', () => {
+    const app = makeApp();
+    Preflight.apply(app);
+    addSupersededViolation(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow();
+    expect(readReport(app).map((v) => v.ruleName)).toContain(superseded);
+  });
+
+  test('strict drops it and the engine finding still fails synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app, { strict: true });
+    addSupersededViolation(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow();
+    const rules = readReport(app).map((v) => v.ruleName);
+    expect(rules).not.toContain(superseded);
+    expect(rules).toContain('E3510');
+  });
+
+  test('validateAgainstDefaultRules drops it and the CDK itself fails synthesis', () => {
+    const app = makeApp({ '@aws-cdk/core:validateAgainstDefaultRules': true });
+    Preflight.apply(app);
+    addSupersededViolation(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow();
+    const rules = readReport(app).map((v) => v.ruleName);
+    expect(rules).not.toContain(superseded);
+    expect(rules).toContain('E3510');
+  });
+
+  test('validateAgainstDefaultRules keeps it when CDK_VALIDATION=false switches the built-in off', () => {
+    process.env.CDK_VALIDATION = 'false';
+    try {
+      const app = makeApp({ '@aws-cdk/core:validateAgainstDefaultRules': true });
+      Preflight.apply(app);
+      addSupersededViolation(new Stack(app, 'S'));
+      expect(() => app.synth()).toThrow();
+      expect(readReport(app).map((v) => v.ruleName)).toContain(superseded);
+    } finally {
+      delete process.env.CDK_VALIDATION;
+    }
+  });
+
+  test('an unreadable engine version drops nothing', () => {
+    expect(isSuperseded(BUNDLED_RULES.find((r) => r.id === superseded)!, undefined)).toBe(false);
+  });
+});
+
+describe('compareVersions', () => {
+  test.each([
+    ['1.12.1', '1.11.0', 1],
+    ['1.9.0-beta', '1.10.0', -1],
+    ['1.9.0-beta', '1.9.0', -1],
+    ['1.9.0', '1.9.0-beta', 1],
+    ['1.8.0-beta', '1.8.0-beta', 0],
+    ['2.271.0', '2.268.0', 1],
+  ])('%s vs %s', (a, b, sign) => {
+    expect(Math.sign(compareVersions(a, b)!)).toBe(sign);
+  });
+
+  test('an unparsable version compares as undefined', () => {
+    expect(compareVersions('unknown', '1.0.0')).toBeUndefined();
   });
 });
 

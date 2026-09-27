@@ -4,7 +4,11 @@ resourceTypes: [AWS::Cognito::UserPoolResourceServer]
 severity: ERROR
 title: "A resource server identifier takes no spaces"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolresourceserver.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [F3031]
 benchRegion: us-east-1
 repro:
   method: real-deploy

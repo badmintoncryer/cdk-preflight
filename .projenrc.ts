@@ -1,8 +1,10 @@
-import { awscdk, github, JsonPatch } from 'projen';
+import { awscdk, DependencyType, github, JsonPatch } from 'projen';
 const project = new awscdk.AwsCdkConstructLibrary({
   author: 'Kazuho CryerShinozuka',
   authorAddress: 'malaysia.cryer@gmail.com',
   cdkVersion: '2.267.0',
+  // 下限に固定した devDependency を自動で足させない（開発用の版は下の addDependency で別に決める）。
+  peerDependencyOptions: { pinnedDevDependency: false },
   defaultReleaseBranch: 'main',
   jsiiVersion: '~6.0.0',
   name: 'cdk-preflight',
@@ -71,6 +73,13 @@ project.tryFindObjectFile('.github/dependabot.yml')!.addOverride('updates.1', {
   'labels': ['dependencies'],
   'groups': { all: { patterns: ['*'] } },
 });
+
+// cdkVersion は peerDependency の下限と開発用の版を同時に決めるが、この 2 つは切り離す。
+// 下限は据え置いて古いエンジンの利用者にもルールを届けつつ、開発と CI は最新のエンジンで回して
+// 「エンジンが追いついたルール」（meta.yaml#supersededBy）を最初に見つける（AGENTS.md「Rule lifecycle」）。
+project.deps.removeDependency('aws-cdk-lib', DependencyType.BUILD);
+project.deps.addDependency('aws-cdk-lib@2.271.0', DependencyType.BUILD);
+project.deps.addDependency('constructs@10.5.1', DependencyType.BUILD);
 
 // src/rules.generated.ts は rules/** から決定的に作られ preCompile で必ず生成されるので、コミットしない。
 // 追跡していると 3MB の生成物がルール追加 PR すべての diff に乗り、PR 同士が必ず衝突する。
@@ -152,10 +161,10 @@ project.buildWorkflow!.addPostBuildJob('package-smoke', {
 // src/rules.generated.ts は gitignore 済みの生成物なので、素の checkout（月次の report ジョブ）には無い。
 // 先に作らないと TS2307 でコンパイルが落ちる（2026-09-27 の月次で確認）。
 const redundancyScan = project.addTask('redundancy-scan', {
-  description: 'List rules the bundled engine now blocks by itself (retirement candidates)',
+  description: 'List rules the bundled engine now blocks by itself; --bisect [--write] records the engine version they retire at',
 });
 redundancyScan.spawn(bundleRules);
-redundancyScan.exec('ts-node --project test/tsconfig.json scripts/redundancy-scan.ts');
+redundancyScan.exec('ts-node --project test/tsconfig.json scripts/redundancy-scan.ts', { receiveArgs: true });
 // サービス一覧とシャード数は scripts/plan-services.py に置き、plan ジョブが実行時に
 // rules/ を読んで組む。ここで焼き込むと全サービス名が workflow の 1 行に並ぶので、
 // サービスを足す PR が毎回その行で衝突する（2026-09-22、#66 の 4 本で踏んだ）。

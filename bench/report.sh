@@ -52,9 +52,18 @@ section('BROKEN — fail template deployed clean (constraint may have drifted)',
 section('INCONCLUSIVE — could not judge (after retry)', inconc,
         lambda r: f"- **{r['rule']}** ({r['service']}, {r['region']}): {r['detail']}")
 section('LEFTOVER — resources not fully reclaimed', leftover, lambda l: f"- {l}")
-section('REDUNDANT — the bundled engine now blocks this by itself; retire the rule', redundant,
+unrecorded = [r for r in redundant if r.get('kind', 'unrecorded') == 'unrecorded']
+partial = [r for r in redundant if r.get('kind') == 'partial']
+deletable = [r for r in redundant if r.get('kind') == 'deletable']
+section('REDUNDANT — the bundled engine now blocks this by itself; record the version it retires at', unrecorded,
         lambda r: f"- **{r['rule']}** ({r['service']}, upstream={r['upstream']}) is now caught by "
-                  f"{', '.join(r['engineRules'])}: {r['detail']}\n"
+                  f"{', '.join(r['engineRules'])}: {r['detail']}")
+if unrecorded:
+    print("Record them in one PR: `npx projen redundancy-scan --bisect --write` (AGENTS.md \"Rule lifecycle\").\n")
+section('REDUNDANT (partial) — the bundled engine now blocks part of the fail template; move those cases out, keep the rule', partial,
+        lambda r: f"- **{r['rule']}** ({r['service']}) <- {', '.join(r['engineRules'])}: {r['detail']}")
+section('REDUNDANT — no supported aws-cdk-lib evaluates this any more; delete the rule', deletable,
+        lambda r: f"- **{r['rule']}** ({r['service']}): the peerDependency floor reached aws-cdk-lib {r['cdk']}\n"
                   f"  `rm -rf rules/{r['service']}/{r['rule']}/ && npx projen bundle-rules`")
 
 with open('bench/out/counts', 'w') as f:

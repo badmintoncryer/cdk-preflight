@@ -19,6 +19,17 @@ interface Meta {
   addedOn?: string;
   /** Region the fixture harness evaluates this rule's templates in (default us-east-1). */
   fixtureRegion?: string;
+  /** The bundled engine blocks the fail template by itself from this version on (AGENTS.md "Rule lifecycle"). */
+  supersededBy?: SupersededBy;
+}
+
+export interface SupersededBy {
+  /** First @aws/cloudformation-validate version whose bare engine reports ERROR/FATAL on the fail template. */
+  engine: string;
+  /** First aws-cdk-lib release that bundles that engine (or a later one). */
+  cdk: string;
+  /** Engine rule ids that block it. */
+  engineRules: string[];
 }
 
 /** Shared helper module under rules/_lib/, loaded ahead of every rule (never emits diagnostics). */
@@ -35,12 +46,56 @@ export interface BundledRule {
   upstream: string;
   resourceTypes: string[];
   fixtureRegion?: string;
+  supersededBy?: SupersededBy;
   rego: string;
 }
 
 const SEVERITIES = ['FATAL', 'ERROR', 'WARN', 'INFO'];
 const UPSTREAMS = ['none', 'pending-engine', 'cfn-schema', 'engine-pr', 'retired'];
 const REPRO_METHODS = ['real-deploy', 'research-case', 'doc-only'];
+
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?$/;
+
+/**
+ * supersededBy の形と upstream との整合。supersededBy があるルールは upstream: retired、
+ * retired は supersededBy 付きでしか名乗れない（版の記録が無い retired は何も省けない）。
+ */
+export function supersededProblem(upstream: string, s: SupersededBy | undefined): string | undefined {
+  if (s === undefined) {
+    return upstream === 'retired' ? 'upstream: retired requires meta.supersededBy' : undefined;
+  }
+  if (upstream !== 'retired') return 'meta.supersededBy requires upstream: retired';
+  if (typeof s.engine !== 'string' || !SEMVER.test(s.engine)) return 'meta.supersededBy.engine must be a version like 1.12.1';
+  if (typeof s.cdk !== 'string' || !SEMVER.test(s.cdk)) return 'meta.supersededBy.cdk must be a version like 2.271.0';
+  if (!Array.isArray(s.engineRules) || s.engineRules.length === 0 || !s.engineRules.every((r) => typeof r === 'string')) {
+    return 'meta.supersededBy.engineRules must be a non-empty list of engine rule ids';
+  }
+  return undefined;
+}
+
+/** エンジン診断のうち、重複判定に使う部分。 */
+export interface Finding {
+  readonly ruleId: string;
+  readonly severity: string;
+  readonly source?: string;
+  readonly propertyPath?: string;
+  readonly entity?: { readonly logicalId?: string };
+}
+
+/**
+ * own（ルール自身の指摘）のうち、エンジンの ERROR/FATAL が同じリソースの同じプロパティ（祖先・子孫を
+ * 含む）で指摘していないもの。空ならエンジンがルールの指摘をすべて覆っている＝supersededBy にできる。
+ * fail テンプレートを「エンジンが止めた」だけで判定すると、ケースを複数並べたフィクスチャの 1 ケースに
+ * 別の制約が当たっただけで重複扱いになる（2026-09-28、pf-ec2-sg-port-range: E9002 は FromPort > ToPort
+ * の 1 ケースだけを止め、範囲外の 2 ケースは素通りだった）。
+ */
+export function uncoveredFindings(own: Finding[], engine: Finding[]): Finding[] {
+  const blockers = engine.filter((d) => d.source !== 'CUSTOM' && (d.severity === 'ERROR' || d.severity === 'FATAL')
+    && d.entity?.logicalId && d.propertyPath);
+  const related = (a: string, b: string) => a === b || a.startsWith(`${b}.`) || b.startsWith(`${a}.`);
+  return own.filter((m) => !blockers.some((x) => x.entity!.logicalId === m.entity?.logicalId
+    && m.propertyPath !== undefined && related(x.propertyPath!, m.propertyPath)));
+}
 
 const ISO_DATE = /\d{4}-\d{2}-\d{2}/;
 const AWS_REGION = /\b(?:af|ap|ca|eu|il|me|sa|us)-[a-z]+-\d\b/;
@@ -484,6 +539,8 @@ export function collectRules(root: string): BundledRule[] {
       if (sevProblem) throw new Error(`${id}: ${sevProblem}`);
       const docProblem = docOnlyProblem(meta.repro, meta.severity);
       if (docProblem) throw new Error(`${id}: ${docProblem}`);
+      const supProblem = supersededProblem(meta.upstream, meta.supersededBy);
+      if (supProblem) throw new Error(`${id}: ${supProblem}`);
       out.push({
         id,
         service,
@@ -492,6 +549,13 @@ export function collectRules(root: string): BundledRule[] {
         upstream: meta.upstream,
         resourceTypes: meta.resourceTypes,
         ...(meta.fixtureRegion ? { fixtureRegion: meta.fixtureRegion } : {}),
+        ...(meta.supersededBy ? {
+          supersededBy: {
+            engine: meta.supersededBy.engine,
+            cdk: meta.supersededBy.cdk,
+            engineRules: meta.supersededBy.engineRules,
+          },
+        } : {}),
         rego,
       });
     }
@@ -526,6 +590,8 @@ export function renderGenerated(rules: BundledRule[], libs: BundledLib[] = []): 
     '  readonly upstream: string;',
     '  readonly resourceTypes: string[];',
     '  readonly fixtureRegion?: string;',
+    '  /** The bundled engine blocks this rule\'s constraint by itself from `engine` on (bundled in aws-cdk-lib >= `cdk`). */',
+    '  readonly supersededBy?: { readonly engine: string; readonly cdk: string; readonly engineRules: string[] };',
     '  readonly rego: string;',
     '}',
     '',
@@ -542,9 +608,15 @@ export function renderGenerated(rules: BundledRule[], libs: BundledLib[] = []): 
   ].join('\n');
 }
 
+/** retired は「どの aws-cdk-lib から要らなくなるか」まで書く（それ未満の利用者には今も効いている）。 */
+function upstreamCell(r: BundledRule): string {
+  if (!r.supersededBy) return r.upstream;
+  return `retired: engine ${r.supersededBy.engineRules.join(', ')} covers it from aws-cdk-lib ${r.supersededBy.cdk}`;
+}
+
 export function renderDocs(rules: BundledRule[]): string {
   const rows = rules
-    .map((r) => `| \`${r.id}\` | ${r.resourceTypes.join('<br>')} | ${r.title} | ${r.severity} | ${r.upstream} |`)
+    .map((r) => `| \`${r.id}\` | ${r.resourceTypes.join('<br>')} | ${r.title} | ${r.severity} | ${upstreamCell(r)} |`)
     .join('\n');
   return [
     '# Bundled rules',

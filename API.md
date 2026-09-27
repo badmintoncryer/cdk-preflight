@@ -92,6 +92,11 @@ public readonly strict: boolean;
 
 In enforce mode, additionally fail synthesis on error-class findings (severity ERROR/FATAL) of the built-in validation engine itself, e.g. schema violations like `F3034`. This is the workaround for the CDK behavior where all built-in findings are downgraded to warnings.
 
+Since the engine's own errors then fail synthesis, bundled rules that the
+running engine already covers are skipped instead of being reported twice.
+The same happens with `enforce: false`, and when the app sets the context
+`@aws-cdk/core:validateAgainstDefaultRules: true`.
+
 Only effective in enforce mode (the default).
 
 ---

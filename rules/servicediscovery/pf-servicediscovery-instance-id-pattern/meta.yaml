@@ -5,7 +5,11 @@ resourceTypes: [AWS::ServiceDiscovery::Instance]
 severity: ERROR
 title: "An instance id takes a restricted character set"
 constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_RegisterInstance.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.10.0
+  cdk: 2.271.0
+  engineRules: [F3031]
 repro:
   method: real-deploy
   evidence: "bench 2026-09-23 us-east-1: InstanceId 'bad id!' -> \"1 validation error detected: Value 'bad id!' at 'instanceId' failed to satisfy constraint: Member must satisfy regular expression pattern: ^[0-9a-zA-Z_/:.@-]+$\" (ROLLBACK_COMPLETE); pass InstanceId 'good-id' -> CREATE_COMPLETE"

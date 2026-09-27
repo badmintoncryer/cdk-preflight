@@ -24,8 +24,18 @@
       "type": "build"
     },
     {
+      "name": "aws-cdk-lib",
+      "version": "2.271.0",
+      "type": "build"
+    },
+    {
       "name": "commit-and-tag-version",
       "version": "^12",
+      "type": "build"
+    },
+    {
+      "name": "constructs",
+      "version": "10.5.1",
       "type": "build"
     },
     {
