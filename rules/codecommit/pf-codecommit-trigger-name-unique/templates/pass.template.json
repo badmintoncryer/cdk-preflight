@@ -7,7 +7,9 @@
     "Triggers": [
      {
       "Name": "t0",
-      "DestinationArn": "arn:aws:sns:us-east-1:214794239830:cdkpf-codesuite",
+      "DestinationArn": {
+       "Fn::Sub": "arn:aws:sns:us-east-1:${AWS::AccountId}:cdkpf-codesuite"
+      },
       "Events": [
        "all"
       ],
@@ -17,7 +19,9 @@
      },
      {
       "Name": "t1",
-      "DestinationArn": "arn:aws:sns:us-east-1:214794239830:cdkpf-codesuite",
+      "DestinationArn": {
+       "Fn::Sub": "arn:aws:sns:us-east-1:${AWS::AccountId}:cdkpf-codesuite"
+      },
       "Events": [
        "updateReference"
       ],

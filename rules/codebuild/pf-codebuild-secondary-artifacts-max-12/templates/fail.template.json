@@ -3,7 +3,9 @@
     "Main": {
       "Type": "AWS::CodeBuild::Project",
       "Properties": {
-        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "ServiceRole": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
         "Source": {
           "Type": "NO_SOURCE",
           "BuildSpec": "version: 0.2\nphases:\n  build:\n    commands:\n      - echo hi\n"
@@ -19,79 +21,105 @@
         "SecondaryArtifacts": [
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a0",
             "Path": "p0"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a1",
             "Path": "p1"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a2",
             "Path": "p2"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a3",
             "Path": "p3"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a4",
             "Path": "p4"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a5",
             "Path": "p5"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a6",
             "Path": "p6"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a7",
             "Path": "p7"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a8",
             "Path": "p8"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a9",
             "Path": "p9"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a10",
             "Path": "p10"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a11",
             "Path": "p11"
           },
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            },
             "ArtifactIdentifier": "a12",
             "Path": "p12"
           }

@@ -3,7 +3,9 @@
     "Main": {
       "Type": "AWS::CodeBuild::Project",
       "Properties": {
-        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "ServiceRole": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
         "Source": {
           "Type": "NO_SOURCE",
           "BuildSpec": "version: 0.2\nphases:\n  build:\n    commands:\n      - echo hi\n"
@@ -16,7 +18,9 @@
           "ComputeType": "BUILD_GENERAL1_SMALL",
           "Image": "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
         },
-        "EncryptionKey": "arn:aws:kms:eu-west-1:214794239830:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+        "EncryptionKey": {
+          "Fn::Sub": "arn:aws:kms:eu-west-1:${AWS::AccountId}:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+        }
       }
     }
   }

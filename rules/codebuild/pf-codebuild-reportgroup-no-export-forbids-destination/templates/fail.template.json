@@ -7,7 +7,9 @@
         "ExportConfig": {
           "ExportConfigType": "NO_EXPORT",
           "S3Destination": {
-            "Bucket": "cdkpf-codesuite-63"
+            "Bucket": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+            }
           }
         }
       }
