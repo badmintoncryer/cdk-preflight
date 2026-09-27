@@ -5,7 +5,9 @@
       "Type": "AWS::Lambda::LayerVersion",
       "Properties": {
         "Content": {
-          "S3Bucket": "cdkpf-bench-layers",
+          "S3Bucket": {
+            "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+          },
           "S3Key": "l.zip"
         },
         "LayerName": "cdkpf.layer"

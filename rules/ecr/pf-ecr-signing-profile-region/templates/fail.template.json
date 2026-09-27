@@ -5,7 +5,9 @@
       "Properties": {
         "Rules": [
           {
-            "SigningProfileArn": "arn:aws:signer:us-west-2:214794239830:/signing-profiles/cdkpfprobe"
+            "SigningProfileArn": {
+              "Fn::Sub": "arn:aws:signer:us-west-2:${AWS::AccountId}:/signing-profiles/cdkpfprobe"
+            }
           }
         ]
       }

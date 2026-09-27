@@ -6,10 +6,12 @@
       "Properties": {
         "LayerName": "cdkpf-layer",
         "Content": {
-          "S3Bucket": "cdkpf-bench-layers",
+          "S3Bucket": {
+            "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+          },
           "S3Key": "l.zip",
           "S3ObjectStorageMode": "REFERENCE",
-          "S3ObjectVersion": "lj9POwJUCoeaeWD_Tv6gXedsAF5lsQ4T"
+          "S3ObjectVersion": "{{resolve:ssm:/cdkpf/fixtures/s3/l.zip-version}}"
         }
       }
     }
