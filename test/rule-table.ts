@@ -23,6 +23,7 @@ import * as path from 'path';
 import { uncoveredFindings } from '../scripts/bundle-rules';
 import {
   compareVersions, deployEnvironmentModule, engineVersion, isSuperseded, loadEngine, mergeRuleModules, prune, templateResourceTypes,
+  validateTemplate,
 } from '../src/private/enforce';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
@@ -66,7 +67,7 @@ function engineInstance(region?: string): any {
 const diagCache = new Map<string, Diagnostic[]>();
 export function diagnose(templateFile: string, region: string = HARNESS_REGION): Diagnostic[] {
   if (!diagCache.has(templateFile)) {
-    const report = engineInstance(region).validateDetailed(new engine.TemplateFile(templateFile), {
+    const report = validateTemplate(engineInstance(region), new engine.TemplateFile(templateFile), {
       pseudoParameterOverrides: { accountId: '123456789012', region },
     });
     diagCache.set(templateFile, (report.diagnostics ?? []) as Diagnostic[]);
@@ -84,7 +85,7 @@ export function diagnoseTemplate(tpl: unknown, region?: string): Diagnostic[] {
   const options = region
     ? { pseudoParameterOverrides: { accountId: '123456789012', region } }
     : {};
-  const report = engineInstance(region).validateDetailed(new engine.TemplateFile(file), options);
+  const report = validateTemplate(engineInstance(region), new engine.TemplateFile(file), options);
   return (report.diagnostics ?? []) as Diagnostic[];
 }
 

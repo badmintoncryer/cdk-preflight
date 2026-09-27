@@ -118,7 +118,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     for (const st of context.stackTemplates) {
       let report: any;
       try {
-        report = eng.validateDetailed(new engine.TemplateFile(st.templatePath), {
+        report = validateTemplate(eng, new engine.TemplateFile(st.templatePath), {
           pseudoParameterOverrides: {
             accountId: context.accountId,
             region: context.region,
@@ -487,6 +487,22 @@ export function prune(rules: BundledRuleData[], types: Set<string> | undefined):
  * 通常は aws-cdk-lib が bundledDependencies として同梱しているコピーに乗る。
  * （テストからも利用するため export している）
  */
+/**
+ * エンジンの版に依らずテンプレートを評価する。1.7.0-beta〜1.9.0-beta（aws-cdk-lib 2.267〜2.270 の
+ * 同梱版）は validateDetailed だけ、1.10.0 は validateTemplate だけ（改名）、1.11.0 以降は両方を
+ * 持ち、1.12.1 で validateDetailed は非推奨の別名になった。レポートの形（diagnostics の
+ * ruleId/severity/source/propertyPath/entity.logicalId）は両者で同じ（実測 2026-09-28、
+ * 1.7.0-beta / 1.10.0 / 1.12.1 で fail テンプレート 400 本の CUSTOM 診断が完全一致）。
+ * 先に消えるのは非推奨の側なので validateTemplate を優先する。
+ */
+export function validateTemplate(eng: any, template: unknown, config: object): any {
+  const fn = eng.validateTemplate ?? eng.validateDetailed;
+  if (typeof fn !== 'function') {
+    throw new Error('@aws/cloudformation-validate has neither validateTemplate nor validateDetailed');
+  }
+  return fn.call(eng, template, config);
+}
+
 export function loadEngine(): any | undefined {
   try {
     return require('@aws/cloudformation-validate');

@@ -18,7 +18,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { deployEnvironmentModule, engineVersion, isSuperseded, loadEngine } from '../src/private/enforce';
+import { deployEnvironmentModule, engineVersion, isSuperseded, loadEngine, validateTemplate } from '../src/private/enforce';
 import type { BundledRuleData } from '../src/rules.generated';
 import { type SupersededBy, uncoveredFindings } from './bundle-rules';
 
@@ -43,7 +43,7 @@ const blockers = (ds: Diagnostic[]) =>
   ds.filter((d) => d.source !== 'CUSTOM' && (d.severity === 'ERROR' || d.severity === 'FATAL'));
 
 function evaluate(inst: any, file: string, region: string = REGION): Diagnostic[] {
-  const report = inst.validateDetailed(new engine.TemplateFile(file), {
+  const report = validateTemplate(inst, new engine.TemplateFile(file), {
     pseudoParameterOverrides: { accountId: ACCOUNT, region },
   });
   return (report.diagnostics ?? []) as Diagnostic[];

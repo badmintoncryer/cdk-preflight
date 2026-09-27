@@ -216,9 +216,23 @@ monthlyVerify.addJob('plan', {
     },
   ],
 });
+// フィクスチャが前提にする常設物（bench/fixtures.sh）を、シャードより先に 1 回だけそろえる。落ちても verify は
+// 止めない: 常設物を指すルールが repro.expect と合わない理由で倒れて INCONCLUSIVE になるだけ
+monthlyVerify.addJob('fixtures', {
+  runsOn: ['ubuntu-latest'],
+  permissions: {
+    idToken: github.workflows.JobPermission.WRITE,
+    contents: github.workflows.JobPermission.READ,
+  },
+  steps: [
+    checkoutStep,
+    awsCredsStep,
+    { name: 'Provision fixtures', run: 'bash bench/fixtures.sh', continueOnError: true },
+  ],
+});
 monthlyVerify.addJob('verify', {
   runsOn: ['ubuntu-latest'],
-  needs: ['plan'],
+  needs: ['plan', 'fixtures'],
   timeoutMinutes: 300,
   permissions: {
     idToken: github.workflows.JobPermission.WRITE,

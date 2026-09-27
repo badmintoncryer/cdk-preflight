@@ -1,0 +1,222 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "cdk-preflight: permanent resources the rule fixtures point at, kept under the same names in every account that runs bench/verify-rule.sh. Deployed by bench/fixtures.sh.",
+  "Resources": {
+    "CodesuiteProbeRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RoleName": "cdkpf-codesuite-probe",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "codedeploy.amazonaws.com",
+                  "codebuild.amazonaws.com",
+                  "codepipeline.amazonaws.com"
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSCodeDeployRole"
+          }
+        ]
+      }
+    },
+    "BatchInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RoleName": "cdkpf-batch-instance",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Description": "cdk-preflight Batch survey probe instance role (permanent, free)",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+          }
+        ]
+      }
+    },
+    "BatchInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "InstanceProfileName": "cdkpf-batch-instance",
+        "Roles": [
+          {
+            "Ref": "BatchInstanceRole"
+          }
+        ]
+      }
+    },
+    "BatchSpotFleetRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RoleName": "cdkpf-batch-spotfleet",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "spotfleet.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Description": "cdk-preflight Batch survey probe (permanent, free)",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole"
+          }
+        ]
+      }
+    },
+    "EcsProbeRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RoleName": "cdkpf-ecs-probe",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+          }
+        ]
+      }
+    },
+    "GlueProbeRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RoleName": "cdkpf-glue-probe",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "glue.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSGlueServiceRole"
+          }
+        ]
+      }
+    },
+    "MskProbeRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RoleName": "cdkpf-msk-probe",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "kafka.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      }
+    },
+    "CodesuiteTopic": {
+      "Type": "AWS::SNS::Topic",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "TopicName": "cdkpf-codesuite"
+      }
+    },
+    "BenchImageRepository": {
+      "Type": "AWS::ECR::Repository",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RepositoryName": "cdkpf-bench-image",
+        "ImageTagMutability": "MUTABLE",
+        "ImageScanningConfiguration": {
+          "ScanOnPush": false
+        },
+        "EncryptionConfiguration": {
+          "EncryptionType": "AES256"
+        },
+        "RepositoryPolicyText": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "LambdaECRImageRetrievalPolicy",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": [
+                "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProbeJob": {
+      "Type": "AWS::Glue::Job",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Name": "pfjob",
+        "Role": {
+          "Fn::GetAtt": [
+            "GlueProbeRole",
+            "Arn"
+          ]
+        },
+        "Command": {
+          "Name": "pythonshell",
+          "ScriptLocation": {
+            "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/nope.py"
+          },
+          "PythonVersion": "3.9"
+        },
+        "GlueVersion": "5.1",
+        "MaxCapacity": 0.0625
+      }
+    }
+  }
+}

@@ -20,6 +20,7 @@ import {
   observePluginCached,
   prune,
   templateResourceTypes,
+  validateTemplate,
 } from '../src/private/enforce';
 import { BUNDLED_RULES, type BundledRuleData } from '../src/rules.generated';
 
@@ -525,6 +526,29 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
     const rules = readReport(app).map((v) => v.ruleName);
     expect(new Set(rules)).toEqual(new Set([ENGINE_ERROR_RULE, 'pf-ec2-sg-port-range']));
     expect(rules.filter((r) => r === ENGINE_ERROR_RULE)).toHaveLength(1);
+  });
+});
+
+describe('validateTemplate works on every engine version', () => {
+  const report = { diagnostics: [] };
+  const config = { disableBuiltinRules: true };
+
+  test.each([
+    ['1.7.0-beta to 1.9.0-beta: validateDetailed only', { validateDetailed: jest.fn(() => report) }],
+    ['1.10.0: validateTemplate only', { validateTemplate: jest.fn(() => report) }],
+  ])('%s', (_label, eng: Record<string, jest.Mock>) => {
+    expect(validateTemplate(eng, 'tpl', config)).toBe(report);
+    expect(Object.values(eng)[0]).toHaveBeenCalledWith('tpl', config);
+  });
+
+  test('prefers validateTemplate over the deprecated validateDetailed (1.11.0+)', () => {
+    const eng = { validateTemplate: jest.fn(() => report), validateDetailed: jest.fn() };
+    validateTemplate(eng, 'tpl', config);
+    expect(eng.validateDetailed).not.toHaveBeenCalled();
+  });
+
+  test('names the missing method instead of "is not a function"', () => {
+    expect(() => validateTemplate({}, 'tpl', config)).toThrow(/neither validateTemplate nor validateDetailed/);
   });
 });
 

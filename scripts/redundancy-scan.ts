@@ -18,7 +18,7 @@
 import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { compareVersions, deployEnvironmentModule, engineVersion, loadEngine, mergeRuleModules } from '../src/private/enforce';
+import { compareVersions, deployEnvironmentModule, engineVersion, loadEngine, mergeRuleModules, validateTemplate } from '../src/private/enforce';
 import { collectLibs, collectRules, type Finding, uncoveredFindings } from './bundle-rules';
 
 interface Diagnostic extends Finding {
@@ -53,7 +53,7 @@ function diagnose(rule: (typeof rules)[number]): Diagnostic[] {
       customRules: [...libs, ...mergeRuleModules(rules), deployEnvironmentModule(region, '123456789012')],
     }));
   }
-  return (engines.get(region).validateDetailed(new engine.TemplateFile(failTemplate(rule)), {
+  return (validateTemplate(engines.get(region), new engine.TemplateFile(failTemplate(rule)), {
     pseudoParameterOverrides: { accountId: '123456789012', region },
   }).diagnostics ?? []) as Diagnostic[];
 }
@@ -121,8 +121,9 @@ if (bisect && unrecorded.length) {
     const out = execFileSync(process.execPath, ['-e', `
       const e = require(${JSON.stringify(path.join(dir, 'package'))});
       const inst = new e.RegoEngine({});
-      // 1.10.0〜1.12.0 には validateDetailed が無い（validateTemplate に改名され、1.12.1 で非推奨の別名として復活）
-      const validate = (inst.validateDetailed ?? inst.validateTemplate).bind(inst);
+      // 別プロセスなので enforce の validateTemplate() と同じ選び方をここに写す（1.7.0-beta〜1.9.0-beta は
+      // validateDetailed だけ、1.10.0 は validateTemplate だけ）
+      const validate = (inst.validateTemplate ?? inst.validateDetailed).bind(inst);
       const files = JSON.parse(require('fs').readFileSync(0, 'utf8'));
       const out = {};
       for (const f of files) {
