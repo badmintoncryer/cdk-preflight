@@ -149,10 +149,13 @@ project.buildWorkflow!.addPostBuildJob('package-smoke', {
 });
 
 // ルール不要化（エンジンが追いついた）の検知。AWS 不要・完全ローカル。
-project.addTask('redundancy-scan', {
+// src/rules.generated.ts は gitignore 済みの生成物なので、素の checkout（月次の report ジョブ）には無い。
+// 先に作らないと TS2307 でコンパイルが落ちる（2026-09-27 の月次で確認）。
+const redundancyScan = project.addTask('redundancy-scan', {
   description: 'List rules the bundled engine now blocks by itself (retirement candidates)',
-  exec: 'ts-node --project test/tsconfig.json scripts/redundancy-scan.ts',
 });
+redundancyScan.spawn(bundleRules);
+redundancyScan.exec('ts-node --project test/tsconfig.json scripts/redundancy-scan.ts');
 // サービス一覧とシャード数は scripts/plan-services.py に置き、plan ジョブが実行時に
 // rules/ を読んで組む。ここで焼き込むと全サービス名が workflow の 1 行に並ぶので、
 // サービスを足す PR が毎回その行で衝突する（2026-09-22、#66 の 4 本で踏んだ）。
@@ -241,13 +244,18 @@ monthlyVerify.addJob('report', {
     issues: github.workflows.JobPermission.WRITE,
   },
   env: { GH_TOKEN: '${{ github.token }}' },
+  // 既定の bash -e には pipefail が無く、`| tee` の左が落ちても step は緑になる（Redundancy scan が
+  // コンパイルに失敗したまま緑だった）
+  defaults: { run: { shell: 'bash' } },
   steps: [
     checkoutStep,
     awsCredsStep,
     {
       name: 'Download results',
       uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c',
-      with: { 'pattern': 'verify-*', 'path': 'bench/out/', 'merge-multiple': true },
+      // verify は bench/out/ と bench/logs/ を上げるので artifact の根は bench/。bench/out/ に落とすと
+      // bench/out/out/*.jsonl になり、report.sh が 1 行も読めず「all green」と言い続けていた（#51 から）
+      with: { 'pattern': 'verify-*', 'path': 'bench/', 'merge-multiple': true },
     },
     { name: 'Sweep leftover stacks', run: 'bash bench/sweep.sh | tee bench/out/sweep.log' },
     {
@@ -259,7 +267,8 @@ monthlyVerify.addJob('report', {
     // 不要化スキャン: 実機ではなく同梱エンジンに fail テンプレートを掛け直し、
     // 組み込みが止めるようになったルール（＝退役候補）を洗い出す
     { name: 'Redundancy scan', run: 'npx projen redundancy-scan | tee bench/out/redundancy.log' },
-    { name: 'Report', run: 'bash bench/report.sh' },
+    // 手前が落ちても BROKEN / INCONCLUSIVE / LEFTOVER は起票する
+    { name: 'Report', if: '!cancelled()', run: 'bash bench/report.sh' },
   ],
 });
 

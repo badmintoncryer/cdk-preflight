@@ -8,8 +8,8 @@ set -u
 cd "$(dirname "$0")/.."
 month=$(date -u +%Y-%m)
 
-python3 - <<'EOF' > bench/out/summary.md
-import glob, json
+python3 - <<'EOF' > bench/out/summary.md || exit 1
+import glob, json, sys
 
 rows = []
 for f in sorted(glob.glob('bench/out/*.jsonl')):
@@ -19,6 +19,10 @@ for f in sorted(glob.glob('bench/out/*.jsonl')):
         line = line.strip()
         if line:
             rows.append(json.loads(line))
+# verify が 1 本でも走れば行は出る（SKIPPED も 1 行）。0 行で「all green」と言うと、結果の置き場所が
+# ずれても誰も気づかない（2026-09-04 の #51 から 09-27 まで、artifact が bench/out/out/ に落ちていた）
+if not rows:
+    sys.exit('report.sh: no verify results under bench/out/*.jsonl')
 
 broken = [r for r in rows if r['status'] == 'BROKEN']
 inconc = [r for r in rows if r['status'] == 'INCONCLUSIVE']
