@@ -253,7 +253,7 @@ monthlyVerify.addJob('report', {
     {
       name: 'Setup node',
       uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
-      with: { 'node-version': '20' },
+      with: { 'node-version': '24' }, // workflowNodeVersion と揃える。20 のままだと node>=22 を要求する依存（stream-chain 4.x）で Install が落ちる
     },
     { name: 'Install', run: 'yarn install --check-files --frozen-lockfile' },
     // 不要化スキャン: 実機ではなく同梱エンジンに fail テンプレートを掛け直し、
