@@ -1,20 +1,40 @@
 {
  "AWSTemplateFormatVersion": "2010-09-09",
  "Resources": {
-  "Pad": {
-   "Type": "AWS::SNS::Topic",
+  "Role": {
+   "Type": "AWS::IAM::Role",
    "Properties": {
-    "DisplayName": "pad"
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": [
+         "hooks.cloudformation.amazonaws.com"
+        ]
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    }
    }
   },
   "GH": {
    "Type": "AWS::CloudFormation::GuardHook",
    "Properties": {
-    "ExecutionRole": "arn:aws:iam::214794239830:role/AmazonS3FullAccess",
+    "ExecutionRole": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
     "FailureMode": "WARN",
     "HookStatus": "DISABLED",
     "RuleLocation": {
-     "Uri": "s3://cdkpf-bench-layers/cfn73/r.guard"
+     "Uri": {
+      "Fn::Sub": "s3://cdkpf-absent-${AWS::AccountId}/r.guard"
+     }
     },
     "Alias": "Private::Guard::Cdkpf73Fail",
     "TargetOperations": []
