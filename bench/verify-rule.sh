@@ -22,7 +22,8 @@ mkdir -p bench/logs
 LOG="bench/logs/$RULE.log"
 : > "$LOG"
 ERRF=$(mktemp)
-trap 'rm -f "$ERRF"' EXIT
+LOCAL_TPL=$(mktemp)
+trap 'rm -f "$ERRF" "$LOCAL_TPL"' EXIT
 
 POLL_BUDGET_SECONDS=${CDKPF_POLL_BUDGET:-3600}
 
@@ -156,10 +157,38 @@ cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除
   fi
 }
 
+# bench (214794239830) の us-east-1 既定 VPC の ID。「VPC が要るだけなら既定 VPC を使う」方針で、
+# elbv2 / msk / servicediscovery / opensearch のフィクスチャがこれを直書きしている。他のアカウント（月次）には
+# その ID が無く、制約より先に NotFound で倒れるので、作る直前に自分の既定 VPC の ID へ読み替える。
+# サブネットは AZ 名ではなく AZ ID で選ぶ（AZ 名と物理 AZ の対応はアカウントごとに違う）。bench では同じ ID に戻る。
+localize() { # <template> -> 作るテンプレートのパス。直書きがあるのに既定 VPC を引けなければ rc 1
+  local vpc val pair args
+  grep -qsE 'vpc-4331593e|sg-7d699f61|subnet-(2e0a500f|ab11fde7|7f91c820)' "$1" || { echo "$1"; return 0; }
+  vpc=$(aws ec2 describe-vpcs --region "$REGION" --filters Name=is-default,Values=true \
+    --query 'Vpcs[0].VpcId' --output text 2>>"$LOG")
+  case "$vpc" in vpc-*) ;; *) return 1 ;; esac
+  args=(-e "s/vpc-4331593e/$vpc/g")
+  val=$(aws ec2 describe-security-groups --region "$REGION" \
+    --filters Name=vpc-id,Values="$vpc" Name=group-name,Values=default \
+    --query 'SecurityGroups[0].GroupId' --output text 2>>"$LOG")
+  case "$val" in sg-*) args+=(-e "s/sg-7d699f61/$val/g") ;; *) return 1 ;; esac
+  for pair in subnet-2e0a500f:use1-az2 subnet-ab11fde7:use1-az4 subnet-7f91c820:use1-az6; do
+    val=$(aws ec2 describe-subnets --region "$REGION" --filters Name=vpc-id,Values="$vpc" \
+      Name=availability-zone-id,Values="${pair#*:}" Name=default-for-az,Values=true \
+      --query 'Subnets[0].SubnetId' --output text 2>>"$LOG")
+    case "$val" in subnet-*) args+=(-e "s/${pair%%:*}/$val/g") ;; *) return 1 ;; esac
+  done
+  sed "${args[@]}" "$1" > "$LOCAL_TPL" && echo "$LOCAL_TPL"
+}
+
 create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれたら理由を出して INCONCLUSIVE で抜ける
-  local out rc msg
+  local out rc msg tpl
+  tpl=$(localize "$2") || {
+    echo "!! INCONCLUSIVE: the $3 template names bench's default VPC, and $REGION here has no default VPC (or subnet) to stand in for it" | tee -a "$LOG"
+    exit 4
+  }
   out=$(aws cloudformation create-stack --stack-name "$1" --region "$REGION" \
-    --template-body "file://$2" \
+    --template-body "file://$tpl" \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --output text 2>&1)
   rc=$?
   echo "$out" >> "$LOG"
