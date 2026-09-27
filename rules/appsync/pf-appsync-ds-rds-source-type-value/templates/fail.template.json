@@ -28,7 +28,9 @@
      "RelationalDatabaseSourceType": "RDS_MYSQL",
      "RdsHttpEndpointConfig": {
       "AwsRegion": "us-east-1",
-      "AwsSecretStoreArn": "arn:aws:secretsmanager:us-east-1:214794239830:secret:s",
+      "AwsSecretStoreArn": {
+       "Fn::Sub": "arn:aws:secretsmanager:us-east-1:${AWS::AccountId}:secret:s"
+      },
       "DbClusterIdentifier": "c"
      }
     }
