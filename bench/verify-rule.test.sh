@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 RULE=pf-t-plain # resourceTypes: [AWS::Batch::ComputeEnvironment]、repro.expect なし
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect"
+mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect" "$tmp/rules/t/pf-t-vpc/templates"
 cat > "$tmp/rules/t/pf-t-plain/meta.yaml" <<'YAML'
 id: pf-t-plain
 resourceTypes: ["AWS::Batch::ComputeEnvironment"]
@@ -17,6 +17,14 @@ repro:
 YAML
 sed 's/pf-t-plain/pf-t-expect/' "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-expect/meta.yaml"
 echo '  expect: "must be created in ENABLED state"' >> "$tmp/rules/t/pf-t-expect/meta.yaml"
+sed 's/pf-t-plain/pf-t-vpc/' "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-vpc/meta.yaml"
+# bench の既定 VPC を直書きしたフィクスチャ（読み替えの対象）と、読み替えてはいけない偽の ID
+cat > "$tmp/rules/t/pf-t-vpc/templates/fail.template.json" <<'JSON'
+{"Resources": {"L": {"Type": "AWS::ElasticLoadBalancingV2::LoadBalancer", "Properties": {
+  "Subnets": ["subnet-2e0a500f", "subnet-ab11fde7", "subnet-7f91c820", "subnet-11111111"],
+  "SecurityGroups": ["sg-7d699f61"]}},
+ "T": {"Type": "AWS::ElasticLoadBalancingV2::TargetGroup", "Properties": {"VpcId": "vpc-4331593e"}}}}
+JSON
 cat > "$tmp/aws" <<'STUB'
 #!/bin/bash
 # fail スタックと pass スタックで別の答えを返す（名前で見分ける）
@@ -57,7 +65,15 @@ case "$args" in
     esac ;;
   *"describe-stack-resources"*) echo "" ;;
   *"wait"*"stack-delete-complete"*) [ -z "$wfail" ] || exit 255 ;;
-  *"create-stack"*) [ -z "$cerr" ] || { echo "$cerr" >&2; exit 254; } ;;
+  *"create-stack"*)
+    tb=${args#*file://}; cp "${tb%% *}" "$CDKPF_STUB_CALLS.tpl" 2>/dev/null # 実際に作ろうとしたテンプレート
+    [ -z "$cerr" ] || { echo "$cerr" >&2; exit 254; } ;;
+  # 別アカウントの既定 VPC。サブネットは AZ ID で答える
+  *"describe-vpcs"*) echo "${CDKPF_STUB_VPC-vpc-0aaa}" ;;
+  *"describe-security-groups"*) echo sg-0bbb ;;
+  *"describe-subnets"*use1-az2*) echo subnet-0a2 ;;
+  *"describe-subnets"*use1-az4*) echo subnet-0a4 ;;
+  *"describe-subnets"*use1-az6*) echo subnet-0a6 ;;
   *) exit 0 ;;
 esac
 STUB
@@ -67,7 +83,7 @@ chmod +x "$tmp/sleep"
 export PATH="$tmp:$PATH" CDKPF_STUB_CALLS="$tmp/calls"
 
 run() { # run <failed type> <reason> [--fail-only 以外を渡すと pass 側も回す] -> exit code
-  rm -f "$tmp/calls" "$tmp/calls.F" "$tmp/calls.P"; : > "$tmp/calls"
+  rm -f "$tmp/calls" "$tmp/calls.F" "$tmp/calls.P" "$tmp/calls.tpl"; : > "$tmp/calls"
   # 予算は保険。リトライの打ち切りが壊れたら 1 時間ではなく 1 分で落ちるように
   CDKPF_STUB_FTYPE="$1" CDKPF_STUB_FREASON="$2" CDKPF_RULES_DIR="$tmp/rules" CDKPF_REGION=us-east-1 CDKPF_POLL_BUDGET=60 \
     bash bench/verify-rule.sh "$RULE" "${3---fail-only}" > "$tmp/out" 2>&1
@@ -269,4 +285,27 @@ got=$(RULE=pf-t-expect CDKPF_STUB_PCREATE_ERR="$SYNC" \
       run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state." "")
 expect 4 "$got" "a synchronous rejection of the pass template is never evidence"
 
-echo "ok: verify-rule.sh scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint"
+# --- bench の既定 VPC の ID は、作る直前に自アカウントの既定 VPC へ読み替える ---
+# 月次アカウントには bench のサブネットが無く、制約より先に InvalidSubnetID.NotFound で倒れていた
+got=$(RULE=pf-t-vpc run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+expect 0 "$got" "a fixture on bench's default VPC still runs in another account"
+for id in vpc-0aaa sg-0bbb subnet-0a2 subnet-0a4 subnet-0a6 subnet-11111111; do
+  grep -q "\"$id\"" "$tmp/calls.tpl" || { echo "FAIL: $id missing from the deployed template"; cat "$tmp/calls.tpl"; exit 1; }
+done
+grep -qE 'vpc-4331593e|sg-7d699f61|subnet-(2e0a500f|ab11fde7|7f91c820)' "$tmp/calls.tpl" \
+  && { echo "FAIL: a bench default-VPC ID survived into the deployed template"; cat "$tmp/calls.tpl"; exit 1; }
+# AZ 名ではなく AZ ID で合わせる（AZ 名と物理 AZ の対応はアカウントごとに違う）
+tr -d ' \n' < "$tmp/calls.tpl" | grep -q '"Subnets":\["subnet-0a2","subnet-0a4","subnet-0a6","subnet-11111111"\]' \
+  || { echo "FAIL: the subnets were not matched by AZ ID"; cat "$tmp/calls.tpl"; exit 1; }
+
+# 既定 VPC が無いアカウントでは、別の NotFound で倒して「検証した」と読ませず、作る前に降りる
+got=$(RULE=pf-t-vpc CDKPF_STUB_VPC=None run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+expect 4 "$got" "no default VPC to stand in for bench's is INCONCLUSIVE"
+grep -q "has no default VPC" "$tmp/out" || { echo "FAIL: the missing default VPC was not named"; cat "$tmp/out"; exit 1; }
+grep -q "create-stack" "$tmp/calls" && { echo "FAIL: created a stack without a default VPC to point at"; exit 1; }
+
+# 直書きの無いテンプレートには EC2 を引きに行かない
+got=$(run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+grep -q "describe-vpcs" "$tmp/calls" && { echo "FAIL: looked up a default VPC for a template that names none"; exit 1; }
+
+echo "ok: verify-rule.sh default-VPC localization + scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint"
