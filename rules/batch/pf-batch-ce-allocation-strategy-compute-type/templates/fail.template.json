@@ -11,7 +11,9 @@
           "InstanceTypes": [
             "optimal"
           ],
-          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "InstanceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:instance-profile/cdkpf-batch-instance"
+          },
           "Subnets": [
             {
               "Ref": "Subnet"
@@ -67,7 +69,9 @@
           "InstanceTypes": [
             "c5"
           ],
-          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "InstanceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:instance-profile/cdkpf-batch-instance"
+          },
           "Subnets": [
             {
               "Ref": "Subnet"
@@ -78,7 +82,9 @@
               "Ref": "Sg"
             }
           ],
-          "SpotIamFleetRole": "arn:aws:iam::214794239830:role/cdkpf-batch-spotfleet",
+          "SpotIamFleetRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-batch-spotfleet"
+          },
           "AllocationStrategy": "BEST_FIT_PROGRESSIVE_ORDERED"
         }
       },

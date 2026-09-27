@@ -8,7 +8,9 @@
         "ServiceEnvironmentOrder": [
           {
             "Order": 1,
-            "ServiceEnvironment": "arn:aws:batch:eu-west-1:214794239830:service-environment/pf-a"
+            "ServiceEnvironment": {
+              "Fn::Sub": "arn:aws:batch:eu-west-1:${AWS::AccountId}:service-environment/pf-a"
+            }
           }
         ]
       },

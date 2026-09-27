@@ -7,19 +7,27 @@
         "ComputeEnvironmentOrder": [
           {
             "Order": 1,
-            "ComputeEnvironment": "arn:aws:batch:us-east-1:214794239830:compute-environment/pf-a"
+            "ComputeEnvironment": {
+              "Fn::Sub": "arn:aws:batch:us-east-1:${AWS::AccountId}:compute-environment/pf-a"
+            }
           },
           {
             "Order": 2,
-            "ComputeEnvironment": "arn:aws:batch:us-east-1:214794239830:compute-environment/pf-b"
+            "ComputeEnvironment": {
+              "Fn::Sub": "arn:aws:batch:us-east-1:${AWS::AccountId}:compute-environment/pf-b"
+            }
           },
           {
             "Order": 3,
-            "ComputeEnvironment": "arn:aws:batch:us-east-1:214794239830:compute-environment/pf-c"
+            "ComputeEnvironment": {
+              "Fn::Sub": "arn:aws:batch:us-east-1:${AWS::AccountId}:compute-environment/pf-c"
+            }
           },
           {
             "Order": 4,
-            "ComputeEnvironment": "arn:aws:batch:us-east-1:214794239830:compute-environment/pf-d"
+            "ComputeEnvironment": {
+              "Fn::Sub": "arn:aws:batch:us-east-1:${AWS::AccountId}:compute-environment/pf-d"
+            }
           }
         ]
       },

@@ -7,7 +7,9 @@
         "ComputeEnvironmentOrder": [
           {
             "Order": 1,
-            "ComputeEnvironment": "arn:aws:batch:eu-west-1:214794239830:compute-environment/pf-a"
+            "ComputeEnvironment": {
+              "Fn::Sub": "arn:aws:batch:eu-west-1:${AWS::AccountId}:compute-environment/pf-a"
+            }
           }
         ]
       },

@@ -21,7 +21,9 @@
             "c5n",
             "m5n"
           ],
-          "InstanceRole": "arn:aws:iam::214794239830:instance-profile/cdkpf-batch-instance",
+          "InstanceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:instance-profile/cdkpf-batch-instance"
+          },
           "Subnets": [
             {
               "Ref": "Subnet"

@@ -4,7 +4,9 @@
       "Type": "AWS::Batch::ComputeEnvironment",
       "Properties": {
         "Type": "UNMANAGED",
-        "ServiceRole": "arn:aws:iam::214794239830:role/aws-service-role/batch.amazonaws.com/AWSServiceRoleForBatch"
+        "ServiceRole": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/batch.amazonaws.com/AWSServiceRoleForBatch"
+        }
       },
       "DependsOn": [
         "BatchRole"

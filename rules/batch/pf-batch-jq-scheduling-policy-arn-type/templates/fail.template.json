@@ -12,7 +12,9 @@
             }
           }
         ],
-        "SchedulingPolicyArn": "arn:aws:batch:us-east-1:214794239830:compute-environment/pf-a"
+        "SchedulingPolicyArn": {
+          "Fn::Sub": "arn:aws:batch:us-east-1:${AWS::AccountId}:compute-environment/pf-a"
+        }
       },
       "DependsOn": [
         "BatchRole",
