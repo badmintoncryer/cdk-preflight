@@ -32,7 +32,9 @@
               "Arn"
             ]
           },
-          "BucketARN": "arn:aws:s3:us-east-1:214794239830:cdkpf-firehose-probe-214794239830"
+          "BucketARN": {
+            "Fn::Sub": "arn:aws:s3:us-east-1:${AWS::AccountId}:cdkpf-fixtures-${AWS::AccountId}"
+          }
         }
       }
     }

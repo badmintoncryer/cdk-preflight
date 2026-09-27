@@ -9,7 +9,9 @@
         "ConnectionInput": {
           "ConnectionType": "SNOWFLAKE",
           "ConnectionProperties": {
-            "SparkProperties": "{\"sfUrl\": \"pfacct.snowflakecomputing.com\", \"secretId\": \"arn:aws:secretsmanager:us-east-1:214794239830:secret:pfsecret-AbCdEf\"}",
+            "SparkProperties": {
+              "Fn::Sub": "{\"sfUrl\": \"pfacct.snowflakecomputing.com\", \"secretId\": \"arn:aws:secretsmanager:us-east-1:${AWS::AccountId}:secret:pfsecret-AbCdEf\"}"
+            },
             "PythonProperties": "{\"account\": \"pfacct\"}"
           }
         }

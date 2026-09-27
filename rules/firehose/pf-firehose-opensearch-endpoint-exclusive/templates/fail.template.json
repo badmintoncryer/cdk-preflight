@@ -47,7 +47,9 @@
               ]
             }
           },
-          "DomainARN": "arn:aws:es:us-east-1:214794239830:domain/cdkpf-probe",
+          "DomainARN": {
+            "Fn::Sub": "arn:aws:es:us-east-1:${AWS::AccountId}:domain/cdkpf-probe"
+          },
           "ClusterEndpoint": "https://search-cdkpf.us-east-1.es.amazonaws.com"
         }
       }

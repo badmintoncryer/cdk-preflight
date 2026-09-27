@@ -28,7 +28,9 @@
         "ResourceUris": [
           {
             "ResourceType": "JAR",
-            "Uri": "s3://cdkpf-glue-probe-214794239830/u.jar"
+            "Uri": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/u.jar"
+            }
           }
         ]
       }

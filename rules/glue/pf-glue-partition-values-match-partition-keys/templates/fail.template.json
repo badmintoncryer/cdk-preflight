@@ -28,7 +28,9 @@
           },
           "TableType": "EXTERNAL_TABLE",
           "StorageDescriptor": {
-            "Location": "s3://cdkpf-glue-probe-214794239830/t/",
+            "Location": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/t/"
+            },
             "Columns": [
               {
                 "Name": "c1",
@@ -67,7 +69,9 @@
             "01"
           ],
           "StorageDescriptor": {
-            "Location": "s3://cdkpf-glue-probe-214794239830/t/y=2026/",
+            "Location": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/t/y=2026/"
+            },
             "Columns": [
               {
                 "Name": "c1",

@@ -3,11 +3,15 @@
     "Main": {
       "Type": "AWS::Glue::Job",
       "Properties": {
-        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "Role": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-glue-probe"
+        },
         "GlueVersion": "4.0",
         "Command": {
           "Name": "glueetl",
-          "ScriptLocation": "s3://cdkpf-glue-probe-214794239830/s.py",
+          "ScriptLocation": {
+            "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/s.py"
+          },
           "PythonVersion": "3",
           "Runtime": "Ray2.4"
         },
