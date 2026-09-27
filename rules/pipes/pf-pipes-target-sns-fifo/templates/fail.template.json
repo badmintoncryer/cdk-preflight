@@ -10,8 +10,12 @@
       "Arn"
      ]
     },
-    "Source": "arn:aws:sqs:us-east-1:214794239830:Q",
-    "Target": "arn:aws:sns:us-east-1:214794239830:T.fifo"
+    "Source": {
+     "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:Q"
+    },
+    "Target": {
+     "Fn::Sub": "arn:aws:sns:us-east-1:${AWS::AccountId}:T.fifo"
+    }
    }
   },
   "Role": {

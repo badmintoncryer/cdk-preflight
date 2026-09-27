@@ -3,9 +3,13 @@
     "Scram": {
       "Type": "AWS::MSK::BatchScramSecret",
       "Properties": {
-        "ClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/pfcluster/11111111-2222-3333-4444-555555555555-1",
+        "ClusterArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/pfcluster/11111111-2222-3333-4444-555555555555-1"
+        },
         "SecretArnList": [
-          "arn:aws:secretsmanager:us-east-1:214794239830:secret:AmazonMSK_cdkpf-a1b2c3"
+          {
+            "Fn::Sub": "arn:aws:secretsmanager:us-east-1:${AWS::AccountId}:secret:AmazonMSK_cdkpf-a1b2c3"
+          }
         ]
       }
     }

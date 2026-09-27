@@ -20,7 +20,9 @@
             "Priority": 1,
             "Statement": {
               "IPSetReferenceStatement": {
-                "Arn": "arn:aws:wafv2:eu-west-1:214794239830:regional/ipset/x/11111111-2222-3333-4444-555555555555"
+                "Arn": {
+                  "Fn::Sub": "arn:aws:wafv2:eu-west-1:${AWS::AccountId}:regional/ipset/x/11111111-2222-3333-4444-555555555555"
+                }
               }
             },
             "Action": {

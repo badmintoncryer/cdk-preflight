@@ -5,7 +5,9 @@
       "Properties": {
         "Alias": "cdkpf-ws-log-group-arn-format",
         "LoggingConfiguration": {
-          "LogGroupArn": "arn:aws:logs:us-east-1:214794239830:log-group:/aws/vendedlogs/cdkpf:*"
+          "LogGroupArn": {
+            "Fn::Sub": "arn:aws:logs:us-east-1:${AWS::AccountId}:log-group:/aws/vendedlogs/cdkpf:*"
+          }
         }
       }
     },
@@ -17,7 +19,9 @@
           "Destinations": [
             {
               "CloudWatchLogs": {
-                "LogGroupArn": "arn:aws:logs:us-east-1:214794239830:log-group:/aws/vendedlogs/cdkpf:*"
+                "LogGroupArn": {
+                  "Fn::Sub": "arn:aws:logs:us-east-1:${AWS::AccountId}:log-group:/aws/vendedlogs/cdkpf:*"
+                }
               },
               "Filters": {
                 "QspThreshold": 1000

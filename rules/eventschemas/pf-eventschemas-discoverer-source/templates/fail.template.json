@@ -4,7 +4,9 @@
   "D": {
    "Type": "AWS::EventSchemas::Discoverer",
    "Properties": {
-    "SourceArn": "arn:aws:sqs:us-east-1:214794239830:Q"
+    "SourceArn": {
+     "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:Q"
+    }
    }
   }
  }

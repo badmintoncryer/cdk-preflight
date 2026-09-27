@@ -19,7 +19,9 @@
         "Arn"
        ]
       },
-      "Arn": "arn:aws:redshift:us-east-1:214794239830:cluster:c1",
+      "Arn": {
+       "Fn::Sub": "arn:aws:redshift:us-east-1:${AWS::AccountId}:cluster:c1"
+      },
       "RedshiftDataParameters": {
        "Database": "db",
        "DbUser": "u",

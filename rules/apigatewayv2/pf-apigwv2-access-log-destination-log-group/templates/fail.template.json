@@ -15,7 +15,9 @@
         },
         "StageName": "s",
         "AccessLogSettings": {
-          "DestinationArn": "arn:aws:firehose:us-east-1:214794239830:deliverystream/amazon-apigateway-x",
+          "DestinationArn": {
+            "Fn::Sub": "arn:aws:firehose:us-east-1:${AWS::AccountId}:deliverystream/amazon-apigateway-x"
+          },
           "Format": "$context.requestId"
         }
       }

@@ -17,7 +17,9 @@
        "Arn"
       ]
      },
-     "Input": "{\"QueueUrl\": \"https://sqs.us-east-1.amazonaws.com/214794239830/Q\", \"MessageBody\": \"m\"}"
+     "Input": {
+      "Fn::Sub": "{\"QueueUrl\": \"https://sqs.us-east-1.amazonaws.com/${AWS::AccountId}/Q\", \"MessageBody\": \"m\"}"
+     }
     }
    }
   },

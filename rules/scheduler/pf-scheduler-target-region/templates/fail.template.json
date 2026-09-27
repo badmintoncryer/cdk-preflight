@@ -10,7 +10,9 @@
     "ScheduleExpression": "rate(5 minutes)",
     "State": "DISABLED",
     "Target": {
-     "Arn": "arn:aws:lambda:us-west-2:214794239830:function:F",
+     "Arn": {
+      "Fn::Sub": "arn:aws:lambda:us-west-2:${AWS::AccountId}:function:F"
+     },
      "RoleArn": {
       "Fn::GetAtt": [
        "Role",

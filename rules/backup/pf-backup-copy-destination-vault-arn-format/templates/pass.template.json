@@ -29,7 +29,9 @@
               "ScheduleExpression": "cron(0 0 1 1 ? 2035)",
               "CopyActions": [
                 {
-                  "DestinationBackupVaultArn": "arn:aws:backup:us-east-1:214794239830:backup-vault:cdkpf-copy-destination-vault-arn2"
+                  "DestinationBackupVaultArn": {
+                    "Fn::Sub": "arn:aws:backup:us-east-1:${AWS::AccountId}:backup-vault:cdkpf-copy-destination-vault-arn2"
+                  }
                 }
               ]
             }

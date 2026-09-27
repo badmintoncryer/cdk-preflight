@@ -20,7 +20,9 @@
       ]
      }
     },
-    "KmsKeyArn": "arn:aws:kms:eu-west-1:214794239830:key/12345678-1234-1234-1234-1234567890ab"
+    "KmsKeyArn": {
+     "Fn::Sub": "arn:aws:kms:eu-west-1:${AWS::AccountId}:key/12345678-1234-1234-1234-1234567890ab"
+    }
    }
   }
  }

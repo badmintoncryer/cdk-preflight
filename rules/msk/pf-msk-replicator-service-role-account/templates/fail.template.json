@@ -8,7 +8,9 @@
         "KafkaClusters": [
           {
             "AmazonMskCluster": {
-              "MskClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-src/11111111-2222-3333-4444-555555555555-1"
+              "MskClusterArn": {
+                "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf-src/11111111-2222-3333-4444-555555555555-1"
+              }
             },
             "VpcConfig": {
               "SubnetIds": [
@@ -22,7 +24,9 @@
           },
           {
             "AmazonMskCluster": {
-              "MskClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+              "MskClusterArn": {
+                "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+              }
             },
             "VpcConfig": {
               "SubnetIds": [
@@ -37,8 +41,12 @@
         ],
         "ReplicationInfoList": [
           {
-            "SourceKafkaClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-src/11111111-2222-3333-4444-555555555555-1",
-            "TargetKafkaClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2",
+            "SourceKafkaClusterArn": {
+              "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf-src/11111111-2222-3333-4444-555555555555-1"
+            },
+            "TargetKafkaClusterArn": {
+              "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+            },
             "TargetCompressionType": "NONE",
             "TopicReplication": {
               "TopicsToReplicate": [

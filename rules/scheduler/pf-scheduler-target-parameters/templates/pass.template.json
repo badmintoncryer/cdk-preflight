@@ -10,7 +10,9 @@
     "ScheduleExpression": "rate(5 minutes)",
     "State": "DISABLED",
     "Target": {
-     "Arn": "arn:aws:kinesis:us-east-1:214794239830:stream/S",
+     "Arn": {
+      "Fn::Sub": "arn:aws:kinesis:us-east-1:${AWS::AccountId}:stream/S"
+     },
      "RoleArn": {
       "Fn::GetAtt": [
        "Role",

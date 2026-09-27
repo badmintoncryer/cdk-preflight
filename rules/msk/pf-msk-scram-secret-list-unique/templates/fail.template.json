@@ -98,8 +98,12 @@
           "Ref": "Cluster"
         },
         "SecretArnList": [
-          "arn:aws:secretsmanager:us-east-1:214794239830:secret:AmazonMSK_cdkpf-a1b2c3",
-          "arn:aws:secretsmanager:us-east-1:214794239830:secret:AmazonMSK_cdkpf-a1b2c3"
+          {
+            "Fn::Sub": "arn:aws:secretsmanager:us-east-1:${AWS::AccountId}:secret:AmazonMSK_cdkpf-a1b2c3"
+          },
+          {
+            "Fn::Sub": "arn:aws:secretsmanager:us-east-1:${AWS::AccountId}:secret:AmazonMSK_cdkpf-a1b2c3"
+          }
         ]
       }
     }

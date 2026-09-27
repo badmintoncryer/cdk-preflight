@@ -19,7 +19,9 @@
         "IdentitySource": [
           "route.request.header.Authorization"
         ],
-        "AuthorizerUri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:214794239830:function:f/invocations"
+        "AuthorizerUri": {
+          "Fn::Sub": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:${AWS::AccountId}:function:f/invocations"
+        }
       }
     }
   }

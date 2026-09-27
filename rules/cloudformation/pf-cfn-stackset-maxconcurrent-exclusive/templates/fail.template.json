@@ -18,7 +18,9 @@
       ],
       "DeploymentTargets": {
        "Accounts": [
-        "214794239830"
+        {
+         "Ref": "AWS::AccountId"
+        }
        ]
       }
      }

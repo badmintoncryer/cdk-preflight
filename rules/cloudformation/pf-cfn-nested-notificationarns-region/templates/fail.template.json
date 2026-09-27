@@ -14,7 +14,9 @@
      "Fn::Sub": "https://cdkpf-fixtures-${AWS::AccountId}.s3.amazonaws.com/cfn73/child.json"
     },
     "NotificationARNs": [
-     "arn:aws:sns:eu-west-1:214794239830:cdkpf73-narn-f"
+     {
+      "Fn::Sub": "arn:aws:sns:eu-west-1:${AWS::AccountId}:cdkpf73-narn-f"
+     }
     ]
    }
   }

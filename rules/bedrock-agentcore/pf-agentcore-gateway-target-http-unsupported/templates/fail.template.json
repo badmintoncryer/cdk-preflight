@@ -62,7 +62,9 @@
     "TargetConfiguration": {
      "Http": {
       "AgentcoreRuntime": {
-       "Arn": "arn:aws:bedrock-agentcore:eu-west-1:214794239830:runtime/cdkpf_nosuch-abcdefghij"
+       "Arn": {
+        "Fn::Sub": "arn:aws:bedrock-agentcore:eu-west-1:${AWS::AccountId}:runtime/cdkpf_nosuch-abcdefghij"
+       }
       }
      }
     },

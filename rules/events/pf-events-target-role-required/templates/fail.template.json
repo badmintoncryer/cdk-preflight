@@ -13,7 +13,9 @@
     "Targets": [
      {
       "Id": "t1",
-      "Arn": "arn:aws:kinesis:us-east-1:214794239830:stream/cdkpf-nonexistent",
+      "Arn": {
+       "Fn::Sub": "arn:aws:kinesis:us-east-1:${AWS::AccountId}:stream/cdkpf-nonexistent"
+      },
       "KinesisParameters": {
        "PartitionKeyPath": "$.detail.k"
       }
