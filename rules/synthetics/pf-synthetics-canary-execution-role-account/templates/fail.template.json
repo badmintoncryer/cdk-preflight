@@ -4,7 +4,9 @@
       "Type": "AWS::Synthetics::Canary",
       "Properties": {
         "Name": "cdkpf-roleacct-f",
-        "ArtifactS3Location": "s3://cdkpf-bench-layers/canary-artifacts/cdkpf-roleacct-f",
+        "ArtifactS3Location": {
+          "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/canary-artifacts/cdkpf-roleacct-f"
+        },
         "ExecutionRoleArn": "arn:aws:iam::999999999999:role/cdkpf-nosuch-role",
         "RuntimeVersion": "syn-nodejs-puppeteer-17.0",
         "StartCanaryAfterCreation": false,

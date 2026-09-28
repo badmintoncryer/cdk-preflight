@@ -30,8 +30,12 @@
                     "s3:ListAllMyBuckets"
                   ],
                   "Resource": [
-                    "arn:aws:s3:::cdkpf-bench-layers",
-                    "arn:aws:s3:::cdkpf-bench-layers/*"
+                    {
+                      "Fn::Sub": "arn:aws:s3:::cdkpf-fixtures-${AWS::AccountId}"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:s3:::cdkpf-fixtures-${AWS::AccountId}/*"
+                    }
                   ]
                 },
                 {
@@ -55,7 +59,9 @@
       "Type": "AWS::Synthetics::Canary",
       "Properties": {
         "Name": "cdkpf-deplreg-f",
-        "ArtifactS3Location": "s3://cdkpf-bench-layers/canary-artifacts/cdkpf-deplreg-f",
+        "ArtifactS3Location": {
+          "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/canary-artifacts/cdkpf-deplreg-f"
+        },
         "ExecutionRoleArn": {
           "Fn::GetAtt": [
             "Role",

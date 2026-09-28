@@ -30,8 +30,12 @@
                     "s3:ListAllMyBuckets"
                   ],
                   "Resource": [
-                    "arn:aws:s3:::cdkpf-bench-layers",
-                    "arn:aws:s3:::cdkpf-bench-layers/*"
+                    {
+                      "Fn::Sub": "arn:aws:s3:::cdkpf-fixtures-${AWS::AccountId}"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:s3:::cdkpf-fixtures-${AWS::AccountId}/*"
+                    }
                   ]
                 },
                 {
@@ -55,7 +59,9 @@
       "Type": "AWS::Synthetics::Canary",
       "Properties": {
         "Name": "cdkpf-scrs3-f",
-        "ArtifactS3Location": "s3://cdkpf-bench-layers/canary-artifacts/cdkpf-scrs3-f",
+        "ArtifactS3Location": {
+          "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/canary-artifacts/cdkpf-scrs3-f"
+        },
         "ExecutionRoleArn": {
           "Fn::GetAtt": [
             "Role",
@@ -71,7 +77,9 @@
         "Code": {
           "Handler": "index.handler",
           "Script": "exports.handler = async () => {};",
-          "S3Bucket": "cdkpf-bench-layers",
+          "S3Bucket": {
+            "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+          },
           "S3Key": "canary-artifacts/canary.zip"
         }
       }

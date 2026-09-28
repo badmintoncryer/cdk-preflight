@@ -55,7 +55,9 @@
         },
         "PackageType": "Image",
         "Code": {
-          "ImageUri": "214794239830.dkr.ecr.us-east-1.amazonaws.com/cdkpf-bench-image:py313"
+          "ImageUri": {
+            "Fn::Sub": "${AWS::AccountId}.dkr.ecr.us-east-1.amazonaws.com/cdkpf-bench-image:py313"
+          }
         }
       }
     }
