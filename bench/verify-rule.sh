@@ -221,6 +221,17 @@ else
   FSTATUS=$(poll_terminal "$FSTACK")
   REASON=$(reason_of "$FSTACK") || READ_FAILED=1
   FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
+  # 違反するリソースが 2 つある fail テンプレートは、CFN が並行に作るのでどちらが先に倒れるかが実行ごとに
+  # 変わる（2026-09-28、nfw tls-scopes と glue worker-type が exit 4。期待の文面はどちらも、後から倒れた
+  # もう一方のリソースの本物の失敗に出ていた）。先頭でなくても制約の文面で倒れたリソースがあれば、それを理由にする。
+  if [ "$READ_FAILED" = 0 ] && [ -n "$EXPECT" ] && ! grep -qF -- "$EXPECT" <<<"$REASON"; then
+    q="$(root_failure "$FSTACK") && contains(ResourceStatusReason || '', '${EXPECT//\'/\\\'}')"
+    if R=$(events_query "$FSTACK" "StackEvents[?$q]|[-1].ResourceStatusReason") && [ "$R" != None ] &&
+      T=$(events_query "$FSTACK" "StackEvents[?$q]|[-1].ResourceType"); then
+      echo "fail: first to fail=$REASON" | tee -a "$LOG"
+      REASON=$R FTYPE=$T
+    fi
+  fi
 fi
 echo "fail: finalStatus=$FSTATUS" | tee -a "$LOG"
 echo "fail: reason=$REASON" | tee -a "$LOG"

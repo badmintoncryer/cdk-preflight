@@ -52,6 +52,9 @@ case "$args" in
     # クエリで答えを変える。スタブは JMESPath を評価しないので、フィルタが外すはずの文面
     # （巻き添えの取り消しなど）を返させると、ハーネス側の最後の砦だけが試される
     case "$args" in
+      # 先に倒れたのとは別のリソースの、repro.expect を含む失敗（無ければ None）
+      *"contains(ResourceStatusReason"*".ResourceType"*) eval "ans=\${CDKPF_STUB_${w}TYPE2:-None}" ;;
+      *"contains(ResourceStatusReason"*) eval "ans=\${CDKPF_STUB_${w}REASON2:-None}" ;;
       *ROLLBACK_IN_PROGRESS*) ans=$sreason ;; # スタック自身のロールバック開始の行
       *"LogicalResourceId=="*) ans=None ;;    # スタック自身の CREATE_FAILED
       *".ResourceType"*) ans=$ftype ;;
@@ -267,6 +270,18 @@ got=$(RULE=pf-t-expect run "AWS::Batch::ComputeEnvironment" "Role arn:aws:iam::1
 expect 4 "$got" "falling over on the rule's own type for another reason is not evidence"
 grep -q "fell for a different reason than repro.expect" "$tmp/out" \
   || { echo "FAIL: the mismatch was not reported as such"; cat "$tmp/out"; exit 1; }
+
+# fail テンプレートに違反するリソースが 2 つあると、CFN は並行に作るのでどちらが先に倒れるかが実行ごとに
+# 変わる（2026-09-28、nfw tls-scopes と glue worker-type が exit 4。期待の文面はもう一方の本物の失敗に出ていた）
+got=$(RULE=pf-t-expect CDKPF_STUB_FREASON2="Compute Environment must be created in ENABLED state." \
+      CDKPF_STUB_FTYPE2="AWS::Batch::ComputeEnvironment" \
+      run "AWS::Batch::ComputeEnvironment" "Compute Environment must have a service role.")
+expect 0 "$got" "the expected rejection on the resource that fell second still verifies"
+grep -qF "fail: reason=Compute Environment must be created in ENABLED state." "$tmp/out" \
+  || { echo "FAIL: the matching failure was not written up as the reason"; cat "$tmp/out"; exit 1; }
+# 2 つ目の失敗も期待の文面でなければ、これまでどおり INCONCLUSIVE
+got=$(RULE=pf-t-expect run "AWS::Batch::ComputeEnvironment" "Compute Environment must have a service role.")
+expect 4 "$got" "no failure naming repro.expect stays INCONCLUSIVE"
 
 # create-stack の同期拒否: 足場が倒れる余地が無いぶん一番強い証拠だが、スロットルや認証切れと
 # 見分けられるのは repro.expect を名指ししたときだけ
