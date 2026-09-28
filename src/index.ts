@@ -1,6 +1,6 @@
 import { Stage, Validations } from 'aws-cdk-lib';
 import { IConstruct } from 'constructs';
-import { installEnforceGate, observePluginCached, PreflightEnforcePlugin } from './private/enforce';
+import { engineVersion, installEnforceGate, isSuperseded, observePluginCached, PreflightEnforcePlugin } from './private/enforce';
 import { BUNDLED_RULES } from './rules.generated';
 
 /**
@@ -34,6 +34,11 @@ export interface PreflightOptions {
    * (severity ERROR/FATAL) of the built-in validation engine itself, e.g.
    * schema violations like `F3034`. This is the workaround for the CDK
    * behavior where all built-in findings are downgraded to warnings.
+   *
+   * Since the engine's own errors then fail synthesis, bundled rules that the
+   * running engine already covers are skipped instead of being reported twice.
+   * The same happens with `enforce: false`, and when the app sets the context
+   * `@aws-cdk/core:validateAgainstDefaultRules: true`.
    *
    * Only effective in enforce mode (the default).
    *
@@ -81,12 +86,21 @@ export class Preflight {
     if (unknown.length > 0) {
       throw new Error(`cdk-preflight: unknown rule id(s) in exclude: ${unknown.join(', ')}`);
     }
+    const enforce = options.enforce ?? true;
+    const strict = options.strict ?? false;
+    // meta.yaml#supersededBy のルールは、このエンジンが同じ違反を自力で見つける。省くのは
+    // 省いても止まり方が変わらないときだけ: observe（どちらも警告）、strict（組み込みの
+    // ERROR/FATAL で止まる）、CDK 自身が組み込みを格下げしない設定のとき。既定の enforce では
+    // CDK が組み込みの ERROR/FATAL を警告に落とすので、省くと synth が通ってしまう。
+    const engineBlocks = !enforce || strict || cdkKeepsDefaultRuleErrors(scope);
+    const version = engineBlocks ? engineVersion() : undefined;
     const selected = BUNDLED_RULES
       .filter((r) => (options.includeUpstreamPending ?? true) || r.upstream !== 'pending-engine')
-      .filter((r) => !exclude.includes(r.id));
+      .filter((r) => !exclude.includes(r.id))
+      .filter((r) => !isSuperseded(r, version));
 
-    if (options.enforce ?? true) {
-      Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, options.strict ?? false));
+    if (enforce) {
+      Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, strict));
       installEnforceGate(scope);
     } else {
       Validations.of(scope).addPlugins(observePluginCached(selected));
@@ -101,4 +115,14 @@ export class Preflight {
   }
 
   private constructor() {}
+}
+
+/**
+ * CDK が組み込みエンジンの ERROR/FATAL を警告に落とさない設定か。判定は aws-cdk-lib 2.271.0 の
+ * synthesis-validation と同じ: context `@aws-cdk/core:validateAgainstDefaultRules` が false 以外で
+ * 設定されていて、かつ組み込みの自動登録が `CDK_VALIDATION=false` で止められていないこと。
+ */
+function cdkKeepsDefaultRuleErrors(scope: IConstruct): boolean {
+  const raw = scope.node.tryGetContext('@aws-cdk/core:validateAgainstDefaultRules');
+  return raw !== undefined && raw !== false && raw !== 'false' && process.env.CDK_VALIDATION !== 'false';
 }

@@ -4,7 +4,11 @@ resourceTypes: [AWS::Cognito::UserPoolDomain]
 severity: ERROR
 title: "A hosted UI domain prefix is capped at 63 characters"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [E3031, F3033]
 benchRegion: us-east-1
 repro:
   method: real-deploy

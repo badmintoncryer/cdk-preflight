@@ -4,7 +4,11 @@ resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
 severity: ERROR
 title: Statement IDs must be unique within a policy
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [E3510]
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: two statements with Sid \"Dup\" in one policy (i17) -> \"Statement IDs (SID) in a single policy must be unique.\" ROLLBACK_COMPLETE."

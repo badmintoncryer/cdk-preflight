@@ -4,7 +4,11 @@ resourceTypes: [AWS::Cognito::UserPoolDomain]
 severity: ERROR
 title: "A hosted UI domain prefix takes lower-case letters, digits and hyphens"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.11.0
+  cdk: 2.271.0
+  engineRules: [E3031]
 benchRegion: us-east-1
 repro:
   method: real-deploy

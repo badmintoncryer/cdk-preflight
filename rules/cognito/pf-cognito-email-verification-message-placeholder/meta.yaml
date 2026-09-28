@@ -4,7 +4,11 @@ resourceTypes: [AWS::Cognito::UserPool]
 severity: ERROR
 title: "EmailVerificationMessage needs the {####} code placeholder"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [F3031]
 benchRegion: us-east-1
 repro:
   method: real-deploy

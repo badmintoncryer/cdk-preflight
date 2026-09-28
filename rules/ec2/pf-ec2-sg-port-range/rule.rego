@@ -58,6 +58,10 @@ violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	_pf_port_out(n)
 }
 
+# 単独リソースの FromPort > ToPort はエンジン 1.12.1 の E9002 も止める（ingress / egress とも、
+# 2026-09-28 実測）。下限の aws-cdk-lib 2.267.0 のエンジン（1.7.0-beta）は止めないので残す。
+# 範囲外の分岐はどの版も止めないため、ルール全体は supersededBy にしない。fail テンプレートに
+# この分岐のケースを置くと重複ガードが赤くなるので、置いていない。
 violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	"Properties.FromPort",
 	sprintf("FromPort (%v) must be less than or equal to ToPort (%v)", [f, t]),

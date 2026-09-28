@@ -28,18 +28,6 @@
           }
         ]
       }
-    },
-    "Order": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-        "GroupId": {
-          "Ref": "SG"
-        },
-        "IpProtocol": "tcp",
-        "FromPort": 65535,
-        "ToPort": 65534,
-        "CidrIp": "10.11.0.0/16"
-      }
     }
   }
 }

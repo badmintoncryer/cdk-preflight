@@ -18,13 +18,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { deployEnvironmentModule, loadEngine, validateTemplate } from '../src/private/enforce';
+import { deployEnvironmentModule, engineVersion, isSuperseded, loadEngine, validateTemplate } from '../src/private/enforce';
+import type { BundledRuleData } from '../src/rules.generated';
+import { type SupersededBy, uncoveredFindings } from './bundle-rules';
 
 interface Diagnostic {
   readonly ruleId: string;
   readonly severity: string;
   readonly source?: string;
   readonly message?: string;
+  readonly propertyPath?: string;
+  readonly entity?: { readonly logicalId?: string };
 }
 
 const ROOT = path.join(__dirname, '..');
@@ -32,6 +36,7 @@ const REGION = process.env.PF_REGION ?? 'us-east-1';
 const ACCOUNT = process.env.PF_ACCOUNT ?? '123456789012';
 
 const engine = loadEngine();
+const VERSION = engineVersion();
 if (!engine) throw new Error('engine not resolvable (needs aws-cdk-lib >= 2.267.0)');
 
 const blockers = (ds: Diagnostic[]) =>
@@ -75,7 +80,7 @@ function guard(paths: string[]): number {
   return 0;
 }
 
-interface RuleDir { id: string; service: string; dir: string; rego: string; fixtureRegion?: string }
+interface RuleDir { id: string; service: string; dir: string; rego: string; fixtureRegion?: string; supersededBy?: SupersededBy }
 
 function collect(filters: string[]): RuleDir[] {
   const rulesDir = path.join(ROOT, 'rules');
@@ -89,10 +94,8 @@ function collect(filters: string[]): RuleDir[] {
       if (!fs.existsSync(rego)) continue;
       // meta.yaml はまだ無いことがある（evidence 前の実装途中でも回せるのがこのコマンドの趣旨）。
       const metaPath = path.join(dir, 'meta.yaml');
-      const fixtureRegion: string | undefined = fs.existsSync(metaPath)
-        ? YAML.parse(fs.readFileSync(metaPath, 'utf8'))?.fixtureRegion
-        : undefined;
-      out.push({ id, service, dir, rego: fs.readFileSync(rego, 'utf8'), fixtureRegion });
+      const meta = fs.existsSync(metaPath) ? YAML.parse(fs.readFileSync(metaPath, 'utf8')) : undefined;
+      out.push({ id, service, dir, rego: fs.readFileSync(rego, 'utf8'), fixtureRegion: meta?.fixtureRegion, supersededBy: meta?.supersededBy });
     }
   }
   if (filters.length === 0) return out;
@@ -134,7 +137,11 @@ function check(filters: string[]): number {
       const ds = evaluate(inst, file, region);
       const custom = ds.filter((d) => d.source === 'CUSTOM');
       const b = blockers(ds);
-      if (b.length > 0) problems.push(`${kind}: engine ${b.map((d) => `${d.ruleId}/${d.severity}`).join(' ')}`);
+      // supersededBy のルールは fail をエンジンが覆っていて正しい（その精査は jest の重複ガード）
+      const covered = kind === 'fail' && rule.supersededBy
+        && isSuperseded(rule as unknown as BundledRuleData, VERSION)
+        && uncoveredFindings(custom.filter((d) => d.ruleId === rule.id), ds).length === 0;
+      if (b.length > 0 && !covered) problems.push(`${kind}: engine ${b.map((d) => `${d.ruleId}/${d.severity}`).join(' ')}`);
       if (kind === 'fail' && !custom.some((d) => d.ruleId === rule.id)) problems.push('fail: own rule silent');
       if (kind === 'pass' && custom.length > 0) problems.push(`pass: ${[...new Set(custom.map((d) => d.ruleId))].join(' ')} fired`);
     }

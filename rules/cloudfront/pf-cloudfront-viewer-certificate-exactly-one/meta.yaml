@@ -4,7 +4,11 @@ resourceTypes: [AWS::CloudFront::Distribution]
 severity: ERROR
 title: 'ViewerCertificate must name exactly one certificate source'
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-viewercertificate.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [F3014]
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: Exactly one of [AcmCertificateArn, CloudFrontDefaultCertificate, IamCertificateId] needs to be specified" (RequestToken: 9b478016-2081-5f20-b874-88d534930066, HandlerErrorCode: InvalidRequest)'

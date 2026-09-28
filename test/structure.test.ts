@@ -8,7 +8,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, topLevelNames } from '../scripts/bundle-rules';
+import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, supersededProblem, topLevelNames, uncoveredFindings } from '../scripts/bundle-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -214,6 +214,33 @@ test('doc-only rules are warnings: they must not fail synth', () => {
   // 実機・研究ケースの証拠があるものは ERROR のままでよい
   expect(docOnlyProblem({ method: 'real-deploy' }, 'ERROR')).toBeUndefined();
   expect(docOnlyProblem({ method: 'research-case' }, 'ERROR')).toBeUndefined();
+});
+
+test('supersededBy and upstream: retired go together, with versions and engine rule ids', () => {
+  const s = { engine: '1.8.0-beta', cdk: '2.268.0', engineRules: ['E3510'] };
+  expect(supersededProblem('retired', s)).toBeUndefined();
+  expect(supersededProblem('none', undefined)).toBeUndefined();
+  expect(supersededProblem('none', s)).toMatch(/requires upstream: retired/);
+  expect(supersededProblem('retired', undefined)).toMatch(/requires meta.supersededBy/);
+  expect(supersededProblem('retired', { ...s, engine: '1.8' })).toMatch(/engine must be a version/);
+  expect(supersededProblem('retired', { ...s, cdk: 'latest' })).toMatch(/cdk must be a version/);
+  expect(supersededProblem('retired', { ...s, engineRules: [] })).toMatch(/engineRules/);
+});
+
+test('a rule counts as covered only where the engine blocks the same property', () => {
+  const own = (logicalId: string, propertyPath: string) =>
+    ({ ruleId: 'pf-x', severity: 'ERROR', source: 'CUSTOM', propertyPath, entity: { logicalId } });
+  const eng = (logicalId: string, propertyPath: string, severity = 'ERROR') =>
+    ({ ruleId: 'E1', severity, source: 'CFN_LINT', propertyPath, entity: { logicalId } });
+  const mine = [own('SG', 'Properties.Ingress.0.FromPort'), own('Order', 'Properties.FromPort')];
+  // pf-ec2-sg-port-range の実例: エンジンは 1 ケースしか止めていない
+  expect(uncoveredFindings(mine, [eng('Order', 'Properties.FromPort')]).map((d) => d.entity.logicalId)).toEqual(['SG']);
+  // 祖先・子孫のパスは同じ指摘として数える
+  expect(uncoveredFindings(mine, [eng('SG', 'Properties.Ingress.0'), eng('Order', 'Properties.FromPort')])).toEqual([]);
+  // 名前が前方一致するだけの別プロパティ、WARN、別リソースは覆わない
+  expect(uncoveredFindings([own('Order', 'Properties.FromPort')], [eng('Order', 'Properties.FromPortX')])).toHaveLength(1);
+  expect(uncoveredFindings([own('Order', 'Properties.FromPort')], [eng('Order', 'Properties.FromPort', 'WARN')])).toHaveLength(1);
+  expect(uncoveredFindings([own('Order', 'Properties.FromPort')], [eng('SG', 'Properties.FromPort')])).toHaveLength(1);
 });
 
 test('every doc-only rule ships as a warning', () => {

@@ -519,3 +519,52 @@ export function loadEngine(): any | undefined {
     return undefined;
   }
 }
+
+/**
+ * loadEngine() が載せるのと同じエンジンの版。解決順も同じにしてある。読めなければ undefined。
+ * （テストからも利用するため export している）
+ */
+export function engineVersion(): string | undefined {
+  try {
+    return require('@aws/cloudformation-validate/package.json').version;
+  } catch {
+    // fall through
+  }
+  try {
+    const libPkg = require.resolve('aws-cdk-lib/package.json');
+    return require(require.resolve('@aws/cloudformation-validate/package.json', {
+      paths: [path.dirname(libPkg)],
+    })).version;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * semver の大小（a < b で負）。プレリリース（`1.9.0-beta`）は同じ版の正式リリースより小さい。
+ * 読めない形なら undefined。
+ * ponytail: プレリリース同士は文字列で比べる（エンジンは `-beta` しか出していない）。
+ */
+export function compareVersions(a: string, b: string): number | undefined {
+  const parse = (v: string) => /^(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/.exec(v);
+  const pa = parse(a);
+  const pb = parse(b);
+  if (!pa || !pb) return undefined;
+  for (let i = 1; i <= 3; i++) {
+    const d = Number(pa[i]) - Number(pb[i]);
+    if (d !== 0) return d;
+  }
+  if (pa[4] === pb[4]) return 0;
+  if (pa[4] === undefined) return 1;
+  if (pb[4] === undefined) return -1;
+  return pa[4] < pb[4] ? -1 : 1;
+}
+
+/**
+ * このエンジンが自力で止める制約のルールか（meta.yaml#supersededBy）。版が読めなければ false
+ * ＝省かない（重複が出るだけで、見逃しは起きない側に倒す）。
+ */
+export function isSuperseded(rule: BundledRuleData, version: string | undefined): boolean {
+  if (!rule.supersededBy || version === undefined) return false;
+  return (compareVersions(version, rule.supersededBy.engine) ?? -1) >= 0;
+}

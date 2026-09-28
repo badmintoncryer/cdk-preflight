@@ -12,13 +12,19 @@
  *  - fail テンプレート → 当該ルールの CUSTOM 診断が 1 件以上出る
  *  - pass テンプレート → 当該ルールの診断が出ない
  *  - 【重複ガード】fail テンプレートに対して、組み込みエンジン（SCHEMA / CFN_LINT）の
- *    ERROR/FATAL が出ない = 「エンジンが既に止める制約」をルールパックに重複実装していない
+ *    ERROR/FATAL が出ない = 「エンジンが既に止める制約」をルールパックに重複実装していない。
+ *    meta.supersededBy のあるルールは逆に「記録した engineRules で止まる」ことを確かめ、
+ *    peerDependency の下限がその aws-cdk-lib に達していないこと（まだ誰かに要る）も見る
  *  - 【フィクスチャ健全性】pass テンプレートにも組み込み ERROR/FATAL が出ない
  */
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { deployEnvironmentModule, loadEngine, mergeRuleModules, prune, templateResourceTypes, validateTemplate } from '../src/private/enforce';
+import { uncoveredFindings } from '../scripts/bundle-rules';
+import {
+  compareVersions, deployEnvironmentModule, engineVersion, isSuperseded, loadEngine, mergeRuleModules, prune, templateResourceTypes,
+  validateTemplate,
+} from '../src/private/enforce';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 export interface Diagnostic {
@@ -26,9 +32,15 @@ export interface Diagnostic {
   severity: string;
   message: string;
   source?: string;
+  propertyPath?: string;
+  entity?: { logicalId?: string };
 }
 
 export const engine = loadEngine();
+const ENGINE_VERSION = engineVersion();
+/** peerDependencies の下限（`^2.267.0` -> `2.267.0`）。 */
+const CDK_FLOOR = String(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'))
+  .peerDependencies['aws-cdk-lib']).replace(/^[\^~>=\s]+/, '');
 
 /** フィクスチャ評価時のデプロイリージョン（deploy_region 注入のハーネス既定）。 */
 const HARNESS_REGION = 'us-east-1';
@@ -116,15 +128,33 @@ export function describeRuleTable(shard: number, total: number): void {
     test('does not duplicate a built-in blocker (fail template)', () => {
       const ds = diagnose(fixturePath(rule, 'fail'), region);
       const found = blockers(ds);
-      // このテストは二役: 新規ルールに対しては「エンジンと重複したので書くな」、
-      // 既存ルールに対しては「エンジンが追いついたので退役させろ」の合図になる。
-      // 後者は aws-cdk-lib を上げた時にだけ赤くなる（bench/out/redundancy.jsonl と同じ判定）。
+      if (rule.supersededBy && isSuperseded(rule, ENGINE_VERSION)) {
+        // 記録どおりエンジンがルールの指摘をすべて覆っていること。覆わなくなったら記録（か fail テンプレート）が誤り。
+        const own = ds.filter((d) => d.source === 'CUSTOM' && d.ruleId === rule.id);
+        const uncovered = uncoveredFindings(own, ds);
+        expect(uncovered.map((d) => `${rule.id}: meta.supersededBy says engine ${rule.supersededBy!.engine} covers the fail`
+          + ` template, but engine ${ENGINE_VERSION} leaves ${d.entity?.logicalId}.${d.propertyPath} to the rule`
+          + ` (engine blockers: ${found.map((x) => x.ruleId).join(',') || 'none'})`)).toEqual([]);
+        return;
+      }
+      // 新規ルールに対しては「エンジンと重複したので書くな」、既存ルールに対しては
+      // 「エンジンが追いついたので supersededBy を記録しろ」の合図になる。後者は aws-cdk-lib を
+      // 上げた時にだけ赤くなる（bench/out/redundancy.jsonl と同じ判定）。
       expect(found.map((d) => `${d.severity}/${d.source}/${d.ruleId}: ${d.message}`
-        + ` >>> the bundled engine now blocks ${rule.id} by itself — retire it:`
-        + ` rm -rf rules/${rule.service}/${rule.id}/ && npx projen bundle-rules`
-        + ' (AGENTS.md "Rule lifecycle"; npx projen redundancy-scan lists them all)'))
+        + ` >>> engine ${ENGINE_VERSION} blocks ${rule.id} by itself — for an existing rule, record it:`
+        + ' npx projen redundancy-scan --bisect --write (AGENTS.md "Rule lifecycle"), or, when the engine blocks'
+        + ' only some of the fail template\'s cases, move those cases out; for a new rule, drop it'))
         .toHaveLength(0);
     });
+
+    if (rule.supersededBy) {
+      // 下限の aws-cdk-lib が supersededBy.cdk に達したら、どの利用者にもこのルールは評価されない。
+      test('is still needed by the lowest supported aws-cdk-lib', () => {
+        expect((compareVersions(CDK_FLOOR, rule.supersededBy!.cdk) ?? -1) < 0
+          ? [] : [`${rule.id}: the peerDependency floor aws-cdk-lib ${CDK_FLOOR} already bundles an engine that`
+            + ` blocks it (from ${rule.supersededBy!.cdk}) — delete it: rm -rf rules/${rule.service}/${rule.id}/`]).toEqual([]);
+      });
+    }
 
     test('pass template is clean for the built-in engine', () => {
       const ds = diagnose(fixturePath(rule, 'pass'), region);

@@ -5,7 +5,11 @@ resourceTypes: [AWS::ServiceDiscovery::PublicDnsNamespace, AWS::ServiceDiscovery
 severity: ERROR
 title: "The SOA record TTL of a DNS namespace may not exceed 2147483647"
 constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_SOA.html
-upstream: cfn-schema
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [F3034]
 repro:
   method: real-deploy
   evidence: "bench 2026-09-22 us-east-1: SOA.TTL 2147483648 -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); SOA.TTL 2147483647 -> CREATE_COMPLETE"

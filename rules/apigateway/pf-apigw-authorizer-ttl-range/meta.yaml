@@ -4,7 +4,11 @@ resourceTypes: [AWS::ApiGateway::Authorizer]
 severity: ERROR
 title: AuthorizerResultTtlInSeconds tops out at 3600
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.11.0
+  cdk: 2.271.0
+  engineRules: [E3718]
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: AuthorizerResultTtlInSeconds 3601 -> \"Authorizer result TTL outside allowable range. TTL must be between 0 and 3600 seconds.\" (ROLLBACK_COMPLETE); pass 3600 -> CREATE_COMPLETE"

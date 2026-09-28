@@ -4,7 +4,11 @@ resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy]
 severity: ERROR
 title: Identity policies cannot carry a Principal field
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.8.0-beta
+  cdk: 2.268.0
+  engineRules: [E3510]
 repro:
   method: real-deploy
   evidence: "api 2026-09-07: PutRolePolicy with a NotPrincipal in an identity policy is rejected with the same \"Policy document should not specify a principal.\" — the rule now covers both keys. bench 2026-09-03 ap-northeast-1: Role inline policy statement with Principal (i04) -> \"Policy document should not specify a principal.\" ROLLBACK_COMPLETE."

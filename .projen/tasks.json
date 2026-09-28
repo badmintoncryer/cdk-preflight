@@ -311,13 +311,14 @@
     },
     "redundancy-scan": {
       "name": "redundancy-scan",
-      "description": "List rules the bundled engine now blocks by itself (retirement candidates)",
+      "description": "List rules the bundled engine now blocks by itself; --bisect [--write] records the engine version they retire at",
       "steps": [
         {
           "spawn": "bundle-rules"
         },
         {
-          "exec": "ts-node --project test/tsconfig.json scripts/redundancy-scan.ts"
+          "exec": "ts-node --project test/tsconfig.json scripts/redundancy-scan.ts",
+          "receiveArgs": true
         }
       ]
     },
