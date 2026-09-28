@@ -19,9 +19,7 @@
         "DomainEndpointOptions": {
           "CustomEndpointEnabled": true,
           "CustomEndpoint": "search.appnao.com",
-          "CustomEndpointCertificateArn": {
-            "Fn::Sub": "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
-          },
+          "CustomEndpointCertificateArn": "{{resolve:ssm:/cdkpf/fixtures/acm/wildcard-appnao-com}}",
           "EnforceHTTPS": true
         }
       }

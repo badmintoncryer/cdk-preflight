@@ -5,7 +5,9 @@
       "Type": "AWS::ElasticLoadBalancingV2::TrustStore",
       "Properties": {
         "Name": "pf-ts-elbtsr",
-        "CaCertificatesBundleS3Bucket": "cdkpf-bench-layers",
+        "CaCertificatesBundleS3Bucket": {
+          "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+        },
         "CaCertificatesBundleS3Key": "ca.pem"
       }
     },

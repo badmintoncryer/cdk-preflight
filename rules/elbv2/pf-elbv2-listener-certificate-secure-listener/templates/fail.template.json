@@ -49,7 +49,7 @@
         },
         "Certificates": [
           {
-            "CertificateArn": "arn:aws:acm:us-east-1:214794239830:certificate/06f8bd5d-314f-4bb7-a94a-6ca705935aca"
+            "CertificateArn": "{{resolve:ssm:/cdkpf/fixtures/acm/cdkpf-appnao-com}}"
           }
         ]
       }

@@ -9,9 +9,7 @@
             {
               "ServerCertificates": [
                 {
-                  "ResourceArn": {
-                    "Fn::Sub": "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
-                  }
+                  "ResourceArn": "{{resolve:ssm:/cdkpf/fixtures/acm/wildcard-appnao-com}}"
                 }
               ],
               "Scopes": [
@@ -47,9 +45,7 @@
             {
               "ServerCertificates": [
                 {
-                  "ResourceArn": {
-                    "Fn::Sub": "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
-                  }
+                  "ResourceArn": "{{resolve:ssm:/cdkpf/fixtures/acm/wildcard-appnao-com}}"
                 }
               ],
               "Scopes": [

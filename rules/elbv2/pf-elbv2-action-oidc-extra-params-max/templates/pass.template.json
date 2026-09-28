@@ -66,7 +66,7 @@
         "Protocol": "HTTPS",
         "Certificates": [
           {
-            "CertificateArn": "arn:aws:acm:us-east-1:214794239830:certificate/e25484f3-9c39-426f-aff1-e39092fd3c11"
+            "CertificateArn": "{{resolve:ssm:/cdkpf/fixtures/acm/wildcard-appnao-com}}"
           }
         ],
         "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06"
