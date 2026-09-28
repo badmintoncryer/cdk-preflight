@@ -28,7 +28,9 @@
           },
           "TableType": "EXTERNAL_TABLE",
           "StorageDescriptor": {
-            "Location": "s3://cdkpf-glue-probe-214794239830/ice/",
+            "Location": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/ice/"
+            },
             "Columns": [
               {
                 "Name": "c1",

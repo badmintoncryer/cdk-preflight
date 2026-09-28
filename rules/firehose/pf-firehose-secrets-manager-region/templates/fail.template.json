@@ -44,7 +44,9 @@
           },
           "SecretsManagerConfiguration": {
             "Enabled": true,
-            "SecretARN": "arn:aws:secretsmanager:eu-west-1:214794239830:secret:cdkpf-probe-AbCdEf",
+            "SecretARN": {
+              "Fn::Sub": "arn:aws:secretsmanager:eu-west-1:${AWS::AccountId}:secret:cdkpf-probe-AbCdEf"
+            },
             "RoleARN": {
               "Fn::GetAtt": [
                 "R",

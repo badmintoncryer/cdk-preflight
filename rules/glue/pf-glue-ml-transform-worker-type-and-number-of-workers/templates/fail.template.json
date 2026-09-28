@@ -28,7 +28,9 @@
           },
           "TableType": "EXTERNAL_TABLE",
           "StorageDescriptor": {
-            "Location": "s3://cdkpf-glue-probe-214794239830/t/",
+            "Location": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/t/"
+            },
             "Columns": [
               {
                 "Name": "c1",
@@ -49,7 +51,9 @@
         "Name": {
           "Fn::Sub": "${AWS::StackName}-m1"
         },
-        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "Role": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-glue-probe"
+        },
         "InputRecordTables": {
           "GlueTables": [
             {
@@ -77,7 +81,9 @@
         "Name": {
           "Fn::Sub": "${AWS::StackName}-m2"
         },
-        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "Role": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-glue-probe"
+        },
         "InputRecordTables": {
           "GlueTables": [
             {

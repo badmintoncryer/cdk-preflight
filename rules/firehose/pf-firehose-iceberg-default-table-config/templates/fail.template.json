@@ -47,7 +47,9 @@
             }
           },
           "CatalogConfiguration": {
-            "CatalogArn": "arn:aws:glue:us-east-1:214794239830:catalog"
+            "CatalogArn": {
+              "Fn::Sub": "arn:aws:glue:us-east-1:${AWS::AccountId}:catalog"
+            }
           }
         }
       }

@@ -56,7 +56,9 @@
         "ConnectionInput": {
           "ConnectionType": "CUSTOM",
           "ConnectionProperties": {
-            "CONNECTOR_URL": "s3://cdkpf-glue-probe-214794239830/c.jar",
+            "CONNECTOR_URL": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/c.jar"
+            },
             "CONNECTOR_TYPE": "Jdbc",
             "CONNECTOR_CLASS_NAME": "com.example.Driver"
           }
@@ -72,7 +74,9 @@
         "ConnectionInput": {
           "ConnectionType": "MARKETPLACE",
           "ConnectionProperties": {
-            "CONNECTOR_URL": "s3://cdkpf-glue-probe-214794239830/c.jar",
+            "CONNECTOR_URL": {
+              "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/c.jar"
+            },
             "CONNECTOR_TYPE": "Jdbc",
             "CONNECTOR_CLASS_NAME": "com.example.Driver"
           }

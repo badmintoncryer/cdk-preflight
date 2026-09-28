@@ -3,12 +3,16 @@
     "Main": {
       "Type": "AWS::Glue::Crawler",
       "Properties": {
-        "Role": "arn:aws:iam::214794239830:role/cdkpf-glue-probe",
+        "Role": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-glue-probe"
+        },
         "DatabaseName": "pfcrawldb",
         "Targets": {
           "S3Targets": [
             {
-              "Path": "s3://cdkpf-glue-probe-214794239830/in/"
+              "Path": {
+                "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/in/"
+              }
             }
           ]
         }

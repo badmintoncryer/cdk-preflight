@@ -40,7 +40,9 @@
           }
         },
         "MSKSourceConfiguration": {
-          "MSKClusterARN": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf/1",
+          "MSKClusterARN": {
+            "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf/1"
+          },
           "TopicName": "t",
           "AuthenticationConfiguration": {
             "Connectivity": "PRIVATE",

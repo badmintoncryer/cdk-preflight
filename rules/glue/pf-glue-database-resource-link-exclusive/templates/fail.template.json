@@ -16,7 +16,9 @@
             },
             "DatabaseName": "pfcrawldb"
           },
-          "LocationUri": "s3://cdkpf-glue-probe-214794239830/db/"
+          "LocationUri": {
+            "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/db/"
+          }
         }
       }
     }

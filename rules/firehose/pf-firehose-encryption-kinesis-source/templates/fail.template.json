@@ -40,7 +40,9 @@
           }
         },
         "KinesisStreamSourceConfiguration": {
-          "KinesisStreamARN": "arn:aws:kinesis:us-east-1:214794239830:stream/cdkpf-probe",
+          "KinesisStreamARN": {
+            "Fn::Sub": "arn:aws:kinesis:us-east-1:${AWS::AccountId}:stream/cdkpf-probe"
+          },
           "RoleARN": {
             "Fn::GetAtt": [
               "R",
