@@ -3,18 +3,18 @@
     "X": {
       "Type": "AWS::ApiGateway::DomainName",
       "Properties": {
-        "DomainName": "x.example.com",
+        "DomainName": "cdkpf-apigw-mtls.appnao.com",
         "EndpointConfiguration": {
           "Types": [
             "REGIONAL"
           ]
         },
-        "RegionalCertificateArn": {
-          "Fn::Sub": "arn:aws:acm:us-east-1:${AWS::AccountId}:certificate/11111111-2222-3333-4444-555555555555"
-        },
+        "RegionalCertificateArn": "{{resolve:ssm:/cdkpf/fixtures/acm/wildcard-appnao-com}}",
         "SecurityPolicy": "TLS_1_2",
         "MutualTlsAuthentication": {
-          "TruststoreUri": "s3://b/k"
+          "TruststoreUri": {
+            "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/ca.pem"
+          }
         }
       }
     }

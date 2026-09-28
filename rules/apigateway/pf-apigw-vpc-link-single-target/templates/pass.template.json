@@ -6,8 +6,18 @@
         "Name": "v",
         "TargetArns": [
           {
-            "Fn::Sub": "arn:aws:elasticloadbalancing:us-east-1:${AWS::AccountId}:loadbalancer/net/a/1111111111111111"
+            "Ref": "Nlb"
           }
+        ]
+      }
+    },
+    "Nlb": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "Scheme": "internal",
+        "Subnets": [
+          "subnet-2e0a500f"
         ]
       }
     }

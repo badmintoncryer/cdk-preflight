@@ -48,13 +48,112 @@
           },
           "CatalogConfiguration": {
             "CatalogArn": {
-              "Fn::Sub": "arn:aws:glue:us-east-1:${AWS::AccountId}:catalog"
+              "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
             }
           },
           "DestinationTableConfigurationList": [
             {
               "DestinationTableName": "t",
-              "DestinationDatabaseName": "db"
+              "DestinationDatabaseName": "cdkpf_iceberg_catalog_arn_format"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "P",
+        "T"
+      ]
+    },
+    "Db": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": "cdkpf_iceberg_catalog_arn_format"
+        }
+      }
+    },
+    "T": {
+      "Type": "AWS::Glue::Table",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseName": {
+          "Ref": "Db"
+        },
+        "TableInput": {
+          "Name": "t",
+          "TableType": "EXTERNAL_TABLE",
+          "StorageDescriptor": {
+            "Columns": [
+              {
+                "Name": "c",
+                "Type": "string"
+              }
+            ],
+            "Location": {
+              "Fn::Sub": "s3://${B}/t/"
+            }
+          }
+        }
+      }
+    },
+    "P": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "p",
+        "Roles": [
+          {
+            "Ref": "R"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "glue:GetTable",
+                "glue:GetDatabase",
+                "glue:UpdateTable"
+              ],
+              "Resource": [
+                {
+                  "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
+                },
+                {
+                  "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/cdkpf_iceberg_catalog_arn_format"
+                },
+                {
+                  "Fn::Sub": "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/cdkpf_iceberg_catalog_arn_format/*"
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:AbortMultipartUpload",
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:ListBucketMultipartUploads",
+                "s3:PutObject",
+                "s3:DeleteObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "B",
+                    "Arn"
+                  ]
+                },
+                {
+                  "Fn::Sub": "${B.Arn}/*"
+                }
+              ]
             }
           ]
         }

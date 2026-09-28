@@ -16,10 +16,18 @@
         "StageName": "s",
         "AccessLogSettings": {
           "DestinationArn": {
-            "Fn::Sub": "arn:aws:logs:us-east-1:${AWS::AccountId}:log-group:x"
+            "Fn::Sub": "arn:aws:logs:us-east-1:${AWS::AccountId}:log-group:cdkpf-apigwv2-access-log-destination"
           },
           "Format": "$context.requestId"
         }
+      },
+      "DependsOn": "LG"
+    },
+    "LG": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "cdkpf-apigwv2-access-log-destination",
+        "RetentionInDays": 1
       }
     }
   }
