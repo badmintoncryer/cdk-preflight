@@ -15,7 +15,9 @@
         },
         "IntegrationType": "HTTP_PROXY",
         "IntegrationMethod": "GET",
-        "IntegrationUri": "arn:aws:elasticloadbalancing:us-east-1:214794239830:listener/net/a/1111111111111111/2222222222222222",
+        "IntegrationUri": {
+          "Fn::Sub": "arn:aws:elasticloadbalancing:us-east-1:${AWS::AccountId}:listener/net/a/1111111111111111/2222222222222222"
+        },
         "ConnectionType": "VPC_LINK",
         "ConnectionId": "abcdef",
         "PayloadFormatVersion": "1.0"

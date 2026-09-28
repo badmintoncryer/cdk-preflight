@@ -8,7 +8,9 @@
         "ACLName": "open-access",
         "NumShards": 1,
         "NumReplicasPerShard": 0,
-        "KmsKeyId": "arn:aws:kms:us-west-2:214794239830:key/11111111-2222-3333-4444-555555555555"
+        "KmsKeyId": {
+          "Fn::Sub": "arn:aws:kms:us-west-2:${AWS::AccountId}:key/11111111-2222-3333-4444-555555555555"
+        }
       }
     }
   }

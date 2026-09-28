@@ -20,7 +20,9 @@
     "A": {
       "Type": "AWS::WAFv2::WebACLAssociation",
       "Properties": {
-        "ResourceArn": "arn:aws:cloudfront::214794239830:distribution/E1234567890ABC",
+        "ResourceArn": {
+          "Fn::Sub": "arn:aws:cloudfront::${AWS::AccountId}:distribution/E1234567890ABC"
+        },
         "WebACLArn": {
           "Fn::GetAtt": [
             "W",

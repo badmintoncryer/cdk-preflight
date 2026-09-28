@@ -15,7 +15,9 @@
             "Arn"
           ]
         },
-        "PolicyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::214794239830:root\"},\"Action\":[\"aps:*\"]}]}"
+        "PolicyDocument": {
+          "Fn::Sub": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${AWS::AccountId}:root\"},\"Action\":[\"aps:*\"]}]}"
+        }
       }
     }
   }

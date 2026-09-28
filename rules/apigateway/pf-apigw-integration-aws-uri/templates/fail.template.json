@@ -23,7 +23,9 @@
         "Integration": {
           "Type": "AWS",
           "IntegrationHttpMethod": "POST",
-          "Uri": "arn:aws:lambda:us-east-1:214794239830:function:f"
+          "Uri": {
+            "Fn::Sub": "arn:aws:lambda:us-east-1:${AWS::AccountId}:function:f"
+          }
         }
       }
     }

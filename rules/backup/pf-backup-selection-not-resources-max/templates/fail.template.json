@@ -77,37 +77,99 @@
             }
           ],
           "NotResources": [
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf690*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf691*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf692*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf693*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf694*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf695*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf696*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf697*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf698*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf699*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6910*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6911*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6912*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6913*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6914*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6915*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6916*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6917*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6918*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6919*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6920*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6921*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6922*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6923*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6924*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6925*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6926*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6927*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6928*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6929*",
-            "arn:aws:ec2:us-east-1:214794239830:volume/vol-cdkpf6930*"
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf690*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf691*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf692*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf693*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf694*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf695*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf696*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf697*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf698*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf699*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6910*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6911*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6912*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6913*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6914*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6915*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6916*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6917*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6918*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6919*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6920*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6921*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6922*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6923*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6924*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6925*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6926*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6927*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6928*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6929*"
+            },
+            {
+              "Fn::Sub": "arn:aws:ec2:us-east-1:${AWS::AccountId}:volume/vol-cdkpf6930*"
+            }
           ]
         }
       }

@@ -22,7 +22,9 @@
         "AuthorizationType": "NONE",
         "Integration": {
           "Type": "MOCK",
-          "Credentials": "arn:aws:iam::214794239830:role/r"
+          "Credentials": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/r"
+          }
         }
       }
     }

@@ -19,7 +19,9 @@
         "Arn"
        ]
       },
-      "Arn": "arn:aws:batch:us-east-1:214794239830:job-queue/JQ",
+      "Arn": {
+       "Fn::Sub": "arn:aws:batch:us-east-1:${AWS::AccountId}:job-queue/JQ"
+      },
       "BatchParameters": {
        "JobDefinition": "jd",
        "JobName": "jn",

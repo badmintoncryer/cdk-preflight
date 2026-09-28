@@ -13,7 +13,9 @@
     "Targets": [
      {
       "Id": "t1",
-      "Arn": "arn:aws:ecs:us-east-1:214794239830:cluster/C",
+      "Arn": {
+       "Fn::Sub": "arn:aws:ecs:us-east-1:${AWS::AccountId}:cluster/C"
+      },
       "RoleArn": {
        "Fn::GetAtt": [
         "Role",

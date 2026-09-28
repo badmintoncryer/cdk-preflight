@@ -4,7 +4,9 @@
   "A": {
    "Type": "AWS::Events::Archive",
    "Properties": {
-    "SourceArn": "arn:aws:events:us-east-1:214794239830:event-bus/default"
+    "SourceArn": {
+     "Fn::Sub": "arn:aws:events:us-east-1:${AWS::AccountId}:event-bus/default"
+    }
    }
   }
  }

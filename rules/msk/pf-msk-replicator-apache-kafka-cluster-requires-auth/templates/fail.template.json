@@ -4,7 +4,9 @@
       "Type": "AWS::MSK::Replicator",
       "Properties": {
         "ReplicatorName": "cdkpf-repl-apache-auth-fail",
-        "ServiceExecutionRoleArn": "arn:aws:iam::214794239830:role/cdkpf-msk-probe",
+        "ServiceExecutionRoleArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-msk-probe"
+        },
         "KafkaClusters": [
           {
             "ApacheKafkaCluster": {
@@ -14,7 +16,9 @@
           },
           {
             "AmazonMskCluster": {
-              "MskClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+              "MskClusterArn": {
+                "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+              }
             },
             "VpcConfig": {
               "SubnetIds": [
@@ -29,7 +33,9 @@
         ],
         "ReplicationInfoList": [
           {
-            "TargetKafkaClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2",
+            "TargetKafkaClusterArn": {
+              "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/cdkpf-tgt/22222222-3333-4444-5555-666666666666-2"
+            },
             "TargetCompressionType": "NONE",
             "TopicReplication": {
               "TopicsToReplicate": [

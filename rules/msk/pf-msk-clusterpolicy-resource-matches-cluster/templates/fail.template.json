@@ -3,20 +3,26 @@
     "Policy": {
       "Type": "AWS::MSK::ClusterPolicy",
       "Properties": {
-        "ClusterArn": "arn:aws:kafka:us-east-1:214794239830:cluster/pfcluster/11111111-2222-3333-4444-555555555555-1",
+        "ClusterArn": {
+          "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/pfcluster/11111111-2222-3333-4444-555555555555-1"
+        },
         "Policy": {
           "Version": "2012-10-17",
           "Statement": [
             {
               "Effect": "Allow",
               "Principal": {
-                "AWS": "arn:aws:iam::214794239830:root"
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+                }
               },
               "Action": [
                 "kafka:CreateVpcConnection",
                 "kafka:GetBootstrapBrokers"
               ],
-              "Resource": "arn:aws:kafka:us-east-1:214794239830:cluster/pftarget/22222222-3333-4444-5555-666666666666-2"
+              "Resource": {
+                "Fn::Sub": "arn:aws:kafka:us-east-1:${AWS::AccountId}:cluster/pftarget/22222222-3333-4444-5555-666666666666-2"
+              }
             }
           ]
         }

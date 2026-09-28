@@ -10,14 +10,18 @@
   "CrLow": {
    "Type": "AWS::CloudFormation::CustomResource",
    "Properties": {
-    "ServiceToken": "arn:aws:sns:us-east-1:214794239830:cdkpf73-absent",
+    "ServiceToken": {
+     "Fn::Sub": "arn:aws:sns:us-east-1:${AWS::AccountId}:cdkpf73-absent"
+    },
     "ServiceTimeout": "0"
    }
   },
   "CrHigh": {
    "Type": "AWS::CloudFormation::CustomResource",
    "Properties": {
-    "ServiceToken": "arn:aws:sns:us-east-1:214794239830:cdkpf73-absent",
+    "ServiceToken": {
+     "Fn::Sub": "arn:aws:sns:us-east-1:${AWS::AccountId}:cdkpf73-absent"
+    },
     "ServiceTimeout": "14401"
    }
   }

@@ -20,7 +20,9 @@
           "QueueUrl": "https://q",
           "MessageBody": "$request.body"
         },
-        "CredentialsArn": "arn:aws:iam::214794239830:role/r"
+        "CredentialsArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/r"
+        }
       }
     }
   }

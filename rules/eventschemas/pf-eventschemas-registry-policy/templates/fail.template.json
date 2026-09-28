@@ -18,10 +18,14 @@
        "Sid": "s1",
        "Effect": "Allow",
        "Principal": {
-        "AWS": "arn:aws:iam::214794239830:root"
+        "AWS": {
+         "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"
+        }
        },
        "Action": "schemas:DescribeSchema",
-       "Resource": "arn:aws:schemas:us-east-1:214794239830:schema/cdkpf-bench-policy*"
+       "Resource": {
+        "Fn::Sub": "arn:aws:schemas:us-east-1:${AWS::AccountId}:schema/cdkpf-bench-policy*"
+       }
       }
      ]
     }

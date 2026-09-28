@@ -14,9 +14,13 @@
       ],
       "DeploymentTargets": {
        "Accounts": [
-        "214794239830"
+        {
+         "Ref": "AWS::AccountId"
+        }
        ],
-       "AccountsUrl": "s3://cdkpf-bench-layers/cfn73/accounts.csv"
+       "AccountsUrl": {
+        "Fn::Sub": "s3://cdkpf-fixtures-${AWS::AccountId}/cfn73/accounts.csv"
+       }
       }
      }
     ]

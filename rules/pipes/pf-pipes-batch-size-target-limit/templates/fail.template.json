@@ -10,8 +10,12 @@
       "Arn"
      ]
     },
-    "Source": "arn:aws:kinesis:us-east-1:214794239830:stream/S",
-    "Target": "arn:aws:sqs:us-east-1:214794239830:Q2",
+    "Source": {
+     "Fn::Sub": "arn:aws:kinesis:us-east-1:${AWS::AccountId}:stream/S"
+    },
+    "Target": {
+     "Fn::Sub": "arn:aws:sqs:us-east-1:${AWS::AccountId}:Q2"
+    },
     "SourceParameters": {
      "KinesisStreamParameters": {
       "StartingPosition": "LATEST",

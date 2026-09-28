@@ -9,7 +9,9 @@
           "SAML"
         ],
         "PermissionType": "CUSTOMER_MANAGED",
-        "RoleArn": "arn:aws:iam::214794239830:role/cdkpf-grafana",
+        "RoleArn": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-grafana"
+        },
         "SamlConfiguration": {
           "IdpMetadata": {
             "Url": "https://example.com/metadata.xml"
