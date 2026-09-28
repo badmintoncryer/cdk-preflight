@@ -3,7 +3,9 @@
     "Main": {
       "Type": "AWS::CodeBuild::Project",
       "Properties": {
-        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "ServiceRole": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
         "Source": {
           "Type": "CODECOMMIT",
           "Location": "https://git-codecommit.us-east-1.amazonaws.com/v1/repos/cdkpf-probe",

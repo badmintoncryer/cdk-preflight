@@ -3,7 +3,9 @@
     "Main": {
       "Type": "AWS::CodeBuild::Project",
       "Properties": {
-        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "ServiceRole": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
         "Source": {
           "Type": "NO_SOURCE",
           "BuildSpec": "version: 0.2\nphases:\n  build:\n    commands:\n      - echo hi\n"
@@ -19,7 +21,9 @@
         "SecondarySources": [
           {
             "Type": "S3",
-            "Location": "cdkpf-codesuite-63/src0.zip",
+            "Location": {
+              "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}/src0.zip"
+            },
             "SourceIdentifier": "s0"
           }
         ]

@@ -4,7 +4,9 @@
    "Type": "AWS::CodeCommit::Repository",
    "Properties": {
     "RepositoryName": "cdkpf-cc-kms-f",
-    "KmsKeyId": "arn:aws:kms:eu-west-1:214794239830:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+    "KmsKeyId": {
+     "Fn::Sub": "arn:aws:kms:eu-west-1:${AWS::AccountId}:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+    }
    }
   }
  }

@@ -8,7 +8,9 @@
     },
     "ArtifactStore": {
      "Type": "S3",
-     "Location": "cdkpf-codesuite-63"
+     "Location": {
+      "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+     }
     },
     "Stages": [
      {
@@ -50,7 +52,9 @@
          "Version": "1"
         },
         "Configuration": {
-         "BucketName": "cdkpf-codesuite-63",
+         "BucketName": {
+          "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+         },
          "Extract": "false",
          "ObjectKey": "out.zip"
         },

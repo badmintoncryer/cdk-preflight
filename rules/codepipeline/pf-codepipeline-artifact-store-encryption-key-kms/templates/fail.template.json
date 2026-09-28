@@ -8,7 +8,9 @@
     },
     "ArtifactStore": {
      "Type": "S3",
-     "Location": "cdkpf-codesuite-63",
+     "Location": {
+      "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+     },
      "EncryptionKey": {
       "Id": "arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000",
       "Type": "kms"
@@ -27,7 +29,9 @@
          "Version": "1"
         },
         "Configuration": {
-         "S3Bucket": "cdkpf-codesuite-63",
+         "S3Bucket": {
+          "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+         },
          "S3ObjectKey": "src.zip",
          "PollForSourceChanges": "false"
         },
@@ -51,7 +55,9 @@
          "Version": "1"
         },
         "Configuration": {
-         "BucketName": "cdkpf-codesuite-63",
+         "BucketName": {
+          "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+         },
          "Extract": "false",
          "ObjectKey": "out.zip"
         },

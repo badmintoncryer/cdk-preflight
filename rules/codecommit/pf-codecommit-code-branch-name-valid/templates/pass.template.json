@@ -6,7 +6,9 @@
     "RepositoryName": "cdkpf-cc-cbn-p",
     "Code": {
      "S3": {
-      "Bucket": "cdkpf-codesuite-63",
+      "Bucket": {
+       "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+      },
       "Key": "cdkpf-code.zip"
      },
      "BranchName": "main"

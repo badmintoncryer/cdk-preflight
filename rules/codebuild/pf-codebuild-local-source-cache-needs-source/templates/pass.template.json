@@ -3,10 +3,14 @@
     "Main": {
       "Type": "AWS::CodeBuild::Project",
       "Properties": {
-        "ServiceRole": "arn:aws:iam::214794239830:role/cdkpf-codesuite-probe",
+        "ServiceRole": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-codesuite-probe"
+        },
         "Source": {
           "Type": "S3",
-          "Location": "cdkpf-codesuite-63/src.zip"
+          "Location": {
+            "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}/src.zip"
+          }
         },
         "Artifacts": {
           "Type": "NO_ARTIFACTS"
