@@ -9,7 +9,9 @@
         ],
         "ContainerProperties": {
           "Image": "public.ecr.aws/amazonlinux/amazonlinux:2",
-          "ExecutionRoleArn": "arn:aws:iam::214794239830:role/cdkpf-ecs-probe",
+          "ExecutionRoleArn": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-ecs-probe"
+          },
           "ResourceRequirements": [
             {
               "Type": "VCPU",

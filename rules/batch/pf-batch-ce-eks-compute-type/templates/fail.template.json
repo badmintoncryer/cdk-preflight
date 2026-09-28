@@ -5,7 +5,9 @@
       "Properties": {
         "Type": "MANAGED",
         "EksConfiguration": {
-          "EksClusterArn": "arn:aws:eks:us-east-1:214794239830:cluster/cdkpf-probe",
+          "EksClusterArn": {
+            "Fn::Sub": "arn:aws:eks:us-east-1:${AWS::AccountId}:cluster/cdkpf-probe"
+          },
           "KubernetesNamespace": "cdkpf-batch"
         },
         "ComputeResources": {
