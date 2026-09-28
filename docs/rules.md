@@ -42,7 +42,7 @@
 | `pf-aoss-security-policy-network-body-shape` | AWS::OpenSearchServerless::SecurityPolicy | A network security policy body must be a JSON array without encryption keys | ERROR | none |
 | `pf-apigw-access-log-format-request-id` | AWS::ApiGateway::Stage | Access log format must include a request id variable | ERROR | none |
 | `pf-apigw-api-key-value-length` | AWS::ApiGateway::ApiKey | An API key value is at least 20 characters | ERROR | none |
-| `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | ERROR | none |
+| `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | ERROR | retired: engine E3718 covers it from aws-cdk-lib 2.271.0 |
 | `pf-apigw-authorizer-uri-format` | AWS::ApiGateway::Authorizer | An authorizer URI is an API Gateway invocation ARN | ERROR | none |
 | `pf-apigw-cognito-authorizer-provider-arns` | AWS::ApiGateway::Authorizer | COGNITO_USER_POOLS authorizers need ProviderARNs | ERROR | none |
 | `pf-apigw-deployment-no-methods` | AWS::ApiGateway::Deployment | A Deployment needs at least one Method on its REST API | ERROR | none |
@@ -76,7 +76,7 @@
 | `pf-apigw-stage-access-log-firehose-prefix` | AWS::ApiGateway::Stage | An access log delivery stream is named amazon-apigateway-* | ERROR | none |
 | `pf-apigw-stage-cache-ttl-range` | AWS::ApiGateway::Stage | Method setting cache TTL tops out at 3600 seconds | ERROR | none |
 | `pf-apigw-stage-method-setting-http-method` | AWS::ApiGateway::Stage | Method setting HttpMethod is a verb or * | ERROR | none |
-| `pf-apigw-stage-method-setting-resource-path` | AWS::ApiGateway::Stage | Method setting paths start with / and encode slashes as ~1 | ERROR | none |
+| `pf-apigw-stage-method-setting-resource-path` | AWS::ApiGateway::Stage | Method setting paths start with / and encode slashes as ~1 | ERROR | retired: engine E3723 covers it from aws-cdk-lib 2.271.0 |
 | `pf-apigw-stage-name-charset` | AWS::ApiGateway::Stage | Stage names allow only a-zA-Z0-9_ | ERROR | none |
 | `pf-apigw-stage-variable-name` | AWS::ApiGateway::Stage | Stage variable names allow only word characters | ERROR | none |
 | `pf-apigw-stage-variable-value` | AWS::ApiGateway::Stage | Stage variable values have a restricted character set | ERROR | none |
@@ -298,10 +298,10 @@
 | `pf-aps-ad-alias-max-64` | AWS::APS::AnomalyDetector | An anomaly detector alias is at most 64 characters | ERROR | none |
 | `pf-aps-ad-evaluation-interval-range` | AWS::APS::AnomalyDetector | An anomaly detector evaluation interval is between 30 and 86400 seconds | ERROR | none |
 | `pf-aps-ad-ignore-near-expected-non-negative` | AWS::APS::AnomalyDetector | An ignore-near-expected amount or ratio is not negative | ERROR | none |
-| `pf-aps-ad-ignore-near-expected-not-empty` | AWS::APS::AnomalyDetector | An ignore-near-expected block specifies an amount or a ratio | ERROR | cfn-schema |
+| `pf-aps-ad-ignore-near-expected-not-empty` | AWS::APS::AnomalyDetector | An ignore-near-expected block specifies an amount or a ratio | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.268.0 |
 | `pf-aps-ad-label-key-format` | AWS::APS::AnomalyDetector | An anomaly detector label key is a Prometheus label name | ERROR | none |
 | `pf-aps-ad-label-value-not-empty` | AWS::APS::AnomalyDetector | An anomaly detector label value is not empty | ERROR | none |
-| `pf-aps-ad-missing-data-action-not-empty` | AWS::APS::AnomalyDetector | A missing-data action specifies MarkAsAnomaly or Skip | ERROR | cfn-schema |
+| `pf-aps-ad-missing-data-action-not-empty` | AWS::APS::AnomalyDetector | A missing-data action specifies MarkAsAnomaly or Skip | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.268.0 |
 | `pf-aps-ad-query-aggregation-operator` | AWS::APS::AnomalyDetector | A Random Cut Forest query is wrapped by a supported aggregation operator | ERROR | none |
 | `pf-aps-rgn-data-duration-format` | AWS::APS::RuleGroupsNamespace | Durations in a rules file carry a unit | ERROR | none |
 | `pf-aps-rgn-data-group-name-required` | AWS::APS::RuleGroupsNamespace | A rule group name must not be empty | ERROR | none |
@@ -785,7 +785,7 @@
 | `pf-agentcore-payment-credential-provider-vendor-config` | AWS::BedrockAgentCore::PaymentCredentialProvider | ProviderConfigurationInput must contain the block matching CredentialProviderVendor (CoinbaseCDP / StripePrivy) | ERROR | none |
 | `pf-agentcore-policy-cedar-statement` | AWS::BedrockAgentCore::Policy | A Cedar policy statement must be a permit/forbid clause that constrains the resource and, for permit, carries a condition | ERROR | none |
 | `pf-agentcore-policy-name-unique` | AWS::BedrockAgentCore::Policy | Policy names must be unique within one policy engine | ERROR | none |
-| `pf-agentcore-required-union-empty` | AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::GatewayTarget<br>AWS::BedrockAgentCore::Policy | Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects | ERROR | pending-engine |
+| `pf-agentcore-required-union-empty` | AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::GatewayTarget<br>AWS::BedrockAgentCore::Policy | Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.268.0 |
 | `pf-agentcore-resource-policy-document` | AWS::BedrockAgentCore::ResourcePolicy | A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN | ERROR | none |
 | `pf-agentcore-runtime-artifact-exactly-one` | AWS::BedrockAgentCore::Runtime | AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration | ERROR | none |
 | `pf-agentcore-runtime-code-entrypoint-extension` | AWS::BedrockAgentCore::Runtime | A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*) | ERROR | none |
@@ -903,7 +903,7 @@
 | `pf-cloudfront-trusted-key-groups-excludes-trusted-signers` | AWS::CloudFront::Distribution | TrustedKeyGroups and TrustedSigners cannot both be used on a cache behavior | ERROR | none |
 | `pf-cloudfront-trusted-signers-account-format` | AWS::CloudFront::Distribution | TrustedSigners entries must be self or a 12-digit account id | ERROR | none |
 | `pf-cloudfront-ttl-order` | AWS::CloudFront::Distribution | Cache behavior TTLs must satisfy MinTTL <= DefaultTTL <= MaxTTL | ERROR | none |
-| `pf-cloudfront-viewer-certificate-exactly-one` | AWS::CloudFront::Distribution | ViewerCertificate must name exactly one certificate source | ERROR | none |
+| `pf-cloudfront-viewer-certificate-exactly-one` | AWS::CloudFront::Distribution | ViewerCertificate must name exactly one certificate source | ERROR | retired: engine F3014 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cloudfront-viewer-certificate-sni-min-protocol` | AWS::CloudFront::Distribution | sni-only requires MinimumProtocolVersion of TLSv1 or higher | ERROR | none |
 | `pf-cloudfront-viewer-certificate-vip-deprecated` | AWS::CloudFront::Distribution | SslSupportMethod vip cannot be used for new distributions | ERROR | none |
 | `pf-cloudfront-viewer-protocol-policy-enum` | AWS::CloudFront::Distribution | ViewerProtocolPolicy must be allow-all, https-only or redirect-to-https | ERROR | pending-engine |
@@ -1115,36 +1115,36 @@
 | `pf-cognito-auto-verified-username-consistency` | AWS::Cognito::UserPool | Auto-verifying phone_number requires an SmsConfiguration | ERROR | none |
 | `pf-cognito-callback-url-fragment` | AWS::Cognito::UserPoolClient | Callback URLs cannot carry a fragment | ERROR | none |
 | `pf-cognito-callback-url-https` | AWS::Cognito::UserPoolClient | Callback URLs must use https (except localhost) | ERROR | none |
-| `pf-cognito-callback-urls-max` | AWS::Cognito::UserPoolClient | At most 100 callback URLs per client | ERROR | none |
+| `pf-cognito-callback-urls-max` | AWS::Cognito::UserPoolClient | At most 100 callback URLs per client | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-client-credentials-exclusive` | AWS::Cognito::UserPoolClient | client_credentials cannot combine with code or implicit | ERROR | none |
 | `pf-cognito-client-credentials-secret` | AWS::Cognito::UserPoolClient | client_credentials needs a client secret | ERROR | none |
 | `pf-cognito-client-name` | AWS::Cognito::UserPoolClient | User pool client names allow only word characters, spaces and +=,.@- | ERROR | none |
 | `pf-cognito-custom-domain-cert-region` | AWS::Cognito::UserPoolDomain | A custom domain certificate must be in us-east-1 | ERROR | none |
-| `pf-cognito-custom-domain-fqdn` | AWS::Cognito::UserPoolDomain | A custom domain must be a fully qualified domain name | ERROR | none |
+| `pf-cognito-custom-domain-fqdn` | AWS::Cognito::UserPoolDomain | A custom domain must be a fully qualified domain name | ERROR | retired: engine E3031 covers it from aws-cdk-lib 2.271.0 |
 | `pf-cognito-custom-email-sender-kms` | AWS::Cognito::UserPool | A custom email sender trigger requires LambdaConfig.KMSKeyID | ERROR | none |
 | `pf-cognito-custom-sender-kms-region` | AWS::Cognito::UserPool | The custom sender KMS key must be in the pool region | ERROR | none |
 | `pf-cognito-custom-sms-sender-kms` | AWS::Cognito::UserPool | A custom SMS sender trigger requires LambdaConfig.KMSKeyID | ERROR | none |
 | `pf-cognito-default-redirect-uri-member` | AWS::Cognito::UserPoolClient | DefaultRedirectURI must be one of the callback URLs | ERROR | none |
-| `pf-cognito-developer-provider-name-format` | AWS::Cognito::IdentityPool | DeveloperProviderName takes no spaces | ERROR | none |
-| `pf-cognito-domain-prefix-format` | AWS::Cognito::UserPoolDomain | A hosted UI domain prefix takes lower-case letters, digits and hyphens | ERROR | none |
-| `pf-cognito-domain-prefix-length` | AWS::Cognito::UserPoolDomain | A hosted UI domain prefix is capped at 63 characters | ERROR | none |
+| `pf-cognito-developer-provider-name-format` | AWS::Cognito::IdentityPool | DeveloperProviderName takes no spaces | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-domain-prefix-format` | AWS::Cognito::UserPoolDomain | A hosted UI domain prefix takes lower-case letters, digits and hyphens | ERROR | retired: engine E3031 covers it from aws-cdk-lib 2.271.0 |
+| `pf-cognito-domain-prefix-length` | AWS::Cognito::UserPoolDomain | A hosted UI domain prefix is capped at 63 characters | ERROR | retired: engine E3031, F3033 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-domain-reserved-word` | AWS::Cognito::UserPoolDomain | Domain prefixes cannot contain reserved words | ERROR | none |
 | `pf-cognito-email-cognito-default-with-sourcearn` | AWS::Cognito::UserPool | COGNITO_DEFAULT email sending takes no SourceArn | ERROR | none |
 | `pf-cognito-email-developer-requires-sourcearn` | AWS::Cognito::UserPool | DEVELOPER email sending needs a SES SourceArn | ERROR | none |
 | `pf-cognito-email-from-format` | AWS::Cognito::UserPool | EmailConfiguration.From must be an email address | ERROR | none |
-| `pf-cognito-email-reply-to-format` | AWS::Cognito::UserPool | ReplyToEmailAddress must be an email address | ERROR | none |
+| `pf-cognito-email-reply-to-format` | AWS::Cognito::UserPool | ReplyToEmailAddress must be an email address | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-email-sourcearn-region` | AWS::Cognito::UserPool | The SES SourceArn must be in a Cognito-supported SES region | ERROR | none |
-| `pf-cognito-email-verification-message-placeholder` | AWS::Cognito::UserPool | EmailVerificationMessage needs the {####} code placeholder | ERROR | none |
+| `pf-cognito-email-verification-message-placeholder` | AWS::Cognito::UserPool | EmailVerificationMessage needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-explicit-auth-flows-legacy-mix` | AWS::Cognito::UserPoolClient | Legacy and ALLOW_ auth flow names cannot be mixed | ERROR | none |
 | `pf-cognito-group-role-arn-account` | AWS::Cognito::UserPoolGroup | A group role must be in the deploying account | ERROR | none |
 | `pf-cognito-identity-pool-provider-name-format` | AWS::Cognito::IdentityPool | A user pool provider name is the full cognito-idp endpoint | ERROR | none |
 | `pf-cognito-identity-pool-saml-arn-account` | AWS::Cognito::IdentityPool | SAML provider ARNs must be in the deploying account | ERROR | none |
 | `pf-cognito-idp-apple-required-keys` | AWS::Cognito::UserPoolIdentityProvider | Sign in with Apple needs team_id, key_id and private_key | ERROR | none |
-| `pf-cognito-idp-identifiers-max` | AWS::Cognito::UserPoolIdentityProvider | At most 50 IdP identifiers | ERROR | none |
+| `pf-cognito-idp-identifiers-max` | AWS::Cognito::UserPoolIdentityProvider | At most 50 IdP identifiers | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-idp-oidc-attributes-request-method` | AWS::Cognito::UserPoolIdentityProvider | attributes_request_method is GET or POST | ERROR | none |
 | `pf-cognito-idp-oidc-issuer-https` | AWS::Cognito::UserPoolIdentityProvider | The OIDC issuer must be an https URL | ERROR | none |
 | `pf-cognito-idp-oidc-required-keys` | AWS::Cognito::UserPoolIdentityProvider | An OIDC provider needs four ProviderDetails keys | ERROR | none |
-| `pf-cognito-idp-provider-name-length` | AWS::Cognito::UserPoolIdentityProvider | A provider name is capped at 32 characters | ERROR | none |
+| `pf-cognito-idp-provider-name-length` | AWS::Cognito::UserPoolIdentityProvider | A provider name is capped at 32 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-idp-saml-metadata-exclusive` | AWS::Cognito::UserPoolIdentityProvider | MetadataURL and MetadataFile are exclusive | ERROR | none |
 | `pf-cognito-idp-saml-metadata-required` | AWS::Cognito::UserPoolIdentityProvider | A SAML provider needs MetadataURL or MetadataFile | ERROR | none |
 | `pf-cognito-idp-social-provider-name-fixed` | AWS::Cognito::UserPoolIdentityProvider | A social provider name is fixed to its type | ERROR | none |
@@ -1165,18 +1165,18 @@
 | `pf-cognito-oauth-callback-required` | AWS::Cognito::UserPoolClient | code and implicit OAuth flows need CallbackURLs | ERROR | none |
 | `pf-cognito-oauth-flows-scopes-required` | AWS::Cognito::UserPoolClient | Enabling OAuth requires both AllowedOAuthFlows and AllowedOAuthScopes | ERROR | none |
 | `pf-cognito-oauth-scopes-unknown` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPoolResourceServer | OAuth scopes must be standard or come from a resource server | ERROR | none |
-| `pf-cognito-password-history-size-range` | AWS::Cognito::UserPool | PasswordHistorySize must be between 0 and 24 | ERROR | none |
-| `pf-cognito-password-min-length` | AWS::Cognito::UserPool | PasswordPolicy MinimumLength runs 6 to 99 | ERROR | none |
+| `pf-cognito-password-history-size-range` | AWS::Cognito::UserPool | PasswordHistorySize must be between 0 and 24 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-password-min-length` | AWS::Cognito::UserPool | PasswordPolicy MinimumLength runs 6 to 99 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-pre-token-generation-config-tier` | AWS::Cognito::UserPool | Pre token generation V2_0 and later need ESSENTIALS or PLUS | ERROR | none |
 | `pf-cognito-pre-token-generation-legacy-mix` | AWS::Cognito::UserPool | PreTokenGeneration and PreTokenGenerationConfig must name the same function | ERROR | none |
 | `pf-cognito-propagate-context-requires-secret` | AWS::Cognito::UserPoolClient | Propagating user context data requires a client secret | ERROR | none |
 | `pf-cognito-read-attributes-exists` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPool | ReadAttributes must name attributes the pool has | ERROR | none |
 | `pf-cognito-recovery-admin-only-alone` | AWS::Cognito::UserPool | admin_only cannot be combined with other recovery mechanisms | ERROR | none |
 | `pf-cognito-recovery-duplicate` | AWS::Cognito::UserPool | Recovery mechanisms cannot repeat priorities or names | ERROR | none |
-| `pf-cognito-recovery-mechanisms-max` | AWS::Cognito::UserPool | At most two account recovery mechanisms | ERROR | none |
-| `pf-cognito-resource-server-identifier-charset` | AWS::Cognito::UserPoolResourceServer | A resource server identifier takes no spaces | ERROR | none |
-| `pf-cognito-resource-server-scope-name-charset` | AWS::Cognito::UserPoolResourceServer | Scope names take no spaces or quotes | ERROR | none |
-| `pf-cognito-resource-server-scopes-max` | AWS::Cognito::UserPoolResourceServer | At most 100 scopes per resource server | ERROR | none |
+| `pf-cognito-recovery-mechanisms-max` | AWS::Cognito::UserPool | At most two account recovery mechanisms | ERROR | retired: engine F3032, F3034 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-resource-server-identifier-charset` | AWS::Cognito::UserPoolResourceServer | A resource server identifier takes no spaces | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-resource-server-scope-name-charset` | AWS::Cognito::UserPoolResourceServer | Scope names take no spaces or quotes | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-resource-server-scopes-max` | AWS::Cognito::UserPoolResourceServer | At most 100 scopes per resource server | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-risk-account-takeover-event-action-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Account takeover actions take four values | ERROR | none |
 | `pf-cognito-risk-compromised-event-action-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Compromised credentials action is BLOCK or NO_ACTION | ERROR | none |
 | `pf-cognito-risk-compromised-event-filter-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Compromised credentials event filter takes three values | ERROR | none |
@@ -1191,33 +1191,33 @@
 | `pf-cognito-role-mappings-rules-required` | AWS::Cognito::IdentityPoolRoleAttachment | A Rules role mapping needs RulesConfiguration | ERROR | none |
 | `pf-cognito-role-mappings-token-no-rules` | AWS::Cognito::IdentityPoolRoleAttachment | A Token role mapping takes no RulesConfiguration | ERROR | none |
 | `pf-cognito-schema-attr-length-order` | AWS::Cognito::UserPool | Schema attribute MaxLength cannot undercut MinLength | ERROR | none |
-| `pf-cognito-schema-attr-max` | AWS::Cognito::UserPool | A user pool takes at most 50 custom attributes | ERROR | none |
-| `pf-cognito-schema-custom-name-length` | AWS::Cognito::UserPool | A schema attribute name is capped at 20 characters | ERROR | none |
+| `pf-cognito-schema-attr-max` | AWS::Cognito::UserPool | A user pool takes at most 50 custom attributes | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-schema-custom-name-length` | AWS::Cognito::UserPool | A schema attribute name is capped at 20 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-schema-custom-required` | AWS::Cognito::UserPool | Custom attributes cannot be required | ERROR | none |
 | `pf-cognito-schema-name-duplicate` | AWS::Cognito::UserPool | Schema attribute names must be unique | ERROR | none |
 | `pf-cognito-schema-number-min-max-order` | AWS::Cognito::UserPool | Number attribute MinValue must not exceed MaxValue | ERROR | none |
 | `pf-cognito-schema-standard-attr-datatype` | AWS::Cognito::UserPool | Standard attributes keep their fixed data type | ERROR | none |
 | `pf-cognito-signin-policy-password-required` | AWS::Cognito::UserPool | AllowedFirstAuthFactors must include PASSWORD | ERROR | none |
 | `pf-cognito-signin-policy-webauthn-tier` | AWS::Cognito::UserPool | Passwordless sign-in factors need ESSENTIALS or PLUS | ERROR | none |
-| `pf-cognito-sms-authentication-message-placeholder` | AWS::Cognito::UserPool | SmsAuthenticationMessage needs the {####} code placeholder | ERROR | none |
+| `pf-cognito-sms-authentication-message-placeholder` | AWS::Cognito::UserPool | SmsAuthenticationMessage needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-sms-caller-arn-account` | AWS::Cognito::UserPool | The SMS caller role must be in the deploying account | ERROR | none |
 | `pf-cognito-sms-configuration-sns-region` | AWS::Cognito::UserPool | SnsRegion must be the region the pool deploys to | ERROR | none |
-| `pf-cognito-sms-verification-message-placeholder` | AWS::Cognito::UserPool | SmsVerificationMessage needs the {####} code placeholder | ERROR | none |
+| `pf-cognito-sms-verification-message-placeholder` | AWS::Cognito::UserPool | SmsVerificationMessage needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-supported-identity-providers-exists` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPoolIdentityProvider | Supported identity providers must exist on the pool | ERROR | none |
-| `pf-cognito-temporary-password-validity-range` | AWS::Cognito::UserPool | TemporaryPasswordValidityDays must be between 0 and 365 | ERROR | none |
+| `pf-cognito-temporary-password-validity-range` | AWS::Cognito::UserPool | TemporaryPasswordValidityDays must be between 0 and 365 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-token-expiration-order` | AWS::Cognito::UserPoolClient | Access and id tokens cannot outlive the refresh token | ERROR | none |
 | `pf-cognito-token-validity-range` | AWS::Cognito::UserPoolClient | Token validity ranges depend on token type and unit | ERROR | none |
 | `pf-cognito-ui-customization-css-properties` | AWS::Cognito::UserPoolUICustomizationAttachment | Hosted UI CSS only styles the -customizable classes | ERROR | none |
 | `pf-cognito-ui-customization-requires-domain` | AWS::Cognito::UserPoolUICustomizationAttachment<br>AWS::Cognito::UserPoolDomain | Hosted UI customization requires a domain on the pool | ERROR | none |
 | `pf-cognito-unused-account-validity-exclusive` | AWS::Cognito::UserPool | UnusedAccountValidityDays and TemporaryPasswordValidityDays are exclusive | ERROR | none |
-| `pf-cognito-unused-account-validity-range` | AWS::Cognito::UserPool | UnusedAccountValidityDays must be between 0 and 365 | ERROR | none |
+| `pf-cognito-unused-account-validity-range` | AWS::Cognito::UserPool | UnusedAccountValidityDays must be between 0 and 365 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-user-attribute-update-requires-auto-verified` | AWS::Cognito::UserPool | Attributes requiring verification before update must be auto-verified | ERROR | none |
 | `pf-cognito-user-attribute-update-settings-enum` | AWS::Cognito::UserPool | Only email and phone_number can require verification before update | ERROR | none |
 | `pf-cognito-user-pool-name` | AWS::Cognito::UserPool | User pool names allow only word characters, spaces and +=,.@- | ERROR | none |
-| `pf-cognito-verification-code-placeholder` | AWS::Cognito::UserPool | The verification email needs the {####} code placeholder | ERROR | none |
-| `pf-cognito-verification-email-subject-length` | AWS::Cognito::UserPool | The verification email subject is capped at 140 characters | ERROR | none |
-| `pf-cognito-verification-link-placeholder` | AWS::Cognito::UserPool | A link verification message needs the {##...##} placeholder | ERROR | none |
-| `pf-cognito-verification-sms-placeholder` | AWS::Cognito::UserPool | The verification SMS needs the {####} code placeholder | ERROR | none |
+| `pf-cognito-verification-code-placeholder` | AWS::Cognito::UserPool | The verification email needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-verification-email-subject-length` | AWS::Cognito::UserPool | The verification email subject is capped at 140 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-verification-link-placeholder` | AWS::Cognito::UserPool | A link verification message needs the {##...##} placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
+| `pf-cognito-verification-sms-placeholder` | AWS::Cognito::UserPool | The verification SMS needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-web-authn-relying-party-format` | AWS::Cognito::UserPool | WebAuthnRelyingPartyID is a bare domain name | ERROR | none |
 | `pf-cognito-write-attributes-immutable` | AWS::Cognito::UserPoolClient | Verified-status attributes cannot be written by a client | ERROR | none |
 | `pf-config-aggregator-account-source-regions-exclusive` | AWS::Config::ConfigurationAggregator | An account aggregation source takes AllAwsRegions or AwsRegions, not both | ERROR | none |
@@ -1263,7 +1263,7 @@
 | `pf-docdbelastic-shard-capacity-enum` | AWS::DocDBElastic::Cluster | ShardCapacity must be one of 2, 4, 8, 16, 32 or 64 vCPUs | ERROR | none |
 | `pf-docdbelastic-shard-count-max` | AWS::DocDBElastic::Cluster | ShardCount must not exceed 32 | ERROR | none |
 | `pf-docdbelastic-shard-instance-count-max` | AWS::DocDBElastic::Cluster | ShardInstanceCount must not exceed 16 | ERROR | none |
-| `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | ERROR | none |
+| `pf-dynamodb-attribute-definitions-usage` | AWS::DynamoDB::Table | Every AttributeDefinitions entry must be used by a key schema | ERROR | retired: engine E3039 covers it from aws-cdk-lib 2.268.0 |
 | `pf-dynamodb-attribute-type` | AWS::DynamoDB::Table | AttributeType must be S, N or B | ERROR | pending-engine |
 | `pf-dynamodb-billing-throughput` | AWS::DynamoDB::Table | ProvisionedThroughput must match BillingMode (required for PROVISIONED, forbidden for PAY_PER_REQUEST) | ERROR | none |
 | `pf-dynamodb-contributor-insights-mode` | AWS::DynamoDB::Table | Contributor Insights Mode must be ACCESSED_AND_THROTTLED_KEYS or THROTTLED_KEYS | ERROR | pending-engine |
@@ -1301,7 +1301,7 @@
 | `pf-dynamodb-key-schema-shape` | AWS::DynamoDB::Table | KeySchema must be [HASH] or [HASH, RANGE] | ERROR | none |
 | `pf-dynamodb-kinesis-precision` | AWS::DynamoDB::Table | Kinesis record timestamp precision is MICROSECOND or MILLISECOND | ERROR | pending-engine |
 | `pf-dynamodb-kinesis-stream-region` | AWS::DynamoDB::Table | A Kinesis streaming destination must be in the table's region | ERROR | none |
-| `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | ERROR | none |
+| `pf-dynamodb-lsi-attribute-definitions` | AWS::DynamoDB::Table | LSI key attributes must be defined in AttributeDefinitions | ERROR | retired: engine E3039 covers it from aws-cdk-lib 2.268.0 |
 | `pf-dynamodb-lsi-count` | AWS::DynamoDB::Table | A table can carry at most 5 local secondary indexes | ERROR | none |
 | `pf-dynamodb-lsi-shape` | AWS::DynamoDB::Table | An LSI needs a RANGE key and the table's leading hash key | ERROR | none |
 | `pf-dynamodb-ondemand-throughput-billing` | AWS::DynamoDB::Table | OnDemandThroughput belongs to PAY_PER_REQUEST tables only | ERROR | none |
@@ -1359,7 +1359,7 @@
 | `pf-ec2-sg-icmp-type-code` | AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | ICMP type and code must be within -1 to 255 | ERROR | none |
 | `pf-ec2-sg-port-range` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group TCP/UDP ports must be within 0-65535 and FromPort <= ToPort | ERROR | none |
 | `pf-ec2-sg-rule-description` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | Security group rule descriptions are limited to 255 chars of a restricted ASCII set | ERROR | none |
-| `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | ERROR | none |
+| `pf-ec2-sg-source-exclusive` | AWS::EC2::SecurityGroup<br>AWS::EC2::SecurityGroupIngress<br>AWS::EC2::SecurityGroupEgress | A security group rule takes exactly one source/destination field | ERROR | retired: engine F3014 covers it from aws-cdk-lib 2.268.0 |
 | `pf-ec2-subnet-cidr-size` | AWS::EC2::Subnet | Subnet IPv4 CIDR netmask must be between /16 and /28 | ERROR | none |
 | `pf-ec2-subnet-dns64-ipv6` | AWS::EC2::Subnet | EnableDns64 requires the subnet to have an IPv6 CIDR | ERROR | none |
 | `pf-ec2-subnet-ipv6-native-cidr` | AWS::EC2::Subnet | An IPv6-only subnet cannot carry IPv4 addressing | ERROR | none |
@@ -1443,14 +1443,14 @@
 | `pf-ecs-fargate-inference-accelerator` | AWS::ECS::TaskDefinition | InferenceAccelerators is retired and always rejected | ERROR | none |
 | `pf-ecs-fargate-ipc-mode` | AWS::ECS::TaskDefinition | IpcMode is not supported on Fargate | ERROR | none |
 | `pf-ecs-fargate-links` | AWS::ECS::TaskDefinition | Links is not supported with NetworkMode awsvpc | ERROR | none |
-| `pf-ecs-fargate-log-driver-unsupported` | AWS::ECS::TaskDefinition | Fargate supports only a subset of log drivers | ERROR | none |
+| `pf-ecs-fargate-log-driver-unsupported` | AWS::ECS::TaskDefinition | Fargate supports only a subset of log drivers | ERROR | retired: engine E3048 covers it from aws-cdk-lib 2.268.0 |
 | `pf-ecs-fargate-max-swap` | AWS::ECS::TaskDefinition | LinuxParameters.MaxSwap is not supported on Fargate | ERROR | none |
-| `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | ERROR | none |
+| `pf-ecs-fargate-network-mode` | AWS::ECS::TaskDefinition | Fargate task definitions require NetworkMode 'awsvpc' | ERROR | retired: engine E3048 covers it from aws-cdk-lib 2.268.0 |
 | `pf-ecs-fargate-pid-mode-host` | AWS::ECS::TaskDefinition | PidMode host is not supported on Fargate | ERROR | none |
-| `pf-ecs-fargate-placement-constraints` | AWS::ECS::TaskDefinition | Task placement constraints are not supported on Fargate | ERROR | none |
+| `pf-ecs-fargate-placement-constraints` | AWS::ECS::TaskDefinition | Task placement constraints are not supported on Fargate | ERROR | retired: engine E3048 covers it from aws-cdk-lib 2.268.0 |
 | `pf-ecs-fargate-privileged` | AWS::ECS::TaskDefinition | Privileged is not supported on Fargate | ERROR | none |
 | `pf-ecs-fargate-shared-memory-size` | AWS::ECS::TaskDefinition | LinuxParameters.SharedMemorySize is not supported on Fargate | ERROR | none |
-| `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | ERROR | none |
+| `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | ERROR | retired: engine E3048 covers it from aws-cdk-lib 2.268.0 |
 | `pf-ecs-fargate-windows-cpu-under-1vcpu` | AWS::ECS::TaskDefinition | Windows tasks on Fargate need at least 1 vCPU | ERROR | none |
 | `pf-ecs-healthcheck-interval-range` | AWS::ECS::TaskDefinition | HealthCheck.Interval must be 5-300 seconds | ERROR | none |
 | `pf-ecs-healthcheck-retries-range` | AWS::ECS::TaskDefinition | HealthCheck.Retries must be 1-10 | ERROR | none |
@@ -1529,7 +1529,7 @@
 | `pf-eks-accessentry-policy-arn-form` | AWS::EKS::AccessEntry | An access policy ARN is not an IAM policy ARN | ERROR | none |
 | `pf-eks-accessentry-policy-arn-partition` | AWS::EKS::AccessEntry | An access policy ARN must name the deploy partition | ERROR | none |
 | `pf-eks-accessentry-principal-arn-account` | AWS::EKS::AccessEntry | A node-type access entry principal must live in the deploy account | ERROR | none |
-| `pf-eks-accessentry-principal-arn-duplicate` | AWS::EKS::AccessEntry | One IAM principal may hold only one access entry per cluster | ERROR | none |
+| `pf-eks-accessentry-principal-arn-duplicate` | AWS::EKS::AccessEntry | One IAM principal may hold only one access entry per cluster | ERROR | retired: engine E3019 covers it from aws-cdk-lib 2.268.0 |
 | `pf-eks-accessentry-principal-arn-service-linked-role` | AWS::EKS::AccessEntry | An access entry principal cannot be a service-linked role | ERROR | none |
 | `pf-eks-accessentry-requires-api-auth-mode` | AWS::EKS::AccessEntry<br>AWS::EKS::Cluster | Access entries need a cluster whose authentication mode includes API | ERROR | none |
 | `pf-eks-accessentry-scope-cluster-forbids-namespaces` | AWS::EKS::AccessEntry | A cluster-scoped access policy cannot name namespaces | ERROR | none |
@@ -1537,7 +1537,7 @@
 | `pf-eks-accessentry-username-only-standard` | AWS::EKS::AccessEntry | A node-type access entry cannot carry a Username | ERROR | none |
 | `pf-eks-accessentry-username-reserved-prefix` | AWS::EKS::AccessEntry | An access entry Username may not start with a prefix EKS reserves | ERROR | none |
 | `pf-eks-addon-configuration-values-json` | AWS::EKS::Addon | ConfigurationValues that opens as a JSON object must parse | ERROR | none |
-| `pf-eks-addon-duplicate-per-cluster` | AWS::EKS::Addon | The same add-on cannot be installed twice on one cluster | ERROR | none |
+| `pf-eks-addon-duplicate-per-cluster` | AWS::EKS::Addon | The same add-on cannot be installed twice on one cluster | ERROR | retired: engine E3019 covers it from aws-cdk-lib 2.268.0 |
 | `pf-eks-addon-namespace-config-format` | AWS::EKS::Addon | NamespaceConfig.Namespace must be an RFC 1123 DNS label | ERROR | none |
 | `pf-eks-addon-service-account-role-account` | AWS::EKS::Addon | An add-on service account role must live in the deploy account | ERROR | none |
 | `pf-eks-addon-version-format` | AWS::EKS::Addon | AddonVersion must be of the form vX.Y.Z-eksbuild.N | ERROR | none |
@@ -1632,7 +1632,7 @@
 | `pf-elbv2-action-redirect-port-value` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A redirect port is a port number or #{port} | ERROR | none |
 | `pf-elbv2-action-redirect-status-code` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A redirect answers with HTTP_301 or HTTP_302 | ERROR | none |
 | `pf-elbv2-action-session-timeout-range` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | An authentication session lasts between 1 and 604800 seconds | ERROR | none |
-| `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | ERROR | none |
+| `pf-elbv2-alb-subnet-count` | AWS::ElasticLoadBalancingV2::LoadBalancer | Application load balancers need at least two subnets | ERROR | retired: engine E3680 covers it from aws-cdk-lib 2.271.0 |
 | `pf-elbv2-app-cookie-name` | AWS::ElasticLoadBalancingV2::TargetGroup | app_cookie stickiness requires a cookie name | ERROR | none |
 | `pf-elbv2-hc-timeout-interval` | AWS::ElasticLoadBalancingV2::TargetGroup | Health check timeout must be strictly smaller than the interval | ERROR | none |
 | `pf-elbv2-lambda-target-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Lambda target groups cannot specify Protocol | ERROR | none |
@@ -1886,7 +1886,7 @@
 | `pf-glue-classifier-csv-custom-datatype` | AWS::Glue::Classifier | Custom CSV datatypes come from the supported set | ERROR | pending-engine |
 | `pf-glue-classifier-csv-custom-datatype-flag` | AWS::Glue::Classifier | ContainsCustomDatatype and CustomDatatypeConfigured travel together | ERROR | none |
 | `pf-glue-classifier-csv-quote-symbol` | AWS::Glue::Classifier | The CSV quote symbol differs from the delimiter | ERROR | none |
-| `pf-glue-classifier-csv-single-char` | AWS::Glue::Classifier | The CSV delimiter and quote symbol are one character each | ERROR | pending-engine |
+| `pf-glue-classifier-csv-single-char` | AWS::Glue::Classifier | The CSV delimiter and quote symbol are one character each | ERROR | retired: engine F3031, F3033 covers it from aws-cdk-lib 2.268.0 |
 | `pf-glue-classifier-grok-pattern-names` | AWS::Glue::Classifier | A grok pattern only names built-in or custom patterns | ERROR | none |
 | `pf-glue-classifier-grok-pattern-single-line` | AWS::Glue::Classifier | A grok pattern holds no line break | ERROR | pending-engine |
 | `pf-glue-connection-jdbc-credentials` | AWS::Glue::Connection | A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID | ERROR | none |
@@ -1953,7 +1953,7 @@
 | `pf-grafana-ws-notification-destinations-enum` | AWS::Grafana::Workspace | NotificationDestinations names SNS | ERROR | pending-engine |
 | `pf-grafana-ws-organization-access-requires-ous` | AWS::Grafana::Workspace | Organization-wide account access lists the organizational units | ERROR | none |
 | `pf-grafana-ws-saml-idp-metadata-source` | AWS::Grafana::Workspace | A SAML identity provider names exactly one metadata source | ERROR | none |
-| `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | none |
+| `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
 | `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | none |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | ERROR | none |
@@ -1964,7 +1964,7 @@
 | `pf-iam-path-service-role-reserved` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::InstanceProfile<br>AWS::IAM::ManagedPolicy | The /aws-service-role/ path is reserved | ERROR | none |
 | `pf-iam-permissions-boundary-policy-arn` | AWS::IAM::Role<br>AWS::IAM::User | A permissions boundary is a policy ARN | ERROR | none |
 | `pf-iam-policy-action-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Actions must carry a service prefix | ERROR | none |
-| `pf-iam-policy-action-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Every statement needs an Action or NotAction | ERROR | none |
+| `pf-iam-policy-action-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Every statement needs an Action or NotAction | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
 | `pf-iam-policy-action-single-colon` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | An action carries exactly one colon | ERROR | none |
 | `pf-iam-policy-action-vendor-wildcard` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | The service prefix of an action takes no wildcard | ERROR | none |
 | `pf-iam-policy-arn-partition` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Attached policy ARNs live in the deploy partition | ERROR | none |
@@ -1974,23 +1974,23 @@
 | `pf-iam-policy-condition-ip-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | IpAddress condition operators need an IP address or CIDR | ERROR | none |
 | `pf-iam-policy-condition-null-ifexists` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Null does not take the IfExists suffix | ERROR | none |
 | `pf-iam-policy-condition-numeric-value` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Numeric condition operators need a numeric value | ERROR | none |
-| `pf-iam-policy-condition-operator` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Condition operators come from a closed grammar | ERROR | none |
-| `pf-iam-policy-condition-value-type` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Condition values are strings, not nested objects | ERROR | none |
-| `pf-iam-policy-duplicate-sid` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Statement IDs must be unique within a policy | ERROR | none |
-| `pf-iam-policy-effect-case` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Effect is case-sensitive Allow or Deny | ERROR | none |
-| `pf-iam-policy-effect-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Every statement needs an Effect | ERROR | none |
-| `pf-iam-policy-exclusive-fields` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Action/NotAction and Resource/NotResource are exclusive pairs | ERROR | none |
+| `pf-iam-policy-condition-operator` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Condition operators come from a closed grammar | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-condition-value-type` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Condition values are strings, not nested objects | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-duplicate-sid` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Statement IDs must be unique within a policy | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-effect-case` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Effect is case-sensitive Allow or Deny | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-effect-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Every statement needs an Effect | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-exclusive-fields` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Action/NotAction and Resource/NotResource are exclusive pairs | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
 | `pf-iam-policy-resource-arn-segments` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A resource ARN carries six colon-separated segments | ERROR | none |
-| `pf-iam-policy-resource-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Resources must be ARNs or * | ERROR | none |
+| `pf-iam-policy-resource-format` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Resources must be ARNs or * | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
 | `pf-iam-policy-resource-global-service-arn` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | S3, IAM and Route 53 ARNs carry no region | ERROR | none |
 | `pf-iam-policy-resource-partition` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | Resource ARNs live in the deploy partition | ERROR | none |
-| `pf-iam-policy-resource-service-wildcard` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | The service segment of a resource ARN takes no wildcard | ERROR | none |
-| `pf-iam-policy-sid-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy statement Sid must be alphanumeric | ERROR | none |
-| `pf-iam-policy-statement-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A policy document needs a non-empty Statement | ERROR | none |
-| `pf-iam-policy-statement-resource-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policy statements need Resource or NotResource | ERROR | none |
-| `pf-iam-policy-statement-unknown-field` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A statement holds only the documented policy elements | ERROR | none |
-| `pf-iam-policy-unknown-toplevel-field` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A policy document holds only Version, Id and Statement | ERROR | none |
-| `pf-iam-policy-version` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy Version must be 2012-10-17 or 2008-10-17 | ERROR | none |
+| `pf-iam-policy-resource-service-wildcard` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | The service segment of a resource ARN takes no wildcard | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-sid-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy statement Sid must be alphanumeric | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-statement-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A policy document needs a non-empty Statement | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-statement-resource-required` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policy statements need Resource or NotResource | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-statement-unknown-field` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A statement holds only the documented policy elements | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-unknown-toplevel-field` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy<br>AWS::IAM::User<br>AWS::IAM::Group | A policy document holds only Version, Id and Statement | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
+| `pf-iam-policy-version` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Policy Version must be 2012-10-17 or 2008-10-17 | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
 | `pf-iam-slr-service-name-format` | AWS::IAM::ServiceLinkedRole | AWSServiceName is a service principal | ERROR | none |
 | `pf-iam-trust-policy-action-sts-only` | AWS::IAM::Role | A trust policy allows only the STS AssumeRole family | ERROR | none |
 | `pf-iam-trust-policy-aws-principal-format` | AWS::IAM::Role | An AWS principal is an account id or an IAM ARN | ERROR | none |
@@ -2200,7 +2200,7 @@
 | `pf-lambda-tenancy-no-function-url` | AWS::Lambda::Function | A tenant-isolated function cannot have a function URL | ERROR | none |
 | `pf-lambda-tenancy-no-provisioned-concurrency` | AWS::Lambda::Function | A tenant-isolated function cannot use provisioned concurrency | ERROR | none |
 | `pf-lambda-tenancy-no-snapstart` | AWS::Lambda::Function | A tenant-isolated function cannot use SnapStart | ERROR | pending-engine |
-| `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | ERROR | pending-engine |
+| `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | ERROR | retired: engine E3717 covers it from aws-cdk-lib 2.271.0 |
 | `pf-lambda-tracing-mode-enum` | AWS::Lambda::Function | TracingConfig.Mode takes Active or PassThrough | ERROR | pending-engine |
 | `pf-lambda-url-auth-type-enum` | AWS::Lambda::Url | AuthType is AWS_IAM or NONE | ERROR | pending-engine |
 | `pf-lambda-url-cors-allow-methods-wildcard-mix` | AWS::Lambda::Url | CORS methods are a wildcard or a list, not both | ERROR | none |
@@ -2459,7 +2459,7 @@
 | `pf-pipes-target-parameters` | AWS::Pipes::Pipe | Target parameters must match the target's resource type | ERROR | none |
 | `pf-pipes-target-sns-fifo` | AWS::Pipes::Pipe | A FIFO SNS topic cannot be a pipe target | ERROR | none |
 | `pf-rds-backtrack` | AWS::RDS::DBCluster | Backtrack only works on aurora-mysql, with a window of at most 259200 seconds | ERROR | none |
-| `pf-rds-backup-retention-range` | AWS::RDS::DBInstance | BackupRetentionPeriod must be at most 35 days | ERROR | none |
+| `pf-rds-backup-retention-range` | AWS::RDS::DBInstance | BackupRetentionPeriod must be at most 35 days | ERROR | retired: engine E3719 covers it from aws-cdk-lib 2.271.0 |
 | `pf-rds-backup-window-duration` | AWS::RDS::DBInstance | The backup window must be at least 30 minutes | ERROR | none |
 | `pf-rds-backup-window-format` | AWS::RDS::DBInstance | PreferredBackupWindow must be hh24:mi-hh24:mi | ERROR | none |
 | `pf-rds-character-set-engine` | AWS::RDS::DBInstance | CharacterSetName is only accepted by Oracle engines | ERROR | none |
@@ -2564,7 +2564,7 @@
 | `pf-route53-alias-target-outside-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An alias into a hosted zone of this template must target a name inside that zone | ERROR | none |
 | `pf-route53-apex-cname` | AWS::Route53::RecordSet<br>AWS::Route53::HostedZone | A CNAME record is not permitted at the zone apex | ERROR | none |
 | `pf-route53-caa-tag-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A CAA tag must be issue, issuewild or iodef | ERROR | none |
-| `pf-route53-cidr-collection-id-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.CollectionId must be a UUID | ERROR | cfn-schema |
+| `pf-route53-cidr-collection-id-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | CidrRoutingConfig.CollectionId must be a UUID | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-cidr-location-name-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup<br>AWS::Route53::CidrCollection | CidrRoutingConfig.LocationName is limited to 16 characters of [0-9A-Za-z_-*] | ERROR | none |
 | `pf-route53-cidr-private-zone` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | IP-based routing is not available in a private hosted zone | ERROR | none |
 | `pf-route53-cidr-same-collection-in-group` | AWS::Route53::RecordSetGroup | IP-based record sets sharing a name and type must use one CIDR collection | ERROR | none |
@@ -2591,13 +2591,13 @@
 | `pf-route53-geolocation-continent-code-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.ContinentCode must be one of the seven two-letter continent codes | ERROR | none |
 | `pf-route53-geolocation-country-code-iso` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.CountryCode must be an ISO 3166-1 alpha-2 country code | ERROR | none |
 | `pf-route53-geolocation-duplicate-location` | AWS::Route53::RecordSetGroup | Two geolocation record sets cannot claim the same location | ERROR | none |
-| `pf-route53-geolocation-exclusive` | AWS::Route53::RecordSet | GeoLocation cannot specify both ContinentCode and CountryCode | ERROR | pending-engine |
+| `pf-route53-geolocation-exclusive` | AWS::Route53::RecordSet | GeoLocation cannot specify both ContinentCode and CountryCode | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-geolocation-subdivision-code-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode must be a US state or territory code | ERROR | none |
 | `pf-route53-geolocation-subdivision-requires-us` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode is only valid with CountryCode US | ERROR | none |
 | `pf-route53-geolocation-unsupported-country` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Four ISO country codes have no Route 53 geolocation coverage | ERROR | none |
 | `pf-route53-geoproximity-awsregion-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.AWSRegion must be an existing AWS Region | ERROR | none |
-| `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | cfn-schema |
-| `pf-route53-geoproximity-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates | ERROR | pending-engine |
+| `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.269.0 |
+| `pf-route53-geoproximity-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-geoproximity-localzonegroup-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.LocalZoneGroup must be a Local Zone group name | ERROR | none |
 | `pf-route53-geoproximity-max-30-same-name-type` | AWS::Route53::RecordSetGroup | A geoproximity group may hold at most 30 record sets per name and type | ERROR | none |
 | `pf-route53-healthcheck-alarm-extended-statistic` | AWS::Route53::HealthCheck<br>AWS::CloudWatch::Alarm | A CloudWatch alarm health check cannot watch an alarm on an extended statistic | ERROR | none |
@@ -2652,7 +2652,7 @@
 | `pf-route53-keysigningkey-kms-keyspec` | AWS::Route53::KeySigningKey<br>AWS::KMS::Key | The DNSSEC signing key must be an ECC_NIST_P256 key used for SIGN_VERIFY | ERROR | none |
 | `pf-route53-keysigningkey-kmsarn-unique-per-zone` | AWS::Route53::KeySigningKey | Two key signing keys in one hosted zone cannot share a KMS key | ERROR | none |
 | `pf-route53-keysigningkey-max-2-per-zone` | AWS::Route53::KeySigningKey | A hosted zone can hold at most two key signing keys | ERROR | none |
-| `pf-route53-keysigningkey-name-unique-per-zone` | AWS::Route53::KeySigningKey | Two key signing keys in one hosted zone cannot share a name | ERROR | none |
+| `pf-route53-keysigningkey-name-unique-per-zone` | AWS::Route53::KeySigningKey | Two key signing keys in one hosted zone cannot share a name | ERROR | retired: engine E3019 covers it from aws-cdk-lib 2.268.0 |
 | `pf-route53-keysigningkey-status-enum` | AWS::Route53::KeySigningKey | A key signing key is either ACTIVE or INACTIVE | ERROR | pending-engine |
 | `pf-route53-latency-one-record-per-region` | AWS::Route53::RecordSetGroup | A latency group may hold only one record set per Region | ERROR | none |
 | `pf-route53-latency-region-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The latency Region must be an existing AWS Region | ERROR | none |
@@ -2667,7 +2667,7 @@
 | `pf-route53-naptr-regexp-replacement-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A NAPTR value carries either a regexp or a replacement, never both | ERROR | none |
 | `pf-route53-naptr-service-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The NAPTR service field must be quoted | ERROR | none |
 | `pf-route53-private-zone-health-check-policy` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record with no routing policy cannot reference a health check | ERROR | none |
-| `pf-route53-record-comment-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Comment is limited to 256 characters | ERROR | cfn-schema |
+| `pf-route53-record-comment-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Comment is limited to 256 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-record-name-charset` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name cannot contain a space | ERROR | none |
 | `pf-route53-record-name-label-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Each label of a record name is limited to 63 bytes | ERROR | none |
 | `pf-route53-record-name-punycode` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name must be ASCII (IDNs go in as Punycode) | ERROR | none |
@@ -2678,10 +2678,10 @@
 | `pf-route53-record-value-source` | AWS::Route53::RecordSet | A record set needs AliasTarget or the full TTL+ResourceRecords pair | ERROR | none |
 | `pf-route53-recordsetgroup-max-1000-elements` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 1000 ResourceRecords values in total | ERROR | none |
 | `pf-route53-recordsetgroup-max-32000-chars` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 32000 characters of record data | ERROR | none |
-| `pf-route53-resourcerecord-value-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A single ResourceRecords value is limited to 4000 characters | ERROR | cfn-schema |
+| `pf-route53-resourcerecord-value-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A single ResourceRecords value is limited to 4000 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-resourcerecords-max-400` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record set may hold at most 400 ResourceRecords values | ERROR | none |
 | `pf-route53-routing-policy-exclusive` | AWS::Route53::RecordSet | A record set can use only one routing policy | ERROR | none |
-| `pf-route53-set-identifier-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SetIdentifier must be 1-128 characters | ERROR | cfn-schema |
+| `pf-route53-set-identifier-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SetIdentifier must be 1-128 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-set-identifier-pairing` | AWS::Route53::RecordSet | SetIdentifier and a routing policy must appear together | ERROR | none |
 | `pf-route53-set-identifier-unique-in-group` | AWS::Route53::RecordSetGroup | SetIdentifier must be unique among record sets sharing a name and type | ERROR | none |
 | `pf-route53-simple-and-policy-same-name-type` | AWS::Route53::RecordSetGroup | A simple record set cannot coexist with a routing-policy record set of the same name and type | ERROR | none |
@@ -2833,7 +2833,7 @@
 | `pf-s3-storagelensgroup-object-age-order` | AWS::S3::StorageLensGroup | MatchObjectAge DaysGreaterThan must be smaller than DaysLessThan | ERROR | none |
 | `pf-s3-storagelensgroup-object-size-order` | AWS::S3::StorageLensGroup | MatchObjectSize BytesGreaterThan must be smaller than BytesLessThan | ERROR | none |
 | `pf-s3-versioning-suspended-with-replication` | AWS::S3::Bucket | A replicating bucket must keep versioning enabled | ERROR | none |
-| `pf-s3-website-empty-condition` | AWS::S3::Bucket | A RoutingRuleCondition needs a key prefix or an HTTP error code | ERROR | none |
+| `pf-s3-website-empty-condition` | AWS::S3::Bucket | A RoutingRuleCondition needs a key prefix or an HTTP error code | ERROR | retired: engine F3017 covers it from aws-cdk-lib 2.268.0 |
 | `pf-s3-website-empty-redirect-rule` | AWS::S3::Bucket | A RedirectRule must carry at least one element | ERROR | none |
 | `pf-s3-website-redirect-exclusive` | AWS::S3::Bucket | RedirectAllRequestsTo excludes every other website setting | ERROR | none |
 | `pf-s3-website-replace-key-exclusive` | AWS::S3::Bucket | ReplaceKeyWith and ReplaceKeyPrefixWith are mutually exclusive | ERROR | none |
@@ -2873,8 +2873,8 @@
 | `pf-secretsmanager-secret-name` | AWS::SecretsManager::Secret | A secret Name may only contain ASCII letters, digits and -/_+=.@! (no spaces, colons, hashes or non-ASCII text) | ERROR | none |
 | `pf-secretsmanager-secret-string-exclusive` | AWS::SecretsManager::Secret | SecretString and GenerateSecretString cannot both be set on a secret | ERROR | none |
 | `pf-secretsmanager-target-attachment` | AWS::SecretsManager::SecretTargetAttachment | SecretTargetAttachment needs a TargetType from the documented list and a secret whose value is a JSON object (SecretString JSON or GenerateSecretString with SecretStringTemplate) | ERROR | none |
-| `pf-servicediscovery-http-namespace-name-charset` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name must be printable ASCII | ERROR | none |
-| `pf-servicediscovery-http-namespace-name-length` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name is limited to 1024 characters | ERROR | cfn-schema |
+| `pf-servicediscovery-http-namespace-name-charset` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name must be printable ASCII | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.269.0 |
+| `pf-servicediscovery-http-namespace-name-length` | AWS::ServiceDiscovery::HttpNamespace | An HTTP namespace name is limited to 1024 characters | ERROR | retired: engine F3031, F3033 covers it from aws-cdk-lib 2.269.0 |
 | `pf-servicediscovery-instance-a-requires-ipv4` | AWS::ServiceDiscovery::Instance | An A record service needs AWS_INSTANCE_IPV4 on every instance | ERROR | none |
 | `pf-servicediscovery-instance-aaaa-requires-ipv6` | AWS::ServiceDiscovery::Instance | An AAAA record service needs AWS_INSTANCE_IPV6 on every instance | ERROR | none |
 | `pf-servicediscovery-instance-alias-requires-weighted` | AWS::ServiceDiscovery::Instance | An ALIAS instance needs a WEIGHTED service | ERROR | none |
@@ -2888,18 +2888,18 @@
 | `pf-servicediscovery-instance-ec2-id-http-namespace-only` | AWS::ServiceDiscovery::Instance | AWS_EC2_INSTANCE_ID only works in an HTTP namespace | ERROR | none |
 | `pf-servicediscovery-instance-healthcheck-forbids-nonroutable-ipv4` | AWS::ServiceDiscovery::Instance | A health-checked service rejects a non-routable AWS_INSTANCE_IPV4 | ERROR | none |
 | `pf-servicediscovery-instance-healthcheck-requires-port` | AWS::ServiceDiscovery::Instance | An instance of a health-checked service needs AWS_INSTANCE_PORT | ERROR | none |
-| `pf-servicediscovery-instance-id-length` | AWS::ServiceDiscovery::Instance | An instance id is at most 64 characters | ERROR | cfn-schema |
-| `pf-servicediscovery-instance-id-pattern` | AWS::ServiceDiscovery::Instance | An instance id takes a restricted character set | ERROR | none |
+| `pf-servicediscovery-instance-id-length` | AWS::ServiceDiscovery::Instance | An instance id is at most 64 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.271.0 |
+| `pf-servicediscovery-instance-id-pattern` | AWS::ServiceDiscovery::Instance | An instance id takes a restricted character set | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.271.0 |
 | `pf-servicediscovery-instance-init-health-status-enum` | AWS::ServiceDiscovery::Instance | AWS_INIT_HEALTH_STATUS is HEALTHY or UNHEALTHY | ERROR | none |
 | `pf-servicediscovery-instance-srv-requires-ip` | AWS::ServiceDiscovery::Instance | An SRV record service needs an IP address on every instance | ERROR | none |
 | `pf-servicediscovery-instance-srv-requires-port` | AWS::ServiceDiscovery::Instance | An SRV record service needs AWS_INSTANCE_PORT on every instance | ERROR | none |
 | `pf-servicediscovery-instance-unknown-aws-attribute` | AWS::ServiceDiscovery::Instance | The AWS_ attribute prefix is reserved | ERROR | none |
-| `pf-servicediscovery-namespace-description-length` | AWS::ServiceDiscovery::HttpNamespace<br>AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | A namespace description is limited to 1024 characters | ERROR | cfn-schema |
-| `pf-servicediscovery-namespace-soa-ttl-range` | AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | The SOA record TTL of a DNS namespace may not exceed 2147483647 | ERROR | cfn-schema |
-| `pf-servicediscovery-private-namespace-name-charset` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name must be printable ASCII | ERROR | none |
-| `pf-servicediscovery-private-namespace-name-length` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name is limited to 253 characters | ERROR | none |
+| `pf-servicediscovery-namespace-description-length` | AWS::ServiceDiscovery::HttpNamespace<br>AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | A namespace description is limited to 1024 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.269.0 |
+| `pf-servicediscovery-namespace-soa-ttl-range` | AWS::ServiceDiscovery::PublicDnsNamespace<br>AWS::ServiceDiscovery::PrivateDnsNamespace | The SOA record TTL of a DNS namespace may not exceed 2147483647 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.268.0 |
+| `pf-servicediscovery-private-namespace-name-charset` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name must be printable ASCII | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
+| `pf-servicediscovery-private-namespace-name-length` | AWS::ServiceDiscovery::PrivateDnsNamespace | A private DNS namespace name is limited to 253 characters | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-servicediscovery-public-namespace-name-length` | AWS::ServiceDiscovery::PublicDnsNamespace | A public DNS namespace name is limited to 253 characters | ERROR | none |
-| `pf-servicediscovery-public-namespace-name-pattern` | AWS::ServiceDiscovery::PublicDnsNamespace | A public DNS namespace name must be a multi-label DNS domain | ERROR | none |
+| `pf-servicediscovery-public-namespace-name-pattern` | AWS::ServiceDiscovery::PublicDnsNamespace | A public DNS namespace name must be a multi-label DNS domain | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-servicediscovery-service-attributes-max-entries` | AWS::ServiceDiscovery::Service | A service may carry at most 30 service attributes | ERROR | cfn-schema |
 | `pf-servicediscovery-service-cname-requires-weighted` | AWS::ServiceDiscovery::Service | A CNAME service record requires the WEIGHTED routing policy | ERROR | none |
 | `pf-servicediscovery-service-cname-with-healthcheck` | AWS::ServiceDiscovery::Service | A CNAME service cannot carry a Route 53 health check | ERROR | none |
@@ -3086,7 +3086,7 @@
 | `pf-wafv2-label-syntax` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | Rule labels and label match keys must follow the label syntax (no reserved words, no empty components, at most 8 components of 128 chars, no labels on rule group references) | ERROR | none |
 | `pf-wafv2-logging-destination` | AWS::WAFv2::LoggingConfiguration | Exactly one log destination whose name starts with aws-waf-logs-, in the web ACL account and region | ERROR | none |
 | `pf-wafv2-logging-filter-condition` | AWS::WAFv2::LoggingConfiguration | Each logging filter condition is exactly one of ActionCondition / LabelNameCondition | ERROR | none |
-| `pf-wafv2-logging-unique` | AWS::WAFv2::LoggingConfiguration | One LoggingConfiguration per web ACL in a template | ERROR | none |
+| `pf-wafv2-logging-unique` | AWS::WAFv2::LoggingConfiguration | One LoggingConfiguration per web ACL in a template | ERROR | retired: engine E3019 covers it from aws-cdk-lib 2.268.0 |
 | `pf-wafv2-managed-rule-group` | AWS::WAFv2::WebACL | Managed rule group statements: known AWS group names, matching and complete ManagedRuleGroupConfigs, consistent overrides and response inspection | ERROR | none |
 | `pf-wafv2-metric-name-reserved` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup | MetricName Default_Action is reserved | ERROR | none |
 | `pf-wafv2-name-unique` | AWS::WAFv2::WebACL<br>AWS::WAFv2::RuleGroup<br>AWS::WAFv2::IPSet<br>AWS::WAFv2::RegexPatternSet | Two WAFv2 entities of the same type, Scope and Name in one template | ERROR | none |
