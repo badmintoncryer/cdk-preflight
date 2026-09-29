@@ -7,7 +7,7 @@ constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command
 upstream: none
 repro:
   method: real-deploy
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): non-ARN, non-SecretsManager/SSM ARN and blank rejected; region/account mismatch PASSES"
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): non-ARN, non-SecretsManager/SSM ARN and blank rejected; region/account mismatch PASSES ; CFN rejection: Provide a valid ARN for AWS Secrets Manager or AWS Systems Manager (SSM) Parameter Store"
   expect: "Provide a valid ARN for AWS Secrets Manager or AWS Systems Manager (SSM) Parameter Store"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1
