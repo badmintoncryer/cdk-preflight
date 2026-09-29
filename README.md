@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3107-blue" alt="3107 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3106-blue" alt="3106 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -186,7 +186,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **Config** | `ConfigRule` (6), `ConfigurationAggregator` (2), `ConfigurationRecorder` (7), `ConformancePack` (1), `RemediationConfiguration` (2) |
 | **DocDB** | `DBCluster` (14), `DBInstance` (1), `DBSubnetGroup` (2), `EventSubscription` (1) |
 | **DocDBElastic** | `Cluster` (7) |
-| **DynamoDB** | `GlobalTable` (26), `Table` (28) |
+| **DynamoDB** | `GlobalTable` (25), `Table` (28) |
 | **EC2** | `ClientVpnAuthorizationRule` (1), `ClientVpnEndpoint` (6), `DHCPOptions` (2), `EIPAssociation` (1), `FlowLog` (4), `Instance` (10), `KeyPair` (1), `LaunchTemplate` (12), `NatGateway` (2), `NetworkAclEntry` (1), `NetworkInterface` (2), `PlacementGroup` (3), `PrefixList` (3), `Route` (1), `SecurityGroup` (7), `SecurityGroupEgress` (5), `SecurityGroupIngress` (5), `Subnet` (14), `TrafficMirrorTarget` (1), `TransitGateway` (2), `TransitGatewayRoute` (1), `Volume` (6), `VPC` (2), `VPCCidrBlock` (1), `VPCEndpoint` (4), `VPCGatewayAttachment` (1), `VPNConnection` (5) |
 | **ECR** | `PullThroughCacheRule` (3), `RegistryScanningConfiguration` (1), `ReplicationConfiguration` (1), `Repository` (7), `RepositoryCreationTemplate` (8), `SigningConfiguration` (1) |
 | **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (37), `TaskDefinition` (64), `TaskSet` (2) |

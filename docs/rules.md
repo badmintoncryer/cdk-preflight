@@ -1276,7 +1276,6 @@
 | `pf-dynamodb-global-table-lsi-count` | AWS::DynamoDB::GlobalTable | A global table can carry at most 5 local secondary indexes | ERROR | none |
 | `pf-dynamodb-global-table-lsi-shape` | AWS::DynamoDB::GlobalTable | A GlobalTable LSI needs a RANGE key and the table's leading hash key | ERROR | none |
 | `pf-dynamodb-global-table-mrsc-lsi` | AWS::DynamoDB::GlobalTable | MRSC global tables do not support local secondary indexes | ERROR | none |
-| `pf-dynamodb-global-table-mrsc-region-set` | AWS::DynamoDB::GlobalTable | An MRSC global table cannot span Region sets | ERROR | none |
 | `pf-dynamodb-global-table-mrsc-replica-count` | AWS::DynamoDB::GlobalTable | An MRSC global table spans exactly three Regions | ERROR | none |
 | `pf-dynamodb-global-table-mrsc-ttl` | AWS::DynamoDB::GlobalTable | MRSC global tables do not support TTL | ERROR | none |
 | `pf-dynamodb-global-table-name-length` | AWS::DynamoDB::GlobalTable | GlobalTable TableName must be at least 3 characters | ERROR | none |
