@@ -18,10 +18,3 @@ _pf_ddb_regions(name, prop) := {r |
 _pf_ddb_replica_regions(name) := _pf_ddb_regions(name, "Replicas")
 
 _pf_ddb_witness_regions(name) := _pf_ddb_regions(name, "GlobalTableWitnesses")
-
-# The three Region sets an MRSC global table can live in (2026-09).
-_pf_ddb_mrsc_sets := [
-	{"us-east-1", "us-east-2", "us-west-2"},
-	{"eu-west-1", "eu-west-2", "eu-west-3", "eu-central-1"},
-	{"ap-northeast-1", "ap-northeast-2", "ap-northeast-3"},
-]
