@@ -184,7 +184,7 @@ localize() { # <template> -> 作るテンプレートのパス。直書きがあ
 create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれたら理由を出して INCONCLUSIVE で抜ける
   local out rc msg tpl
   tpl=$(localize "$2") || {
-    echo "!! INCONCLUSIVE: the $3 template names bench's default VPC, and $REGION here has no default VPC (or subnet) to stand in for it" | tee -a "$LOG"
+    echo "!! INCONCLUSIVE: the $3 template names bench's default VPC, and $REGION here has no default VPC (or subnet) to stand in for it, or the lookup failed (see the aws error above in $LOG)" | tee -a "$LOG"
     exit 4
   }
   out=$(aws cloudformation create-stack --stack-name "$1" --region "$REGION" \
