@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "ResourceLifecycleConfig": {
+          "ServiceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-eb-service-role"
+          },
+          "VersionLifecycleConfig": {
+            "MaxCountRule": {
+              "Enabled": true,
+              "MaxCount": 10
+            }
+          }
+        }
+      }
+    }
+  }
+}

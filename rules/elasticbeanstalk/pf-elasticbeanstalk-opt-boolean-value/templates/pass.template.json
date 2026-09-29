@@ -1,0 +1,377 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:asg",
+            "OptionName": "EnableCapacityRebalancing",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T2": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "DisableIMDSv1",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T3": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "DisableDefaultEC2SecurityGroup",
+            "Value": "false"
+          }
+        ]
+      }
+    },
+    "T4": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "LaunchTemplateTagPropagationEnabled",
+            "Value": "false"
+          }
+        ]
+      }
+    },
+    "T5": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:updatepolicy:rollingupdate",
+            "OptionName": "RollingUpdateEnabled",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T6": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "AssociatePublicIpAddress",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T7": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:cloudwatch:logs",
+            "OptionName": "DeleteOnTerminate",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T8": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:cloudwatch:logs",
+            "OptionName": "StreamLogs",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T9": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:cloudwatch:logs:health",
+            "OptionName": "DeleteOnTerminate",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T10": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:cloudwatch:logs:health",
+            "OptionName": "HealthStreamingEnabled",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T11": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "IgnoreHealthCheck",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T12": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:control",
+            "OptionName": "RollbackLaunchOnFailure",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T13": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:healthreporting:system",
+            "OptionName": "EnhancedHealthAuthEnabled",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T14": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:managedactions:platformupdate",
+            "OptionName": "InstanceRefreshEnabled",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T15": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:managedactions",
+            "OptionName": "ManagedActionsEnabled",
+            "Value": "false"
+          }
+        ]
+      }
+    },
+    "T16": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:monitoring",
+            "OptionName": "Automatically Terminate Unhealthy Instances",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T17": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:hostmanager",
+            "OptionName": "LogPublicationControl",
+            "Value": "false"
+          }
+        ]
+      }
+    },
+    "T18": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elb:listener",
+            "OptionName": "ListenerEnabled",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T19": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elb:loadbalancer",
+            "OptionName": "CrossZone",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T20": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elb:policies",
+            "OptionName": "ConnectionDrainingEnabled",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T21": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elb:policies",
+            "OptionName": "Stickiness Policy",
+            "Value": "True"
+          }
+        ]
+      }
+    },
+    "T22": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "Suspend",
+            "Value": "false",
+            "ResourceName": "cdkpf-sched"
+          }
+        ]
+      }
+    },
+    "T23": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:rds:dbinstance",
+            "OptionName": "HasCoupledDatabase",
+            "Value": "false"
+          }
+        ]
+      }
+    }
+  }
+}

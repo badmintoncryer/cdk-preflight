@@ -1,0 +1,178 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "Timeout",
+            "Value": "0"
+          }
+        ]
+      }
+    },
+    "T2": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "Timeout",
+            "Value": "3601"
+          }
+        ]
+      }
+    },
+    "T3": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:updatepolicy:rollingupdate",
+            "OptionName": "MaxBatchSize",
+            "Value": "0"
+          }
+        ]
+      }
+    },
+    "T4": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:updatepolicy:rollingupdate",
+            "OptionName": "MaxBatchSize",
+            "Value": "10001"
+          }
+        ]
+      }
+    },
+    "T5": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:updatepolicy:rollingupdate",
+            "OptionName": "MinInstancesInService",
+            "Value": "-1"
+          }
+        ]
+      }
+    },
+    "T6": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:updatepolicy:rollingupdate",
+            "OptionName": "MinInstancesInService",
+            "Value": "10000"
+          }
+        ]
+      }
+    },
+    "T7": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:control",
+            "OptionName": "LaunchTimeout",
+            "Value": "-1"
+          }
+        ]
+      }
+    },
+    "T8": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "BatchSizeType",
+            "Value": "Percentage"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "BatchSize",
+            "Value": "101"
+          }
+        ]
+      }
+    },
+    "T9": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "BatchSize",
+            "Value": "0"
+          }
+        ]
+      }
+    },
+    "T10": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "BatchSizeType",
+            "Value": "Fixed"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "BatchSize",
+            "Value": "10001"
+          }
+        ]
+      }
+    }
+  }
+}

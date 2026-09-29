@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-instances-spot
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Spot instance price, percentage and on-demand base are valid"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): SpotMaxPrice 0.001-20 (not gated on EnableSpot); SpotFleetOnDemandBase<=MaxSize(default 4); AboveBase<=100. phase-B validate-configuration-settings sweep: SpotMaxPrice: -1=rejected 0=rejected 20=ok 21=rejected; SpotFleetOnDemandAboveBasePercentage: -1=LOW 0=ok 100=ok 101=HIGH; SpotFleetOnDemandBase: -1=rejected 0=ok; SpotFleetOnDemandBase above MaxSize (default 4 when unset) rejected"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

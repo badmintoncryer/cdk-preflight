@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "V1": {
+      "Type": "AWS::ElasticBeanstalk::ApplicationVersion",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "SourceBundle": {
+          "S3Bucket": {
+            "Fn::Sub": "cdkpf-fixtures-${AWS::AccountId}"
+          },
+          "S3Key": "eb/app.zip"
+        },
+        "ImageConfiguration": {
+          "Build": {
+            "Type": "docker",
+            "CodeBuildServiceRole": {
+              "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-eb-codebuild"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:cloudwatch:logs",
+            "OptionName": "RetentionInDays",
+            "Value": "10"
+          }
+        ]
+      }
+    }
+  }
+}

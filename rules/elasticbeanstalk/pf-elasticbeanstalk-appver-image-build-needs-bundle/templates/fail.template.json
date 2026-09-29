@@ -1,0 +1,24 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "V1": {
+      "Type": "AWS::ElasticBeanstalk::ApplicationVersion",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "ImageConfiguration": {
+          "Build": {
+            "Type": "docker",
+            "CodeBuildServiceRole": {
+              "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-eb-codebuild"
+            }
+          }
+        }
+      }
+    }
+  }
+}

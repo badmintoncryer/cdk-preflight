@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-platform-arn-region
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "An AWS platform ARN must be from the deploy region"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/api/API_CreateConfigurationTemplate.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): ARN of other region rejected in ap-northeast-1; empty-region ARN accepted"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

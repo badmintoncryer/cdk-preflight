@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-rootvolume-throughput
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Root volume throughput is 125 to 1000"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): 125-1000; NOT gated on gp3 (gp2 with 200 passes). phase-B validate-configuration-settings sweep: RootVolumeThroughput: 124=rejected 125=ok 1000=ok 1001=rejected"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

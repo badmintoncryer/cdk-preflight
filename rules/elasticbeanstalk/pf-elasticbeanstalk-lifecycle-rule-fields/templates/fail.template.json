@@ -1,0 +1,55 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "ResourceLifecycleConfig": {
+          "ServiceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-eb-service-role"
+          },
+          "VersionLifecycleConfig": {
+            "MaxCountRule": {
+              "Enabled": true,
+              "MaxCount": 0
+            }
+          }
+        }
+      }
+    },
+    "AppB": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "ResourceLifecycleConfig": {
+          "ServiceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-eb-service-role"
+          },
+          "VersionLifecycleConfig": {
+            "MaxAgeRule": {
+              "Enabled": true
+            }
+          }
+        }
+      }
+    },
+    "AppC": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "ResourceLifecycleConfig": {
+          "ServiceRole": {
+            "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/cdkpf-eb-service-role"
+          },
+          "VersionLifecycleConfig": {
+            "MaxAgeRule": {
+              "Enabled": true,
+              "MaxAgeInDays": 1
+            },
+            "MaxCountRule": {
+              "Enabled": true,
+              "MaxCount": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

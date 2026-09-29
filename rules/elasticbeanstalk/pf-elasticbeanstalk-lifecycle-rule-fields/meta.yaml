@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-lifecycle-rule-fields
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::Application]
+severity: ERROR
+title: "Version lifecycle rules: enabled needs a value of at least 1, only one may be enabled"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/api/API_ApplicationResourceLifecycleConfig.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): Enabled=true needs MaxCount/MaxAgeInDays >= 1"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1
