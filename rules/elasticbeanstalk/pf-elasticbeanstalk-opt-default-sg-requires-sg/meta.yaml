@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-default-sg-requires-sg
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Disabling the default security group needs SecurityGroups"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): rejected without SecurityGroups"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

@@ -1,0 +1,66 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "MinSize",
+            "Value": "1",
+            "ResourceName": "cdkpf-sched"
+          },
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "MaxSize",
+            "Value": "4",
+            "ResourceName": "cdkpf-sched"
+          },
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "Recurrence",
+            "Value": "0 9 * * *",
+            "ResourceName": "cdkpf-sched"
+          }
+        ]
+      }
+    },
+    "T2": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "MinSize",
+            "Value": "1",
+            "ResourceName": "cdkpf-sched"
+          },
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "MaxSize",
+            "Value": "4",
+            "ResourceName": "cdkpf-sched"
+          },
+          {
+            "Namespace": "aws:autoscaling:scheduledaction",
+            "OptionName": "StartTime",
+            "Value": "2030-01-01T00:00:00Z",
+            "ResourceName": "cdkpf-sched"
+          }
+        ]
+      }
+    }
+  }
+}

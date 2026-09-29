@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-elbv2-protocol-lb-type
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Network Load Balancer listener and process protocols are TCP or TLS"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): NLB listener only TCP/TLS, process only TCP; ALB accepts TCP"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

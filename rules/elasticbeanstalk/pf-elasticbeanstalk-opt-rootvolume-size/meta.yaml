@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-rootvolume-size
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Root volume size is within range"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): min 8 on all stacks (doc 10 => BROKEN-EXPECTATION), max 16384 (standard 1024 on win/dock/ecs/base); io1-requires-size NOT enforced"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

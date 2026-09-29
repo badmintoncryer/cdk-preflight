@@ -1,0 +1,56 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/IIS 10.0 running on 64bit Windows Server Core 2025/2.23.6",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:windows:activedirectory",
+            "OptionName": "DirectoryId",
+            "Value": "d-0123456789"
+          }
+        ]
+      }
+    },
+    "T2": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/IIS 10.0 running on 64bit Windows Server Core 2025/2.23.6",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:windows:activedirectory",
+            "OptionName": "DirectoryName",
+            "Value": "corp.example.com"
+          }
+        ]
+      }
+    },
+    "T3": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/IIS 10.0 running on 64bit Windows Server Core 2025/2.23.6",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:windows:activedirectory",
+            "OptionName": "DirectoryOU",
+            "Value": "OU=WebServers,DC=corp,DC=example,DC=com"
+          }
+        ]
+      }
+    }
+  }
+}

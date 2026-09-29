@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-rolling-min-in-service
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Rolling update MinInstancesInService is below MaxSize"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): MinInstancesInService < MaxSize only when RollingUpdateEnabled=true (merged with default 4); MaxBatchSize<=MaxSize NOT enforced"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

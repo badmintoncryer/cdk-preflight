@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-health-streaming-enhanced
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Health streaming needs enhanced health reporting"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): HealthStreamingEnabled=true with SystemType=basic rejected ('Health transition option settings require enhanced SystemType'); validate only, not re-run via create template"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

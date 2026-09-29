@@ -47,6 +47,7 @@ _pf_eblib_lit_opt(it) if {
 	is_object(it)
 	is_string(it.Namespace)
 	is_string(it.OptionName)
+	is_string(object.get(it, "ResourceName", ""))
 	not _pf_ll_conditional(it)
 	s := _pf_eblib_valstr(it.Value)
 	not contains(s, "{{")
@@ -58,7 +59,7 @@ _pf_eblib_nsn(ns) := n if {
 	n := regex.replace(b, `^aws:elasticbeanstalk:environment:process:.+$`, "aws:elasticbeanstalk:environment:process")
 }
 
-_pf_eblib_opt contains {"rn": rn, "i": i, "ns": ns, "nm": nm, "s": s, "k": k} if {
+_pf_eblib_opt contains {"rn": rn, "i": i, "ns": ns, "nm": nm, "s": s, "k": k, "res": res} if {
 	some rn in _pf_eblib_res
 	arr := object.get(_pf_eblib_props(rn), "OptionSettings", null)
 	is_array(arr)
@@ -68,6 +69,7 @@ _pf_eblib_opt contains {"rn": rn, "i": i, "ns": ns, "nm": nm, "s": s, "k": k} if
 	nm := it.OptionName
 	s := _pf_eblib_valstr(it.Value)
 	k := sprintf("%s|%s", [_pf_eblib_nsn(ns), nm])
+	res := object.get(it, "ResourceName", "__pf_absent")
 }
 
 # リソース rn の中でオプション k に書かれた値の一覧（生の並び順）
@@ -249,6 +251,80 @@ _pf_eblib_dur_timeout_lo := 300
 
 _pf_eblib_dur_max := 3600
 
+
+# 同じ名前空間（正規化しない）の中でオプション nm に書かれた値の一覧
+_pf_eblib_nsvals(rn, ns, nm) := [o.s |
+	o := _pf_eblib_opt[_]
+	o.rn == rn
+	o.ns == ns
+	o.nm == nm
+]
+
+# MinSize の既定は 1（41 プラットフォームすべて）。指定が 1 つならその値、未指定は既定値（不在の推論の前提を通ったときだけ）
+_pf_eblib_minsize(rn) := n if {
+	vs := _pf_eblib_vals(rn, "aws:autoscaling:asg|MinSize")
+	count(vs) == 1
+	n := _pf_eblib_num(vs[0])
+}
+
+_pf_eblib_minsize(rn) := 1 if {
+	count(_pf_eblib_vals(rn, "aws:autoscaling:asg|MinSize")) == 0
+	_pf_eblib_clean(rn)
+	_pf_eblib_standalone(rn)
+}
+
+# LoadBalancerType の既定は classic（41 プラットフォームすべて）
+_pf_eblib_lbtype(rn) := lower(vs[0]) if {
+	vs := _pf_eblib_vals(rn, "aws:elasticbeanstalk:environment|LoadBalancerType")
+	count(vs) == 1
+}
+
+_pf_eblib_lbtype(rn) := "classic" if {
+	count(_pf_eblib_vals(rn, "aws:elasticbeanstalk:environment|LoadBalancerType")) == 0
+	_pf_eblib_clean(rn)
+	_pf_eblib_standalone(rn)
+}
+
+_pf_eblib_single(rn) if {
+	vs := _pf_eblib_vals(rn, "aws:elasticbeanstalk:environment|EnvironmentType")
+	count(vs) == 1
+	lower(vs[0]) == "singleinstance"
+}
+
+# 共有ロードバランサーでは listener のオプションの多くが使われない
+_pf_eblib_shared(rn) if {
+	_pf_eblib_on(rn, "aws:elasticbeanstalk:environment|LoadBalancerIsShared")
+}
+
+# 「値が空でない」オプションが 1 つでもあるか（キーが無い / 空文字だけなら偽）
+_pf_eblib_nsfilled(rn, ns, nm) if {
+	some v in _pf_eblib_nsvals(rn, ns, nm)
+	trim_space(v) != ""
+}
+
+_pf_eblib_filled(rn, k) if {
+	some v in _pf_eblib_vals(rn, k)
+	trim_space(v) != ""
+}
+
+# scheduledaction: ResourceName ごとのオプション値（ResourceName が無い要素は "__pf_absent" の組に入る）
+_pf_eblib_sa := "aws:autoscaling:scheduledaction"
+
+_pf_eblib_savals(rn, res, nm) := [o.s |
+	o := _pf_eblib_opt[_]
+	o.rn == rn
+	o.ns == _pf_eblib_sa
+	o.res == res
+	o.nm == nm
+]
+
+# 組の中で最初の要素の番号（診断を 1 組に 1 つにする）
+_pf_eblib_sa_first(rn, res) := min({o.i |
+	o := _pf_eblib_opt[_]
+	o.rn == rn
+	o.ns == _pf_eblib_sa
+	o.res == res
+})
 
 _pf_eblib_r_asg := {
 	"aws:autoscaling:asg|Cooldown": [0, 10000],

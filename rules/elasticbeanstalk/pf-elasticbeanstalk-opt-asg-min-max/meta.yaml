@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-asg-min-max
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Auto Scaling MinSize does not exceed MaxSize"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): MinSize=6 alone rejected (merged with default MaxSize 4); MaxSize=0 alone rejected"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

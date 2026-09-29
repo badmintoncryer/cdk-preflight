@@ -1,0 +1,12 @@
+id: pf-elasticbeanstalk-opt-elb-listener-layer
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Classic listener and instance protocols are on the same layer"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): instance protocol must be same layer as listener protocol; secure listener needs SSLCertificateId; namespace aws:elb:listener:443"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

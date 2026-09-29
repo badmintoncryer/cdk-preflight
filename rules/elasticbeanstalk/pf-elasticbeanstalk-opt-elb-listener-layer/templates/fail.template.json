@@ -1,0 +1,50 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elb:listener:8080",
+            "OptionName": "ListenerProtocol",
+            "Value": "HTTP"
+          },
+          {
+            "Namespace": "aws:elb:listener:8080",
+            "OptionName": "InstanceProtocol",
+            "Value": "TCP"
+          }
+        ]
+      }
+    },
+    "T2": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elb:listener:8080",
+            "OptionName": "ListenerProtocol",
+            "Value": "TCP"
+          },
+          {
+            "Namespace": "aws:elb:listener:8080",
+            "OptionName": "InstanceProtocol",
+            "Value": "HTTP"
+          }
+        ]
+      }
+    }
+  }
+}
