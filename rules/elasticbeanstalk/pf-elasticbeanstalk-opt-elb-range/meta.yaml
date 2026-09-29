@@ -6,7 +6,8 @@ title: "Classic load balancer thresholds, ports and timeouts are within range"
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): BatchSize > 100 under Percentage rejected. phase-B validate-configuration-settings sweep: HealthyThreshold: 1=LOW 2=ok 10=ok 11=HIGH; Interval: 4=LOW 5=ok 300=ok 301=HIGH; Timeout: 1=LOW 2=ok 60=ok 61=HIGH; UnhealthyThreshold: 1=LOW 2=ok 10=ok 11=HIGH; InstancePort: 0=LOW 1=ok 65535=ok 65536=HIGH; ConnectionSettingIdleTimeout: 0=LOW 1=ok 3600=ok 3601=HIGH; ConnectionDrainingTimeout: 0=LOW 1=rejected 3600=rejected 3601=HIGH; Stickiness Cookie Expiration: -1=LOW 0=ok 1000000=ok 1000001=HIGH"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): BatchSize > 100 under Percentage rejected. phase-B validate-configuration-settings sweep: HealthyThreshold: 1=LOW 2=ok 10=ok 11=HIGH; Interval: 4=LOW 5=ok 300=ok 301=HIGH; Timeout: 1=LOW 2=ok 60=ok 61=HIGH; UnhealthyThreshold: 1=LOW 2=ok 10=ok 11=HIGH; InstancePort: 0=LOW 1=ok 65535=ok 65536=HIGH; ConnectionSettingIdleTimeout: 0=LOW 1=ok 3600=ok 3601=HIGH; ConnectionDrainingTimeout: 0=LOW 1=rejected 3600=rejected 3601=HIGH; Stickiness Cookie Expiration: -1=LOW 0=ok 1000000=ok 1000001=HIGH"
+  expect: "Value exceeds maximum allowed value: 65535"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1

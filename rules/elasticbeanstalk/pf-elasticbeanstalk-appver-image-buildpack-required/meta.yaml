@@ -1,12 +1,14 @@
 id: pf-elasticbeanstalk-appver-image-buildpack-required
 service: elasticbeanstalk
+benchRegion: us-east-1
 resourceTypes: [AWS::ElasticBeanstalk::ApplicationVersion]
 severity: ERROR
 title: "Build.Type buildpack requires Buildpack"
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/api/API_ImageBuildConfiguration.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): Build without buildpack rejected"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): Build without buildpack rejected"
+  expect: "Must provide Buildpack when using type Buildpack"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1

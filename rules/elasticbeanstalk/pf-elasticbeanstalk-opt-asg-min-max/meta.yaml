@@ -6,7 +6,8 @@ title: "Auto Scaling MinSize does not exceed MaxSize"
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): MinSize=6 alone rejected (merged with default MaxSize 4); MaxSize=0 alone rejected"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): MinSize=6 alone rejected (merged with default MaxSize 4); MaxSize=0 alone rejected"
+  expect: "MinSize is greater than MaxSize"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1

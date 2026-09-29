@@ -6,7 +6,8 @@ title: "Rolling update Timeout and PauseTime are ISO 8601 durations within limit
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): PauseTime ISO8601 <=PT1H; Timeout ISO8601, PT4M rejected, PT5M-PT1H ok (message says 15, boundary is 5); Timeout not gated on RollingUpdateEnabled"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): PauseTime ISO8601 <=PT1H; Timeout ISO8601, PT4M rejected, PT5M-PT1H ok (message says 15, boundary is 5); Timeout not gated on RollingUpdateEnabled"
+  expect: "should be between 15 minutes to an hour"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1

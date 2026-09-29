@@ -16,19 +16,19 @@
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MinSize",
             "Value": "1",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MaxSize",
             "Value": "4",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "Recurrence",
             "Value": "0 9 * * *",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           }
         ]
       }
@@ -45,19 +45,19 @@
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MinSize",
             "Value": "1",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MaxSize",
             "Value": "4",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "StartTime",
             "Value": "2030-01-01T00:00:00Z",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           }
         ]
       }

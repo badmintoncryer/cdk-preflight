@@ -16,19 +16,19 @@
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MinSize",
             "Value": "3",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MaxSize",
             "Value": "2",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "Recurrence",
             "Value": "0 9 * * *",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           }
         ]
       }
@@ -45,25 +45,25 @@
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MinSize",
             "Value": "2",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MaxSize",
             "Value": "3",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "DesiredCapacity",
             "Value": "1",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "Recurrence",
             "Value": "0 9 * * *",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           }
         ]
       }
@@ -80,25 +80,25 @@
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MinSize",
             "Value": "1",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "MaxSize",
             "Value": "2",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "DesiredCapacity",
             "Value": "3",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           },
           {
             "Namespace": "aws:autoscaling:scheduledaction",
             "OptionName": "Recurrence",
             "Value": "0 9 * * *",
-            "ResourceName": "cdkpf-sched"
+            "ResourceName": "cdkpfsched"
           }
         ]
       }

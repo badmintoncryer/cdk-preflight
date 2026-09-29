@@ -6,7 +6,8 @@ title: "TrafficSplitting deployments need an Application Load Balancer"
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): TrafficSplitting compatible only with ALB; on Windows-based template default SystemType is basic so also 'require SystemType: Enhanced'; stack default differs"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): TrafficSplitting compatible only with ALB; on Windows-based template default SystemType is basic so also 'require SystemType: Enhanced'; stack default differs"
+  expect: "Traffic Splitting deployments are compatible only with Application Load Balancers"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1

@@ -6,7 +6,8 @@ title: "Health streaming needs enhanced health reporting"
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): HealthStreamingEnabled=true with SystemType=basic rejected ('Health transition option settings require enhanced SystemType'); validate only, not re-run via create template"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): HealthStreamingEnabled=true with SystemType=basic rejected ('Health transition option settings require enhanced SystemType'); validate only, not re-run via create template"
+  expect: "Health transition option settings require enhanced SystemType"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1

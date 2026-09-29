@@ -6,7 +6,8 @@ title: "Scheduled action sizes are ordered MinSize <= DesiredCapacity <= MaxSize
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none
 repro:
-  method: research-case
-  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate not run): MaxSize >= DesiredCapacity >= MinSize"
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): MaxSize >= DesiredCapacity >= MinSize"
+  expect: "should follow the constraint MaxSize>=DesiredCapacity>=MinSize for scheduled action"
 addedOn: 2026-09-29
 fixtureRegion: ap-northeast-1
