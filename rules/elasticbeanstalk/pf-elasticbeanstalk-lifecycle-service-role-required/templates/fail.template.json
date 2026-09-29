@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {
+        "ResourceLifecycleConfig": {
+          "VersionLifecycleConfig": {
+            "MaxCountRule": {
+              "Enabled": true,
+              "MaxCount": 10
+            }
+          }
+        }
+      }
+    }
+  }
+}

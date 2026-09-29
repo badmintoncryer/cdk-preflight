@@ -1,0 +1,13 @@
+id: pf-elasticbeanstalk-opt-elbv2-listener-cert
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "An HTTPS Application Load Balancer listener has a certificate"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): HTTPS listener without cert rejected ; CFN rejection: You must specify an SSL certificate to configure a listener to use HTTPS or TLS"
+  expect: "You must specify an SSL certificate to configure a listener to use HTTPS or TLS"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

@@ -1,0 +1,13 @@
+id: pf-elasticbeanstalk-opt-trigger-range
+service: elasticbeanstalk
+resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
+severity: ERROR
+title: "Auto Scaling trigger period, evaluation periods and thresholds are within range"
+constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "EB API probe 2026-09-29 ap-northeast-1 (validate-configuration-settings / create-configuration-template / create-application-version / create-application on the same properties; CloudFormation real-deploy gate run 2026-09-30 in the bench account (fail ROLLBACK_COMPLETE with the rejection in expect, pass CREATE_COMPLETE)): Period 1-600 (0 gives \"/ by zero\"), thresholds >=0, EvaluationPeriods>=1 with BreachDuration=EvalPeriods*Period<=600. phase-B validate-configuration-settings sweep: Period: 0=rejected 1=ok 600=ok 601=HIGH; EvaluationPeriods: 0=LOW 1=ok 600=HIGH 601=HIGH; LowerThreshold: -1=LOW 0=ok; UpperThreshold: -1=LOW 0=ok"
+  expect: "/ by zero"
+addedOn: 2026-09-29
+fixtureRegion: ap-northeast-1

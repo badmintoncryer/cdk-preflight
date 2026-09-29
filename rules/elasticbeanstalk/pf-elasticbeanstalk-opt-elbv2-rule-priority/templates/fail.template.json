@@ -1,0 +1,70 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "LoadBalancerType",
+            "Value": "application"
+          },
+          {
+            "Namespace": "aws:elbv2:listener:default",
+            "OptionName": "Rules",
+            "Value": "r1"
+          },
+          {
+            "Namespace": "aws:elbv2:listenerrule:r1",
+            "OptionName": "PathPatterns",
+            "Value": "/img/*"
+          },
+          {
+            "Namespace": "aws:elbv2:listenerrule:r1",
+            "OptionName": "Priority",
+            "Value": "0"
+          }
+        ]
+      }
+    },
+    "T2": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "LoadBalancerType",
+            "Value": "application"
+          },
+          {
+            "Namespace": "aws:elbv2:listener:default",
+            "OptionName": "Rules",
+            "Value": "r1"
+          },
+          {
+            "Namespace": "aws:elbv2:listenerrule:r1",
+            "OptionName": "PathPatterns",
+            "Value": "/img/*"
+          },
+          {
+            "Namespace": "aws:elbv2:listenerrule:r1",
+            "OptionName": "Priority",
+            "Value": "1001"
+          }
+        ]
+      }
+    }
+  }
+}

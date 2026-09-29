@@ -1,0 +1,39 @@
+{
+  "Resources": {
+    "App": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": {}
+    },
+    "T1": {
+      "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
+      "Properties": {
+        "ApplicationName": {
+          "Ref": "App"
+        },
+        "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+        "OptionSettings": [
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "InstanceType",
+            "Value": "t3.micro"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "STAGE",
+            "Value": "prod"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:environment:process:default",
+            "OptionName": "Port",
+            "Value": "8080"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:customoption",
+            "OptionName": "Mine",
+            "Value": "1"
+          }
+        ]
+      }
+    }
+  }
+}
