@@ -17,7 +17,12 @@ import sys
 
 # 1 ジョブに収まらないサービスはジョブを増やす方向にだけ割る（ジョブ内は逐次のままなので
 # 同時 VPC 数は maxParallel を超えない）。認証は role-duration-seconds 4h、ジョブは
-# timeoutMinutes 300 なので、1 シャード 3h 以内を目安にする。
+# timeoutMinutes 300 なので、1 シャード 2h 以内を目安にする。
+# まずルール数で割る: 2026-09-29 の初の全件実行（run 36505082526）は 1 本 1〜3.5 分で、
+# 割っていなかった batch(183) / appsync(109) / cognito(113) / cloudfront(95) / bedrock(81) が
+# 4h を超え、認証が切れた後の残りを ExpiredToken の INCONCLUSIVE で落とした。40 本 × 3 分 = 2h。
+PER_SHARD = 40
+# ルール数で割っても重いサービスは下で明示する（大きいほうを使う）。
 # route53resolver: 実測 2026-09-11 us-east-1（fail-only）— エンドポイントが立ち切る 10 本が
 # 337 秒/本、エンドポイント自身が違反で即拒否される 19 本が 225 秒/本、残り 33 本が 50 秒/本。
 # 62 本を逐次で回すと 2.6h で、INCONCLUSIVE のリトライが重なると 4h に触れる。3 分割で 1 本 55 分前後。
@@ -32,6 +37,12 @@ import sys
 SHARDS = {"route53resolver": 3, "msk": 2, "eks": 6}
 
 
+def shards(name: str, root: str = "rules") -> int:
+    # verify-all.sh と同じく rules/<service>/ 直下のディレクトリを全部数える（doc-only も数えるので多めに割れる）
+    count = sum(os.path.isdir(os.path.join(root, name, d)) for d in os.listdir(os.path.join(root, name)))
+    return max(SHARDS.get(name, 1), -(-count // PER_SHARD))
+
+
 def matrix(selection: str, root: str = "rules") -> list:
     out = []
     for name in sorted(os.listdir(root)):
@@ -41,8 +52,8 @@ def matrix(selection: str, root: str = "rules") -> list:
         if "." in name:
             # verify-all.sh は "<service>.<i>of<n>" を '.' で切って解釈する
             raise SystemExit(f"service directory name must not contain a dot: {name}")
-        n = SHARDS.get(name)
-        out += [f"{name}.{i + 1}of{n}" for i in range(n)] if n else [name]
+        n = shards(name, root)
+        out += [f"{name}.{i + 1}of{n}" for i in range(n)] if n > 1 else [name]
     if selection:
         # サービス名だけを渡されたらそのサービスのシャードに展開する（知らない名前はそのまま通す）
         out = [s for s in out if s == selection or s.startswith(selection + ".")] or [selection]
@@ -51,13 +62,21 @@ def matrix(selection: str, root: str = "rules") -> list:
 
 def self_test() -> None:
     every = matrix("")
-    assert every == sorted(set(every)), "重複か未ソート"
+    # 並びはサービス名の順。文字列としては整列しない（"bedrock.1of3" は "bedrock-agentcore" の後ろに来る）
+    assert len(every) == len(set(every)), "重複"
     assert "_lib" not in every, "共有ヘルパーが行列に混ざった"
-    for name, n in SHARDS.items():
-        shards = [s for s in every if s.startswith(name + ".")]
-        assert shards == [f"{name}.{i + 1}of{n}" for i in range(n)], f"{name}: {shards}"
-        assert matrix(name) == shards, f"{name} はシャードに展開されるべき"
-        assert name not in every, f"{name} はシャードとしてだけ現れるべき"
+    for name in sorted({s.split(".")[0] for s in every}):
+        n = shards(name)
+        parts = [s for s in every if s.startswith(name + ".")]
+        count = sum(os.path.isdir(os.path.join("rules", name, d)) for d in os.listdir(os.path.join("rules", name)))
+        assert -(-count // n) <= PER_SHARD, f"{name}: {count} 本を {n} シャードでは 1 シャード {PER_SHARD} 本を超える"
+        assert n >= SHARDS.get(name, 1), f"{name}: 明示したシャード数より少ない"
+        if n > 1:
+            assert parts == [f"{name}.{i + 1}of{n}" for i in range(n)], f"{name}: {parts}"
+            assert matrix(name) == parts, f"{name} はシャードに展開されるべき"
+            assert name not in every, f"{name} はシャードとしてだけ現れるべき"
+        else:
+            assert parts == [] and name in every, f"{name} は割らずに 1 本で現れるべき"
     one = next(s for s in every if "." not in s)
     assert matrix(one) == [one], f"{one} は自分だけを選ぶべき"
     assert matrix("nosuchservice") == ["nosuchservice"], "知らない名前はそのまま通すべき"
