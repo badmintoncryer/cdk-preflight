@@ -49,9 +49,84 @@
         },
         "AccessLogSetting": {
           "DestinationArn": {
-            "Fn::Sub": "arn:aws:firehose:us-east-1:${AWS::AccountId}:deliverystream/amazon-apigateway-x"
+            "Fn::Sub": "arn:aws:firehose:us-east-1:${AWS::AccountId}:deliverystream/amazon-apigateway-cdkpf-access-log"
           },
           "Format": "$context.requestId"
+        }
+      },
+      "DependsOn": "DS"
+    },
+    "B": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {}
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "firehose.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "p",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:AbortMultipartUpload",
+                    "s3:GetBucketLocation",
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:ListBucketMultipartUploads",
+                    "s3:PutObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "B",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Sub": "${B.Arn}/*"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "DS": {
+      "Type": "AWS::KinesisFirehose::DeliveryStream",
+      "Properties": {
+        "DeliveryStreamName": "amazon-apigateway-cdkpf-access-log",
+        "DeliveryStreamType": "DirectPut",
+        "ExtendedS3DestinationConfiguration": {
+          "RoleARN": {
+            "Fn::GetAtt": [
+              "R",
+              "Arn"
+            ]
+          },
+          "BucketARN": {
+            "Fn::GetAtt": [
+              "B",
+              "Arn"
+            ]
+          }
         }
       }
     }

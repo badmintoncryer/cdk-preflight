@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"For VpcLink VPC_LINK, integration uri should be a valid ELB listener ARN or a valid Cloud Map service ARN.\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"For VpcLink VPC_LINK, integration uri should be a valid ELB listener ARN or a valid Cloud Map service ARN.\" (ROLLBACK_COMPLETE) bench 2026-09-29 us-east-1: pass (an in-template VPC link v2 and the listener ARN of an in-template NLB) -> CREATE_COMPLETE. The listener is a Ref, so the rule cannot read the URI and the pass is silent by construction."
   expect: "For VpcLink VPC_LINK, integration uri should be a valid ELB listener ARN or a valid Cloud Map service ARN"
 addedOn: 2026-09-08

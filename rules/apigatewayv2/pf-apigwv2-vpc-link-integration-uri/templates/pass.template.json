@@ -16,11 +16,64 @@
         "IntegrationType": "HTTP_PROXY",
         "IntegrationMethod": "GET",
         "IntegrationUri": {
-          "Fn::Sub": "arn:aws:elasticloadbalancing:us-east-1:${AWS::AccountId}:listener/net/a/1111111111111111/2222222222222222"
+          "Ref": "L"
         },
         "ConnectionType": "VPC_LINK",
-        "ConnectionId": "abcdef",
+        "ConnectionId": {
+          "Ref": "VL"
+        },
         "PayloadFormatVersion": "1.0"
+      }
+    },
+    "Nlb": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "network",
+        "Scheme": "internal",
+        "Subnets": [
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
+        ]
+      }
+    },
+    "Tg": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Protocol": "TCP",
+        "Port": 80,
+        "VpcId": "vpc-4331593e",
+        "TargetType": "ip"
+      }
+    },
+    "L": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "Nlb"
+        },
+        "Protocol": "TCP",
+        "Port": 80,
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "Tg"
+            }
+          }
+        ]
+      }
+    },
+    "VL": {
+      "Type": "AWS::ApiGatewayV2::VpcLink",
+      "Properties": {
+        "Name": "cdkpf-apigwv2-vpc-link-integration-uri",
+        "SubnetIds": [
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
+        ],
+        "SecurityGroupIds": [
+          "sg-7d699f61"
+        ]
       }
     }
   }

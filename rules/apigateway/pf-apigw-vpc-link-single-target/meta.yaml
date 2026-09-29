@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"More than one target arn specified for vpc link.\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"More than one target arn specified for vpc link.\" (ROLLBACK_COMPLETE) bench 2026-09-29 us-east-1: pass (one in-template internal NLB in the default VPC as the only target) -> CREATE_COMPLETE."
   expect: "More than one target arn specified for vpc link"
 addedOn: 2026-09-08

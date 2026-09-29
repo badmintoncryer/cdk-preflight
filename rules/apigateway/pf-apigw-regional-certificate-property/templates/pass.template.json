@@ -3,15 +3,13 @@
     "X": {
       "Type": "AWS::ApiGateway::DomainName",
       "Properties": {
-        "DomainName": "x.example.com",
+        "DomainName": "cdkpf-apigw-regional-cert.appnao.com",
         "EndpointConfiguration": {
           "Types": [
             "REGIONAL"
           ]
         },
-        "RegionalCertificateArn": {
-          "Fn::Sub": "arn:aws:acm:us-east-1:${AWS::AccountId}:certificate/11111111-2222-3333-4444-555555555555"
-        }
+        "RegionalCertificateArn": "{{resolve:ssm:/cdkpf/fixtures/acm/wildcard-appnao-com}}"
       }
     }
   }
