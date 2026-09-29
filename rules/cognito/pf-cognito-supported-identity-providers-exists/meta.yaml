@@ -9,5 +9,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The provider Google does not exist for User Pool us-east-1_l9gfya7RC.\"; pass template -> CREATE_COMPLETE"
-  expect: "The provider Google does not exist for User Pool us-east-1_l9gfya7RC"
+  expect: "The provider Google does not exist for User Pool"
 addedOn: 2026-09-08
