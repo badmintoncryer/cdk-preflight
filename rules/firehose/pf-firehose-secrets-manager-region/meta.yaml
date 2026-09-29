@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/APIReference/API_S
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 ap-northeast-1: Cross-region secrets are not allowed. Please provide a secret in the same region as firehose -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: SecretARN in eu-west-1 for a us-east-1 stream -> InvalidArgumentException \"Cross-region secrets are not allowed. Please provide a secret in the same region as firehose\". The rule needs the deploy region, so it is silent in warn mode and in region-agnostic apps."
+  evidence: "bench 2026-09-10 ap-northeast-1: Cross-region secrets are not allowed. Please provide a secret in the same region as firehose -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: SecretARN in eu-west-1 for a us-east-1 stream -> InvalidArgumentException \"Cross-region secrets are not allowed. Please provide a secret in the same region as firehose\". The rule needs the deploy region, so it is silent in warn mode and in region-agnostic apps. bench 2026-09-29 ap-northeast-1: pass (an in-template secret, so it lives in the stack's region) -> CREATE_COMPLETE. The secret is a Ref, so the rule cannot read its region and the pass is silent by construction."
   expect: "Cross-region secrets are not allowed. Please provide a secret in the same region as firehose"
 addedOn: 2026-09-10

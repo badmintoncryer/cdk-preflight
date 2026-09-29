@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 ap-northeast-1: IcebergDestinationConfiguration must be specified for Database as Source. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: DeliveryStreamType DatabaseAsSource with an ExtendedS3 destination -> InvalidArgumentException \"IcebergDestinationConfiguration must be specified for Database as Source.\""
+  evidence: "bench 2026-09-10 ap-northeast-1: IcebergDestinationConfiguration must be specified for Database as Source. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: DeliveryStreamType DatabaseAsSource with an ExtendedS3 destination -> InvalidArgumentException \"IcebergDestinationConfiguration must be specified for Database as Source.\" bench 2026-09-29 ap-northeast-1: pass (in-template Glue database and table, CatalogArn in the stack's region, the role allowed glue:GetTable) -> CREATE_COMPLETE. The table is a plain Glue table: Firehose checks GetTable at creation, not the table format."
   expect: "IcebergDestinationConfiguration must be specified for Database as Source"
 addedOn: 2026-09-10

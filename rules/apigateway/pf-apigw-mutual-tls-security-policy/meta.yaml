@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid request provided: Mutual TLS authentication is only supported with TLS 1.2.\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid request provided: Mutual TLS authentication is only supported with TLS 1.2.\" (ROLLBACK_COMPLETE) bench 2026-09-29 us-east-1: pass (REGIONAL domain with TLS_1_2 and the truststore s3://cdkpf-fixtures-<account>/ca.pem, the running account's *.appnao.com certificate from SSM /cdkpf/fixtures/acm/wildcard-appnao-com) -> CREATE_COMPLETE."
   expect: "Mutual TLS authentication is only supported with TLS 1.2"
 addedOn: 2026-09-08

@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid certificate ARN: arn:aws:acm:us-west-2:214794239830:certificate/11111111-2222-3333-4444-555555555555. Certificate must be in 'us-east-1'.\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid certificate ARN: arn:aws:acm:us-west-2:214794239830:certificate/11111111-2222-3333-4444-555555555555. Certificate must be in 'us-east-1'.\" (ROLLBACK_COMPLETE) bench 2026-09-29 us-east-1: pass (REGIONAL domain cdkpf-apigwv2-cert-region.appnao.com, the running account's *.appnao.com certificate from SSM /cdkpf/fixtures/acm/wildcard-appnao-com) -> CREATE_COMPLETE. The SSM reference hides the ARN from the rule, so the pass is silent because the region cannot be read, not because it matches."
   expect: "Invalid certificate ARN"
 addedOn: 2026-09-08

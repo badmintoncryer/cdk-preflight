@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Access log destination must only contain characters a-z, A-Z, 0-9, '_', '-', '/', '.': 'deliverystream/amazon-apigateway-x'\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Access log destination must only contain characters a-z, A-Z, 0-9, '_', '-', '/', '.': 'deliverystream/amazon-apigateway-x'\" (ROLLBACK_COMPLETE) bench 2026-09-29 us-east-1: pass (stage logging to the in-template log group cdkpf-apigwv2-access-log-destination) -> CREATE_COMPLETE."
   expect: "Access log destination must only contain characters a-z, A-Z, 0-9, '_', '-', '/', '.': 'deliverystream/amazon-apigateway-x"
 addedOn: 2026-09-08

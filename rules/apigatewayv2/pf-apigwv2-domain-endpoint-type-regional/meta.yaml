@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"EDGE endpoint type is not supported for APIGatewayV2 domainName\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"EDGE endpoint type is not supported for APIGatewayV2 domainName\" (ROLLBACK_COMPLETE) bench 2026-09-29 us-east-1: pass (REGIONAL domain cdkpf-apigwv2-regional.appnao.com, the running account's *.appnao.com certificate from SSM /cdkpf/fixtures/acm/wildcard-appnao-com) -> CREATE_COMPLETE."
   expect: "EDGE endpoint type is not supported for APIGatewayV2 domainName"
 addedOn: 2026-09-08
