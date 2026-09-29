@@ -1611,6 +1611,45 @@
 | `pf-elasticache-user-authentication` | AWS::ElastiCache::User | A user needs exactly one authentication mode, and passwords are 16-128 characters with at most two per user | ERROR | none |
 | `pf-elasticache-user-group-default-user` | AWS::ElastiCache::UserGroup | A Redis user group must contain a user named default, and a Valkey group rejects password-less users | ERROR | none |
 | `pf-elasticache-user-group-transit-encryption` | AWS::ElastiCache::ReplicationGroup | UserGroupIds requires in-transit encryption | ERROR | none |
+| `pf-elasticbeanstalk-lifecycle-rule-fields` | AWS::ElasticBeanstalk::Application | Version lifecycle rules: enabled needs a value of at least 1, only one may be enabled | ERROR | none |
+| `pf-elasticbeanstalk-lifecycle-service-role-required` | AWS::ElasticBeanstalk::Application | A version lifecycle configuration needs a ServiceRole | ERROR | none |
+| `pf-elasticbeanstalk-opt-ad-directory-id-format` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Active Directory DirectoryId is d- plus 10 hex characters | ERROR | none |
+| `pf-elasticbeanstalk-opt-ad-requires-name` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Active Directory DirectoryId, DirectoryName and DirectoryOU are set together | ERROR | none |
+| `pf-elasticbeanstalk-opt-ad-windows-only` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Active Directory options need a Windows Server platform | ERROR | none |
+| `pf-elasticbeanstalk-opt-asg-min-max` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Auto Scaling MinSize does not exceed MaxSize | ERROR | none |
+| `pf-elasticbeanstalk-opt-asg-range` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Auto Scaling group sizes and cooldown are within range | ERROR | none |
+| `pf-elasticbeanstalk-opt-boolean-value` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Boolean options accept true or false | ERROR | none |
+| `pf-elasticbeanstalk-opt-deploy-range` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Deployment timeouts, batch sizes and health thresholds are within range | ERROR | none |
+| `pf-elasticbeanstalk-opt-elb-listener-layer` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Classic listener and instance protocols are on the same layer | ERROR | none |
+| `pf-elasticbeanstalk-opt-elb-range` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Classic load balancer thresholds, ports and timeouts are within range | ERROR | none |
+| `pf-elasticbeanstalk-opt-elbv2-ip-address-type` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | IpAddressType needs an Application or Network Load Balancer | ERROR | none |
+| `pf-elasticbeanstalk-opt-elbv2-listener-cert` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | An HTTPS Application Load Balancer listener has a certificate | ERROR | none |
+| `pf-elasticbeanstalk-opt-elbv2-protocol-lb-type` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Network Load Balancer listener and process protocols are TCP or TLS | ERROR | none |
+| `pf-elasticbeanstalk-opt-elbv2-rule-priority` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Application Load Balancer rule priority is 1 to 1000 | ERROR | none |
+| `pf-elasticbeanstalk-opt-enum-value` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Enumerated options accept only their listed values | ERROR | none |
+| `pf-elasticbeanstalk-opt-health-streaming-enhanced` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Health streaming needs enhanced health reporting | ERROR | none |
+| `pf-elasticbeanstalk-opt-instances-spot` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Spot instance price, percentage and on-demand base are valid | ERROR | none |
+| `pf-elasticbeanstalk-opt-instances-type-count` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | InstanceTypes takes 1 to 40 distinct instance types | ERROR | none |
+| `pf-elasticbeanstalk-opt-logs-retention` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Log retention takes a supported number of days | ERROR | none |
+| `pf-elasticbeanstalk-opt-managed-actions-requires` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Managed actions need PreferredStartTime and UpdateLevel | ERROR | none |
+| `pf-elasticbeanstalk-opt-namespace-known` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | OptionSettings namespaces must exist | ERROR | none |
+| `pf-elasticbeanstalk-opt-process-range` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Environment process port and health check timeout are within range | ERROR | none |
+| `pf-elasticbeanstalk-opt-regex-catalog` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Format-checked options must match their pattern | ERROR | none |
+| `pf-elasticbeanstalk-opt-rolling-duration` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Rolling update Timeout and PauseTime are ISO 8601 durations within limits | ERROR | none |
+| `pf-elasticbeanstalk-opt-rolling-min-in-service` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Rolling update MinInstancesInService is below MaxSize | ERROR | none |
+| `pf-elasticbeanstalk-opt-rootvolume-iops` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Root volume IOPS is within range | ERROR | none |
+| `pf-elasticbeanstalk-opt-rootvolume-size` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Root volume size is within range | ERROR | none |
+| `pf-elasticbeanstalk-opt-rootvolume-throughput` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Root volume throughput is 125 to 1000 | ERROR | none |
+| `pf-elasticbeanstalk-opt-sched-min-max` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Scheduled action sizes are ordered MinSize <= DesiredCapacity <= MaxSize | ERROR | none |
+| `pf-elasticbeanstalk-opt-sched-recurrence` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | A scheduled action Recurrence is a five-field cron expression | ERROR | none |
+| `pf-elasticbeanstalk-opt-sched-required` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | A scheduled action has MinSize, MaxSize and a StartTime or Recurrence | ERROR | none |
+| `pf-elasticbeanstalk-opt-sched-resource-name` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Scheduled action options carry a ResourceName | ERROR | none |
+| `pf-elasticbeanstalk-opt-secrets-arn-service` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Environment secrets point at Secrets Manager or SSM ARNs | ERROR | none |
+| `pf-elasticbeanstalk-opt-traffic-splitting-alb` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | TrafficSplitting deployments need an Application Load Balancer | ERROR | none |
+| `pf-elasticbeanstalk-opt-trigger-range` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Auto Scaling trigger period, evaluation periods and thresholds are within range | ERROR | none |
+| `pf-elasticbeanstalk-platform-arn-region` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | An AWS platform ARN must be from the deploy region | ERROR | none |
+| `pf-elasticbeanstalk-tmpl-platform-stack-exclusive` | AWS::ElasticBeanstalk::ConfigurationTemplate | PlatformArn and SolutionStackName are mutually exclusive | ERROR | none |
+| `pf-elasticbeanstalk-tmpl-source-required` | AWS::ElasticBeanstalk::ConfigurationTemplate | A ConfigurationTemplate needs a platform, a source template or an environment to start from | ERROR | none |
 | `pf-elbv2-action-cognito-userpool-region` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | The Cognito user pool sits in the load balancer region | ERROR | none |
 | `pf-elbv2-action-fixed-response-content-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | A fixed response uses one of the five supported content types | ERROR | none |
 | `pf-elbv2-action-forward-same-ip-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::ListenerRule | Target groups in one forward action share a IP address type | ERROR | none |
