@@ -9,5 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-25 us-east-1: two AWS::EKS::PodIdentityAssociation on one cluster with the same Namespace and ServiceAccount -> ROLLBACK_COMPLETE, \"Association already exists: a-zarudjcsdvajnhwsg (Status Code: 409)\". The association id is service-generated, so unlike the access entry duplicate this one is caught by EKS rather than by CloudFormation primary-id check. The second association carries DependsOn. fail-only; the fixture builds its own cluster and a role trusting pods.eks.amazonaws.com for sts:AssumeRole and sts:TagSession."
-  expect: "Association already exists: a-zarudjcsdvajnhwsg"
+  expect: "Association already exists"
 addedOn: 2026-09-25
