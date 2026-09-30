@@ -8,6 +8,6 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"You cannot use the log types 'general' with engine version aurora-postgresql 17.7. For supported log types, see the documentation.\" ROLLBACK_COMPLETE Claim scope: aurora-mysql / aurora-postgresql / mysql / postgres only."
-  expect: "You cannot use the log types 'general' with engine version aurora-postgresql 17.7. For supported log types, see the documentation"
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"You cannot use the log types 'general' with engine version aurora-postgresql 17.7. For supported log types, see the documentation.\" ROLLBACK_COMPLETE Claim scope: aurora-mysql / aurora-postgresql / mysql / postgres only. monthly 2026-09-29 us-east-1 (502761806921): the same fail -> \"...with engine version aurora-postgresql 17.9...\" - the fixture takes the default engine version, which moved from 17.7 to 17.9, so the expect stops before the version."
+  expect: "You cannot use the log types 'general' with engine version aurora-postgresql"
 addedOn: 2026-09-08
