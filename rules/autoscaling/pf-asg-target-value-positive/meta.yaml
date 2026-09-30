@@ -5,7 +5,9 @@ severity: ERROR
 title: Target tracking needs a positive TargetValue
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-scalingpolicy.html
 upstream: none
+benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: TargetTrackingConfiguration.TargetValue -5 (as09) -> \"Target value must be between 8.51592E-12 and 1.174271E17\". ROLLBACK_COMPLETE (the policy failed after its group created with zero instances)."
+  evidence: "bench 2026-09-30 us-east-1: TargetTrackingConfiguration.TargetValue -5 -> \"Target value must be between 8.51592E-12 and 1.174271E17\" ROLLBACK_COMPLETE (the policy failed after its group created with zero instances); pass TargetValue 50 -> CREATE_COMPLETE, no instance launched. The fixtures name us-east-1a, so benchRegion pins us-east-1: without it the harness ran the rule in ap-northeast-1, where the scaffolding group fails first on \"You must use a valid fully-formed launch template. Invalid availability zone: [us-east-1a]\" and the policy is never created (monthly 2026-09-04 and 2026-09-29 counted that as verified because there was no repro.expect)."
+  expect: "Target value must be between 8.51592E-12 and 1.174271E17"
 addedOn: 2026-09-03
