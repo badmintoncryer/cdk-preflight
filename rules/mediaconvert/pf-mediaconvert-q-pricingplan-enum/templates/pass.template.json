@@ -1,0 +1,12 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::Queue",
+      "Properties": {
+        "Name": "cdkpf-mc-queue",
+        "PricingPlan": "ON_DEMAND"
+      }
+    }
+  }
+}

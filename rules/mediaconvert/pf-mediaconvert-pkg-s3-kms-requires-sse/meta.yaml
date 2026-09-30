@@ -1,0 +1,12 @@
+id: pf-mediaconvert-pkg-s3-kms-requires-sse
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::JobTemplate]
+severity: ERROR
+title: "A KMS key on S3 output encryption needs SERVER_SIDE_ENCRYPTION_KMS"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/ug/outputs-file-group.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreateJobTemplate on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /outputGroups/0/outputGroupSettings/fileGroupSettings/destinationSettings/s3Settings/encryption/kmsKeyArn: Should match all dependencies: See other errors for more details | /outputGroups/0/outputGroupSettings/fileGroupSettings/destinationSettings/s3Settings/encryption/encryptionType: Must be SERVER_SIDE_ENCRYPTION_KMS"
+  expect: "Must be SERVER_SIDE_ENCRYPTION_KMS"
+addedOn: 2026-09-30

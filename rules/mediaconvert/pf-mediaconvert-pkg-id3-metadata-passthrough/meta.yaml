@@ -1,0 +1,12 @@
+id: pf-mediaconvert-pkg-id3-metadata-passthrough
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "ID3 timed-metadata settings need TimedMetadata PASSTHROUGH"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): : You specified a value for ID3 metadata value, which requires ID3 metadata be set to Passthrough. To resolve: Set ID3 metadata to passthrough, or remove ID3 metadata value, and resubmit your job."
+  expect: "which requires ID3 metadata be set to Passthrough"
+addedOn: 2026-09-30

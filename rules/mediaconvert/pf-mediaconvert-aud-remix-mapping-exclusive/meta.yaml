@@ -1,0 +1,12 @@
+id: pf-mediaconvert-aud-remix-mapping-exclusive
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "An output channel maps with InputChannels or InputChannelsFineTune, not both"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /audioDescriptions/0/remixSettings/channelMapping/outputChannels/0: Should have at most 1 properties"
+  expect: "Should have at most 1 properties"
+addedOn: 2026-09-30

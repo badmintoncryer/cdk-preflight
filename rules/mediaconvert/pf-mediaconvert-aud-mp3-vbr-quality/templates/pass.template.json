@@ -1,0 +1,29 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::Preset",
+      "Properties": {
+        "Name": "cdkpf-mc-preset",
+        "SettingsJson": {
+          "ContainerSettings": {
+            "Container": "RAW"
+          },
+          "AudioDescriptions": [
+            {
+              "CodecSettings": {
+                "Codec": "MP3",
+                "Mp3Settings": {
+                  "RateControlMode": "VBR",
+                  "VbrQuality": 4,
+                  "Channels": 2,
+                  "SampleRate": 48000
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

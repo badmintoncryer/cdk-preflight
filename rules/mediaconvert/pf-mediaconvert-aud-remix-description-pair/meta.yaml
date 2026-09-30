@@ -1,0 +1,12 @@
+id: pf-mediaconvert-aud-remix-description-pair
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "AudioDescriptionAudioChannel and AudioDescriptionDataChannel go together"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /audioDescriptions/0/remixSettings/audioDescriptionAudioChannel: Should match all dependencies: See other errors for more details | /audioDescriptions/0/remixSettings: audioDescriptionDataChannel is a required property"
+  expect: "audioDescriptionDataChannel is a required property"
+addedOn: 2026-09-30

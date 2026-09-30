@@ -1,0 +1,12 @@
+id: pf-mediaconvert-prep-nexguard-required-fields
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "NexGuard file marker settings need a License"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /videoDescription/videoPreprocessors/partnerWatermarking/nexguardFileMarkerSettings: license is a required property"
+  expect: "license is a required property"
+addedOn: 2026-09-30

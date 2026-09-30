@@ -1,0 +1,12 @@
+id: pf-mediaconvert-prep-clip-limits
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "ColorCorrector.ClipLimits needs SampleRangeConversion LIMITED_RANGE_CLIP"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /videoDescription/videoPreprocessors/colorCorrector: You specified a value for Minimum YUV, Maximum YUV, Minimum RGB tolerance, or Maximum RGB tolerance, but did not set Sample range conversion to Limited range clip, which is required. These settings only apply when Sample range conversion is set to Limited range clip. To resolve: Set Sample range conversion to Limited range clip and resubmit your job."
+  expect: "but did not set Sample range conversion to Limited range clip"
+addedOn: 2026-09-30

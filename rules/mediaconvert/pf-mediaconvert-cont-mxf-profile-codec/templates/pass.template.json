@@ -1,0 +1,49 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::Preset",
+      "Properties": {
+        "Name": "cdkpf-mc-preset",
+        "SettingsJson": {
+          "ContainerSettings": {
+            "Container": "MXF",
+            "MxfSettings": {
+              "Profile": "D_10"
+            }
+          },
+          "VideoDescription": {
+            "Width": 720,
+            "Height": 576,
+            "CodecSettings": {
+              "Codec": "MPEG2",
+              "Mpeg2Settings": {
+                "CodecProfile": "PROFILE_422",
+                "CodecLevel": "MAIN",
+                "RateControlMode": "CBR",
+                "Bitrate": 50000000,
+                "FramerateControl": "SPECIFIED",
+                "FramerateNumerator": 25,
+                "FramerateDenominator": 1,
+                "InterlaceMode": "TOP_FIELD",
+                "Syntax": "D_10"
+              }
+            }
+          },
+          "AudioDescriptions": [
+            {
+              "CodecSettings": {
+                "Codec": "WAV",
+                "WavSettings": {
+                  "BitDepth": 24,
+                  "Channels": 2,
+                  "SampleRate": 48000
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

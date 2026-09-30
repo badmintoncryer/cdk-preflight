@@ -1,0 +1,43 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::Preset",
+      "Properties": {
+        "Name": "cdkpf-mc-preset",
+        "SettingsJson": {
+          "ContainerSettings": {
+            "Container": "M2TS",
+            "M2tsSettings": {}
+          },
+          "VideoDescription": {
+            "Width": 1280,
+            "Height": 720,
+            "CodecSettings": {
+              "Codec": "AV1",
+              "Av1Settings": {
+                "RateControlMode": "QVBR",
+                "QvbrSettings": {
+                  "QvbrQualityLevel": 8
+                },
+                "MaxBitrate": 5000000
+              }
+            }
+          },
+          "AudioDescriptions": [
+            {
+              "CodecSettings": {
+                "Codec": "AAC",
+                "AacSettings": {
+                  "Bitrate": 96000,
+                  "CodingMode": "CODING_MODE_2_0",
+                  "SampleRate": 48000
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

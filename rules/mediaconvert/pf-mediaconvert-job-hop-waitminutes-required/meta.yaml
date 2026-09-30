@@ -1,0 +1,12 @@
+id: pf-mediaconvert-job-hop-waitminutes-required
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::JobTemplate]
+severity: ERROR
+title: "Every queue-hopping destination needs WaitMinutes"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/jobtemplates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreateJobTemplate on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): You specified the following wait time for this job before queue hopping: 'null'. Wait time must be between 1 and 4320 minutes. Update this value, and then resubmit your job."
+  expect: "Wait time must be between 1 and 4320 minutes"
+addedOn: 2026-09-30

@@ -1,0 +1,12 @@
+id: pf-mediaconvert-codec-audio-settings-block
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "AC3 and MP3 audio codecs need their settings block"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /audioDescriptions/0/codecSettings/aacSettings: Should match all dependencies: See other errors for more details | /audioDescriptions/0/codecSettings/codec: Must be AAC | /audioDescriptions/0/codecSettings: When codec is set to AC3, ac3Settings must also be provided."
+  expect: "When codec is set to AC3, ac3Settings must also be provided"
+addedOn: 2026-09-30

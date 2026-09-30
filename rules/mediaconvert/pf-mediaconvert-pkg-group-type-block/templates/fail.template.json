@@ -1,0 +1,69 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::JobTemplate",
+      "Properties": {
+        "Name": "cdkpf-mc-jt",
+        "SettingsJson": {
+          "TimecodeConfig": {
+            "Source": "ZEROBASED"
+          },
+          "Inputs": [
+            {
+              "AudioSelectors": {
+                "Audio Selector 1": {
+                  "DefaultSelection": "DEFAULT"
+                }
+              }
+            }
+          ],
+          "OutputGroups": [
+            {
+              "Name": "File Group",
+              "OutputGroupSettings": {
+                "Type": "HLS_GROUP_SETTINGS",
+                "FileGroupSettings": {
+                  "Destination": "s3://cdkpf-mc-bucket/out/"
+                }
+              },
+              "Outputs": [
+                {
+                  "ContainerSettings": {
+                    "Container": "M3U8",
+                    "M3u8Settings": {}
+                  },
+                  "VideoDescription": {
+                    "Width": 1280,
+                    "Height": 720,
+                    "CodecSettings": {
+                      "Codec": "H_264",
+                      "H264Settings": {
+                        "RateControlMode": "CBR",
+                        "Bitrate": 2000000
+                      }
+                    }
+                  },
+                  "AudioDescriptions": [
+                    {
+                      "CodecSettings": {
+                        "Codec": "AAC",
+                        "AacSettings": {
+                          "Bitrate": 96000,
+                          "CodingMode": "CODING_MODE_2_0",
+                          "SampleRate": 48000
+                        }
+                      },
+                      "AudioSourceName": "Audio Selector 1"
+                    }
+                  ],
+                  "NameModifier": "_a"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

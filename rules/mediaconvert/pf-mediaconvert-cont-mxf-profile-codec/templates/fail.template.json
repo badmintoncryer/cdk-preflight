@@ -1,0 +1,42 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::Preset",
+      "Properties": {
+        "Name": "cdkpf-mc-preset",
+        "SettingsJson": {
+          "ContainerSettings": {
+            "Container": "MXF",
+            "MxfSettings": {
+              "Profile": "D_10"
+            }
+          },
+          "VideoDescription": {
+            "Width": 1280,
+            "Height": 720,
+            "CodecSettings": {
+              "Codec": "H_264",
+              "H264Settings": {
+                "RateControlMode": "CBR",
+                "Bitrate": 2000000
+              }
+            }
+          },
+          "AudioDescriptions": [
+            {
+              "CodecSettings": {
+                "Codec": "WAV",
+                "WavSettings": {
+                  "BitDepth": 24,
+                  "Channels": 2,
+                  "SampleRate": 48000
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

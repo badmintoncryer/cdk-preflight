@@ -1,0 +1,80 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::JobTemplate",
+      "Properties": {
+        "Name": "cdkpf-mc-jt",
+        "SettingsJson": {
+          "TimecodeConfig": {
+            "Source": "ZEROBASED"
+          },
+          "Inputs": [
+            {
+              "AudioSelectors": {
+                "Audio Selector 1": {
+                  "DefaultSelection": "DEFAULT"
+                }
+              }
+            }
+          ],
+          "OutputGroups": [
+            {
+              "Name": "File Group",
+              "OutputGroupSettings": {
+                "Type": "DASH_ISO_GROUP_SETTINGS",
+                "DashIsoGroupSettings": {
+                  "Destination": "s3://cdkpf-mc-bucket/out/dash/",
+                  "FragmentLength": 2,
+                  "SegmentLength": 30,
+                  "ImageBasedTrickPlay": "ADVANCED",
+                  "ImageBasedTrickPlaySettings": {
+                    "IntervalCadence": "FOLLOW_CUSTOM",
+                    "ThumbnailInterval": 10,
+                    "ThumbnailWidth": 96,
+                    "ThumbnailHeight": 60,
+                    "TileWidth": 5,
+                    "TileHeight": 4
+                  }
+                }
+              },
+              "Outputs": [
+                {
+                  "ContainerSettings": {
+                    "Container": "MPD",
+                    "MpdSettings": {}
+                  },
+                  "VideoDescription": {
+                    "Width": 1280,
+                    "Height": 720,
+                    "CodecSettings": {
+                      "Codec": "H_264",
+                      "H264Settings": {
+                        "RateControlMode": "CBR",
+                        "Bitrate": 2000000
+                      }
+                    }
+                  },
+                  "AudioDescriptions": [
+                    {
+                      "CodecSettings": {
+                        "Codec": "AAC",
+                        "AacSettings": {
+                          "Bitrate": 96000,
+                          "CodingMode": "CODING_MODE_2_0",
+                          "SampleRate": 48000
+                        }
+                      },
+                      "AudioSourceName": "Audio Selector 1"
+                    }
+                  ],
+                  "NameModifier": "_a"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
