@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/p
 upstream: none
 repro:
   method: real-deploy
-  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate pending): /videoDescription/codecSettings/h264Settings: You set Rate control mode to CBR but the settings values for Bitrate and Max bitrate aren't compatible with CBR. When you use CBR, you must specify a value for Bitrate and you must not specify a value for Max bitrate. Adjust your job settings and then resubmit your job."
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /videoDescription/codecSettings/h264Settings: You set Rate control mode to CBR but the settings values for Bitrate and Max bitrate aren't compatible with CBR. When you use CBR, you must specify a value for Bitrate and you must not specify a value for Max bitrate. Adjust your job settings and then resubmit your job."
   expect: "When you use CBR, you must specify a value for Bitrate"
 addedOn: 2026-09-30

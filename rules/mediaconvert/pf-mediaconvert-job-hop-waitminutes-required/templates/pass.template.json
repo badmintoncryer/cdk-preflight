@@ -7,7 +7,9 @@
         "Name": "cdkpf-mc-jt",
         "HopDestinations": [
           {
-            "Queue": "arn:aws:mediaconvert:us-east-1:123456789012:queues/Default",
+            "Queue": {
+              "Fn::Sub": "arn:aws:mediaconvert:${AWS::Region}:${AWS::AccountId}:queues/Default"
+            },
             "WaitMinutes": 10
           }
         ],

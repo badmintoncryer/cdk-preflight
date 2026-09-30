@@ -14,7 +14,9 @@
             "Height": 720,
             "CodecSettings": {
               "Codec": "PRORES",
-              "ProresSettings": {}
+              "ProresSettings": {
+                "CodecProfile": "APPLE_PRORES_422"
+              }
             }
           },
           "AudioDescriptions": [

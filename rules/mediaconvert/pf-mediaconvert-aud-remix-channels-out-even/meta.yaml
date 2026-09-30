@@ -7,6 +7,6 @@ constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/p
 upstream: none
 repro:
   method: real-deploy
-  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate pending): /audioDescriptions/0/remixSettings/channelsOut: Should match exactly one schema defined in \"oneOf\" | /audioDescriptions/0/remixSettings/channelsOut: Should be less than or equal to 1 | /audioDescriptions/0/remixSettings/channelsOut: Should be a multiple of 2"
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate verified 2026-09-30 ap-northeast-1 - fail stack ROLLBACK_COMPLETE with the same rejection and pass stack CREATE_COMPLETE): /audioDescriptions/0/remixSettings/channelsOut: Should match exactly one schema defined in \"oneOf\" | /audioDescriptions/0/remixSettings/channelsOut: Should be less than or equal to 1 | /audioDescriptions/0/remixSettings/channelsOut: Should be a multiple of 2"
   expect: "Should be a multiple of 2"
 addedOn: 2026-09-30
