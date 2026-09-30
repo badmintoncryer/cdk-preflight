@@ -2288,6 +2288,49 @@
 | `pf-logs-subscription-lambda-no-role` | AWS::Logs::SubscriptionFilter | A Lambda destination must not carry RoleArn | ERROR | none |
 | `pf-logs-transformer-grok-pattern` | AWS::Logs::Transformer | A grok match may only use supported pattern names | ERROR | none |
 | `pf-logs-transformer-parser-first` | AWS::Logs::Transformer | A transformer config must begin with a parser | ERROR | none |
+| `pf-mediaconvert-aud-aac-cbr-combo` | AWS::MediaConvert::Preset | AAC CBR needs a supported profile / coding mode / sample rate / bitrate combination | ERROR | none |
+| `pf-mediaconvert-aud-aac-vbr-combo` | AWS::MediaConvert::Preset | AAC VBR needs VbrQuality and the LC profile | ERROR | none |
+| `pf-mediaconvert-aud-ac3-eac3-bitrate-multiple-8000` | AWS::MediaConvert::Preset | AC3 and EAC3 Bitrate must be a multiple of 8000 | ERROR | none |
+| `pf-mediaconvert-aud-mp3-vbr-quality` | AWS::MediaConvert::Preset | MP3 VBR needs VbrQuality | ERROR | none |
+| `pf-mediaconvert-aud-remix-channels-out-even` | AWS::MediaConvert::Preset | RemixSettings.ChannelsOut must be 1 or even | ERROR | none |
+| `pf-mediaconvert-aud-remix-description-pair` | AWS::MediaConvert::Preset | AudioDescriptionAudioChannel and AudioDescriptionDataChannel go together | ERROR | none |
+| `pf-mediaconvert-aud-remix-mapping-exclusive` | AWS::MediaConvert::Preset | An output channel maps with InputChannels or InputChannelsFineTune, not both | ERROR | none |
+| `pf-mediaconvert-cap-dvbsub-dds-coordinates` | AWS::MediaConvert::Preset | DVB-Sub DDS coordinates and size need DdsHandling other than NONE | ERROR | none |
+| `pf-mediaconvert-codec-audio-settings-block` | AWS::MediaConvert::Preset | AC3 and MP3 audio codecs need their settings block | ERROR | none |
+| `pf-mediaconvert-codec-video-settings-block` | AWS::MediaConvert::Preset | A video codec needs its matching settings block | ERROR | none |
+| `pf-mediaconvert-codec-xavc-profile-block` | AWS::MediaConvert::Preset | XAVC_HD_INTRA_CBG needs XavcHdIntraCbgProfileSettings | ERROR | none |
+| `pf-mediaconvert-cont-audio-codec-matrix` | AWS::MediaConvert::Preset | WebM does not accept AAC and MP4 does not accept Vorbis audio | ERROR | none |
+| `pf-mediaconvert-cont-m2ts-video-codec` | AWS::MediaConvert::Preset | The M2TS container does not accept every video codec | ERROR | none |
+| `pf-mediaconvert-cont-misc-single-codec` | AWS::MediaConvert::Preset | F4V and ISMV containers do not accept H_265 | ERROR | none |
+| `pf-mediaconvert-cont-mov-video-codec` | AWS::MediaConvert::Preset | The MOV container does not accept every video codec | ERROR | none |
+| `pf-mediaconvert-cont-mp4-video-codec` | AWS::MediaConvert::Preset | The MP4 container does not accept every video codec | ERROR | none |
+| `pf-mediaconvert-cont-mxf-profile-codec` | AWS::MediaConvert::Preset | An MXF D_10 profile needs the MPEG2 video codec | ERROR | none |
+| `pf-mediaconvert-cont-res-max-by-codec` | AWS::MediaConvert::Preset | MPEG2 output width is at most 1920 | ERROR | none |
+| `pf-mediaconvert-cont-webm-codec` | AWS::MediaConvert::Preset | The WEBM container does not accept every video codec | ERROR | none |
+| `pf-mediaconvert-job-dynamic-audio-selector-language` | AWS::MediaConvert::JobTemplate | A LANGUAGE_CODE dynamic audio selector needs a LanguageCode | ERROR | none |
+| `pf-mediaconvert-job-hop-waitminutes-required` | AWS::MediaConvert::JobTemplate | Every queue-hopping destination needs WaitMinutes | ERROR | none |
+| `pf-mediaconvert-job-nielsen-required-fields` | AWS::MediaConvert::JobTemplate | Nielsen non-linear watermarking needs its source id | ERROR | none |
+| `pf-mediaconvert-job-props-enum-values` | AWS::MediaConvert::JobTemplate | AccelerationSettings.Mode and StatusUpdateInterval take only their listed values | ERROR | none |
+| `pf-mediaconvert-pkg-group-container` | AWS::MediaConvert::JobTemplate | An output group only accepts its own container | ERROR | none |
+| `pf-mediaconvert-pkg-group-type-block` | AWS::MediaConvert::JobTemplate | An output group needs the settings block that matches its Type | ERROR | none |
+| `pf-mediaconvert-pkg-id3-metadata-passthrough` | AWS::MediaConvert::Preset | ID3 timed-metadata settings need TimedMetadata PASSTHROUGH | ERROR | none |
+| `pf-mediaconvert-pkg-mp4-ctts-cslg` | AWS::MediaConvert::Preset | MP4 CttsVersion 1 needs the cslg atom included | ERROR | none |
+| `pf-mediaconvert-pkg-s3-kms-requires-sse` | AWS::MediaConvert::JobTemplate | A KMS key on S3 output encryption needs SERVER_SIDE_ENCRYPTION_KMS | ERROR | none |
+| `pf-mediaconvert-pkg-trickplay-divisibility` | AWS::MediaConvert::JobTemplate | Image-based trick play thumbnails: width a multiple of 8, height a multiple of 2 | ERROR | none |
+| `pf-mediaconvert-prep-clip-limits` | AWS::MediaConvert::Preset | ColorCorrector.ClipLimits needs SampleRangeConversion LIMITED_RANGE_CLIP | ERROR | none |
+| `pf-mediaconvert-prep-dolby-vision` | AWS::MediaConvert::Preset | DolbyVision needs a Profile | ERROR | none |
+| `pf-mediaconvert-prep-hdr10-metadata` | AWS::MediaConvert::Preset | FORCE_HDR10 needs Hdr10Metadata with both light levels | ERROR | none |
+| `pf-mediaconvert-prep-image-inserter-xy` | AWS::MediaConvert::Preset | Each inserted image needs ImageX and ImageY | ERROR | none |
+| `pf-mediaconvert-prep-nexguard-required-fields` | AWS::MediaConvert::Preset | NexGuard file marker settings need a License | ERROR | none |
+| `pf-mediaconvert-prep-noise-reducer-filter` | AWS::MediaConvert::Preset | SpatialFilterSettings goes with the SPATIAL noise reducer filter | ERROR | none |
+| `pf-mediaconvert-q-pricingplan-enum` | AWS::MediaConvert::Queue | Queue PricingPlan is ON_DEMAND or RESERVED | ERROR | none |
+| `pf-mediaconvert-q-status-enum` | AWS::MediaConvert::Queue | Queue Status is ACTIVE or PAUSED | ERROR | none |
+| `pf-mediaconvert-rc-bitrate-required` | AWS::MediaConvert::Preset | CBR and VBR video rate control need a Bitrate | ERROR | none |
+| `pf-mediaconvert-rc-interlace-optimize` | AWS::MediaConvert::Preset | Optimized interlacing needs an interlaced output and no hard telecine | ERROR | none |
+| `pf-mediaconvert-rc-qvbr-maxbitrate` | AWS::MediaConvert::Preset | AV1 QVBR needs MaxBitrate | ERROR | none |
+| `pf-mediaconvert-rc-slowpal-framerate` | AWS::MediaConvert::Preset | SlowPal needs a specified 25 fps framerate | ERROR | none |
+| `pf-mediaconvert-sj-enum-value` | AWS::MediaConvert::Preset | The video codec and the container must be values the service lists | ERROR | none |
+| `pf-mediaconvert-sj-string-format` | AWS::MediaConvert::JobTemplate | An HLS output group Destination must be an s3:// URL | ERROR | none |
 | `pf-memorydb-data-tiering-node-type` | AWS::MemoryDB::Cluster | DataTiering only works on r6gd node types | ERROR | none |
 | `pf-memorydb-engine` | AWS::MemoryDB::Cluster | MemoryDB runs Valkey or Redis, not Memcached | ERROR | none |
 | `pf-memorydb-kms-key-region` | AWS::MemoryDB::Cluster | KmsKeyId must name a key in the deploy region | ERROR | none |
