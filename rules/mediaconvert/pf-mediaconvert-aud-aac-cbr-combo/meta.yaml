@@ -1,0 +1,12 @@
+id: pf-mediaconvert-aud-aac-cbr-combo
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "AAC CBR needs a supported profile / coding mode / sample rate / bitrate combination"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/ug/aac-support.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate pending): /audioDescriptions/0/codecSettings/aacSettings/bitrate: You specified a value for Bitrate that is not valid with the combination of Profile LC, Coding mode CODING_MODE_1_0, and Sample rate 96000 you selected. Specify a bitrate in the range of 128000-288000, and resubmit your job For a list of supported bitrates, see: https://docs.aws.amazon.com/mediaconvert/latest/ug/aac-support.html"
+  expect: "Specify a bitrate in the range of 128000-288000"
+addedOn: 2026-09-30

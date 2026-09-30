@@ -1,0 +1,12 @@
+id: pf-mediaconvert-cap-dvbsub-dds-coordinates
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "DVB-Sub DDS coordinates and size need DdsHandling other than NONE"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate pending): /captionDescriptions/0/destinationSettings/dvbSubDestinationSettings: In your output that contains DVB-Sub captions, for ddsHandling, you kept the default value, NONE. You also specified a value that's different from the default value for at least one of the settings that MediaConvert uses to set up the DDS: ddsXCoordinate, ddsYCoordinate, width, and height. But this combination of settings isn't valid. When you set ddsHandling to NONE, MediaConvert ignores these related settings. Therefore, you can't specify them manually. Either remove your values for the related settings or choose a differe"
+  expect: "When you set ddsHandling to NONE, MediaConvert ignores these related settings"
+addedOn: 2026-09-30

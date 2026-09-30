@@ -1,0 +1,12 @@
+id: pf-mediaconvert-codec-video-settings-block
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::Preset]
+severity: ERROR
+title: "A video codec needs its matching settings block"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreatePreset on the same SettingsJson; CloudFormation real-deploy gate pending): /videoDescription/codecSettings/h264Settings: Should match all dependencies: See other errors for more details | /videoDescription/codecSettings/codec: Must be H_264"
+  expect: "Should match all dependencies"
+addedOn: 2026-09-30
