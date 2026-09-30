@@ -57,6 +57,31 @@ cert cdkpf.appnao.com /cdkpf/fixtures/acm/cdkpf-appnao-com
 [ "$(aws ec2 describe-vpcs --region $R --filters Name=is-default,Values=true \
     --query 'Vpcs[0].VpcId' --output text)" != None ] ||
   aws ec2 create-default-vpc --region $R >/dev/null
+# bench の既定 VPC には Amazon の IPv6 CIDR が付いていて、use1-az2 の既定サブネット（bench の subnet-2e0a500f）にも
+# IPv6 がある。dualstack の LB を建てる elbv2 の fail（8 本）はそのサブネットに建つので、ほかのアカウントでも同じにする。
+# 無いと制約より先に "You must specify subnets with an associated IPv6 CIDR block" で倒れる（2026-09-29 の月次で 2 本）
+ipv6() {
+  local vpc v6 sub has i q='Vpcs[0].Ipv6CidrBlockAssociationSet[?Ipv6CidrBlockState.State==`associated`].Ipv6CidrBlock | [0]'
+  vpc=$(aws ec2 describe-vpcs --region $R --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text) || return 1
+  v6=$(aws ec2 describe-vpcs --region $R --vpc-ids "$vpc" --query "$q" --output text) || return 1
+  if [ "$v6" = None ]; then
+    aws ec2 associate-vpc-cidr-block --region $R --vpc-id "$vpc" --amazon-provided-ipv6-cidr-block >/dev/null || return 1
+    for i in 1 2 3 4 5 6 7 8 9 10; do # 割り当ては数秒かかる
+      sleep 3
+      v6=$(aws ec2 describe-vpcs --region $R --vpc-ids "$vpc" --query "$q" --output text) || return 1
+      [ "$v6" != None ] && break
+    done
+    [ "$v6" != None ] || return 1
+  fi
+  read -r sub has <<<"$(aws ec2 describe-subnets --region $R --filters Name=vpc-id,Values="$vpc" \
+    Name=availability-zone-id,Values=use1-az2 Name=default-for-az,Values=true \
+    --query 'Subnets[0].[SubnetId, Ipv6CidrBlockAssociationSet[0].Ipv6CidrBlock]' --output text)"
+  case "$sub" in subnet-*) ;; *) return 1 ;; esac
+  [ "$has" != None ] && return 0
+  aws ec2 associate-subnet-cidr-block --region $R --subnet-id "$sub" --ipv6-cidr-block \
+    "$(python3 -c 'import ipaddress, sys; print(next(ipaddress.ip_network(sys.argv[1]).subnets(new_prefix=64)))' "$v6")" >/dev/null
+}
+ipv6 || echo "!! ipv6: could not give the default subnet in use1-az2 an IPv6 CIDR in $A — the dualstack elbv2 fixtures will be INCONCLUSIVE"
 
 # CodeCommit は新規の顧客を締め出していて、アカウントによっては作れない。スタックに入れると
 # それだけで全部が巻き戻るので外に置き、落ちても先へ進む
