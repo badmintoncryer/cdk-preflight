@@ -5,8 +5,9 @@ severity: ERROR
 title: DesiredCapacity must sit between MinSize and MaxSize
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html
 upstream: none
+benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: two groups, DesiredCapacity 3 over MaxSize 2 and DesiredCapacity 1 under MinSize 2 -> \"Desired capacity:3 must be between the specified min size:0 and max size:2\" (ROLLBACK_COMPLETE; AutoScaling reports the first group, so the lower end stays behind it); pass one group at DesiredCapacity 2 == MaxSize 2 and one at 0 == MinSize 0 -> CREATE_COMPLETE. The pass groups sit at zero or at a maximum of zero so that no instance is launched."
+  evidence: "bench 2026-09-30 us-east-1: two groups, DesiredCapacity 3 over MaxSize 2 and DesiredCapacity 1 under MinSize 2 -> \"Desired capacity:3 must be between the specified min size:0 and max size:2\" and \"Desired capacity:1 must be between the specified min size:2 and max size:5\" (ROLLBACK_COMPLETE, each group rejected on its own end); pass one group at DesiredCapacity 2 == MaxSize 2 and one at 0/0/0 -> CREATE_COMPLETE. The DesiredCapacity 2 group does launch two t3.micro, which run until the harness deletes the stack (about a minute and a half). The fixtures name us-east-1a, so benchRegion pins us-east-1: without it the harness ran the rule in ap-northeast-1, where the group fails first on \"You must use a valid fully-formed launch template. Invalid availability zone: [us-east-1a]\" (monthly 2026-09-04 counted that as verified before repro.expect existed; monthly 2026-09-29 and bench 2026-09-30 ap-northeast-1 were INCONCLUSIVE)."
   expect: "Desired capacity:3 must be between the specified min size:0 and max size:2"
 addedOn: 2026-09-03
