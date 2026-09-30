@@ -5,7 +5,9 @@ severity: ERROR
 title: A group needs AvailabilityZones, AvailabilityZoneIds, or subnets
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html
 upstream: none
+benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: group with neither AvailabilityZones nor VPCZoneIdentifier (as05) -> \"You must specify 1 of either AvailabilityZones, AvailabilityZoneIds, or Subnets\". ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-30 us-east-1: group with neither AvailabilityZones nor VPCZoneIdentifier -> \"You must specify 1 of either AvailabilityZones, AvailabilityZoneIds, or Subnets\" ROLLBACK_COMPLETE; pass AvailabilityZones [us-east-1a] -> CREATE_COMPLETE, no instance launched. benchRegion pins us-east-1 for the pass: the fail names no zone and is rejected the same way in ap-northeast-1 (monthly 2026-09-04 and 2026-09-29), but the pass names us-east-1a."
+  expect: "You must specify 1 of either AvailabilityZones, AvailabilityZoneIds, or Subnets"
 addedOn: 2026-09-03
