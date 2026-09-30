@@ -74,9 +74,20 @@ read -r nb ni nl nr < bench/out/counts
 cat bench/out/summary.md
 
 if [ "$nb" -gt 0 ] || [ "$ni" -gt 0 ] || [ "$nl" -gt 0 ] || [ "$nr" -gt 0 ]; then
+  # issue の本文は 65,536 文字まで。初の全件実行（2026-09-29、INCONCLUSIVE 431 本）はこれを超えて
+  # createIssue が落ち、issue が立たなかった。全文はこのジョブのログ（上の cat）にあるので、本文は切って指す
+  python3 - "${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}" <<'EOF' > bench/out/issue.md
+import sys
+body = open('bench/out/summary.md').read()
+LIMIT = 60000
+if len(body) > LIMIT:
+    cut = body.rfind('\n', 0, LIMIT)
+    body = body[:cut] + f"\n\n… truncated ({len(body) - cut} more characters). The full list is in the report job log: {sys.argv[1]}\n"
+sys.stdout.write(body)
+EOF
   gh issue create \
     --title "monthly-verify $month: $nb broken / $nr redundant / $ni inconclusive / $nl leftover" \
-    --body-file bench/out/summary.md
+    --body-file bench/out/issue.md
 else
   echo "all green — no issue filed"
 fi
