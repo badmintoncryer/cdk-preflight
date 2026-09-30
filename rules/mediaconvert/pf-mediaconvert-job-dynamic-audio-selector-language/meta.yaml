@@ -1,0 +1,12 @@
+id: pf-mediaconvert-job-dynamic-audio-selector-language
+service: mediaconvert
+resourceTypes: [AWS::MediaConvert::JobTemplate]
+severity: ERROR
+title: "A LANGUAGE_CODE dynamic audio selector needs a LanguageCode"
+constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/jobtemplates.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "MediaConvert API probe 2026-09-30 ap-northeast-1 (phase B of #322,CreateJobTemplate on the same SettingsJson; CloudFormation real-deploy gate pending): /inputs/0/dynamicAudioSelectors/Dynamic 1/selectorType: Under Dynamic audio selector, you specified Language code for the Selector type but did not enter a Language code. To resolve: Enter a Language code, or choose All tracks for the Selector type. Then resubmit your job. | /inputs/0/dynamicAudioSelectors/Dynamic 1: Under Dynamic audio selector, you specified Language code for the Selector type but did not enter a Language code. To resolve: Enter a Language code, or choose All tracks for the Selector type. Then resubmit your job."
+  expect: "you specified Language code for the Selector type but did not enter a Language code"
+addedOn: 2026-09-30

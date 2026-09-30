@@ -1,0 +1,47 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::Preset",
+      "Properties": {
+        "Name": "cdkpf-mc-preset",
+        "SettingsJson": {
+          "ContainerSettings": {
+            "Container": "MXF",
+            "MxfSettings": {
+              "Profile": "XAVC"
+            }
+          },
+          "VideoDescription": {
+            "Width": 1920,
+            "Height": 1080,
+            "CodecSettings": {
+              "Codec": "XAVC",
+              "XavcSettings": {
+                "Profile": "XAVC_HD_INTRA_CBG",
+                "FramerateControl": "SPECIFIED",
+                "FramerateNumerator": 25,
+                "FramerateDenominator": 1,
+                "XavcHdIntraCbgProfileSettings": {
+                  "XavcClass": "CLASS_100"
+                }
+              }
+            }
+          },
+          "AudioDescriptions": [
+            {
+              "CodecSettings": {
+                "Codec": "WAV",
+                "WavSettings": {
+                  "BitDepth": 24,
+                  "Channels": 2,
+                  "SampleRate": 48000
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Mc": {
+      "Type": "AWS::MediaConvert::JobTemplate",
+      "Properties": {
+        "Name": "cdkpf-mc-jt",
+        "HopDestinations": [
+          {
+            "Queue": "arn:aws:mediaconvert:us-east-1:123456789012:queues/Default",
+            "WaitMinutes": 10
+          }
+        ],
+        "SettingsJson": {
+          "TimecodeConfig": {
+            "Source": "ZEROBASED"
+          },
+          "Inputs": [
+            {
+              "AudioSelectors": {
+                "Audio Selector 1": {
+                  "DefaultSelection": "DEFAULT"
+                }
+              }
+            }
+          ],
+          "OutputGroups": [
+            {
+              "Name": "File Group",
+              "OutputGroupSettings": {
+                "Type": "FILE_GROUP_SETTINGS",
+                "FileGroupSettings": {
+                  "Destination": "s3://cdkpf-mc-bucket/out/"
+                }
+              },
+              "Outputs": [
+                {
+                  "ContainerSettings": {
+                    "Container": "MP4"
+                  },
+                  "VideoDescription": {
+                    "Width": 1280,
+                    "Height": 720,
+                    "CodecSettings": {
+                      "Codec": "H_264",
+                      "H264Settings": {
+                        "RateControlMode": "CBR",
+                        "Bitrate": 2000000
+                      }
+                    }
+                  },
+                  "AudioDescriptions": [
+                    {
+                      "CodecSettings": {
+                        "Codec": "AAC",
+                        "AacSettings": {
+                          "Bitrate": 96000,
+                          "CodingMode": "CODING_MODE_2_0",
+                          "SampleRate": 48000
+                        }
+                      },
+                      "AudioSourceName": "Audio Selector 1"
+                    }
+                  ],
+                  "NameModifier": "_a"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

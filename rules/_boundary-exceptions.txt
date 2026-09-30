@@ -102,3 +102,4 @@ pf-eks-addon-namespace-config-format  count(ns) <= 63 は「DNS-1123 ラベル�
 pf-eks-fargate-selector-namespace-format  同上。count(ns) <= 63 は書式チェックを長すぎる文字列に当てないためのガードで、上限そのものは見ていない
 pf-networkfirewall-policy-stateless-capacity-sum  しきい値はテンプレートに現れない。制約は「参照している各ステートレスルールグループの Capacity の合計 > 30000」で、fail は 30000 と 1 の 2 本（合計 30001 = 限界に最も近い違反値）だが、30001 という数字はどこにも書かれていない。pass は 30000 ちょうどを 1 本で持っている
 pf-elasticbeanstalk-opt-instances-type-count  しきい値の 40 はカンマ区切り文字列の要素数で、テンプレートに 40 / 41 という数字は現れない。fail は 41 種（限界に最も近い違反値）、pass は 40 種ちょうどをそれぞれ 1 本のカンマ区切りで持っている
+pf-mediaconvert-cont-res-max-by-codec  fail は API で実際に拒否された 1922 に乗せてある。限界に最も近い 1921 は奇数幅で、幅の偶数制約など別の理由に化ける恐れがあり探っていない（実機ゲートで 1921 が同じ拒否文になるか確かめるまで据え置き）。pass は境界そのものの 1920

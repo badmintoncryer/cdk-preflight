@@ -103,6 +103,38 @@ _pf_mclib_groups contains {"rn": rn, "i": i, "g": g, "gs": gs} if {
 	_pf_mclib_lit(gs)
 }
 
+# Preset: ContainerSettings（リテラルのオブジェクト）
+_pf_mclib_cont(rn) := cont if {
+	s := _pf_mclib_settings(rn, "AWS::MediaConvert::Preset")
+	cont := s.ContainerSettings
+	_pf_mclib_lit(cont)
+}
+
+# Preset: VideoPreprocessors（リテラルのオブジェクト）
+_pf_mclib_vp(rn) := vp if {
+	vd := _pf_mclib_vd(rn)
+	vp := vd.VideoPreprocessors
+	_pf_mclib_lit(vp)
+}
+
+# JobTemplate: Inputs の各要素（リテラルのものだけ）
+_pf_mclib_inputs contains {"rn": rn, "i": i, "in": inp} if {
+	some rn in resources_of_type("AWS::MediaConvert::JobTemplate")
+	s := _pf_mclib_settings(rn, "AWS::MediaConvert::JobTemplate")
+	ins := s.Inputs
+	is_array(ins)
+	some i, inp in ins
+	_pf_mclib_lit(inp)
+}
+
+# 値が「書かれている」と言える形: 文字列のリテラル、または GetAtt（Ref の AWS::NoValue は含めない）
+_pf_mclib_present(v) if is_string(v)
+
+_pf_mclib_present(v) if {
+	is_object(v)
+	startswith(object.get(v, "__kind", ""), "getatt:")
+}
+
 # AAC CBR の許容表（ug/aac-support.html の CBR 表。LC / HEV1 / HEV2 のみ、XHE は含めない）。
 # キーは "<CodecProfile>|<コーディングモード>|<SampleRate>"、値は [最小, 最大] ビットレート。
 # 表にないキーはサンプルレートが不正、範囲外は Bitrate が不正（サーバーは範囲 min-max で報告する）。
