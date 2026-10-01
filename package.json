@@ -92,10 +92,7 @@
   "version": "0.0.0",
   "jest": {
     "coverageProvider": "v8",
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/src/rules.generated.ts"
-    ],
+    "collectCoverage": false,
     "testMatch": [
       "<rootDir>/@(src|test)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(src|test)/**/__tests__/**/*.ts?(x)",
@@ -103,7 +100,6 @@
       "<rootDir>/@(projenrc)/**/__tests__/**/*.ts?(x)"
     ],
     "clearMocks": true,
-    "collectCoverage": true,
     "coverageReporters": [
       "json",
       "lcov",
@@ -112,6 +108,9 @@
       "text"
     ],
     "coverageDirectory": "coverage",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ],
     "testPathIgnorePatterns": [
       "/node_modules/"
     ],
