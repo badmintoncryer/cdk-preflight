@@ -1,0 +1,13 @@
+id: pf-cassandra-counter-default-ttl
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "A table with counter columns has no DefaultTimeToLive"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html#cql.data-types.numeric.counters
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: counter column + DefaultTimeToLive 1 -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass DefaultTimeToLive 0 -> CREATE_COMPLETE; CFN rejection: Cannot set default_time_to_live on a table with counters"
+  expect: "Cannot set default_time_to_live on a table with counters"
+addedOn: 2026-10-01

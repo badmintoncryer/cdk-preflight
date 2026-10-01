@@ -1,0 +1,13 @@
+id: pf-cassandra-column-type-nonfrozen-nested-collection
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table, AWS::Cassandra::Type]
+severity: ERROR
+title: "A collection nested inside a collection is frozen"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: ColumnType list<list<int>> -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass list<frozen<list<int>>> -> CREATE_COMPLETE; CFN rejection: Non-frozen collections are not allowed inside collections: list<list<int>>"
+  expect: "Non-frozen collections are not allowed inside collections: list<list<int>>"
+addedOn: 2026-10-01

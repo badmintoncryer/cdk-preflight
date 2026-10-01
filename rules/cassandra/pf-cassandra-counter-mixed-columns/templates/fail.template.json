@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_counter_mixed_columns"
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "RegularColumns": [
+          {
+            "ColumnName": "cn",
+            "ColumnType": "counter"
+          },
+          {
+            "ColumnName": "nm",
+            "ColumnType": "text"
+          }
+        ]
+      }
+    }
+  }
+}

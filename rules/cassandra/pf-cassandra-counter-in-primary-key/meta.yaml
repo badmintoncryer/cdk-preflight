@@ -1,0 +1,13 @@
+id: pf-cassandra-counter-in-primary-key
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "A counter column is not part of the primary key"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html#cql.data-types.numeric.counters
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: PartitionKeyColumns id counter -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass counter as a regular column -> CREATE_COMPLETE; CFN rejection: counter type is not supported for PRIMARY KEY part id"
+  expect: "counter type is not supported for PRIMARY KEY part id"
+addedOn: 2026-10-01

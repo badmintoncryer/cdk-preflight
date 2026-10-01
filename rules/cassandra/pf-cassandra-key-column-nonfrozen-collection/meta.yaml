@@ -1,0 +1,13 @@
+id: pf-cassandra-key-column-nonfrozen-collection
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "A partition key or clustering column of collection or UDT type is frozen"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: PartitionKeyColumns id list<int> -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass frozen<list<int>> -> CREATE_COMPLETE; CFN rejection: Invalid non-frozen collection type for PRIMARY KEY component id"
+  expect: "Invalid non-frozen collection type for PRIMARY KEY component id"
+addedOn: 2026-10-01

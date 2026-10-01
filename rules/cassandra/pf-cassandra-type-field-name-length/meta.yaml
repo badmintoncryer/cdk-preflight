@@ -1,0 +1,13 @@
+id: pf-cassandra-type-field-name-length
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Type]
+severity: ERROR
+title: "A UDT FieldName is at most 128 characters"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/quotas.html#quotas-udts
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: FieldName of 129 characters -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass 128 characters -> CREATE_COMPLETE; CFN rejection: Member must have length less than or equal to 128"
+  expect: "Member must have length less than or equal to 128"
+addedOn: 2026-10-01

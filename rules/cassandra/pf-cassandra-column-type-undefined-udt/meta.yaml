@@ -1,0 +1,13 @@
+id: pf-cassandra-column-type-undefined-udt
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table, AWS::Cassandra::Type]
+severity: ERROR
+title: "A non-built-in column type names a UDT the template creates in the same keyspace"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/udts.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: ColumnType string in a keyspace the template creates -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass text -> CREATE_COMPLETE; CFN rejection: UDT string does not exist"
+  expect: "UDT string does not exist"
+addedOn: 2026-10-01

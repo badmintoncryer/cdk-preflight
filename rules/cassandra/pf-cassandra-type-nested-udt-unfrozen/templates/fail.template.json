@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_type_nested_udt_unfrozen"
+      }
+    },
+    "Ty": {
+      "Type": "AWS::Cassandra::Type",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TypeName": "addr",
+        "Fields": [
+          {
+            "FieldName": "ff",
+            "FieldType": "text"
+          }
+        ]
+      }
+    },
+    "Ty2": {
+      "Type": "AWS::Cassandra::Type",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TypeName": "person",
+        "Fields": [
+          {
+            "FieldName": "home",
+            "FieldType": "addr"
+          }
+        ]
+      },
+      "DependsOn": [
+        "Ty"
+      ]
+    }
+  }
+}
