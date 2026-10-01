@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The policy must contain a valid version string\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The policy must contain a valid version string\"; pass template -> CREATE_COMPLETE bench 2026-09-30 us-east-1 and monthly 2026-09-29: the BucketPolicy now sits in CREATE_IN_PROGRESS for about 11 minutes and fails with \"long overflow\" (HandlerErrorCode: InternalFailure) - the deploy still fails, but the CloudFormation handler no longer surfaces the S3 message, so this rule stays INCONCLUSIVE until the handler is fixed (the expect is kept: a generic handler error names no constraint)."
   expect: "The policy must contain a valid version string"
 addedOn: 2026-09-06

@@ -8,6 +8,6 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The request includes Aurora Limitless Database attributes, which aren't available for the engine version of your DB cluster (Aurora PostgreSQL (Compatible with PostgreSQL 17.7)). Upgrade to an engine version that's compatible with Aurora Limitless Database.\" ROLLBACK_COMPLETE"
-  expect: "The request includes Aurora Limitless Database attributes, which aren't available for the engine version of your DB cluster (Aurora PostgreSQL (Compatible with PostgreSQL 17.7)). Upgrade to an engine version that's compatible with Aurora Limitless Database"
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"The request includes Aurora Limitless Database attributes, which aren't available for the engine version of your DB cluster (Aurora PostgreSQL (Compatible with PostgreSQL 17.7)). Upgrade to an engine version that's compatible with Aurora Limitless Database.\" ROLLBACK_COMPLETE monthly 2026-09-29 us-east-1 (502761806921): the same sentence with PostgreSQL 17.9 - the fixture takes the default engine version, which moved from 17.7 to 17.9, so the expect stops before the version."
+  expect: "The request includes Aurora Limitless Database attributes, which aren't available for the engine version of your DB cluster"
 addedOn: 2026-09-08
