@@ -1,0 +1,13 @@
+id: pf-cassandra-type-name-format
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Type]
+severity: ERROR
+title: "An unquoted TypeName starts with a letter and uses only letters, digits and _"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cassandra-type.html#cfn-cassandra-type-typename
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: TypeName my-addr -> ROLLBACK_COMPLETE, Invalid request provided: UDT name my-addr contains invalid characters. (Service: Keyspaces, Status Code: 400) HandlerErrorCode: InvalidRequest; pass my_addr -> CREATE_COMPLETE; CFN rejection: UDT name my-addr contains invalid characters"
+  expect: "UDT name my-addr contains invalid characters"
+addedOn: 2026-10-01

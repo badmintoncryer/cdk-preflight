@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_keyspace_name_system"
+      }
+    }
+  }
+}

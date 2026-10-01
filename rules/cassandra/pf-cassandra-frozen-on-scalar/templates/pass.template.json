@@ -1,0 +1,31 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_frozen_on_scalar"
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "RegularColumns": [
+          {
+            "ColumnName": "cf",
+            "ColumnType": "frozen<list<int>>"
+          }
+        ]
+      }
+    }
+  }
+}

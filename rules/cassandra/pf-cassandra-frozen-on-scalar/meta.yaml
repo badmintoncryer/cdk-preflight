@@ -1,0 +1,13 @@
+id: pf-cassandra-frozen-on-scalar
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table, AWS::Cassandra::Type]
+severity: ERROR
+title: "frozen<> wraps only a collection, tuple or UDT"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: RegularColumns ColumnType frozen<int> -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass frozen<list<int>> -> CREATE_COMPLETE; CFN rejection: frozen<> is only allowed on collections, tuples, and user-defined types (got int)"
+  expect: "frozen<> is only allowed on collections, tuples, and user-defined types"
+addedOn: 2026-10-01

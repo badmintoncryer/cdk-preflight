@@ -1,0 +1,13 @@
+id: pf-cassandra-keyspace-name-system
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Keyspace]
+severity: ERROR
+title: "KeyspaceName is not one of the service-owned system keyspaces"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cassandra-keyspace.html#cfn-cassandra-keyspace-keyspacename
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: KeyspaceName system_schema -> ROLLBACK_COMPLETE before any handler call; the stack reason is generic and DescribeEvents names the check: NAME_CONFLICT_VALIDATION at /Resources/Ks, Resource of type 'AWS::Cassandra::Keyspace' with identifier 'system_schema' already exists. (CreateKeyspace called directly says system_schema keyspace is not user-modifiable); pass cdkpf_keyspace_name_system -> CREATE_COMPLETE; CFN rejection: Validation failed with 1 error(s)"
+  expect: "Validation failed with 1 error(s)"
+addedOn: 2026-10-01

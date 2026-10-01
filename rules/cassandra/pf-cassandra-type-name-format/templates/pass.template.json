@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_type_name_format"
+      }
+    },
+    "Ty": {
+      "Type": "AWS::Cassandra::Type",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TypeName": "my_addr",
+        "Fields": [
+          {
+            "FieldName": "ff",
+            "FieldType": "text"
+          }
+        ]
+      }
+    }
+  }
+}
