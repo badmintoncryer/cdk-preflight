@@ -2131,7 +2131,6 @@
 | `pf-lambda-dlq-region` | AWS::Lambda::Function | The dead letter target must sit in the deploy region | ERROR | none |
 | `pf-lambda-dlq-service` | AWS::Lambda::Function | The dead letter target must be an SQS queue or SNS topic | ERROR | none |
 | `pf-lambda-durable-kms-key-region` | AWS::Lambda::Function | A durable-function KMS key lives in the deploy region | ERROR | none |
-| `pf-lambda-efs-mount-target-dependson` | AWS::Lambda::Function | A function that mounts EFS waits for the mount target | ERROR | none |
 | `pf-lambda-efs-mount-target-every-az` | AWS::Lambda::Function | Every subnet of an EFS function needs a mount target in its AZ | ERROR | none |
 | `pf-lambda-efs-requires-vpc` | AWS::Lambda::Function | Mounting EFS requires VpcConfig | ERROR | none |
 | `pf-lambda-eic-destination-no-sns-fifo` | AWS::Lambda::EventInvokeConfig | An invoke destination cannot be a FIFO topic | ERROR | none |
