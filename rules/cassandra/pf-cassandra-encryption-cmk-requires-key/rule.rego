@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-cassandra-encryption-type-key-consistency", "ERROR", name, "Properties.EncryptionSpecification",
+violation contains make_diag_full("pf-cassandra-encryption-cmk-requires-key", "ERROR", name, "Properties.EncryptionSpecification",
 	"EncryptionType is CUSTOMER_MANAGED_KMS_KEY but KmsKeyIdentifier is missing; the table create fails with \"EncryptionSpecification is invalid\"",
 	"Set KmsKeyIdentifier to the key ARN, or use AWS_OWNED_KMS_KEY",
 	"https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.ddl.table.html") if {

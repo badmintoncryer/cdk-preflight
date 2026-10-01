@@ -1,4 +1,4 @@
-id: pf-cassandra-encryption-type-key-consistency
+id: pf-cassandra-encryption-cmk-requires-key
 service: cassandra
 benchRegion: us-east-1
 resourceTypes: [AWS::Cassandra::Table]

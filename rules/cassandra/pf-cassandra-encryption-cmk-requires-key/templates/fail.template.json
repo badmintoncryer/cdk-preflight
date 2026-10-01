@@ -3,7 +3,7 @@
     "Ks": {
       "Type": "AWS::Cassandra::Keyspace",
       "Properties": {
-        "KeyspaceName": "cdkpf_encryption_type_key_consistency"
+        "KeyspaceName": "cdkpf_encryption_cmk_requires_key"
       }
     },
     "T": {
@@ -20,7 +20,7 @@
           }
         ],
         "EncryptionSpecification": {
-          "EncryptionType": "AWS_OWNED_KMS_KEY"
+          "EncryptionType": "CUSTOMER_MANAGED_KMS_KEY"
         }
       }
     }
