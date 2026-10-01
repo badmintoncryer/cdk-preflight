@@ -1,0 +1,17 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_keyspace_regionlist_includes_current",
+        "ReplicationSpecification": {
+          "ReplicationStrategy": "MULTI_REGION",
+          "RegionList": [
+            "us-east-1",
+            "eu-west-1"
+          ]
+        }
+      }
+    }
+  }
+}
