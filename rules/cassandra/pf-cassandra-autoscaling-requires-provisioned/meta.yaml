@@ -1,0 +1,13 @@
+id: pf-cassandra-autoscaling-requires-provisioned
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "AutoScalingSpecifications is only used on a PROVISIONED table"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/autoscaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: BillingMode omitted (ON_DEMAND) + AutoScalingSpecifications.WriteCapacityAutoScaling -> ROLLBACK_COMPLETE, Resource handler returned message: 'PAY_PER_REQUEST' throughput mode should not have AUTOSCALING_SETTINGS as table option. HandlerErrorCode: InvalidRequest; pass without AutoScalingSpecifications -> CREATE_COMPLETE; CFN rejection: 'PAY_PER_REQUEST' throughput mode should not have AUTOSCALING_SETTINGS"
+  expect: "'PAY_PER_REQUEST' throughput mode should not have AUTOSCALING_SETTINGS"
+addedOn: 2026-10-01

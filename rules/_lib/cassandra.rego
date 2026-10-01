@@ -151,3 +151,33 @@ _pf_cass_deps(name) := d if {
 }
 
 _pf_cass_dep1s := {n: ts | some n, res in input.resources; ts := {t | some r in res.outgoingRefs; t := r.target}}
+
+# Table の BillingMode.Mode（BillingMode 省略は ON_DEMAND）。Mode や BillingMode がトークンなら undefined
+_pf_cass_mode(name) := "ON_DEMAND" if {
+	object.get(input.resources[name].properties, "BillingMode", null) == null
+}
+
+_pf_cass_mode(name) := m if {
+	bm := object.get(input.resources[name].properties, "BillingMode", null)
+	is_object(bm)
+	not _pf_cass_tokenish(bm)
+	m := object.get(bm, "Mode", "ON_DEMAND")
+	is_string(m)
+}
+
+_pf_cass_tokenish(o) if {
+	some k, _ in o
+	startswith(k, "__")
+}
+
+_pf_cass_tokenish(o) if {
+	some k, _ in o
+	startswith(k, "Fn::")
+}
+
+# テンプレート内の Keyspace（論理 ID）が MULTI_REGION か
+_pf_cass_mr(ks) if {
+	rs := object.get(input.resources[ks].properties, "ReplicationSpecification", null)
+	is_object(rs)
+	object.get(rs, "ReplicationStrategy", null) == "MULTI_REGION"
+}

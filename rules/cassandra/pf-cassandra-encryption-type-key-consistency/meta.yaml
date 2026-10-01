@@ -1,0 +1,13 @@
+id: pf-cassandra-encryption-type-key-consistency
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "EncryptionType CUSTOMER_MANAGED_KMS_KEY comes with a KmsKeyIdentifier"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.ddl.table.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: EncryptionType CUSTOMER_MANAGED_KMS_KEY without KmsKeyIdentifier -> ROLLBACK_COMPLETE, Resource handler returned message: EncryptionSpecification is invalid HandlerErrorCode: InvalidRequest (the handler's own check; CreateTable called directly says Required property kms_key_identifier not present); AWS_OWNED_KMS_KEY with a key ARN is accepted, so only the missing-key direction is checked; pass AWS_OWNED_KMS_KEY -> CREATE_COMPLETE; CFN rejection: EncryptionSpecification is invalid"
+  expect: "EncryptionSpecification is invalid"
+addedOn: 2026-10-01

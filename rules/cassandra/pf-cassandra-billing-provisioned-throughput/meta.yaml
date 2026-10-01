@@ -1,0 +1,13 @@
+id: pf-cassandra-billing-provisioned-throughput
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "ProvisionedThroughput is set exactly when BillingMode.Mode is PROVISIONED"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.ddl.table.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: Mode ON_DEMAND + ProvisionedThroughput 1/1 -> ROLLBACK_COMPLETE, Resource handler returned message: BillingMode is invalid HandlerErrorCode: InvalidRequest (the handler's own check; CreateTable called directly says 'PAY_PER_REQUEST' throughput mode should not have 'read_capacity_units' or 'write_capacity_units' option set.); the other direction, Mode PROVISIONED without ProvisionedThroughput, was deployed once with --fail-only from a scratch template and got the same BillingMode is invalid (no table was created); pass Mode ON_DEMAND alone -> CREATE_COMPLETE; CFN rejection: BillingMode is invalid"
+  expect: "BillingMode is invalid"
+addedOn: 2026-10-01

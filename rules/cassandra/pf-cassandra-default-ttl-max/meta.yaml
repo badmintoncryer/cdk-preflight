@@ -1,0 +1,13 @@
+id: pf-cassandra-default-ttl-max
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "DefaultTimeToLive is at most 630,720,000 seconds (20 years)"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cassandra-table.html#cfn-cassandra-table-defaulttimetolive
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: DefaultTimeToLive 630720001 -> ROLLBACK_COMPLETE, Resource handler returned message: default_time_to_live must be less than or equal to 630720000 (got 630720001) HandlerErrorCode: InvalidRequest; pass 630720000 -> CREATE_COMPLETE; CFN rejection: default_time_to_live must be less than or equal to 630720000"
+  expect: "default_time_to_live must be less than or equal to 630720000"
+addedOn: 2026-10-01
