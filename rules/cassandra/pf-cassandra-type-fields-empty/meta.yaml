@@ -1,0 +1,13 @@
+id: pf-cassandra-type-fields-empty
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Type]
+severity: ERROR
+title: "An AWS::Cassandra::Type has at least one field"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/APIReference/API_CreateType.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: Fields [] -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass one field -> CREATE_COMPLETE; CFN rejection: Member must have length greater than or equal to 1"
+  expect: "Member must have length greater than or equal to 1"
+addedOn: 2026-10-01

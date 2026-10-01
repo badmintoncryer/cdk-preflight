@@ -1,0 +1,32 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_billing_provisioned_throughput"
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "BillingMode": {
+          "Mode": "ON_DEMAND",
+          "ProvisionedThroughput": {
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          }
+        }
+      }
+    }
+  }
+}

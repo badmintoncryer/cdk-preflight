@@ -1,0 +1,13 @@
+id: pf-cassandra-column-type-udt-in-collection-unfrozen
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table, AWS::Cassandra::Type]
+severity: ERROR
+title: "A UDT used as a collection element is frozen"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/keyspaces-create-udt.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: ColumnType list<addr> (addr is an in-template AWS::Cassandra::Type) -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass list<frozen<addr>> -> CREATE_COMPLETE; CFN rejection: Non-frozen UDTs are not allowed inside collections: list<addr>"
+  expect: "Non-frozen UDTs are not allowed inside collections: list<addr>"
+addedOn: 2026-10-01

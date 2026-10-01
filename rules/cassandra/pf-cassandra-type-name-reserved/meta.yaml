@@ -1,0 +1,13 @@
+id: pf-cassandra-type-name-reserved
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Type]
+severity: ERROR
+title: "TypeName is not a built-in type name or reserved keyword"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cassandra-type.html#cfn-cassandra-type-typename
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: TypeName set -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass my_set -> CREATE_COMPLETE; CFN rejection: The custom type name 'set' is not allowed because it is a reserved keyword"
+  expect: "The custom type name 'set' is not allowed because it is a reserved keyword"
+addedOn: 2026-10-01

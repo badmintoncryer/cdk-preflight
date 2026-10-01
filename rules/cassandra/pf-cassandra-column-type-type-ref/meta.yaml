@@ -1,0 +1,13 @@
+id: pf-cassandra-column-type-type-ref
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table, AWS::Cassandra::Type]
+severity: ERROR
+title: "ColumnType / FieldType does not Ref an AWS::Cassandra::Type"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cassandra-type.html#aws-resource-cassandra-type-return-values
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: ColumnType {Ref: Ty} (an AWS::Cassandra::Type) -> ROLLBACK_COMPLETE, HandlerErrorCode: InvalidRequest; pass literal addr + DependsOn Ty -> CREATE_COMPLETE; CFN rejection: no viable alternative at character '|'"
+  expect: "no viable alternative at character '|'"
+addedOn: 2026-10-01

@@ -1,0 +1,35 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_multiregion_table_cmk",
+        "ReplicationSpecification": {
+          "ReplicationStrategy": "MULTI_REGION",
+          "RegionList": [
+            "us-east-1",
+            "eu-west-1"
+          ]
+        }
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "EncryptionSpecification": {
+          "EncryptionType": "AWS_OWNED_KMS_KEY"
+        }
+      }
+    }
+  }
+}

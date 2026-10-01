@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_encryption_kms_key_symmetric"
+      }
+    },
+    "Key": {
+      "Type": "AWS::KMS::Key",
+      "Properties": {
+        "Description": "cdkpf keyspaces-325 pf-cassandra-encryption-kms-key-symmetric",
+        "PendingWindowInDays": 7,
+        "KeySpec": "RSA_2048",
+        "KeyUsage": "ENCRYPT_DECRYPT"
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "EncryptionSpecification": {
+          "EncryptionType": "CUSTOMER_MANAGED_KMS_KEY",
+          "KmsKeyIdentifier": {
+            "Fn::GetAtt": [
+              "Key",
+              "Arn"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

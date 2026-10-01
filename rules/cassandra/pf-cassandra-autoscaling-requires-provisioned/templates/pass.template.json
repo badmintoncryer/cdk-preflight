@@ -1,0 +1,25 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_autoscaling_requires_provisioned"
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+id: pf-cassandra-autoscaling-min-le-max
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table]
+severity: ERROR
+title: "Auto scaling MinimumUnits is not greater than MaximumUnits"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/autoscaling.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: PROVISIONED 1/1 table with WriteCapacityAutoScaling MinimumUnits 2 / MaximumUnits 1 -> ROLLBACK_COMPLETE, Resource handler returned message: 'maximum_units' can not be less than 'minimum_units'. HandlerErrorCode: InvalidRequest; --fail-only: the pass template (1 / 1) needs a billed PROVISIONED table and is not deployed; CFN rejection: 'maximum_units' can not be less than 'minimum_units'"
+  expect: "'maximum_units' can not be less than 'minimum_units'"
+addedOn: 2026-10-01

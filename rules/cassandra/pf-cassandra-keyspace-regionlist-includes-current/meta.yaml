@@ -1,0 +1,13 @@
+id: pf-cassandra-keyspace-regionlist-includes-current
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Keyspace]
+severity: ERROR
+title: "A MULTI_REGION keyspace has a RegionList that includes the deployment Region"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cassandra-keyspace.html#cfn-cassandra-keyspace-replicationspecification
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1: two keyspaces, MULTI_REGION without RegionList and MULTI_REGION with RegionList [ap-northeast-1, eu-west-1] -> ROLLBACK_COMPLETE, both CREATE_FAILED with Resource handler returned message: Replication regions must include the current region us-east-1 HandlerErrorCode: InvalidRequest; pass RegionList [us-east-1, eu-west-1] -> CREATE_COMPLETE; CFN rejection: Replication regions must include the current region"
+  expect: "Replication regions must include the current region"
+addedOn: 2026-10-01

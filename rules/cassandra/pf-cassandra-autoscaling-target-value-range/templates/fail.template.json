@@ -1,0 +1,52 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_autoscaling_target_value_range"
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "BillingMode": {
+          "Mode": "PROVISIONED",
+          "ProvisionedThroughput": {
+            "ReadCapacityUnits": 1,
+            "WriteCapacityUnits": 1
+          }
+        },
+        "AutoScalingSpecifications": {
+          "WriteCapacityAutoScaling": {
+            "MinimumUnits": 1,
+            "MaximumUnits": 1,
+            "ScalingPolicy": {
+              "TargetTrackingScalingPolicyConfiguration": {
+                "TargetValue": 9
+              }
+            }
+          },
+          "ReadCapacityAutoScaling": {
+            "MinimumUnits": 1,
+            "MaximumUnits": 1,
+            "ScalingPolicy": {
+              "TargetTrackingScalingPolicyConfiguration": {
+                "TargetValue": 91
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_multiregion_table_cmk",
+        "ReplicationSpecification": {
+          "ReplicationStrategy": "MULTI_REGION",
+          "RegionList": [
+            "us-east-1",
+            "eu-west-1"
+          ]
+        }
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "EncryptionSpecification": {
+          "EncryptionType": "CUSTOMER_MANAGED_KMS_KEY",
+          "KmsKeyIdentifier": {
+            "Fn::Sub": "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/11111111-2222-3333-4444-555555555555"
+          }
+        }
+      }
+    }
+  }
+}

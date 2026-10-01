@@ -1,0 +1,48 @@
+{
+  "Resources": {
+    "Ks": {
+      "Type": "AWS::Cassandra::Keyspace",
+      "Properties": {
+        "KeyspaceName": "cdkpf_column_type_type_ref"
+      }
+    },
+    "Ty": {
+      "Type": "AWS::Cassandra::Type",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TypeName": "addr",
+        "Fields": [
+          {
+            "FieldName": "ff",
+            "FieldType": "text"
+          }
+        ]
+      }
+    },
+    "T": {
+      "Type": "AWS::Cassandra::Table",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TableName": "tt",
+        "PartitionKeyColumns": [
+          {
+            "ColumnName": "id",
+            "ColumnType": "text"
+          }
+        ],
+        "RegularColumns": [
+          {
+            "ColumnName": "ad",
+            "ColumnType": {
+              "Ref": "Ty"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
