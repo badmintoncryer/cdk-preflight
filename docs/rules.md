@@ -795,6 +795,35 @@
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | ERROR | pending-engine |
 | `pf-agentcore-runtime-session-storage-single` | AWS::BedrockAgentCore::Runtime | An AgentCore Runtime allows at most one SessionStorage filesystem configuration | ERROR | none |
 | `pf-agentcore-vpc-network-mode-config` | AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::BrowserCustom<br>AWS::BedrockAgentCore::CodeInterpreterCustom<br>AWS::BedrockAgentCore::Harness | NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness) | ERROR | none |
+| `pf-cassandra-autoscaling-min-le-max` | AWS::Cassandra::Table | Auto scaling MinimumUnits is not greater than MaximumUnits | ERROR | none |
+| `pf-cassandra-autoscaling-requires-provisioned` | AWS::Cassandra::Table | AutoScalingSpecifications is only used on a PROVISIONED table | ERROR | none |
+| `pf-cassandra-autoscaling-target-value-range` | AWS::Cassandra::Table | Auto scaling TargetValue is between 10 and 90 | ERROR | none |
+| `pf-cassandra-billing-provisioned-throughput` | AWS::Cassandra::Table | ProvisionedThroughput is set exactly when BillingMode.Mode is PROVISIONED | ERROR | none |
+| `pf-cassandra-column-duplicate-name` | AWS::Cassandra::Table | A column name appears once across partition key, clustering and regular columns | ERROR | none |
+| `pf-cassandra-column-type-nonfrozen-nested-collection` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | A collection nested inside a collection is frozen | ERROR | none |
+| `pf-cassandra-column-type-syntax` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | ColumnType / FieldType has balanced angle brackets and the right number of type arguments | ERROR | none |
+| `pf-cassandra-column-type-type-ref` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | ColumnType / FieldType does not Ref an AWS::Cassandra::Type | ERROR | none |
+| `pf-cassandra-column-type-udt-in-collection-unfrozen` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | A UDT used as a collection element is frozen | ERROR | none |
+| `pf-cassandra-column-type-undefined-udt` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | A non-built-in column type names a UDT the template creates in the same keyspace | ERROR | none |
+| `pf-cassandra-counter-default-ttl` | AWS::Cassandra::Table | A table with counter columns has no DefaultTimeToLive | ERROR | none |
+| `pf-cassandra-counter-in-collection-or-udt` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | counter is not used inside a collection or a UDT field | ERROR | none |
+| `pf-cassandra-counter-in-primary-key` | AWS::Cassandra::Table | A counter column is not part of the primary key | ERROR | none |
+| `pf-cassandra-counter-mixed-columns` | AWS::Cassandra::Table | A table with a counter column has only counter regular columns | ERROR | none |
+| `pf-cassandra-default-ttl-max` | AWS::Cassandra::Table | DefaultTimeToLive is at most 630,720,000 seconds (20 years) | ERROR | none |
+| `pf-cassandra-encryption-cmk-requires-key` | AWS::Cassandra::Table | EncryptionType CUSTOMER_MANAGED_KMS_KEY comes with a KmsKeyIdentifier | ERROR | none |
+| `pf-cassandra-encryption-kms-key-symmetric` | AWS::Cassandra::Table | The customer managed key of a table is a symmetric encryption key | ERROR | none |
+| `pf-cassandra-frozen-on-scalar` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | frozen<> wraps only a collection, tuple or UDT | ERROR | none |
+| `pf-cassandra-key-column-nonfrozen-collection` | AWS::Cassandra::Table | A partition key or clustering column of collection or UDT type is frozen | ERROR | none |
+| `pf-cassandra-keyspace-multiregion-partition` | AWS::Cassandra::Keyspace | A multi-Region keyspace RegionList has no China Regions | ERROR | none |
+| `pf-cassandra-keyspace-regionlist-includes-current` | AWS::Cassandra::Keyspace | A MULTI_REGION keyspace has a RegionList that includes the deployment Region | ERROR | none |
+| `pf-cassandra-multiregion-table-cmk` | AWS::Cassandra::Table | A table in a multi-Region keyspace does not use CUSTOMER_MANAGED_KMS_KEY | ERROR | none |
+| `pf-cassandra-replica-read-capacity-requires-provisioned` | AWS::Cassandra::Table | ReplicaSpecifications read capacity settings are only used on a PROVISIONED table | ERROR | none |
+| `pf-cassandra-table-udt-dependency` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | A table or type that uses an in-template UDT depends on its AWS::Cassandra::Type | ERROR | none |
+| `pf-cassandra-type-field-name-length` | AWS::Cassandra::Type | A UDT FieldName is at most 128 characters | ERROR | none |
+| `pf-cassandra-type-fields-empty` | AWS::Cassandra::Type | An AWS::Cassandra::Type has at least one field | ERROR | none |
+| `pf-cassandra-type-name-format` | AWS::Cassandra::Type | An unquoted TypeName starts with a letter and uses only letters, digits and _ | ERROR | none |
+| `pf-cassandra-type-name-reserved` | AWS::Cassandra::Type | TypeName is not a built-in type name or reserved keyword | ERROR | none |
+| `pf-cassandra-type-nested-udt-unfrozen` | AWS::Cassandra::Type | A UDT field that holds another UDT is frozen | ERROR | none |
 | `pf-cfn-custom-servicetimeout-range` | * | A custom resource's ServiceTimeout must be between 1 and 14400 seconds | ERROR | none |
 | `pf-cfn-custom-servicetoken-region` | * | A custom resource's ServiceToken must live in the stack's own Region | ERROR | none |
 | `pf-cfn-custom-servicetoken-service` | * | A custom resource's ServiceToken must be an SNS topic or a Lambda function | ERROR | none |
