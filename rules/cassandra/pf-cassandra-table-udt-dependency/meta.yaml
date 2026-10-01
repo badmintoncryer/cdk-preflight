@@ -1,0 +1,13 @@
+id: pf-cassandra-table-udt-dependency
+service: cassandra
+benchRegion: us-east-1
+resourceTypes: [AWS::Cassandra::Table, AWS::Cassandra::Type]
+severity: ERROR
+title: "A table or type that uses an in-template UDT depends on its AWS::Cassandra::Type"
+constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/udts.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-01 us-east-1, a race, run 3 times: Table column frozen<addr> with addr an in-template AWS::Cassandra::Type and no DependsOn on it -> ROLLBACK_COMPLETE 3/3, HandlerErrorCode: InvalidRequest; pass (same + DependsOn Ty) -> CREATE_COMPLETE 3/3; CFN rejection: UDT addr does not exist"
+  expect: "UDT addr does not exist"
+addedOn: 2026-10-01
