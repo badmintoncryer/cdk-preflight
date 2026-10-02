@@ -26,9 +26,10 @@ const project = new awscdk.AwsCdkConstructLibrary({
   gitignore: ['*.js', '*.d.ts', '!test/.*.snapshot/**/*', '.tmp', '!/rules/logs/'],
   jestOptions: {
     jestConfig: {
-      // src/rules.generated.ts は rules/** から機械生成する 3MB のデータ塊で、
-      // カバレッジ率に意味が無いうえ v8 の計測対象としては一番重い。
-      coveragePathIgnorePatterns: ['/node_modules/', '/src/rules.generated.ts'],
+      // カバレッジは誰も読んでいない（アップロード先もバッジも無い）のに jest の半分以上を食っていた。
+      // v8 はプロセス内の全 JS（node_modules の検証エンジンを含む）を計測し、
+      // coveragePathIgnorePatterns はレポート時に捨てるだけ。ルール表 1 シャードが 94s -> 40s。
+      collectCoverage: false,
     },
   },
   devDeps: ['yaml'],
