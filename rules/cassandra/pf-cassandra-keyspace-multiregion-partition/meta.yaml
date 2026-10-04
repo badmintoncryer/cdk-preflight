@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/multiReg
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-01 us-east-1: MULTI_REGION RegionList [us-east-1, cn-north-1] -> ROLLBACK_COMPLETE, Resource handler returned message: Replication regions must be among the following regions: eu-north-1, ap-south-1, ... (the 34 commercial Regions, no cn-*) HandlerErrorCode: InvalidRequest; pass [us-east-1, eu-west-1] -> CREATE_COMPLETE; CFN rejection: Replication regions must be among the following regions"
+  evidence: "bench 2026-10-01 us-east-1: MULTI_REGION RegionList [us-east-1, cn-north-1] -> ROLLBACK_COMPLETE, Resource handler returned message: Replication regions must be among the following regions: eu-north-1, ap-south-1, ... (the 34 commercial Regions, no cn-*) HandlerErrorCode: InvalidRequest; pass [us-east-1, eu-west-1] -> CREATE_COMPLETE; CFN rejection: Replication regions must be among the following regions bench 2026-10-04 us-east-1: the replica region is now us-west-2, since the bench account's SCP denies eu-west-1 (monthly 2026-10 #332); fail and pass verified."
   expect: "Replication regions must be among the following regions"
 addedOn: 2026-10-01
