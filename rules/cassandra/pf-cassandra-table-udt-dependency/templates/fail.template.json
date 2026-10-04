@@ -6,6 +6,21 @@
         "KeyspaceName": "cdkpf_table_udt_dependency"
       }
     },
+    "Pre": {
+      "Type": "AWS::Cassandra::Type",
+      "Properties": {
+        "KeyspaceName": {
+          "Ref": "Ks"
+        },
+        "TypeName": "pre",
+        "Fields": [
+          {
+            "FieldName": "ff",
+            "FieldType": "text"
+          }
+        ]
+      }
+    },
     "Ty": {
       "Type": "AWS::Cassandra::Type",
       "Properties": {
@@ -19,7 +34,10 @@
             "FieldType": "text"
           }
         ]
-      }
+      },
+      "DependsOn": [
+        "Pre"
+      ]
     },
     "T": {
       "Type": "AWS::Cassandra::Table",
