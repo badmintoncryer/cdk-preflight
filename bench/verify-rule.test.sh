@@ -126,6 +126,14 @@ grep -q "^OK:" "$tmp/out" \
 got=$(run "AWS::Batch::ComputeEnvironment" "$COLLIDE")
 expect 0 "$got" "AlreadyExists on the rule's own type is evidence, not scaffolding"
 
+# 別の型で倒れても、文面が repro.expect を含むなら上限系の HandlerErrorCode でも本物の証拠
+RULE=pf-t-expect
+got=$(run "AWS::Batch::JobQueue" "Compute Environment must be created in ENABLED state. (HandlerErrorCode: ServiceLimitExceeded)")
+expect 0 "$got" "repro.expect on another type is evidence even with a limit HandlerErrorCode"
+got=$(run "AWS::Batch::JobQueue" "Too many job queues. (HandlerErrorCode: ServiceLimitExceeded)")
+expect 4 "$got" "a limit on another type without repro.expect is still scaffolding"
+RULE=pf-t-plain
+
 # 足場の型でも、上限系でない文面なら判定を続ける（リソース型だけで弾かない）
 got=$(run "AWS::EC2::Subnet" "The CIDR '10.0.0.0/24' conflicts with another subnet")
 expect 0 "$got" "a non-quota failure elsewhere must not be swallowed"

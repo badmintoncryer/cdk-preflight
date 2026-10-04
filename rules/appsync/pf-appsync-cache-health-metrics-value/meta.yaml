@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/APIReference/API_Cr
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/HealthMetricsConfig} does not match pattern {(ENABLED|DISABLED)}]"
-  expect: "Property validation failure: [Value for property {/HealthMetricsConfig} does not match pattern {(ENABLED|DISABLED"
+  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/HealthMetricsConfig} does not match pattern {(ENABLED|DISABLED)}] monthly 2026-10 (#332) us-east-1: the schema pattern is gone, and AppSync itself answers \"Invalid healthMetricsConfig for cache given. (Service: AppSync, Status Code: 400)\""
+  expect: "Invalid healthMetricsConfig for cache given"
 addedOn: 2026-09-12
