@@ -189,7 +189,10 @@
         },
         "Name": "ksk2",
         "Status": "ACTIVE"
-      }
+      },
+      "DependsOn": [
+        "Ksk"
+      ]
     },
     "Ksk3": {
       "Type": "AWS::Route53::KeySigningKey",
@@ -205,7 +208,10 @@
         },
         "Name": "ksk3",
         "Status": "ACTIVE"
-      }
+      },
+      "DependsOn": [
+        "Ksk2"
+      ]
     }
   }
 }
