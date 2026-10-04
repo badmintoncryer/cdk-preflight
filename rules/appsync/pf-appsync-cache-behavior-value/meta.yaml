@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/ApiCachingBehavior} does not match pattern {(FULL_REQUEST_CACHING|PER_RESOLVER_CACHING|OPERATION_LEVEL_CACHING)}]"
-  expect: "Property validation failure: [Value for property {/ApiCachingBehavior} does not match pattern {(FULL_REQUEST_CACHING|PER_RESOLVER_CACHING|OPERATION_LEVEL_CACHING"
+  evidence: "real-deploy 2026-09-12 us-east-1: Property validation failure: [Value for property {/ApiCachingBehavior} does not match pattern {(FULL_REQUEST_CACHING|PER_RESOLVER_CACHING|OPERATION_LEVEL_CACHING)}] monthly 2026-10 (#332) us-east-1: the schema pattern is gone, and AppSync itself answers \"Cache behavior is not valid. (Service: AppSync, Status Code: 400)\""
+  expect: "Cache behavior is not valid"
 addedOn: 2026-09-12

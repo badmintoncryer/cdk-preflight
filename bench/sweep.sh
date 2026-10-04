@@ -260,6 +260,23 @@ sweep_fixture_buckets() {
   done
 }
 
+# S3 Express のディレクトリバケットは、作成後に倒れた fail スタックのロールバックで消えずに残る
+# （2026-10-04 us-east-1、pf-s3express-lifecycle-rule-no-action の fail で毎回 1 本。翌月の同名作成が
+# NAME_CONFLICT_VALIDATION で倒れていた）。タグ API に対応しておらず list-buckets にも出ないので名前で拾う。
+sweep_directory_buckets() {
+  local region=$1 b
+  aws s3api list-directory-buckets --region "$region" \
+    --query "Buckets[?starts_with(Name,'cdkpf-')].Name" --output text 2>/dev/null |
+    tr '\t' '\n' | while read -r b; do
+    { [ -z "$b" ] || [ "$b" = "None" ]; } && continue
+    if aws s3api delete-bucket --bucket "$b" --region "$region" 2>"$RECLAIM_ERR"; then
+      echo "sweep: reclaimed directory bucket $b ($region)"
+    else
+      echo "LEFTOVER: directory bucket $b ($region) — could not delete: $(reclaim_err)"
+    fi
+  done
+}
+
 # OpenSearch Serverless の残骸を回収する。#268 のフィクスチャは CollectionGroup を実機に建てるので
 # 課金物（コレクションもグループも、アイドルでも容量下限ぶん OCU が課金される）がスタック削除に
 # 失敗したまま残り得るが、スタックタグは AOSS に伝播しないので上のタグ索引では拾えない。名前で引く。
@@ -397,6 +414,7 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
   sweep_hook_types "$region"
   sweep_domain_configs "$region"
   sweep_aoss "$region"
+  sweep_directory_buckets "$region"
 done
 
 sweep_fixture_buckets

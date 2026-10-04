@@ -125,6 +125,9 @@ scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失
   local ftype=$1 reason=$2
   case "$ftype" in "" | None) return 1 ;; esac
   grep -qF "$ftype" <<<"$RTYPES" && return 1
+  # 制約が別の型のリソースで発火することもある（2026-10、elbv2 tg-single-load-balancer は Listener が
+  # "cannot be associated with more than one load balancer ... HandlerErrorCode: ServiceLimitExceeded" で倒れた）
+  [ -n "$EXPECT" ] && grep -qF -- "$EXPECT" <<<"$reason" && return 1
   grep -qiE 'maximum number of|LimitExceeded|limit exceeded|quota|Rate exceeded|Throttl|already ?exists' <<<"$reason"
 }
 

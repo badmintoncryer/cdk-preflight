@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: At least one of [ExpirationInDays,AbortIncompleteMultipartUpload] needs to be specified\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-07 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: At least one of [ExpirationInDays,AbortIncompleteMultipartUpload] needs to be specified\"; pass template -> CREATE_COMPLETE monthly 2026-10 (#332): CloudFormation's pre-deployment check refused the fail stack with NAME_CONFLICT_VALIDATION, because the fail run leaves its directory bucket behind after rollback and sweep did not reclaim directory buckets; sweep now does, and bench 2026-10-04 us-east-1 verified fail and pass again."
   expect: "At least one of [ExpirationInDays,AbortIncompleteMultipartUpload] needs to be specified"
 addedOn: 2026-09-06
