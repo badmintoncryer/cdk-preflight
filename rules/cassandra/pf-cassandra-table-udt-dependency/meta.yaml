@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/udts.htm
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-01 us-east-1, a race, run 3 times: Table column frozen<addr> with addr an in-template AWS::Cassandra::Type and no DependsOn on it -> ROLLBACK_COMPLETE 3/3, HandlerErrorCode: InvalidRequest; pass (same + DependsOn Ty) -> CREATE_COMPLETE 3/3; CFN rejection: UDT addr does not exist"
+  evidence: "bench 2026-10-04 us-east-1, run 4 times: Table column frozen<addr> with addr an in-template AWS::Cassandra::Type and no DependsOn on it, the Type held back behind another Type (DependsOn Pre) so the race always goes the Table's way -> ROLLBACK_COMPLETE 4/4, HandlerErrorCode: InvalidRequest; pass (Table DependsOn Ty) -> CREATE_COMPLETE; CFN rejection: UDT addr does not exist. Without the hold-back the race is open: 2026-10-01 monthly-verify and 1 of 3 bench runs on 2026-10-04 reached CREATE_COMPLETE (#332)"
   expect: "UDT addr does not exist"
 addedOn: 2026-10-01
