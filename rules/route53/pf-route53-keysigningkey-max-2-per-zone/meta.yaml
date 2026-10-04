@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but CloudFormation only reports the knock-on state (\"Key Signing Key: ksk1, has status INTERNAL_FAILURE\"); creating a third key signing key straight against CreateKeySigningKey answers TooManyKeySigningKeys: \"The Hosted Zone with Id ... has reached the limit of allowed Key Signing keys per Hosted Zone\" (ROLLBACK_COMPLETE)"
-  expect: "Key Signing Key: ksk1, has status INTERNAL_FAILURE"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but CloudFormation only reports the knock-on state (\"Key Signing Key: ksk1, has status INTERNAL_FAILURE\"); creating a third key signing key straight against CreateKeySigningKey answers TooManyKeySigningKeys: \"The Hosted Zone with Id ... has reached the limit of allowed Key Signing keys per Hosted Zone\" (ROLLBACK_COMPLETE) bench 2026-10-04 us-east-1: with the three key signing keys created in parallel, CloudFormation reports either the INTERNAL_FAILURE knock-on or the limit, run to run (monthly 2026-10 #332); the fail template now creates them one after another (DependsOn) and Ksk3 fails with the TooManyKeySigningKeys message itself Parallel key signing keys on one zone can go INTERNAL_FAILURE by themselves (bench 2026-10-04: the max-2 pass template with two keys rolled back that way, and a parallel delete left ksk2 behind), so the pass template creates its keys one after another too."
+  expect: "has reached the limit of allowed Key Signing keys per Hosted Zone"
 addedOn: 2026-09-10
