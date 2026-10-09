@@ -6,6 +6,8 @@ const project = new awscdk.AwsCdkConstructLibrary({
   // 下限に固定した devDependency を自動で足させない（開発用の版は下の addDependency で別に決める）。
   peerDependencyOptions: { pinnedDevDependency: false },
   defaultReleaseBranch: 'main',
+  // 0.x を卒業して 1.0.0 から出す。1.x に入った後は何もしない。
+  minMajorVersion: 1,
   jsiiVersion: '~6.0.0',
   name: 'cdk-preflight',
   projenrcTs: true,
