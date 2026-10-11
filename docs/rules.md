@@ -2794,7 +2794,6 @@
 | `pf-route53-set-identifier-pairing` | AWS::Route53::RecordSet | SetIdentifier and a routing policy must appear together | ERROR | none |
 | `pf-route53-set-identifier-unique-in-group` | AWS::Route53::RecordSetGroup | SetIdentifier must be unique among record sets sharing a name and type | ERROR | none |
 | `pf-route53-simple-and-policy-same-name-type` | AWS::Route53::RecordSetGroup | A simple record set cannot coexist with a routing-policy record set of the same name and type | ERROR | none |
-| `pf-route53-soa-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SOA record value needs exactly 7 space-separated fields | ERROR | none |
 | `pf-route53-spf-value-quotes` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SPF record value must be enclosed in quotation marks | ERROR | none |
 | `pf-route53-srv-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SRV record value needs exactly 4 space-separated fields | ERROR | none |
 | `pf-route53-sshfp-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An SSHFP record value needs exactly 3 space-separated fields | ERROR | none |
