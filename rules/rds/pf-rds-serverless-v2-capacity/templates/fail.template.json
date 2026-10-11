@@ -12,7 +12,10 @@
           "MinCapacity": 0.5,
           "MaxCapacity": 257
         }
-      }
+      },
+      "DependsOn": [
+        "C2"
+      ]
     },
     "C2": {
       "Type": "AWS::RDS::DBCluster",

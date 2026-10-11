@@ -66,7 +66,7 @@ pf-memorydb-user-password  パスワード長のしきい値はヘルパー述�
 pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある
 pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
 pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
-pf-rds-serverless-v2-capacity  MinCapacity / MaxCapacity は 0.5 ACU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 1.5/1 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 0.5/0.5 で限界そのものに乗っている
+pf-rds-serverless-v2-capacity  MinCapacity / MaxCapacity は 0.5 ACU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 1.5/1 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 1/1 で限界そのものに乗っている（MaxCapacity は 1 以上でないと RDS が通さないので 0.5/0.5 は使えない）
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）
 pf-route53-coordinates-latitude-range  XSD が 90 ちょうどか 0-89 の 2 桁小数までしか許さないので最も近い違反値は 90.01。機械チェックは整数の 91 を要求する（pass の 90 は境界に乗っている）
 pf-route53-coordinates-longitude-range  同じ XSD の形で、最も近い違反値は 180.01。機械チェックは整数の 181 を要求する（pass の 180 は境界に乗っている）

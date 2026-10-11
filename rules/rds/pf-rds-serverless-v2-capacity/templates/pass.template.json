@@ -23,8 +23,8 @@
         "MasterUsername": "benchuser",
         "MasterUserPassword": "benchpass123",
         "ServerlessV2ScalingConfiguration": {
-          "MinCapacity": 0.5,
-          "MaxCapacity": 0.5
+          "MinCapacity": 1,
+          "MaxCapacity": 1
         }
       }
     }

@@ -18,6 +18,7 @@ case "$1 $2" in
   "resourcegroupstaggingapi get-resources") cat "$CDKPF_STUB_ORPHANS" ;;
   "kms describe-key") echo "${CDKPF_STUB_KEYSTATE:-Enabled}" ;;
   "route53resolver list-firewall-rule-groups") echo "${CDKPF_STUB_FRG:-}" ;;
+  "s3api list-directory-buckets") case "$*" in *us-east-1*) echo "${CDKPF_STUB_DIRB:-}" ;; esac ;;
   "route53resolver list-firewall-rule-group-associations") echo "${CDKPF_STUB_FRGA:-}" ;;
   "route53resolver list-firewall-rules") printf '%b\n' "${CDKPF_STUB_FR:-}" ;;
   "route53resolver list-firewall-domain-lists") echo "${CDKPF_STUB_FDL:-}" ;;
@@ -302,5 +303,14 @@ grep -q 'could not list anything (ap-northeast-1) — .*AccessDenied' <<<"$out" 
   fail "the denial reason was not carried onto the leftover line" "$out"
 called 'delete-collection-group' &&
   fail "kept deleting after the list was denied (the listing is what the deletes are based on)" "$out"
+
+# ロールバックで消えないディレクトリバケットは名前で拾う（タグ索引にも list-buckets にも出ない）
+export CDKPF_STUB_DIRB=cdkpf-s3xlnaf-b0--use1-az4--x-s3
+out=$(run "$tmp/none")
+unset CDKPF_STUB_DIRB
+grep -q 'reclaimed directory bucket cdkpf-s3xlnaf-b0--use1-az4--x-s3 (us-east-1)' <<<"$out" ||
+  fail "an orphaned directory bucket was not reclaimed" "$out"
+called 'delete-bucket --bucket cdkpf-s3xlnaf-b0--use1-az4--x-s3 --region us-east-1' ||
+  fail "the directory bucket was not deleted in its region" "$out"
 
 echo "sweep.test.sh: OK"
