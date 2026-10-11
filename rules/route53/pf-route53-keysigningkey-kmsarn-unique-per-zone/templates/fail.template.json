@@ -87,7 +87,10 @@
         },
         "Name": "ksk2",
         "Status": "ACTIVE"
-      }
+      },
+      "DependsOn": [
+        "Ksk"
+      ]
     }
   }
 }

@@ -12,6 +12,6 @@ supersededBy:
   engineRules: [E3019]
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, CloudFormation refuses the duplicate physical id itself (\"Z07333131XS2VZUJ317HS|ksk1 already exists in stack ...\"); the same pair put straight to CreateKeySigningKey answers KeySigningKeyAlreadyExists: \"Key Signing Key with the same Name and/or KMS ARN already exist. Please make sure the Key Signing Key name and KMS ARN parameters of this request are not being used by another Key Signing Key in this Hosted Zone\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, CloudFormation refuses the duplicate physical id itself (\"Z07333131XS2VZUJ317HS|ksk1 already exists in stack ...\"); the same pair put straight to CreateKeySigningKey answers KeySigningKeyAlreadyExists: \"Key Signing Key with the same Name and/or KMS ARN already exist. Please make sure the Key Signing Key name and KMS ARN parameters of this request are not being used by another Key Signing Key in this Hosted Zone\" (ROLLBACK_COMPLETE) Parallel key signing keys on one zone can go INTERNAL_FAILURE by themselves (bench 2026-10-04: the max-2 pass template with two keys rolled back that way, and a parallel delete left ksk2 behind), so the pass template creates its keys one after another too."
   expect: "|ksk1 already exists in stack"
 addedOn: 2026-09-10
