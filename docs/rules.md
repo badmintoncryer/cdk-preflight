@@ -1784,6 +1784,7 @@
 | `pf-elbv2-rule-priority-unique` | AWS::ElasticLoadBalancingV2::ListenerRule | Listener rules on the same listener must have distinct priorities | ERROR | none |
 | `pf-elbv2-rule-regex-and-values-exclusive` | AWS::ElasticLoadBalancingV2::ListenerRule | A rule condition matches either literals or a regex | ERROR | none |
 | `pf-elbv2-rule-regex-values-fields` | AWS::ElasticLoadBalancingV2::ListenerRule | Only three condition fields take a regular expression | ERROR | none |
+| `pf-elbv2-rule-source-ip-broadcast` | AWS::ElasticLoadBalancingV2::ListenerRule | An ALB source-ip condition cannot take 255.255.255.255/32 | ERROR | none |
 | `pf-elbv2-rule-source-ip-cidr` | AWS::ElasticLoadBalancingV2::ListenerRule | A source-ip condition takes CIDR blocks | ERROR | none |
 | `pf-elbv2-rule-value-length-128` | AWS::ElasticLoadBalancingV2::ListenerRule | A condition value is at most 128 characters | ERROR | none |
 | `pf-elbv2-stickiness-type-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Stickiness type lb_cookie needs an HTTP-protocol target group, source_ip a TCP one | ERROR | none |
