@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/keyspaces/latest/devguide/multiReg
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-01 us-east-1: MULTI_REGION keyspace (us-east-1, eu-west-1) + table CUSTOMER_MANAGED_KMS_KEY with a non-existent same-account key ARN -> ROLLBACK_COMPLETE, Resource handler returned message: Customer managed KMS key encryption type is not supported on multi region table HandlerErrorCode: InvalidRequest (rejected before the key lookup, which would say Specified encryption key is invalid or not found); pass AWS_OWNED_KMS_KEY -> CREATE_COMPLETE; CFN rejection: Customer managed KMS key encryption type is not supported on multi region table"
+  evidence: "bench 2026-10-01 us-east-1: MULTI_REGION keyspace (us-east-1, eu-west-1) + table CUSTOMER_MANAGED_KMS_KEY with a non-existent same-account key ARN -> ROLLBACK_COMPLETE, Resource handler returned message: Customer managed KMS key encryption type is not supported on multi region table HandlerErrorCode: InvalidRequest (rejected before the key lookup, which would say Specified encryption key is invalid or not found); pass AWS_OWNED_KMS_KEY -> CREATE_COMPLETE; CFN rejection: Customer managed KMS key encryption type is not supported on multi region table bench 2026-10-04 us-east-1: the replica region is now us-west-2, since the bench account's SCP denies eu-west-1 (monthly 2026-10 #332); fail and pass verified."
   expect: "Customer managed KMS key encryption type is not supported on multi region table"
 addedOn: 2026-10-01
