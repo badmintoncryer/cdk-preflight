@@ -1,0 +1,13 @@
+id: pf-elbv2-rule-source-ip-broadcast
+service: elbv2
+resourceTypes: [AWS::ElasticLoadBalancingV2::ListenerRule]
+severity: ERROR
+title: "An ALB source-ip condition cannot take 255.255.255.255/32"
+constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/rule-condition-types.html#source-ip-conditions
+benchRegion: us-east-1
+upstream: none
+repro:
+  method: research-case
+  evidence: "user deploy 2026-10-11: a ListenerRule whose source-ip condition held 255.255.255.255/32 (meant as a never-matching rule) rolled back with \"Resource handler returned message: The specified value '255.255.255.255/32' is not a valid CIDR block (Service: ElasticLoadBalancingV2, Status Code: 400)\" HandlerErrorCode: InvalidRequest. The ALB guide states it directly: \"You cannot specify the 255.255.255.255/32 CIDR for the source IP rule condition.\" Not yet run through bench; the pass template carries 255.255.255.254/32, the neighbouring address."
+  expect: "The specified value '255.255.255.255/32' is not a valid CIDR block"
+addedOn: 2026-10-12
