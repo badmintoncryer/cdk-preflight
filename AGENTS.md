@@ -6,7 +6,7 @@ Guide for AI agents (and humans) working on this repository.
 
 A data-first OSS: the product is the **rule pack** (`rules/`), not the loader. Rules are Rego documents evaluated by `@aws/cloudformation-validate` (the engine bundled inside `aws-cdk-lib` >= 2.267.0). The loader (`src/index.ts`) only selects rules and registers them with the CDK validation machinery.
 
-Scope: **every deploy-time failure that no existing CDK mechanism already catches.** A rule belongs here iff (a) violating it makes an actual deployment fail and (b) no layer that sees the same synthesized template already blocks it. That is the entire admission test — there is no second question about whether a rule is "worth it", how exotic the mistake looks, or whether some other layer would usually have caught the user first.
+Scope: **every deploy-time failure, and every post-deploy run that is certain to fail, that no existing CDK mechanism already catches.** A rule belongs here iff (a) violating it makes an actual deployment fail, or lets the deployment succeed and then makes every run of the deployed resource fail, and (b) no layer that sees the same synthesized template already blocks it. The second half of (a) exists because a resource that deploys and never works is the harder mistake to notice: an SSM Automation association whose Targets name several tags reaches CREATE_COMPLETE and then fails every execution (`pf-ssm-association-automation-single-target`). Such a rule still needs a fail template that fails the deploy, so the real-deploy gate can run it; there, `WaitForSuccessTimeoutSeconds` makes CloudFormation wait for the association's first run. That is the entire admission test — there is no second question about whether a rule is "worth it", how exotic the mistake looks, or whether some other layer would usually have caught the user first.
 
 Security and compliance policy (cdk-nag, Control Tower proactive controls) stays out under the same rule rather than as a special exception: those mechanisms exist, so that gap is not ours to fill.
 
@@ -145,7 +145,7 @@ If you are a subagent running one of these phases, do not spawn further agents.
 
 ## Adding a rule (the pipeline)
 
-1. Identify a constraint that fails only at deploy time (doc page, API error message, war story).
+1. Identify a constraint that fails at deploy time, or that makes every run after the deploy fail (doc page, API error message, war story).
 2. Create `rules/<service>/<rule-id>/` with all four files. Rego conventions:
    - `package cdk_preflight`, `import rego.v1`
    - Emit via `make_diag_full("<rule-id>", "ERROR", name, <property-path>, <message with actual value>, <fix>, <doc url>)`
