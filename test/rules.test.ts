@@ -2640,6 +2640,26 @@ describe('kms / secretsmanager / ssm rules', () => {
     expect(ids(diagnoseTemplate(withDoc({}, { DocumentType: 'Automation', Content: AUTO() })))).toContain('pf-ssm-association-document');
     expect(ids(diagnoseTemplate(withDoc({ AutomationTargetParameterName: 'InstanceId' }, { DocumentType: 'Automation', Content: AUTO({ parameters: { InstanceId: { type: 'String', default: '' } } }) })))).toHaveLength(0);
   });
+
+  test('ssm rate-controlled automation association takes one tag or resource group', () => {
+    const RULE = 'pf-ssm-association-automation-single-target';
+    const auto = (targets: unknown, extra: Record<string, unknown> = {}) => assoc(
+      { Name: { Ref: 'D' }, Parameters: undefined, AutomationTargetParameterName: 'InstanceId', Targets: targets },
+      { D: { Type: 'AWS::SSM::Document', Properties: { DocumentType: 'Automation', Content: AUTO({ parameters: { InstanceId: { type: 'String', default: '' } } }) } }, ...extra },
+    );
+    // the fail fixture covers several tag values; these are the branches it cannot reach
+    expect(ids(diagnoseTemplate(auto([{ Key: 'tag:a', Values: ['x'] }, { Key: 'tag:b', Values: ['y'] }])))).toEqual([RULE]);
+    expect(ids(diagnoseTemplate(auto([{ Key: 'resource-groups:Name', Values: ['g1', 'g2'] }])))).toEqual([RULE]);
+    expect(ids(diagnoseTemplate(auto([{ Key: 'resource-groups:Name', Values: ['g1'] }])))).toHaveLength(0);
+    // InstanceIds values have no documented limit here
+    expect(ids(diagnoseTemplate(auto([{ Key: 'InstanceIds', Values: ['i-0123456789abcdef0', 'i-0123456789abcdef1'] }])))).toHaveLength(0);
+    // a list whose length the template does not show is left alone
+    const p = { Ids: { Type: 'CommaDelimitedList' } };
+    expect(ids(diagnoseTemplate({ Parameters: p, ...auto([{ Key: 'tag:a', Values: { Ref: 'Ids' } }]) }))).toHaveLength(0);
+    expect(ids(diagnoseTemplate({ Conditions: { C: { 'Fn::Equals': ['a', 'b'] } }, ...auto([{ Key: 'tag:a', Values: ['x', { 'Fn::If': ['C', 'y', { Ref: 'AWS::NoValue' }] }] }]) }))).toHaveLength(0);
+    // a Command association runs every tag value it is given
+    expect(ids(diagnoseTemplate(assoc({ Targets: [{ Key: 'tag:Name', Values: ['a', 'b', 'c'] }] })))).toHaveLength(0);
+  });
 });
 
 /**

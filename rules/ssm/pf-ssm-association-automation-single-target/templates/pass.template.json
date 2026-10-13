@@ -1,0 +1,47 @@
+{
+  "Resources": {
+    "Doc": {
+      "Type": "AWS::SSM::Document",
+      "Properties": {
+        "DocumentType": "Automation",
+        "Content": {
+          "schemaVersion": "0.3",
+          "description": "cdk-preflight probe: sleeps one second",
+          "parameters": {
+            "InstanceId": {
+              "type": "String",
+              "default": ""
+            }
+          },
+          "mainSteps": [
+            {
+              "name": "sleep",
+              "action": "aws:sleep",
+              "inputs": {
+                "Duration": "PT1S"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "A": {
+      "Type": "AWS::SSM::Association",
+      "Properties": {
+        "Name": {
+          "Ref": "Doc"
+        },
+        "AutomationTargetParameterName": "InstanceId",
+        "Targets": [
+          {
+            "Key": "tag:cdkpf",
+            "Values": [
+              "probe-1"
+            ]
+          }
+        ],
+        "WaitForSuccessTimeoutSeconds": 300
+      }
+    }
+  }
+}
