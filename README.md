@@ -19,7 +19,7 @@ Some CloudFormation constraints are not expressed in resource provider schemas �
 
 cdk-preflight is a curated [Rego rule pack](docs/rules.md) for exactly those constraints, evaluated with the CloudFormation validation engine that ships inside `aws-cdk-lib` (>= 2.267.0). By default a violation **fails `cdk synth`** — a template that is known to fail at deploy time never leaves your machine.
 
-The pack aims at **every deploy-time failure that no existing CDK mechanism already catches** — nothing narrower. Every bundled rule is backed by a `fail`/`pass` template pair, and the failure has been reproduced against real AWS. The handful of rules that could not be reproduced are marked `doc-only` and report as **warnings**, as does a rule whose remaining false positives cannot be told from the template (a cross-account Lambda layer the owner may have shared): they show up in the validation report but never fail synth. Rules that the built-in validation engine already covers are deliberately **not** duplicated — a test suite enforces this, and a rule the engine catches up with later is skipped on engines that cover it (see [Scope and rule lifecycle](#scope-and-rule-lifecycle)).
+The pack aims at **every deploy-time failure, and every post-deploy run that is certain to fail, that no existing CDK mechanism already catches** — nothing narrower. Every bundled rule is backed by a `fail`/`pass` template pair, and the failure has been reproduced against real AWS. The handful of rules that could not be reproduced are marked `doc-only` and report as **warnings**, as does a rule whose remaining false positives cannot be told from the template (a cross-account Lambda layer the owner may have shared): they show up in the validation report but never fail synth. Rules that the built-in validation engine already covers are deliberately **not** duplicated — a test suite enforces this, and a rule the engine catches up with later is skipped on engines that cover it (see [Scope and rule lifecycle](#scope-and-rule-lifecycle)).
 
 > **Requires `aws-cdk-lib` >= 2.267.0** (released 2026-08-27) — the first release that bundles
 > the CloudFormation validation engine. On older versions the rules cannot run at all.
@@ -285,7 +285,7 @@ missing a rule. Report it:
 
 ## Scope and rule lifecycle
 
-A constraint belongs in the pack when violating it makes a real deployment fail *and* no layer that sees the same synthesized template already blocks it. There is no further "is this worth a rule" question — if the gap is real, it gets a rule.
+A constraint belongs in the pack when violating it makes a real deployment fail, or lets the deployment succeed and then makes every run of the deployed resource fail (an SSM Automation association that targets several tags, for example), *and* no layer that sees the same synthesized template already blocks it. There is no further "is this worth a rule" question — if the gap is real, it gets a rule.
 
 CDK L2 construct validation is deliberately **not** one of those layers. `CfnXxx` usage, escape hatches, `addPropertyOverride`, `cloudformation-include` and migrated templates all bypass L2, so an L2 guard covering the same mistake neither disqualifies a rule nor retires one.
 
