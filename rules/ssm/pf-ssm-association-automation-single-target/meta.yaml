@@ -1,0 +1,11 @@
+id: pf-ssm-association-automation-single-target
+service: ssm
+resourceTypes: [AWS::SSM::Association]
+severity: ERROR
+title: "A rate-controlled Automation association (AutomationTargetParameterName set) takes one target, and that target one tag value or one resource group"
+constraintSource: https://docs.aws.amazon.com/systems-manager/latest/userguide/running-automations-map-targets.html
+upstream: none
+repro:
+  method: research-case
+  evidence: "user deploy 2026-10-12 ap-northeast-1: an association of a custom Automation runbook with AutomationTargetParameterName InstanceId and Targets [{Key: tag:Name, Values: [three server names]}] reached CREATE_COMPLETE (no WaitForSuccessTimeoutSeconds), then its first run ended Status Failed, DetailedStatus InvalidAutomationParameters with no child executions; CloudTrail showed State Manager's StartAutomationExecution failing with \"InvalidAutomationExecutionParametersException: Only one resource group or tag can be specified at a time\". Re-targeted to one tag key and one value, the association ran. The Automation guide says \"You can specify a single tag as the target of an automation\" and \"a single AWS resource group\"; StartAutomationExecution caps Targets at 1 item. Not yet run through bench: the fixtures set WaitForSuccessTimeoutSeconds so the failed run fails the deploy, and the pass template (one value, no matching resource) has not been deployed."
+addedOn: 2026-10-13
