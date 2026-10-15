@@ -2282,6 +2282,8 @@
 | `pf-lambda-vpc-non-empty` | AWS::Lambda::Function | VpcConfig needs at least one subnet and one security group | ERROR | none |
 | `pf-lambda-vpc-same-vpc` | AWS::Lambda::Function | Subnets and security groups belong to one VPC | ERROR | none |
 | `pf-lambda-zip-no-imageuri` | AWS::Lambda::Function | A .zip function cannot carry Code.ImageUri | ERROR | none |
+| `pf-lambda-zipfile-handler-missing` | AWS::Lambda::Function | An inline (Code.ZipFile) function's Handler must name a function the inline code defines | ERROR | none |
+| `pf-lambda-zipfile-handler-module` | AWS::Lambda::Function | An inline (Code.ZipFile) function's Handler must load the module index | ERROR | none |
 | `pf-logs-account-policy-document-json` | AWS::Logs::AccountPolicy | An account policy document must be valid JSON | ERROR | none |
 | `pf-logs-account-policy-selection-criteria-prefix` | AWS::Logs::AccountPolicy | Field index and transformer account policies select with LogGroupNamePrefix | ERROR | none |
 | `pf-logs-account-policy-selection-criteria-subscription` | AWS::Logs::AccountPolicy | A subscription account policy selects with LogGroupName NOT IN | ERROR | none |
@@ -3045,6 +3047,7 @@
 | `pf-ses-receipt-rule-set-name-charset` | AWS::SES::ReceiptRuleSet | A receipt rule set's name must start and end with a letter or digit | ERROR | none |
 | `pf-ses-sns-destination-topic-region` | AWS::SES::ConfigurationSetEventDestination | An SNS event destination must publish to a topic in the deployment Region | ERROR | none |
 | `pf-ses-template-html-or-text-part` | AWS::SES::Template | An email template needs an HtmlPart or a TextPart | ERROR | none |
+| `pf-sns-aws-managed-key-delivery` | AWS::SNS::Topic<br>AWS::CloudWatch::Alarm<br>AWS::CloudWatch::CompositeAlarm<br>AWS::Events::Rule | CloudWatch alarms and EventBridge cannot publish to a topic encrypted with the AWS managed key alias/aws/sns | ERROR | none |
 | `pf-sns-delivery-policy` | AWS::SNS::Subscription<br>AWS::SNS::Topic | HTTP/S DeliveryPolicy retry values: minDelayTarget >= 1, maxDelayTarget <= 3600 and >= minDelayTarget, numRetries 0..100 and at least the sum of the phase retries, phase counts >= 0, backoffFunction one of arithmetic|exponential|geometric|linear, maxReceivesPerSecond >= 1 (subscription DeliveryPolicy and topic DeliveryPolicy.http) | ERROR | none |
 | `pf-sns-fifo-only-attributes` | AWS::SNS::Topic | ContentBasedDeduplication, ArchivePolicy and FifoThroughputScope are FIFO-only topic attributes, and ArchivePolicy.MessageRetentionPeriod is 1..365 days | ERROR | none |
 | `pf-sns-fifo-queue-on-standard-topic` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A FIFO SQS queue cannot subscribe to a standard topic (a FIFO topic may fan out to standard queues, not the reverse) | ERROR | none |
@@ -3059,6 +3062,7 @@
 | `pf-sns-topic-attribute-values` | AWS::SNS::Topic | Topic DisplayName is at most 100 characters, SignatureVersion is 1 or 2, and TracingConfig is PassThrough or Active | ERROR | none |
 | `pf-sns-topic-name-format` | AWS::SNS::Topic | Topic names allow only letters, numbers, hyphen and underscore (plus a .fifo suffix) | ERROR | none |
 | `pf-sns-topic-policy-topics` | AWS::SNS::TopicPolicy | TopicPolicy.Topics takes topic ARNs (Ref Topic), not topic names | ERROR | none |
+| `pf-sqs-aws-managed-key-delivery` | AWS::SQS::Queue<br>AWS::SNS::Subscription<br>AWS::SNS::Topic<br>AWS::Events::Rule | SNS and EventBridge cannot deliver to a queue encrypted with the AWS managed key alias/aws/sqs | ERROR | none |
 | `pf-sqs-dlq-same-type` | AWS::SQS::Queue | A dead-letter queue named by a literal ARN must be the same type as its source (FIFO for FIFO, standard for standard); Fn::GetAtt wiring is covered by engine rule E3502 | ERROR | none |
 | `pf-sqs-fifo-name-suffix` | AWS::SQS::Queue | A QueueName ending in .fifo requires FifoQueue: true (a FIFO queue without the suffix is engine rule E2504) | ERROR | none |
 | `pf-sqs-fifo-only-attributes` | AWS::SQS::Queue | ContentBasedDeduplication, DeduplicationScope and FifoThroughputLimit are FIFO-only queue attributes (and the two enums are messageGroup|queue and perQueue|perMessageGroupId) | ERROR | none |
