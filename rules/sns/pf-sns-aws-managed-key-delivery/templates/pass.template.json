@@ -1,0 +1,258 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Topic": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {}
+  },
+  "TopicPolicy": {
+   "Type": "AWS::SNS::TopicPolicy",
+   "Properties": {
+    "Topics": [
+     {
+      "Ref": "Topic"
+     }
+    ],
+    "PolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Sid": "Events",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Action": "sns:Publish",
+       "Resource": {
+        "Ref": "Topic"
+       }
+      },
+      {
+       "Sid": "Alarms",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "cloudwatch.amazonaws.com"
+       },
+       "Action": "sns:Publish",
+       "Resource": {
+        "Ref": "Topic"
+       }
+      },
+      {
+       "Sid": "Owner",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+        }
+       },
+       "Action": [
+        "sns:Publish",
+        "sns:Subscribe",
+        "sns:GetTopicAttributes"
+       ],
+       "Resource": {
+        "Ref": "Topic"
+       }
+      }
+     ]
+    }
+   }
+  },
+  "Queue": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "SqsManagedSseEnabled": true
+   }
+  },
+  "QueuePolicy": {
+   "Type": "AWS::SQS::QueuePolicy",
+   "Properties": {
+    "Queues": [
+     {
+      "Ref": "Queue"
+     }
+    ],
+    "PolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "sns.amazonaws.com"
+       },
+       "Action": "sqs:SendMessage",
+       "Resource": {
+        "Fn::GetAtt": [
+         "Queue",
+         "Arn"
+        ]
+       },
+       "Condition": {
+        "ArnEquals": {
+         "aws:SourceArn": {
+          "Ref": "Topic"
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  },
+  "Sub": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Protocol": "sqs",
+    "RawMessageDelivery": true,
+    "TopicArn": {
+     "Ref": "Topic"
+    },
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "Queue",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "Rule": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "cdkpf.probe"
+     ]
+    },
+    "Targets": [
+     {
+      "Id": "t",
+      "Arn": {
+       "Ref": "Topic"
+      }
+     }
+    ]
+   }
+  },
+  "Alarm": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "Namespace": "cdkpf/probe",
+    "MetricName": "never",
+    "Statistic": "Sum",
+    "Period": 60,
+    "EvaluationPeriods": 1,
+    "Threshold": 1,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "AlarmActions": [
+     {
+      "Ref": "Topic"
+     }
+    ]
+   }
+  },
+  "ProbeRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "probe",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage"
+         ],
+         "Resource": {
+          "Fn::GetAtt": [
+           "Queue",
+           "Arn"
+          ]
+         }
+        },
+        {
+         "Effect": "Allow",
+         "Action": "events:PutEvents",
+         "Resource": {
+          "Fn::Sub": "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default"
+         }
+        },
+        {
+         "Effect": "Allow",
+         "Action": [
+          "cloudwatch:SetAlarmState",
+          "cloudwatch:DescribeAlarmHistory"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "ProbeFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 150,
+    "Role": {
+     "Fn::GetAtt": [
+      "ProbeRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "import json, time, urllib.request, boto3\ndef handler(event, context):\n    reason = None\n    if event['RequestType'] == 'Create':\n        try:\n            reason = check(event['ResourceProperties'])\n        except Exception as e:\n            reason = 'cdkpf probe could not run: %r' % e\n    body = {'Status': 'FAILED' if reason else 'SUCCESS', 'Reason': (reason or 'ok')[:900],\n            'PhysicalResourceId': event.get('PhysicalResourceId', context.log_stream_name),\n            'StackId': event['StackId'], 'RequestId': event['RequestId'], 'LogicalResourceId': event['LogicalResourceId']}\n    urllib.request.urlopen(urllib.request.Request(event['ResponseURL'], data=json.dumps(body).encode(), method='PUT', headers={'Content-Type': ''}))\ndef check(p):\n    sqs = boto3.client('sqs')\n    want = set()\n    if p.get('TopicArn'):\n        boto3.client('sns').publish(TopicArn=p['TopicArn'], Message='cdkpf-sns')\n        want.add('SNS')\n    if p.get('EventSource'):\n        boto3.client('events').put_events(Entries=[{'Source': p['EventSource'], 'DetailType': 'probe', 'Detail': '{}'}])\n        want.add('EventBridge')\n    alarm = p.get('AlarmName')\n    if alarm:\n        boto3.client('cloudwatch').set_alarm_state(AlarmName=alarm, StateValue='ALARM', StateReason='cdkpf probe')\n    got, deadline = set(), time.time() + 90\n    while time.time() < deadline and want - got:\n        for m in sqs.receive_message(QueueUrl=p['QueueUrl'], WaitTimeSeconds=10, MaxNumberOfMessages=10).get('Messages', []):\n            got.add('EventBridge' if p.get('EventSource', '-') in m['Body'] else 'SNS')\n    bad = ['%s message was not delivered within 90 s' % s for s in sorted(want - got)]\n    if alarm:\n        for _ in range(12):\n            h = boto3.client('cloudwatch').describe_alarm_history(AlarmName=alarm, HistoryItemType='Action')['AlarmHistoryItems']\n            if h:\n                break\n            time.sleep(5)\n        failed = [i['HistorySummary'] + ' ' + i.get('HistoryData', '')[:300] for i in h if not i['HistorySummary'].startswith('Successfully')]\n        bad = failed + bad + ([] if h else ['no alarm action ran within 60 s'])\n    return '; '.join(bad)\n"
+    }
+   }
+  },
+  "Probe": {
+   "Type": "Custom::CdkpfProbe",
+   "DependsOn": [
+    "Sub",
+    "Rule",
+    "QueuePolicy",
+    "TopicPolicy",
+    "Alarm"
+   ],
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "ProbeFn",
+      "Arn"
+     ]
+    },
+    "ServiceTimeout": "300",
+    "QueueUrl": {
+     "Ref": "Queue"
+    },
+    "EventSource": "cdkpf.probe",
+    "AlarmName": {
+     "Ref": "Alarm"
+    }
+   }
+  }
+ }
+}

@@ -57,7 +57,7 @@
           ]
         },
         "Code": {
-          "ZipFile": "x"
+          "ZipFile": "def handler(e, c):\n    return 0\n"
         },
         "Runtime": "python3.13",
         "Handler": "index.handler",

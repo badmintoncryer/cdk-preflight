@@ -1,0 +1,12 @@
+id: pf-lambda-zipfile-handler-module
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "An inline (Code.ZipFile) function's Handler must load the module index"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html#cfn-lambda-function-code-zipfile
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 ap-northeast-1: inline python3.13 and nodejs22.x functions with Handler app.handler reached CREATE_COMPLETE; the probe's first invoke of each returned Runtime.ImportModuleError (Python: Unable to import module 'app': No module named 'app'; Node.js: Error: Cannot find module 'app') -> probe FAILED, ROLLBACK_COMPLETE; pass Handler index.handler on both -> CREATE_COMPLETE"
+  expect: "Runtime.ImportModuleError"
+addedOn: 2026-10-16

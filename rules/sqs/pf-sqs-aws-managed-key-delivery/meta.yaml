@@ -1,0 +1,12 @@
+id: pf-sqs-aws-managed-key-delivery
+service: sqs
+resourceTypes: [AWS::SQS::Queue, AWS::SNS::Subscription, AWS::SNS::Topic, AWS::Events::Rule]
+severity: ERROR
+title: "SNS and EventBridge cannot deliver to a queue encrypted with the AWS managed key alias/aws/sqs"
+constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-key-management.html#compatibility-with-aws-services
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 ap-northeast-1: a queue with KmsMasterKeyId alias/aws/sqs, a queue policy allowing sns.amazonaws.com and events.amazonaws.com from the topic and the rule, an SNS subscription and an EventBridge rule target all reached CREATE_COMPLETE; the probe published once and put one event, and in 90 s neither arrived (EventBridge message was not delivered within 90 s; SNS message was not delivered within 90 s) -> probe FAILED, ROLLBACK_COMPLETE; pass, the same template with SqsManagedSseEnabled true, received both -> CREATE_COMPLETE"
+  expect: "message was not delivered within 90 s"
+addedOn: 2026-10-16

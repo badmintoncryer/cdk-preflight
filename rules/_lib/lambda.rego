@@ -275,3 +275,42 @@ _pf_lam_str(o, k) := v if {
 	v != "__pf_absent"
 	is_string(v)
 }
+
+# --- inline (Code.ZipFile) functions -----------------------------------------
+# CloudFormation writes ZipFile to a single file named index (index.py, index.js)
+# for the Node.js and Python runtimes, so the handler's module can only be index
+# and its function has to be in that text. Only strings the template fixes are read
+# (the engine folds an Fn::Join of literals into one); a ZipFile, Handler or Runtime
+# that takes a parameter is not judged.
+_pf_lam_inline contains [name, rt, h, code] if {
+	some name in resources_of_type("AWS::Lambda::Function")
+	code := object.get(object.get(_pf_lam_props(name), "Code", {}), "ZipFile", null)
+	is_string(code)
+	rt := _pf_lam_get(name, "Runtime")
+	is_string(rt)
+	some fam in {"python", "nodejs"}
+	startswith(rt, fam)
+	h := _pf_lam_get(name, "Handler")
+	is_string(h)
+}
+
+# Python imports everything before the last dot; Node.js loads the file named
+# before the first dot and walks the rest as a property path.
+_pf_lam_handler_module(rt, h) := m if {
+	startswith(rt, "python")
+	parts := split(h, ".")
+	count(parts) >= 2
+	m := concat(".", array.slice(parts, 0, count(parts) - 1))
+}
+
+_pf_lam_handler_module(rt, h) := split(h, ".")[0] if {
+	startswith(rt, "nodejs")
+	contains(h, ".")
+}
+
+_pf_lam_handler_fn(rt, h) := parts[count(parts) - 1] if {
+	startswith(rt, "python")
+	parts := split(h, ".")
+}
+
+_pf_lam_handler_fn(rt, h) := split(h, ".")[1] if startswith(rt, "nodejs")

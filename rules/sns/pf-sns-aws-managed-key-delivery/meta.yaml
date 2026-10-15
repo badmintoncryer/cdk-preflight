@@ -1,0 +1,12 @@
+id: pf-sns-aws-managed-key-delivery
+service: sns
+resourceTypes: [AWS::SNS::Topic, AWS::CloudWatch::Alarm, AWS::CloudWatch::CompositeAlarm, AWS::Events::Rule]
+severity: ERROR
+title: "CloudWatch alarms and EventBridge cannot publish to a topic encrypted with the AWS managed key alias/aws/sns"
+constraintSource: https://docs.aws.amazon.com/sns/latest/dg/sns-key-management.html#compatibility-with-aws-services
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 ap-northeast-1: a topic with KmsMasterKeyId alias/aws/sns, a topic policy allowing cloudwatch.amazonaws.com and events.amazonaws.com, an alarm action and an EventBridge rule target all reached CREATE_COMPLETE; SetAlarmState ALARM left the history item Failed to execute action with error CloudWatch Alarms does not have authorization to access the SNS topic encryption key, and the event never reached the subscribed queue in 90 s -> probe FAILED, ROLLBACK_COMPLETE; pass, the same template with the topic unencrypted -> CREATE_COMPLETE"
+  expect: "Failed to execute action"
+addedOn: 2026-10-16

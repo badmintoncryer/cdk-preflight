@@ -81,7 +81,7 @@ function addSupersededViolation(stack: Stack): void {
 function addDocOnlyViolation(stack: Stack): void {
   const fn = new lambda.CfnFunction(stack, 'F', {
     role: 'arn:aws:iam::123456789012:role/lambda-role',
-    code: { zipFile: 'x' },
+    code: { zipFile: 'def handler(e, c):\n    return 0\n' },
     runtime: 'python3.13',
     handler: 'index.handler',
   });
