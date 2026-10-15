@@ -1,0 +1,12 @@
+id: pf-lambda-zipfile-handler-missing
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "An inline (Code.ZipFile) function's Handler must name a function the inline code defines"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html#cfn-lambda-function-code-zipfile
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 ap-northeast-1: inline functions reached CREATE_COMPLETE; the probe's first invoke returned Runtime.HandlerNotFound on both (python3.13 Handler index.lambda_handler over code defining handler: Handler 'lambda_handler' missing on module 'index'; nodejs22.x Handler index.main over code exporting handler: index.main is undefined or not exported) -> probe FAILED, ROLLBACK_COMPLETE; pass Handler index.handler on both -> CREATE_COMPLETE"
+  expect: "Runtime.HandlerNotFound"
+addedOn: 2026-10-16

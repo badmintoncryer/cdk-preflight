@@ -3644,3 +3644,84 @@ describe('length bounds embedded in format regexes (#226)', () => {
     expect(ids(diagnoseTemplate(assoc(`mi-${rep(17, '0')}`)))).not.toContain('pf-ssm-association-targets');
   });
 });
+
+/**
+ * デプロイは通り、実行のたびに失敗するもの（Lambda の ZipFile と Handler、AWS マネージドキーで
+ * 暗号化した配送先）のうち、fail フィクスチャ 1 枚では踏めない分岐と、止めない形。
+ */
+describe('post-deploy run failures', () => {
+  const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const fires = (tpl: unknown, id: string) => expect(ids(diagnoseTemplate(tpl))).toContain(id);
+  const silent = (tpl: unknown, id: string) => expect(ids(diagnoseTemplate(tpl))).not.toContain(id);
+  const ROLE = 'arn:aws:iam::123456789012:role/r';
+  const fn = (Runtime: string, Handler: unknown, ZipFile: unknown) =>
+    ({ Resources: { F: { Type: 'AWS::Lambda::Function', Properties: { Runtime, Handler, Role: ROLE, Code: { ZipFile } } } } });
+
+  test('pf-lambda-zipfile-handler-module', () => {
+    const RULE = 'pf-lambda-zipfile-handler-module';
+    const PY = 'def handler(e, c):\n  return 1\n';
+    // Python imports everything before the last dot
+    fires(fn('python3.13', 'index.sub.handler', PY), RULE);
+    silent(fn('python3.13', 'index.handler', PY), RULE);
+    // Node.js loads the file before the first dot and walks the rest
+    silent(fn('nodejs22.x', 'index.obj.handler', 'exports.obj = { handler: async () => 1 };'), RULE);
+    // a Handler without a dot fails differently (Bad handler); not judged here
+    silent(fn('python3.13', 'handler', PY), RULE);
+    // a Join of literals is folded into the code CloudFormation writes; one that takes a parameter is not judged
+    fires(fn('python3.13', 'app.handler', { 'Fn::Join': ['', ['def handler(e, c):\n', '  return 1\n']] }), RULE);
+    silent({ Parameters: { P: { Type: 'String' } }, ...fn('python3.13', 'app.handler', { 'Fn::Join': ['', ['def handler(e, c):\n', { Ref: 'P' }]] }) }, RULE);
+    // only the runtimes that support ZipFile, and only inline code
+    silent(fn('java21', 'app.Handler::handle', PY), RULE);
+    silent({ Resources: { F: { Type: 'AWS::Lambda::Function', Properties: { Runtime: 'python3.13', Handler: 'app.handler', Role: ROLE, Code: { S3Bucket: 'b', S3Key: 'k.zip' } } } } }, RULE);
+  });
+
+  test('pf-lambda-zipfile-handler-missing', () => {
+    const RULE = 'pf-lambda-zipfile-handler-missing';
+    // the name has to appear as a whole word
+    fires(fn('python3.13', 'index.handler', 'def handler_x(e, c):\n  return 1\n'), RULE);
+    silent(fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n'), RULE);
+    // any appearance counts, even a comment
+    silent(fn('nodejs22.x', 'index.main', '// main\nexports.handler = async () => 1;'), RULE);
+    // code that can define names without spelling them
+    silent(fn('python3.13', 'index.handler', 'from helpers import *\n'), RULE);
+    silent(fn('python3.13', 'index.handler', "globals()['hand' + 'ler'] = lambda e, c: 1\n"), RULE);
+    silent(fn('nodejs22.x', 'index.handler', "module.exports = require('/opt/nodejs/app');"), RULE);
+    silent(fn('nodejs22.x', 'index.handler', "Object.assign(exports, require('/opt/nodejs/app'));"), RULE);
+    // a wrong module is the other rule's
+    silent(fn('python3.13', 'app.handler', 'def x(e, c):\n  return 1\n'), RULE);
+    // names outside the identifier pattern are not judged
+    silent(fn('nodejs22.x', 'index.$h', 'exports.x = 1;'), RULE);
+  });
+
+  const QUEUE = (Properties: unknown) => ({ Type: 'AWS::SQS::Queue', Properties });
+  const AMK_Q = QUEUE({ KmsMasterKeyId: 'alias/aws/sqs' });
+  test('pf-sqs-aws-managed-key-delivery', () => {
+    const RULE = 'pf-sqs-aws-managed-key-delivery';
+    const Q = { 'Fn::GetAtt': ['Q', 'Arn'] };
+    const topic = (Protocol: string, q = AMK_Q) => ({ Resources: { Q: q, T: { Type: 'AWS::SNS::Topic', Properties: { Subscription: [{ Protocol, Endpoint: Q }] } } } });
+    // a subscription written inline on the topic
+    fires(topic('sqs'), RULE);
+    // the alias ARN form names the same key
+    fires(topic('sqs', QUEUE({ KmsMasterKeyId: 'arn:aws:kms:us-east-1:123456789012:alias/aws/sqs' })), RULE);
+    // SSE-SQS and customer managed keys work
+    silent(topic('sqs', QUEUE({ SqsManagedSseEnabled: true })), RULE);
+    silent(topic('sqs', QUEUE({ KmsMasterKeyId: 'alias/my-key' })), RULE);
+    // a queue read by its own role (event source mapping) is not a delivery by SNS or EventBridge
+    silent({ Resources: { Q: AMK_Q, M: { Type: 'AWS::Lambda::EventSourceMapping', Properties: { FunctionName: 'f', EventSourceArn: Q } } } }, RULE);
+    // an EventBridge dead-letter queue is used only on failures
+    silent({ Resources: { Q: AMK_Q, R: { Type: 'AWS::Events::Rule', Properties: { ScheduleExpression: 'rate(1 hour)', Targets: [{ Id: 't', Arn: 'arn:aws:sns:us-east-1:123456789012:t', DeadLetterConfig: { Arn: Q } }] } } } }, RULE);
+  });
+
+  test('pf-sns-aws-managed-key-delivery', () => {
+    const RULE = 'pf-sns-aws-managed-key-delivery';
+    const T = (Properties: unknown) => ({ Type: 'AWS::SNS::Topic', Properties });
+    const composite = (t: unknown, key = 'OKActions') => ({ Resources: { T: t, C: { Type: 'AWS::CloudWatch::CompositeAlarm', Properties: { AlarmRule: 'ALARM(a)', [key]: [{ Ref: 'T' }] } } } });
+    // composite alarms publish the same way
+    fires(composite(T({ KmsMasterKeyId: 'alias/aws/sns' })), RULE);
+    fires(composite(T({ KmsMasterKeyId: 'alias/aws/sns' }), 'InsufficientDataActions'), RULE);
+    silent(composite(T({})), RULE);
+    silent(composite(T({ KmsMasterKeyId: 'alias/my-key' })), RULE);
+    // an SQS queue's AWS managed key is the other rule's
+    silent(composite(T({ KmsMasterKeyId: 'alias/aws/sqs' })), RULE);
+  });
+});
