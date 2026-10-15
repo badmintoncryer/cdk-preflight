@@ -1,6 +1,6 @@
-import { Stage, Validations } from 'aws-cdk-lib';
+import { Duration, Stage, Validations } from 'aws-cdk-lib';
 import { IConstruct } from 'constructs';
-import { engineVersion, installEnforceGate, isSuperseded, observePluginCached, PreflightEnforcePlugin } from './private/enforce';
+import { engineVersion, installEnforceGate, isSuperseded, observePluginCached, PreflightEnforcePlugin, PreflightQuotaPlugin } from './private/enforce';
 import { BUNDLED_RULES } from './rules.generated';
 
 /**
@@ -60,6 +60,34 @@ export interface PreflightOptions {
    * @default true
    */
   readonly includeUpstreamPending?: boolean;
+
+  /**
+   * Compare what the app is about to create against the target account's
+   * Service Quotas and current usage: VPCs, internet gateways and Elastic IPs
+   * per Region, and the unreserved Lambda concurrency left after reserved
+   * concurrency changes. Counts are summed over every stack (including nested
+   * stacks) that deploys to the same account and Region, and resources that
+   * already exist in the deployed stack are not counted again.
+   *
+   * This is the one feature that makes synth call AWS. It needs credentials
+   * for the target account in the app process: the CDK CLI does not pass
+   * `--profile` on to the app, so set `AWS_PROFILE` (or `AWS_*` variables)
+   * instead. Without usable credentials the check is skipped with a warning
+   * and synth goes on. A finding fails synth in enforce mode and is a warning
+   * with `enforce: false`.
+   *
+   * @default false
+   */
+  readonly checkQuotas?: boolean;
+
+  /**
+   * How long `checkQuotas` reuses the usage and deployed-stack state it
+   * fetched, cached under the cloud assembly directory (`cdk.out`). Quota
+   * values themselves are cached for 24 hours.
+   *
+   * @default Duration.minutes(5)
+   */
+  readonly quotaCacheTtl?: Duration;
 }
 
 /**
@@ -99,11 +127,13 @@ export class Preflight {
       .filter((r) => !exclude.includes(r.id))
       .filter((r) => !isSuperseded(r, version));
 
+    const quotaTtlMs = options.checkQuotas ? (options.quotaCacheTtl ?? Duration.minutes(5)).toMilliseconds() : undefined;
     if (enforce) {
-      Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, strict));
+      Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, strict, quotaTtlMs));
       installEnforceGate(scope);
     } else {
       Validations.of(scope).addPlugins(observePluginCached(selected));
+      if (quotaTtlMs !== undefined) Validations.of(scope).addPlugins(new PreflightQuotaPlugin(quotaTtlMs));
     }
   }
 

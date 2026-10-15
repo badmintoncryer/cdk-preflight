@@ -9,7 +9,7 @@ body:
       options:
         - label: "`cdk synth` with cdk-preflight enabled passed cleanly"
           required: true
-        - label: "The failure is a validation rejection (400-class, e.g. `Invalid request provided: ...`) — not AccessDenied / permissions, a service quota, throttling, a name conflict with an existing resource, or a stabilization timeout"
+        - label: "The failure is a validation rejection (400-class, e.g. `Invalid request provided: ...`) — not AccessDenied / permissions, a service quota (quotas belong to the opt-in `checkQuotas`; open a regular issue if it missed one), throttling, a name conflict with an existing resource, or a stabilization timeout"
           required: true
         - label: "All account-specific data below is redacted (account IDs → 123456789012, real ARNs/domains → placeholders)"
           required: true

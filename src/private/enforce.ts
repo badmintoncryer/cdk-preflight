@@ -9,6 +9,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
+import { checkQuotas } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -76,9 +77,21 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
   constructor(
     private readonly rules: BundledRuleData[],
     private readonly strict: boolean,
+    /** checkQuotas のとき、使用量キャッシュの寿命 */
+    private readonly quotaTtlMs?: number,
   ) {}
 
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
+    const violations = [...this.validateRules(context)];
+    if (this.quotaTtlMs !== undefined) {
+      violations.push(...checkQuotas(context, { severity: 'error', ttlMs: this.quotaTtlMs }));
+    }
+    // CDK 組み込みの CloudFormationValidatePlugin と同じ判定。warning だけなら
+    // レポートには載るが合成は通る（CLI 側は success/failure に関わらず必ず出力する）。
+    return { success: violations.every((v) => !BLOCKS_SYNTH.has(String(v.severity))), violations };
+  }
+
+  private validateRules(context: IPolicyValidationContext): PolicyViolation[] {
     const engine = loadEngineCached();
     if (!engine) {
       // eslint-disable-next-line no-console
@@ -87,7 +100,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
         'enforce mode is unavailable and no preflight checks were run. ' +
         'Install it as a devDependency or use the default (warn) mode.',
       );
-      return { success: true, violations: [] };
+      return [];
     }
 
     const region = isConcreteRegion(context.region) ? context.region : undefined;
@@ -103,7 +116,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     // （libs だけを載せたエンジンは violation ルールを持たず、評価時に落ちる）。
     // strict のときは組み込みエンジンの findings を拾う仕事が残るので通常どおり進む。
     if (rules.length === 0 && !this.strict) {
-      return { success: true, violations: [] };
+      return [];
     }
 
     let eng: any;
@@ -112,7 +125,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     } catch (e) {
       // ルールパックがコンパイルできない = どのテンプレートも検査できないので、
       // 全スタックぶん violation を立てる（1 枚ずつの catch には到達しない）。
-      return { success: false, violations: context.stackTemplates.map((st) => engineErrorViolation(st, e)) };
+      return context.stackTemplates.map((st) => engineErrorViolation(st, e));
     }
 
     for (const st of context.stackTemplates) {
@@ -156,10 +169,21 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
         });
       }
     }
+    return violations;
+  }
+}
 
-    // CDK 組み込みの CloudFormationValidatePlugin と同じ判定。warning だけなら
-    // レポートには載るが合成は通る（CLI 側は success/failure に関わらず必ず出力する）。
-    return { success: violations.every((v) => !BLOCKS_SYNTH.has(String(v.severity))), violations };
+/**
+ * `enforce: false` のときのクォータ検査。ルールは CDK 組み込みのプラグインに載せるが、
+ * クォータはテンプレートの外の話なので別プラグインにし、warning として報告だけする。
+ */
+export class PreflightQuotaPlugin implements IPolicyValidationPlugin {
+  public readonly name = `${PLUGIN_NAME}-quotas`;
+
+  constructor(private readonly ttlMs: number) {}
+
+  public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
+    return { success: true, violations: checkQuotas(context, { severity: 'warning', ttlMs: this.ttlMs }) };
   }
 }
 

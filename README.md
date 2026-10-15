@@ -136,6 +136,8 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
 | `strict` | `false` | With `enforce`: also fail on error-class findings (`ERROR`/`FATAL`, e.g. `F3034`) of the built-in validation engine itself, which the CDK currently downgrades to warnings |
 | `exclude` | `[]` | Rule ids to disable |
 | `includeUpstreamPending` | `true` | Include rules already proposed to the upstream engine but not yet merged |
+| `checkQuotas` | `false` | Also check the target account's Service Quotas and current usage (calls AWS at synth time, see below) |
+| `quotaCacheTtl` | 5 minutes | How long `checkQuotas` reuses the usage and deployed-stack state it fetched |
 
 To opt out of a single rule everywhere, pass its id in `exclude`. To suppress a
 single *finding* on one construct, acknowledge it — this works in both modes, the
@@ -148,6 +150,39 @@ cdk.Validations.of(errorFilter).acknowledge({
   reason: 'log group is written by a legacy producer; pattern is fixed upstream',
 });
 ```
+
+## Service quota check (opt-in)
+
+The rules only read the template, so they never assert a limit an account can raise. `checkQuotas: true` covers that
+gap for the quotas a CDK app runs into most: it adds up what every stack in the app (nested stacks included) is about
+to create in each account and Region, and compares that against the account's applied quota and current usage.
+
+```ts
+Preflight.apply(app, { checkQuotas: true });
+```
+
+| Check | Counts | Against |
+|---|---|---|
+| `pf-quota-vpcs-per-region` | new `AWS::EC2::VPC` | VPCs per Region (`vpc/L-F678F1CE`) |
+| `pf-quota-internet-gateways-per-region` | new `AWS::EC2::InternetGateway` | Internet gateways per Region (`vpc/L-A4707A72`) |
+| `pf-quota-elastic-ips-per-region` | new `AWS::EC2::EIP` (one per NAT gateway in a default `ec2.Vpc`) | EC2-VPC Elastic IPs (`ec2/L-0263D0A3`) |
+| `pf-quota-lambda-unreserved-concurrency` | increase in `ReservedConcurrentExecutions` | Lambda keeps at least 100 concurrent executions unreserved |
+
+- **Only new resources count.** The deployed template of each stack is read with `GetTemplate`; a resource whose
+  logical id and type are already deployed is not counted again, so redeploying an unchanged app never trips the
+  check. Resources behind a `Condition` and the brief overlap during a replacement are not counted.
+- **A finding fails synth** in enforce mode and is a warning with `enforce: false`. Acknowledge one like any other
+  finding (`cdk-preflight::pf-quota-...`; `cdk-preflight-quotas::pf-quota-...` with `enforce: false`).
+- **It needs credentials in the app process.** The CDK CLI does not pass `--profile` on to the app, so set
+  `AWS_PROFILE` (or `AWS_*` variables) instead. When the credentials are missing, lack permissions, or belong to a
+  different account than the stack's, the check is skipped with a `pf-quota-check-skipped` warning and synth goes on.
+- **Permissions:** `servicequotas:GetServiceQuota`, `servicequotas:GetAWSDefaultServiceQuota`, `ec2:DescribeVpcs`,
+  `ec2:DescribeInternetGateways`, `ec2:DescribeAddresses`, `lambda:GetAccountSettings`, `cloudformation:GetTemplate`,
+  `cloudformation:DescribeStackResource`, `sts:GetCallerIdentity`. All read-only.
+- **Results are cached** in `cdk.out/.cdk-preflight/quota-cache.json`: usage and deployed templates for
+  `quotaCacheTtl` (5 minutes), quota values for 24 hours. Delete the file to force a refetch.
+- Usage can change between synth and deploy (another team deploying to the same account), so a clean check is not a
+  guarantee.
 
 ## Bundled rules
 
@@ -273,7 +308,8 @@ and the failure is a service-side validation rejection — CREATE_FAILED/UPDATE_
 with a 400-class message such as "Invalid request provided: ..." — cdk-preflight is
 missing a rule. Report it:
 
-1. Qualify first. NOT reportable: AccessDenied / permissions, service quotas,
+1. Qualify first. NOT reportable: AccessDenied / permissions, service quotas
+   (those belong to the opt-in `checkQuotas`; open a regular issue if it missed one),
    throttling, name conflicts with existing resources, stabilization timeouts.
 2. Redact account-specific data (account IDs -> 123456789012, real ARNs/domains
    -> placeholders).
@@ -295,7 +331,7 @@ Rules move the other way too. Once the validation engine bundled in `aws-cdk-lib
 
 ## How it works
 
-`Preflight.apply()` evaluates the rules with the [cloudformation-validate](https://github.com/aws-cloudformation/cloudformation-validate) Rust/WASM engine that ships inside `aws-cdk-lib` — no extra binaries, no network access at synth time. In the default enforce mode the engine is invoked through a dedicated CDK validation plugin so that violations fail synthesis; with `enforce: false` the rules are instead injected into the CDK built-in `CloudFormationValidatePlugin` and reported as warnings.
+`Preflight.apply()` evaluates the rules with the [cloudformation-validate](https://github.com/aws-cloudformation/cloudformation-validate) Rust/WASM engine that ships inside `aws-cdk-lib` — no extra binaries, and no network access at synth time unless you opt in to `checkQuotas`, which calls AWS from a child process. In the default enforce mode the engine is invoked through a dedicated CDK validation plugin so that violations fail synthesis; with `enforce: false` the rules are instead injected into the CDK built-in `CloudFormationValidatePlugin` and reported as warnings.
 
 Constraints that *can* be expressed in schemas or generic engine rules also make good upstream PRs to that engine, but nothing here waits on one — the upstream release cycle is deliberately slower than this pack's. Each rule's `meta.yaml` tracks its upstream status so that retirement stays bookkeeping.
 
