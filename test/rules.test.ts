@@ -3744,11 +3744,13 @@ describe('post-deploy run failures', () => {
     const POST = 'pf-apigw-lambda-integration-post';
     const TRUST = 'pf-apigw-integration-credentials-trust';
     const LAMBDA_URI = { 'Fn::Join': ['', ['arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/', { 'Fn::GetAtt': ['F', 'Arn'] }, '/invocations']] };
-    const method = (Integration: unknown, R: unknown = TRUSTING('apigateway.amazonaws.com')) => ({ Resources: {
-      F: fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n').Resources.F,
-      R,
-      M: { Type: 'AWS::ApiGateway::Method', Properties: { RestApiId: 'a', ResourceId: 'r', HttpMethod: 'GET', AuthorizationType: 'NONE', Integration } },
-    } });
+    const method = (Integration: unknown, R: unknown = TRUSTING('apigateway.amazonaws.com')) => ({
+      Resources: {
+        F: fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n').Resources.F,
+        R,
+        M: { Type: 'AWS::ApiGateway::Method', Properties: { RestApiId: 'a', ResourceId: 'r', HttpMethod: 'GET', AuthorizationType: 'NONE', Integration } },
+      },
+    });
     fires(method({ Type: 'AWS', IntegrationHttpMethod: 'GET', Uri: LAMBDA_URI }), POST);
     silent(method({ Type: 'AWS_PROXY', IntegrationHttpMethod: 'POST', Uri: LAMBDA_URI }), POST);
     // only a Uri that is visibly a Lambda invocation
@@ -3768,16 +3770,45 @@ describe('post-deploy run failures', () => {
 
   test('pf-events-target-role-trust', () => {
     const TRUST = 'pf-events-target-role-trust';
-    const rule = (target: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: {
-      C: { Type: 'AWS::ECS::Cluster', Properties: {} },
-      R: TRUSTING('events.amazonaws.com'),
-      ...extra,
-      E: { Type: 'AWS::Events::Rule', Properties: { ScheduleExpression: 'rate(1 hour)', Targets: [{ Id: 't', Arn: { 'Fn::GetAtt': ['C', 'Arn'] }, RoleArn: ROLE_ARN, ...target }] } },
-    } });
+    const rule = (target: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
+      Resources: {
+        C: { Type: 'AWS::ECS::Cluster', Properties: {} },
+        R: TRUSTING('events.amazonaws.com'),
+        ...extra,
+        E: { Type: 'AWS::Events::Rule', Properties: { ScheduleExpression: 'rate(1 hour)', Targets: [{ Id: 't', Arn: { 'Fn::GetAtt': ['C', 'Arn'] }, RoleArn: ROLE_ARN, ...target }] } },
+      },
+    });
     // EventBridge assumes the role for an ECS target, not for a Lambda one
     fires(rule({}, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
     silent(rule({}), TRUST);
     silent(rule({ Arn: 'arn:aws:lambda:us-east-1:123456789012:function:f' }, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
     fires(rule({ Arn: 'arn:aws:states:us-east-1:123456789012:stateMachine:s' }, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
+  });
+
+  test('pf-events-target-ecs-fargate-network-mode', () => {
+    const RULE = 'pf-events-target-ecs-fargate-network-mode';
+    const tpl = (LaunchType: string, NetworkMode?: string) => ({
+      Resources: {
+        T: { Type: 'AWS::ECS::TaskDefinition', Properties: { RequiresCompatibilities: ['EC2'], NetworkMode, Cpu: '256', Memory: '512', ContainerDefinitions: [{ Name: 'a', Image: 'i' }] } },
+        E: {
+          Type: 'AWS::Events::Rule',
+          Properties: {
+            ScheduleExpression: 'rate(1 hour)',
+            Targets: [{
+              Id: 't',
+              Arn: 'arn:aws:ecs:us-east-1:123456789012:cluster/c',
+              RoleArn: 'arn:aws:iam::123456789012:role/r',
+              EcsParameters: { TaskDefinitionArn: { Ref: 'T' }, LaunchType },
+            }],
+          },
+        },
+      },
+    });
+    fires(tpl('FARGATE', 'bridge'), RULE);
+    // an absent NetworkMode is bridge
+    fires(tpl('FARGATE'), RULE);
+    // Fargate runs an EC2-only task definition as long as it is awsvpc
+    silent(tpl('FARGATE', 'awsvpc'), RULE);
+    silent(tpl('EC2', 'bridge'), RULE);
   });
 });
