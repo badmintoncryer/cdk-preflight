@@ -1,0 +1,13 @@
+id: pf-scheduler-target-ecs-fargate-network-mode
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule, AWS::ECS::TaskDefinition]
+severity: ERROR
+title: "A FARGATE ECS target's task definition must use the awsvpc network mode"
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-networking
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 us-east-1: a Scheduler schedule (rate(1 minute), RetryPolicy 0, DLQ) with an ECS FARGATE target whose task definition is NetworkMode bridge reached CREATE_COMPLETE; the invocation dead-lettered with InvalidParameterException: Task definition does not support launch_type FARGATE. -> probe FAILED, ROLLBACK_COMPLETE; pass with the same task definition in NetworkMode awsvpc -> the Fargate task ran and exited 0, CREATE_COMPLETE"
+  expect: "Task definition does not support launch_type FARGATE"
+addedOn: 2026-10-16
