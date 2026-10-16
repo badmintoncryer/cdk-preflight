@@ -178,7 +178,8 @@ Preflight.apply(app, { checkQuotas: true });
   different account than the stack's, the check is skipped with a `pf-quota-check-skipped` warning and synth goes on.
 - **Permissions:** `servicequotas:GetServiceQuota`, `servicequotas:GetAWSDefaultServiceQuota`, `ec2:DescribeVpcs`,
   `ec2:DescribeInternetGateways`, `ec2:DescribeAddresses`, `lambda:GetAccountSettings`, `cloudformation:GetTemplate`,
-  `cloudformation:DescribeStackResource`, `sts:GetCallerIdentity`. All read-only.
+  `cloudformation:DescribeStackResource`. All read-only (`ReadOnlyAccess` covers them). The check also calls
+  `sts:GetCallerIdentity`, which IAM never denies.
 - **Results are cached** in `cdk.out/.cdk-preflight/quota-cache.json`: usage and deployed templates for
   `quotaCacheTtl` (5 minutes), quota values for 24 hours. Delete the file to force a refetch.
 - Usage can change between synth and deploy (another team deploying to the same account), so a clean check is not a
