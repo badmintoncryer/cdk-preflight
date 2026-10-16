@@ -172,7 +172,7 @@ Preflight.apply(app, { checkQuotas: true });
   logical id and type are already deployed is not counted again, so redeploying an unchanged app never trips the
   check. Resources behind a `Condition` and the brief overlap during a replacement are not counted.
 - **A finding fails synth** in enforce mode and is a warning with `enforce: false`. Acknowledge one like any other
-  finding (`cdk-preflight::pf-quota-...`; `cdk-preflight-quotas::pf-quota-...` with `enforce: false`).
+  finding (`cdk-preflight::pf-quota-...`; `cdk-preflight-quotas::pf-quota-...` with `enforce: false`). The ids also work in `exclude`, including `pf-quota-check-skipped` to silence the skip warning.
 - **It needs credentials in the app process.** The CDK CLI does not pass `--profile` on to the app, so set
   `AWS_PROFILE` (or `AWS_*` variables) instead. When the credentials are missing, lack permissions, or belong to a
   different account than the stack's, the check is skipped with a `pf-quota-check-skipped` warning and synth goes on.

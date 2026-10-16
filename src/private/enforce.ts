@@ -9,7 +9,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
-import { checkQuotas } from './quota';
+import { checkQuotas, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -77,14 +77,14 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
   constructor(
     private readonly rules: BundledRuleData[],
     private readonly strict: boolean,
-    /** checkQuotas のとき、使用量キャッシュの寿命 */
-    private readonly quotaTtlMs?: number,
+    /** checkQuotas のときだけ渡る */
+    private readonly quotas?: Omit<QuotaCheckOptions, 'severity'>,
   ) {}
 
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
     const violations = [...this.validateRules(context)];
-    if (this.quotaTtlMs !== undefined) {
-      violations.push(...checkQuotas(context, { severity: 'error', ttlMs: this.quotaTtlMs }));
+    if (this.quotas) {
+      violations.push(...checkQuotas(context, { ...this.quotas, severity: 'error' }));
     }
     // CDK 組み込みの CloudFormationValidatePlugin と同じ判定。warning だけなら
     // レポートには載るが合成は通る（CLI 側は success/failure に関わらず必ず出力する）。
@@ -180,10 +180,10 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
 export class PreflightQuotaPlugin implements IPolicyValidationPlugin {
   public readonly name = `${PLUGIN_NAME}-quotas`;
 
-  constructor(private readonly ttlMs: number) {}
+  constructor(private readonly quotas: Omit<QuotaCheckOptions, 'severity'>) {}
 
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
-    return { success: true, violations: checkQuotas(context, { severity: 'warning', ttlMs: this.ttlMs }) };
+    return { success: true, violations: checkQuotas(context, { ...this.quotas, severity: 'warning' }) };
   }
 }
 

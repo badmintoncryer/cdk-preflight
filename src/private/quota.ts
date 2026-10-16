@@ -1,7 +1,8 @@
 import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { IPolicyValidationContext, PolicyViolation } from 'aws-cdk-lib';
+import { App, type IPolicyValidationContext, type PolicyViolation } from 'aws-cdk-lib';
+import type { IConstruct } from 'constructs';
 
 /**
  * Service Quotas 検査（`checkQuotas: true` のときだけ動く）。
@@ -39,6 +40,8 @@ export interface QuotaCheckOptions {
   readonly severity: 'error' | 'warning';
   /** 使用量とデプロイ済みテンプレートのキャッシュ寿命 */
   readonly ttlMs: number;
+  /** 報告しない id（Preflight.apply の exclude） */
+  readonly exclude?: string[];
   /** テスト用。既定は子プロセスで AWS に問い合わせる */
   readonly fetch?: QuotaFetcher;
   readonly now?: () => number;
@@ -59,6 +62,9 @@ type Counted = keyof typeof COUNTED;
 
 export const QUOTA_SKIPPED_RULE = 'pf-quota-check-skipped';
 export const LAMBDA_CONCURRENCY_RULE = 'pf-quota-lambda-unreserved-concurrency';
+
+/** `exclude` に書ける id。Rego のルールではないので BUNDLED_RULES には無い。 */
+export const QUOTA_RULE_IDS: string[] = [...Object.values(COUNTED).map((q) => q.rule), LAMBDA_CONCURRENCY_RULE, QUOTA_SKIPPED_RULE];
 
 export interface Demand {
   vpc: string[];
@@ -86,6 +92,7 @@ export function demand(local: Template, deployed: Template | null | undefined): 
     if (r.Type === 'AWS::Lambda::Function') {
       const now = r.Properties?.ReservedConcurrentExecutions;
       const was = before?.Properties?.ReservedConcurrentExecutions;
+      // ponytail: デプロイ済みの値が組み込み関数なら 0 とみなすので、差分を多めに数える（偽陽性側）
       if (typeof now === 'number') {
         const delta = now - (typeof was === 'number' ? was : 0);
         if (delta > 0) d.concurrency.push({ id, delta });
@@ -164,6 +171,10 @@ function stackNameOf(templatePath: string): string {
 }
 
 export function checkQuotas(context: Pick<IPolicyValidationContext, 'stackTemplates'>, opts: QuotaCheckOptions): PolicyViolation[] {
+  return findViolations(context, opts).filter((v) => !opts.exclude?.includes(v.ruleName));
+}
+
+function findViolations(context: Pick<IPolicyValidationContext, 'stackTemplates'>, opts: QuotaCheckOptions): PolicyViolation[] {
   const violations: PolicyViolation[] = [];
   let units: Unit[];
   try {
@@ -186,18 +197,24 @@ export function checkQuotas(context: Pick<IPolicyValidationContext, 'stackTempla
     }
     const total: Demand = { vpc: [], igw: [], eip: [], concurrency: [] };
     const where = new Map<string, Unit>();
+    const skippedStacks = new Set<string>();
+    const skip = (u: Unit, why: string) => {
+      // ネストしたスタックは親と同じ construct path に出るので、スタックごとに 1 件にする
+      if (!skippedStacks.has(u.stackName)) violations.push(skipped(u, why));
+      skippedStacks.add(u.stackName);
+    };
+    // 先にスタック単位で降りるかを決める。ネストの片方だけ数えると、半端な合計で判定してしまう
     for (const u of group) {
       if (u.account && /^\d{12}$/.test(u.account) && u.account !== facts.callerAccount) {
-        violations.push(skipped(u, `the credentials belong to account ${facts.callerAccount}, but this stack deploys to ${u.account}. `
-          + 'The CDK CLI does not pass --profile to the app; set AWS_PROFILE instead'));
-        continue;
+        skip(u, `the credentials belong to account ${facts.callerAccount}, but this stack deploys to ${u.account}. `
+          + 'The CDK CLI does not pass --profile to the app; set AWS_PROFILE instead');
+      } else if (facts.templates[u.key] === 'unparseable') {
+        skip(u, `the deployed template of ${u.key} is not JSON`);
       }
-      const deployed = facts.templates[u.key];
-      if (deployed === 'unparseable') {
-        violations.push(skipped(u, `the deployed template of ${u.key} is not JSON`));
-        continue;
-      }
-      const d = demand(u.local, deployed);
+    }
+    for (const u of group) {
+      if (skippedStacks.has(u.stackName)) continue;
+      const d = demand(u.local, facts.templates[u.key] as Template | null | undefined);
       for (const k of Object.keys(COUNTED) as Counted[]) total[k].push(...d[k].map((id) => tag(where, u, id)));
       total.concurrency.push(...d.concurrency.map((c) => ({ id: tag(where, u, c.id), delta: c.delta })));
     }
@@ -224,7 +241,7 @@ export function checkQuotas(context: Pick<IPolicyValidationContext, 'stackTempla
         ruleName: LAMBDA_CONCURRENCY_RULE,
         description: `This app reserves ${delta} more Lambda concurrent executions in ${env}, which has `
           + `${facts.usage.unreservedConcurrency} unreserved; Lambda rejects a change that leaves fewer than `
-          + `${MIN_UNRESERVED_CONCURRENCY} ("decreases account's UnreservedConcurrentExecution below its minimum value of [100]").`,
+          + `${MIN_UNRESERVED_CONCURRENCY}.`,
         severity: opts.severity,
         fix: 'Lower ReservedConcurrentExecutions, or request a higher "Concurrent executions" quota (lambda/L-B99A9384).',
         violatingResources: total.concurrency.map((c) => resourceOf(where, c.id)),
@@ -293,13 +310,47 @@ function cachedFetch(templatePath: string, req: QuotaRequest, opts: QuotaCheckOp
   const got = (opts.fetch ?? fetchFromAws)({ ...req, skipQuotas: quotasFresh });
   const facts: QuotaFacts = { ...got, quotas: got.quotas ?? hit?.facts.quotas };
   cache[key] = { at: now, quotasAt: got.quotas ? now : hit!.quotasAt, facts };
-  try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(cache));
-  } catch {
-    // キャッシュは無くても動く
-  }
+  pendingCache.set(file, cache);
   return facts;
+}
+
+/**
+ * validate() の最中は cdk.out に書けない。CDK は CloudFormationValidatePlugin 以外のプラグインの
+ * 前後で cdk.out 配下の全ファイルのハッシュを取り、既存ファイルが変わっていれば
+ * IllegalPluginOperation で synth を落とす（aws-cdk-lib 2.271.0 synthesis-validation）。
+ * TTL 切れの上書きがちょうどそれに当たるので、書くのは synth が終わってからにする。
+ */
+const pendingCache = new Map<string, Record<string, CacheEntry>>();
+
+export function flushQuotaCache(): void {
+  for (const [file, cache] of pendingCache) {
+    try {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, JSON.stringify(cache));
+    } catch {
+      // キャッシュは無くても動く
+    }
+  }
+  pendingCache.clear();
+}
+
+const FLUSH_INSTALLED = Symbol.for('cdk-preflight.quotaCacheFlush');
+
+/** App.synth() の後で flushQuotaCache() を呼ぶようにする。 */
+export function installQuotaCacheFlush(scope: IConstruct): void {
+  const root = scope.node.root;
+  if (!App.isApp(root)) return;
+  const app = root as App & { [FLUSH_INSTALLED]?: boolean };
+  if (app[FLUSH_INSTALLED]) return;
+  Object.defineProperty(app, FLUSH_INSTALLED, { value: true, enumerable: false });
+  const synth = app.synth.bind(app);
+  app.synth = (options?: Parameters<App['synth']>[0]) => {
+    try {
+      return synth(options);
+    } finally {
+      flushQuotaCache();
+    }
+  };
 }
 
 /** Stage のスタックは cdk.out/assembly-*／に入るので、アプリの cdk.out まで上がる。 */
@@ -316,6 +367,8 @@ function fetchFromAws(req: QuotaRequest): QuotaFacts {
     input: JSON.stringify(req),
     encoding: 'utf8',
     timeout: 60_000,
+    // デプロイ済みテンプレートの全文を返すので、既定の 1 MiB では大きいアプリほど黙って検査が外れる
+    maxBuffer: 256 * 1024 * 1024,
     stdio: ['pipe', 'pipe', 'pipe'],
   });
   return JSON.parse(out);

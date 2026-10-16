@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, CfnCondition, Fn, NestedStack, Stack, aws_ec2 as ec2, aws_lambda as lambda } from 'aws-cdk-lib';
-import { checkQuotas, LAMBDA_CONCURRENCY_RULE, QUOTA_SKIPPED_RULE, type QuotaFacts, type QuotaRequest } from '../src/private/quota';
+import { App, CfnCondition, Fn, NestedStack, Stack, Validations, aws_ec2 as ec2, aws_lambda as lambda } from 'aws-cdk-lib';
+import { PreflightQuotaPlugin } from '../src/private/enforce';
+import { checkQuotas, flushQuotaCache, installQuotaCacheFlush, LAMBDA_CONCURRENCY_RULE, QUOTA_SKIPPED_RULE, type QuotaFacts, type QuotaRequest } from '../src/private/quota';
 
 const ACCOUNT = '123456789012';
 
@@ -39,6 +40,7 @@ function run(ctx: ReturnType<typeof synth>, f: QuotaFacts | (() => QuotaFacts), 
     return typeof f === 'function' ? f() : f;
   };
   const violations = checkQuotas(ctx, { severity: 'error', ttlMs: 60_000, fetch, ...extra });
+  flushQuotaCache();
   return { violations, calls, rules: violations.map((v) => v.ruleName) };
 }
 
@@ -153,6 +155,17 @@ describe('skipping', () => {
   });
 });
 
+test('exclude drops a quota finding', () => {
+  const ctx = synth(vpcs(6));
+  const violations = checkQuotas(ctx, { severity: 'error', ttlMs: 0, fetch: () => facts(), exclude: ['pf-quota-vpcs-per-region'] });
+  expect(violations).toEqual([]);
+});
+
+test('a skipped stack is reported once, not once per nested stack', () => {
+  const ctx = synth((s) => vpcs(1)(new NestedStack(s, 'N')), { account: '210987654321', region: 'us-east-1' });
+  expect(run(ctx, facts()).rules).toEqual([QUOTA_SKIPPED_RULE]);
+});
+
 describe('cache', () => {
   test('reuses facts within the TTL, then refetches usage but not quotas', () => {
     const ctx = synth(vpcs(1));
@@ -167,4 +180,22 @@ describe('cache', () => {
     // 取り直した使用量と、キャッシュのクォータで判定する
     expect(rules).toEqual(['pf-quota-vpcs-per-region']);
   });
+});
+
+test('refreshing an expired cache does not modify the cloud assembly during validation', () => {
+  // CDK は検証プラグインの前後で cdk.out の既存ファイルを比べ、変わっていれば
+  // IllegalPluginOperation で synth を落とす。TTL 切れの上書きを validate() 中にやるとこれに当たる
+  const outdir = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-quota-'));
+  const synthOnce = () => {
+    const app = new App({ outdir });
+    vpcs(1)(new Stack(app, 'S', { env: { region: 'us-east-1' } }));
+    Validations.of(app).addPlugins(new PreflightQuotaPlugin({ ttlMs: 0, fetch: () => facts() }));
+    installQuotaCacheFlush(app);
+    app.synth();
+  };
+  synthOnce();
+  const cacheFile = path.join(outdir, '.cdk-preflight', 'quota-cache.json');
+  const first = fs.readFileSync(cacheFile, 'utf8');
+  expect(() => synthOnce()).not.toThrow();
+  expect(fs.readFileSync(cacheFile, 'utf8')).not.toEqual(first);
 });
