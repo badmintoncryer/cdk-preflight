@@ -3744,11 +3744,13 @@ describe('post-deploy run failures', () => {
     const POST = 'pf-apigw-lambda-integration-post';
     const TRUST = 'pf-apigw-integration-credentials-trust';
     const LAMBDA_URI = { 'Fn::Join': ['', ['arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/', { 'Fn::GetAtt': ['F', 'Arn'] }, '/invocations']] };
-    const method = (Integration: unknown, R: unknown = TRUSTING('apigateway.amazonaws.com')) => ({ Resources: {
-      F: fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n').Resources.F,
-      R,
-      M: { Type: 'AWS::ApiGateway::Method', Properties: { RestApiId: 'a', ResourceId: 'r', HttpMethod: 'GET', AuthorizationType: 'NONE', Integration } },
-    } });
+    const method = (Integration: unknown, R: unknown = TRUSTING('apigateway.amazonaws.com')) => ({
+      Resources: {
+        F: fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n').Resources.F,
+        R,
+        M: { Type: 'AWS::ApiGateway::Method', Properties: { RestApiId: 'a', ResourceId: 'r', HttpMethod: 'GET', AuthorizationType: 'NONE', Integration } },
+      },
+    });
     fires(method({ Type: 'AWS', IntegrationHttpMethod: 'GET', Uri: LAMBDA_URI }), POST);
     silent(method({ Type: 'AWS_PROXY', IntegrationHttpMethod: 'POST', Uri: LAMBDA_URI }), POST);
     // only a Uri that is visibly a Lambda invocation
@@ -3768,12 +3770,14 @@ describe('post-deploy run failures', () => {
 
   test('pf-events-target-role-trust', () => {
     const TRUST = 'pf-events-target-role-trust';
-    const rule = (target: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: {
-      C: { Type: 'AWS::ECS::Cluster', Properties: {} },
-      R: TRUSTING('events.amazonaws.com'),
-      ...extra,
-      E: { Type: 'AWS::Events::Rule', Properties: { ScheduleExpression: 'rate(1 hour)', Targets: [{ Id: 't', Arn: { 'Fn::GetAtt': ['C', 'Arn'] }, RoleArn: ROLE_ARN, ...target }] } },
-    } });
+    const rule = (target: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
+      Resources: {
+        C: { Type: 'AWS::ECS::Cluster', Properties: {} },
+        R: TRUSTING('events.amazonaws.com'),
+        ...extra,
+        E: { Type: 'AWS::Events::Rule', Properties: { ScheduleExpression: 'rate(1 hour)', Targets: [{ Id: 't', Arn: { 'Fn::GetAtt': ['C', 'Arn'] }, RoleArn: ROLE_ARN, ...target }] } },
+      },
+    });
     // EventBridge assumes the role for an ECS target, not for a Lambda one
     fires(rule({}, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
     silent(rule({}), TRUST);
