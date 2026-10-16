@@ -1,0 +1,13 @@
+id: pf-events-target-role-trust
+service: events
+resourceTypes: [AWS::Events::Rule, AWS::IAM::Role]
+severity: ERROR
+title: "A target's RoleArn must be a role that trusts events.amazonaws.com"
+constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-use-identity-based.html
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 us-east-1: an ECS RunTask target whose RoleArn trusts only ecs-tasks.amazonaws.com reached CREATE_COMPLETE; every PutEvents for 100 s dead-lettered with FAILED_TO_ASSUME_ROLE: User: events.amazonaws.com is not authorized to perform: sts:AssumeRole on resource: <the role> -> probe FAILED, ROLLBACK_COMPLETE; pass role trusting events.amazonaws.com -> the Fargate task ran and exited 0, CREATE_COMPLETE"
+  expect: "events.amazonaws.com is not authorized to perform: sts:AssumeRole"
+addedOn: 2026-10-16

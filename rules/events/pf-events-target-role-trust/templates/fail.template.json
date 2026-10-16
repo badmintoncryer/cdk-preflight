@@ -1,0 +1,273 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Cluster": {
+   "Type": "AWS::ECS::Cluster",
+   "Properties": {}
+  },
+  "TaskDef": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "NetworkMode": "awsvpc",
+    "Cpu": "256",
+    "Memory": "512",
+    "ContainerDefinitions": [
+     {
+      "Name": "app",
+      "Image": "public.ecr.aws/docker/library/busybox:latest",
+      "Essential": true,
+      "Command": [
+       "true"
+      ]
+     }
+    ]
+   }
+  },
+  "Bus": {
+   "Type": "AWS::Events::EventBus",
+   "Properties": {
+    "Name": {
+     "Fn::Sub": "${AWS::StackName}-bus"
+    }
+   }
+  },
+  "Dlq": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {}
+  },
+  "DlqPolicy": {
+   "Type": "AWS::SQS::QueuePolicy",
+   "Properties": {
+    "Queues": [
+     {
+      "Ref": "Dlq"
+     }
+    ],
+    "PolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Action": "sqs:SendMessage",
+       "Resource": {
+        "Fn::GetAtt": [
+         "Dlq",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    }
+   }
+  },
+  "TargetRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "p",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": "ecs:RunTask",
+         "Resource": "*"
+        },
+        {
+         "Effect": "Allow",
+         "Action": "iam:PassRole",
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Rule": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventBusName": {
+     "Ref": "Bus"
+    },
+    "EventPattern": {
+     "source": [
+      "cdkpf.probe"
+     ]
+    },
+    "Targets": [
+     {
+      "Id": "task",
+      "Arn": {
+       "Fn::GetAtt": [
+        "Cluster",
+        "Arn"
+       ]
+      },
+      "RoleArn": {
+       "Fn::GetAtt": [
+        "TargetRole",
+        "Arn"
+       ]
+      },
+      "EcsParameters": {
+       "TaskDefinitionArn": {
+        "Ref": "TaskDef"
+       },
+       "LaunchType": "FARGATE",
+       "NetworkConfiguration": {
+        "AwsVpcConfiguration": {
+         "Subnets": [
+          "subnet-2e0a500f"
+         ],
+         "AssignPublicIp": "ENABLED"
+        }
+       }
+      },
+      "DeadLetterConfig": {
+       "Arn": {
+        "Fn::GetAtt": [
+         "Dlq",
+         "Arn"
+        ]
+       }
+      },
+      "RetryPolicy": {
+       "MaximumRetryAttempts": 0
+      }
+     }
+    ]
+   }
+  },
+  "ProbeRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "p",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": "events:PutEvents",
+         "Resource": {
+          "Fn::GetAtt": [
+           "Bus",
+           "Arn"
+          ]
+         }
+        },
+        {
+         "Effect": "Allow",
+         "Action": [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage"
+         ],
+         "Resource": {
+          "Fn::GetAtt": [
+           "Dlq",
+           "Arn"
+          ]
+         }
+        },
+        {
+         "Effect": "Allow",
+         "Action": "ecs:ListTasks",
+         "Resource": "*"
+        },
+        {
+         "Effect": "Allow",
+         "Action": [
+          "ecs:StopTask",
+          "ecs:DescribeTasks"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ],
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   }
+  },
+  "ProbeFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 150,
+    "Role": {
+     "Fn::GetAtt": [
+      "ProbeRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "import json, time, urllib.request, boto3\ndef handler(event, context):\n    reason = None\n    if event['RequestType'] == 'Create':\n        try:\n            reason = check(event['ResourceProperties'])\n        except Exception as e:\n            reason = 'cdkpf probe could not run: %r' % e\n    body = {'Status': 'FAILED' if reason else 'SUCCESS', 'Reason': (reason or 'ok')[:900],\n            'PhysicalResourceId': event.get('PhysicalResourceId', context.log_stream_name),\n            'StackId': event['StackId'], 'RequestId': event['RequestId'], 'LogicalResourceId': event['LogicalResourceId']}\n    urllib.request.urlopen(urllib.request.Request(event['ResponseURL'], data=json.dumps(body).encode(), method='PUT', headers={'Content-Type': ''}))\ndef check(p):\n    # Sends one event at a time until the rule starts a task or about 100 seconds\n    # pass; a new role takes a while to become assumable, so only an error that\n    # persists is reported. The dead-letter message carries EventBridge's error.\n    ev, sqs, ecs = boto3.client('events'), boto3.client('sqs'), boto3.client('ecs')\n    deadline, last = time.time() + 100, 'no task started and nothing dead-lettered'\n    while time.time() < deadline:\n        ev.put_events(Entries=[{'EventBusName': p['Bus'], 'Source': 'cdkpf.probe', 'DetailType': 'probe', 'Detail': '{}'}])\n        for _ in range(4):\n            tasks = ecs.list_tasks(cluster=p['Cluster'], desiredStatus='RUNNING')['taskArns'] + ecs.list_tasks(cluster=p['Cluster'], desiredStatus='STOPPED')['taskArns']\n            if tasks:\n                return task_outcome(ecs, p['Cluster'], tasks[0], deadline + 30)\n            for m in sqs.receive_message(QueueUrl=p['Dlq'], MessageAttributeNames=['All'], WaitTimeSeconds=5).get('Messages', []):\n                a = m.get('MessageAttributes', {})\n                last = '%s: %s' % (a.get('ERROR_CODE', {}).get('StringValue'), a.get('ERROR_MESSAGE', {}).get('StringValue'))\n                sqs.delete_message(QueueUrl=p['Dlq'], ReceiptHandle=m['ReceiptHandle'])\n    return last\ndef task_outcome(ecs, cluster, arn, until):\n    # A started task only counts when its container ran and exited 0.\n    while True:\n        t = ecs.describe_tasks(cluster=cluster, tasks=[arn])['tasks'][0]\n        if t['lastStatus'] == 'STOPPED' or time.time() > until:\n            break\n        time.sleep(5)\n    if t['lastStatus'] != 'STOPPED':\n        ecs.stop_task(cluster=cluster, task=arn)\n    c = t['containers'][0]\n    if t['lastStatus'] == 'STOPPED' and c.get('exitCode') == 0:\n        return None\n    return 'task %s %s: %s / %s (exit %s, launchType %s)' % (arn.split('/')[-1], t['lastStatus'], t.get('stopCode'), t.get('stoppedReason'), c.get('exitCode'), t.get('launchType'))\n"
+    }
+   }
+  },
+  "Probe": {
+   "Type": "Custom::CdkpfProbe",
+   "DependsOn": [
+    "Rule",
+    "DlqPolicy",
+    "TargetRole"
+   ],
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "ProbeFn",
+      "Arn"
+     ]
+    },
+    "ServiceTimeout": "300",
+    "Bus": {
+     "Ref": "Bus"
+    },
+    "Cluster": {
+     "Ref": "Cluster"
+    },
+    "Dlq": {
+     "Ref": "Dlq"
+    }
+   }
+  }
+ }
+}

@@ -3724,4 +3724,59 @@ describe('post-deploy run failures', () => {
     // an SQS queue's AWS managed key is the other rule's
     silent(composite(T({ KmsMasterKeyId: 'alias/aws/sqs' })), RULE);
   });
+  test('pf-lambda-cfnresponse-import', () => {
+    const RULE = 'pf-lambda-cfnresponse-import';
+    const py = (code: string) => fn('python3.13', 'index.handler', code + '\ndef handler(e, c):\n  return 1\n');
+    fires(py('import json, cfnresponse'), RULE);
+    fires(py('from cfnresponse import send'), RULE);
+    // the exact statement anywhere bundles the module for every form
+    silent(py('import cfnresponse'), RULE);
+    silent(py('import cfnresponse\nfrom cfnresponse import send'), RULE);
+    silent(py('    import cfnresponse as cr'), RULE);
+    // a mention outside an import is not judged; Node.js has its own module rules
+    silent(py('# cfnresponse is not used'), RULE);
+    silent(fn('nodejs22.x', 'index.handler', "const r = require('cfnresponse');\nexports.handler = async () => 1;"), RULE);
+  });
+
+  const TRUSTING = (svc: unknown) => ({ Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: svc }, Action: 'sts:AssumeRole' }] } } });
+  const ROLE_ARN = { 'Fn::GetAtt': ['R', 'Arn'] };
+  test('pf-apigw-lambda-integration-post / pf-apigw-integration-credentials-trust', () => {
+    const POST = 'pf-apigw-lambda-integration-post';
+    const TRUST = 'pf-apigw-integration-credentials-trust';
+    const LAMBDA_URI = { 'Fn::Join': ['', ['arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/', { 'Fn::GetAtt': ['F', 'Arn'] }, '/invocations']] };
+    const method = (Integration: unknown, R: unknown = TRUSTING('apigateway.amazonaws.com')) => ({ Resources: {
+      F: fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n').Resources.F,
+      R,
+      M: { Type: 'AWS::ApiGateway::Method', Properties: { RestApiId: 'a', ResourceId: 'r', HttpMethod: 'GET', AuthorizationType: 'NONE', Integration } },
+    } });
+    fires(method({ Type: 'AWS', IntegrationHttpMethod: 'GET', Uri: LAMBDA_URI }), POST);
+    silent(method({ Type: 'AWS_PROXY', IntegrationHttpMethod: 'POST', Uri: LAMBDA_URI }), POST);
+    // only a Uri that is visibly a Lambda invocation
+    silent(method({ Type: 'AWS', IntegrationHttpMethod: 'GET', Uri: 'arn:aws:apigateway:us-east-1:s3:path/b/k' }), POST);
+    silent(method({ Type: 'HTTP', IntegrationHttpMethod: 'GET', Uri: 'https://example.com' }), POST);
+    const withRole = (R: unknown) => method({ Type: 'AWS_PROXY', IntegrationHttpMethod: 'POST', Uri: LAMBDA_URI, Credentials: ROLE_ARN }, R);
+    fires(withRole(TRUSTING('lambda.amazonaws.com')), TRUST);
+    silent(withRole(TRUSTING(['lambda.amazonaws.com', 'apigateway.amazonaws.com'])), TRUST);
+    // a trust policy that would need evaluating is not judged
+    silent(withRole(TRUSTING('*')), TRUST);
+    silent(withRole({ Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Statement: [{ Effect: 'Allow', Principal: '*', Action: 'sts:AssumeRole' }] } } }), TRUST);
+    silent(withRole(TRUSTING({ 'Fn::Sub': 'apigateway.${AWS::URLSuffix}' })), TRUST);
+    // the caller's own credentials
+    silent(method({ Type: 'AWS_PROXY', IntegrationHttpMethod: 'POST', Uri: LAMBDA_URI, Credentials: 'arn:aws:iam::*:user/*' }, TRUSTING('lambda.amazonaws.com')), TRUST);
+  });
+
+  test('pf-events-target-role-trust', () => {
+    const TRUST = 'pf-events-target-role-trust';
+    const rule = (target: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: {
+      C: { Type: 'AWS::ECS::Cluster', Properties: {} },
+      R: TRUSTING('events.amazonaws.com'),
+      ...extra,
+      E: { Type: 'AWS::Events::Rule', Properties: { ScheduleExpression: 'rate(1 hour)', Targets: [{ Id: 't', Arn: { 'Fn::GetAtt': ['C', 'Arn'] }, RoleArn: ROLE_ARN, ...target }] } },
+    } });
+    // EventBridge assumes the role for an ECS target, not for a Lambda one
+    fires(rule({}, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
+    silent(rule({}), TRUST);
+    silent(rule({ Arn: 'arn:aws:lambda:us-east-1:123456789012:function:f' }, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
+    fires(rule({ Arn: 'arn:aws:states:us-east-1:123456789012:stateMachine:s' }, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
+  });
 });

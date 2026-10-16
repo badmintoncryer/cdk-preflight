@@ -147,3 +147,44 @@ _pf_iamlib_partition := "aws" if {
 	not startswith(r, "us-iso-")
 	not startswith(r, "us-isob-")
 }
+
+# --- a role that another resource hands to a service --------------------------
+# A property that names a role for a service to assume (an API Gateway
+# integration's Credentials, an EventBridge target's RoleArn) is checked only when
+# that service first assumes the role, after the deploy. This gives the logical id
+# of the role when the value is Fn::GetAtt <role>.Arn of a role in this template
+# whose trust policy can be read in full and no statement names `svc` as a Service
+# principal. Anything that would need the trust policy evaluated (Deny,
+# NotPrincipal, a "*" principal, intrinsics anywhere in a Principal) is not judged;
+# Conditions are not read, so a role that names the service is never reported.
+_pf_iamlib_role_without_service(v, svc) := id if {
+	is_object(v)
+	object.get(v, "__kind", "") == "getatt:Arn"
+	id := object.get(v, "__ref", null)
+	id in resources_of_type("AWS::IAM::Role")
+	some [r, _, d] in _pf_iamlib_trusts
+	r == id
+	not _pf_iamlib_marker(d)
+	stmts := _pf_iamlib_stmts(d)
+	count(stmts) > 0
+	every pair in stmts {
+		_pf_iamlib_trust_readable(pair[1])
+		not svc in _pf_iamlib_list(object.get(object.get(pair[1], "Principal", {}), "Service", []))
+	}
+}
+
+_pf_iamlib_trust_readable(s) if {
+	is_object(s)
+	object.get(s, "Effect", null) == "Allow"
+	object.get(s, "NotPrincipal", "__pf_absent") == "__pf_absent"
+	p := object.get(s, "Principal", null)
+	is_object(p)
+	not _pf_iamlib_marker(p)
+	every _, raw in p {
+		vals := _pf_iamlib_list(raw)
+		every x in vals {
+			is_string(x)
+			x != "*"
+		}
+	}
+}
