@@ -1,0 +1,173 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "FnRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   }
+  },
+  "Fn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 10,
+    "Role": {
+     "Fn::GetAtt": [
+      "FnRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "def handler(event, context):\n    return {'statusCode': 200, 'body': 'ok'}\n"
+    }
+   }
+  },
+  "Api": {
+   "Type": "AWS::ApiGateway::RestApi",
+   "Properties": {
+    "Name": {
+     "Fn::Sub": "${AWS::StackName}-api"
+    }
+   }
+  },
+  "Permission": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "Fn",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Sub": "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*"
+    }
+   }
+  },
+  "Method": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "RestApiId": {
+     "Ref": "Api"
+    },
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "Api",
+      "RootResourceId"
+     ]
+    },
+    "HttpMethod": "GET",
+    "AuthorizationType": "NONE",
+    "Integration": {
+     "Type": "AWS_PROXY",
+     "IntegrationHttpMethod": "POST",
+     "Uri": {
+      "Fn::Sub": "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Fn.Arn}/invocations"
+     }
+    }
+   }
+  },
+  "ProbeRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "probe",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": "apigateway:POST",
+         "Resource": {
+          "Fn::Sub": "arn:${AWS::Partition}:apigateway:${AWS::Region}::/restapis/${Api}/*"
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "ProbeFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 150,
+    "Role": {
+     "Fn::GetAtt": [
+      "ProbeRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "import json, time, urllib.request, boto3\ndef handler(event, context):\n    reason = None\n    if event['RequestType'] == 'Create':\n        try:\n            reason = check(event['ResourceProperties'])\n        except Exception as e:\n            reason = 'cdkpf probe could not run: %r' % e\n    body = {'Status': 'FAILED' if reason else 'SUCCESS', 'Reason': (reason or 'ok')[:900],\n            'PhysicalResourceId': event.get('PhysicalResourceId', context.log_stream_name),\n            'StackId': event['StackId'], 'RequestId': event['RequestId'], 'LogicalResourceId': event['LogicalResourceId']}\n    urllib.request.urlopen(urllib.request.Request(event['ResponseURL'], data=json.dumps(body).encode(), method='PUT', headers={'Content-Type': ''}))\ndef check(p):\n    # A new role takes a while to become assumable, so a failure is only reported\n    # once it has persisted for about 100 seconds.\n    gw = boto3.client('apigateway')\n    deadline = time.time() + 100\n    while True:\n        r = gw.test_invoke_method(restApiId=p['RestApiId'], resourceId=p['ResourceId'], httpMethod=p['HttpMethod'])\n        if r['status'] == 200:\n            return None\n        if time.time() > deadline:\n            log = r.get('log', '')\n            lines = [l for l in log.splitlines() if 'Execution failed' in l or 'Endpoint response' in l or 'rror' in l]\n            return 'HTTP %s: %s' % (r['status'], ' | '.join(lines)[:700] or r.get('body', '')[:300])\n        time.sleep(10)\n"
+    }
+   }
+  },
+  "Probe": {
+   "Type": "Custom::CdkpfProbe",
+   "DependsOn": [
+    "Method",
+    "Permission"
+   ],
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "ProbeFn",
+      "Arn"
+     ]
+    },
+    "ServiceTimeout": "300",
+    "RestApiId": {
+     "Ref": "Api"
+    },
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "Api",
+      "RootResourceId"
+     ]
+    },
+    "HttpMethod": "GET"
+   }
+  }
+ }
+}

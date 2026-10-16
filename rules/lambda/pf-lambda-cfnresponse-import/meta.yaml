@@ -1,0 +1,12 @@
+id: pf-lambda-cfnresponse-import
+service: lambda
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "Inline Python code must import cfnresponse with the exact statement 'import cfnresponse'"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-lambda-function-code-cfnresponsemodule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 ap-northeast-1: inline python3.13 functions importing the module as 'import json, os, cfnresponse' and 'from cfnresponse import send, SUCCESS' reached CREATE_COMPLETE; the probe's first invoke of each returned Runtime.ImportModuleError: Unable to import module 'index': No module named 'cfnresponse' -> probe FAILED, ROLLBACK_COMPLETE; pass with a separate 'import cfnresponse' line in both (the from-import kept alongside) -> CREATE_COMPLETE"
+  expect: "No module named 'cfnresponse'"
+addedOn: 2026-10-16

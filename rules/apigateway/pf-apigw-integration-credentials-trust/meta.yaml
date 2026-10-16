@@ -1,0 +1,12 @@
+id: pf-apigw-integration-credentials-trust
+service: apigateway
+resourceTypes: [AWS::ApiGateway::Method, AWS::IAM::Role]
+severity: ERROR
+title: "The role in Integration.Credentials must trust apigateway.amazonaws.com"
+constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/integration-request-basic-setup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 ap-northeast-1: a Lambda integration whose Credentials role trusts only lambda.amazonaws.com reached CREATE_COMPLETE; TestInvokeMethod kept returning HTTP 500 for 100 s with 'Execution failed due to configuration error: API Gateway does not have permission to assume the provided role' -> probe FAILED, ROLLBACK_COMPLETE; pass role trusting apigateway.amazonaws.com -> HTTP 200, CREATE_COMPLETE"
+  expect: "API Gateway does not have permission to assume the provided role"
+addedOn: 2026-10-16

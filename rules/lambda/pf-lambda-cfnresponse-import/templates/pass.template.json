@@ -1,0 +1,158 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "FnRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   }
+  },
+  "ListFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 10,
+    "Role": {
+     "Fn::GetAtt": [
+      "FnRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "import json, os\nimport cfnresponse\ndef handler(event, context):\n    return {'ok': True}\n"
+    }
+   }
+  },
+  "FromFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 10,
+    "Role": {
+     "Fn::GetAtt": [
+      "FnRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "import cfnresponse\nfrom cfnresponse import send, SUCCESS\ndef handler(event, context):\n    return {'ok': True}\n"
+    }
+   }
+  },
+  "ProbeRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "probe",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": "lambda:InvokeFunction",
+         "Resource": [
+          {
+           "Fn::GetAtt": [
+            "ListFn",
+            "Arn"
+           ]
+          },
+          {
+           "Fn::GetAtt": [
+            "FromFn",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "ProbeFn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 150,
+    "Role": {
+     "Fn::GetAtt": [
+      "ProbeRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "import json, time, urllib.request, boto3\ndef handler(event, context):\n    reason = None\n    if event['RequestType'] == 'Create':\n        try:\n            reason = check(event['ResourceProperties'])\n        except Exception as e:\n            reason = 'cdkpf probe could not run: %r' % e\n    body = {'Status': 'FAILED' if reason else 'SUCCESS', 'Reason': (reason or 'ok')[:900],\n            'PhysicalResourceId': event.get('PhysicalResourceId', context.log_stream_name),\n            'StackId': event['StackId'], 'RequestId': event['RequestId'], 'LogicalResourceId': event['LogicalResourceId']}\n    urllib.request.urlopen(urllib.request.Request(event['ResponseURL'], data=json.dumps(body).encode(), method='PUT', headers={'Content-Type': ''}))\ndef check(p):\n    bad = []\n    for fn in p['Functions']:\n        r = boto3.client('lambda').invoke(FunctionName=fn, Payload=b'{}')\n        if 'FunctionError' in r:\n            e = json.loads(r['Payload'].read() or b'{}')\n            bad.append('%s (%s): %s' % (e.get('errorType'), fn.split(':')[-1], e.get('errorMessage', '')[:200]))\n    return '; '.join(bad)\n"
+    }
+   }
+  },
+  "Probe": {
+   "Type": "Custom::CdkpfProbe",
+   "DependsOn": [
+    "ListFn",
+    "FromFn"
+   ],
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "ProbeFn",
+      "Arn"
+     ]
+    },
+    "ServiceTimeout": "300",
+    "Functions": [
+     {
+      "Fn::GetAtt": [
+       "ListFn",
+       "Arn"
+      ]
+     },
+     {
+      "Fn::GetAtt": [
+       "FromFn",
+       "Arn"
+      ]
+     }
+    ]
+   }
+  }
+ }
+}
