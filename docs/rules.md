@@ -2975,9 +2975,11 @@
 | `pf-scheduler-rate-positive` | AWS::Scheduler::Schedule | A Scheduler rate() value must be positive | ERROR | none |
 | `pf-scheduler-schedule-expression` | AWS::Scheduler::Schedule | Schedule expression must parse as a valid rate(), cron() or at() | ERROR | none |
 | `pf-scheduler-start-end-order` | AWS::Scheduler::Schedule | StartDate must come before EndDate | ERROR | none |
+| `pf-scheduler-target-ecs-fargate-network-mode` | AWS::Scheduler::Schedule<br>AWS::ECS::TaskDefinition | A FARGATE ECS target's task definition must use the awsvpc network mode | ERROR | none |
 | `pf-scheduler-target-input-json` | AWS::Scheduler::Schedule | Target Input must be valid JSON | ERROR | none |
 | `pf-scheduler-target-parameters` | AWS::Scheduler::Schedule | Target parameters must match the target, and FIFO queues and Fargate tasks need theirs | ERROR | none |
 | `pf-scheduler-target-region` | AWS::Scheduler::Schedule | A schedule can only invoke a target in its own Region | ERROR | none |
+| `pf-scheduler-target-role-trust` | AWS::Scheduler::Schedule<br>AWS::IAM::Role | A schedule's Target.RoleArn must be a role that trusts scheduler.amazonaws.com | ERROR | none |
 | `pf-scheduler-universal-target` | AWS::Scheduler::Schedule | Universal targets need the bare ARN shape, an Input, and an API that changes state | ERROR | none |
 | `pf-secretsmanager-generate-secret-string` | AWS::SecretsManager::Secret | GenerateSecretString must leave at least one character type, a PasswordLength (1..4096) that fits every required type, ExcludeCharacters under 4096 chars that does not wipe out a required type, and SecretStringTemplate (a JSON object) together with GenerateStringKey | ERROR | none |
 | `pf-secretsmanager-hosted-rotation` | AWS::SecretsManager::RotationSchedule | HostedRotationLambda needs the AWS::SecretsManager transform, a known RotationType, MasterSecretArn/SuperuserSecretArn only for *MultiUser types (never both), and no Runtime with the 2024-09-16 transform | ERROR | none |
