@@ -8,12 +8,14 @@ import rego.v1
 # or a dead-letter message when the target has one). Lambda, SNS, SQS and Logs
 # targets are reached through their resource policies and ignore RoleArn, so only
 # targets that are visibly one of the kinds EventBridge calls with the role are
-# judged.
-_pf_evrt_role_services := {"ecs", "states", "kinesis", "firehose", "events", "codebuild", "codepipeline", "batch"}
+# judged. ECS was measured on bench; the rest are the role-assumed targets in the
+# EventBridge permissions doc. An event bus target is left out: whether a
+# same-account bus uses RoleArn or its own resource policy is not confirmed.
+_pf_evrt_role_services := {"ecs", "states", "kinesis", "firehose", "codebuild", "codepipeline", "batch"}
 
 _pf_evrt_role_types := {
 	"AWS::ECS::Cluster", "AWS::StepFunctions::StateMachine", "AWS::Kinesis::Stream",
-	"AWS::KinesisFirehose::DeliveryStream", "AWS::Events::EventBus", "AWS::CodeBuild::Project",
+	"AWS::KinesisFirehose::DeliveryStream", "AWS::CodeBuild::Project",
 	"AWS::CodePipeline::Pipeline", "AWS::Batch::JobQueue",
 }
 

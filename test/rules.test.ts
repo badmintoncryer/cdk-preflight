@@ -3757,6 +3757,7 @@ describe('post-deploy run failures', () => {
     const withRole = (R: unknown) => method({ Type: 'AWS_PROXY', IntegrationHttpMethod: 'POST', Uri: LAMBDA_URI, Credentials: ROLE_ARN }, R);
     fires(withRole(TRUSTING('lambda.amazonaws.com')), TRUST);
     silent(withRole(TRUSTING(['lambda.amazonaws.com', 'apigateway.amazonaws.com'])), TRUST);
+    silent(withRole(TRUSTING('apigateway.amazonaws.com.cn')), TRUST);
     // a trust policy that would need evaluating is not judged
     silent(withRole(TRUSTING('*')), TRUST);
     silent(withRole({ Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Statement: [{ Effect: 'Allow', Principal: '*', Action: 'sts:AssumeRole' }] } } }), TRUST);

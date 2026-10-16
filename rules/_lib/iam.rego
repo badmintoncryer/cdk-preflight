@@ -169,7 +169,9 @@ _pf_iamlib_role_without_service(v, svc) := id if {
 	count(stmts) > 0
 	every pair in stmts {
 		_pf_iamlib_trust_readable(pair[1])
-		not svc in _pf_iamlib_list(object.get(object.get(pair[1], "Principal", {}), "Service", []))
+		svcs := _pf_iamlib_list(object.get(object.get(pair[1], "Principal", {}), "Service", []))
+		not svc in svcs
+		not concat("", [svc, ".cn"]) in svcs
 	}
 }
 
