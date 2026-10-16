@@ -1,0 +1,13 @@
+id: pf-events-target-ecs-fargate-network-mode
+service: events
+resourceTypes: [AWS::Events::Rule, AWS::ECS::TaskDefinition]
+severity: ERROR
+title: "A FARGATE ECS target's task definition must use the awsvpc network mode"
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html#fargate-tasks-networking
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 us-east-1: an EventBridge ECS target with LaunchType FARGATE whose task definition is RequiresCompatibilities [EC2] with NetworkMode bridge reached CREATE_COMPLETE; every PutEvents for 100 s dead-lettered with INVALID_PARAMETER: Task definition does not support launch_type FARGATE. (InvalidParameterException) -> probe FAILED, ROLLBACK_COMPLETE; pass with the same task definition in NetworkMode awsvpc -> the Fargate task ran and exited 0, CREATE_COMPLETE (the same EC2-only awsvpc task definition also ran on FARGATE earlier that day, so RequiresCompatibilities alone does not decide it)"
+  expect: "Task definition does not support launch_type FARGATE"
+addedOn: 2026-10-16

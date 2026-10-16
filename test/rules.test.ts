@@ -3784,4 +3784,31 @@ describe('post-deploy run failures', () => {
     silent(rule({ Arn: 'arn:aws:lambda:us-east-1:123456789012:function:f' }, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
     fires(rule({ Arn: 'arn:aws:states:us-east-1:123456789012:stateMachine:s' }, { R: TRUSTING('ecs-tasks.amazonaws.com') }), TRUST);
   });
+
+  test('pf-events-target-ecs-fargate-network-mode', () => {
+    const RULE = 'pf-events-target-ecs-fargate-network-mode';
+    const tpl = (LaunchType: string, NetworkMode?: string) => ({
+      Resources: {
+        T: { Type: 'AWS::ECS::TaskDefinition', Properties: { RequiresCompatibilities: ['EC2'], NetworkMode, Cpu: '256', Memory: '512', ContainerDefinitions: [{ Name: 'a', Image: 'i' }] } },
+        E: {
+          Type: 'AWS::Events::Rule',
+          Properties: {
+            ScheduleExpression: 'rate(1 hour)',
+            Targets: [{
+              Id: 't',
+              Arn: 'arn:aws:ecs:us-east-1:123456789012:cluster/c',
+              RoleArn: 'arn:aws:iam::123456789012:role/r',
+              EcsParameters: { TaskDefinitionArn: { Ref: 'T' }, LaunchType },
+            }],
+          },
+        },
+      },
+    });
+    fires(tpl('FARGATE', 'bridge'), RULE);
+    // an absent NetworkMode is bridge
+    fires(tpl('FARGATE'), RULE);
+    // Fargate runs an EC2-only task definition as long as it is awsvpc
+    silent(tpl('FARGATE', 'awsvpc'), RULE);
+    silent(tpl('EC2', 'bridge'), RULE);
+  });
 });
