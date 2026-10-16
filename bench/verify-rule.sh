@@ -121,6 +121,8 @@ failed_type() { events_query "$1" "StackEvents[?$(root_failure "$1")]|[-1].Resou
 # ルールは "already exists" が、ロールのアカウントを見るルールは "is not authorized" が
 # 本物の証拠になる。文面の側は CloudFormation が空白なしの HandlerErrorCode: AlreadyExists でも
 # 同じことを言うので両方拾う（2026-09-22、足場の HttpNamespace の衝突が素通りして verified になった）。
+# クォータ系の文面を INCONCLUSIVE にするのは Rego ルールの証拠としてだけ。クォータ超過を
+# 「当てる」側（checkQuotas）の証明は bench/verify-quota.sh が別に持つ（AGENTS.md 原則 7）。
 scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失敗なら 0
   local ftype=$1 reason=$2
   case "$ftype" in "" | None) return 1 ;; esac

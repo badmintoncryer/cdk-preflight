@@ -35,6 +35,15 @@ const project = new awscdk.AwsCdkConstructLibrary({
     },
   },
   devDeps: ['yaml'],
+  // checkQuotas: true のときだけ子プロセス（src/private/quota-worker.ts）が読む。jsii のパッケージは
+  // jsii でない依存を同梱しないと Python から解決できないので bundledDeps にする。
+  bundledDeps: [
+    '@aws-sdk/client-cloudformation',
+    '@aws-sdk/client-ec2',
+    '@aws-sdk/client-lambda',
+    '@aws-sdk/client-service-quotas',
+    '@aws-sdk/client-sts',
+  ],
   releaseToNpm: true,
   packageName: 'cdk-preflight',
   npmTrustedPublishing: true,

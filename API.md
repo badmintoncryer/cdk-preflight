@@ -19,10 +19,36 @@ const preflightOptions: PreflightOptions = { ... }
 
 | **Name** | **Type** | **Description** |
 | --- | --- | --- |
+| <code><a href="#cdk-preflight.PreflightOptions.property.checkQuotas">checkQuotas</a></code> | <code>boolean</code> | Compare what the app is about to create against the target account's Service Quotas and current usage: VPCs, internet gateways and Elastic IPs per Region, and the unreserved Lambda concurrency left after reserved concurrency changes. |
 | <code><a href="#cdk-preflight.PreflightOptions.property.enforce">enforce</a></code> | <code>boolean</code> | Fail synthesis when a bundled rule is violated. |
 | <code><a href="#cdk-preflight.PreflightOptions.property.exclude">exclude</a></code> | <code>string[]</code> | Rule ids to disable (see `Preflight.ruleIds()` or docs/rules.md). |
 | <code><a href="#cdk-preflight.PreflightOptions.property.includeUpstreamPending">includeUpstreamPending</a></code> | <code>boolean</code> | Include rules that are marked `pending-engine` (candidates that have been proposed to the upstream cloudformation-validate engine but are not merged yet). |
+| <code><a href="#cdk-preflight.PreflightOptions.property.quotaCacheTtl">quotaCacheTtl</a></code> | <code>aws-cdk-lib.Duration</code> | How long `checkQuotas` reuses the usage and deployed-stack state it fetched, cached under the cloud assembly directory (`cdk.out`). Quota values themselves are cached for 24 hours. |
 | <code><a href="#cdk-preflight.PreflightOptions.property.strict">strict</a></code> | <code>boolean</code> | In enforce mode, additionally fail synthesis on error-class findings (severity ERROR/FATAL) of the built-in validation engine itself, e.g. schema violations like `F3034`. This is the workaround for the CDK behavior where all built-in findings are downgraded to warnings. |
+
+---
+
+##### `checkQuotas`<sup>Optional</sup> <a name="checkQuotas" id="cdk-preflight.PreflightOptions.property.checkQuotas"></a>
+
+```typescript
+public readonly checkQuotas: boolean;
+```
+
+- *Type:* boolean
+- *Default:* false
+
+Compare what the app is about to create against the target account's Service Quotas and current usage: VPCs, internet gateways and Elastic IPs per Region, and the unreserved Lambda concurrency left after reserved concurrency changes.
+
+Counts are summed over every stack (including nested
+stacks) that deploys to the same account and Region, and resources that
+already exist in the deployed stack are not counted again.
+
+This is the one feature that makes synth call AWS. It needs credentials
+for the target account in the app process: the CDK CLI does not pass
+`--profile` on to the app, so set `AWS_PROFILE` (or `AWS_*` variables)
+instead. Without usable credentials the check is skipped with a warning
+and synth goes on. A finding fails synth in enforce mode and is a warning
+with `enforce: false`.
 
 ---
 
@@ -78,6 +104,19 @@ own registry schema does reject those templates, but only with a
 stack-level "Validation failed with 1 error(s)" that names no property, so
 they keep earning their place at synth time and no engine release retires
 them.
+
+---
+
+##### `quotaCacheTtl`<sup>Optional</sup> <a name="quotaCacheTtl" id="cdk-preflight.PreflightOptions.property.quotaCacheTtl"></a>
+
+```typescript
+public readonly quotaCacheTtl: Duration;
+```
+
+- *Type:* aws-cdk-lib.Duration
+- *Default:* Duration.minutes(5)
+
+How long `checkQuotas` reuses the usage and deployed-stack state it fetched, cached under the cloud assembly directory (`cdk.out`). Quota values themselves are cached for 24 hours.
 
 ---
 

@@ -10,7 +10,8 @@ Scope: every deploy-time failure, and every post-deploy run that is certain to f
 2. `npx cdk-preflight init` (alias: `npx cdkpf init`) — locates the app entry via cdk.json and inserts `Preflight.apply(app)`. `--dry-run` previews, `--dir <path>` targets another directory. Idempotent.
 3. `cdk synth` — violations FAIL the synth by default, reported with rule id, actual value, and suggested fix.
 4. Opt-outs: `exclude: ['<rule-id>']` disables one rule; `enforce: false` reports as warnings only (with construct traces and per-finding acknowledgement). Add `strict: true` to also fail on the engine's own error-class findings (F-/E-prefixed) that CDK otherwise downgrades to warnings.
-5. Machine-readable findings: synth with `-c @aws-cdk/core:validationReportJson=true`, then read `cdk.out/validation-report.json`.
+5. Opt-in: `checkQuotas: true` also compares what the app creates (VPCs, internet gateways, Elastic IPs per Region, reserved Lambda concurrency) against the target account's Service Quotas and usage. It is the only option that calls AWS at synth time; the app process needs credentials (`AWS_PROFILE`, since the CDK CLI does not pass `--profile` on), and without them the check is skipped with a `pf-quota-check-skipped` warning.
+6. Machine-readable findings: synth with `-c @aws-cdk/core:validationReportJson=true`, then read `cdk.out/validation-report.json`.
 
 ## Key files
 
@@ -21,5 +22,5 @@ Scope: every deploy-time failure, and every post-deploy run that is certain to f
 
 ## API
 
-- `Preflight.apply(scope: App | Stage, options?: { exclude?: string[]; enforce?: boolean; strict?: boolean; includeUpstreamPending?: boolean })`
+- `Preflight.apply(scope: App | Stage, options?: { exclude?: string[]; enforce?: boolean; strict?: boolean; includeUpstreamPending?: boolean; checkQuotas?: boolean; quotaCacheTtl?: Duration })`
 - `Preflight.ruleIds(): string[]`
