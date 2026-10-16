@@ -182,7 +182,9 @@ Preflight.apply(app, { checkQuotas: true });
 - **Results are cached** in `cdk.out/.cdk-preflight/quota-cache.json`: usage and deployed templates for
   `quotaCacheTtl` (5 minutes), quota values for 24 hours. Delete the file to force a refetch.
 - Usage can change between synth and deploy (another team deploying to the same account), so a clean check is not a
-  guarantee.
+  guarantee. The reverse also happens: EC2 does not always enforce the Elastic IP quota when CloudFormation
+  creates several addresses in parallel (measured 2026-10-16: with 4 of 5 in use, two parallel `AWS::EC2::EIP` both
+  succeeded), so a template the check stops may occasionally deploy. The check follows the quota, not the race.
 
 ## Bundled rules
 

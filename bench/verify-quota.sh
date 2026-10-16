@@ -60,6 +60,7 @@ while [ "$u" -lt $((quota - 1)) ]; do
   u=$((u + 1))
 done
 echo "filled to $u (allocated ${#ALLOCATED[@]})" | tee -a "$LOG"
+sleep "${CDKPF_SETTLE:-0}"
 
 # synth: <スタック名> <EIP 数> -> 0=通った / 1=止まった。テンプレートは $WORK/<スタック名>/ に出る
 synth() {
@@ -69,7 +70,14 @@ synth() {
     const { Preflight } = require(process.env.ROOT + "/lib");
     const app = new App({ outdir: process.env.OUT, analyticsReporting: false });
     const s = new Stack(app, process.env.STACK, { synthesizer: new BootstraplessSynthesizer() });
-    for (let i = 0; i < Number(process.env.N); i++) new ec2.CfnEIP(s, "Eip" + i, { domain: "vpc" });
+    // 1 個ずつ作らせる。並行に作ると EC2 の上限判定をすり抜け、上限 5 で 6 個目まで通る
+    // （2026-10-16 us-east-1 で 2 回再現。CLI から順に確保すると 6 個目で AddressLimitExceeded）
+    let prev;
+    for (let i = 0; i < Number(process.env.N); i++) {
+      const eip = new ec2.CfnEIP(s, "Eip" + i, { domain: "vpc" });
+      if (prev) eip.addDependency(prev);
+      prev = eip;
+    }
     Preflight.apply(app, { checkQuotas: true, quotaCacheTtl: require(process.env.ROOT + "/node_modules/aws-cdk-lib").Duration.seconds(0) });
     app.synth();
   ' >"$WORK/$1.synth.log" 2>&1
@@ -83,6 +91,8 @@ deploy() { # <スタック名> -> 終端ステータスと失敗理由を stdout
     --template-body "file://$WORK/$1/$1.template.json" --on-failure ROLLBACK >>"$LOG" 2>&1 || return 1
   aws cloudformation wait stack-create-complete --stack-name "$1" --region "$REGION" >>"$LOG" 2>&1
   aws cloudformation describe-stacks --stack-name "$1" --region "$REGION" --query 'Stacks[0].StackStatus' --output text
+  aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" --output text \
+    --query "StackEvents[].[Timestamp,LogicalResourceId,ResourceStatus,PhysicalResourceId]" >>"$LOG" 2>&1
   aws cloudformation describe-stack-events --stack-name "$1" --region "$REGION" --output text \
     --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].ResourceStatusReason" | head -1
 }
