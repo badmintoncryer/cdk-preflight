@@ -3811,4 +3811,29 @@ describe('post-deploy run failures', () => {
     silent(tpl('FARGATE', 'awsvpc'), RULE);
     silent(tpl('EC2', 'bridge'), RULE);
   });
+
+  test('pf-scheduler-target-ecs-fargate-network-mode / pf-scheduler-target-role-trust', () => {
+    const MODE = 'pf-scheduler-target-ecs-fargate-network-mode';
+    const TRUST = 'pf-scheduler-target-role-trust';
+    const tpl = (LaunchType: string, NetworkMode?: string, R: unknown = TRUSTING('scheduler.amazonaws.com')) => ({
+      Resources: {
+        R,
+        T: { Type: 'AWS::ECS::TaskDefinition', Properties: { NetworkMode, Cpu: '256', Memory: '512', ContainerDefinitions: [{ Name: 'a', Image: 'i' }] } },
+        S: {
+          Type: 'AWS::Scheduler::Schedule',
+          Properties: {
+            ScheduleExpression: 'rate(1 hour)',
+            FlexibleTimeWindow: { Mode: 'OFF' },
+            Target: { Arn: 'arn:aws:ecs:us-east-1:123456789012:cluster/c', RoleArn: ROLE_ARN, EcsParameters: { TaskDefinitionArn: { Ref: 'T' }, LaunchType } },
+          },
+        },
+      },
+    });
+    fires(tpl('FARGATE', 'bridge'), MODE);
+    fires(tpl('FARGATE'), MODE);
+    silent(tpl('FARGATE', 'awsvpc'), MODE);
+    silent(tpl('EC2', 'bridge'), MODE);
+    fires(tpl('EC2', 'bridge', TRUSTING('events.amazonaws.com')), TRUST);
+    silent(tpl('EC2', 'bridge'), TRUST);
+  });
 });

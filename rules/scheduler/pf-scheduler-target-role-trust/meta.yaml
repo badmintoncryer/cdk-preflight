@@ -1,0 +1,13 @@
+id: pf-scheduler-target-role-trust
+service: scheduler
+resourceTypes: [AWS::Scheduler::Schedule, AWS::IAM::Role]
+severity: ERROR
+title: "A schedule's Target.RoleArn must be a role that trusts scheduler.amazonaws.com"
+constraintSource: https://docs.aws.amazon.com/scheduler/latest/UserGuide/setting-up.html#setting-up-execution-role
+upstream: none
+benchRegion: us-east-1
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-16 us-east-1: CreateSchedule with a Target.RoleArn role trusting only events.amazonaws.com -> Invalid request provided: The execution role you provide must allow AWS EventBridge Scheduler to assume the role. (Service: Scheduler, Status Code: 400), ROLLBACK_COMPLETE; pass with the role trusting scheduler.amazonaws.com (byte-identical to the pf-scheduler-target-ecs-fargate-network-mode pass template, run the same day) -> CREATE_COMPLETE and the Fargate task exited 0"
+  expect: "The execution role you provide must allow AWS EventBridge Scheduler to assume the role"
+addedOn: 2026-10-16
