@@ -1864,6 +1864,7 @@
 | `pf-events-rule-schedule-default-bus` | AWS::Events::Rule | A scheduled rule only works on the default event bus | ERROR | none |
 | `pf-events-target-batch-parameters` | AWS::Events::Rule | Batch array size and retry attempts have service-stated bounds | ERROR | none |
 | `pf-events-target-dlq` | AWS::Events::Rule | A target dead-letter queue must be a standard SQS queue in the rule's Region | ERROR | none |
+| `pf-events-target-ecs-fargate-network-mode` | AWS::Events::Rule<br>AWS::ECS::TaskDefinition | A FARGATE ECS target's task definition must use the awsvpc network mode | ERROR | none |
 | `pf-events-target-ecs-parameters` | AWS::Events::Rule | EcsParameters must match the launch type and stay inside its size caps | ERROR | none |
 | `pf-events-target-ecs-task-definition-region` | AWS::Events::Rule | An ECS target's cluster and task definition must share a Region | ERROR | none |
 | `pf-events-target-id-duplicate` | AWS::Events::Rule | Target ids must be unique within a rule | ERROR | none |
