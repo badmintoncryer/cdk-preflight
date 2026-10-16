@@ -53,11 +53,13 @@
 | `pf-apigw-integration-aws-uri` | AWS::ApiGateway::Method | An AWS integration URI is an API Gateway ARN, not the target's ARN | ERROR | none |
 | `pf-apigw-integration-cache-key-parameters` | AWS::ApiGateway::Method | Cache key parameters must be declared method request parameters | ERROR | none |
 | `pf-apigw-integration-credentials-arn` | AWS::ApiGateway::Method | Integration credentials must be an ARN | ERROR | none |
+| `pf-apigw-integration-credentials-trust` | AWS::ApiGateway::Method<br>AWS::IAM::Role | The role in Integration.Credentials must trust apigateway.amazonaws.com | ERROR | none |
 | `pf-apigw-integration-http-method` | AWS::ApiGateway::Method | Non-MOCK integrations need IntegrationHttpMethod | ERROR | none |
 | `pf-apigw-integration-http-uri` | AWS::ApiGateway::Method | An HTTP integration URI is an http(s) URL | ERROR | none |
 | `pf-apigw-integration-request-parameter-value` | AWS::ApiGateway::Method | Static integration request parameters must be single-quoted | ERROR | none |
 | `pf-apigw-integration-response-selection-pattern` | AWS::ApiGateway::Method | SelectionPattern must be a valid regular expression | ERROR | none |
 | `pf-apigw-integration-vpc-link-connection-id` | AWS::ApiGateway::Method | A VPC_LINK integration needs a ConnectionId | ERROR | none |
+| `pf-apigw-lambda-integration-post` | AWS::ApiGateway::Method | A Lambda integration's IntegrationHttpMethod must be POST | ERROR | none |
 | `pf-apigw-method-authorization-scopes-cognito` | AWS::ApiGateway::Method | AuthorizationScopes needs COGNITO_USER_POOLS authorization | ERROR | none |
 | `pf-apigw-method-authorizer-id` | AWS::ApiGateway::Method | CUSTOM and COGNITO_USER_POOLS authorization need AuthorizerId | ERROR | none |
 | `pf-apigw-method-http-verb` | AWS::ApiGateway::Method | HttpMethod is one of the eight API Gateway verbs | ERROR | none |
@@ -1871,6 +1873,7 @@
 | `pf-events-target-parameters-required` | AWS::Events::Rule | ECS, Batch and FIFO queue targets require their parameter block | ERROR | none |
 | `pf-events-target-redshift-parameters` | AWS::Events::Rule | RedshiftDataParameters takes one statement form and one credential form | ERROR | none |
 | `pf-events-target-role-required` | AWS::Events::Rule | Targets other than Lambda, SNS, SQS and CloudWatch Logs require RoleArn | ERROR | none |
+| `pf-events-target-role-trust` | AWS::Events::Rule<br>AWS::IAM::Role | A target's RoleArn must be a role that trusts events.amazonaws.com | ERROR | none |
 | `pf-eventschemas-discoverer-source` | AWS::EventSchemas::Discoverer | A discoverer source must be an event bus in the discoverer's Region | ERROR | none |
 | `pf-eventschemas-registry-name-reserved` | AWS::EventSchemas::Registry | A registry name may not use the reserved aws. prefix | ERROR | none |
 | `pf-eventschemas-registry-policy` | AWS::EventSchemas::RegistryPolicy | A registry policy must declare a Version | ERROR | none |
@@ -2152,6 +2155,7 @@
 | `pf-lambda-capacity-provider-arn-region` | AWS::Lambda::Function | A capacity provider lives in the deploy region | ERROR | none |
 | `pf-lambda-capacity-provider-json-log-only` | AWS::Lambda::Function | Managed-instance functions log in JSON | ERROR | none |
 | `pf-lambda-capacity-provider-runtime` | AWS::Lambda::Function | Managed instances support only the newer runtimes | ERROR | none |
+| `pf-lambda-cfnresponse-import` | AWS::Lambda::Function | Inline Python code must import cfnresponse with the exact statement 'import cfnresponse' | ERROR | none |
 | `pf-lambda-code-s3-pair` | AWS::Lambda::Function | S3-based Code needs both S3Bucket and S3Key | ERROR | none |
 | `pf-lambda-code-signing-arn-region` | AWS::Lambda::Function | A code signing config lives in the deploy region | ERROR | none |
 | `pf-lambda-code-signing-zip-only` | AWS::Lambda::Function | Code signing applies to .zip functions only | ERROR | none |
