@@ -1,6 +1,6 @@
 id: pf-iam-policy-action-vendor-wildcard
 service: iam
-resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::RolePolicy, AWS::IAM::UserPolicy, AWS::IAM::GroupPolicy]
 severity: ERROR
 title: The service prefix of an action takes no wildcard
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html

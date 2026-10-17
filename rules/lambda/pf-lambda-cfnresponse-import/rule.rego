@@ -16,6 +16,7 @@ violation contains make_diag_full("pf-lambda-cfnresponse-import", "ERROR", name,
 	"Write 'import cfnresponse' on a line of its own, or answer the ResponseURL yourself with urllib",
 	_pf_lcri_url) if {
 	some [name, rt, _, code] in _pf_lam_inline
+	_pf_lam_no_layers(name)
 	startswith(rt, "python")
 	not contains(code, "import cfnresponse")
 	line := regex.find_n(`(?m)^[ \t]*(import|from)[ \t].*\bcfnresponse\b.*$`, code, 1)[0]

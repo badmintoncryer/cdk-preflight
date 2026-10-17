@@ -1,6 +1,6 @@
 id: pf-iam-policy-condition-date-value
 service: iam
-resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::RolePolicy, AWS::IAM::UserPolicy, AWS::IAM::GroupPolicy]
 severity: ERROR
 title: Date condition operators need ISO 8601 or epoch seconds
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html

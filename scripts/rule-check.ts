@@ -107,6 +107,11 @@ function collect(filters: string[]): RuleDir[] {
  * pass は「全ルール無音」でなければならないので、対象を絞っても全ルールを載せて評価する。
  */
 function check(filters: string[]): number {
+  // 打ち間違えた id は 0 本に絞られ、「0 NG」で緑に見える
+  if (filters.length > 0 && collect(filters).length === 0) {
+    console.error(`no rule matches ${filters.join(' ')}`);
+    return 2;
+  }
   const libs = fs.existsSync(path.join(ROOT, 'rules', '_lib'))
     ? fs.readdirSync(path.join(ROOT, 'rules', '_lib')).filter((f) => f.endsWith('.rego')).sort()
       .map((f) => ({ name: `_lib/${f.replace(/\.rego$/, '')}`, content: fs.readFileSync(path.join(ROOT, 'rules', '_lib', f), 'utf8') }))

@@ -1,6 +1,6 @@
 id: pf-iam-policy-condition-null-ifexists
 service: iam
-resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::RolePolicy, AWS::IAM::UserPolicy, AWS::IAM::GroupPolicy]
 severity: ERROR
 title: Null does not take the IfExists suffix
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html

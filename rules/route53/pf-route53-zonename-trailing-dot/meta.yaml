@@ -1,6 +1,6 @@
 id: pf-route53-zonename-trailing-dot
 service: route53
-resourceTypes: [AWS::Route53::RecordSet]
+resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
 severity: ERROR
 title: HostedZoneName must end with a trailing dot
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html

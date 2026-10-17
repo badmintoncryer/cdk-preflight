@@ -1,6 +1,6 @@
 id: pf-iam-policy-effect-required
 service: iam
-resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::RolePolicy, AWS::IAM::UserPolicy, AWS::IAM::GroupPolicy]
 severity: ERROR
 title: Every statement needs an Effect
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_grammar.html

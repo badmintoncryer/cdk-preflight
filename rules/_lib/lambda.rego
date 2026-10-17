@@ -294,6 +294,13 @@ _pf_lam_inline contains [name, rt, h, code] if {
 	is_string(h)
 }
 
+# Layers が無い関数。Layer は /opt にモジュールを足し、Datadog や New Relic の Layer は
+# Handler をその中のラッパーに書き換える（元の Handler は環境変数に移る）ので、
+# Layer がある関数では「ZipFile の中に無いモジュール」を根拠に鳴らせない。
+_pf_lam_no_layers(name) if object.get(_pf_lam_props(name), "Layers", "__pf_absent") == "__pf_absent"
+
+_pf_lam_no_layers(name) if object.get(_pf_lam_props(name), "Layers", null) == []
+
 # Python imports everything before the last dot; Node.js loads the file named
 # before the first dot and walks the rest as a property path.
 _pf_lam_handler_module(rt, h) := m if {

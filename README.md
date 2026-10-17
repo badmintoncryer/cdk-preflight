@@ -239,7 +239,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **GlobalAccelerator** | `Accelerator` (1), `EndpointGroup` (5), `Listener` (2) |
 | **Glue** | `Classifier` (6), `Connection` (5), `Crawler` (11), `CustomEntityType` (1), `Database` (1), `DataQualityRuleset` (1), `Job` (15), `MLTransform` (4), `Partition` (1), `Schema` (3), `SecurityConfiguration` (1), `Table` (1), `Trigger` (10), `UserDefinedFunction` (2), `Workflow` (1) |
 | **Grafana** | `Workspace` (7) |
-| **IAM** | `Group` (23), `GroupPolicy` (1), `InstanceProfile` (2), `ManagedPolicy` (31), `OIDCProvider` (2), `Policy` (29), `Role` (44), `RolePolicy` (1), `ServiceLinkedRole` (1), `User` (24), `UserPolicy` (1) |
+| **IAM** | `Group` (23), `GroupPolicy` (19), `InstanceProfile` (2), `ManagedPolicy` (31), `OIDCProvider` (2), `Policy` (29), `Role` (44), `RolePolicy` (19), `ServiceLinkedRole` (1), `User` (24), `UserPolicy` (19) |
 | **IoT** | `Authorizer` (3), `Certificate` (1), `CertificateProvider` (1), `Command` (1), `DomainConfiguration` (3), `JobTemplate` (3), `MitigationAction` (1), `Policy` (4), `PolicyPrincipalAttachment` (1), `ProvisioningTemplate` (3), `RoleAlias` (1), `ScheduledAudit` (1), `Thing` (1), `ThingGroup` (2), `TopicRule` (5), `TopicRuleDestination` (2) |
 | **Kinesis** | `ResourcePolicy` (4), `Stream` (5), `StreamConsumer` (2) |
 | **KinesisAnalyticsV2** | `Application` (20), `ApplicationCloudWatchLoggingOption` (1), `ApplicationOutput` (1), `ApplicationReferenceDataSource` (1) |
@@ -259,7 +259,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **RDS** | `DBCluster` (19), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
 | **Redshift** | `Cluster` (20), `EventSubscription` (1), `ScheduledAction` (2) |
 | **RedshiftServerless** | `Namespace` (5), `Workgroup` (6) |
-| **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (74), `RecordSetGroup` (75) |
+| **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (74), `RecordSetGroup` (76) |
 | **Route53Profiles** | `ProfileAssociation` (1), `ProfileResourceAssociation` (6) |
 | **Route53Resolver** | `FirewallDomainList` (3), `FirewallRuleGroup` (18), `FirewallRuleGroupAssociation` (4), `ResolverDNSSECConfig` (1), `ResolverEndpoint` (18), `ResolverQueryLoggingConfig` (1), `ResolverQueryLoggingConfigAssociation` (1), `ResolverRule` (15), `ResolverRuleAssociation` (1) |
 | **S3** | `AccessPoint` (1), `Bucket` (54), `BucketPolicy` (4), `StorageLens` (5), `StorageLensGroup` (3) |
