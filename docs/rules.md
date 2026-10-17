@@ -44,6 +44,7 @@
 | `pf-apigw-api-key-value-length` | AWS::ApiGateway::ApiKey | An API key value is at least 20 characters | ERROR | none |
 | `pf-apigw-authorizer-ttl-range` | AWS::ApiGateway::Authorizer | AuthorizerResultTtlInSeconds tops out at 3600 | ERROR | retired: engine E3718 covers it from aws-cdk-lib 2.271.0 |
 | `pf-apigw-authorizer-uri-format` | AWS::ApiGateway::Authorizer | An authorizer URI is an API Gateway invocation ARN | ERROR | none |
+| `pf-apigw-body-lambda-integration-post` | AWS::ApiGateway::RestApi | A Lambda x-amazon-apigateway-integration in a RestApi Body must use httpMethod POST | ERROR | none |
 | `pf-apigw-cognito-authorizer-provider-arns` | AWS::ApiGateway::Authorizer | COGNITO_USER_POOLS authorizers need ProviderARNs | ERROR | none |
 | `pf-apigw-deployment-no-methods` | AWS::ApiGateway::Deployment | A Deployment needs at least one Method on its REST API | ERROR | none |
 | `pf-apigw-documentation-part-location` | AWS::ApiGateway::DocumentationPart | An API-level documentation part takes no path, method, status or name | ERROR | none |
@@ -479,6 +480,7 @@
 | `pf-backup-selection-list-of-tags-string-equals-only` | AWS::Backup::BackupSelection | ListOfTags only accepts the STRINGEQUALS condition type | ERROR | none |
 | `pf-backup-selection-not-resources-max` | AWS::Backup::BackupSelection | NotResources accepts at most 30 wildcard selectors | ERROR | none |
 | `pf-backup-selection-requires-resources-or-tags` | AWS::Backup::BackupSelection | A backup selection must list resources or tags | ERROR | none |
+| `pf-backup-selection-role-trust` | AWS::Backup::BackupSelection<br>AWS::IAM::Role | A backup selection's IamRoleArn must be a role that trusts backup.amazonaws.com | ERROR | none |
 | `pf-backup-start-window-minutes-min` | AWS::Backup::BackupPlan | StartWindowMinutes must be at least 60 minutes | ERROR | none |
 | `pf-backup-vault-encryption-key-region` | AWS::Backup::BackupVault | A backup vault encryption key must live in the deploy region | ERROR | none |
 | `pf-backup-vault-lock-changeable-for-days-min` | AWS::Backup::BackupVault | A compliance-mode vault lock needs a cooling-off period of at least 3 days | ERROR | none |

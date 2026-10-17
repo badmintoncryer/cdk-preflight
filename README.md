@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3228-blue" alt="3228 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3230-blue" alt="3230 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -200,14 +200,14 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | Service | Resource types |
 |---|---|
 | **(any resource type)** | `*` (14) |
-| **ApiGateway** | `ApiKey` (1), `Authorizer` (5), `Deployment` (1), `DocumentationPart` (1), `DomainName` (4), `GatewayResponse` (1), `Method` (14), `Model` (3), `Resource` (1), `RestApi` (4), `Stage` (9), `UsagePlan` (5), `VpcLink` (1) |
+| **ApiGateway** | `ApiKey` (1), `Authorizer` (5), `Deployment` (1), `DocumentationPart` (1), `DomainName` (4), `GatewayResponse` (1), `Method` (14), `Model` (3), `Resource` (1), `RestApi` (5), `Stage` (9), `UsagePlan` (5), `VpcLink` (1) |
 | **ApiGatewayV2** | `Api` (5), `Authorizer` (11), `DomainName` (3), `Integration` (15), `IntegrationResponse` (1), `Model` (2), `Route` (6), `RouteResponse` (2), `Stage` (4), `VpcLink` (1) |
 | **ApplicationAutoScaling** | `ScalableTarget` (19), `ScalingPolicy` (30) |
 | **AppSync** | `Api` (7), `ApiCache` (4), `ApiKey` (2), `ChannelNamespace` (5), `DataSource` (15), `DomainName` (1), `FunctionConfiguration` (24), `GraphQLApi` (16), `GraphQLSchema` (12), `Resolver` (32), `SourceApiAssociation` (3) |
 | **APS** | `AnomalyDetector` (9), `ResourcePolicy` (5), `RuleGroupsNamespace` (10), `Workspace` (12) |
 | **Athena** | `DataCatalog` (6), `WorkGroup` (8) |
 | **AutoScaling** | `AutoScalingGroup` (38), `LifecycleHook` (8), `ScalingPolicy` (41), `ScheduledAction` (13), `WarmPool` (4) |
-| **Backup** | `BackupPlan` (12), `BackupSelection` (4), `BackupVault` (3), `Framework` (3), `LogicallyAirGappedBackupVault` (2), `ReportPlan` (2), `RestoreTestingPlan` (5), `RestoreTestingSelection` (3) |
+| **Backup** | `BackupPlan` (12), `BackupSelection` (5), `BackupVault` (3), `Framework` (3), `LogicallyAirGappedBackupVault` (2), `ReportPlan` (2), `RestoreTestingPlan` (5), `RestoreTestingSelection` (3) |
 | **Batch** | `ComputeEnvironment` (40), `ConsumableResource` (2), `JobDefinition` (109), `JobQueue` (18), `SchedulingPolicy` (8), `ServiceEnvironment` (6) |
 | **Bedrock** | `ApplicationInferenceProfile` (2), `AutomatedReasoningPolicy` (3), `Blueprint` (3), `DataAutomationProject` (8), `DataSource` (12), `Flow` (14), `Guardrail` (19), `IntelligentPromptRouter` (5), `KnowledgeBase` (18), `Prompt` (4) |
 | **BedrockAgentCore** | `ApiKeyCredentialProvider` (1), `BrowserCustom` (1), `CodeInterpreterCustom` (1), `ConfigurationBundle` (3), `Dataset` (3), `Evaluator` (4), `Gateway` (5), `GatewayRule` (3), `GatewayTarget` (9), `Harness` (2), `HarnessEndpoint` (2), `Memory` (6), `OAuth2CredentialProvider` (3), `OnlineEvaluationConfig` (3), `PaymentCredentialProvider` (1), `PaymentManager` (1), `Policy` (3), `ResourcePolicy` (1), `Runtime` (8), `RuntimeEndpoint` (1) |
@@ -239,7 +239,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **GlobalAccelerator** | `Accelerator` (1), `EndpointGroup` (5), `Listener` (2) |
 | **Glue** | `Classifier` (6), `Connection` (5), `Crawler` (11), `CustomEntityType` (1), `Database` (1), `DataQualityRuleset` (1), `Job` (15), `MLTransform` (4), `Partition` (1), `Schema` (3), `SecurityConfiguration` (1), `Table` (1), `Trigger` (10), `UserDefinedFunction` (2), `Workflow` (1) |
 | **Grafana** | `Workspace` (7) |
-| **IAM** | `Group` (23), `GroupPolicy` (1), `InstanceProfile` (2), `ManagedPolicy` (31), `OIDCProvider` (2), `Policy` (29), `Role` (43), `RolePolicy` (1), `ServiceLinkedRole` (1), `User` (24), `UserPolicy` (1) |
+| **IAM** | `Group` (23), `GroupPolicy` (1), `InstanceProfile` (2), `ManagedPolicy` (31), `OIDCProvider` (2), `Policy` (29), `Role` (44), `RolePolicy` (1), `ServiceLinkedRole` (1), `User` (24), `UserPolicy` (1) |
 | **IoT** | `Authorizer` (3), `Certificate` (1), `CertificateProvider` (1), `Command` (1), `DomainConfiguration` (3), `JobTemplate` (3), `MitigationAction` (1), `Policy` (4), `PolicyPrincipalAttachment` (1), `ProvisioningTemplate` (3), `RoleAlias` (1), `ScheduledAudit` (1), `Thing` (1), `ThingGroup` (2), `TopicRule` (5), `TopicRuleDestination` (2) |
 | **Kinesis** | `ResourcePolicy` (4), `Stream` (5), `StreamConsumer` (2) |
 | **KinesisAnalyticsV2** | `Application` (20), `ApplicationCloudWatchLoggingOption` (1), `ApplicationOutput` (1), `ApplicationReferenceDataSource` (1) |
