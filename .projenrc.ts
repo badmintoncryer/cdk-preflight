@@ -205,7 +205,8 @@ const checkoutStep: github.workflows.JobStep = {
 };
 const awsCredsStep: github.workflows.JobStep = {
   name: 'Configure AWS credentials',
-  uses: 'aws-actions/configure-aws-credentials@v6',
+  // OIDC で検証ロールを受け取る action なので、ほかの action と同じく SHA で固定する（v6.3.0）
+  uses: 'aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd',
   with: {
     'role-to-assume': verifyRole,
     'aws-region': 'ap-northeast-1',
@@ -224,7 +225,9 @@ monthlyVerify.addJob('plan', {
     {
       id: 'plan',
       name: 'Compute service matrix',
-      run: 'python3 scripts/plan-services.py "${{ inputs.service }}" >> "$GITHUB_OUTPUT"',
+      // 入力は env 経由で渡す。run の中に ${{ }} で展開すると、値がそのままシェルのコードになる
+      env: { SERVICE: '${{ inputs.service }}' },
+      run: 'python3 scripts/plan-services.py "$SERVICE" >> "$GITHUB_OUTPUT"',
     },
   ],
 });
@@ -260,7 +263,7 @@ monthlyVerify.addJob('verify', {
   steps: [
     checkoutStep,
     awsCredsStep,
-    { name: 'Verify rules', run: 'bash bench/verify-all.sh ${{ matrix.service }}' },
+    { name: 'Verify rules', env: { SERVICE: '${{ matrix.service }}' }, run: 'bash bench/verify-all.sh "$SERVICE"' },
     {
       name: 'Upload results',
       if: 'always()',
@@ -334,7 +337,10 @@ const selfMutationPush: github.workflows.JobStep = {
   name: 'Push self mutation',
   // ジョブ中に人間が main を進めると push が弾かれる。バッジ再生成は冪等なので
   // 次の release が同じ差分を作り直す。publish 済みのランを赤くする方が損。
-  run: 'git push origin HEAD:${{ github.ref_name }} || echo "push rejected (main moved) - the next release redoes it"',
+  // dry run では公開しないのと同じく、main にも書かない
+  if: '${{ !inputs.dry_run }}',
+  env: { REF: '${{ github.ref_name }}' },
+  run: 'git push origin "HEAD:$REF" || echo "push rejected (main moved) - the next release redoes it"',
 };
 // steps[4] = projen 生成の `release` ステップ。その直前に commit を差し込み、
 // push は steps の末尾に足す。projen 更新でステップ構成が変わったら添字を見直すこと。

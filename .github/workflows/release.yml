@@ -84,7 +84,10 @@ jobs:
           path: dist
           overwrite: true
       - name: Push self mutation
-        run: git push origin HEAD:${{ github.ref_name }} || echo "push rejected (main moved) - the next release redoes it"
+        if: ${{ !inputs.dry_run }}
+        env:
+          REF: ${{ github.ref_name }}
+        run: git push origin "HEAD:$REF" || echo "push rejected (main moved) - the next release redoes it"
   release_github:
     name: Publish to GitHub Releases
     needs:

@@ -26,7 +26,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Compute service matrix
         id: plan
-        run: python3 scripts/plan-services.py "${{ inputs.service }}" >> "$GITHUB_OUTPUT"
+        env:
+          SERVICE: ${{ inputs.service }}
+        run: python3 scripts/plan-services.py "$SERVICE" >> "$GITHUB_OUTPUT"
   fixtures:
     runs-on: ubuntu-latest
     permissions:
@@ -37,7 +39,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Configure AWS credentials
         id: configure_aws_credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
         with:
           role-to-assume: arn:aws:iam::502761806921:role/cdkpf-monthly-verify
           aws-region: ap-northeast-1
@@ -59,14 +61,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Configure AWS credentials
         id: configure_aws_credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
         with:
           role-to-assume: arn:aws:iam::502761806921:role/cdkpf-monthly-verify
           aws-region: ap-northeast-1
           role-duration-seconds: 14400
       - name: Verify rules
         id: verify_rules
-        run: bash bench/verify-all.sh ${{ matrix.service }}
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: bash bench/verify-all.sh "$SERVICE"
       - name: Upload results
         id: upload_results
         if: always()
@@ -100,7 +104,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Configure AWS credentials
         id: configure_aws_credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
         with:
           role-to-assume: arn:aws:iam::502761806921:role/cdkpf-monthly-verify
           aws-region: ap-northeast-1
