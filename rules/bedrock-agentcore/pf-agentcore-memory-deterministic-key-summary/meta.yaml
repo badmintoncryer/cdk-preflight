@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-deterministic-key-summary
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "Summary strategies cannot declare STRICTLY_CONSISTENT metadata keys"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify.sh): fail SummaryMemoryStrategy with a STRICTLY_CONSISTENT key -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: extractionType STRICTLY_CONSISTENT is not supported on summary-based strategies (summaryMemoryStrategy or customMemoryStrategy with summaryOverride). Strictly-consistent metadata is supported on semanticMemoryStrategy, userPreferenceMemoryStrategy, and episodicMemoryStrategy. (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass SummaryMemoryStrategy with an LLM_INFERRED key -> CREATE_COMPLETE and deleted. CreateMemory direct (#354 B) returned the same text."
+  expect: "extractionType STRICTLY_CONSISTENT is not supported on summary-based strategies"
+addedOn: 2026-10-17

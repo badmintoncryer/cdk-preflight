@@ -1,0 +1,34 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_dksum_fail",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SummaryMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "dept",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "IndexedKeys": [
+          {
+            "Key": "dept",
+            "Type": "STRING"
+          }
+        ]
+      }
+    }
+  }
+}
