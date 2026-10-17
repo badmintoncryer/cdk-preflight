@@ -1,0 +1,13 @@
+id: pf-vpclattice-authpolicy-size
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::AuthPolicy]
+severity: ERROR
+title: "An auth policy must not exceed 10240 bytes"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail auth policy on an in-stack service network, 10241 bytes as compact JSON (one StringEquals value padded) -> ROLLBACK_COMPLETE (Access policy size exceeds maximum allowed size of 10240 bytes.); pass the same at 10240 bytes -> CREATE_COMPLETE. The CFN handler serializes Policy without added whitespace: the 10240-byte compact document deploys, as with the API (#363 B: 10240 accepted, 10241 rejected)."
+  expect: "Access policy size exceeds maximum allowed size of 10240 bytes"
+addedOn: 2026-10-18

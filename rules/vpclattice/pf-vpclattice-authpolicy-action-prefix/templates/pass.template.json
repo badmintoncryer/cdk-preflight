@@ -1,0 +1,30 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-04-p-n"
+   }
+  },
+  "P": {
+   "Type": "AWS::VpcLattice::AuthPolicy",
+   "Properties": {
+    "ResourceIdentifier": {
+     "Ref": "Sn"
+    },
+    "Policy": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": "*",
+       "Action": "vpc-lattice-svcs:Invoke",
+       "Resource": "*"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

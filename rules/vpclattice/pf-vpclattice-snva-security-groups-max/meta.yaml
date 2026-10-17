@@ -1,0 +1,13 @@
+id: pf-vpclattice-snva-security-groups-max
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkVpcAssociation]
+severity: ERROR
+title: "A service network VPC association takes at most 5 security groups"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail association with 6 in-stack security groups (in-stack VPC) -> ROLLBACK_COMPLETE (1 validation error detected: Value '[sg-0dbc7580249cba4e7, sg-096401a7eae36a409, sg-0... (truncated)' at 'securityGroupIds' failed to satisfy constraint: Member must have length less than or equal to 5); pass 5 security groups -> CREATE_COMPLETE. Returned by the resource handler (service model validation), not CloudFormation early validation."
+  expect: "Member must have length less than or equal to 5"
+addedOn: 2026-10-18

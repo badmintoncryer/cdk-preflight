@@ -1,0 +1,13 @@
+id: pf-vpclattice-snva-sg-other-vpc
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkVpcAssociation]
+severity: ERROR
+title: "Association security groups must belong to the associated VPC"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateServiceNetworkVpcAssociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail association to VPC A with a security group of in-stack VPC B -> ROLLBACK_COMPLETE (Security group is not valid for vpc vpc-0c19905ebc3abcb98.); pass a security group of VPC A -> CREATE_COMPLETE."
+  expect: "Security group is not valid for vpc"
+addedOn: 2026-10-18

@@ -1,0 +1,13 @@
+id: pf-vpclattice-snva-specified-domain-format
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkVpcAssociation]
+severity: ERROR
+title: "PrivateDnsSpecifiedDomains entries must be host names"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_DnsOptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail PrivateDnsSpecifiedDomains ['api example.com'] -> ROLLBACK_COMPLETE (Domain api example.com has invalid format); pass [example.com] -> CREATE_COMPLETE. Variant ['café.example.com'] -> ROLLBACK_COMPLETE (Domain caf?.example.com has invalid format)."
+  expect: "has invalid format"
+addedOn: 2026-10-18

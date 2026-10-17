@@ -1,0 +1,41 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-10-f-n"
+   }
+  },
+  "P": {
+   "Type": "AWS::VpcLattice::ResourcePolicy",
+   "Properties": {
+    "ResourceArn": {
+     "Fn::GetAtt": [
+      "Sn",
+      "Arn"
+     ]
+    },
+    "Policy": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Action": [
+        "vpc-lattice:CreateServiceNetworkVpcAssociation",
+        "vpc-lattice:CreateServiceNetworkServiceAssociation",
+        "vpc-lattice:GetServiceNetwork"
+       ],
+       "Resource": {
+        "Fn::GetAtt": [
+         "Sn",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

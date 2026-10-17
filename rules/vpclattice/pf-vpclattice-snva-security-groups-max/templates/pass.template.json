@@ -1,0 +1,107 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-14-p-n"
+   }
+  },
+  "Vpc": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.60.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "Sg0": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf 363 slice 3",
+    "VpcId": {
+     "Ref": "Vpc"
+    }
+   }
+  },
+  "Sg1": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf 363 slice 3",
+    "VpcId": {
+     "Ref": "Vpc"
+    }
+   }
+  },
+  "Sg2": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf 363 slice 3",
+    "VpcId": {
+     "Ref": "Vpc"
+    }
+   }
+  },
+  "Sg3": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf 363 slice 3",
+    "VpcId": {
+     "Ref": "Vpc"
+    }
+   }
+  },
+  "Sg4": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf 363 slice 3",
+    "VpcId": {
+     "Ref": "Vpc"
+    }
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkVpcAssociation",
+   "Properties": {
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn"
+    },
+    "VpcIdentifier": {
+     "Ref": "Vpc"
+    },
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "Sg0",
+       "GroupId"
+      ]
+     },
+     {
+      "Fn::GetAtt": [
+       "Sg1",
+       "GroupId"
+      ]
+     },
+     {
+      "Fn::GetAtt": [
+       "Sg2",
+       "GroupId"
+      ]
+     },
+     {
+      "Fn::GetAtt": [
+       "Sg3",
+       "GroupId"
+      ]
+     },
+     {
+      "Fn::GetAtt": [
+       "Sg4",
+       "GroupId"
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

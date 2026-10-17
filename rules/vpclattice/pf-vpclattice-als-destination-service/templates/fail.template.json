@@ -1,0 +1,22 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-03-f-n"
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::AccessLogSubscription",
+   "Properties": {
+    "ResourceIdentifier": {
+     "Ref": "Sn"
+    },
+    "DestinationArn": {
+     "Fn::Sub": "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:cdkpf-363-none"
+    }
+   }
+  }
+ }
+}

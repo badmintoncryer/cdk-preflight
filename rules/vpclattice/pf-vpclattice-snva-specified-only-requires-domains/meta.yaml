@@ -1,0 +1,13 @@
+id: pf-vpclattice-snva-specified-only-requires-domains
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkVpcAssociation]
+severity: ERROR
+title: "A *_SPECIFIED_DOMAINS* preference needs PrivateDnsSpecifiedDomains"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_DnsOptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail SPECIFIED_DOMAINS_ONLY without PrivateDnsSpecifiedDomains -> ROLLBACK_COMPLETE (privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY); pass SPECIFIED_DOMAINS_ONLY with [example.com] -> CREATE_COMPLETE. Variant VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS without domains -> ROLLBACK_COMPLETE (privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY)."
+  expect: "privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY"
+addedOn: 2026-10-18

@@ -1,0 +1,58 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-19-p-n"
+   }
+  },
+  "Sn2": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-19-p-n2"
+   }
+  },
+  "Vpc": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.60.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "Vpc2": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.61.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkVpcAssociation",
+   "Properties": {
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn"
+    },
+    "VpcIdentifier": {
+     "Ref": "Vpc"
+    }
+   }
+  },
+  "B": {
+   "Type": "AWS::VpcLattice::ServiceNetworkVpcAssociation",
+   "Properties": {
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn2"
+    },
+    "VpcIdentifier": {
+     "Ref": "Vpc2"
+    }
+   },
+   "DependsOn": [
+    "A"
+   ]
+  }
+ }
+}

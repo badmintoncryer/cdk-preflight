@@ -1,0 +1,13 @@
+id: pf-vpclattice-als-arn-region
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::AccessLogSubscription]
+severity: ERROR
+title: "An access log subscription must target a resource in the deploy region"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateAccessLogSubscription.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail access log subscription for a sn- ARN in ap-northeast-1 (destination an in-stack S3 bucket) -> ROLLBACK_COMPLETE (Invalid region in the resourceIdentifier provided. Must match current region us-east-1.); pass in-stack service network -> CREATE_COMPLETE. Pass: Lattice writes a 0-byte AWSLogs/<account>/ marker into the destination bucket, so the bucket is retained on delete (bench sweep removes it). Baseline (#363 B, API 2026-10-17): a missing sn- ARN in us-east-1 -> ResourceNotFoundException, so the text tracks the region."
+  expect: "Invalid region in the resourceIdentifier provided"
+addedOn: 2026-10-18

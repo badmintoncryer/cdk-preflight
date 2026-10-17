@@ -1,0 +1,13 @@
+id: pf-vpclattice-resourcepolicy-principal-required
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourcePolicy]
+severity: ERROR
+title: "Every resource policy statement needs a Principal"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_PutResourcePolicy.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail resource policy statement without Principal -> ROLLBACK_COMPLETE (InvalidPolicy: A Principal is required); pass Principal AWS account root -> CREATE_COMPLETE."
+  expect: "A Principal is required"
+addedOn: 2026-10-18

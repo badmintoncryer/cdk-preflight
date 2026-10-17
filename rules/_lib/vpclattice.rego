@@ -73,3 +73,14 @@ _pf_vpcl_fwd_tgs(name, path) := {[i, tg] |
 _pf_vpcl_lit(v) if is_string(v)
 
 _pf_vpcl_lit(v) if is_number(v)
+
+# The raw Policy object of an AuthPolicy / ResourcePolicy (undefined when it is
+# an intrinsic or not an object).
+_pf_vpcl_policy(name) := d if {
+	d := _pf_vpcl_raw(name, ["Policy"])
+	is_object(d)
+	not _pf_iamlib_marker(d)
+}
+
+# Its statements as [index, statement] (marker statements skipped).
+_pf_vpcl_stmts(name) := _pf_iamlib_stmts(_pf_vpcl_policy(name))
