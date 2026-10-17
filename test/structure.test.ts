@@ -38,6 +38,10 @@ test('the renderers drop no rule', () => {
     expect(generated).toContain(JSON.stringify(r.id));
     expect(docs).toContain(r.id);
   }
+  // 表の行は 5 列のまま。タイトルの `|`（`<header|querystring|path>` など）が素のままだとセルが割れる
+  for (const row of docs.split('\n').filter((l) => l.startsWith('| `'))) {
+    expect(row.replace(/\\\|/g, '').split('|')).toHaveLength(7);
+  }
   // README のリソース表は ID ではなく型ごとの本数で書かれる。短縮名はサービスをまたいで重複する
   // （ApiGateway と AppSync の両方に ApiKey がある）ので、名前ではなく本数の総和で見る。
   const tallied = [...supported.matchAll(/\((\d+)\)/g)].reduce((n, m) => n + Number(m[1]), 0);
@@ -156,6 +160,8 @@ test('repro.expect is one sed-readable line quoted from the evidence, and new re
   // 必須になるのは切り替え日以降に足した real-deploy だけ
   expect(expectProblem(repro(), EXPECT_REQUIRED_FROM, raw(''))).toMatch(/required/);
   expect(expectProblem(repro(), '2026-09-26', raw(''))).toBeUndefined();
+  // addedOn が無いと '' として締め切りより前に並び、要求を素通りしていた
+  expect(expectProblem(repro(), undefined, raw(''))).toMatch(/addedOn/);
   expect(expectProblem({ method: 'doc-only', evidence: 'schema says so' }, EXPECT_REQUIRED_FROM, raw(''))).toBeUndefined();
 });
 
@@ -174,7 +180,8 @@ function bareSomeOffenders(name: string, rego: string): string[] {
       continue;
     }
     if (line === '}') {
-      const bare = body.filter((l) => /^\t*some\s+[A-Za-z_][A-Za-z0-9_]*\s*$/.test(l));
+      // `some i, j` も数える。`some i, j` と `some k` の組み合わせでも同じくパックごと落ちる
+      const bare = body.filter((l) => /^\s*some\s+[A-Za-z_]\w*(\s*,\s*[A-Za-z_]\w*)*\s*(#.*)?$/.test(l));
       if (bare.length >= 2) offenders.push(`${name}: ${bare.map((l) => l.trim()).join(' + ')}`);
       body = undefined;
       continue;
@@ -187,6 +194,10 @@ function bareSomeOffenders(name: string, rego: string): string[] {
 test('no rego body declares two bare `some` variables', () => {
   // 検出器そのものが空振りしていないことの確認
   expect(bareSomeOffenders('probe', 'violation contains 1 if {\n\tsome a\n\tsome b\n}\n')).toHaveLength(1);
+  // 多変数の `some i, j` も同じ穴を開ける（実測: `some i, j` + `some k` でパックごと落ちる）
+  expect(bareSomeOffenders('probe', 'violation contains 1 if {\n\tsome i, j\n\tsome k\n}\n')).toHaveLength(1);
+  expect(bareSomeOffenders('probe', 'violation contains 1 if {\n    some i # first\n    some j, k\n}\n')).toHaveLength(1);
+  expect(bareSomeOffenders('probe', 'violation contains 1 if {\n\tsome i, j\n}\n')).toHaveLength(0);
 
   const modules = [
     ...BUNDLED_RULES.map((r) => ({ name: r.id, rego: r.rego })),

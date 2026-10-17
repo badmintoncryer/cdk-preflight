@@ -130,7 +130,10 @@ export function expectProblem(
 ): string | undefined {
   const ex = repro.expect;
   if (ex === undefined) {
-    if (repro.method !== 'real-deploy' || String(addedOn ?? '') < EXPECT_REQUIRED_FROM) return undefined;
+    if (repro.method !== 'real-deploy') return undefined;
+    // 無い addedOn を '' と読むと締め切りより前に並び、expect の要求を素通りする
+    if (typeof addedOn !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(addedOn)) return 'meta.addedOn must be a YYYY-MM-DD date for a real-deploy rule';
+    if (addedOn < EXPECT_REQUIRED_FROM) return undefined;
     return `meta.repro.expect is required for real-deploy rules added on or after ${EXPECT_REQUIRED_FROM}: quote the part of the observed rejection that names the constraint`;
   }
   if (typeof ex !== 'string' || /["\\\n]/.test(ex) || raw.match(/^\s+expect:\s*"(.*)"\s*$/m)?.[1] !== ex) {
@@ -616,7 +619,8 @@ function upstreamCell(r: BundledRule): string {
 
 export function renderDocs(rules: BundledRule[]): string {
   const rows = rules
-    .map((r) => `| \`${r.id}\` | ${r.resourceTypes.join('<br>')} | ${r.title} | ${r.severity} | ${upstreamCell(r)} |`)
+    // タイトルの `|` はそのままだと表のセルを割り、Severity 以降の列がずれる
+    .map((r) => `| \`${r.id}\` | ${r.resourceTypes.join('<br>')} | ${r.title.replace(/\|/g, '\\|')} | ${r.severity} | ${upstreamCell(r)} |`)
     .join('\n');
   return [
     '# Bundled rules',

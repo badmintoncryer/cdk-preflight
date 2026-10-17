@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-lambda-zipfile-handler-module", "ERROR", n
 	sprintf("Set Handler to 'index.%s'", [_pf_lam_handler_fn(rt, h)]),
 	_pf_lzhm_url) if {
 	some [name, rt, h, _] in _pf_lam_inline
+	_pf_lam_no_layers(name)
 	m := _pf_lam_handler_module(rt, h)
 	m != "index"
 }

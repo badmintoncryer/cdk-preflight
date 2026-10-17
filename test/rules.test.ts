@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { type Diagnostic, diagnose, diagnoseTemplate, engine } from './rule-table';
+import { prune } from '../src/private/enforce';
+import { BUNDLED_RULES } from '../src/rules.generated';
 
 test('engine is resolvable (bundled in aws-cdk-lib)', () => {
   expect(engine).toBeDefined();
@@ -3870,5 +3872,44 @@ describe('post-deploy run failures', () => {
     });
     fires(sel(TRUSTING('lambda.amazonaws.com')), BACKUP);
     silent(sel(TRUSTING('backup.amazonaws.com')), BACKUP);
+  });
+});
+
+/**
+ * 2026-10-17 のレビューで見つかった個別ルールの誤検知と、刈り込みで黙る形。
+ */
+describe('rule-level findings from the 2026-10-17 review', () => {
+  const custom = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  // Datadog / New Relic の Layer は Handler を書き換え、元の Handler を環境変数に移す。
+  // Layer があれば、index 以外のモジュールも cfnresponse も Layer から読める
+  test('a handler or module that a Layer supplies is not flagged', () => {
+    const ids = custom(diagnoseTemplate({ Resources: { Role: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }] } } }, FnNode: { Type: 'AWS::Lambda::Function', Properties: { Runtime: 'nodejs20.x', Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler', Role: { 'Fn::GetAtt': ['Role', 'Arn'] }, Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:115'], Environment: { Variables: { DD_LAMBDA_HANDLER: 'index.handler' } }, Code: { ZipFile: 'exports.handler = async () => ({ statusCode: 200 });' } } }, FnPy: { Type: 'AWS::Lambda::Function', Properties: { Runtime: 'python3.12', Handler: 'datadog_lambda.handler.handler', Role: { 'Fn::GetAtt': ['Role', 'Arn'] }, Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Python312:101'], Environment: { Variables: { DD_LAMBDA_HANDLER: 'index.handler' } }, Code: { ZipFile: 'def handler(event, context):\n    return {}\n' } } }, FnCfn: { Type: 'AWS::Lambda::Function', Properties: { Runtime: 'python3.12', Handler: 'index.handler', Role: { 'Fn::GetAtt': ['Role', 'Arn'] }, Layers: ['arn:aws:lambda:us-east-1:123456789012:layer:my-cfnresponse:1'], Code: { ZipFile: 'from cfnresponse import send, SUCCESS\ndef handler(event, context):\n    send(event, context, SUCCESS, {})\n' } } } } }));
+    expect(ids).not.toContain('pf-lambda-zipfile-handler-module');
+    expect(ids).not.toContain('pf-lambda-cfnresponse-import');
+  });
+
+  // Lambda の管理 API（GetFunctionConfiguration など）への GET は正しい AWS 統合
+  test('a GET to a Lambda management API is not an Invoke', () => {
+    const ids = custom(diagnoseTemplate({ Resources: { Role: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'apigateway.amazonaws.com' }, Action: 'sts:AssumeRole' }] }, ManagedPolicyArns: ['arn:aws:iam::aws:policy/AWSLambda_ReadOnlyAccess'] } }, Api: { Type: 'AWS::ApiGateway::RestApi', Properties: { Name: 'a' } }, M: { Type: 'AWS::ApiGateway::Method', Properties: { RestApiId: { Ref: 'Api' }, ResourceId: { 'Fn::GetAtt': ['Api', 'RootResourceId'] }, HttpMethod: 'GET', AuthorizationType: 'NONE', Integration: { Type: 'AWS', IntegrationHttpMethod: 'GET', Credentials: { 'Fn::GetAtt': ['Role', 'Arn'] }, Uri: 'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/my-function/configuration' } } }, Api2: { Type: 'AWS::ApiGateway::RestApi', Properties: { Name: 'b', Body: { openapi: '3.0.1', info: { title: 'b', version: '1' }, paths: { '/fn': { get: { 'x-amazon-apigateway-integration': { type: 'aws', httpMethod: 'GET', credentials: 'arn:aws:iam::123456789012:role/r', uri: 'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/my-function', responses: { default: { statusCode: '200' } } } } } } } } } } }));
+    expect(ids).not.toContain('pf-apigw-lambda-integration-post');
+    expect(ids).not.toContain('pf-apigw-body-lambda-integration-post');
+  });
+
+  // 刈り込みは meta.resourceTypes だけを見る。ルールが読む型が宣言に無いと、その型だけの
+  // テンプレートではルールごと外れて黙る
+  test.each([
+    ['pf-route53-zonename-trailing-dot', 'AWS::Route53::RecordSetGroup'],
+    ...['RolePolicy', 'UserPolicy', 'GroupPolicy'].map((t) => ['pf-iam-policy-action-vendor-wildcard', `AWS::IAM::${t}`]),
+  ])('%s survives pruning on a template with only %s', (id, type) => {
+    expect(prune(BUNDLED_RULES, new Set([type])).map((r) => r.id)).toContain(id);
+  });
+
+  test('the RecordSetGroup branch of the trailing-dot rule fires', () => {
+    expect(custom(diagnoseTemplate({ Resources: { G: { Type: 'AWS::Route53::RecordSetGroup', Properties: { HostedZoneName: 'example.com', RecordSets: [{ Name: 'a.example.com.', Type: 'A', TTL: '60', ResourceRecords: ['192.0.2.1'] }] } } } }))).toContain('pf-route53-zonename-trailing-dot');
+  });
+
+  test('the IAM grammar rules fire on a stand-alone RolePolicy', () => {
+    expect(custom(diagnoseTemplate({ Resources: { P: { Type: 'AWS::IAM::RolePolicy', Properties: { RoleName: 'existing-role', PolicyName: 'p', PolicyDocument: { Version: '2012-10-17', Statement: [{ Sid: 's1', Effect: 'Allow', Action: '*:GetObject', Resource: 'arn:aws:s3:::b/*' }, { Sid: 's2', Effect: 'Allow', Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*', Condition: { DateGreaterThan: { 'aws:CurrentTime': 'tomorrow' } } }] } } } } }))).toContain('pf-iam-policy-action-vendor-wildcard');
   });
 });

@@ -31,5 +31,8 @@ violation contains make_diag_full("pf-apigw-lambda-integration-post", "ERROR", n
 	m := object.get(integ, "IntegrationHttpMethod", null)
 	is_string(m)
 	upper(m) != "POST"
-	contains(_pf_aplip_text(object.get(integ, "Uri", null)), ":lambda:path/2015-03-31/functions/")
+	uri := _pf_aplip_text(object.get(integ, "Uri", null))
+	contains(uri, ":lambda:path/2015-03-31/functions/")
+	# Invoke だけが POST 専用。GetFunctionConfiguration などの管理 API への GET は正しい
+	endswith(uri, "/invocations")
 }

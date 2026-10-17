@@ -1,6 +1,6 @@
 id: pf-iam-policy-action-required
 service: iam
-resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group]
+resourceTypes: [AWS::IAM::Role, AWS::IAM::Policy, AWS::IAM::ManagedPolicy, AWS::IAM::User, AWS::IAM::Group, AWS::IAM::RolePolicy, AWS::IAM::UserPolicy, AWS::IAM::GroupPolicy]
 severity: ERROR
 title: Every statement needs an Action or NotAction
 constraintSource: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html
