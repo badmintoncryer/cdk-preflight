@@ -1,0 +1,13 @@
+id: pf-agentcore-gateway-rate-limit-entry-metric
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::GatewayRateLimit]
+severity: ERROR
+title: "Each rate limit entry needs Requests, Tokens or Connections"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-rate-limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail entry with Dimensions only -> CREATE_FAILED (Resource handler returned message: Each entry must have at least one rate config: 'requests', 'tokens', or 'connections' (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass Requests 10/second -> CREATE_COMPLETE and deleted."
+  expect: "Each entry must have at least one rate config"
+addedOn: 2026-10-17

@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-metadata-key-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "Metadata keys must be unique within a strategy schema, and IndexedKeys unique ignoring case"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify-rerun.sh): fail MetadataSchema [a, A] -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: Duplicate metadata keys in strategy 's1': a (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass MetadataSchema [a, b] + IndexedKeys [a, b] -> CREATE_COMPLETE and deleted. First run (c1/verify.sh, same day): MetadataSchema [a, a] -> the same text, IndexedKeys [a, A] -> Duplicate indexed key names (case-insensitive): a, and a MetadataSchema [a, A] meant as pass also failed with Duplicate metadata keys, so both lists compare ignoring case."
+  expect: "Duplicate metadata keys in strategy"
+addedOn: 2026-10-17

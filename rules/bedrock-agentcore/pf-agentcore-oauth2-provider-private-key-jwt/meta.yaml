@@ -3,11 +3,11 @@ service: bedrock-agentcore
 benchRegion: us-east-1
 resourceTypes: [AWS::BedrockAgentCore::OAuth2CredentialProvider]
 severity: ERROR
-title: ClientAuthenticationMethod PRIVATE_KEY_JWT cannot be satisfied through CloudFormation (PrivateKeyJwtConfig is not in the resource schema)
-constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CustomOauth2ProviderConfigInput.html
+title: "ClientAuthenticationMethod PRIVATE_KEY_JWT needs PrivateKeyJwtConfig"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/private-key-jwt.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 us-east-1 (probe): ClientAuthenticationMethod: PRIVATE_KEY_JWT -> CREATE_FAILED (Bedrock AgentCore Control 400: privateKeyJwtConfig is required when clientAuthenticationMethod is PRIVATE_KEY_JWT.) -> ROLLBACK_COMPLETE; the AWS::BedrockAgentCore::OAuth2CredentialProvider schema has no PrivateKeyJwtConfig property (F3002 if added), so the method is unusable from a template. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-oauth2-provider-private-key-jwt.log"
+  evidence: "bench 2026-10-17 us-east-1 (#354 c2/verify.sh, narrowed): fail PRIVATE_KEY_JWT without PrivateKeyJwtConfig -> CREATE_FAILED (Resource handler returned message: privateKeyJwtConfig is required when clientAuthenticationMethod is PRIVATE_KEY_JWT. (Service: Bedrock AgentCore Control; Operation: CreateOauth2CredentialProvider; Status Code: 400; Error Code: ValidationException)) -> ROLLBACK_COMPLETE; pass PRIVATE_KEY_JWT with PrivateKeyJwtConfig (in-stack RSA_2048 SIGN_VERIFY key, RS256) -> CREATE_COMPLETE and deleted. Until 2026-09 the resource had no PrivateKeyJwtConfig and the rule fired on every PRIVATE_KEY_JWT (bench 2026-09-05, same rejection); since the property landed in the schema the rule fires only when it is missing."
   expect: "privateKeyJwtConfig is required when clientAuthenticationMethod is PRIVATE_KEY_JWT"
 addedOn: 2026-09-05

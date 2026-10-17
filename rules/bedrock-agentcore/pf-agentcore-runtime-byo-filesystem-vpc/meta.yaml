@@ -1,0 +1,13 @@
+id: pf-agentcore-runtime-byo-filesystem-vpc
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: "EfsAccessPoint and S3FilesAccessPoint need a runtime in VPC network mode"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-filesystem-configurations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail PUBLIC runtime with an EfsAccessPoint that does not exist -> CREATE_FAILED (Resource handler returned message: Invalid request provided: Filesystem configurations with EFS or S3 Files access points require VPC network mode, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass NetworkMode VPC (default VPC subnets) with an in-stack EFS file system, two mount targets and an access point, execution role allowed elasticfilesystem:DescribeAccessPoints / DescribeMountTargets / ClientMount / ClientWrite -> CREATE_COMPLETE and deleted (c3/verify-rerun.sh 19:41, same fail text). Without DescribeAccessPoints the pass fails with Execution role is missing required filesystem permissions. The VPC check runs before the access point is looked up."
+  expect: "require VPC network mode"
+addedOn: 2026-10-17

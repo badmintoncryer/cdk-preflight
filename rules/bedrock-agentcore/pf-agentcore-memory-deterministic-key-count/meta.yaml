@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-deterministic-key-count
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "A memory strategy may declare at most three STRICTLY_CONSISTENT metadata keys"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify.sh): fail 4 STRICTLY_CONSISTENT keys in one SemanticMemoryStrategy -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: Strategy 's1' has 4 STRICTLY_CONSISTENT keys, maximum allowed is 3 (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass 3 STRICTLY_CONSISTENT + 1 LLM_INFERRED -> CREATE_COMPLETE and deleted. CreateMemory direct (#354 B) returned the same text."
+  expect: "STRICTLY_CONSISTENT keys, maximum allowed is 3"
+addedOn: 2026-10-17

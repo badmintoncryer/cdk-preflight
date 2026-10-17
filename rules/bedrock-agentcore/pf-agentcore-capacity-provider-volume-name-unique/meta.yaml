@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-volume-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "Capacity provider volume names must be unique"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateCapacityProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail two Volumes named dup -> CREATE_FAILED (Resource handler returned message: Volume name 'dup' is used more than once; volume names must be unique, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass volumes a and b -> CREATE_COMPLETE and deleted."
+  expect: "volume names must be unique"
+addedOn: 2026-10-17

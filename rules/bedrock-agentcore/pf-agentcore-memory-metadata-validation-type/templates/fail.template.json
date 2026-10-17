@@ -1,0 +1,74 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_mvaltype_fail1",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "n",
+                    "Type": "NUMBER",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of n",
+                        "Validation": {
+                          "StringValidation": {
+                            "AllowedValues": [
+                              "a"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "M2": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_mvaltype_fail2",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "n",
+                    "Type": "NUMBER",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of n",
+                        "Validation": {
+                          "NumberValidation": {
+                            "MinValue": 2,
+                            "MaxValue": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

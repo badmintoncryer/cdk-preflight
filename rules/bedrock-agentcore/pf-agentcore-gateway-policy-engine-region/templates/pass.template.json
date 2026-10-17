@@ -1,0 +1,69 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "p",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "logs:*",
+          "bedrock-agentcore:*"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "PE": {
+   "Type": "AWS::BedrockAgentCore::PolicyEngine",
+   "Properties": {
+    "Name": "cdkpf_gwpe_pass"
+   }
+  },
+  "G": {
+   "Type": "AWS::BedrockAgentCore::Gateway",
+   "Properties": {
+    "Name": "cdkpf-gateway-policy-engine-region-p",
+    "AuthorizerType": "AWS_IAM",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "ProtocolType": "MCP",
+    "PolicyEngineConfiguration": {
+     "Arn": {
+      "Fn::GetAtt": [
+       "PE",
+       "PolicyEngineArn"
+      ]
+     },
+     "Mode": "LOG_ONLY"
+    }
+   }
+  }
+ }
+}

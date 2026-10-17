@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-deterministic-key-type
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "STRICTLY_CONSISTENT metadata keys must be of type STRING"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify.sh): fail STRICTLY_CONSISTENT key n Type NUMBER (indexed as NUMBER) -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: Key 'n' in strategy 's1' with extractionType STRICTLY_CONSISTENT must be of type STRING, but got NUMBER (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass same key as STRING -> CREATE_COMPLETE and deleted. CreateMemory direct (#354 B) returned the same text."
+  expect: "with extractionType STRICTLY_CONSISTENT must be of type STRING"
+addedOn: 2026-10-17

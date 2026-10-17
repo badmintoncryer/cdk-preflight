@@ -1,0 +1,53 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_mkeyuniq_pass",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "a",
+                    "Type": "STRING",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of a"
+                      }
+                    }
+                  },
+                  {
+                    "Key": "b",
+                    "Type": "STRING",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of b"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "IndexedKeys": [
+          {
+            "Key": "a",
+            "Type": "STRING"
+          },
+          {
+            "Key": "b",
+            "Type": "STRING"
+          }
+        ]
+      }
+    }
+  }
+}

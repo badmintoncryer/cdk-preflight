@@ -1,0 +1,13 @@
+id: pf-agentcore-gateway-rate-limit-entry-duplicate
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::GatewayRateLimit]
+severity: ERROR
+title: "Two entries of one rate limit cannot have the same Dimensions"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-rate-limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail two entries with Dimensions {targetName: *} -> CREATE_FAILED (Resource handler returned message: Duplicate entry detected: dimensions {targetName=*} appears more than once in the same limit (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass {targetName: *} and {targetName: cdkpf-t1} -> CREATE_COMPLETE and deleted."
+  expect: "appears more than once in the same limit"
+addedOn: 2026-10-17

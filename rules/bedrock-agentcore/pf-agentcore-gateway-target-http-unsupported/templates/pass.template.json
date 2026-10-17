@@ -1,4 +1,5 @@
 {
+ "AWSTemplateFormatVersion": "2010-09-09",
  "Resources": {
   "Role": {
    "Type": "AWS::IAM::Role",
@@ -9,10 +10,7 @@
       {
        "Effect": "Allow",
        "Principal": {
-        "Service": [
-         "bedrock-agentcore.amazonaws.com",
-         "lambda.amazonaws.com"
-        ]
+        "Service": "bedrock-agentcore.amazonaws.com"
        },
        "Action": "sts:AssumeRole"
       }
@@ -20,17 +18,14 @@
     },
     "Policies": [
      {
-      "PolicyName": "agentcore",
+      "PolicyName": "p",
       "PolicyDocument": {
        "Version": "2012-10-17",
        "Statement": [
         {
          "Effect": "Allow",
          "Action": [
-          "lambda:InvokeFunction",
-          "bedrock:InvokeModel",
-          "logs:*",
-          "secretsmanager:GetSecretValue"
+          "logs:*"
          ],
          "Resource": "*"
         }
@@ -40,28 +35,10 @@
     ]
    }
   },
-  "Fn": {
-   "Type": "AWS::Lambda::Function",
-   "Properties": {
-    "Runtime": "python3.12",
-    "Handler": "index.handler",
-    "Role": {
-     "Fn::GetAtt": [
-      "Role",
-      "Arn"
-     ]
-    },
-    "Code": {
-     "ZipFile": "def handler(e, c):\n    return e\n"
-    },
-    "FunctionName": "cdkpf-gwtreg-pass"
-   }
-  },
-  "Gw": {
+  "G": {
    "Type": "AWS::BedrockAgentCore::Gateway",
    "Properties": {
-    "Name": "cdkpf-gwtreg-pass",
-    "ProtocolType": "MCP",
+    "Name": "cdkpf-gtrt-pass",
     "AuthorizerType": "AWS_IAM",
     "RoleArn": {
      "Fn::GetAtt": [
@@ -71,51 +48,35 @@
     }
    }
   },
-  "Target": {
+  "T": {
    "Type": "AWS::BedrockAgentCore::GatewayTarget",
    "Properties": {
     "GatewayIdentifier": {
      "Fn::GetAtt": [
-      "Gw",
+      "G",
       "GatewayIdentifier"
      ]
     },
-    "Name": "tools",
+    "Name": "rt",
     "TargetConfiguration": {
-     "Mcp": {
-      "Lambda": {
-       "LambdaArn": {
-        "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:cdkpf-gwtreg-pass"
-       },
-       "ToolSchema": {
-        "InlinePayload": [
-         {
-          "Name": "get_weather",
-          "Description": "Returns the weather",
-          "InputSchema": {
-           "Type": "object",
-           "Properties": {
-            "city": {
-             "Type": "string"
-            }
-           },
-           "Required": [
-            "city"
-           ]
-          }
-         }
-        ]
-       }
+     "Http": {
+      "Passthrough": {
+       "Endpoint": "https://example.com",
+       "ProtocolType": "A2A"
       }
      }
     },
     "CredentialProviderConfigurations": [
      {
-      "CredentialProviderType": "GATEWAY_IAM_ROLE"
+      "CredentialProviderType": "GATEWAY_IAM_ROLE",
+      "CredentialProvider": {
+       "IamCredentialProvider": {
+        "Service": "execute-api"
+       }
+      }
      }
     ]
-   },
-   "DependsOn": "Fn"
+   }
   }
  }
 }

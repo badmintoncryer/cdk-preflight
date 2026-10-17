@@ -1,0 +1,134 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Key": {
+   "Type": "AWS::KMS::Key",
+   "Properties": {
+    "Description": "cdkpf #354 C3 capacity provider volume key",
+    "PendingWindowInDays": 7,
+    "KeyPolicy": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Sid": "root",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+        }
+       },
+       "Action": "kms:*",
+       "Resource": "*"
+      }
+     ]
+    }
+   }
+  },
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/BedrockAgentCoreRuntimeInstancesOperatorRolePolicy"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "runtime",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchImportUpstreamImage",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:DescribeMountTargets"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "CP": {
+   "Type": "AWS::BedrockAgentCore::CapacityProvider",
+   "Properties": {
+    "Name": "cdkpf_cp_kms_req_enc_p",
+    "Description": "cdkpf #354 C3 probe",
+    "PermissionsConfiguration": {
+     "CapacityProviderOperatorRoleArn": {
+      "Fn::GetAtt": [
+       "Role",
+       "Arn"
+      ]
+     }
+    },
+    "ComputeConfiguration": {
+     "Ec2Configuration": {
+      "LaunchTemplateSource": {
+       "LaunchParameters": {
+        "OperatingSystem": "LINUX_X86_64",
+        "InstanceRequirements": {
+         "AllowedInstanceTypes": [
+          "m5.large"
+         ]
+        }
+       }
+      },
+      "VpcConfiguration": {
+       "Subnets": [
+        "subnet-2e0a500f",
+        "subnet-ab11fde7"
+       ],
+       "SecurityGroups": [
+        "sg-7d699f61"
+       ]
+      },
+      "LifecycleConfiguration": {
+       "IdleInstanceTimeout": 600,
+       "MaxLifetime": 3600
+      },
+      "Volumes": [
+       {
+        "EbsConfiguration": {
+         "Name": "v1",
+         "SizeGiB": 10,
+         "VolumeType": "gp3",
+         "Encrypted": true,
+         "KmsKeyId": {
+          "Fn::GetAtt": [
+           "Key",
+           "Arn"
+          ]
+         }
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

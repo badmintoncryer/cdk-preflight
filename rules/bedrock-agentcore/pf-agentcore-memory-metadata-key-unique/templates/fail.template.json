@@ -1,0 +1,81 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_mkeyuniq_fail1",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "a",
+                    "Type": "STRING",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of a"
+                      }
+                    }
+                  },
+                  {
+                    "Key": "A",
+                    "Type": "STRING",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of A"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "M2": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_mkeyuniq_fail2",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "a",
+                    "Type": "STRING",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of a"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "IndexedKeys": [
+          {
+            "Key": "a",
+            "Type": "STRING"
+          },
+          {
+            "Key": "A",
+            "Type": "STRING"
+          }
+        ]
+      }
+    }
+  }
+}

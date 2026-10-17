@@ -1,0 +1,61 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_dkcount_fail",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "a",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  },
+                  {
+                    "Key": "b",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  },
+                  {
+                    "Key": "c",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  },
+                  {
+                    "Key": "d",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "IndexedKeys": [
+          {
+            "Key": "a",
+            "Type": "STRING"
+          },
+          {
+            "Key": "b",
+            "Type": "STRING"
+          },
+          {
+            "Key": "c",
+            "Type": "STRING"
+          },
+          {
+            "Key": "d",
+            "Type": "STRING"
+          }
+        ]
+      }
+    }
+  }
+}

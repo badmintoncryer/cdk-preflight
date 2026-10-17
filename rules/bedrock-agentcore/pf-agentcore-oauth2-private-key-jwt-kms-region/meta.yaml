@@ -1,0 +1,13 @@
+id: pf-agentcore-oauth2-private-key-jwt-kms-region
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::OAuth2CredentialProvider]
+severity: ERROR
+title: "The PrivateKeyJwtConfig KMS key must be in the deploy region"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/private-key-jwt.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail KmsKeyArn in us-west-2 (a key id that does not exist) -> CREATE_FAILED (Resource handler returned message: KMS key region 'us-west-2' does not match credential provider region 'us-east-1'. Cross-region keys are not supported. (Service: Bedrock AgentCore Control; Operation: CreateOauth2CredentialProvider; Status Code: 400; Error Code: ValidationException), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass in-stack RSA_2048 SIGN_VERIFY key, RS256 -> CREATE_COMPLETE and deleted. The region is checked before the key is looked up."
+  expect: "does not match credential provider region"
+addedOn: 2026-10-17

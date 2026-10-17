@@ -1,0 +1,39 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_dksum_pass",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SummaryMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "topic",
+                    "Type": "STRING",
+                    "ExtractionType": "LLM_INFERRED",
+                    "ExtractionConfig": {
+                      "LlmExtractionConfig": {
+                        "Definition": "value of topic"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "IndexedKeys": [
+          {
+            "Key": "dept",
+            "Type": "STRING"
+          }
+        ]
+      }
+    }
+  }
+}

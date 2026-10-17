@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-metadata-indexed-type
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "A metadata key declared in IndexedKeys must use the same Type in every strategy schema"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify.sh): fail MetadataSchema a NUMBER vs IndexedKeys a STRING -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: Type mismatch for indexed key 'a' in strategy 's1': memory-level type is STRING but got NUMBER (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass both NUMBER -> CREATE_COMPLETE and deleted. CreateMemory direct (#354 B) returned the same text."
+  expect: "Type mismatch for indexed key"
+addedOn: 2026-10-17

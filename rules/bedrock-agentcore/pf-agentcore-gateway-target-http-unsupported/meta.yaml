@@ -1,12 +1,13 @@
 id: pf-agentcore-gateway-target-http-unsupported
 service: bedrock-agentcore
 benchRegion: us-east-1
-resourceTypes: [AWS::BedrockAgentCore::GatewayTarget]
+resourceTypes: [AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::GatewayTarget]
 severity: ERROR
-title: "TargetConfiguration.Http cannot be used: CloudFormation gateways are always MCP"
-constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayTarget.html
+title: "An Http target cannot be added to a gateway with ProtocolType MCP"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-target-http-runtime.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: TargetConfiguration.Http.AgentcoreRuntime on a gateway created through CloudFormation -> ROLLBACK_COMPLETE, \"HTTP target configuration is not supported for gateways with MCP protocol type. Provide an MCP-compatible target configuration and retry the request. (BedrockAgentCoreControl, 400)\". Both the cross-region and the same-region control template fail identically, so the block is the Http shape itself, not the ARN. AWS::BedrockAgentCore::Gateway.ProtocolType is an enum of exactly one value, MCP, so no CloudFormation gateway can accept an Http target."
+  evidence: "bench 2026-10-17 us-east-1 (#354 c2/verify.sh, narrowed): fail Http AgentcoreRuntime target on a gateway with ProtocolType MCP -> CREATE_FAILED (Resource handler returned message: HTTP target configuration is not supported for gateways with MCP protocol type. Provide an MCP-compatible target configuration and retry the request. (Service: BedrockAgentCoreControl, Status Code: 400)) -> ROLLBACK_COMPLETE; pass Http Passthrough (A2A) target on an AWS_IAM gateway with ProtocolType unset -> CREATE_COMPLETE and deleted, so CloudFormation does not send the schema default MCP. The 2026-09-10 measurement only used ProtocolType MCP and the rule then fired on every Http target."
+  expect: "HTTP target configuration is not supported for gateways with MCP protocol type"
 addedOn: 2026-09-10

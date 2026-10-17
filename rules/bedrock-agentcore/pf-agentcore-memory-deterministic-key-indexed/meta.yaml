@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-deterministic-key-indexed
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "STRICTLY_CONSISTENT metadata keys must also be declared in the memory's IndexedKeys"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify.sh): fail STRICTLY_CONSISTENT key dept with IndexedKeys [other] -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: Key 'dept' in strategy 's1' with extractionType STRICTLY_CONSISTENT must be an indexed key (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass IndexedKeys [other, dept] -> CREATE_COMPLETE and deleted. CreateMemory direct (#354 B) returned the same text. Rerun 2026-10-17 us-east-1 (c1/verify-rerun.sh, --fail-only): the same key with IndexedKeys omitted -> CREATE_FAILED with the same text (must be an indexed key) -> ROLLBACK_COMPLETE."
+  expect: "with extractionType STRICTLY_CONSISTENT must be an indexed key"
+addedOn: 2026-10-17

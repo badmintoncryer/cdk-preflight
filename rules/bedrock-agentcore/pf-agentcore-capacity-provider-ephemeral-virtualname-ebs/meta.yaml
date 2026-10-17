@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-ephemeral-virtualname-ebs
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "An ephemeral volume mapping sets either VirtualName or Ebs, not both"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_LaunchParameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail EphemeralVolumes[] with VirtualName ephemeral0 and Ebs -> CREATE_FAILED (Resource handler returned message: virtualName and ebs are mutually exclusive; a mapping is either an instance-store volume or an EBS volume, not both, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass Ebs only -> CREATE_COMPLETE and deleted."
+  expect: "virtualName and ebs are mutually exclusive"
+addedOn: 2026-10-17

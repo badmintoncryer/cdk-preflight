@@ -1,0 +1,13 @@
+id: pf-agentcore-memory-metadata-validation-type
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Memory]
+severity: ERROR
+title: "A metadata Validation must match the key Type, and NumberValidation needs MinValue <= MaxValue"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-memory-metadata.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c1/verify.sh): fail NUMBER key with StringValidation -> CREATE_FAILED (Resource handler returned message: Validation failed during CreateMemory: stringValidation can only be used with STRING type, but key 'n' in strategy 's1' has type NUMBER (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass NumberValidation MinValue 1 = MaxValue 1 and STRING with StringValidation -> CREATE_COMPLETE and deleted. CreateMemory direct (#354 B) returned the same text. Rerun 2026-10-17 us-east-1 (c1/verify-rerun.sh, that resource alone, --fail-only): NumberValidation MinValue 2 > MaxValue 1 -> CREATE_FAILED (Validation failed during CreateMemory: numberValidation for key 'n' in strategy 's1' has minValue (2.0) > maxValue (1.0)) -> ROLLBACK_COMPLETE."
+  expect: "stringValidation can only be used with STRING type"
+addedOn: 2026-10-17

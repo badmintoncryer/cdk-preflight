@@ -1,0 +1,88 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Key": {
+   "Type": "AWS::KMS::Key",
+   "Properties": {
+    "Description": "cdkpf #354 private_key_jwt probe",
+    "KeySpec": "RSA_2048",
+    "KeyUsage": "SIGN_VERIFY",
+    "PendingWindowInDays": 7,
+    "KeyPolicy": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Sid": "root",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+        }
+       },
+       "Action": "kms:*",
+       "Resource": "*"
+      },
+      {
+       "Sid": "BedrockAgentCoreIdentityPrivateKeyJwtAccess",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+        }
+       },
+       "Action": [
+        "kms:Sign",
+        "kms:DescribeKey"
+       ],
+       "Resource": "*",
+       "Condition": {
+        "StringEquals": {
+         "aws:ResourceAccount": "${aws:PrincipalAccount}"
+        },
+        "StringLike": {
+         "kms:ViaService": "bedrock-agentcore-identity.*.amazonaws.com"
+        }
+       }
+      }
+     ]
+    }
+   }
+  },
+  "OA": {
+   "Type": "AWS::BedrockAgentCore::OAuth2CredentialProvider",
+   "Properties": {
+    "Name": "cdkpf-oapkc-fail",
+    "CredentialProviderVendor": "CustomOauth2",
+    "Oauth2ProviderConfigInput": {
+     "CustomOauth2ProviderConfig": {
+      "ClientId": "cdkpf",
+      "ClientAuthenticationMethod": "PRIVATE_KEY_JWT",
+      "OauthDiscovery": {
+       "AuthorizationServerMetadata": {
+        "Issuer": "https://idp.example.com",
+        "AuthorizationEndpoint": "https://idp.example.com/authorize",
+        "TokenEndpoint": "https://idp.example.com/token"
+       }
+      },
+      "PrivateKeyJwtConfig": {
+       "PrivateKeySource": {
+        "KmsKeySource": {
+         "KmsKeyArn": {
+          "Fn::GetAtt": [
+           "Key",
+           "Arn"
+          ]
+         }
+        }
+       },
+       "SigningAlgorithm": "RS256",
+       "AdditionalHeaderClaims": {
+        "alg": "none"
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

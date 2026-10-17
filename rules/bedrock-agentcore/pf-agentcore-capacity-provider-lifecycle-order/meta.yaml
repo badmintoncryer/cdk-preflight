@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-lifecycle-order
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "A capacity provider IdleInstanceTimeout must not exceed MaxLifetime"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateCapacityProvider.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail IdleInstanceTimeout 3601 / MaxLifetime 3600 -> CREATE_FAILED (Resource handler returned message: maxLifetime must be greater than or equal to idleInstanceTimeout, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass 3600 / 3600 (equal is accepted) -> CREATE_COMPLETE and deleted."
+  expect: "maxLifetime must be greater than or equal to idleInstanceTimeout"
+addedOn: 2026-10-17

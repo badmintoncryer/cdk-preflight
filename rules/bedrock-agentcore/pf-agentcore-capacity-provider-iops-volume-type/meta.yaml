@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-iops-volume-type
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "A capacity provider volume can set Iops only for gp3, io1 or io2"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_EbsVolumeConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail Volumes[] gp2 with Iops 3000 (in-stack operator role, m5.large, default VPC) -> CREATE_FAILED (Resource handler returned message: iops is not valid for volumeType gp2, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass gp3 with Iops 3000 -> CREATE_COMPLETE and deleted."
+  expect: "iops is not valid for volumeType"
+addedOn: 2026-10-17

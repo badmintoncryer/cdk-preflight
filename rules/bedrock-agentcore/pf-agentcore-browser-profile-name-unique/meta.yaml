@@ -1,0 +1,13 @@
+id: pf-agentcore-browser-profile-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::BrowserProfile]
+severity: ERROR
+title: "BrowserProfile names must be unique in the account"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-building-adding-targets-authorization.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail two BrowserProfiles named cdkpf_bpnu_fail -> one CREATE_FAILED (Resource handler returned message: Resource of type 'AWS::BedrockAgentCore::BrowserProfile' with identifier 'cdkpf_bpnu_fail' already exists., HandlerErrorCode AlreadyExists) -> ROLLBACK_COMPLETE; pass cdkpf_bpnu_pass1 and cdkpf_bpnu_pass2 -> CREATE_COMPLETE and deleted (c2/verify-rerun.sh 17:33, same fail text). CreateBrowserProfile direct (#354 B) returned ConflictException: Browser profile with name ... already exists in this account."
+  expect: "with identifier 'cdkpf_bpnu_fail' already exists"
+addedOn: 2026-10-17

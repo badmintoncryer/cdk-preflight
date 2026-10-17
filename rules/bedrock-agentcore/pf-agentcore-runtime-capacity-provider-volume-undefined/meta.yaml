@@ -1,0 +1,13 @@
+id: pf-agentcore-runtime-capacity-provider-volume-undefined
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: "A CapacityProviderVolume must name a volume defined on the runtime's capacity provider"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-filesystem-configurations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail CapacityProviderVolume nope on a provider with volume scratch -> CREATE_FAILED (Resource handler returned message: Invalid request provided: Volume name 'nope' does not exist in the CapacityProvider. Available volumes: [scratch], HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass CapacityProviderVolume scratch -> CREATE_COMPLETE and deleted."
+  expect: "does not exist in the CapacityProvider"
+addedOn: 2026-10-17

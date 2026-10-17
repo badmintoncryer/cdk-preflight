@@ -1,0 +1,57 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "M": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_dkidx_fail1",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "dept",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "IndexedKeys": [
+          {
+            "Key": "other",
+            "Type": "STRING"
+          }
+        ]
+      }
+    },
+    "M2": {
+      "Type": "AWS::BedrockAgentCore::Memory",
+      "Properties": {
+        "Name": "cdkpf_dkidx_fail2",
+        "EventExpiryDuration": 7,
+        "MemoryStrategies": [
+          {
+            "SemanticMemoryStrategy": {
+              "Name": "s1",
+              "MemoryRecordSchema": {
+                "MetadataSchema": [
+                  {
+                    "Key": "dept",
+                    "Type": "STRING",
+                    "ExtractionType": "STRICTLY_CONSISTENT"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
