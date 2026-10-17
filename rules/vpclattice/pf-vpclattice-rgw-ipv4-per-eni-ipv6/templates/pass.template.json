@@ -1,0 +1,92 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "V": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.99.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "Sg": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf #363 resource gateway",
+    "VpcId": {
+     "Ref": "V"
+    }
+   }
+  },
+  "V6": {
+   "Type": "AWS::EC2::VPCCidrBlock",
+   "Properties": {
+    "VpcId": {
+     "Ref": "V"
+    },
+    "AmazonProvidedIpv6CidrBlock": true
+   }
+  },
+  "S6": {
+   "Type": "AWS::EC2::Subnet",
+   "DependsOn": [
+    "V6"
+   ],
+   "Properties": {
+    "VpcId": {
+     "Ref": "V"
+    },
+    "Ipv6Native": true,
+    "Ipv6CidrBlock": {
+     "Fn::Select": [
+      0,
+      {
+       "Fn::Cidr": [
+        {
+         "Fn::Select": [
+          0,
+          {
+           "Fn::GetAtt": [
+            "V",
+            "Ipv6CidrBlocks"
+           ]
+          }
+         ]
+        },
+        2,
+        64
+       ]
+      }
+     ]
+    },
+    "AvailabilityZoneId": "use1-az2"
+   }
+  },
+  "Gw": {
+   "Type": "AWS::VpcLattice::ResourceGateway",
+   "Properties": {
+    "Name": "cdkpf-363-s5-12-p-g",
+    "VpcIdentifier": {
+     "Ref": "V"
+    },
+    "SubnetIds": [
+     {
+      "Ref": "S6"
+     }
+    ],
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "Sg",
+       "GroupId"
+      ]
+     }
+    ],
+    "IpAddressType": "IPV6"
+   },
+   "DependsOn": [
+    "V6"
+   ]
+  }
+ }
+}

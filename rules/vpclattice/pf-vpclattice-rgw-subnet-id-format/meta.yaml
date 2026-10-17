@@ -1,0 +1,13 @@
+id: pf-vpclattice-rgw-subnet-id-format
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceGateway]
+severity: ERROR
+title: "ResourceGateway SubnetIds must be subnet ids"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceGateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail resource gateway with SubnetIds [vpc-0123456789abcdef0] -> ROLLBACK_COMPLETE (SubnetId vpc-0123456789abcdef0 has invalid format); pass default-VPC subnets -> CREATE_COMPLETE."
+  expect: "SubnetId vpc-0123456789abcdef0 has invalid format"
+addedOn: 2026-10-18

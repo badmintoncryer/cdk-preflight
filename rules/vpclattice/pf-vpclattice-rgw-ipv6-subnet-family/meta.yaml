@@ -1,0 +1,13 @@
+id: pf-vpclattice-rgw-ipv6-subnet-family
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceGateway]
+severity: ERROR
+title: "An IPV6 or DUALSTACK resource gateway needs subnets with IPv6 blocks"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-gateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail IPV6 gateway on an IPv4-only subnet of an in-stack VPC with an Amazon IPv6 block -> ROLLBACK_COMPLETE (Subnet subnet-02f46043dea6080d6 is not valid because it doesn't have IPv6 blocks. Specify a subnet with allocated IPv6 blocks.); pass DUALSTACK gateway on a dual-stack subnet -> CREATE_COMPLETE. Variant DUALSTACK gateway on the IPv4-only subnet -> ROLLBACK_COMPLETE (Subnet subnet-037c5b7989bfa2bde is not valid because it doesn't have IPv6 blocks. Specify a subnet with allocated IPv6 blocks.)."
+  expect: "doesn't have IPv6 blocks"
+addedOn: 2026-10-18

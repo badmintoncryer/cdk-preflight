@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-cidr-custom-domain
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A CIDR resource configuration must not set CustomDomainName"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail CIDR with CustomDomainName -> ROLLBACK_COMPLETE (Unexpected attribute customDomainName for type CIDR); pass CIDR without it -> CREATE_COMPLETE."
+  expect: "Unexpected attribute customDomainName for type CIDR"
+addedOn: 2026-10-18

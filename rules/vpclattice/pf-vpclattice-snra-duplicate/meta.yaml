@@ -1,0 +1,13 @@
+id: pf-vpclattice-snra-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkResourceAssociation]
+severity: ERROR
+title: "A resource configuration can be associated with a service network only once"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/service-network-associations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail two associations of the same SINGLE resource configuration and service network (second DependsOn first) -> ROLLBACK_COMPLETE (Association for sn-0cf03cacbf2c2b9ee and rcfg-06a0a514598d2a3b9 already exists.); pass one association -> CREATE_COMPLETE."
+  expect: "Association for"
+addedOn: 2026-10-18

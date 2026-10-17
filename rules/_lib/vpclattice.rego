@@ -84,3 +84,20 @@ _pf_vpcl_policy(name) := d if {
 
 # Its statements as [index, statement] (marker statements skipped).
 _pf_vpcl_stmts(name) := _pf_iamlib_stmts(_pf_vpcl_policy(name))
+
+# Two VPC references that cannot be the same VPC: distinct in-template VPCs,
+# distinct literal vpc- ids, or one of each (a VPC the template creates never
+# has an id written in it).
+_pf_vpcl_vpc_kind(v) := "tpl" if v in resources_of_type("AWS::EC2::VPC")
+
+_pf_vpcl_vpc_kind(v) := "lit" if {
+	is_string(v)
+	startswith(v, "vpc-")
+	not v in resources_of_type("AWS::EC2::VPC")
+}
+
+_pf_vpcl_vpc_differs(a, b) if {
+	_pf_vpcl_vpc_kind(a)
+	_pf_vpcl_vpc_kind(b)
+	a != b
+}

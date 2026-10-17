@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-cidr-gateway-public
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A CIDR resource configuration needs a resource gateway with IN_VPC DNS resolution"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-gateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail CIDR on an in-stack gateway without ResourceConfigDnsResolution -> ROLLBACK_COMPLETE (CIDR type resource configurations require a resource gateway with IN_VPC DNS resolution); pass CIDR on an IN_VPC gateway -> CREATE_COMPLETE. Variant CIDR on a gateway with ResourceConfigDnsResolution PUBLIC -> ROLLBACK_COMPLETE (CIDR type resource configurations require a resource gateway with IN_VPC DNS resolution)."
+  expect: "CIDR type resource configurations require a resource gateway with IN_VPC DNS resolution"
+addedOn: 2026-10-18

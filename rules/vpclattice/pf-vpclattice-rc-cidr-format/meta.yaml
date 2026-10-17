@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-cidr-format
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "CidrRanges prefix lengths must be at most 32"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail CIDR CidrRanges 10.200.<n>.0/33 -> ROLLBACK_COMPLETE (Invalid CIDR format: 10.200.104.0/33); pass CidrRanges 10.200.<n>.0/32 -> CREATE_COMPLETE. /32 is accepted, so the limit is a prefix length of 32."
+  expect: "Invalid CIDR format"
+addedOn: 2026-10-18
