@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-tag-key-duplicate", "ERROR", 
 	sprintf("tag key '%v' appears twice in the same filter; S3 ANDs the filter tags and rejects a repeated key", [key]),
 	_pf_s3ltk_fix, _pf_s3ltk_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
 	tags := object.get(rule.value, "TagFilters", [])

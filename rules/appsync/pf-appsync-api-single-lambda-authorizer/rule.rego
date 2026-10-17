@@ -2,10 +2,13 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_apisinglelambdaauthorizer_types(n) := array.concat(
+_pf_apisinglelambdaauthorizer_types(n) := pfv if {
+	_pf_static_list(n, "Properties.AdditionalAuthenticationProviders")
+	pfv := array.concat(
 	[object.get(input.resources[n].properties, "AuthenticationType", "")],
 	[p.value.AuthenticationType | some p in flatten_list(n, "Properties.AdditionalAuthenticationProviders")],
 )
+}
 
 violation contains make_diag_full("pf-appsync-api-single-lambda-authorizer", "ERROR", name,
 	"Properties.AdditionalAuthenticationProviders",

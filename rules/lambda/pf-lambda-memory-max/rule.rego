@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-lambda-memory-max", "ERROR", name,
 	"Use at most 10240 MB",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html") if {
 	some name in resources_of_type("AWS::Lambda::Function")
-	m := to_number(resolve(name, "Properties.MemorySize"))
+	m := _pf_num(name, "Properties.MemorySize")
 	m > 10240
 }

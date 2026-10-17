@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-batch-jd-linux-max-swap-negative", "ERROR"
 	"Use 0 (swap disabled) or a positive limit",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_LinuxParameters.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
-	n := to_number(resolve(name, "Properties.ContainerProperties.LinuxParameters.MaxSwap"))
+	n := _pf_num(name, "Properties.ContainerProperties.LinuxParameters.MaxSwap")
 	n < 0
 }

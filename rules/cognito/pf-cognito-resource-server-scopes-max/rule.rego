@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-cognito-resource-server-scopes-max", "ERRO
 	"Keep the scope list at 100 entries or fewer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolresourceserver.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPoolResourceServer")
+	_pf_static_list(name, "Properties.Scopes")
 	ss := flatten_list(name, "Properties.Scopes")
 	count(ss) > 100
 }

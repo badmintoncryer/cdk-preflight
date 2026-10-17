@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-elasticache-port", "ERROR", name,
 	_pf_ecport_fix, _pf_ecport_url) if {
 	some t in _pf_ecport_types
 	some name in resources_of_type(t)
-	p := to_number(resolve(name, "Properties.Port"))
+	p := _pf_num(name, "Properties.Port")
 	not _pf_cachelib_port_ok(p)
 }

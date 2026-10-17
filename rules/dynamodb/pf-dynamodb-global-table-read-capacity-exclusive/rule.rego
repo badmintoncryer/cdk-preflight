@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-read-capacity-exclus
 	"Keep either the fixed ReadCapacityUnits or the autoscaling settings, not both",
 	_pf_ddbgrc_url) if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
+	_pf_static_list(name, "Properties.Replicas")
 	some r in flatten_list(name, "Properties.Replicas")
 	rp := object.get(r.value, "ReadProvisionedThroughputSettings", null)
 	is_object(rp)
@@ -28,6 +29,7 @@ violation contains make_diag_full("pf-dynamodb-global-table-read-capacity-exclus
 	"Set ReadCapacityUnits, or ReadCapacityAutoScalingSettings, or drop the property entirely",
 	_pf_ddbgrc_url) if {
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
+	_pf_static_list(name, "Properties.Replicas")
 	some r in flatten_list(name, "Properties.Replicas")
 	rp := object.get(r.value, "ReadProvisionedThroughputSettings", null)
 	is_object(rp)

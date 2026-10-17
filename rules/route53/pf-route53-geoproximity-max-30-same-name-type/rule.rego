@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-route53-geoproximity-max-30-same-name-type
 	"Keep at most 30 geoproximity record sets for one name and type",
 	"https://docs.aws.amazon.com/general/latest/gr/r53.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSetGroup")
+	_pf_static_list(name, "Properties.RecordSets")
 	some a in flatten_list(name, "Properties.RecordSets")
 	"GeoProximityLocation" in _pf_r53lib_kinds(a.value)
 	k := _pf_r53lib_key(a.value)

@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-replication-v1-v2-mixed", "ERROR", name
 	"the rule sets both the V1 Prefix and the V2 Filter; S3 accepts one schema version per rule",
 	_pf_s3rmx_fix, _pf_s3rmx_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.ReplicationConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.ReplicationConfiguration.Rules")
 	is_object(rule.value)
 	object.get(rule.value, "Prefix", "__pf_absent") != "__pf_absent"

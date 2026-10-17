@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-object-size-order", "ERROR", 
 	sprintf("ObjectSizeGreaterThan (%v) is not smaller than ObjectSizeLessThan (%v); the rule would match no object", [gt, lt]),
 	_pf_s3los_fix, _pf_s3los_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
 	rawg := object.get(rule.value, "ObjectSizeGreaterThan", null)

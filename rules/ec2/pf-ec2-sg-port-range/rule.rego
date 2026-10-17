@@ -54,7 +54,7 @@ violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	some name in resources_of_type(rtype)
 	_pf_tcp_udp(resolve(name, "Properties.IpProtocol"))
 	some pname in {"FromPort", "ToPort"}
-	n := to_number(resolve(name, sprintf("Properties.%s", [pname])))
+	n := _pf_num(name, sprintf("Properties.%s", [pname]))
 	_pf_port_out(n)
 }
 
@@ -69,8 +69,8 @@ violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	some rtype in {"AWS::EC2::SecurityGroupIngress", "AWS::EC2::SecurityGroupEgress"}
 	some name in resources_of_type(rtype)
 	_pf_tcp_udp(resolve(name, "Properties.IpProtocol"))
-	f := to_number(resolve(name, "Properties.FromPort"))
-	t := to_number(resolve(name, "Properties.ToPort"))
+	f := _pf_num(name, "Properties.FromPort")
+	t := _pf_num(name, "Properties.ToPort")
 	f >= 0
 	t <= 65535
 	f > t

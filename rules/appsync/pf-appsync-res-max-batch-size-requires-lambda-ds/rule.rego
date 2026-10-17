@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-appsync-res-max-batch-size-requires-lambda
 	"Point DataSourceName at an AWS_LAMBDA data source, or drop MaxBatchSize",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html") if {
 	some name in resources_of_type("AWS::AppSync::Resolver")
-	to_number(resolve(name, "Properties.MaxBatchSize")) > 0
+	_pf_num(name, "Properties.MaxBatchSize") > 0
 	api := resolve(name, "Properties.ApiId")
 	dsn := resolve(name, "Properties.DataSourceName")
 	d := _pf_resmaxbatchsizerequireslambdads_ds(api, dsn)

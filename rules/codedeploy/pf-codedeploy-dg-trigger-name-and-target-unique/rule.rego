@@ -2,10 +2,13 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_cdtu_vals(name, key) := [v |
+_pf_cdtu_vals(name, key) := pfv if {
+	_pf_static_list(name, "Properties.TriggerConfigurations")
+	pfv := [v |
 	some it in flatten_list(name, "Properties.TriggerConfigurations")
 	v := resolve(name, sprintf("Properties.TriggerConfigurations.%d.%s", [it.index, key]))
 ]
+}
 
 _pf_cdtu_dup(name, key) := [v |
 	vs := _pf_cdtu_vals(name, key)

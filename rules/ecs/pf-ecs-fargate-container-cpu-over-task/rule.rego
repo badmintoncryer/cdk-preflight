@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-ecs-fargate-container-cpu-over-task", "ERR
 	"Lower the container Cpu values, or raise the task-level Cpu",
 	"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html") if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
-	tc := to_number(resolve(name, "Properties.Cpu"))
+	tc := _pf_num(name, "Properties.Cpu")
 	total := sum([n | some c in _pf_ecs_containers(name); n := to_number(object.get(c.value, "Cpu", 0))])
 	total > tc
 }

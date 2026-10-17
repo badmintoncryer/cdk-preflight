@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-ec2-client-vpn-port", "ERROR", name,
 	"Use 443 or 1194",
 	"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html") if {
 	some name in resources_of_type("AWS::EC2::ClientVpnEndpoint")
-	n := to_number(resolve(name, "Properties.VpnPort"))
+	n := _pf_num(name, "Properties.VpnPort")
 	not n in {443, 1194}
 }

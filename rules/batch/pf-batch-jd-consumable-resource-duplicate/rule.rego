@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-batch-jd-consumable-resource-duplicate", "
 	"Declare each consumable resource once",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_ConsumableResourceProperties.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
+	_pf_static_list(name, "Properties.ConsumableResourceProperties.ConsumableResourceList")
 	entries := flatten_list(name, "Properties.ConsumableResourceProperties.ConsumableResourceList")
 	some e in entries
 	r := _pf_batch_oget(e.value, "ConsumableResource")

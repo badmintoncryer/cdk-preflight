@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-batch-ce-vcpus-order", "ERROR", name,
 	"Keep MinvCpus <= MaxvCpus",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateComputeEnvironment.html") if {
 	some name in resources_of_type("AWS::Batch::ComputeEnvironment")
-	mn := to_number(resolve(name, "Properties.ComputeResources.MinvCpus"))
-	mx := to_number(resolve(name, "Properties.ComputeResources.MaxvCpus"))
+	mn := _pf_num(name, "Properties.ComputeResources.MinvCpus")
+	mx := _pf_num(name, "Properties.ComputeResources.MaxvCpus")
 	mx < mn
 }

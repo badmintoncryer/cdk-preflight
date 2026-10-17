@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-elasticache-snapshotting-cluster", "ERROR"
 	_pf_ecsc_fix, _pf_ecsc_url) if {
 	some name in resources_of_type("AWS::ElastiCache::ReplicationGroup")
 	not _pf_cachelib_absent(name, "SnapshottingClusterId")
-	n := to_number(resolve(name, "Properties.NumNodeGroups"))
+	n := _pf_num(name, "Properties.NumNodeGroups")
 	n > 1
 }

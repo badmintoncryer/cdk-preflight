@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-codebuild-secondary-artifact-identifier-un
 	"Give each SecondaryArtifacts entry its own ArtifactIdentifier",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-artifacts.html") if {
 	some name in resources_of_type("AWS::CodeBuild::Project")
+	_pf_static_list(name, "Properties.SecondaryArtifacts")
 	items := flatten_list(name, "Properties.SecondaryArtifacts")
 	some a in items
 	some b in items

@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-apigwv2-authorizer-ttl-identity-source", "
 	"List the identity sources the cache key is built from, or set AuthorizerResultTtlInSeconds: 0",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-authorizer.html") if {
 	some name in resources_of_type("AWS::ApiGatewayV2::Authorizer")
-	ttl := to_number(resolve(name, "Properties.AuthorizerResultTtlInSeconds"))
+	ttl := _pf_num(name, "Properties.AuthorizerResultTtlInSeconds")
 	ttl > 0
 	count(flatten_list(name, "Properties.IdentitySource")) == 0
 }

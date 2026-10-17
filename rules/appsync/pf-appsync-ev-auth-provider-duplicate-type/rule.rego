@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-appsync-ev-auth-provider-duplicate-type", 
 	"List each auth type once",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html") if {
 	some name in resources_of_type("AWS::AppSync::Api")
+	_pf_static_list(name, "Properties.EventConfig.AuthProviders")
 	ps := flatten_list(name, "Properties.EventConfig.AuthProviders")
 	some i, p in ps
 	some j, q in ps

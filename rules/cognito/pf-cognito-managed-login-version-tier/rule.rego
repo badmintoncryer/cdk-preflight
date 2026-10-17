@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-cognito-managed-login-version-tier", "ERRO
 	"Use UserPoolTier ESSENTIALS or PLUS on the pool, or ManagedLoginVersion 1",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpooldomain.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPoolDomain")
-	to_number(resolve(name, "Properties.ManagedLoginVersion")) == 2
+	_pf_num(name, "Properties.ManagedLoginVersion") == 2
 	pool := resolve(name, "Properties.UserPoolId")
 	pool in resources_of_type("AWS::Cognito::UserPool")
 	resolve(pool, "Properties.UserPoolTier") == "LITE"

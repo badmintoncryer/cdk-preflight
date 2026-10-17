@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-redshiftserverless-base-capacity-step", "E
 	"Above 8 RPUs, BaseCapacity moves in steps of 8 (16, 24, ..., 512; 32-RPU steps above 512 where the region allows it)",
 	"https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-capacity.html") if {
 	some name in resources_of_type("AWS::RedshiftServerless::Workgroup")
-	n := to_number(resolve(name, "Properties.BaseCapacity"))
+	n := _pf_num(name, "Properties.BaseCapacity")
 	n > 8
 	n % 8 != 0
 }

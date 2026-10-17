@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-ec2-cpu-options-combination", "ERROR", nam
 	"Set ThreadsPerCore to 1 (SMT off) or 2",
 	_pf_ec2cpu_url) if {
 	some name in resources_of_type("AWS::EC2::Instance")
-	t := to_number(resolve(name, "Properties.CpuOptions.ThreadsPerCore"))
+	t := _pf_num(name, "Properties.CpuOptions.ThreadsPerCore")
 	not t in {1, 2}
 }
 
@@ -24,6 +24,6 @@ violation contains make_diag_full("pf-ec2-cpu-options-combination", "ERROR", nam
 	"Set CoreCount to a core count the instance type offers",
 	_pf_ec2cpu_url) if {
 	some name in resources_of_type("AWS::EC2::Instance")
-	c := to_number(resolve(name, "Properties.CpuOptions.CoreCount"))
+	c := _pf_num(name, "Properties.CpuOptions.CoreCount")
 	c < 1
 }

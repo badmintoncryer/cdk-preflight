@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3express-lifecycle-object-size-order", "E
 	sprintf("ObjectSizeGreaterThan (%v) is not smaller than ObjectSizeLessThan (%v); the rule would match no object", [gt, lt]),
 	_pf_s3xlsz_fix, _pf_s3xlsz_url) if {
 	some name in resources_of_type("AWS::S3Express::DirectoryBucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some r in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(r.value)
 	rawg := object.get(r.value, "ObjectSizeGreaterThan", null)

@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-ec2-vpn-phase-lifetime-order", "ERROR", na
 	"Lower Phase2LifetimeSeconds below Phase1LifetimeSeconds",
 	"https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html") if {
 	some name in resources_of_type("AWS::EC2::VPNConnection")
+	_pf_static_list(name, "Properties.VpnTunnelOptionsSpecifications")
 	some item in flatten_list(name, "Properties.VpnTunnelOptionsSpecifications")
 	p1 := to_number(object.get(item.value, "Phase1LifetimeSeconds", null))
 	p2 := to_number(object.get(item.value, "Phase2LifetimeSeconds", null))

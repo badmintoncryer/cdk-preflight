@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-opensearch-iam-federation-requires-fgac", 
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-advancedsecurityoptionsinput.html") if {
 	some name in _pf_os_domains
 	_pf_os_on3(name, "AdvancedSecurityOptions", "IAMFederationOptions", "Enabled")
-	not _pf_os_on(name, "AdvancedSecurityOptions", "Enabled")
+	_pf_os_off(name, "AdvancedSecurityOptions", "Enabled")
 }

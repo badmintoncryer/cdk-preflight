@@ -27,7 +27,7 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	some name in resources_of_type("AWS::EC2::Volume")
 	vt := resolve(name, "Properties.VolumeType")
 	r := _pf_voliops_range[vt]
-	n := to_number(resolve(name, "Properties.Iops"))
+	n := _pf_num(name, "Properties.Iops")
 	_pf_voliops_out(n, r[0], r[1])
 }
 
@@ -38,8 +38,8 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	some name in resources_of_type("AWS::EC2::Volume")
 	vt := resolve(name, "Properties.VolumeType")
 	ratio := _pf_voliops_per_gib[vt]
-	n := to_number(resolve(name, "Properties.Iops"))
-	s := to_number(resolve(name, "Properties.Size"))
+	n := _pf_num(name, "Properties.Iops")
+	s := _pf_num(name, "Properties.Size")
 	n > s * ratio
 }
 
@@ -71,7 +71,7 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	_pf_voliops_fix, _pf_voliops_url) if {
 	some name in resources_of_type("AWS::EC2::Volume")
 	resolve(name, "Properties.VolumeType") == "gp3"
-	t := to_number(resolve(name, "Properties.Throughput"))
+	t := _pf_num(name, "Properties.Throughput")
 	t > 2000
 }
 
@@ -81,8 +81,8 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	_pf_voliops_fix, _pf_voliops_url) if {
 	some name in resources_of_type("AWS::EC2::Volume")
 	resolve(name, "Properties.VolumeType") == "gp3"
-	t := to_number(resolve(name, "Properties.Throughput"))
-	n := to_number(resolve(name, "Properties.Iops"))
+	t := _pf_num(name, "Properties.Throughput")
+	n := _pf_num(name, "Properties.Iops")
 	t * 4 > n
 }
 
@@ -93,6 +93,6 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	some name in resources_of_type("AWS::EC2::Volume")
 	resolve(name, "Properties.VolumeType") == "gp3"
 	not _pf_voliops_has_iops(name)
-	t := to_number(resolve(name, "Properties.Throughput"))
+	t := _pf_num(name, "Properties.Throughput")
 	t > 750
 }

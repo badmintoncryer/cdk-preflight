@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-ec2-volume-size-minimum", "ERROR", name,
 	some name in resources_of_type("AWS::EC2::Volume")
 	vt := resolve(name, "Properties.VolumeType")
 	mn := _pf_ec2vsm_min[vt]
-	s := to_number(resolve(name, "Properties.Size"))
+	s := _pf_num(name, "Properties.Size")
 	s < mn
 }

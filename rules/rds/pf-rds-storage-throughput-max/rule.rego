@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-rds-storage-throughput-max", "ERROR", name
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html") if {
 	some name in resources_of_type("AWS::RDS::DBInstance")
 	resolve(name, "Properties.StorageType") == "gp3"
-	n := to_number(resolve(name, "Properties.StorageThroughput"))
+	n := _pf_num(name, "Properties.StorageThroughput")
 	n > 4000
 }

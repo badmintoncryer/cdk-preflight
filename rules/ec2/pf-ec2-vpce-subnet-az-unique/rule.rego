@@ -11,10 +11,13 @@ _pf_ec2vaz_az(name, i) := az if {
 	az := resolve(sref, "Properties.AvailabilityZone")
 }
 
-_pf_ec2vaz_azs(name) := [az |
+_pf_ec2vaz_azs(name) := pfv if {
+	_pf_static_list(name, "Properties.SubnetIds")
+	pfv := [az |
 	some s in flatten_list(name, "Properties.SubnetIds")
 	az := _pf_ec2vaz_az(name, s.index)
 ]
+}
 
 _pf_ec2vaz_dup(name) := az if {
 	azs := _pf_ec2vaz_azs(name)

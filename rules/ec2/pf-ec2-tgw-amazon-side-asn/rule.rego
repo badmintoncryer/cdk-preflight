@@ -18,6 +18,6 @@ violation contains make_diag_full("pf-ec2-tgw-amazon-side-asn", "ERROR", name,
 	"Use a private ASN such as 64512",
 	"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TransitGatewayRequestOptions.html") if {
 	some name in resources_of_type("AWS::EC2::TransitGateway")
-	n := to_number(resolve(name, "Properties.AmazonSideAsn"))
+	n := _pf_num(name, "Properties.AmazonSideAsn")
 	not _pf_tgwasn_ok(n)
 }

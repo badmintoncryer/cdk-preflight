@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-cloudwatch-alarm-period", "ERROR", name,
 	"Use 10, 20, 30, or a multiple of 60 seconds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html") if {
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
-	p := to_number(resolve(name, "Properties.Period"))
+	p := _pf_num(name, "Properties.Period")
 	not p in {10, 20, 30}
 	p % 60 != 0
 }

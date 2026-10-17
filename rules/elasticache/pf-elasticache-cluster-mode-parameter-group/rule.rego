@@ -20,7 +20,7 @@ violation contains make_diag_full("pf-elasticache-cluster-mode-parameter-group",
 	sprintf("NumNodeGroups is %v but parameter group '%s' does not set cluster-enabled: yes; the deployment fails with \"Use a parameter group with cluster-enabled parameter to create more than one node group.\"", [n, pgname]),
 	_pf_eccmpg_fix, _pf_eccmpg_url) if {
 	some name in resources_of_type("AWS::ElastiCache::ReplicationGroup")
-	n := to_number(resolve(name, "Properties.NumNodeGroups"))
+	n := _pf_num(name, "Properties.NumNodeGroups")
 	n > 1
 	pgname := resolve(name, "Properties.CacheParameterGroupName")
 	pgname in resources_of_type("AWS::ElastiCache::ParameterGroup")

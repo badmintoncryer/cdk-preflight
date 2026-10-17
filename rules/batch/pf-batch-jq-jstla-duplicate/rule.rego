@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-batch-jq-jstla-duplicate", "ERROR", name,
 	"Keep one job state time limit action per state",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_JobStateTimeLimitAction.html") if {
 	some name in resources_of_type("AWS::Batch::JobQueue")
+	_pf_static_list(name, "Properties.JobStateTimeLimitActions")
 	es := flatten_list(name, "Properties.JobStateTimeLimitActions")
 	some e in es
 	st := _pf_batch_oget(e.value, "State")

@@ -12,8 +12,8 @@ violation contains make_diag_full("pf-rds-io1-iops-ratio", "ERROR", name,
 	some name in resources_of_type("AWS::RDS::DBInstance")
 	resolve(name, "Properties.Engine") == "postgres"
 	resolve(name, "Properties.StorageType") == "io1"
-	n := to_number(resolve(name, "Properties.Iops"))
-	s := to_number(resolve(name, "Properties.AllocatedStorage"))
+	n := _pf_num(name, "Properties.Iops")
+	s := _pf_num(name, "Properties.AllocatedStorage")
 	s > 0
 	n > s * 50
 }

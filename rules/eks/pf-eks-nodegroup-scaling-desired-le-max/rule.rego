@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-eks-nodegroup-scaling-desired-le-max", "ER
 	"Keep DesiredSize <= MaxSize",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-nodegroup-scalingconfig.html") if {
 	some name in resources_of_type("AWS::EKS::Nodegroup")
-	d := to_number(resolve(name, "Properties.ScalingConfig.DesiredSize"))
-	mx := to_number(resolve(name, "Properties.ScalingConfig.MaxSize"))
+	d := _pf_num(name, "Properties.ScalingConfig.DesiredSize")
+	mx := _pf_num(name, "Properties.ScalingConfig.MaxSize")
 	d > mx
 }

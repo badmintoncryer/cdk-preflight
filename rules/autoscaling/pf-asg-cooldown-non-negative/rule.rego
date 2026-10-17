@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-asg-cooldown-non-negative", "ERROR", name,
 	"Use zero or a positive number of seconds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html") if {
 	some name in resources_of_type("AWS::AutoScaling::AutoScalingGroup")
-	c := to_number(resolve(name, "Properties.Cooldown"))
+	c := _pf_num(name, "Properties.Cooldown")
 	c < 0
 }

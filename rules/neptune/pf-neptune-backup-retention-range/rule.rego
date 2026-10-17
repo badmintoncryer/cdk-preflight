@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-neptune-backup-retention-range", "ERROR", 
 	"Use a retention period of 35 days or less",
 	"https://docs.aws.amazon.com/neptune/latest/userguide/api-clusters.html") if {
 	some name in resources_of_type("AWS::Neptune::DBCluster")
-	n := to_number(resolve(name, "Properties.BackupRetentionPeriod"))
+	n := _pf_num(name, "Properties.BackupRetentionPeriod")
 	n > 35
 }

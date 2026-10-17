@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-docdb-serverless-half-step", "ERROR", name
 	"Round the capacity to a multiple of 0.5",
 	_pf_docdbshs_url) if {
 	some name in _pf_docdb_clusters
-	n := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity"))
+	n := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity")
 	_pf_docdbshs_bad(n)
 }
 
@@ -25,6 +25,6 @@ violation contains make_diag_full("pf-docdb-serverless-half-step", "ERROR", name
 	"Round the capacity to a multiple of 0.5",
 	_pf_docdbshs_url) if {
 	some name in _pf_docdb_clusters
-	n := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity"))
+	n := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity")
 	_pf_docdbshs_bad(n)
 }

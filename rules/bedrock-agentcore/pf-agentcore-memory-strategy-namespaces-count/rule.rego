@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-agentcore-memory-strategy-namespaces-count
 	"Keep one namespace per strategy; add another strategy for a second namespace",
 	"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_SemanticMemoryStrategyInput.html") if {
 	some name in resources_of_type("AWS::BedrockAgentCore::Memory")
+	_pf_static_list(name, "Properties.MemoryStrategies")
 	some s in flatten_list(name, "Properties.MemoryStrategies")
 	is_object(s.value)
 	some kind, strat in s.value

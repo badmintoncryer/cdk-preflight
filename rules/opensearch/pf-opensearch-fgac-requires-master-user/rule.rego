@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-opensearch-fgac-requires-master-user", "ER
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-masteruseroptions.html") if {
 	some name in _pf_os_domains
 	_pf_os_on(name, "AdvancedSecurityOptions", "Enabled")
-	not _pf_os_on(name, "AdvancedSecurityOptions", "InternalUserDatabaseEnabled")
+	_pf_os_off(name, "AdvancedSecurityOptions", "InternalUserDatabaseEnabled")
 	not _pf_os_has3(name, "AdvancedSecurityOptions", "MasterUserOptions", "MasterUserARN")
 }

@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-cognito-password-min-length", "ERROR", nam
 	"Use a minimum password length between 6 and 99",
 	_pf_cogpml_url) if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
-	ml := to_number(resolve(name, "Properties.Policies.PasswordPolicy.MinimumLength"))
+	ml := _pf_num(name, "Properties.Policies.PasswordPolicy.MinimumLength")
 	ml < 6
 }
 
@@ -22,6 +22,6 @@ violation contains make_diag_full("pf-cognito-password-min-length", "ERROR", nam
 	"Use a minimum password length between 6 and 99",
 	_pf_cogpml_url) if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
-	ml := to_number(resolve(name, "Properties.Policies.PasswordPolicy.MinimumLength"))
+	ml := _pf_num(name, "Properties.Policies.PasswordPolicy.MinimumLength")
 	ml > 99
 }

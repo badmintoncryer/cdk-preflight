@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-msk-serverless-subnets-count", "ERROR", na
 	"Give each VPC configuration between 2 and 6 subnets, one per Availability Zone",
 	"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html") if {
 	some name in resources_of_type("AWS::MSK::ServerlessCluster")
+	_pf_static_list(name, "Properties.VpcConfigs")
 	some it in flatten_list(name, "Properties.VpcConfigs")
 	ids := it.value.SubnetIds
 	is_array(ids)

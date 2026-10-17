@@ -76,12 +76,51 @@ _pf_ll_elems(l) := [] if {
 }
 
 # 生のプロパティ（Ref / Fn::If がマーカーのまま残っている側）を path で引く。
+# 途中の段がマーカー（`BrokerNodeGroupInfo` 丸ごとの Fn::If など）なら undefined。
+# object.get はマーカーの中に目当てのキーを見つけられず "__pf_absent" を返すので、
+# 「無い = 0 個」と読まれて、両方の枝を連結した flatten_list の個数で鳴っていた。
 _pf_ll_raw(name, path) := v if {
 	segs := split(path, ".")
-	v := object.get(object.get(input.resources[name], "properties", {}), array.slice(segs, 1, count(segs)), "__pf_absent")
+	props := object.get(input.resources[name], "properties", {})
+	keys := array.slice(segs, 1, count(segs))
+	not _pf_ll_blocked(props, keys)
+	v := object.get(props, keys, "__pf_absent")
+}
+
+_pf_ll_blocked(props, keys) if {
+	count(keys) > 1
+	some i in numbers.range(1, count(keys) - 1)
+	_pf_ll_marker(object.get(props, array.slice(keys, 0, i), null))
+}
+
+_pf_ll_marker(v) if {
+	is_object(v)
+	some k, _ in v
+	startswith(k, "__")
 }
 
 _pf_ll_conditional(it) if {
 	is_object(it)
 	object.get(it, "__conditional", "__pf_absent") != "__pf_absent"
+}
+
+# resolve() した値を数値で読む。`to_number(resolve(...))` を直接書かないこと。
+# 真の枝が AWS::NoValue の Fn::If は resolve() が null を返し、to_number(null) は 0 になる
+# ので、「数値 0 が指定された」と読んで鳴ってしまう（2026-10-17 実測、glue / memorydb）。
+# 真偽値も to_number では 0 / 1 に化けるので降りる。
+_pf_num(name, path) := n if {
+	v := resolve(name, path)
+	v != null
+	not is_boolean(v)
+	n := to_number(v)
+}
+
+# 要素同士を比べるルール（重複、件数、排他、順序）用のゲート。プロパティ丸ごと、または
+# 途中の段が Fn::If だと、flatten_list() は両方の枝の要素を連結して返す（2026-10-17 実測。
+# 要素単位の Fn::If が真の枝に潰れる #276 とは別の歪み）。オプションのソートキーを
+# `Fn::If[C, [pk, sk], [pk]]` と書いただけで「pk が重複」と読まれていた。
+# 無いときは真（flatten_list が [] を返すのと同じ）。
+_pf_static_list(name, path) if {
+	l := _pf_ll_raw(name, path)
+	not _pf_ll_conditional(l)
 }

@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-rds-backtrack", "ERROR", name,
 	"Remove BacktrackWindow, or use the aurora-mysql engine",
 	_pf_rdsbt_url) if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
-	n := to_number(resolve(name, "Properties.BacktrackWindow"))
+	n := _pf_num(name, "Properties.BacktrackWindow")
 	n > 0
 	eng := resolve(name, "Properties.Engine")
 	is_string(eng)
@@ -24,6 +24,6 @@ violation contains make_diag_full("pf-rds-backtrack", "ERROR", name,
 	_pf_rdsbt_url) if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
 	resolve(name, "Properties.Engine") == "aurora-mysql"
-	n := to_number(resolve(name, "Properties.BacktrackWindow"))
+	n := _pf_num(name, "Properties.BacktrackWindow")
 	n > 259200
 }

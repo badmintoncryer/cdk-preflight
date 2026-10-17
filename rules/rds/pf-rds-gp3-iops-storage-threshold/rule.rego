@@ -21,7 +21,7 @@ violation contains make_diag_full("pf-rds-gp3-iops-storage-threshold", "ERROR", 
 	eng := resolve(name, "Properties.Engine")
 	eng in {"postgres", "mysql"}
 	resolve(name, "Properties.StorageType") == "gp3"
-	s := to_number(resolve(name, "Properties.AllocatedStorage"))
+	s := _pf_num(name, "Properties.AllocatedStorage")
 	s < 400
 	_pf_rdsgp3_custom(name)
 }

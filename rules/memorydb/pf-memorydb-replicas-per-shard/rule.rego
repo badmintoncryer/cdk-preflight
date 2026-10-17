@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-memorydb-replicas-per-shard", "ERROR", nam
 	sprintf("NumReplicasPerShard is %v; CreateCluster fails with \"The number of replicas per shard must be within 0 and 5.\"", [v]),
 	_pf_mdbrep_fix, _pf_mdbrep_url) if {
 	some name in resources_of_type("AWS::MemoryDB::Cluster")
-	v := to_number(resolve(name, "Properties.NumReplicasPerShard"))
+	v := _pf_num(name, "Properties.NumReplicasPerShard")
 	_pf_mdbrep_out_of_range(v)
 }
 

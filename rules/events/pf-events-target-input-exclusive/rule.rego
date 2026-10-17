@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-events-target-input-exclusive", "ERROR", n
 	"Keep only one of Input, InputPath and InputTransformer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-target.html") if {
 	some name in resources_of_type("AWS::Events::Rule")
+	_pf_static_list(name, "Properties.Targets")
 	some t in flatten_list(name, "Properties.Targets")
 	is_object(t.value)
 	present := {k | some k in ["Input", "InputPath", "InputTransformer"]; object.get(t.value, k, "__pf_absent") != "__pf_absent"}

@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-cognito-risk-ip-range-max", "ERROR", name,
 	"Keep BlockedIPRangeList at 200 entries or fewer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPoolRiskConfigurationAttachment")
+	_pf_static_list(name, "Properties.RiskExceptionConfiguration.BlockedIPRangeList")
 	rs := flatten_list(name, "Properties.RiskExceptionConfiguration.BlockedIPRangeList")
 	count(rs) > 200
 }

@@ -10,5 +10,5 @@ violation contains make_diag_full("pf-opensearch-warm-options-require-enabled", 
 	some name in _pf_os_domains
 	some k in {"WarmCount", "WarmType"}
 	_pf_os_has2(name, "ClusterConfig", k)
-	not _pf_os_on(name, "ClusterConfig", "WarmEnabled")
+	_pf_os_off(name, "ClusterConfig", "WarmEnabled")
 }

@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elasticache-replication-group-clusters", "
 	_pf_ecrgc_fix, _pf_ecrgc_url) if {
 	some name in resources_of_type("AWS::ElastiCache::ReplicationGroup")
 	resolve(name, "Properties.AutomaticFailoverEnabled") == true
-	n := to_number(resolve(name, "Properties.NumCacheClusters"))
+	n := _pf_num(name, "Properties.NumCacheClusters")
 	n < 2
 }
 
@@ -25,7 +25,7 @@ violation contains make_diag_full("pf-elasticache-replication-group-clusters", "
 	_pf_ecrgc_fix, _pf_ecrgc_url) if {
 	some name in resources_of_type("AWS::ElastiCache::ReplicationGroup")
 	_pf_cachelib_absent(name, "AutomaticFailoverEnabled")
-	to_number(resolve(name, "Properties.NumCacheClusters")) == 1
+	_pf_num(name, "Properties.NumCacheClusters") == 1
 }
 
 violation contains make_diag_full("pf-elasticache-replication-group-clusters", "ERROR", name,
@@ -34,6 +34,6 @@ violation contains make_diag_full("pf-elasticache-replication-group-clusters", "
 	_pf_ecrgc_fix, _pf_ecrgc_url) if {
 	some name in resources_of_type("AWS::ElastiCache::ReplicationGroup")
 	not _pf_cachelib_absent(name, "NumCacheClusters")
-	n := to_number(resolve(name, "Properties.NumNodeGroups"))
+	n := _pf_num(name, "Properties.NumNodeGroups")
 	n > 1
 }

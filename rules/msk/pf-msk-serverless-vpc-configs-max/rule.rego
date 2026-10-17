@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-msk-serverless-vpc-configs-max", "ERROR", 
 	"Attach the serverless cluster to at most 5 VPCs",
 	"https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html") if {
 	some name in resources_of_type("AWS::MSK::ServerlessCluster")
+	_pf_static_list(name, "Properties.VpcConfigs")
 	cfgs := flatten_list(name, "Properties.VpcConfigs")
 	n := count(cfgs)
 	n > 5

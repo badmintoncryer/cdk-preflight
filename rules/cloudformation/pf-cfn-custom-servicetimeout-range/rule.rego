@@ -11,7 +11,7 @@ _pf_cfnsvctmo_out(n) if n > 14400
 
 _pf_cfnsvctmo_bad contains [name, n] if {
 	some name in _pf_cfn_custom_resources
-	n := to_number(resolve(name, "Properties.ServiceTimeout"))
+	n := _pf_num(name, "Properties.ServiceTimeout")
 	_pf_cfnsvctmo_out(n)
 }
 

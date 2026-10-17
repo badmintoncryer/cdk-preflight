@@ -6,11 +6,14 @@ import rego.v1
 # rejected asynchronously: the target reaches status FAILED ("Duplicate tool
 # found in target configuration") and CloudFormation rolls back on
 # NotStabilized minutes later.
-_pf_gwttoolname_names(name) := [[t.index, n] |
+_pf_gwttoolname_names(name) := pfv if {
+	_pf_static_list(name, "Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload")
+	pfv := [[t.index, n] |
 	some t in flatten_list(name, "Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload")
 	n := object.get(t.value, "Name", null)
 	is_string(n)
 ]
+}
 
 violation contains make_diag_full("pf-agentcore-gateway-target-lambda-tool-name-unique", "ERROR", name,
 	sprintf("Properties.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.%d.Name", [i]),

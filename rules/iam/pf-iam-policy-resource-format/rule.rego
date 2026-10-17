@@ -27,12 +27,13 @@ _pf_irf_docs contains [name, path, d] if {
 _pf_irf_stmts(d) := [[0, s]] if {
 	s := object.get(d, "Statement", "__pf_absent")
 	is_object(s)
+	not _pf_iamlib_marker(s)
 }
 
 _pf_irf_stmts(d) := out if {
 	arr := object.get(d, "Statement", "__pf_absent")
 	is_array(arr)
-	out := [[i, s] | some i, s in arr]
+	out := [[i, s] | some i, s in arr; not _pf_iamlib_marker(s)]
 }
 
 _pf_irf_vals(v) := [v] if is_string(v)

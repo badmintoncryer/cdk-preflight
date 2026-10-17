@@ -11,7 +11,9 @@ violation contains make_diag_full("pf-s3-replication-priority-duplicate", "ERROR
 	sprintf("priority %v is already used by rule %d; replication priorities must be unique", [p, r1.index]),
 	_pf_s3rpd_fix, _pf_s3rpd_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.ReplicationConfiguration.Rules")
 	some r1 in flatten_list(name, "Properties.ReplicationConfiguration.Rules")
+	_pf_static_list(name, "Properties.ReplicationConfiguration.Rules")
 	some r2 in flatten_list(name, "Properties.ReplicationConfiguration.Rules")
 	r1.index < r2.index
 	is_object(r1.value)

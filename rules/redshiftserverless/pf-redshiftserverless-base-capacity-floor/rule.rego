@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-redshiftserverless-base-capacity-floor", "
 	"Set BaseCapacity to 4, 8, or a multiple of 8",
 	"https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-capacity.html") if {
 	some name in resources_of_type("AWS::RedshiftServerless::Workgroup")
-	n := to_number(resolve(name, "Properties.BaseCapacity"))
+	n := _pf_num(name, "Properties.BaseCapacity")
 	n < 4
 }

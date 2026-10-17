@@ -6,9 +6,12 @@ _pf_r53_rsg32k_one(rs) := sum([count(v) |
 	some v in _pf_r53lib_vals(rs)
 ])
 
-_pf_r53_rsg32k_n(g) := sum([_pf_r53_rsg32k_one(it.value) |
+_pf_r53_rsg32k_n(g) := pfv if {
+	_pf_static_list(g, "Properties.RecordSets")
+	pfv := sum([_pf_r53_rsg32k_one(it.value) |
 	some it in flatten_list(g, "Properties.RecordSets")
 ])
+}
 
 violation contains make_diag_full("pf-route53-recordsetgroup-max-32000-chars", "ERROR", name,
 	"Properties.RecordSets",

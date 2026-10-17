@@ -37,6 +37,6 @@ violation contains make_diag_full("pf-efs-throughput-mode", "ERROR", name,
 	sprintf("ProvisionedThroughputInMibps is %v; the documented ceiling is 3414 MiBps and most regions cap lower (CreateFileSystem fails with ThroughputLimitExceeded)", [v]),
 	_pf_efstm_fix, _pf_efstm_url) if {
 	some name in resources_of_type("AWS::EFS::FileSystem")
-	v := to_number(resolve(name, "Properties.ProvisionedThroughputInMibps"))
+	v := _pf_num(name, "Properties.ProvisionedThroughputInMibps")
 	v > 3414
 }

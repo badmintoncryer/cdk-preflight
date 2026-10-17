@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-apigwv2-integration-timeout-range", "ERROR
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-integration.html") if {
 	some name in resources_of_type("AWS::ApiGatewayV2::Integration")
 	_pf_apigwv2lib_protocol(name) == "HTTP"
-	t := to_number(resolve(name, "Properties.TimeoutInMillis"))
+	t := _pf_num(name, "Properties.TimeoutInMillis")
 	_pf_agvitr_bad(t)
 }

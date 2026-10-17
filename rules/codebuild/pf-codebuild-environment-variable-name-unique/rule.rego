@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-codebuild-environment-variable-name-unique
 	"Give each environment variable its own name, or keep only one entry",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-environment.html") if {
 	some name in resources_of_type("AWS::CodeBuild::Project")
+	_pf_static_list(name, "Properties.Environment.EnvironmentVariables")
 	vars := flatten_list(name, "Properties.Environment.EnvironmentVariables")
 	some a in vars
 	some b in vars

@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-ecs-fargate-windows-cpu-under-1vcpu", "ERR
 	_pf_ecs_fargate(name)
 	os := resolve(name, "Properties.RuntimePlatform.OperatingSystemFamily")
 	startswith(os, "WINDOWS")
-	cpu := to_number(resolve(name, "Properties.Cpu"))
+	cpu := _pf_num(name, "Properties.Cpu")
 	cpu < 1024
 }

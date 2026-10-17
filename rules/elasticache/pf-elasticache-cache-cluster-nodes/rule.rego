@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elasticache-cache-cluster-nodes", "ERROR",
 	_pf_eccn_fix, _pf_eccn_url) if {
 	some name in resources_of_type("AWS::ElastiCache::CacheCluster")
 	lower(resolve(name, "Properties.Engine")) == "redis"
-	n := to_number(resolve(name, "Properties.NumCacheNodes"))
+	n := _pf_num(name, "Properties.NumCacheNodes")
 	n > 1
 }
 
@@ -22,6 +22,6 @@ violation contains make_diag_full("pf-elasticache-cache-cluster-nodes", "ERROR",
 	_pf_eccn_fix, _pf_eccn_url) if {
 	some name in resources_of_type("AWS::ElastiCache::CacheCluster")
 	resolve(name, "Properties.AZMode") == "cross-az"
-	n := to_number(resolve(name, "Properties.NumCacheNodes"))
+	n := _pf_num(name, "Properties.NumCacheNodes")
 	n < 2
 }

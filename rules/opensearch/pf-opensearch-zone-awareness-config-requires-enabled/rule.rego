@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-opensearch-zone-awareness-config-requires-
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-zoneawarenessconfig.html") if {
 	some name in _pf_os_domains
 	_pf_os_has2(name, "ClusterConfig", "ZoneAwarenessConfig")
-	not _pf_os_on(name, "ClusterConfig", "ZoneAwarenessEnabled")
+	_pf_os_off(name, "ClusterConfig", "ZoneAwarenessEnabled")
 }

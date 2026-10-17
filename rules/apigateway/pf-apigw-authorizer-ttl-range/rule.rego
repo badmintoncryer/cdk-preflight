@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-apigw-authorizer-ttl-range", "ERROR", name
 	"Use a TTL between 0 and 3600 seconds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-authorizer.html") if {
 	some name in resources_of_type("AWS::ApiGateway::Authorizer")
-	ttl := to_number(resolve(name, "Properties.AuthorizerResultTtlInSeconds"))
+	ttl := _pf_num(name, "Properties.AuthorizerResultTtlInSeconds")
 	ttl > 3600
 }

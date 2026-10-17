@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-agentcore-runtime-lifecycle-timeout-order"
 	"Lower IdleRuntimeSessionTimeout to at most MaxLifetime, or raise MaxLifetime",
 	"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_LifecycleConfiguration.html") if {
 	some name in resources_of_type("AWS::BedrockAgentCore::Runtime")
-	idle := to_number(resolve(name, "Properties.LifecycleConfiguration.IdleRuntimeSessionTimeout"))
-	max_lifetime := to_number(resolve(name, "Properties.LifecycleConfiguration.MaxLifetime"))
+	idle := _pf_num(name, "Properties.LifecycleConfiguration.IdleRuntimeSessionTimeout")
+	max_lifetime := _pf_num(name, "Properties.LifecycleConfiguration.MaxLifetime")
 	idle > max_lifetime
 }

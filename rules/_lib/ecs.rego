@@ -100,6 +100,8 @@ _pf_ecs_outside(v, _, hi) if {
 }
 
 _pf_ecs_num(v) := n if {
+	v != null
+	not is_boolean(v)
 	n := to_number(v)
 }
 

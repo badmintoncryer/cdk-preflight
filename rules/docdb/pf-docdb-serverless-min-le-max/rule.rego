@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-docdb-serverless-min-le-max", "ERROR", nam
 	"Keep MinCapacity <= MaxCapacity",
 	"https://docs.aws.amazon.com/documentdb/latest/developerguide/API_ServerlessV2ScalingConfiguration.html") if {
 	some name in _pf_docdb_clusters
-	mn := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity"))
-	mx := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity"))
+	mn := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity")
+	mx := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity")
 	mn > mx
 }

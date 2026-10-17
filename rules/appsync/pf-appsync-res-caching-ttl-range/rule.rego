@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-appsync-res-caching-ttl-range", "ERROR", n
 	"Use a TTL between 1 and 3600 seconds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-resolver.html") if {
 	some name in resources_of_type("AWS::AppSync::Resolver")
-	t := to_number(resolve(name, "Properties.CachingConfig.Ttl"))
+	t := _pf_num(name, "Properties.CachingConfig.Ttl")
 	_pf_rescachingttlrange_bad(t)
 }

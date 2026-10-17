@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-batch-jq-ce-order-duplicate-ce", "ERROR", 
 	"List each compute environment once",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_ComputeEnvironmentOrder.html") if {
 	some name in resources_of_type("AWS::Batch::JobQueue")
+	_pf_static_list(name, "Properties.ComputeEnvironmentOrder")
 	es := flatten_list(name, "Properties.ComputeEnvironmentOrder")
 	some e in es
 	ce := _pf_batch_oget(e.value, "ComputeEnvironment")

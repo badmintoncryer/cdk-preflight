@@ -19,6 +19,6 @@ violation contains make_diag_full("pf-rds-pi-retention-period", "ERROR", name,
 	"Use 7, 731, or a multiple of 31 (31-713)",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html") if {
 	some name in resources_of_type("AWS::RDS::DBInstance")
-	n := to_number(resolve(name, "Properties.PerformanceInsightsRetentionPeriod"))
+	n := _pf_num(name, "Properties.PerformanceInsightsRetentionPeriod")
 	not _pf_rdspi_ok(n)
 }

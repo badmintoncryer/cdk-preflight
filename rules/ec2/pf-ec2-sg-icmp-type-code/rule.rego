@@ -15,10 +15,10 @@ _pf_ec2icmp_names contains n if some n in resources_of_type("AWS::EC2::SecurityG
 
 _pf_ec2icmp_icmp(name) if lower(resolve(name, "Properties.IpProtocol")) in {"icmp", "icmpv6", "58"}
 
-_pf_ec2icmp_icmp(name) if to_number(resolve(name, "Properties.IpProtocol")) == 1
+_pf_ec2icmp_icmp(name) if _pf_num(name, "Properties.IpProtocol") == 1
 
 _pf_ec2icmp_bad(name, key) := v if {
-	v := to_number(resolve(name, sprintf("Properties.%s", [key])))
+	v := _pf_num(name, sprintf("Properties.%s", [key]))
 	v > 255
 }
 

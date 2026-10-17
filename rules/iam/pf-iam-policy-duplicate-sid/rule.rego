@@ -6,6 +6,7 @@ import rego.v1
 # ids freely.
 _pf_ids_docs contains [name, path, d] if {
 	some name in resources_of_type("AWS::IAM::Role")
+	_pf_static_list(name, "Properties.Policies")
 	some p in flatten_list(name, "Properties.Policies")
 	is_object(p.value)
 	d := object.get(p.value, "PolicyDocument", {})
@@ -26,12 +27,13 @@ _pf_ids_docs contains [name, path, d] if {
 _pf_ids_stmts(d) := [[0, s]] if {
 	s := object.get(d, "Statement", "__pf_absent")
 	is_object(s)
+	not _pf_iamlib_marker(s)
 }
 
 _pf_ids_stmts(d) := out if {
 	arr := object.get(d, "Statement", "__pf_absent")
 	is_array(arr)
-	out := [[i, s] | some i, s in arr]
+	out := [[i, s] | some i, s in arr; not _pf_iamlib_marker(s)]
 }
 
 violation contains make_diag_full("pf-iam-policy-duplicate-sid", "ERROR", name,

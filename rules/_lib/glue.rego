@@ -41,7 +41,7 @@ _pf_gluelib_str(name, path) := v if {
 }
 
 _pf_gluelib_num(name, path) := n if {
-	n := to_number(resolve(name, path))
+	n := _pf_num(name, path)
 }
 
 # The job flavour every combination rule keys on.

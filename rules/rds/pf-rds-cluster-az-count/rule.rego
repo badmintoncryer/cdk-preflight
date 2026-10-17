@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-rds-cluster-az-count", "ERROR", name,
 	"List at most 3 availability zones",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html") if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
+	_pf_static_list(name, "Properties.AvailabilityZones")
 	azs := flatten_list(name, "Properties.AvailabilityZones")
 	count(azs) > 3
 }

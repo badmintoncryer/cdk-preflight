@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-ecs-container-memory-over-task", "ERROR", 
 	"Lower the container Memory to at most the task-level Memory, or raise the task-level Memory",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html") if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
-	tm := to_number(resolve(name, "Properties.Memory"))
+	tm := _pf_num(name, "Properties.Memory")
 	some c in flatten_list(name, "Properties.ContainerDefinitions")
 	is_object(c.value)
 	cm := to_number(object.get(c.value, "Memory", null))

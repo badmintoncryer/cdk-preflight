@@ -17,6 +17,6 @@ violation contains make_diag_full("pf-appautoscaling-min-capacity-zero-namespace
 	some name in resources_of_type("AWS::ApplicationAutoScaling::ScalableTarget")
 	ns := resolve(name, "Properties.ServiceNamespace")
 	ns in _pf_aasmincap_needs_one
-	mn := to_number(resolve(name, "Properties.MinCapacity"))
+	mn := _pf_num(name, "Properties.MinCapacity")
 	mn < 1
 }

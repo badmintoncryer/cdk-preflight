@@ -22,7 +22,9 @@ violation contains make_diag_full("pf-cognito-recovery-duplicate", "ERROR", name
 	"Give each recovery mechanism a distinct priority and name",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-recoveryoption.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
+	_pf_static_list(name, "Properties.AccountRecoverySetting.RecoveryMechanisms")
 	some a in flatten_list(name, "Properties.AccountRecoverySetting.RecoveryMechanisms")
+	_pf_static_list(name, "Properties.AccountRecoverySetting.RecoveryMechanisms")
 	some b in flatten_list(name, "Properties.AccountRecoverySetting.RecoveryMechanisms")
 	a.index < b.index
 	is_object(a.value)

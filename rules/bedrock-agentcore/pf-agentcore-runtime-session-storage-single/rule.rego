@@ -6,10 +6,13 @@ import rego.v1
 # validates each entry but only CreateAgentRuntime knows that SessionStorage
 # may appear once per runtime ("At most one sessionStorage configuration is
 # allowed", measured 2026-09-06 with distinct mount paths).
-_pf_rtss_entries(name) := [it |
+_pf_rtss_entries(name) := pfv if {
+	_pf_static_list(name, "Properties.FilesystemConfigurations")
+	pfv := [it |
 	some it in flatten_list(name, "Properties.FilesystemConfigurations")
 	is_object(object.get(it.value, "SessionStorage", null))
 ]
+}
 
 violation contains make_diag_full("pf-agentcore-runtime-session-storage-single", "ERROR", name,
 	sprintf("Properties.FilesystemConfigurations.%d.SessionStorage", [last]),

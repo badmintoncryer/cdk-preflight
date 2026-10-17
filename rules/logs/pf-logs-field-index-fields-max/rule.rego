@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-logs-field-index-fields-max", "ERROR", nam
 	"Index at most 20 fields per log group",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-logs-loggroup.html") if {
 	some name in resources_of_type("AWS::Logs::LogGroup")
+	_pf_static_list(name, "Properties.FieldIndexPolicies")
 	some item in flatten_list(name, "Properties.FieldIndexPolicies")
 	pol := item.value
 	is_object(pol)

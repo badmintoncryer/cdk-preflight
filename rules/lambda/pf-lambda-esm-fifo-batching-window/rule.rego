@@ -24,5 +24,5 @@ violation contains make_diag_full("pf-lambda-esm-fifo-batching-window", "ERROR",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html") if {
 	some name in resources_of_type("AWS::Lambda::EventSourceMapping")
 	_pf_lfbw_is_fifo(name)
-	to_number(resolve(name, "Properties.MaximumBatchingWindowInSeconds")) > 0
+	_pf_num(name, "Properties.MaximumBatchingWindowInSeconds") > 0
 }

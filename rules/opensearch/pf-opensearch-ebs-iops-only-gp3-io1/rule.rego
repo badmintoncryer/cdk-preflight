@@ -15,5 +15,5 @@ violation contains make_diag_full("pf-opensearch-ebs-iops-only-gp3-io1", "ERROR"
 	some name in _pf_os_domains
 	vt := _pf_os_opt(name, "EBSOptions", "VolumeType")
 	vt in _pf_osiop_no_iops
-	not _pf_os_missing(name, "EBSOptions", "Iops")
+	_pf_os_has2(name, "EBSOptions", "Iops")
 }

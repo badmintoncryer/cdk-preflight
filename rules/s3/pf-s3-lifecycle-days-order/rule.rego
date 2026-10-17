@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-days-order", "ERROR", name,
 	sprintf("Transition to %s at %v days is less than 30 days after the %s transition at %v days; S3 requires objects to stay at least 30 days in IA storage", [sc2, d2, sc1, d1]),
 	_pf_s3ord_fix, _pf_s3ord_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some r in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(r.value)
 	trans := object.get(r.value, "Transitions", [])
@@ -37,6 +38,7 @@ violation contains make_diag_full("pf-s3-lifecycle-days-order", "ERROR", name,
 	sprintf("ExpirationInDays (%v) must be greater than TransitionInDays (%v); S3 rejects lifecycle rules that expire objects before or when they transition", [e, d]),
 	_pf_s3ord_fix, _pf_s3ord_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some r in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(r.value)
 	rawe := object.get(r.value, "ExpirationInDays", null)

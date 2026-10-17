@@ -10,7 +10,8 @@ violation contains make_diag_full("pf-batch-jd-resource-requirements-vcpu-min", 
 	"Request at least 1 vCPU, or run the job on Fargate",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_ResourceRequirement.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
-	not _pf_batch_fargate(name)
+	caps := _pf_batch_caps(name)
+	not "FARGATE" in caps
 	v := _pf_batch_rr(_pf_batch_cp(name), "VCPU")
 	_pf_batch_lit(v)
 	n := to_number(v)

@@ -20,7 +20,7 @@ violation contains make_diag_full("pf-aoss-collection-group-capacity-ocu-step", 
 	"https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-scaling.html") if {
 	some name in resources_of_type("AWS::OpenSearchServerless::CollectionGroup")
 	some f in _pf_aoss_cgstep_fields
-	v := to_number(resolve(name, sprintf("Properties.CapacityLimits.%v", [f])))
+	v := _pf_num(name, sprintf("Properties.CapacityLimits.%v", [f]))
 	not v in {0, 1, 2, 4, 8, 16}
 	v % 16 != 0
 }

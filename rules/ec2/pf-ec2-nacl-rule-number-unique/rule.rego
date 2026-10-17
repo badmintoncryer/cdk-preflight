@@ -13,7 +13,7 @@ _pf_ec2nre_key(n) := [acl, eg, num] if {
 	acl := resolve(n, "Properties.NetworkAclId")
 	is_string(acl)
 	eg := _pf_ec2nre_egress(n)
-	num := to_number(resolve(n, "Properties.RuleNumber"))
+	num := _pf_num(n, "Properties.RuleNumber")
 }
 
 _pf_ec2nre_peers(k) := {n |

@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-batch-jd-fargate-ephemeral-storage-range",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_EphemeralStorage.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	_pf_batch_fargate(name)
-	n := to_number(resolve(name, "Properties.ContainerProperties.EphemeralStorage.SizeInGiB"))
+	n := _pf_num(name, "Properties.ContainerProperties.EphemeralStorage.SizeInGiB")
 	_pf_batch_outside(n, 21, 200)
 }

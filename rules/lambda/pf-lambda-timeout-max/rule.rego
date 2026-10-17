@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-lambda-timeout-max", "ERROR", name,
 	"Use at most 900 seconds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html") if {
 	some name in resources_of_type("AWS::Lambda::Function")
-	t := to_number(resolve(name, "Properties.Timeout"))
+	t := _pf_num(name, "Properties.Timeout")
 	t > 900
 }

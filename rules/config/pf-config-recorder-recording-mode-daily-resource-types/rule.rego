@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-config-recorder-recording-mode-daily-resou
 	"Leave those types on the CONTINUOUS recording frequency",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configurationrecorder-recordingmode.html") if {
 	some name in resources_of_type("AWS::Config::ConfigurationRecorder")
+	_pf_static_list(name, "Properties.RecordingMode.RecordingModeOverrides")
 	some o in flatten_list(name, "Properties.RecordingMode.RecordingModeOverrides")
 	object.get(o.value, "RecordingFrequency", null) == "DAILY"
 	some t in _pf_cfglib_list(o.value, "ResourceTypes")

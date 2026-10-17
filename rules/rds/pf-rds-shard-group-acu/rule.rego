@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-rds-shard-group-acu", "WARN", name,
 	"Raise MaxACU to at least MinACU",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html") if {
 	some name in resources_of_type("AWS::RDS::DBShardGroup")
-	mx := to_number(resolve(name, "Properties.MaxACU"))
-	mn := to_number(resolve(name, "Properties.MinACU"))
+	mx := _pf_num(name, "Properties.MaxACU")
+	mn := _pf_num(name, "Properties.MinACU")
 	mx < mn
 }

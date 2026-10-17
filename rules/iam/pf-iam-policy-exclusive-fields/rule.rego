@@ -5,6 +5,7 @@ import rego.v1
 # Each pair is either-or per statement; both at once is a syntax error.
 _pf_ief_docs contains [name, path, d] if {
 	some name in resources_of_type("AWS::IAM::Role")
+	_pf_static_list(name, "Properties.Policies")
 	some p in flatten_list(name, "Properties.Policies")
 	is_object(p.value)
 	d := object.get(p.value, "PolicyDocument", {})
@@ -25,12 +26,13 @@ _pf_ief_docs contains [name, path, d] if {
 _pf_ief_stmts(d) := [[0, s]] if {
 	s := object.get(d, "Statement", "__pf_absent")
 	is_object(s)
+	not _pf_iamlib_marker(s)
 }
 
 _pf_ief_stmts(d) := out if {
 	arr := object.get(d, "Statement", "__pf_absent")
 	is_array(arr)
-	out := [[i, s] | some i, s in arr]
+	out := [[i, s] | some i, s in arr; not _pf_iamlib_marker(s)]
 }
 
 _pf_ief_pairs := {["Action", "NotAction"], ["Resource", "NotResource"]}

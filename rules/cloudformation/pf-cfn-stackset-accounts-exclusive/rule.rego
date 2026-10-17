@@ -6,6 +6,7 @@ import rego.v1
 # exists in the StackSets API.
 _pf_cfnssacct_bad contains [name, idx] if {
 	some name in resources_of_type("AWS::CloudFormation::StackSet")
+	_pf_static_list(name, "Properties.StackInstancesGroup")
 	some g in flatten_list(name, "Properties.StackInstancesGroup")
 	dt := object.get(g.value, "DeploymentTargets", {})
 	object.get(dt, "Accounts", null) != null

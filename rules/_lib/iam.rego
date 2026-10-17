@@ -56,15 +56,19 @@ _pf_iamlib_all contains x if {
 }
 
 # Statements as [index, statement]. A single statement object is index 0.
+# An Fn::If (statement-level or over the whole Statement) reaches the rules as a
+# marker object, not a statement: read as one, its __conditional / __if_true keys
+# were reported as unknown statement elements and its missing Effect as an error.
 _pf_iamlib_stmts(d) := [[0, s]] if {
 	s := object.get(d, "Statement", null)
 	is_object(s)
+	not _pf_iamlib_marker(s)
 }
 
 _pf_iamlib_stmts(d) := out if {
 	arr := object.get(d, "Statement", null)
 	is_array(arr)
-	out := [[i, s] | some i, s in arr]
+	out := [[i, s] | some i, s in arr; not _pf_iamlib_marker(s)]
 }
 
 # A scalar-or-list policy value as a list.
@@ -140,12 +144,17 @@ _pf_iamlib_partition := "aws-iso-b" if startswith(data.cdk_preflight.deploy_regi
 
 _pf_iamlib_partition := "aws-iso" if startswith(data.cdk_preflight.deploy_region, "us-iso-")
 
+_pf_iamlib_partition := "aws-iso-e" if startswith(data.cdk_preflight.deploy_region, "eu-isoe-")
+
+_pf_iamlib_partition := "aws-iso-f" if startswith(data.cdk_preflight.deploy_region, "us-isof-")
+
+_pf_iamlib_partition := "aws-eusc" if startswith(data.cdk_preflight.deploy_region, "eusc-")
+
 _pf_iamlib_partition := "aws" if {
 	r := data.cdk_preflight.deploy_region
-	not startswith(r, "cn-")
-	not startswith(r, "us-gov-")
-	not startswith(r, "us-iso-")
-	not startswith(r, "us-isob-")
+	every p in {"cn-", "us-gov-", "us-iso-", "us-isob-", "eu-isoe-", "us-isof-", "eusc-"} {
+		not startswith(r, p)
+	}
 }
 
 # --- a role that another resource hands to a service --------------------------

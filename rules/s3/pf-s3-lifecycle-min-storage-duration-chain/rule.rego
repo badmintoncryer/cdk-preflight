@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-min-storage-duration-chain", 
 	sprintf("the transition to '%v' at %v days leaves '%v' after only %v days, but '%v' bills a %v day minimum storage duration", [sc2, d2, sc1, d2 - d1, sc1, mind]),
 	_pf_s3lmd_fix, _pf_s3lmd_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
 	trans := object.get(rule.value, "Transitions", [])

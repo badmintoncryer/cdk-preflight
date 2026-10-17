@@ -18,6 +18,7 @@ violation contains make_diag_full("pf-route53-resourcerecords-max-400", "ERROR",
 	"Split the values across several record sets",
 	"https://docs.aws.amazon.com/general/latest/gr/r53.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSetGroup")
+	_pf_static_list(name, "Properties.RecordSets")
 	some _pf_it in flatten_list(name, "Properties.RecordSets")
 	rs := _pf_it.value
 	is_object(rs)

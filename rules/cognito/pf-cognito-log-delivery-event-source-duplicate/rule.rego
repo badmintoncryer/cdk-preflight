@@ -8,7 +8,9 @@ violation contains make_diag_full("pf-cognito-log-delivery-event-source-duplicat
 	"Merge the configurations that share an event source",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-logdeliveryconfiguration.html") if {
 	some name in resources_of_type("AWS::Cognito::LogDeliveryConfiguration")
+	_pf_static_list(name, "Properties.LogConfigurations")
 	some a in flatten_list(name, "Properties.LogConfigurations")
+	_pf_static_list(name, "Properties.LogConfigurations")
 	some b in flatten_list(name, "Properties.LogConfigurations")
 	a.index < b.index
 	es := _pf_coglib_at(a.value, "EventSource")

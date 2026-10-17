@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-batch-sp-share-identifier-overlap", "ERROR
 	"Remove the overlap between the wildcard prefix and the explicit share identifier",
 	"https://docs.aws.amazon.com/batch/latest/userguide/create-scheduling-policy.html") if {
 	some name in resources_of_type("AWS::Batch::SchedulingPolicy")
+	_pf_static_list(name, "Properties.FairsharePolicy.ShareDistribution")
 	es := flatten_list(name, "Properties.FairsharePolicy.ShareDistribution")
 	some e in es
 	si := _pf_batch_oget(e.value, "ShareIdentifier")

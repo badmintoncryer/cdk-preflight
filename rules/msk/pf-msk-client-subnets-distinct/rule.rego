@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-msk-client-subnets-distinct", "ERROR", nam
 	"Give each Availability Zone its own subnet - no repeats",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-msk-cluster-brokernodegroupinfo.html") if {
 	some name in resources_of_type("AWS::MSK::Cluster")
+	_pf_static_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets")
 	subnets := [it.value | some it in flatten_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets"); is_string(it.value)]
 	n := count(subnets)
 	u := count({s | some s in subnets})
