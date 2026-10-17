@@ -750,6 +750,15 @@
 | `pf-bedrock-prompt-variant-name-unique` | AWS::Bedrock::Prompt | Prompt variant names must be unique | ERROR | none |
 | `pf-bedrock-prompt-variant-template-type` | AWS::Bedrock::Prompt | A prompt variant's TemplateConfiguration must match its TemplateType | ERROR | none |
 | `pf-agentcore-apikey-provider-secret-source` | AWS::BedrockAgentCore::ApiKeyCredentialProvider | An API key credential provider takes ApiKey when the secret is MANAGED and ApiKeySecretConfig when it is EXTERNAL, never both | ERROR | none |
+| `pf-agentcore-browser-profile-name-unique` | AWS::BedrockAgentCore::BrowserProfile | BrowserProfile names must be unique in the account | ERROR | none |
+| `pf-agentcore-capacity-provider-ephemeral-virtualname-ebs` | AWS::BedrockAgentCore::CapacityProvider | An ephemeral volume mapping sets either VirtualName or Ebs, not both | ERROR | none |
+| `pf-agentcore-capacity-provider-iops-volume-type` | AWS::BedrockAgentCore::CapacityProvider | A capacity provider volume can set Iops only for gp3, io1 or io2 | ERROR | none |
+| `pf-agentcore-capacity-provider-kms-region` | AWS::BedrockAgentCore::CapacityProvider | A capacity provider volume KmsKeyId must name a key in the deploy region | ERROR | none |
+| `pf-agentcore-capacity-provider-kms-requires-encrypted` | AWS::BedrockAgentCore::CapacityProvider | A capacity provider volume with KmsKeyId must set Encrypted to true | ERROR | none |
+| `pf-agentcore-capacity-provider-lifecycle-order` | AWS::BedrockAgentCore::CapacityProvider | A capacity provider IdleInstanceTimeout must not exceed MaxLifetime | ERROR | none |
+| `pf-agentcore-capacity-provider-throughput-volume-type` | AWS::BedrockAgentCore::CapacityProvider | A capacity provider volume can set Throughput only for gp3 | ERROR | none |
+| `pf-agentcore-capacity-provider-volume-init-rate-snapshot` | AWS::BedrockAgentCore::CapacityProvider | An ephemeral EBS volume can set VolumeInitializationRate only with a SnapshotId | ERROR | none |
+| `pf-agentcore-capacity-provider-volume-name-unique` | AWS::BedrockAgentCore::CapacityProvider | Capacity provider volume names must be unique | ERROR | none |
 | `pf-agentcore-config-bundle-components-empty` | AWS::BedrockAgentCore::ConfigurationBundle | A configuration bundle needs at least one component | ERROR | none |
 | `pf-agentcore-config-bundle-name-unique` | AWS::BedrockAgentCore::ConfigurationBundle | BundleName must be unique within the account | ERROR | none |
 | `pf-agentcore-dataset-name-unique` | AWS::BedrockAgentCore::Dataset | DatasetName must be unique within the account, compared case-insensitively | ERROR | none |
@@ -761,12 +770,22 @@
 | `pf-agentcore-gateway-interceptor-point-unique` | AWS::BedrockAgentCore::Gateway | Gateway interceptors may bind each interception point (REQUEST / RESPONSE) only once | ERROR | none |
 | `pf-agentcore-gateway-jwt-authorizer` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::PaymentManager | Gateways and payment managers with AuthorizerType CUSTOM_JWT require AuthorizerConfiguration | ERROR | none |
 | `pf-agentcore-gateway-mcp-supported-versions` | AWS::BedrockAgentCore::Gateway | Gateway MCP SupportedVersions must be MCP protocol versions the service supports | ERROR | none |
+| `pf-agentcore-gateway-policy-engine-region` | AWS::BedrockAgentCore::Gateway | PolicyEngineConfiguration.Arn must name a policy engine in the deploy region | ERROR | none |
+| `pf-agentcore-gateway-rate-limit-connections-period` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRateLimit | Connections rate limits only support Period 'second' | ERROR | none |
+| `pf-agentcore-gateway-rate-limit-dimension-keys-unique` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRateLimit | Two rate limits on the same gateway cannot use the same DimensionKeys | ERROR | none |
+| `pf-agentcore-gateway-rate-limit-entry-dimensions` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRateLimit | Each rate limit entry must give exactly one dimension value per DimensionKeys entry | ERROR | none |
+| `pf-agentcore-gateway-rate-limit-entry-duplicate` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRateLimit | Two entries of one rate limit cannot have the same Dimensions | ERROR | none |
+| `pf-agentcore-gateway-rate-limit-entry-metric` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRateLimit | Each rate limit entry needs Requests, Tokens or Connections | ERROR | none |
+| `pf-agentcore-gateway-rule-bundle-account` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRule | A WeightedOverride configuration bundle must belong to the gateway account | ERROR | none |
 | `pf-agentcore-gateway-rule-priority-unique` | AWS::BedrockAgentCore::GatewayRule | Gateway rules on one gateway must not share a Priority | ERROR | none |
 | `pf-agentcore-gateway-rule-single-bundle-action` | AWS::BedrockAgentCore::GatewayRule | A gateway rule carries at most one ConfigurationBundle action | ERROR | none |
+| `pf-agentcore-gateway-rule-traffic-split-name-unique` | AWS::BedrockAgentCore::ConfigurationBundle<br>AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayRule | Traffic split entry names in a gateway rule must be unique | ERROR | none |
 | `pf-agentcore-gateway-rule-traffic-split-sum` | AWS::BedrockAgentCore::GatewayRule | TrafficSplit weights must sum to exactly 100 | ERROR | none |
+| `pf-agentcore-gateway-target-caller-iam-authorizer` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayTarget | CALLER_IAM_CREDENTIALS needs a gateway whose AuthorizerType is AWS_IAM or AUTHENTICATE_ONLY | ERROR | none |
 | `pf-agentcore-gateway-target-credential-provider-required` | AWS::BedrockAgentCore::GatewayTarget | Gateway target credential types OAUTH and API_KEY require the matching CredentialProvider block | ERROR | none |
-| `pf-agentcore-gateway-target-http-unsupported` | AWS::BedrockAgentCore::GatewayTarget | TargetConfiguration.Http cannot be used: CloudFormation gateways are always MCP | ERROR | none |
+| `pf-agentcore-gateway-target-http-unsupported` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayTarget | An Http target cannot be added to a gateway with ProtocolType MCP | ERROR | none |
 | `pf-agentcore-gateway-target-iam-credential-provider` | AWS::BedrockAgentCore::GatewayTarget | OpenAPI and MCP server gateway targets using GATEWAY_IAM_ROLE must set IamCredentialProvider (the SigV4 service) | ERROR | none |
+| `pf-agentcore-gateway-target-jwt-passthrough-http-only` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::GatewayTarget | JWT_PASSTHROUGH cannot be used on an McpServer target | ERROR | none |
 | `pf-agentcore-gateway-target-lambda-credential-type` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets accept only the GATEWAY_IAM_ROLE credential provider | ERROR | none |
 | `pf-agentcore-gateway-target-lambda-region` | AWS::BedrockAgentCore::GatewayTarget | Lambda gateway targets must be in the gateway's own region | ERROR | none |
 | `pf-agentcore-gateway-target-lambda-tool-name-unique` | AWS::BedrockAgentCore::GatewayTarget | Tool names in a Lambda gateway target's inline ToolSchema must be unique | ERROR | none |
@@ -777,12 +796,22 @@
 | `pf-agentcore-jwt-authorizer-claims` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::Harness | A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims | ERROR | none |
 | `pf-agentcore-kms-key-region` | AWS::BedrockAgentCore::Dataset<br>AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::ConfigurationBundle | A KmsKeyArn must name a key in the deploy region | ERROR | none |
 | `pf-agentcore-memory-custom-strategy-execution-role` | AWS::BedrockAgentCore::Memory | Memories with a custom strategy require MemoryExecutionRoleArn | ERROR | none |
+| `pf-agentcore-memory-deterministic-key-count` | AWS::BedrockAgentCore::Memory | A memory strategy may declare at most three STRICTLY_CONSISTENT metadata keys | ERROR | none |
+| `pf-agentcore-memory-deterministic-key-extraction-config` | AWS::BedrockAgentCore::Memory | STRICTLY_CONSISTENT metadata keys cannot carry an ExtractionConfig | ERROR | none |
+| `pf-agentcore-memory-deterministic-key-indexed` | AWS::BedrockAgentCore::Memory | STRICTLY_CONSISTENT metadata keys must also be declared in the memory's IndexedKeys | ERROR | none |
+| `pf-agentcore-memory-deterministic-key-summary` | AWS::BedrockAgentCore::Memory | Summary strategies cannot declare STRICTLY_CONSISTENT metadata keys | ERROR | none |
+| `pf-agentcore-memory-deterministic-key-type` | AWS::BedrockAgentCore::Memory | STRICTLY_CONSISTENT metadata keys must be of type STRING | ERROR | none |
+| `pf-agentcore-memory-metadata-indexed-type` | AWS::BedrockAgentCore::Memory | A metadata key declared in IndexedKeys must use the same Type in every strategy schema | ERROR | none |
+| `pf-agentcore-memory-metadata-key-unique` | AWS::BedrockAgentCore::Memory | Metadata keys must be unique within a strategy schema, and IndexedKeys unique ignoring case | ERROR | none |
+| `pf-agentcore-memory-metadata-validation-type` | AWS::BedrockAgentCore::Memory | A metadata Validation must match the key Type, and NumberValidation needs MinValue <= MaxValue | ERROR | none |
 | `pf-agentcore-memory-strategy-exactly-one` | AWS::BedrockAgentCore::Memory | Each MemoryStrategies entry must hold exactly one strategy type, and a CustomMemoryStrategy exactly one Configuration override | ERROR | pending-engine |
 | `pf-agentcore-memory-strategy-name-unique` | AWS::BedrockAgentCore::Memory | Memory strategy names must be unique within a memory | ERROR | none |
 | `pf-agentcore-memory-strategy-namespaces-count` | AWS::BedrockAgentCore::Memory | A memory strategy accepts exactly one namespace | ERROR | none |
 | `pf-agentcore-memory-strategy-type-unique` | AWS::BedrockAgentCore::Memory | A memory may carry at most one strategy of each built-in type | ERROR | none |
+| `pf-agentcore-oauth2-private-key-jwt-kms-region` | AWS::BedrockAgentCore::OAuth2CredentialProvider | The PrivateKeyJwtConfig KMS key must be in the deploy region | ERROR | none |
+| `pf-agentcore-oauth2-private-key-jwt-reserved-claims` | AWS::BedrockAgentCore::OAuth2CredentialProvider | PrivateKeyJwtConfig cannot override the reserved JWT claims alg / typ / iss / sub / jti / exp / iat / nbf | ERROR | none |
 | `pf-agentcore-oauth2-provider-client-secret` | AWS::BedrockAgentCore::OAuth2CredentialProvider | A custom OAuth2 provider takes ClientSecret when the secret is MANAGED and ClientSecretConfig when it is EXTERNAL, never both | ERROR | none |
-| `pf-agentcore-oauth2-provider-private-key-jwt` | AWS::BedrockAgentCore::OAuth2CredentialProvider | ClientAuthenticationMethod PRIVATE_KEY_JWT cannot be satisfied through CloudFormation (PrivateKeyJwtConfig is not in the resource schema) | ERROR | none |
+| `pf-agentcore-oauth2-provider-private-key-jwt` | AWS::BedrockAgentCore::OAuth2CredentialProvider | ClientAuthenticationMethod PRIVATE_KEY_JWT needs PrivateKeyJwtConfig | ERROR | none |
 | `pf-agentcore-oauth2-provider-vendor-config` | AWS::BedrockAgentCore::OAuth2CredentialProvider | Oauth2ProviderConfigInput must contain the config block that matches CredentialProviderVendor | ERROR | none |
 | `pf-agentcore-online-eval-evaluator-unique` | AWS::BedrockAgentCore::OnlineEvaluationConfig | An online evaluation config must not list the same evaluator twice | ERROR | none |
 | `pf-agentcore-online-eval-evaluators-or-insights` | AWS::BedrockAgentCore::OnlineEvaluationConfig | An online evaluation config needs a non-empty Evaluators list (or Insights) | ERROR | none |
@@ -792,10 +821,18 @@
 | `pf-agentcore-required-union-empty` | AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::GatewayTarget<br>AWS::BedrockAgentCore::Policy | Required union blocks (EvaluatorConfig, TargetConfiguration, Definition) must not be empty objects | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.268.0 |
 | `pf-agentcore-resource-policy-document` | AWS::BedrockAgentCore::ResourcePolicy | A resource policy must be a JSON policy whose statements carry Principal, bedrock-agentcore actions, and exactly one Resource ARN | ERROR | none |
 | `pf-agentcore-runtime-artifact-exactly-one` | AWS::BedrockAgentCore::Runtime | AgentRuntimeArtifact must hold exactly one of ContainerConfiguration or CodeConfiguration | ERROR | none |
+| `pf-agentcore-runtime-byo-filesystem-vpc` | AWS::BedrockAgentCore::Runtime | EfsAccessPoint and S3FilesAccessPoint need a runtime in VPC network mode | ERROR | none |
+| `pf-agentcore-runtime-capacity-provider-max-lifetime` | AWS::BedrockAgentCore::Runtime | A runtime's MaxLifetime must not exceed its capacity provider's MaxLifetime (both default to 28800) | ERROR | none |
+| `pf-agentcore-runtime-capacity-provider-network-config` | AWS::BedrockAgentCore::Runtime | A runtime on a capacity provider cannot set NetworkConfiguration | ERROR | none |
+| `pf-agentcore-runtime-capacity-provider-region` | AWS::BedrockAgentCore::Runtime | A runtime CapacityProviderArn must name a capacity provider in the deploy region | ERROR | none |
+| `pf-agentcore-runtime-capacity-provider-volume-undefined` | AWS::BedrockAgentCore::Runtime | A CapacityProviderVolume must name a volume defined on the runtime's capacity provider | ERROR | none |
 | `pf-agentcore-runtime-code-entrypoint-extension` | AWS::BedrockAgentCore::Runtime | A CodeConfiguration EntryPoint file must match the selected Runtime (.py for PYTHON_*) | ERROR | none |
+| `pf-agentcore-runtime-ecr-region` | AWS::BedrockAgentCore::Runtime | A runtime ContainerUri must name an ECR repository in the deploy region | ERROR | none |
 | `pf-agentcore-runtime-endpoint-name-default` | AWS::BedrockAgentCore::RuntimeEndpoint | A RuntimeEndpoint cannot be named DEFAULT (the runtime already owns that endpoint) | ERROR | none |
 | `pf-agentcore-runtime-env-var-count` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime EnvironmentVariables holds at most 50 entries | ERROR | cfn-schema |
+| `pf-agentcore-runtime-filesystem-compute-type` | AWS::BedrockAgentCore::Runtime | CapacityProviderVolume needs a capacity provider; SessionStorage, EFS and S3 Files need a runtime without one | ERROR | none |
 | `pf-agentcore-runtime-lifecycle-timeout-order` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime IdleRuntimeSessionTimeout must not exceed MaxLifetime | ERROR | none |
+| `pf-agentcore-runtime-microvm-lifecycle-max` | AWS::BedrockAgentCore::Runtime | A runtime without a capacity provider allows MaxLifetime up to 28800 seconds | ERROR | none |
 | `pf-agentcore-runtime-name` | AWS::BedrockAgentCore::Runtime | AgentCore Runtime names must match [a-zA-Z][a-zA-Z0-9_]{0,47} (no hyphens) | ERROR | pending-engine |
 | `pf-agentcore-runtime-session-storage-single` | AWS::BedrockAgentCore::Runtime | An AgentCore Runtime allows at most one SessionStorage filesystem configuration | ERROR | none |
 | `pf-agentcore-vpc-network-mode-config` | AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::BrowserCustom<br>AWS::BedrockAgentCore::CodeInterpreterCustom<br>AWS::BedrockAgentCore::Harness | NetworkMode VPC requires the VPC config block, and PUBLIC forbids it (Runtime, Browser, Code Interpreter, Harness) | ERROR | none |
