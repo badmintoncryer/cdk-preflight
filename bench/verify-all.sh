@@ -43,13 +43,16 @@ for d in rules/"$SVC"/*/; do
 
   CDKPF_REGION="$region" bash bench/verify-rule.sh "$rule" --fail-only
   rc=$?
+  left=""
   if [ "$rc" -eq 4 ]; then # 判定不能は 1 回だけリトライ（throttle 等の一過性を吸収）
+    # リトライはログを空にして書き直すので、1 回目に残したリソースの行をここで拾っておく
+    left=$(grep -E '^LEFTOVER:' "bench/logs/$rule.log" | tr '\n' ' ')
     echo "retrying $rule after INCONCLUSIVE"
     CDKPF_REGION="$region" bash bench/verify-rule.sh "$rule" --fail-only
     rc=$?
   fi
 
-  detail=$(grep -E '^(fail: reason=|!!|LEFTOVER:)' "bench/logs/$rule.log" | tail -3 | tr '\n' ' ')
+  detail="$left$(grep -E '^(fail: reason=|!!|LEFTOVER:)' "bench/logs/$rule.log" | tail -3 | tr '\n' ' ')"
   case "$rc" in
     0) emit "$rule" OK "$region" "$detail" ;;
     2) emit "$rule" BROKEN "$region" "$detail"; overall=2 ;;

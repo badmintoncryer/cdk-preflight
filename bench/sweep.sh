@@ -397,7 +397,9 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
   done
 
   # retain 削除で切り離されたリソースはスタックが消えているので list-stacks では拾えない。
-  # スタックタグ cdkpf は課金対象リソースに伝播しているので、タグから直接残骸を探して消す。
+  # verify-rule.sh は create-stack にタグを渡さない（タグの伝播がテンプレートのエラーを覆ったため、
+  # b74bdc384 で外した）ので、ここで拾えるのはフィクスチャ自身が cdkpf タグを付けたリソースだけ。
+  # それ以外の retain の残骸は、verify-rule.sh の LEFTOVER 行として report.sh の issue に出る。
   aws resourcegroupstaggingapi get-resources --region "$region" --tag-filters Key=cdkpf \
     --query 'ResourceTagMappingList[].ResourceARN' --output text 2>/dev/null |
     tr '\t' '\n' | while read -r arn; do

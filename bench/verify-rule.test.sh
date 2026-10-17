@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 RULE=pf-t-plain # resourceTypes: [AWS::Batch::ComputeEnvironment]、repro.expect なし
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect" "$tmp/rules/t/pf-t-vpc/templates"
+mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect" "$tmp/rules/t/pf-t-vpc/templates" "$tmp/rules/t/pf-t-client"
 cat > "$tmp/rules/t/pf-t-plain/meta.yaml" <<'YAML'
 id: pf-t-plain
 resourceTypes: ["AWS::Batch::ComputeEnvironment"]
@@ -18,6 +18,9 @@ YAML
 sed 's/pf-t-plain/pf-t-expect/' "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-expect/meta.yaml"
 echo '  expect: "must be created in ENABLED state"' >> "$tmp/rules/t/pf-t-expect/meta.yaml"
 sed 's/pf-t-plain/pf-t-vpc/' "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-vpc/meta.yaml"
+# 対象型の名前が、足場の型の名前を前方に含む（UserPool と UserPoolClient）
+sed -e 's/pf-t-plain/pf-t-client/' -e 's/"AWS::Batch::ComputeEnvironment"/AWS::Cognito::UserPoolClient/' \
+  "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-client/meta.yaml"
 # bench の既定 VPC を直書きしたフィクスチャ（読み替えの対象）と、読み替えてはいけない偽の ID
 cat > "$tmp/rules/t/pf-t-vpc/templates/fail.template.json" <<'JSON'
 {"Resources": {"L": {"Type": "AWS::ElasticLoadBalancingV2::LoadBalancer", "Properties": {
@@ -133,6 +136,21 @@ expect 0 "$got" "repro.expect on another type is evidence even with a limit Hand
 got=$(run "AWS::Batch::JobQueue" "Too many job queues. (HandlerErrorCode: ServiceLimitExceeded)")
 expect 4 "$got" "a limit on another type without repro.expect is still scaffolding"
 RULE=pf-t-plain
+
+# 対象型との比較は完全一致。部分一致だと、足場の UserPool が対象型 UserPoolClient の一部に見えて
+# 足場のクォータ超過や衝突が verified になる（2026-10-17 のレビューでスタブ再現）
+RULE=pf-t-client
+got=$(run "AWS::Cognito::UserPool" "User pool limit exceeded (HandlerErrorCode: ServiceLimitExceeded)")
+expect 4 "$got" "a quota on a scaffolding type whose name prefixes the rule's type is still scaffolding"
+got=$(run "AWS::Cognito::UserPool" "$COLLIDE")
+expect 4 "$got" "a collision on a scaffolding type whose name prefixes the rule's type is still scaffolding"
+got=$(run "AWS::Cognito::UserPoolClient" "Invalid callback URL")
+expect 0 "$got" "the rule's own type still verifies under exact matching"
+RULE=pf-t-plain
+
+# スロットリングは対象型で起きても証拠にならない（並列の月次で起きる）
+got=$(run "AWS::Batch::ComputeEnvironment" "Rate exceeded (Service: Batch, Status Code: 429, Request ID: r1)")
+expect 4 "$got" "throttling on the rule's own type is not evidence"
 
 # 足場の型でも、上限系でない文面なら判定を続ける（リソース型だけで弾かない）
 got=$(run "AWS::EC2::Subnet" "The CIDR '10.0.0.0/24' conflicts with another subnet")

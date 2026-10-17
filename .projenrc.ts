@@ -140,6 +140,7 @@ project.testTask.exec('bash bench/sweep.test.sh');
 // アカウントのクォータで倒れたスタックも ROLLBACK_COMPLETE で終わるので、素通しだと
 // 嘘の証拠が meta.yaml に焼き付く。
 project.testTask.exec('bash bench/verify-rule.test.sh');
+project.testTask.exec('bash bench/report.test.sh');
 
 // 公開される tarball の smoke test。テストは全部 src/ を import しているので、
 // パッケージング側の壊れ（exports の漏れ、lib/rules.generated の解決失敗）は
@@ -271,7 +272,7 @@ monthlyVerify.addJob('verify', {
 });
 monthlyVerify.addJob('report', {
   runsOn: ['ubuntu-latest'],
-  needs: ['verify'],
+  needs: ['plan', 'verify'],
   if: 'always()',
   permissions: {
     idToken: github.workflows.JobPermission.WRITE,
@@ -303,7 +304,14 @@ monthlyVerify.addJob('report', {
     // 組み込みが止めるようになったルール（＝退役候補）を洗い出す
     { name: 'Redundancy scan', run: 'npx projen redundancy-scan | tee bench/out/redundancy.log' },
     // 手前が落ちても BROKEN / INCONCLUSIVE / LEFTOVER は起票する
-    { name: 'Report', if: '!cancelled()', run: 'bash bench/report.sh' },
+    // 計画した service を渡し、結果の行が無いルールを INCONCLUSIVE として数えさせる。シャードが
+    // 認証や打ち切りで落ちると jsonl ごと無くなり、残りのシャードだけで「all green」と言っていた
+    {
+      name: 'Report',
+      if: '!cancelled()',
+      env: { CDKPF_PLAN: '${{ needs.plan.outputs.services }}' },
+      run: 'bash bench/report.sh',
+    },
   ],
 });
 
