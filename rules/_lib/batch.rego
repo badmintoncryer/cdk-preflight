@@ -40,10 +40,16 @@ _pf_batch_has(name, k) if {
 
 # The launch type the job definition asks for. RegisterJobDefinition defaults
 # to EC2 when PlatformCapabilities is absent.
-_pf_batch_caps(name) := {c |
-	some pc in flatten_list(name, "Properties.PlatformCapabilities")
-	c := pc.value
-	is_string(c)
+# Undefined when the list is a Ref or sits behind an Fn::If: flatten_list returned
+# nothing for the Ref (read as "absent, so EC2") and both branches for the Fn::If
+# (read as EC2 and Fargate at once).
+_pf_batch_caps(name) := caps if {
+	_pf_countable_list(name, "Properties.PlatformCapabilities")
+	caps := {c |
+		some pc in flatten_list(name, "Properties.PlatformCapabilities")
+		c := pc.value
+		is_string(c)
+	}
 }
 
 _pf_batch_fargate(name) if {
@@ -108,6 +114,8 @@ _pf_batch_rr(c, t) := v if {
 }
 
 _pf_batch_num(v) := n if {
+	v != null
+	not is_boolean(v)
 	n := to_number(v)
 }
 

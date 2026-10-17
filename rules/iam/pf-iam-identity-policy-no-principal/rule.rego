@@ -26,12 +26,13 @@ _pf_iinp_docs contains [name, path, d] if {
 _pf_iinp_stmts(d) := [[0, s]] if {
 	s := object.get(d, "Statement", "__pf_absent")
 	is_object(s)
+	not _pf_iamlib_marker(s)
 }
 
 _pf_iinp_stmts(d) := out if {
 	arr := object.get(d, "Statement", "__pf_absent")
 	is_array(arr)
-	out := [[i, s] | some i, s in arr]
+	out := [[i, s] | some i, s in arr; not _pf_iamlib_marker(s)]
 }
 
 violation contains make_diag_full("pf-iam-identity-policy-no-principal", "ERROR", name,

@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-ecs-ephemeral-storage-range", "ERROR", nam
 	"Use a size between 21 and 200 GiB, or drop EphemeralStorage to keep the default 20 GiB",
 	_pf_ecseph_url) if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
-	s := to_number(resolve(name, "Properties.EphemeralStorage.SizeInGiB"))
+	s := _pf_num(name, "Properties.EphemeralStorage.SizeInGiB")
 	s < 21
 }
 
@@ -22,6 +22,6 @@ violation contains make_diag_full("pf-ecs-ephemeral-storage-range", "ERROR", nam
 	"Use a size between 21 and 200 GiB",
 	_pf_ecseph_url) if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
-	s := to_number(resolve(name, "Properties.EphemeralStorage.SizeInGiB"))
+	s := _pf_num(name, "Properties.EphemeralStorage.SizeInGiB")
 	s > 200
 }

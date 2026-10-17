@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-transition-singular-plural-ex
 	sprintf("the rule sets both %v and %v; S3 accepts only one of the pair", [pair[0], pair[1]]),
 	_pf_s3lsp_fix, _pf_s3lsp_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
 	some pair in [["Transition", "Transitions"], ["NoncurrentVersionTransition", "NoncurrentVersionTransitions"]]

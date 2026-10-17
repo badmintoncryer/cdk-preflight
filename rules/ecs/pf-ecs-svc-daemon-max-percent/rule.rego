@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-ecs-svc-daemon-max-percent", "ERROR", name
 	"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html") if {
 	some name in resources_of_type("AWS::ECS::Service")
 	resolve(name, "Properties.SchedulingStrategy") == "DAEMON"
-	mp := to_number(resolve(name, "Properties.DeploymentConfiguration.MaximumPercent"))
+	mp := _pf_num(name, "Properties.DeploymentConfiguration.MaximumPercent")
 	mp > 100
 }

@@ -5,12 +5,15 @@ import rego.v1
 # Target ids are the update key for a rule's targets, so PutTargets refuses a
 # repeat: "Parameter targets is not valid. Reason: More than one target with
 # Id '<id>' is provided." Measured 2026-09-07, us-east-1.
-_pf_evtid_ids(name) := [id |
+_pf_evtid_ids(name) := pfv if {
+	_pf_static_list(name, "Properties.Targets")
+	pfv := [id |
 	some t in flatten_list(name, "Properties.Targets")
 	is_object(t.value)
 	id := object.get(t.value, "Id", null)
 	is_string(id)
 ]
+}
 
 violation contains make_diag_full("pf-events-target-id-duplicate", "ERROR", name,
 	"Properties.Targets",

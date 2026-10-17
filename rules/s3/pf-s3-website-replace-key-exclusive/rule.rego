@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-website-replace-key-exclusive", "ERROR"
 	"the redirect rule sets both ReplaceKeyWith and ReplaceKeyPrefixWith; S3 accepts only one",
 	_pf_s3wrk_fix, _pf_s3wrk_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.WebsiteConfiguration.RoutingRules")
 	some r in flatten_list(name, "Properties.WebsiteConfiguration.RoutingRules")
 	is_object(r.value)
 	rr := object.get(r.value, "RedirectRule", {})

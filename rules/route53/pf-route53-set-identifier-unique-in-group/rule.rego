@@ -8,7 +8,9 @@ violation contains make_diag_full("pf-route53-set-identifier-unique-in-group", "
 	"Give each record set in the group its own SetIdentifier",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSetGroup")
+	_pf_static_list(name, "Properties.RecordSets")
 	some a in flatten_list(name, "Properties.RecordSets")
+	_pf_static_list(name, "Properties.RecordSets")
 	some b in flatten_list(name, "Properties.RecordSets")
 	a.index < b.index
 	k := _pf_r53lib_key(a.value)

@@ -10,11 +10,13 @@ violation contains make_diag_full("pf-eks-cluster-sg-and-subnets-same-vpc", "ERR
 	"Create the cluster's security group in the same VPC as its subnets",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-cluster-resourcesvpcconfig.html") if {
 	some name in resources_of_type("AWS::EKS::Cluster")
+	_pf_static_list(name, "Properties.ResourcesVpcConfig.SecurityGroupIds")
 	some sgv in flatten_list(name, "Properties.ResourcesVpcConfig.SecurityGroupIds")
 	sg := object.get(sgv.value, "__ref", "")
 	sg in resources_of_type("AWS::EC2::SecurityGroup")
 	sgvpc := resolve(sg, "Properties.VpcId")
 	sgvpc in resources_of_type("AWS::EC2::VPC")
+	_pf_static_list(name, "Properties.ResourcesVpcConfig.SubnetIds")
 	some snv in flatten_list(name, "Properties.ResourcesVpcConfig.SubnetIds")
 	sn := object.get(snv.value, "__ref", "")
 	sn in resources_of_type("AWS::EC2::Subnet")

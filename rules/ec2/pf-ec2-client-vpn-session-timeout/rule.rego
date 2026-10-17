@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-ec2-client-vpn-session-timeout", "ERROR", 
 	"Use 8, 10, 12 or 24",
 	"https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateClientVpnEndpoint.html") if {
 	some name in resources_of_type("AWS::EC2::ClientVpnEndpoint")
-	n := to_number(resolve(name, "Properties.SessionTimeoutHours"))
+	n := _pf_num(name, "Properties.SessionTimeoutHours")
 	not n in {8, 10, 12, 24}
 }

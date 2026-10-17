@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-rds-serverless-v2-capacity-step", "ERROR",
 	"Round the capacity to a multiple of 0.5",
 	"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html") if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
-	n := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity"))
+	n := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity")
 	_pf_rdsstep_bad(n)
 }
 
@@ -23,6 +23,6 @@ violation contains make_diag_full("pf-rds-serverless-v2-capacity-step", "ERROR",
 	"Round the capacity to a multiple of 0.5",
 	"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html") if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
-	n := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity"))
+	n := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity")
 	_pf_rdsstep_bad(n)
 }

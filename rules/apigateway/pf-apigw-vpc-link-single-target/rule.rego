@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-apigw-vpc-link-single-target", "ERROR", na
 	"List exactly one Network Load Balancer ARN",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-vpclink.html") if {
 	some name in resources_of_type("AWS::ApiGateway::VpcLink")
+	_pf_static_list(name, "Properties.TargetArns")
 	t := flatten_list(name, "Properties.TargetArns")
 	count(t) > 1
 }

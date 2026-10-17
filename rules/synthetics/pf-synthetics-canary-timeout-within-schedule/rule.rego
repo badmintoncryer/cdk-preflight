@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-synthetics-canary-timeout-within-schedule"
 	"Lower TimeoutInSeconds to the run frequency or below, or schedule the canary less often — omitting TimeoutInSeconds uses the frequency itself",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-synthetics-canary-runconfig.html") if {
 	some name in resources_of_type("AWS::Synthetics::Canary")
-	t := to_number(resolve(name, "Properties.RunConfig.TimeoutInSeconds"))
+	t := _pf_num(name, "Properties.RunConfig.TimeoutInSeconds")
 	expr := resolve(name, "Properties.Schedule.Expression")
 	r := _pf_synlib_rate(expr)
 	mins := _pf_synlib_rate_minutes(r[0], r[1])

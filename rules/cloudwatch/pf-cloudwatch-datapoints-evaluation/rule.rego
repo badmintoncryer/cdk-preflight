@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-cloudwatch-datapoints-evaluation", "ERROR"
 	"Lower DatapointsToAlarm to at most EvaluationPeriods, or raise EvaluationPeriods",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cloudwatch-alarm.html") if {
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
-	d := to_number(resolve(name, "Properties.DatapointsToAlarm"))
-	ev := to_number(resolve(name, "Properties.EvaluationPeriods"))
+	d := _pf_num(name, "Properties.DatapointsToAlarm")
+	ev := _pf_num(name, "Properties.EvaluationPeriods")
 	d > ev
 }

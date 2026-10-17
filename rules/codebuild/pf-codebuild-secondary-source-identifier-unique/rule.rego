@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-codebuild-secondary-source-identifier-uniq
 	"Give each SecondarySources entry its own SourceIdentifier",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-source.html") if {
 	some name in resources_of_type("AWS::CodeBuild::Project")
+	_pf_static_list(name, "Properties.SecondarySources")
 	items := flatten_list(name, "Properties.SecondarySources")
 	some a in items
 	some b in items

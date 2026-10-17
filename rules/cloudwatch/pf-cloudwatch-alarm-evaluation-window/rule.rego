@@ -15,8 +15,8 @@ violation contains make_diag_full("pf-cloudwatch-alarm-evaluation-window", "ERRO
 	"Shorten the window: EvaluationPeriods x Period must stay within 604800 seconds when Period >= 3600, and within 86400 seconds when Period < 3600",
 	"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricAlarm.html") if {
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
-	p := to_number(resolve(name, "Properties.Period"))
-	e := to_number(resolve(name, "Properties.EvaluationPeriods"))
+	p := _pf_num(name, "Properties.Period")
+	e := _pf_num(name, "Properties.EvaluationPeriods")
 	lim := _pf_cwew_limit(p)
 	p * e > lim
 }

@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-batch-jd-eks-empty-dir-size-limit-unit", "
 	"Express the size limit in MiB, for example 100Mi",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_EksEmptyDir.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
+	_pf_static_list(name, "Properties.EksProperties.PodProperties.Volumes")
 	some vol in flatten_list(name, "Properties.EksProperties.PodProperties.Volumes")
 	v := _pf_batch_oget(_pf_batch_oget(vol.value, "EmptyDir"), "SizeLimit")
 	_pf_batch_lit(v)

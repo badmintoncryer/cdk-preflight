@@ -15,5 +15,5 @@ violation contains make_diag_full("pf-opensearch-ebs-throughput-only-gp3", "ERRO
 	some name in _pf_os_domains
 	vt := _pf_os_opt(name, "EBSOptions", "VolumeType")
 	vt in _pf_ostp_no_throughput
-	not _pf_os_missing(name, "EBSOptions", "Throughput")
+	_pf_os_has2(name, "EBSOptions", "Throughput")
 }

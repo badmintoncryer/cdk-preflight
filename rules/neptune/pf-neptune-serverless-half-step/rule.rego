@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-neptune-serverless-half-step", "ERROR", na
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-dbcluster-serverlessscalingconfiguration.html") if {
 	some name in resources_of_type("AWS::Neptune::DBCluster")
 	some k in _pf_nepstep_keys
-	n := to_number(resolve(name, sprintf("Properties.ServerlessScalingConfiguration.%s", [k])))
+	n := _pf_num(name, sprintf("Properties.ServerlessScalingConfiguration.%s", [k]))
 	_pf_nepstep_bad(n)
 }

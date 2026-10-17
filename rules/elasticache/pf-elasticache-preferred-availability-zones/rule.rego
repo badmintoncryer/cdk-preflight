@@ -19,6 +19,6 @@ violation contains make_diag_full("pf-elasticache-preferred-availability-zones",
 	some name in resources_of_type(t)
 	azs := resolve(name, sprintf("Properties.%s", [key]))
 	is_array(azs)
-	n := to_number(resolve(name, sprintf("Properties.%s", [countKey])))
+	n := _pf_num(name, sprintf("Properties.%s", [countKey]))
 	count(azs) != n
 }

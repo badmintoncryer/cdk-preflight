@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-ecs-service-lb-target-exclusive", "ERROR",
 	"Keep exactly one of TargetGroupArn (ALB/NLB) or LoadBalancerName (CLB) per entry",
 	"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html") if {
 	some name in resources_of_type("AWS::ECS::Service")
+	_pf_static_list(name, "Properties.LoadBalancers")
 	some item in flatten_list(name, "Properties.LoadBalancers")
 	entry := item.value
 	is_object(entry)

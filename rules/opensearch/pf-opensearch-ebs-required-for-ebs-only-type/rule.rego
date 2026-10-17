@@ -19,5 +19,5 @@ violation contains make_diag_full("pf-opensearch-ebs-required-for-ebs-only-type"
 	some name in _pf_os_domains
 	t := _pf_os_opt(name, "ClusterConfig", "InstanceType")
 	_pf_os_family(t) in _pf_osebr_ebs_only
-	not _pf_os_on(name, "EBSOptions", "EBSEnabled")
+	_pf_os_off(name, "EBSOptions", "EBSEnabled")
 }

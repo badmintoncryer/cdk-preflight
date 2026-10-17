@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-elbv2-rule-priority-unique", "ERROR", r2,
 	l1 := resolve(r1, "Properties.ListenerArn")
 	l2 := resolve(r2, "Properties.ListenerArn")
 	l1 == l2
-	p1 := to_number(resolve(r1, "Properties.Priority"))
-	p2 := to_number(resolve(r2, "Properties.Priority"))
+	p1 := _pf_num(r1, "Properties.Priority")
+	p2 := _pf_num(r2, "Properties.Priority")
 	p1 == p2
 }

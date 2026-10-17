@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-batch-jq-jstla-action-terminate-for-sagema
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_JobStateTimeLimitAction.html") if {
 	some name in resources_of_type("AWS::Batch::JobQueue")
 	_pf_batch_qtype(name) == "SAGEMAKER_TRAINING"
+	_pf_static_list(name, "Properties.JobStateTimeLimitActions")
 	some a in flatten_list(name, "Properties.JobStateTimeLimitActions")
 	act := _pf_batch_oget(a.value, "Action")
 	_pf_batch_lit(act)

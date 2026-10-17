@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-appsync-cache-ttl-range", "ERROR", name,
 	"Use a TTL between 1 and 3600 seconds",
 	"https://docs.aws.amazon.com/appsync/latest/APIReference/API_CreateApiCache.html") if {
 	some name in resources_of_type("AWS::AppSync::ApiCache")
-	t := to_number(resolve(name, "Properties.Ttl"))
+	t := _pf_num(name, "Properties.Ttl")
 	_pf_cachettlrange_bad(t)
 }

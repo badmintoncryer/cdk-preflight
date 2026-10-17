@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-docdbelastic-shard-count-max", "ERROR", na
 	sprintf("ShardCount is %v; CreateCluster fails with \"Invalid Input - '%v'. ShardCount should be between 1 and 32.\"", [v, v]),
 	_pf_dbecnt_fix, _pf_dbecnt_url) if {
 	some name in resources_of_type("AWS::DocDBElastic::Cluster")
-	v := to_number(resolve(name, "Properties.ShardCount"))
+	v := _pf_num(name, "Properties.ShardCount")
 	v > 32
 }

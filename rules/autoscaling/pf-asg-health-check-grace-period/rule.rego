@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-asg-health-check-grace-period", "ERROR", n
 	"Use zero or a positive number of seconds",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html") if {
 	some name in resources_of_type("AWS::AutoScaling::AutoScalingGroup")
-	g := to_number(resolve(name, "Properties.HealthCheckGracePeriod"))
+	g := _pf_num(name, "Properties.HealthCheckGracePeriod")
 	g < 0
 }

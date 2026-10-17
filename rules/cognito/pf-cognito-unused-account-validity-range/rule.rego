@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-cognito-unused-account-validity-range", "E
 	"Use a value between 0 and 365 days",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
-	v := to_number(resolve(name, "Properties.AdminCreateUserConfig.UnusedAccountValidityDays"))
+	v := _pf_num(name, "Properties.AdminCreateUserConfig.UnusedAccountValidityDays")
 	_pf_cguavr_bad(v)
 }

@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-opensearch-cold-requires-warm", "ERROR", n
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-coldstorageoptions.html") if {
 	some name in _pf_os_domains
 	_pf_os_on3(name, "ClusterConfig", "ColdStorageOptions", "Enabled")
-	not _pf_os_on(name, "ClusterConfig", "WarmEnabled")
+	_pf_os_off(name, "ClusterConfig", "WarmEnabled")
 }

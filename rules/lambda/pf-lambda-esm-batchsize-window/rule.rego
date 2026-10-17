@@ -22,7 +22,7 @@ _pf_lbsw_no_window(name) if {
 }
 
 _pf_lbsw_no_window(name) if {
-	to_number(resolve(name, "Properties.MaximumBatchingWindowInSeconds")) == 0
+	_pf_num(name, "Properties.MaximumBatchingWindowInSeconds") == 0
 }
 
 violation contains make_diag_full("pf-lambda-esm-batchsize-window", "ERROR", name,
@@ -32,7 +32,7 @@ violation contains make_diag_full("pf-lambda-esm-batchsize-window", "ERROR", nam
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html") if {
 	some name in resources_of_type("AWS::Lambda::EventSourceMapping")
 	_pf_lbsw_is_sqs(name)
-	b := to_number(resolve(name, "Properties.BatchSize"))
+	b := _pf_num(name, "Properties.BatchSize")
 	b > 10
 	_pf_lbsw_no_window(name)
 }

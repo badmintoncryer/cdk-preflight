@@ -6,6 +6,7 @@ import rego.v1
 # template, which is the only place the merged Tags.of() result exists.
 _pf_tagcount_bad contains [name, n] if {
 	some name in object.keys(input.resources)
+	_pf_static_list(name, "Properties.Tags")
 	tags := flatten_list(name, "Properties.Tags")
 	n := count(tags)
 	n > 50

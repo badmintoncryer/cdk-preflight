@@ -6,12 +6,16 @@ _pf_cf_ttl_fix := "Order the TTLs as MinTTL <= DefaultTTL <= MaxTTL"
 
 _pf_cf_ttl_url := "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html"
 
-_pf_cf_behaviors(name) := array.concat(
+_pf_cf_behaviors(name) := pfv if {
+	_pf_static_list(name, "Properties.DistributionConfig.DefaultCacheBehavior")
+	_pf_static_list(name, "Properties.DistributionConfig.CacheBehaviors")
+	pfv := array.concat(
 	[{"path": "Properties.DistributionConfig.DefaultCacheBehavior", "value": it.value} |
 		some it in flatten_list(name, "Properties.DistributionConfig.DefaultCacheBehavior")],
 	[{"path": sprintf("Properties.DistributionConfig.CacheBehaviors.%d", [it.index]), "value": it.value} |
 		some it in flatten_list(name, "Properties.DistributionConfig.CacheBehaviors")],
 )
+}
 
 violation contains make_diag_full("pf-cloudfront-ttl-order", "ERROR", name, b.path,
 	sprintf("MinTTL (%v) must be less than or equal to MaxTTL (%v)", [mn, mx]),

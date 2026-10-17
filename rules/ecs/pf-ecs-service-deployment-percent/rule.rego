@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-ecs-service-deployment-percent", "ERROR", 
 	"Keep MinimumHealthyPercent at 100 or below",
 	"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html") if {
 	some name in resources_of_type("AWS::ECS::Service")
-	minp := to_number(resolve(name, "Properties.DeploymentConfiguration.MinimumHealthyPercent"))
+	minp := _pf_num(name, "Properties.DeploymentConfiguration.MinimumHealthyPercent")
 	minp > 100
 }
 
@@ -18,6 +18,6 @@ violation contains make_diag_full("pf-ecs-service-deployment-percent", "ERROR", 
 	"Keep MaximumPercent at 100 or above",
 	"https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html") if {
 	some name in resources_of_type("AWS::ECS::Service")
-	maxp := to_number(resolve(name, "Properties.DeploymentConfiguration.MaximumPercent"))
+	maxp := _pf_num(name, "Properties.DeploymentConfiguration.MaximumPercent")
 	maxp < 100
 }

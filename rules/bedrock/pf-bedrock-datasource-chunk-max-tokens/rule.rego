@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-bedrock-datasource-chunk-max-tokens", "ERR
 	"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FixedSizeChunkingConfiguration.html") if {
 	some name in resources_of_type("AWS::Bedrock::DataSource")
 	some path in _pf_dsmt_paths
-	n := to_number(resolve(name, path))
+	n := _pf_num(name, path)
 	n > 8192
 }

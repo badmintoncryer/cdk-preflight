@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-cloudfront-cache-behavior-path-pattern-uni
 	sprintf("PathPattern %v is used by more than one cache behavior", [k]),
 	_pf_cf_cache_behavior_path_pattern_unique_fix, _pf_cf_cache_behavior_path_pattern_unique_url) if {
 	some name in resources_of_type("AWS::CloudFront::Distribution")
+	_pf_static_list(name, "Properties.DistributionConfig.CacheBehaviors")
 	pats := [pp | some it in flatten_list(name, "Properties.DistributionConfig.CacheBehaviors"); pp := object.get(it.value, "PathPattern", null); is_string(pp)]
 	some k in pats
 	count([x | some x in pats; x == k]) > 1

@@ -2,9 +2,12 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_r53_rsg1k_n(g) := sum([count(_pf_r53lib_vals(it.value)) |
+_pf_r53_rsg1k_n(g) := pfv if {
+	_pf_static_list(g, "Properties.RecordSets")
+	pfv := sum([count(_pf_r53lib_vals(it.value)) |
 	some it in flatten_list(g, "Properties.RecordSets")
 ])
+}
 
 violation contains make_diag_full("pf-route53-recordsetgroup-max-1000-elements", "ERROR", name,
 	"Properties.RecordSets",

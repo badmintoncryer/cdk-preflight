@@ -22,6 +22,7 @@ violation contains make_diag_full("pf-msk-replicator-clusters-same-account", "ER
 	"Replicate between clusters in one account - MSK Replicator does not support cross-account replication",
 	"https://docs.aws.amazon.com/msk/latest/developerguide/msk-replicator-supported-configs.html") if {
 	some name in resources_of_type("AWS::MSK::Replicator")
+	_pf_static_list(name, "Properties.KafkaClusters")
 	accounts := {a |
 		some it in flatten_list(name, "Properties.KafkaClusters")
 		a := _pf_mskrsa_account(it.value)

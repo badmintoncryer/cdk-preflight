@@ -6,6 +6,7 @@ import rego.v1
 # duplicate items. ... InvalidParameter: secretArnList" -- the realistic shape is a copy-pasted
 # entry in a list that is otherwise correct. The schema does not mark SecretArnList uniqueItems.
 _pf_msksu_arns(name) := arns if {
+	_pf_static_list(name, "Properties.SecretArnList")
 	arns := [a |
 		some it in flatten_list(name, "Properties.SecretArnList")
 		a := it.value

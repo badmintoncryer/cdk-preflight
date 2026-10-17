@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-apigw-minimum-compression-size-range", "ER
 	"Use a compression threshold between 0 and 10485760 bytes",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-restapi.html") if {
 	some name in resources_of_type("AWS::ApiGateway::RestApi")
-	s := to_number(resolve(name, "Properties.MinimumCompressionSize"))
+	s := _pf_num(name, "Properties.MinimumCompressionSize")
 	s > 10485760
 }

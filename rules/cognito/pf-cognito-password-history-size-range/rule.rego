@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-cognito-password-history-size-range", "ERR
 	"Use a password history size between 0 and 24",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
-	v := to_number(resolve(name, "Properties.Policies.PasswordPolicy.PasswordHistorySize"))
+	v := _pf_num(name, "Properties.Policies.PasswordPolicy.PasswordHistorySize")
 	_pf_cgphsr_bad(v)
 }

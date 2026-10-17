@@ -11,13 +11,16 @@ import rego.v1
 # accepted, so that is deliberately not reported.
 _pf_evitl_url := "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-inputtransformer.html"
 
-_pf_evitl_maps(name) := [t |
+_pf_evitl_maps(name) := pfv if {
+	_pf_static_list(name, "Properties.Targets")
+	pfv := [t |
 	some t in flatten_list(name, "Properties.Targets")
 	is_object(t.value)
 	it := object.get(t.value, "InputTransformer", null)
 	is_object(it)
 	is_object(object.get(it, "InputPathsMap", null))
 ]
+}
 
 _pf_evitl_map(t) := t.value.InputTransformer.InputPathsMap
 

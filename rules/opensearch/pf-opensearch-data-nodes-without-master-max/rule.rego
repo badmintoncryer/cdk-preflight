@@ -10,5 +10,5 @@ violation contains make_diag_full("pf-opensearch-data-nodes-without-master-max",
 	some name in _pf_os_domains
 	n := _pf_os_num(_pf_os_opt(name, "ClusterConfig", "InstanceCount"))
 	n > 10
-	not _pf_os_on(name, "ClusterConfig", "DedicatedMasterEnabled")
+	_pf_os_off(name, "ClusterConfig", "DedicatedMasterEnabled")
 }

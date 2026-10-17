@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-delete-marker-exclusive", "ER
 	sprintf("ExpiredObjectDeleteMarker is set together with %v; S3 rejects that combination", [k]),
 	_pf_s3ldx_fix, _pf_s3ldx_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
 	object.get(rule.value, "ExpiredObjectDeleteMarker", false) == true

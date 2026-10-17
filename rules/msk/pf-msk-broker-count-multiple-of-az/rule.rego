@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-msk-broker-count-multiple-of-az", "ERROR",
 	_pf_countable_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets")
 	s := count(flatten_list(name, "Properties.BrokerNodeGroupInfo.ClientSubnets"))
 	s > 0
-	n := to_number(resolve(name, "Properties.NumberOfBrokerNodes"))
+	n := _pf_num(name, "Properties.NumberOfBrokerNodes")
 	floor(n / s) * s != n
 }

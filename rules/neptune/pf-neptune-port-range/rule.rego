@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-neptune-port-range", "ERROR", name,
 	"Pick a port between 1150 and 65535",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-neptune-dbcluster.html") if {
 	some name in resources_of_type("AWS::Neptune::DBCluster")
-	n := to_number(resolve(name, "Properties.DBPort"))
+	n := _pf_num(name, "Properties.DBPort")
 	_pf_nepport_out(n)
 }

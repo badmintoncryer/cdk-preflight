@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-neptune-serverless-min-le-max", "ERROR", n
 	"Keep MinCapacity <= MaxCapacity",
 	"https://docs.aws.amazon.com/neptune/latest/userguide/neptune-serverless-capacity-scaling.html") if {
 	some name in resources_of_type("AWS::Neptune::DBCluster")
-	mn := to_number(resolve(name, "Properties.ServerlessScalingConfiguration.MinCapacity"))
-	mx := to_number(resolve(name, "Properties.ServerlessScalingConfiguration.MaxCapacity"))
+	mn := _pf_num(name, "Properties.ServerlessScalingConfiguration.MinCapacity")
+	mx := _pf_num(name, "Properties.ServerlessScalingConfiguration.MaxCapacity")
 	mn > mx
 }

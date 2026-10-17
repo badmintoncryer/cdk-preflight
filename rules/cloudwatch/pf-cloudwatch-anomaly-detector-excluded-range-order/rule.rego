@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-cloudwatch-anomaly-detector-excluded-range
 	"Put the earlier timestamp in StartTime",
 	"https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutAnomalyDetector.html") if {
 	some name in resources_of_type("AWS::CloudWatch::AnomalyDetector")
+	_pf_static_list(name, "Properties.Configuration.ExcludedTimeRanges")
 	some item in flatten_list(name, "Properties.Configuration.ExcludedTimeRanges")
 	i := item.index
 	r := item.value

@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-firehose-dynamic-partitioning-buffer", "ER
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-dynamicpartitioningconfiguration.html") if {
 	some name in resources_of_type("AWS::KinesisFirehose::DeliveryStream")
 	coerce_to_bool(resolve(name, "Properties.ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration.Enabled")) == true
-	s := to_number(resolve(name, "Properties.ExtendedS3DestinationConfiguration.BufferingHints.SizeInMBs"))
+	s := _pf_num(name, "Properties.ExtendedS3DestinationConfiguration.BufferingHints.SizeInMBs")
 	s < 64
 }

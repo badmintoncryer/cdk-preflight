@@ -21,7 +21,7 @@ _pf_cogteo_unit(name, unitKey, defUnit) := defUnit if {
 }
 
 _pf_cogteo_secs(name, valKey, unitKey, defUnit) := s if {
-	v := to_number(resolve(name, sprintf("Properties.%s", [valKey])))
+	v := _pf_num(name, sprintf("Properties.%s", [valKey]))
 	u := _pf_cogteo_unit(name, unitKey, defUnit)
 	s := v * _pf_cogteo_unit_secs[u]
 }

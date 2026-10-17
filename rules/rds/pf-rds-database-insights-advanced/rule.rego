@@ -7,7 +7,7 @@ _pf_rdsadv_bad(name) if not _pf_rds_true(name, "PerformanceInsightsEnabled")
 _pf_rdsadv_bad(name) if not _pf_rds_has(name, "PerformanceInsightsRetentionPeriod")
 
 _pf_rdsadv_bad(name) if {
-	n := to_number(resolve(name, "Properties.PerformanceInsightsRetentionPeriod"))
+	n := _pf_num(name, "Properties.PerformanceInsightsRetentionPeriod")
 	n < 31
 }
 

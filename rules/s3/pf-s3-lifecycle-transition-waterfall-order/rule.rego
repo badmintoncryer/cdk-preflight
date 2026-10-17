@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-lifecycle-transition-waterfall-order", 
 	sprintf("the rule transitions to '%v' at %v days and then to '%v' at %v days; S3 transitions follow a waterfall and never move back up", [sc1, d1, sc2, d2]),
 	_pf_s3lwf_fix, _pf_s3lwf_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
 	trans := object.get(rule.value, "Transitions", [])

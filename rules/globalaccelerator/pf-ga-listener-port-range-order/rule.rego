@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-ga-listener-port-range-order", "ERROR", na
 	"Swap the two ends so FromPort <= ToPort (a single port is FromPort == ToPort)",
 	"https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateListener.html") if {
 	some name in _pf_galib_listeners
+	_pf_static_list(name, "Properties.PortRanges")
 	some r in flatten_list(name, "Properties.PortRanges")
 	f := _pf_galib_int(_pf_galib_oget(r.value, "FromPort"))
 	t := _pf_galib_int(_pf_galib_oget(r.value, "ToPort"))

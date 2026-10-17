@@ -8,7 +8,9 @@ violation contains make_diag_full("pf-cognito-schema-name-duplicate", "ERROR", n
 	"Give each schema attribute a distinct Name",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
+	_pf_static_list(name, "Properties.Schema")
 	some a in flatten_list(name, "Properties.Schema")
+	_pf_static_list(name, "Properties.Schema")
 	some b in flatten_list(name, "Properties.Schema")
 	a.index < b.index
 	is_object(a.value)

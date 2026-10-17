@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-batch-jd-memory-minimum", "ERROR", name,
 	"Request at least 4 MiB",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_ContainerProperties.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
-	m := to_number(resolve(name, "Properties.ContainerProperties.Memory"))
+	m := _pf_num(name, "Properties.ContainerProperties.Memory")
 	m < 4
 }

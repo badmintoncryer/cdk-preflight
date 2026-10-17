@@ -17,6 +17,7 @@ _pf_mskrsr_account(arn, service) := acct if {
 }
 
 _pf_mskrsr_clusters(name) := accounts if {
+	_pf_static_list(name, "Properties.KafkaClusters")
 	accounts := {a |
 		some it in flatten_list(name, "Properties.KafkaClusters")
 		a := _pf_mskrsr_account(it.value.AmazonMskCluster.MskClusterArn, "kafka")

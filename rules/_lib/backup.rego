@@ -26,10 +26,13 @@ _pf_bklib_str(o, k) := v if {
 	is_string(v)
 }
 
-# to_number はマーカー（オブジェクト）に対して undefined なので、これがリテラル数値の
-# ガードを兼ねる。数値文字列（"59"）も拾う。
+# to_number はマーカー（オブジェクト）に対して undefined だが、null（真の枝が NoValue の
+# Fn::If）は 0 になるので別に弾く。数値文字列（"59"）は拾う。
 _pf_bklib_num(o, k) := n if {
-	n := to_number(_pf_bklib_get(o, k))
+	v := _pf_bklib_get(o, k)
+	v != null
+	not is_boolean(v)
+	n := to_number(v)
 }
 
 # --- (2) BackupPlan の走査 --------------------------------------------------

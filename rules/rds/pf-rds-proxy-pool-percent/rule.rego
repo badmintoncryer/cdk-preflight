@@ -16,8 +16,8 @@ violation contains make_diag_full("pf-rds-proxy-pool-percent", "ERROR", name,
 	"Keep MaxIdleConnectionsPercent at or below MaxConnectionsPercent",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html") if {
 	some name in resources_of_type("AWS::RDS::DBProxyTargetGroup")
-	idle := to_number(resolve(name, "Properties.ConnectionPoolConfigurationInfo.MaxIdleConnectionsPercent"))
-	mx := to_number(resolve(name, "Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent"))
+	idle := _pf_num(name, "Properties.ConnectionPoolConfigurationInfo.MaxIdleConnectionsPercent")
+	mx := _pf_num(name, "Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent")
 	idle > mx
 }
 
@@ -27,7 +27,7 @@ violation contains make_diag_full("pf-rds-proxy-pool-percent", "ERROR", name,
 	"Use a value between 1 and 100",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html") if {
 	some name in resources_of_type("AWS::RDS::DBProxyTargetGroup")
-	mx := to_number(resolve(name, "Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent"))
+	mx := _pf_num(name, "Properties.ConnectionPoolConfigurationInfo.MaxConnectionsPercent")
 	_pf_rdspool_pct_out(mx)
 }
 
@@ -37,6 +37,6 @@ violation contains make_diag_full("pf-rds-proxy-pool-percent", "ERROR", name,
 	"Use a value between 0 and 300",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-rds-dbproxytargetgroup-connectionpoolconfigurationinfo.html") if {
 	some name in resources_of_type("AWS::RDS::DBProxyTargetGroup")
-	t := to_number(resolve(name, "Properties.ConnectionPoolConfigurationInfo.ConnectionBorrowTimeout"))
+	t := _pf_num(name, "Properties.ConnectionPoolConfigurationInfo.ConnectionBorrowTimeout")
 	_pf_rdspool_timeout_out(t)
 }

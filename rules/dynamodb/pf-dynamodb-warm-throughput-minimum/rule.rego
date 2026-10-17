@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-dynamodb-warm-throughput-minimum", "ERROR"
 	"Use at least 12000 read units per second, or omit WarmThroughput to keep the default",
 	_pf_ddbwtm_url) if {
 	some name in resources_of_type("AWS::DynamoDB::Table")
-	r := to_number(resolve(name, "Properties.WarmThroughput.ReadUnitsPerSecond"))
+	r := _pf_num(name, "Properties.WarmThroughput.ReadUnitsPerSecond")
 	r < 12000
 }
 
@@ -23,6 +23,6 @@ violation contains make_diag_full("pf-dynamodb-warm-throughput-minimum", "ERROR"
 	"Use at least 4000 write units per second, or omit WarmThroughput to keep the default",
 	_pf_ddbwtm_url) if {
 	some name in resources_of_type("AWS::DynamoDB::Table")
-	w := to_number(resolve(name, "Properties.WarmThroughput.WriteUnitsPerSecond"))
+	w := _pf_num(name, "Properties.WarmThroughput.WriteUnitsPerSecond")
 	w < 4000
 }

@@ -17,6 +17,6 @@ violation contains make_diag_full("pf-redshiftserverless-port-range", "ERROR", n
 	"Pick a port between 5431 and 5455 or between 8191 and 8215 (the default is 5439)",
 	"https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_CreateWorkgroup.html") if {
 	some name in resources_of_type("AWS::RedshiftServerless::Workgroup")
-	n := to_number(resolve(name, "Properties.Port"))
+	n := _pf_num(name, "Properties.Port")
 	_pf_rssport_out(n)
 }

@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-intelligent-tiering-duplicate-tier", "E
 	sprintf("access tier '%v' appears more than once in the same configuration", [tier]),
 	_pf_s3itt_fix, _pf_s3itt_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.IntelligentTieringConfigurations")
 	some c in flatten_list(name, "Properties.IntelligentTieringConfigurations")
 	is_object(c.value)
 	tiers := object.get(c.value, "Tierings", [])

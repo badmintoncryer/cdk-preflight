@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-elasticache-snapshot-retention", "ERROR", 
 	_pf_ecsr_fix, _pf_ecsr_url) if {
 	some t in _pf_ecsr_types
 	some name in resources_of_type(t)
-	v := to_number(resolve(name, "Properties.SnapshotRetentionLimit"))
+	v := _pf_num(name, "Properties.SnapshotRetentionLimit")
 	_pf_ecsr_out_of_range(v)
 }
 

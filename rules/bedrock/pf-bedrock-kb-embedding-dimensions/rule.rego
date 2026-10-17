@@ -23,7 +23,7 @@ violation contains make_diag_full("pf-bedrock-kb-embedding-dimensions", "ERROR",
 	some name in resources_of_type("AWS::Bedrock::KnowledgeBase")
 	id := _pf_bedrocklib_kb_embed_model(name)
 	f := _pf_kbed_family(id)
-	d := to_number(resolve(name, _pf_kbed_path))
+	d := _pf_num(name, _pf_kbed_path)
 	not _pf_kbed_sizes[f][d]
 }
 

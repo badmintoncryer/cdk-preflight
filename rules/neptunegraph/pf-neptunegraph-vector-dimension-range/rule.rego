@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-neptunegraph-vector-dimension-range", "ERR
 	"Use a vector dimension between 1 and 65536",
 	"https://docs.aws.amazon.com/neptune-analytics/latest/apiref/API_CreateGraph.html") if {
 	some name in resources_of_type("AWS::NeptuneGraph::Graph")
-	n := to_number(resolve(name, "Properties.VectorSearchConfiguration.VectorSearchDimension"))
+	n := _pf_num(name, "Properties.VectorSearchConfiguration.VectorSearchDimension")
 	_pf_ngvdim_out(n)
 }

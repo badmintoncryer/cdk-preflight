@@ -35,6 +35,7 @@ violation contains make_diag_full("pf-appautoscaling-predictive-metric-pair-excl
 	"Use PredefinedMetricPairSpecification on its own, or pair a scaling metric with a load metric",
 	"https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredictiveScalingMetricSpecification.html") if {
 	some name in resources_of_type("AWS::ApplicationAutoScaling::ScalingPolicy")
+	_pf_static_list(name, "Properties.PredictiveScalingPolicyConfiguration.MetricSpecifications")
 	some m in flatten_list(name, "Properties.PredictiveScalingPolicyConfiguration.MetricSpecifications")
 	is_object(m.value)
 	not _pf_aaspme_ok(m.value)

@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-appautoscaling-scalable-target-action-min-
 	"Lower MinCapacity to MaxCapacity or below (equal values are accepted)",
 	"https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html") if {
 	some name in resources_of_type("AWS::ApplicationAutoScaling::ScalableTarget")
+	_pf_static_list(name, "Properties.ScheduledActions")
 	some item in flatten_list(name, "Properties.ScheduledActions")
 	sched := item.value
 	is_object(sched)

@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-cognito-schema-number-min-max-order", "ERR
 	"Keep MinValue less than or equal to MaxValue",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
+	_pf_static_list(name, "Properties.Schema")
 	some a in flatten_list(name, "Properties.Schema")
 	is_object(a.value)
 	n := object.get(a.value, "Name", "")

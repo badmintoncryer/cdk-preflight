@@ -8,7 +8,7 @@ violation contains make_diag_full("pf-redshiftserverless-max-capacity-ge-base", 
 	"Raise MaxCapacity to at least BaseCapacity, or lower BaseCapacity",
 	"https://docs.aws.amazon.com/redshift-serverless/latest/APIReference/API_CreateWorkgroup.html") if {
 	some name in resources_of_type("AWS::RedshiftServerless::Workgroup")
-	b := to_number(resolve(name, "Properties.BaseCapacity"))
-	m := to_number(resolve(name, "Properties.MaxCapacity"))
+	b := _pf_num(name, "Properties.BaseCapacity")
+	m := _pf_num(name, "Properties.MaxCapacity")
 	m < b
 }

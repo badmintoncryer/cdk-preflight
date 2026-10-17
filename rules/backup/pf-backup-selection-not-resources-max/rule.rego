@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-backup-selection-not-resources-max", "ERRO
 	"Keep wildcard NotResources entries to 30 or fewer, or exclude by tag instead",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-backup-backupselection-backupselectionresourcetype.html") if {
 	some name in resources_of_type("AWS::Backup::BackupSelection")
+	_pf_static_list(name, "Properties.BackupSelection.NotResources")
 	wild := [v |
 		some it in flatten_list(name, "Properties.BackupSelection.NotResources")
 		v := it.value

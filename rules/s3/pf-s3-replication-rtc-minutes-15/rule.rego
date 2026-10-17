@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-s3-replication-rtc-minutes-15", "ERROR", n
 	sprintf("%v.%v.Minutes is %v; S3 accepts only 15", [spot[0], spot[1], m]),
 	_pf_s3rm15_fix, _pf_s3rm15_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.ReplicationConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.ReplicationConfiguration.Rules")
 	is_object(rule.value)
 	d := object.get(rule.value, "Destination", {})

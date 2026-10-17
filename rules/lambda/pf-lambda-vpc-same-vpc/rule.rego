@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-lambda-vpc-same-vpc", "ERROR", name,
 	cfg := _pf_lam_vpccfg(name)
 	some sub in _pf_lam_list(object.get(cfg, "SubnetIds", []))
 	some sg in _pf_lam_list(object.get(cfg, "SecurityGroupIds", []))
-	_pf_lam_vpc_of(sub) != _pf_lam_vpc_of(sg)
+	_pf_lam_vpc_key(sub) != _pf_lam_vpc_key(sg)
 }

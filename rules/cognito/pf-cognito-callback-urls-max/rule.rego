@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-cognito-callback-urls-max", "ERROR", name,
 	"Keep the callback URL list at 100 entries or fewer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPoolClient")
+	_pf_static_list(name, "Properties.CallbackURLs")
 	us := flatten_list(name, "Properties.CallbackURLs")
 	count(us) > 100
 }

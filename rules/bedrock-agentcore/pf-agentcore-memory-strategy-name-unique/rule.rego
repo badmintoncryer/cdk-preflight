@@ -7,7 +7,9 @@ import rego.v1
 # CustomMemoryStrategy) carrying a Name. The schema validates each Name's
 # pattern but not uniqueness; CreateMemory rejects duplicates with
 # "Duplicate memory strategy names were provided: [...]".
-_pf_memsname_names(name) := [[s.index, n] |
+_pf_memsname_names(name) := pfv if {
+	_pf_static_list(name, "Properties.MemoryStrategies")
+	pfv := [[s.index, n] |
 	some s in flatten_list(name, "Properties.MemoryStrategies")
 	is_object(s.value)
 	some _, strat in s.value
@@ -15,6 +17,7 @@ _pf_memsname_names(name) := [[s.index, n] |
 	n := object.get(strat, "Name", null)
 	is_string(n)
 ]
+}
 
 violation contains make_diag_full("pf-agentcore-memory-strategy-name-unique", "ERROR", name,
 	sprintf("Properties.MemoryStrategies.%d", [i]),

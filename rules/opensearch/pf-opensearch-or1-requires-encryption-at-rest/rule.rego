@@ -10,5 +10,5 @@ violation contains make_diag_full("pf-opensearch-or1-requires-encryption-at-rest
 	some name in _pf_os_domains
 	t := _pf_os_opt(name, "ClusterConfig", "InstanceType")
 	_pf_os_family(t) == "or1"
-	not _pf_os_on(name, "EncryptionAtRestOptions", "Enabled")
+	_pf_os_off(name, "EncryptionAtRestOptions", "Enabled")
 }

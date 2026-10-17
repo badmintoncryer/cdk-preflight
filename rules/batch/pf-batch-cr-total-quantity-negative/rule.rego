@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-batch-cr-total-quantity-negative", "ERROR"
 	"Set TotalQuantity to 0 or more",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_CreateConsumableResource.html") if {
 	some name in resources_of_type("AWS::Batch::ConsumableResource")
-	n := to_number(resolve(name, "Properties.TotalQuantity"))
+	n := _pf_num(name, "Properties.TotalQuantity")
 	n < 0
 }

@@ -18,6 +18,7 @@ violation contains make_diag_full("pf-appautoscaling-scheduled-action-start-end-
 	"Swap the two timestamps so the window opens before it closes",
 	"https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PutScheduledAction.html") if {
 	some name in resources_of_type("AWS::ApplicationAutoScaling::ScalableTarget")
+	_pf_static_list(name, "Properties.ScheduledActions")
 	some item in flatten_list(name, "Properties.ScheduledActions")
 	sched := item.value
 	is_object(sched)

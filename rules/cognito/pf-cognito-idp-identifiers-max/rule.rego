@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-cognito-idp-identifiers-max", "ERROR", nam
 	"Keep IdpIdentifiers at 50 entries or fewer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolidentityprovider.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPoolIdentityProvider")
+	_pf_static_list(name, "Properties.IdpIdentifiers")
 	ids := flatten_list(name, "Properties.IdpIdentifiers")
 	count(ids) > 50
 }

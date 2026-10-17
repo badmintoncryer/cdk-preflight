@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-cognito-identity-pool-saml-arn-account", "
 	some name in resources_of_type("AWS::Cognito::IdentityPool")
 	acct := data.cdk_preflight.deploy_account
 	is_string(acct)
+	_pf_static_list(name, "Properties.SamlProviderARNs")
 	some s in flatten_list(name, "Properties.SamlProviderARNs")
 	arn := s.value
 	a := _pf_coglib_arn_account(arn)

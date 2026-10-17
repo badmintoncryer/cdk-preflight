@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-aoss-collection-group-capacity-min-max", "
 	"https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-scaling.html") if {
 	some name in resources_of_type("AWS::OpenSearchServerless::CollectionGroup")
 	some k in _pf_aoss_cgmm_pairs
-	mn := to_number(resolve(name, sprintf("Properties.CapacityLimits.Min%vCapacityInOcu", [k])))
-	mx := to_number(resolve(name, sprintf("Properties.CapacityLimits.Max%vCapacityInOcu", [k])))
+	mn := _pf_num(name, sprintf("Properties.CapacityLimits.Min%vCapacityInOcu", [k]))
+	mx := _pf_num(name, sprintf("Properties.CapacityLimits.Max%vCapacityInOcu", [k]))
 	mn > mx
 }

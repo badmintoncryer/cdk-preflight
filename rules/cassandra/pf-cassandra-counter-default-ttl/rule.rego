@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-cassandra-counter-default-ttl", "ERROR", n
 	"https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html#cql.data-types.numeric.counters") if {
 	some [name, "reg", _, c] in _pf_cass_col
 	lower(trim_space(c)) == "counter"
-	ttl := to_number(resolve(name, "Properties.DefaultTimeToLive"))
+	ttl := _pf_num(name, "Properties.DefaultTimeToLive")
 	ttl > 0
 }

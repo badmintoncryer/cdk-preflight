@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-rds-port-range", "ERROR", name,
 	"Pick a port between 1150 and 65535",
 	"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html") if {
 	some name in resources_of_type("AWS::RDS::DBInstance")
-	n := to_number(resolve(name, "Properties.Port"))
+	n := _pf_num(name, "Properties.Port")
 	_pf_rdsport_out(n)
 }

@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-codedeploy-dg-target-group-name-max-32", "
 	"Name the target group (at most 32 characters), not its ARN",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-targetgroupinfo.html") if {
 	some name in resources_of_type("AWS::CodeDeploy::DeploymentGroup")
+	_pf_static_list(name, "Properties.LoadBalancerInfo.TargetGroupInfoList")
 	some it in flatten_list(name, "Properties.LoadBalancerInfo.TargetGroupInfoList")
 	is_object(it.value)
 	n := object.get(it.value, "Name", null)

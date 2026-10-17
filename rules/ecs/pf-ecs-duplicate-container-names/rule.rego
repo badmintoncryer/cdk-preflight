@@ -10,7 +10,9 @@ violation contains make_diag_full("pf-ecs-duplicate-container-names", "ERROR", n
 	"Give every container in the task definition a distinct Name",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-containerdefinition.html") if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
+	_pf_static_list(name, "Properties.ContainerDefinitions")
 	some a in flatten_list(name, "Properties.ContainerDefinitions")
+	_pf_static_list(name, "Properties.ContainerDefinitions")
 	some b in flatten_list(name, "Properties.ContainerDefinitions")
 	a.index < b.index
 	na := object.get(a.value, "Name", null)

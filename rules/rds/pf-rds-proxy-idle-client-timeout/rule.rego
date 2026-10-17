@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-rds-proxy-idle-client-timeout", "ERROR", n
 	"Use a value between 1 and 28800",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbproxy.html") if {
 	some name in resources_of_type("AWS::RDS::DBProxy")
-	n := to_number(resolve(name, "Properties.IdleClientTimeout"))
+	n := _pf_num(name, "Properties.IdleClientTimeout")
 	_pf_rdspxidle_out(n)
 }

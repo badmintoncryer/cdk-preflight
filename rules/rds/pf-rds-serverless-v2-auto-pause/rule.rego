@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-rds-serverless-v2-auto-pause", "ERROR", na
 	"https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.setting-capacity.html") if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
 	resolve(name, "Properties.ServerlessV2ScalingConfiguration.SecondsUntilAutoPause")
-	n := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity"))
+	n := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity")
 	n != 0
 }

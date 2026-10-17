@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-ecs-svc-placement-constraint-distinct-inst
 	"Drop Expression from the distinctInstance constraint",
 	"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html") if {
 	some name in resources_of_type("AWS::ECS::Service")
+	_pf_static_list(name, "Properties.PlacementConstraints")
 	some pc in flatten_list(name, "Properties.PlacementConstraints")
 	object.get(pc.value, "Type", null) == "distinctInstance"
 	_pf_ecs_ohas(pc.value, "Expression")

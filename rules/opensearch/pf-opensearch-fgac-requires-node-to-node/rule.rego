@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-opensearch-fgac-requires-node-to-node", "E
 	"https://docs.aws.amazon.com/opensearch-service/latest/developerguide/fgac.html") if {
 	some name in _pf_os_domains
 	_pf_os_on(name, "AdvancedSecurityOptions", "Enabled")
-	not _pf_os_on(name, "NodeToNodeEncryptionOptions", "Enabled")
+	_pf_os_off(name, "NodeToNodeEncryptionOptions", "Enabled")
 }

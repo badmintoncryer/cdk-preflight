@@ -8,6 +8,7 @@ violation contains make_diag_full("pf-batch-se-max-capacity-min", "ERROR", name,
 	"Set MaxCapacity to 1 or more",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_CapacityLimit.html") if {
 	some name in resources_of_type("AWS::Batch::ServiceEnvironment")
+	_pf_static_list(name, "Properties.CapacityLimits")
 	some e in flatten_list(name, "Properties.CapacityLimits")
 	n := to_number(_pf_batch_oget(e.value, "MaxCapacity"))
 	n < 1

@@ -8,10 +8,15 @@ import rego.v1
 # A missing filter side means "" and overlaps everything. Pairs with an
 # unresolvable event or filter value are skipped — overlap cannot be proven.
 
-_pf_s3no_configs(name) := array.concat(array.concat(
+_pf_s3no_configs(name) := pfv if {
+	_pf_static_list(name, "Properties.NotificationConfiguration.QueueConfigurations")
+	_pf_static_list(name, "Properties.NotificationConfiguration.TopicConfigurations")
+	_pf_static_list(name, "Properties.NotificationConfiguration.LambdaConfigurations")
+	pfv := array.concat(array.concat(
 	[c | some c in flatten_list(name, "Properties.NotificationConfiguration.QueueConfigurations")],
 	[c | some c in flatten_list(name, "Properties.NotificationConfiguration.TopicConfigurations")]),
 	[c | some c in flatten_list(name, "Properties.NotificationConfiguration.LambdaConfigurations")])
+}
 
 _pf_s3no_rules(c) := rules if {
 	f := object.get(c, "Filter", null)

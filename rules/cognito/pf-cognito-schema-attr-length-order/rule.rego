@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-cognito-schema-attr-length-order", "ERROR"
 	"Keep MinLength less than or equal to MaxLength",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cognito-userpool-schemaattribute.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPool")
+	_pf_static_list(name, "Properties.Schema")
 	some att in flatten_list(name, "Properties.Schema")
 	is_object(att.value)
 	sac := object.get(att.value, "StringAttributeConstraints", {})

@@ -20,15 +20,42 @@ _pf_os_opt(name, block, key) := resolve(name, sprintf("Properties.%s.%s", [block
 
 _pf_os_opt3(name, block, sub, key) := resolve(name, sprintf("Properties.%s.%s.%s", [block, sub, key]))
 
-# A flag is "on" only when it is literally true; absent or tokenized is not.
-# Write `not _pf_os_on(...)` rather than `resolve(...) != true`, which is
-# undefined - and so never fires - exactly when the property is missing.
-_pf_os_on(name, block, key) if _pf_os_opt(name, block, key) == true
+# A flag is "on" when it is true or the string "true" (CloudFormation takes both;
+# a parameter with a default resolves to the string). Absent or tokenized is not.
+_pf_os_on(name, block, key) if _pf_os_true(_pf_os_opt(name, block, key))
 
-_pf_os_on3(name, block, sub, key) if _pf_os_opt3(name, block, sub, key) == true
+_pf_os_on3(name, block, sub, key) if _pf_os_true(_pf_os_opt3(name, block, sub, key))
 
-# to_number is undefined for tokens and marker objects, so this doubles as the guard.
-_pf_os_num(v) := n if n := to_number(v)
+# A flag is "off" only when that is proven: false / "false", or the key (or its
+# whole block) is absent. Not `not _pf_os_on(...)`: that also reads a Ref to a
+# parameter without a default as off, and fired on domains that turn it on.
+_pf_os_off(name, block, key) if _pf_os_false(_pf_os_opt(name, block, key))
+
+_pf_os_off(name, block, key) if _pf_os_at(name, block) == "__pf_absent"
+
+_pf_os_off(name, block, key) if _pf_os_missing(name, block, key)
+
+_pf_os_true(v) if v == true
+
+_pf_os_true(v) if {
+	is_string(v)
+	lower(v) == "true"
+}
+
+_pf_os_false(v) if v == false
+
+_pf_os_false(v) if {
+	is_string(v)
+	lower(v) == "false"
+}
+
+# to_number is undefined for tokens and marker objects, but to_number(null) is 0
+# (an Fn::If whose true branch is AWS::NoValue) and booleans become 0 / 1.
+_pf_os_num(v) := n if {
+	v != null
+	not is_boolean(v)
+	n := to_number(v)
+}
 
 # Absence proof. resolve() is undefined for both "missing" and "present but
 # unresolvable", so the only reliable answer comes from the preprocessed
@@ -43,7 +70,14 @@ _pf_os_props(name) := p if {
 	is_object(p)
 }
 
-_pf_os_at(name, key) := object.get(_pf_os_props(name), key, "__pf_absent")
+# An Fn::If over a whole block is read through its true branch, the same branch
+# resolve() takes. Read raw, the marker's keys made every option of a block that
+# the same rule had just seen "enabled" through resolve() look missing.
+_pf_os_at(name, key) := _pf_os_branch(object.get(_pf_os_props(name), key, "__pf_absent"))
+
+_pf_os_branch(v) := object.get(v, "__if_true", null) if _pf_ll_conditional(v)
+
+_pf_os_branch(v) := v if not _pf_ll_conditional(v)
 
 _pf_os_at2(name, block, key) := object.get(_pf_os_obj(_pf_os_at(name, block)), key, "__pf_absent")
 

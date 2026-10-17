@@ -6,13 +6,16 @@ import rego.v1
 # which interception point each one binds; CreateGateway rejects a point that is
 # bound twice — in one interceptor or across two — with "Only one interceptor
 # configuration per interception point can be defined".
-_pf_gwicpt_points(name) := [[c.index, p] |
+_pf_gwicpt_points(name) := pfv if {
+	_pf_static_list(name, "Properties.InterceptorConfigurations")
+	pfv := [[c.index, p] |
 	some c in flatten_list(name, "Properties.InterceptorConfigurations")
 	pts := object.get(c.value, "InterceptionPoints", [])
 	is_array(pts)
 	some p in pts
 	is_string(p)
 ]
+}
 
 violation contains make_diag_full("pf-agentcore-gateway-interceptor-point-unique", "ERROR", name,
 	"Properties.InterceptorConfigurations",

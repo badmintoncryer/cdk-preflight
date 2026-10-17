@@ -8,6 +8,6 @@ violation contains make_diag_full("pf-rds-backup-retention-range", "ERROR", name
 	"Use a retention period of 35 days or less",
 	"https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html") if {
 	some name in resources_of_type("AWS::RDS::DBInstance")
-	n := to_number(resolve(name, "Properties.BackupRetentionPeriod"))
+	n := _pf_num(name, "Properties.BackupRetentionPeriod")
 	n > 35
 }

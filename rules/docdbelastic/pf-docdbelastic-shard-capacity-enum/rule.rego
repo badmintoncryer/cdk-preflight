@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-docdbelastic-shard-capacity-enum", "ERROR"
 	sprintf("ShardCapacity is %v; CreateCluster fails with \"Invalid Input - '%v'. ShardCapacity must be a power of 2 within [2, 64].\"", [v, v]),
 	_pf_dbesc_fix, _pf_dbesc_url) if {
 	some name in resources_of_type("AWS::DocDBElastic::Cluster")
-	v := to_number(resolve(name, "Properties.ShardCapacity"))
+	v := _pf_num(name, "Properties.ShardCapacity")
 	not v in _pf_dbesc_allowed
 }

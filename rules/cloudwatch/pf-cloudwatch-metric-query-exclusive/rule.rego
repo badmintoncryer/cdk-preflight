@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-cloudwatch-metric-query-exclusive", "ERROR
 	"Keep the Expression and drop MetricStat (fetch the inputs in separate queries), or vice versa",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html") if {
 	some name in resources_of_type("AWS::CloudWatch::Alarm")
+	_pf_static_list(name, "Properties.Metrics")
 	some q in flatten_list(name, "Properties.Metrics")
 	is_object(q.value)
 	object.get(q.value, "Expression", "__pf_absent") != "__pf_absent"

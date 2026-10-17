@@ -11,7 +11,9 @@ violation contains make_diag_full("pf-s3-lifecycle-rule-id-duplicate", "ERROR", 
 	sprintf("lifecycle rule id '%v' is used by rule %d as well; ids must be unique within the configuration", [id, r1.index]),
 	_pf_s3lid_fix, _pf_s3lid_url) if {
 	some name in resources_of_type("AWS::S3::Bucket")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some r1 in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
+	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some r2 in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	r1.index < r2.index
 	is_object(r1.value)

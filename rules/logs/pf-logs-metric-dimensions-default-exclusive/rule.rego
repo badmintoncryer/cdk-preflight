@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-logs-metric-dimensions-default-exclusive",
 	"Drop DefaultValue when the transformation has Dimensions, or drop the Dimensions",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-logs-metricfilter-metrictransformation.html") if {
 	some name in resources_of_type("AWS::Logs::MetricFilter")
+	_pf_static_list(name, "Properties.MetricTransformations")
 	some t in flatten_list(name, "Properties.MetricTransformations")
 	is_object(t.value)
 	object.get(t.value, "DefaultValue", "__pf_absent") != "__pf_absent"

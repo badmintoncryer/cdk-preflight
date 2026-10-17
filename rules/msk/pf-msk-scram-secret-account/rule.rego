@@ -23,6 +23,7 @@ violation contains make_diag_full("pf-msk-scram-secret-account", "ERROR", name,
 	"https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html") if {
 	some name in resources_of_type("AWS::MSK::BatchScramSecret")
 	cacct := _pf_msksa_acct(resolve(name, "Properties.ClusterArn"))
+	_pf_static_list(name, "Properties.SecretArnList")
 	some it in flatten_list(name, "Properties.SecretArnList")
 	sarn := it.value
 	startswith(sarn, "arn:")

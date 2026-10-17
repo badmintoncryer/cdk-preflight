@@ -11,9 +11,9 @@ violation contains make_diag_full("pf-asg-desired-capacity-range", "ERROR", name
 	"Keep MinSize <= DesiredCapacity <= MaxSize",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-autoscaling-autoscalinggroup.html") if {
 	some name in resources_of_type("AWS::AutoScaling::AutoScalingGroup")
-	dc := to_number(resolve(name, "Properties.DesiredCapacity"))
-	mn := to_number(resolve(name, "Properties.MinSize"))
-	mx := to_number(resolve(name, "Properties.MaxSize"))
+	dc := _pf_num(name, "Properties.DesiredCapacity")
+	mn := _pf_num(name, "Properties.MinSize")
+	mx := _pf_num(name, "Properties.MaxSize")
 	mn <= mx
 	_pf_asgdcr_out(dc, mn, mx)
 }

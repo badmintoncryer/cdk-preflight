@@ -3913,3 +3913,77 @@ describe('rule-level findings from the 2026-10-17 review', () => {
     expect(custom(diagnoseTemplate({ Resources: { P: { Type: 'AWS::IAM::RolePolicy', Properties: { RoleName: 'existing-role', PolicyName: 'p', PolicyDocument: { Version: '2012-10-17', Statement: [{ Sid: 's1', Effect: 'Allow', Action: '*:GetObject', Resource: 'arn:aws:s3:::b/*' }, { Sid: 's2', Effect: 'Allow', Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*', Condition: { DateGreaterThan: { 'aws:CurrentTime': 'tomorrow' } } }] } } } } }))).toContain('pf-iam-policy-action-vendor-wildcard');
   });
 });
+
+/**
+ * 共通ライブラリ（rules/_lib）が組み込み関数を読み違えて、デプロイできるテンプレートで
+ * 鳴っていた形（2026-10-17 のレビューで実測）。どれも両方の枝がデプロイできる。
+ */
+describe('intrinsics the shared libraries must not misread', () => {
+  const silent = (tpl: unknown, ids: string[], region?: string) => {
+    const fired = diagnoseTemplate(tpl, region).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+    expect(fired.filter((id) => ids.includes(id))).toEqual([]);
+  };
+
+  test('a NoValue branch is not the number 0 (glue)', () => {
+    silent({ Parameters: { Big: { Type: 'String', Default: 'no' } }, Conditions: { Small: { 'Fn::Equals': [{ Ref: 'Big' }, 'no'] } }, Resources: { J: { Type: 'AWS::Glue::Job', Properties: { Role: 'arn:aws:iam::123456789012:role/glue', GlueVersion: '4.0', Command: { Name: 'glueetl', ScriptLocation: 's3://b/s.py' }, WorkerType: { 'Fn::If': ['Small', { Ref: 'AWS::NoValue' }, 'G.1X'] }, NumberOfWorkers: { 'Fn::If': ['Small', { Ref: 'AWS::NoValue' }, 10] } } } } }, ['pf-glue-job-number-of-workers-min']);
+  });
+
+  test('a NoValue branch is not the number 0 (memorydb port)', () => {
+    silent({ Parameters: { Port: { Type: 'String', Default: '' } }, Conditions: { DefaultPort: { 'Fn::Equals': [{ Ref: 'Port' }, ''] } }, Resources: { M: { Type: 'AWS::MemoryDB::Cluster', Properties: { ClusterName: 'pf', NodeType: 'db.t4g.small', ACLName: 'open-access', Port: { 'Fn::If': ['DefaultPort', { Ref: 'AWS::NoValue' }, 6380] } } } } }, ['pf-memorydb-port']);
+  });
+
+  test('a NoValue branch is not the number 0 (backup lifecycle)', () => {
+    silent({ Conditions: { Short: { 'Fn::Equals': [{ Ref: 'AWS::Region' }, 'us-east-1'] } }, Resources: { P: { Type: 'AWS::Backup::BackupPlan', Properties: { BackupPlan: { BackupPlanName: 'p', BackupPlanRule: [{ RuleName: 'r', TargetBackupVault: 'Default', Lifecycle: { MoveToColdStorageAfterDays: { 'Fn::If': ['Short', { Ref: 'AWS::NoValue' }, 30] }, DeleteAfterDays: { 'Fn::If': ['Short', 30, 120] } } }] } } } } }, ['pf-backup-lifecycle-cold-to-delete-gap']);
+  });
+
+  test('an Fn::If statement is not read as a statement', () => {
+    silent({ Parameters: { Env: { Type: 'String', Default: 'prod' } }, Conditions: { IsProd: { 'Fn::Equals': [{ Ref: 'Env' }, 'prod'] } }, Resources: { P: { Type: 'AWS::IAM::ManagedPolicy', Properties: { PolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*' }, { 'Fn::If': ['IsProd', { Effect: 'Allow', Action: 's3:PutObject', Resource: 'arn:aws:s3:::b/*' }, { Ref: 'AWS::NoValue' }] }] } } } } }, ['pf-iam-policy-action-required', 'pf-iam-policy-effect-case', 'pf-iam-policy-effect-required', 'pf-iam-policy-statement-resource-required', 'pf-iam-policy-statement-unknown-field']);
+  });
+
+  test('an Fn::If over the whole Statement is not read as a statement', () => {
+    silent({ Parameters: { Env: { Type: 'String', Default: 'prod' } }, Conditions: { IsProd: { 'Fn::Equals': [{ Ref: 'Env' }, 'prod'] } }, Resources: { P: { Type: 'AWS::IAM::ManagedPolicy', Properties: { PolicyDocument: { Version: '2012-10-17', Statement: { 'Fn::If': ['IsProd', [{ Effect: 'Allow', Action: 's3:GetObject', Resource: 'arn:aws:s3:::b/*' }], [{ Effect: 'Allow', Action: 's3:ListBucket', Resource: 'arn:aws:s3:::b' }]] } } } } } }, ['pf-iam-policy-action-required', 'pf-iam-policy-effect-case', 'pf-iam-policy-effect-required', 'pf-iam-policy-statement-resource-required', 'pf-iam-policy-statement-unknown-field']);
+  });
+
+  test('the string "true" is on (opensearch)', () => {
+    silent({ Resources: { D: { Type: 'AWS::OpenSearchService::Domain', Properties: { EngineVersion: 'OpenSearch_2.19', ClusterConfig: { InstanceType: 'r6g.large.search', InstanceCount: 1 }, EBSOptions: { EBSEnabled: true, VolumeSize: 10, VolumeType: 'gp3' }, AdvancedSecurityOptions: { Enabled: true, InternalUserDatabaseEnabled: true, MasterUserOptions: { MasterUserName: 'admin', MasterUserPassword: 'Passw0rd!Passw0rd' } }, EncryptionAtRestOptions: { Enabled: 'true' }, NodeToNodeEncryptionOptions: { Enabled: 'true' }, DomainEndpointOptions: { EnforceHTTPS: 'true' } } } } }, ['pf-opensearch-fgac-requires-encryption-at-rest', 'pf-opensearch-fgac-requires-enforce-https', 'pf-opensearch-fgac-requires-node-to-node']);
+  });
+
+  test('a parameter defaulting to "true" is on (opensearch)', () => {
+    silent({ Parameters: { Enc: { Type: 'String', Default: 'true', AllowedValues: ['true', 'false'] } }, Resources: { D: { Type: 'AWS::OpenSearchService::Domain', Properties: { EngineVersion: 'OpenSearch_2.19', ClusterConfig: { InstanceType: 'r6g.large.search', InstanceCount: 1 }, EBSOptions: { EBSEnabled: true, VolumeSize: 10, VolumeType: 'gp3' }, AdvancedSecurityOptions: { Enabled: true, InternalUserDatabaseEnabled: true, MasterUserOptions: { MasterUserName: 'admin', MasterUserPassword: 'Passw0rd!Passw0rd' } }, EncryptionAtRestOptions: { Enabled: { Ref: 'Enc' } }, NodeToNodeEncryptionOptions: { Enabled: true }, DomainEndpointOptions: { EnforceHTTPS: true } } } } }, ['pf-opensearch-fgac-requires-encryption-at-rest']);
+  });
+
+  test('an unresolved flag is not off (opensearch)', () => {
+    silent({ Parameters: { Enc: { Type: 'String', AllowedValues: ['true', 'false'] } }, Resources: { D: { Type: 'AWS::OpenSearchService::Domain', Properties: { EngineVersion: 'OpenSearch_2.19', ClusterConfig: { InstanceType: 'r6g.large.search', InstanceCount: 1 }, EBSOptions: { EBSEnabled: true, VolumeSize: 10, VolumeType: 'gp3' }, AdvancedSecurityOptions: { Enabled: true, InternalUserDatabaseEnabled: true, MasterUserOptions: { MasterUserName: 'admin', MasterUserPassword: 'Passw0rd!Passw0rd' } }, EncryptionAtRestOptions: { Enabled: { Ref: 'Enc' } }, NodeToNodeEncryptionOptions: { Enabled: true }, DomainEndpointOptions: { EnforceHTTPS: true } } } } }, ['pf-opensearch-fgac-requires-encryption-at-rest']);
+  });
+
+  test('a list under an Fn::If parent is not counted twice (msk)', () => {
+    silent({ Parameters: { Big: { Type: 'String', Default: 'no' } }, Conditions: { C: { 'Fn::Equals': [{ Ref: 'Big' }, 'yes'] } }, Resources: { Cluster: { Type: 'AWS::MSK::Cluster', Properties: { ClusterName: 'pf', KafkaVersion: '3.9.x', NumberOfBrokerNodes: 3, BrokerNodeGroupInfo: { 'Fn::If': ['C', { InstanceType: 'kafka.m5.large', ClientSubnets: ['subnet-0a', 'subnet-0b', 'subnet-0c'], StorageInfo: { EBSStorageInfo: { VolumeSize: 100 } } }, { InstanceType: 'kafka.t3.small', ClientSubnets: ['subnet-0a', 'subnet-0b', 'subnet-0c'], StorageInfo: { EBSStorageInfo: { VolumeSize: 10 } } }] } } } } }, ['pf-msk-client-subnets-count', 'pf-msk-client-subnets-distinct', 'pf-msk-broker-count-multiple-of-az']);
+  });
+
+  test('a Ref PlatformCapabilities is not the EC2 default (batch)', () => {
+    silent({ Parameters: { Caps: { Type: 'CommaDelimitedList' } }, Resources: { JD: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', PlatformCapabilities: { Ref: 'Caps' }, ContainerProperties: { Image: 'public.ecr.aws/amazonlinux/amazonlinux:2', ExecutionRoleArn: 'arn:aws:iam::123456789012:role/exec', NetworkConfiguration: { AssignPublicIp: 'ENABLED' }, ResourceRequirements: [{ Type: 'VCPU', Value: '1' }, { Type: 'MEMORY', Value: '2048' }], FargatePlatformConfiguration: { PlatformVersion: 'LATEST' }, RuntimePlatform: { CpuArchitecture: 'X86_64', OperatingSystemFamily: 'LINUX' } } } } } }, ['pf-batch-jd-fargate-platform-config-on-ec2', 'pf-batch-jd-runtime-platform-ec2-only']);
+  });
+
+  test('an Fn::If PlatformCapabilities is not both EC2 and Fargate (batch)', () => {
+    silent({ Parameters: { Mode: { Type: 'String', AllowedValues: ['fargate', 'ec2'], Default: 'fargate' } }, Conditions: { UseFargate: { 'Fn::Equals': [{ Ref: 'Mode' }, 'fargate'] } }, Resources: { JD: { Type: 'AWS::Batch::JobDefinition', Properties: { Type: 'container', PlatformCapabilities: { 'Fn::If': ['UseFargate', ['FARGATE'], ['EC2']] }, ContainerProperties: { Image: 'public.ecr.aws/amazonlinux/amazonlinux:2', ExecutionRoleArn: 'arn:aws:iam::123456789012:role/exec', NetworkConfiguration: { AssignPublicIp: 'ENABLED' }, ResourceRequirements: [{ Type: 'VCPU', Value: '1' }, { Type: 'MEMORY', Value: '2048' }], FargatePlatformConfiguration: { 'Fn::If': ['UseFargate', { PlatformVersion: 'LATEST' }, { Ref: 'AWS::NoValue' }] }, RuntimePlatform: { 'Fn::If': ['UseFargate', { CpuArchitecture: 'X86_64', OperatingSystemFamily: 'LINUX' }, { Ref: 'AWS::NoValue' }] } } } } } }, ['pf-batch-jd-fargate-platform-config-on-ec2', 'pf-batch-jd-runtime-platform-ec2-only']);
+  });
+
+  test('keys inside an Fn::If block are not missing (opensearch cognito)', () => {
+    silent({ Parameters: { UseCognito: { Type: 'String', Default: 'yes' } }, Conditions: { C: { 'Fn::Equals': [{ Ref: 'UseCognito' }, 'yes'] } }, Resources: { D: { Type: 'AWS::OpenSearchService::Domain', Properties: { EngineVersion: 'OpenSearch_2.19', ClusterConfig: { InstanceType: 'r6g.large.search', InstanceCount: 1 }, EBSOptions: { EBSEnabled: true, VolumeSize: 10, VolumeType: 'gp3' }, CognitoOptions: { 'Fn::If': ['C', { Enabled: true, RoleArn: 'arn:aws:iam::123456789012:role/r', UserPoolId: 'us-east-1_abcdef', IdentityPoolId: 'us-east-1:11111111-2222-3333-4444-555555555555' }, { Ref: 'AWS::NoValue' }] }, EncryptionAtRestOptions: { Enabled: true }, NodeToNodeEncryptionOptions: { Enabled: true }, DomainEndpointOptions: { EnforceHTTPS: true } } } } }, ['pf-opensearch-cognito-requires-ids']);
+  });
+
+  test('Ref and GetAtt of the same VPC are the same VPC (lambda)', () => {
+    silent({ Resources: { V: { Type: 'AWS::EC2::VPC', Properties: { CidrBlock: '10.0.0.0/16' } }, S: { Type: 'AWS::EC2::Subnet', Properties: { VpcId: { Ref: 'V' }, CidrBlock: '10.0.0.0/24', AvailabilityZone: 'us-east-1a' } }, G: { Type: 'AWS::EC2::SecurityGroup', Properties: { GroupDescription: 'g', VpcId: { 'Fn::GetAtt': ['V', 'VpcId'] } } }, R: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }] } } }, F: { Type: 'AWS::Lambda::Function', Properties: { Runtime: 'python3.12', Handler: 'index.handler', Role: { 'Fn::GetAtt': ['R', 'Arn'] }, Code: { ZipFile: 'def handler(e,c):\n  return 1\n' }, VpcConfig: { SubnetIds: [{ Ref: 'S' }], SecurityGroupIds: [{ 'Fn::GetAtt': ['G', 'GroupId'] }] } } } } }, ['pf-lambda-vpc-same-vpc']);
+  });
+
+  test('aws-iso-e is the partition of eu-isoe-west-1', () => {
+    silent({ Resources: { P: { Type: 'AWS::IAM::ManagedPolicy', Properties: { PolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Action: 's3:GetObject', Resource: 'arn:aws-iso-e:s3:::b/*' }] } } } } }, ['pf-iam-policy-resource-partition'], 'eu-isoe-west-1');
+  });
+  test('an Fn::If over a whole list does not duplicate its entries (dynamodb)', () => {
+    silent({ Parameters: { SortKey: { Type: 'String', Default: '' } }, Conditions: { HasSort: { 'Fn::Not': [{ 'Fn::Equals': [{ Ref: 'SortKey' }, ''] }] } }, Resources: { T: { Type: 'AWS::DynamoDB::Table', Properties: { BillingMode: 'PAY_PER_REQUEST', AttributeDefinitions: { 'Fn::If': ['HasSort', [{ AttributeName: 'pk', AttributeType: 'S' }, { AttributeName: 'sk', AttributeType: 'S' }], [{ AttributeName: 'pk', AttributeType: 'S' }]] }, KeySchema: { 'Fn::If': ['HasSort', [{ AttributeName: 'pk', KeyType: 'HASH' }, { AttributeName: 'sk', KeyType: 'RANGE' }], [{ AttributeName: 'pk', KeyType: 'HASH' }]] } } } } }, ['pf-dynamodb-duplicate-attribute-definitions']);
+  });
+
+  test('an Fn::If over a whole list does not duplicate its entries (batch job queue)', () => {
+    silent({ Parameters: { UseSpot: { Type: 'String', AllowedValues: ['yes', 'no'], Default: 'yes' } }, Conditions: { Spot: { 'Fn::Equals': [{ Ref: 'UseSpot' }, 'yes'] } }, Resources: { JQ: { Type: 'AWS::Batch::JobQueue', Properties: { Priority: 1, ComputeEnvironmentOrder: { 'Fn::If': ['Spot', [{ ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/spot', Order: 1 }, { ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/od', Order: 2 }], [{ ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/od', Order: 1 }]] } } } } }, ['pf-batch-jq-ce-order-duplicate-ce', 'pf-batch-jq-ce-order-duplicate-order']);
+  });
+});

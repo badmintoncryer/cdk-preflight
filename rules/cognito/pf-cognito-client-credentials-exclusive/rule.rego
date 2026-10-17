@@ -4,7 +4,10 @@ import rego.v1
 
 # Machine-to-machine and user-facing grants are mutually exclusive on one
 # client.
-_pf_cogcce_flows(name) := {f.value | some f in flatten_list(name, "Properties.AllowedOAuthFlows")}
+_pf_cogcce_flows(name) := pfv if {
+	_pf_static_list(name, "Properties.AllowedOAuthFlows")
+	pfv := {f.value | some f in flatten_list(name, "Properties.AllowedOAuthFlows")}
+}
 
 violation contains make_diag_full("pf-cognito-client-credentials-exclusive", "ERROR", name,
 	"Properties.AllowedOAuthFlows",

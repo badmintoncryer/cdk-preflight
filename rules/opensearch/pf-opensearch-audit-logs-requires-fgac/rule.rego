@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-opensearch-audit-logs-requires-fgac", "ERR
 	"https://docs.aws.amazon.com/opensearch-service/latest/developerguide/audit-logs.html") if {
 	some name in _pf_os_domains
 	_pf_os_on3(name, "LogPublishingOptions", "AUDIT_LOGS", "Enabled")
-	not _pf_os_on(name, "AdvancedSecurityOptions", "Enabled")
+	_pf_os_off(name, "AdvancedSecurityOptions", "Enabled")
 }

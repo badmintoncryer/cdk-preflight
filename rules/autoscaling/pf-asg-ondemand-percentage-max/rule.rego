@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-asg-ondemand-percentage-max", "ERROR", nam
 	"Use a percentage between 0 and 100",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-autoscaling-autoscalinggroup-instancesdistribution.html") if {
 	some name in resources_of_type("AWS::AutoScaling::AutoScalingGroup")
-	p := to_number(resolve(name, "Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity"))
+	p := _pf_num(name, "Properties.MixedInstancesPolicy.InstancesDistribution.OnDemandPercentageAboveBaseCapacity")
 	p > 100
 }

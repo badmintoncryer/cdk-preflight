@@ -245,6 +245,15 @@ _pf_lam_vpc_of(v) := vpc if {
 	vpc != "__pf_absent"
 }
 
+# 比べるとき用の VPC の識別子。`{"Ref": "V"}` と `{"Fn::GetAtt": ["V", "VpcId"]}` は同じ VPC
+# でもマーカーの形が違うので、参照先の論理 ID にそろえる。リテラルの vpc-... はそのまま。
+_pf_lam_vpc_key(v) := id if id := _pf_lam_ref(_pf_lam_vpc_of(v))
+
+_pf_lam_vpc_key(v) := vpc if {
+	vpc := _pf_lam_vpc_of(v)
+	not _pf_lam_ref(vpc)
+}
+
 # EFS マウントターゲットが置かれているサブネットの AZ。
 _pf_lam_mt_azs contains az if {
 	some id in resources_of_type("AWS::EFS::MountTarget")

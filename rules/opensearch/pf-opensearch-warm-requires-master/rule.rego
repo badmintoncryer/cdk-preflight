@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-opensearch-warm-requires-master", "ERROR",
 	"https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html") if {
 	some name in _pf_os_domains
 	_pf_os_on(name, "ClusterConfig", "WarmEnabled")
-	not _pf_os_on(name, "ClusterConfig", "DedicatedMasterEnabled")
+	_pf_os_off(name, "ClusterConfig", "DedicatedMasterEnabled")
 }

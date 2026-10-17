@@ -10,8 +10,8 @@ violation contains make_diag_full("pf-rds-serverless-v2-capacity", "ERROR", name
 	"Keep MinCapacity <= MaxCapacity",
 	_pf_rdssv2_url) if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
-	mn := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity"))
-	mx := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity"))
+	mn := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MinCapacity")
+	mx := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity")
 	mn > mx
 }
 
@@ -21,6 +21,6 @@ violation contains make_diag_full("pf-rds-serverless-v2-capacity", "ERROR", name
 	"Use at most 256 ACUs",
 	_pf_rdssv2_url) if {
 	some name in resources_of_type("AWS::RDS::DBCluster")
-	mx := to_number(resolve(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity"))
+	mx := _pf_num(name, "Properties.ServerlessV2ScalingConfiguration.MaxCapacity")
 	mx > 256
 }

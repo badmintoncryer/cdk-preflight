@@ -17,6 +17,6 @@ violation contains make_diag_full("pf-apigw-usage-plan-quota-offset-range", "ERR
 	some name in resources_of_type("AWS::ApiGateway::UsagePlan")
 	period := resolve(name, "Properties.Quota.Period")
 	mx := _pf_apgupqo_max(period)
-	off := to_number(resolve(name, "Properties.Quota.Offset"))
+	off := _pf_num(name, "Properties.Quota.Offset")
 	off > mx
 }
