@@ -13,7 +13,10 @@ FAIL_ONLY="${2:-}"
 DIR=$(find "${CDKPF_RULES_DIR:-rules}" -maxdepth 2 -type d -name "$RULE" | head -1) # 差し替えは自己テスト用
 [ -z "$DIR" ] && { echo "rule not found: $RULE"; exit 1; }
 META_REGION=$(grep -E '^benchRegion:' "$DIR/meta.yaml" | awk '{print $2}')
-RTYPES=$(grep -E '^resourceTypes:' "$DIR/meta.yaml")
+# 1 行 1 型。`[A, B]` も `["A", "B"]` も同じ形にそろえ、比べるときは行ごとの完全一致にする
+# （部分一致だと足場の AWS::Cognito::UserPool が対象型 UserPoolClient の一部に見え、
+# 足場のクォータ超過が verified になった）。
+RTYPES=$(sed -nE 's/^resourceTypes:[[:space:]]*\[(.*)\][[:space:]]*$/\1/p' "$DIR/meta.yaml" | tr -d '" \t' | tr ',' '\n')
 REGION="${CDKPF_REGION:-${META_REGION:-ap-northeast-1}}"
 # repro.expect: fail の拒否文が逐語で含むべき断片（#264）。bundle-rules が 1 行のダブルクォート
 # 文字列（" と \ を含まない）に縛っているので、YAML パーサの無い月次ランナーでも sed で読める。
@@ -125,11 +128,14 @@ failed_type() { events_query "$1" "StackEvents[?$(root_failure "$1")]|[-1].Resou
 # 「当てる」側（checkQuotas）の証明は bench/verify-quota.sh が別に持つ（AGENTS.md 原則 7）。
 scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失敗なら 0
   local ftype=$1 reason=$2
-  case "$ftype" in "" | None) return 1 ;; esac
-  grep -qF "$ftype" <<<"$RTYPES" && return 1
   # 制約が別の型のリソースで発火することもある（2026-10、elbv2 tg-single-load-balancer は Listener が
   # "cannot be associated with more than one load balancer ... HandlerErrorCode: ServiceLimitExceeded" で倒れた）
   [ -n "$EXPECT" ] && grep -qF -- "$EXPECT" <<<"$reason" && return 1
+  # スロットリングは、どの型で倒れても、スタックごと倒れても制約の証拠にならない（並列の月次で起きる）。
+  # 型の判定より先に見るのはそのため。ThrottlingBurstLimit のようなプロパティ名には当てない
+  grep -qE 'Rate exceeded|ThrottlingException|TooManyRequestsException|Status Code: 429' <<<"$reason" && return 0
+  case "$ftype" in "" | None) return 1 ;; esac
+  grep -qxF -- "$ftype" <<<"$RTYPES" && return 1
   grep -qiE 'maximum number of|LimitExceeded|limit exceeded|quota|Rate exceeded|Throttl|already ?exists' <<<"$reason"
 }
 

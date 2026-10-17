@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 month=$(date -u +%Y-%m)
 
 python3 - <<'EOF' > bench/out/summary.md || exit 1
-import glob, json, sys
+import glob, json, os, sys
 
 rows = []
 for f in sorted(glob.glob('bench/out/*.jsonl')):
@@ -24,6 +24,18 @@ for f in sorted(glob.glob('bench/out/*.jsonl')):
 if not rows:
     sys.exit('report.sh: no verify results under bench/out/*.jsonl')
 
+# 計画した service のルールで行が無いもの = そのシャードが落ちたか、途中で打ち切られたか、
+# 結果を上げられなかった。黙って抜けると、残りのシャードだけで「all green」になる
+plan = os.environ.get('CDKPF_PLAN', '').strip()
+if plan:
+    seen = {r['rule'] for r in rows}
+    for svc in sorted({spec.split('.')[0] for spec in json.loads(plan)}):
+        for d in sorted(glob.glob(f'rules/{svc}/*/')):
+            rule = os.path.basename(d.rstrip('/'))
+            if rule not in seen:
+                rows.append({'rule': rule, 'service': svc, 'status': 'INCONCLUSIVE', 'region': '-',
+                             'detail': 'no result: the verify job for this rule did not finish or did not upload'})
+
 broken = [r for r in rows if r['status'] == 'BROKEN']
 inconc = [r for r in rows if r['status'] == 'INCONCLUSIVE']
 skipped = [r for r in rows if r['status'] == 'SKIPPED']
@@ -32,6 +44,8 @@ try:
     leftover = [l.strip() for l in open('bench/out/sweep.log') if l.startswith('LEFTOVER:')]
 except FileNotFoundError:
     leftover = []
+# verify-rule.sh が retain 削除で残したリソースは、ルールのログにしか出ない。OK の行に埋もれさせない
+leftover += [f"{r['rule']}: {r['detail']}" for r in rows if 'LEFTOVER:' in r.get('detail', '')]
 try:
     redundant = [json.loads(l) for l in open('bench/out/redundancy.jsonl') if l.strip()]
 except FileNotFoundError:

@@ -83,7 +83,9 @@ jobs:
       matrix:
         service: ${{ fromJSON(needs.plan.outputs.services) }}
   report:
-    needs: verify
+    needs:
+      - plan
+      - verify
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -129,4 +131,6 @@ jobs:
       - name: Report
         id: report
         if: "!cancelled()"
+        env:
+          CDKPF_PLAN: ${{ needs.plan.outputs.services }}
         run: bash bench/report.sh
