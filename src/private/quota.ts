@@ -270,7 +270,7 @@ function skipped(st: { stackConstructPath: string; templatePath: string }, why: 
     severity: 'warning',
     fix: 'Make AWS credentials for the target account available to the app process (AWS_PROFILE or AWS_* environment variables), '
       + 'with servicequotas:GetServiceQuota, servicequotas:GetAWSDefaultServiceQuota, ec2:Describe{Vpcs,InternetGateways,Addresses}, lambda:GetAccountSettings, '
-      + 'cloudformation:GetTemplate, cloudformation:DescribeStackResource and sts:GetCallerIdentity.',
+      + 'cloudformation:GetTemplate and cloudformation:DescribeStackResource.',
     violatingResources: [{ constructPath: st.stackConstructPath, templatePath: st.templatePath, locations: ['(template)'] }],
   };
 }
