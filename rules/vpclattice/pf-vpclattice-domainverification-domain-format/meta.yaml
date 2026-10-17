@@ -1,0 +1,13 @@
+id: pf-vpclattice-domainverification-domain-format
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::DomainVerification]
+severity: ERROR
+title: "A domain verification DomainName must be plain ASCII without spaces"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_StartDomainVerification.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail DomainName 'api example.com' -> ROLLBACK_COMPLETE (Domain names must contain only ASCII characters: api example.com. For international domain names, please conert to punycode format.); pass a plain ASCII name -> CREATE_COMPLETE. Variant a name with a non-ASCII letter -> ROLLBACK_COMPLETE (Domain names must contain only ASCII characters: cdkpf-363-r01-v0.caf?.example.com. For international domain names, please conert to punycode format.)."
+  expect: "Domain names must contain only ASCII characters"
+addedOn: 2026-10-17

@@ -1,0 +1,13 @@
+id: pf-vpclattice-service-name-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Service]
+severity: ERROR
+title: "Service names must be unique within the account and region"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateService.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail two Services with the same Name -> ROLLBACK_COMPLETE (Resource with name cdkpf-363-r03-f already exists in account 214794239830.); pass two Services with different Names -> CREATE_COMPLETE."
+  expect: "already exists in account"
+addedOn: 2026-10-17

@@ -1,0 +1,11 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Dv": {
+   "Type": "AWS::VpcLattice::DomainVerification",
+   "Properties": {
+    "DomainName": "cdkpf-363-r01-p.cdkpf-363.example.com"
+   }
+  }
+ }
+}

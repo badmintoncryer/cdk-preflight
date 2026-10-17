@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-tcp-health-check-protocol
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An enabled health check on a TCP target group needs HealthCheck.Protocol"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/tls-listeners.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail TCP INSTANCE TG with HealthCheck Enabled true and no Protocol -> ROLLBACK_COMPLETE (Invalid health check configuration. Must provide health check protocol for target group of TCP.); pass the same with HealthCheck Protocol HTTP / ProtocolVersion HTTP1 -> CREATE_COMPLETE. Probe HealthCheck with an interval but no Enabled and no Protocol -> CREATE_COMPLETE (not claimed by the rule)."
+  expect: "Must provide health check protocol for target group of TCP"
+addedOn: 2026-10-17

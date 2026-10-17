@@ -1,0 +1,12 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-r02-f",
+    "CustomDomainName": "api example.com"
+   }
+  }
+ }
+}

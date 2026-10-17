@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-target-ip-outside-vpc
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An IP target group target must lie in the VPC CIDR"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/target-groups.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail IP TG on an in-stack VPC 10.0.0.0/16 with target 10.1.0.10 -> ROLLBACK_FAILED (Failed to register target 10.1.0.10:80 with message: Target: 10.1.0.10 has an invalid IP/port or it is not in active VPC CIDR block.); pass the same with 10.0.0.10 -> CREATE_COMPLETE."
+  expect: "not in active VPC CIDR block"
+addedOn: 2026-10-17

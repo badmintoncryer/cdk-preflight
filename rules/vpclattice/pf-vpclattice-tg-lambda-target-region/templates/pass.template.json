@@ -1,0 +1,61 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "FnRole": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   }
+  },
+  "Fn": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Runtime": "python3.13",
+    "Handler": "index.handler",
+    "Timeout": 10,
+    "Role": {
+     "Fn::GetAtt": [
+      "FnRole",
+      "Arn"
+     ]
+    },
+    "Code": {
+     "ZipFile": "def handler(event, context):\n    return {'statusCode': 200, 'body': 'ok'}\n"
+    }
+   }
+  },
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-r13-p",
+    "Type": "LAMBDA",
+    "Targets": [
+     {
+      "Id": {
+       "Fn::GetAtt": [
+        "Fn",
+        "Arn"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-target-id-type
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An INSTANCE target group target Id must be an EC2 instance ID"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_Target.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail INSTANCE TG with target Id 10.0.0.10 -> ROLLBACK_COMPLETE (Failed to register target 10.0.0.10:80 with message: Provided instance id: 10.0.0.10 is invalid. Instance id must match: (i-[a-f0-9]+).); pass IP TG with 172.31.0.10 in the default VPC -> CREATE_COMPLETE."
+  expect: "Instance id must match"
+addedOn: 2026-10-17

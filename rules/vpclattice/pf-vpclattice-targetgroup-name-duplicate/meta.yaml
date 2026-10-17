@@ -1,0 +1,13 @@
+id: pf-vpclattice-targetgroup-name-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "Target group names must be unique within the account and region"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateTargetGroup.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail two LAMBDA TGs with the same Name -> ROLLBACK_COMPLETE (Resource with name cdkpf-363-r05-f already exists in account 214794239830.); pass different Names -> CREATE_COMPLETE."
+  expect: "already exists in account"
+addedOn: 2026-10-17
