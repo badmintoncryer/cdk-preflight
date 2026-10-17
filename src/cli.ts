@@ -66,10 +66,17 @@ export function runCli(args: string[]): number {
   const varMatch = appLine.match(/(?:const|let|var)\s+(\w+)\s*=/);
   const appVar = varMatch ? varMatch[1] : 'app';
 
-  let updated = src.replace(appLine, `${appLine}\nPreflight.apply(${appVar});`);
-  // shebang は必ず 1 行目でなければならないので、その下に import を差し込む。
-  const shebang = updated.match(/^#![^\n]*\n/)?.[0] ?? '';
-  updated = `${shebang}import { Preflight } from 'cdk-preflight';\n${updated.slice(shebang.length)}`;
+  // 置換を関数で渡すのは、文字列だと App の行に含まれる `$&` などが展開されてしまうから。
+  let updated = src.replace(appLine, () => `${appLine}\nPreflight.apply(${appVar});`);
+  // CommonJS（`cdk init --language javascript` の形）に import を入れると ESM と判定され、
+  // require が使えなくなってアプリが起動しない。
+  const commonJs = /\.cjs$/.test(entry) || (/\.js$/.test(entry) && /\brequire\s*\(/.test(src) && !/^\s*import\s/m.test(src));
+  const importLine = commonJs
+    ? "const { Preflight } = require('cdk-preflight');"
+    : "import { Preflight } from 'cdk-preflight';";
+  // shebang は 1 行目、'use strict' は最初の文でなければ効かないので、その下に差し込む。
+  const head = updated.match(/^(?:#![^\n]*\n)?(?:\s*(['"])use strict\1;?[^\S\n]*\n)?/)?.[0] ?? '';
+  updated = `${head}${importLine}\n${updated.slice(head.length)}`;
 
   if (dry) {
     console.log(`--- ${entry} (dry run) ---\n${updated}`);

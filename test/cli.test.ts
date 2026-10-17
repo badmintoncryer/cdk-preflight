@@ -75,3 +75,49 @@ test('help and unknown commands', () => {
   expect(runCli(['--help'])).toBe(0);
   expect(runCli(['bogus'])).toBe(1);
 });
+
+describe('JavaScript entry points', () => {
+  function makeJsFixture(file: string, src: string): string {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-cli-'));
+    fs.mkdirSync(path.join(dir, 'bin'));
+    fs.writeFileSync(path.join(dir, 'cdk.json'), JSON.stringify({ app: `node bin/${file}` }));
+    fs.writeFileSync(path.join(dir, 'bin', file), src);
+    return dir;
+  }
+
+  // `cdk init app --language javascript` が作る形。import を差し込むと ESM と判定されて
+  // `require is not defined` で起動しなくなる。
+  test('a CommonJS app gets a require, not an import', () => {
+    const src = "#!/usr/bin/env node\n\nconst cdk = require('aws-cdk-lib');\nconst app = new cdk.App();\n";
+    const dir = makeJsFixture('app.js', src);
+    expect(runCli(['init', '--dir', dir])).toBe(0);
+    const out = fs.readFileSync(path.join(dir, 'bin', 'app.js'), 'utf8');
+    expect(out).not.toMatch(/^import /m);
+    expect(out.startsWith("#!/usr/bin/env node\nconst { Preflight } = require('cdk-preflight');\n")).toBe(true);
+    expect(out).toContain('const app = new cdk.App();\nPreflight.apply(app);');
+  });
+
+  test('a "use strict" directive stays the first statement', () => {
+    const src = "'use strict';\nconst cdk = require('aws-cdk-lib');\nconst app = new cdk.App();\n";
+    const dir = makeJsFixture('app.cjs', src);
+    expect(runCli(['init', '--dir', dir])).toBe(0);
+    const out = fs.readFileSync(path.join(dir, 'bin', 'app.cjs'), 'utf8');
+    expect(out.startsWith("'use strict';\nconst { Preflight } = require('cdk-preflight');\n")).toBe(true);
+  });
+
+  test('an ES module app keeps getting an import', () => {
+    const src = "import * as cdk from 'aws-cdk-lib';\nconst app = new cdk.App();\n";
+    const dir = makeJsFixture('app.mjs', src);
+    expect(runCli(['init', '--dir', dir])).toBe(0);
+    const out = fs.readFileSync(path.join(dir, 'bin', 'app.mjs'), 'utf8');
+    expect(out.startsWith("import { Preflight } from 'cdk-preflight';\n")).toBe(true);
+  });
+});
+
+// String.prototype.replace は置換文字列の `$&` などを展開する
+test('a $ in the App line is copied verbatim', () => {
+  const dir = makeFixture("import { App } from 'aws-cdk-lib';\nconst app = new App({ context: { k: 'a$&b$1' } });\n");
+  expect(runCli(['init', '--dir', dir])).toBe(0);
+  const out = fs.readFileSync(path.join(dir, 'bin', 'app.ts'), 'utf8');
+  expect(out).toContain("const app = new App({ context: { k: 'a$&b$1' } });\nPreflight.apply(app);");
+});

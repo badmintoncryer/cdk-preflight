@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_lambda as lambda, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
@@ -279,6 +279,52 @@ describe('enforce mode (default)', () => {
     addDocOnlyViolation(stack);
     addBadSecurityGroup(stack);
     expect(() => app.synth()).toThrow(/cdk-preflight/);
+  });
+
+  // context.region / accountId は全スタックが同じ環境のときしか入らない。スタックごとの値で
+  // 評価しないと、環境の違うスタックを 1 つ足しただけでリージョン依存ルールが全部黙る。
+  describe('each stack is checked against its own region and account', () => {
+    /** pf-kinesis-encryption-key-region: キーが us-east-1 にあるストリーム */
+    const addStream = (stack: Stack) => new kinesis.CfnStream(stack, 'K', {
+      shardCount: 1,
+      streamEncryption: { encryptionType: 'KMS', keyId: 'arn:aws:kms:us-east-1:123456789012:key/abc' },
+    });
+    const regionFindings = (app: App) => readReport(app)
+      .filter((v) => v.ruleName === 'pf-kinesis-encryption-key-region')
+      .flatMap((v: any) => v.violatingConstructs ?? [])
+      .map((r: any) => String(r.constructPath));
+
+    test('a stack in another region still gets its region rules', () => {
+      const app = makeApp();
+      Preflight.apply(app);
+      addStream(new Stack(app, 'East', { env: { account: '123456789012', region: 'us-east-1' } }));
+      addStream(new Stack(app, 'Tokyo', { env: { account: '123456789012', region: 'ap-northeast-1' } }));
+      expect(() => app.synth()).toThrow(/cdk-preflight/);
+      const where = regionFindings(app);
+      expect(where.some((p) => p.startsWith('Tokyo'))).toBe(true);
+      expect(where.some((p) => p.startsWith('East'))).toBe(false);
+    });
+
+    test('a stack in another account still gets its account rules', () => {
+      const app = makeApp();
+      Preflight.apply(app);
+      // pf-eks-cluster-role-arn-account: アカウント 111111111111 のロールを渡すクラスタ。
+      // A では同じアカウントなので黙り、B では別アカウントなので発火する。
+      for (const [id, account] of [['A', '111111111111'], ['B', '222222222222']]) {
+        const stack = new Stack(app, id, { env: { account, region: 'ap-northeast-1' } });
+        new eks.CfnCluster(stack, 'C', {
+          roleArn: 'arn:aws:iam::111111111111:role/eks-cluster',
+          resourcesVpcConfig: { subnetIds: ['subnet-0a', 'subnet-0b'] },
+        });
+      }
+      expect(() => app.synth()).toThrow(/cdk-preflight/);
+      const where = readReport(app)
+        .filter((v) => v.ruleName === 'pf-eks-cluster-role-arn-account')
+        .flatMap((v: any) => v.violatingConstructs ?? [])
+        .map((r: any) => String(r.constructPath));
+      expect(where.some((p) => p.startsWith('B'))).toBe(true);
+      expect(where.some((p) => p.startsWith('A'))).toBe(false);
+    });
   });
 
   test('passes synthesis for clean stacks', () => {
