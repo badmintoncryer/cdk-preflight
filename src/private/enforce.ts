@@ -98,13 +98,11 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       console.error(
         'cdk-preflight: could not resolve @aws/cloudformation-validate; ' +
         'enforce mode is unavailable and no preflight checks were run. ' +
-        'Install it as a devDependency or use the default (warn) mode.',
+        'Install it as a devDependency, or use Preflight.apply(app, { enforce: false }) to report through the CDK built-in validator.',
       );
       return [];
     }
 
-    const region = isConcreteRegion(context.region) ? context.region : undefined;
-    const account = isConcreteAccount(context.accountId) ? context.accountId : undefined;
     const ours = new Set(this.rules.map((r) => r.id));
     const violations: PolicyViolation[] = [];
 
@@ -119,22 +117,40 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       return [];
     }
 
-    let eng: any;
-    try {
-      eng = regoEngineCached(engine, rules, region, account);
-    } catch (e) {
-      // ルールパックがコンパイルできない = どのテンプレートも検査できないので、
-      // 全スタックぶん violation を立てる（1 枚ずつの catch には到達しない）。
-      return context.stackTemplates.map((st) => engineErrorViolation(st, e));
+    // deploy_region / deploy_account はエンジンに焼き込むので、環境ごとにスタックを束ねて
+    // 1 環境 1 回だけエンジンを組む。アプリ単位の context.region / accountId は全スタックが
+    // 同じ環境のときしか入らず、それを使うと環境の違うスタックが 1 つあるだけで
+    // リージョン依存のルールが全スタックで黙る。
+    for (const group of byEnvironment(context.stackTemplates)) {
+      let eng: any;
+      try {
+        eng = regoEngineCached(engine, rules, group.region, group.account);
+      } catch (e) {
+        // ルールパックがコンパイルできない = この環境のどのテンプレートも検査できないので、
+        // そのスタックすべてに violation を立てる（1 枚ずつの catch には到達しない）。
+        violations.push(...group.stacks.map((st) => engineErrorViolation(st, e)));
+        continue;
+      }
+      violations.push(...this.validateStacks(engine, eng, group.stacks, ours));
     }
+    return violations;
+  }
 
-    for (const st of context.stackTemplates) {
+  private validateStacks(
+    engine: any,
+    eng: any,
+    stacks: IPolicyValidationContext['stackTemplates'],
+    ours: Set<string>,
+  ): PolicyViolation[] {
+    const violations: PolicyViolation[] = [];
+    for (const st of stacks) {
       let report: any;
       try {
         report = validateTemplate(eng, new engine.TemplateFile(st.templatePath), {
+          // CDK 組み込みの CloudFormationValidatePlugin と同じく、スタック自身の値を渡す
           pseudoParameterOverrides: {
-            accountId: context.accountId,
-            region: context.region,
+            accountId: st.accountId,
+            region: st.region,
           },
           // 組み込みルールは CDK 組み込みの CloudFormationValidatePlugin が同じテンプレートに
           // 対して既に走らせている。strict でなければ結果も使わず捨てているので、丸ごと切る
@@ -185,6 +201,25 @@ export class PreflightQuotaPlugin implements IPolicyValidationPlugin {
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
     return { success: true, violations: checkQuotas(context, { ...this.quotas, severity: 'warning' }) };
   }
+}
+
+/**
+ * スタックを (リージョン, アカウント) で束ねる。具体的でない値（未指定・トークン）は undefined に
+ * 寄せるので、環境非依存のスタックは deploy_region を注入しないエンジンで評価される。
+ * （テストからも利用するため export している）
+ */
+export function byEnvironment<T extends { region?: string; accountId?: string }>(
+  stacks: readonly T[],
+): { region?: string; account?: string; stacks: T[] }[] {
+  const groups = new Map<string, { region?: string; account?: string; stacks: T[] }>();
+  for (const st of stacks) {
+    const region = isConcreteRegion(st.region) ? st.region : undefined;
+    const account = isConcreteAccount(st.accountId) ? st.accountId : undefined;
+    const key = `${region ?? ''}|${account ?? ''}`;
+    if (!groups.has(key)) groups.set(key, { region, account, stacks: [] });
+    groups.get(key)!.stacks.push(st);
+  }
+  return [...groups.values()];
 }
 
 /** 合成を止める violation severity。 */
@@ -388,6 +423,8 @@ function loadEngineCached(): any | undefined {
 // 積み上がり、2 個目以降の構築が超線形に遅くなる（実測: free 無しで 3.8s -> 11.2s -> 22.1s、
 // 構築前に free すると 3.5s -> 0.4s）。ルールセットが変わる（Stage ごとに exclude が違う、
 // テストで複数アプリを合成する）たびに作り直すので、キャッシュは 1 スロットで足りる。
+// ponytail: 環境（リージョン × アカウント）が N 個あるアプリは synth のたびに N 回組み直す。
+// 実アプリでは 1〜3 個。重くなったら deploy_region をモジュールではなく入力で渡す形にする。
 let cachedRegoEngine: { key: string; engine: any } | undefined;
 function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: string, account?: string): any {
   const key = `${region ?? ''}|${account ?? ''}|${rules.map((r) => r.id).join(',')}`;
