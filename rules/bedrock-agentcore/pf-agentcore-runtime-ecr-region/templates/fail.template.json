@@ -1,0 +1,80 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/BedrockAgentCoreRuntimeInstancesOperatorRolePolicy"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "runtime",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchImportUpstreamImage",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:DescribeMountTargets"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Runtime": {
+   "Type": "AWS::BedrockAgentCore::Runtime",
+   "Properties": {
+    "AgentRuntimeName": "cdkpf_rt_ecr_region_f",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Description": "cdkpf #354 C3 probe",
+    "AgentRuntimeArtifact": {
+     "ContainerConfiguration": {
+      "ContainerUri": {
+       "Fn::Sub": "${AWS::AccountId}.dkr.ecr.us-west-2.amazonaws.com/cdkpf-none/docker/library/python:3.12-slim"
+      }
+     }
+    },
+    "NetworkConfiguration": {
+     "NetworkMode": "PUBLIC"
+    },
+    "LifecycleConfiguration": {
+     "IdleRuntimeSessionTimeout": 300,
+     "MaxLifetime": 1800
+    }
+   }
+  }
+ }
+}

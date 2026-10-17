@@ -1,0 +1,98 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/BedrockAgentCoreRuntimeInstancesOperatorRolePolicy"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "runtime",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchImportUpstreamImage",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:DescribeMountTargets"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Ptc": {
+   "Type": "AWS::ECR::PullThroughCacheRule",
+   "Properties": {
+    "EcrRepositoryPrefix": "cdkpf-rt-ecr-region-p",
+    "UpstreamRegistryUrl": "public.ecr.aws"
+   }
+  },
+  "Repo": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "RepositoryName": "cdkpf-rt-ecr-region-p/docker/library/python",
+    "EmptyOnDelete": true
+   }
+  },
+  "Runtime": {
+   "Type": "AWS::BedrockAgentCore::Runtime",
+   "Properties": {
+    "AgentRuntimeName": "cdkpf_rt_ecr_region_p",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Description": "cdkpf #354 C3 probe",
+    "AgentRuntimeArtifact": {
+     "ContainerConfiguration": {
+      "ContainerUri": {
+       "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repo}:3.12-slim"
+      }
+     }
+    },
+    "NetworkConfiguration": {
+     "NetworkMode": "PUBLIC"
+    },
+    "LifecycleConfiguration": {
+     "IdleRuntimeSessionTimeout": 300,
+     "MaxLifetime": 1800
+    }
+   },
+   "DependsOn": [
+    "Ptc",
+    "Repo"
+   ]
+  }
+ }
+}

@@ -1,0 +1,13 @@
+id: pf-agentcore-runtime-capacity-provider-max-lifetime
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: "A runtime's MaxLifetime must not exceed its capacity provider's MaxLifetime (both default to 28800)"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-lifecycle-settings.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail MaxLifetime 3601 on a provider with MaxLifetime 3600 -> CREATE_FAILED (Resource handler returned message: Invalid request provided: maxLifeTime must be less than or equal to the CapacityProvider instance maxLifetime (3600 seconds), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass MaxLifetime 3600 -> CREATE_COMPLETE and deleted. Variant (fail-only) LifecycleConfiguration omitted (default 28800) -> the same text."
+  expect: "must be less than or equal to the CapacityProvider instance maxLifetime"
+addedOn: 2026-10-17

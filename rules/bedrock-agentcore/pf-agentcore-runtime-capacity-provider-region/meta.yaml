@@ -1,0 +1,13 @@
+id: pf-agentcore-runtime-capacity-provider-region
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: "A runtime CapacityProviderArn must name a capacity provider in the deploy region"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-instances.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail CapacityProviderArn in us-west-2 (does not exist) -> CREATE_FAILED (Resource handler returned message: Invalid request provided: CapacityProvider 'arn:aws:bedrock-agentcore:us-west-2:214794239830:capacity-provider/cdkpf_none-abcdefghij' does not exist. Please create the CapacityProvider before referencing it in an AgentRuntime., HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass in-stack capacity provider (GetAtt Arn) -> CREATE_COMPLETE and deleted. The text names absence, not region; #354 B run2 contrasted a READY capacity provider that exists in us-west-2 and got the same does not exist, so the lookup is bound to the deploy region."
+  expect: "does not exist"
+addedOn: 2026-10-17

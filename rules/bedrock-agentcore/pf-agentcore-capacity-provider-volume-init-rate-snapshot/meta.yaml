@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-volume-init-rate-snapshot
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "An ephemeral EBS volume can set VolumeInitializationRate only with a SnapshotId"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_LaunchParameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail EphemeralVolumes[].Ebs with VolumeInitializationRate 100 and no SnapshotId -> CREATE_FAILED (Resource handler returned message: volumeInitializationRate may only be set when snapshotId is provided; EC2 supports a volume initialization rate only for volumes created from snapshots, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass the same Ebs without VolumeInitializationRate (no snapshot was created, so the SnapshotId side is not deployed) -> CREATE_COMPLETE and deleted."
+  expect: "volumeInitializationRate may only be set when snapshotId is provided"
+addedOn: 2026-10-17

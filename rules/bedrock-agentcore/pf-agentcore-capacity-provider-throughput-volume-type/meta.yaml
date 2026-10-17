@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-throughput-volume-type
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "A capacity provider volume can set Throughput only for gp3"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_EbsVolumeConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail Volumes[] io2 with Iops 3000 and Throughput 125 -> CREATE_FAILED (Resource handler returned message: throughput is not valid for volumeType io2, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass gp3 with Throughput 125 -> CREATE_COMPLETE and deleted."
+  expect: "throughput is not valid for volumeType"
+addedOn: 2026-10-17

@@ -1,0 +1,13 @@
+id: pf-agentcore-runtime-ecr-region
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Runtime]
+severity: ERROR
+title: "A runtime ContainerUri must name an ECR repository in the deploy region"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateAgentRuntime.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail ContainerUri in us-west-2 ECR (a repository that does not exist) -> CREATE_FAILED (Resource handler returned message: Invalid request provided: Ecr uri region 'us-west-2' does not match the application region 'us-east-1'. Container images must be in the same region as the application., HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass in-stack pull-through cache repository in us-east-1 -> CREATE_COMPLETE and deleted. The region is checked before the image is looked up."
+  expect: "does not match the application region"
+addedOn: 2026-10-17

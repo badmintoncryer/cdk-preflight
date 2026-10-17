@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-kms-requires-encrypted
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "A capacity provider volume with KmsKeyId must set Encrypted to true"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_EbsVolumeConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail Volumes[] KmsKeyId (in-stack symmetric key) with Encrypted omitted -> CREATE_FAILED (Resource handler returned message: kmsKeyId may only be set when encrypted is true, HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass the same volume with Encrypted true -> CREATE_COMPLETE and deleted. The schema default (true) is not filled in by the CloudFormation handler (c3/precheck.sh, same text)."
+  expect: "kmsKeyId may only be set when encrypted is true"
+addedOn: 2026-10-17

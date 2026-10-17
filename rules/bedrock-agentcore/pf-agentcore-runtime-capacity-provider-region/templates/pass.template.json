@@ -1,0 +1,125 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/BedrockAgentCoreRuntimeInstancesOperatorRolePolicy"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "runtime",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchImportUpstreamImage",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:DescribeMountTargets"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "CP": {
+   "Type": "AWS::BedrockAgentCore::CapacityProvider",
+   "Properties": {
+    "Name": "cdkpf_rt_cp_region_pcp",
+    "Description": "cdkpf #354 C3 probe",
+    "PermissionsConfiguration": {
+     "CapacityProviderOperatorRoleArn": {
+      "Fn::GetAtt": [
+       "Role",
+       "Arn"
+      ]
+     }
+    },
+    "ComputeConfiguration": {
+     "Ec2Configuration": {
+      "LaunchTemplateSource": {
+       "LaunchParameters": {
+        "OperatingSystem": "LINUX_X86_64",
+        "InstanceRequirements": {
+         "AllowedInstanceTypes": [
+          "m5.large"
+         ]
+        }
+       }
+      },
+      "VpcConfiguration": {
+       "Subnets": [
+        "subnet-2e0a500f",
+        "subnet-ab11fde7"
+       ],
+       "SecurityGroups": [
+        "sg-7d699f61"
+       ]
+      },
+      "LifecycleConfiguration": {
+       "IdleInstanceTimeout": 600,
+       "MaxLifetime": 3600
+      }
+     }
+    }
+   }
+  },
+  "Runtime": {
+   "Type": "AWS::BedrockAgentCore::Runtime",
+   "Properties": {
+    "AgentRuntimeName": "cdkpf_rt_cp_region_p",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Description": "cdkpf #354 C3 probe",
+    "AgentRuntimeArtifact": {
+     "ContainerConfiguration": {
+      "ContainerUri": "public.ecr.aws/docker/library/python:3.12-slim"
+     }
+    },
+    "CapacityProviderConfiguration": {
+     "CapacityProviderArn": {
+      "Fn::GetAtt": [
+       "CP",
+       "Arn"
+      ]
+     }
+    },
+    "LifecycleConfiguration": {
+     "IdleRuntimeSessionTimeout": 300,
+     "MaxLifetime": 1800
+    }
+   }
+  }
+ }
+}

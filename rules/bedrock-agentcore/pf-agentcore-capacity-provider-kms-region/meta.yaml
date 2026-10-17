@@ -1,0 +1,13 @@
+id: pf-agentcore-capacity-provider-kms-region
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::CapacityProvider]
+severity: ERROR
+title: "A capacity provider volume KmsKeyId must name a key in the deploy region"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-instances-encryption.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail Volumes[] Encrypted true with KmsKeyId in us-west-2 (a key id that does not exist) -> CREATE_FAILED (Resource handler returned message: Invalid arn us-west-2, HandlerErrorCode NotFound) -> ROLLBACK_COMPLETE; pass in-stack symmetric key in us-east-1 with Encrypted true -> CREATE_COMPLETE and deleted. The region is checked before the key is looked up (#354 B: a us-west-2 key that exists gives the same text, a missing us-east-1 key gives does not exist)."
+  expect: "Invalid arn us-west-2"
+addedOn: 2026-10-17

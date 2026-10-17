@@ -1,0 +1,155 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/BedrockAgentCoreRuntimeInstancesOperatorRolePolicy"
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyName": "runtime",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchImportUpstreamImage",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:DescribeMountTargets",
+          "elasticfilesystem:DescribeAccessPoints"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "Fs": {
+   "Type": "AWS::EFS::FileSystem",
+   "Properties": {
+    "Encrypted": true
+   }
+  },
+  "Ap": {
+   "Type": "AWS::EFS::AccessPoint",
+   "Properties": {
+    "FileSystemId": {
+     "Ref": "Fs"
+    },
+    "PosixUser": {
+     "Uid": "1000",
+     "Gid": "1000"
+    },
+    "RootDirectory": {
+     "Path": "/agent",
+     "CreationInfo": {
+      "OwnerUid": "1000",
+      "OwnerGid": "1000",
+      "Permissions": "755"
+     }
+    }
+   }
+  },
+  "Mt0": {
+   "Type": "AWS::EFS::MountTarget",
+   "Properties": {
+    "FileSystemId": {
+     "Ref": "Fs"
+    },
+    "SubnetId": "subnet-2e0a500f",
+    "SecurityGroups": [
+     "sg-7d699f61"
+    ]
+   }
+  },
+  "Mt1": {
+   "Type": "AWS::EFS::MountTarget",
+   "Properties": {
+    "FileSystemId": {
+     "Ref": "Fs"
+    },
+    "SubnetId": "subnet-ab11fde7",
+    "SecurityGroups": [
+     "sg-7d699f61"
+    ]
+   }
+  },
+  "Runtime": {
+   "Type": "AWS::BedrockAgentCore::Runtime",
+   "Properties": {
+    "AgentRuntimeName": "cdkpf_rt_byo_fs_vpc_p",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    },
+    "Description": "cdkpf #354 C3 probe",
+    "AgentRuntimeArtifact": {
+     "ContainerConfiguration": {
+      "ContainerUri": "public.ecr.aws/docker/library/python:3.12-slim"
+     }
+    },
+    "NetworkConfiguration": {
+     "NetworkMode": "VPC",
+     "NetworkModeConfig": {
+      "Subnets": [
+       "subnet-2e0a500f",
+       "subnet-ab11fde7"
+      ],
+      "SecurityGroups": [
+       "sg-7d699f61"
+      ]
+     }
+    },
+    "LifecycleConfiguration": {
+     "IdleRuntimeSessionTimeout": 300,
+     "MaxLifetime": 1800
+    },
+    "FilesystemConfigurations": [
+     {
+      "EfsAccessPoint": {
+       "AccessPointArn": {
+        "Fn::GetAtt": [
+         "Ap",
+         "Arn"
+        ]
+       },
+       "MountPath": "/mnt/efs"
+      }
+     }
+    ]
+   },
+   "DependsOn": [
+    "Mt0",
+    "Mt1"
+   ]
+  }
+ }
+}
