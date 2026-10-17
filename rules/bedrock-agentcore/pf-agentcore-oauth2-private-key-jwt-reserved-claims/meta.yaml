@@ -1,0 +1,13 @@
+id: pf-agentcore-oauth2-private-key-jwt-reserved-claims
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::OAuth2CredentialProvider]
+severity: ERROR
+title: "PrivateKeyJwtConfig cannot override the reserved JWT claims alg / typ / iss / sub / jti / exp / iat / nbf"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/private-key-jwt.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail AdditionalHeaderClaims {alg} (in-stack RSA_2048 key) -> CREATE_FAILED (Resource handler returned message: Claim key 'alg' is reserved and cannot be overridden in additionalHeaderClaims. (Service: Bedrock AgentCore Control; Operation: CreateOauth2CredentialProvider; Status Code: 400; Error Code: ValidationException), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass 10 header claims c0..c9 and payload aud -> CREATE_COMPLETE and deleted. Variants (fail-only): header typ -> Claim key 'typ' is reserved and cannot be overridden in additionalHeaderClaims; payload iss -> Claim key 'iss' is reserved and cannot be overridden in additionalPayloadClaims. sub / jti / exp / iat / nbf follow the dev guide table, not measured. 11 header claims fail in CloudFormation early validation (Validation failed with 1 error(s)), so the count is not checked."
+  expect: "is reserved and cannot be overridden in additionalHeaderClaims"
+addedOn: 2026-10-17

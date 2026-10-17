@@ -1,0 +1,13 @@
+id: pf-agentcore-gateway-rule-traffic-split-name-unique
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::ConfigurationBundle, AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::GatewayRule]
+severity: ERROR
+title: "Traffic split entry names in a gateway rule must be unique"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-rules.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail WeightedOverride with two splits named a (in-stack ConfigurationBundle) -> CREATE_FAILED (Resource handler returned message: Duplicate traffic split entry name: a (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass splits named a and b -> CREATE_COMPLETE and deleted (c2/verify-rerun.sh 17:33, same fail text). Variant (fail-only) WeightedRoute over two Http Passthrough targets, both named a -> Duplicate trafficSplit entry name: a (the two branches word it differently)."
+  expect: "Duplicate traffic split entry name"
+addedOn: 2026-10-17

@@ -1,0 +1,35 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "OA": {
+   "Type": "AWS::BedrockAgentCore::OAuth2CredentialProvider",
+   "Properties": {
+    "Name": "cdkpf-oapkr-fail",
+    "CredentialProviderVendor": "CustomOauth2",
+    "Oauth2ProviderConfigInput": {
+     "CustomOauth2ProviderConfig": {
+      "ClientId": "cdkpf",
+      "ClientAuthenticationMethod": "PRIVATE_KEY_JWT",
+      "OauthDiscovery": {
+       "AuthorizationServerMetadata": {
+        "Issuer": "https://idp.example.com",
+        "AuthorizationEndpoint": "https://idp.example.com/authorize",
+        "TokenEndpoint": "https://idp.example.com/token"
+       }
+      },
+      "PrivateKeyJwtConfig": {
+       "PrivateKeySource": {
+        "KmsKeySource": {
+         "KmsKeyArn": {
+          "Fn::Sub": "arn:aws:kms:us-west-2:${AWS::AccountId}:key/11111111-2222-3333-4444-555555555555"
+         }
+        }
+       },
+       "SigningAlgorithm": "RS256"
+      }
+     }
+    }
+   }
+  }
+ }
+}

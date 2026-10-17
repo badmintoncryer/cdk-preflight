@@ -1,0 +1,13 @@
+id: pf-agentcore-gateway-rate-limit-entry-dimensions
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Gateway, AWS::BedrockAgentCore::GatewayRateLimit]
+severity: ERROR
+title: "Each rate limit entry must give exactly one dimension value per DimensionKeys entry"
+constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-rate-limits.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (c2/verify.sh): fail DimensionKeys [targetName, toolName] with Dimensions {targetName} -> CREATE_FAILED (Resource handler returned message: dimensions map size (1) does not equal dimensionKeys length (2) (Service: BedrockAgentCoreControl, Status Code: 400), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass two keys and two values -> CREATE_COMPLETE and deleted. Variant (fail-only) DimensionKeys [targetName] with Dimensions {targetName, toolName} -> dimensions map size (2) does not equal dimensionKeys length (1)."
+  expect: "does not equal dimensionKeys length"
+addedOn: 2026-10-17

@@ -1,0 +1,77 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Role": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "bedrock-agentcore.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+      }
+     ]
+    },
+    "Policies": [
+     {
+      "PolicyName": "p",
+      "PolicyDocument": {
+       "Version": "2012-10-17",
+       "Statement": [
+        {
+         "Effect": "Allow",
+         "Action": [
+          "logs:*"
+         ],
+         "Resource": "*"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "G": {
+   "Type": "AWS::BedrockAgentCore::Gateway",
+   "Properties": {
+    "Name": "cdkpf-gateway-target-caller-iam-auth-p",
+    "AuthorizerType": "AWS_IAM",
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "Role",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "T": {
+   "Type": "AWS::BedrockAgentCore::GatewayTarget",
+   "Properties": {
+    "GatewayIdentifier": {
+     "Fn::GetAtt": [
+      "G",
+      "GatewayIdentifier"
+     ]
+    },
+    "Name": "t1",
+    "TargetConfiguration": {
+     "Http": {
+      "Passthrough": {
+       "Endpoint": "https://example.com",
+       "ProtocolType": "A2A"
+      }
+     }
+    },
+    "CredentialProviderConfigurations": [
+     {
+      "CredentialProviderType": "CALLER_IAM_CREDENTIALS"
+     }
+    ]
+   }
+  }
+ }
+}

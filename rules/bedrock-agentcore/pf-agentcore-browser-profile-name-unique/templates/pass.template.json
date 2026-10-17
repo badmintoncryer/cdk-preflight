@@ -1,0 +1,17 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "B1": {
+   "Type": "AWS::BedrockAgentCore::BrowserProfile",
+   "Properties": {
+    "Name": "cdkpf_bpnu_pass1"
+   }
+  },
+  "B2": {
+   "Type": "AWS::BedrockAgentCore::BrowserProfile",
+   "Properties": {
+    "Name": "cdkpf_bpnu_pass2"
+   }
+  }
+ }
+}
