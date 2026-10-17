@@ -1,0 +1,94 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-19-f"
+   }
+  },
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-s2-19-f-t",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 80,
+     "Protocol": "HTTP",
+     "VpcIdentifier": "vpc-4331593e"
+    }
+   }
+  },
+  "Lis": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "HTTPS",
+    "DefaultAction": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    }
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::Rule",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "ListenerIdentifier": {
+     "Ref": "Lis"
+    },
+    "Priority": 50,
+    "Match": {
+     "HttpMatch": {
+      "PathMatch": {
+       "Match": {
+        "Prefix": "/a"
+       }
+      }
+     }
+    },
+    "Action": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    },
+    "Name": "cdkpf-363-s2-19-f-a"
+   }
+  },
+  "B": {
+   "Type": "AWS::VpcLattice::Rule",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "ListenerIdentifier": {
+     "Ref": "Lis"
+    },
+    "Priority": 50,
+    "Match": {
+     "HttpMatch": {
+      "PathMatch": {
+       "Match": {
+        "Prefix": "/a"
+       }
+      }
+     }
+    },
+    "Action": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    },
+    "Name": "cdkpf-363-s2-19-f-b"
+   },
+   "DependsOn": [
+    "A"
+   ]
+  }
+ }
+}

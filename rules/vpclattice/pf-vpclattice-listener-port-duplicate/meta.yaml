@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-port-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "Listener Port must be unique within its service"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateListener.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail two HTTPS listeners on Port 443 of one service -> ROLLBACK_COMPLETE (Port 443 is occupied); pass Ports 443 and 8443 -> CREATE_COMPLETE."
+  expect: "is occupied"
+addedOn: 2026-10-18

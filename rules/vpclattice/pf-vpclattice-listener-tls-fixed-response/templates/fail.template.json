@@ -1,0 +1,27 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-10-f",
+    "CustomDomainName": "cdkpf-363-s2-10-f.cdkpf-363.example.com"
+   }
+  },
+  "Lis": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "TLS_PASSTHROUGH",
+    "DefaultAction": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    },
+    "Port": 443
+   }
+  }
+ }
+}

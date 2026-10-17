@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-tg-shared-across-services
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "A target group can serve listeners of only one service"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/http-listeners.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail one TG forwarded to by listeners of two in-stack services (second DependsOn first) -> ROLLBACK_COMPLETE (TargetGroup tg-02012546d1e4970c2 has been associated with other services); pass a TG per service -> CREATE_COMPLETE."
+  expect: "has been associated with other services"
+addedOn: 2026-10-18

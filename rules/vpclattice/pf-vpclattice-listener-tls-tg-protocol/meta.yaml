@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-tls-tg-protocol
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "A TLS_PASSTHROUGH listener forwards only to a TCP target group"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/tls-listeners.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail TLS_PASSTHROUGH listener forwarding to an HTTP INSTANCE TG -> ROLLBACK_COMPLETE (Incompatible target group protocol HTTP with listener protocol TLS_PASSTHROUGH.); pass forwarding to a TCP TG -> CREATE_COMPLETE. Variant a LAMBDA TG behind the TLS_PASSTHROUGH listener -> ROLLBACK_COMPLETE (Incompatible target group type LAMBDA with listener protocol TLS_PASSTHROUGH.)."
+  expect: "with listener protocol TLS_PASSTHROUGH"
+addedOn: 2026-10-18

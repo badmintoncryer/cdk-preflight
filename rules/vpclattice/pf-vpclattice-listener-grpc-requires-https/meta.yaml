@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-grpc-requires-https
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "A GRPC target group can be used only behind an HTTPS listener"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/target-groups.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail HTTP listener forwarding to a ProtocolVersion GRPC TG -> ROLLBACK_COMPLETE (Target group tg-04b153d3cb3d588d3 with protocol version GRPC can only be used in an HTTPS listener.); pass the same TG behind an HTTPS listener -> CREATE_COMPLETE."
+  expect: "with protocol version GRPC can only be used in an HTTPS listener"
+addedOn: 2026-10-18

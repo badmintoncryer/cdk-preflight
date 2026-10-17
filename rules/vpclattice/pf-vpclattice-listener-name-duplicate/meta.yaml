@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-name-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "Listener name must be unique within its service"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateListener.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail two listeners of one service with the same Name (Ports 443 / 8443) -> ROLLBACK_COMPLETE (Listener with name cdkpf-363-s2-06-f-l already exists in svc-0f4f038d14ca8c198 service.); pass different Names -> CREATE_COMPLETE."
+  expect: "Listener with name"
+addedOn: 2026-10-18

@@ -1,0 +1,13 @@
+id: pf-vpclattice-service-custom-domain-duplicate-in-sn
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkServiceAssociation]
+severity: ERROR
+title: "Two services with the same CustomDomainName cannot join one service network"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/service-custom-domain-name.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail two services with the same CustomDomainName associated with one service network -> ROLLBACK_COMPLETE (Custom domain name cdkpf-363-s2-20-f.cdkpf-363.example.com already exists in service network sn-0ff0c3e0d4547127a); pass different CustomDomainNames -> CREATE_COMPLETE."
+  expect: "already exists in service network"
+addedOn: 2026-10-18

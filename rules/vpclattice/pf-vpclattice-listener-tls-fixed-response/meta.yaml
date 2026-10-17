@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-tls-fixed-response
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "A TLS_PASSTHROUGH listener default action must be Forward"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/tls-listeners.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail TLS_PASSTHROUGH listener (service with CustomDomainName) with a FixedResponse default action -> ROLLBACK_COMPLETE (Only forward action is allowed for TLS_PASSTHROUGH listener protocol.); pass the same forwarding to a TCP TG -> CREATE_COMPLETE."
+  expect: "Only forward action is allowed for TLS_PASSTHROUGH listener protocol"
+addedOn: 2026-10-18

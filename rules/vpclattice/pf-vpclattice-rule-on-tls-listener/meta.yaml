@@ -1,0 +1,13 @@
+id: pf-vpclattice-rule-on-tls-listener
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Rule]
+severity: ERROR
+title: "A TLS_PASSTHROUGH listener takes no rules besides its default action"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/tls-listeners.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule on a TLS_PASSTHROUGH listener -> ROLLBACK_COMPLETE (Invalid listener type: TLS_PASSTHROUGH listener can only have default rule.); pass the same rule on an HTTPS listener -> CREATE_COMPLETE."
+  expect: "TLS_PASSTHROUGH listener can only have default rule"
+addedOn: 2026-10-18

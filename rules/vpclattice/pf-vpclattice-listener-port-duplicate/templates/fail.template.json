@@ -1,0 +1,46 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-07-f"
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "HTTPS",
+    "DefaultAction": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    },
+    "Port": 443,
+    "Name": "cdkpf-363-s2-07-f-a"
+   }
+  },
+  "B": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "HTTPS",
+    "DefaultAction": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    },
+    "Port": 443,
+    "Name": "cdkpf-363-s2-07-f-b"
+   },
+   "DependsOn": [
+    "A"
+   ]
+  }
+ }
+}

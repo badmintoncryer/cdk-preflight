@@ -50,3 +50,26 @@ _pf_vpcl_bad_domain(d) if {
 	is_string(d)
 	regex.match(`[^\x21-\x7e]`, d)
 }
+
+# Raw property value at a key path ("__pf_absent" when missing). Intrinsics stay
+# as marker objects here, so an equality test against a literal ({} etc.) is
+# never fooled by a Ref / Fn::If.
+_pf_vpcl_raw(name, keys) := v if {
+	props := input.resources[name].properties
+	is_object(props)
+	v := object.get(props, keys, "__pf_absent")
+}
+
+# Forward entries (at path ...Forward.TargetGroups) that reference a target
+# group in the same template: [index, target group logical id].
+_pf_vpcl_fwd_tgs(name, path) := {[i, tg] |
+	some it in flatten_list(name, path)
+	i := it.index
+	tg := resolve(name, sprintf("%s.%d.TargetGroupIdentifier", [path, i]))
+	tg in _pf_vpcl_tgs
+}
+
+# A literal string or number (resolve() hands back logical ids as strings too).
+_pf_vpcl_lit(v) if is_string(v)
+
+_pf_vpcl_lit(v) if is_number(v)

@@ -1,0 +1,77 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-17-f",
+    "CustomDomainName": "cdkpf-363-s2-17-f.cdkpf-363.example.com"
+   }
+  },
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-s2-17-f-t",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 443,
+     "Protocol": "TCP",
+     "VpcIdentifier": "vpc-4331593e"
+    }
+   }
+  },
+  "Lis": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "TLS_PASSTHROUGH",
+    "DefaultAction": {
+     "Forward": {
+      "TargetGroups": [
+       {
+        "TargetGroupIdentifier": {
+         "Ref": "TG"
+        }
+       }
+      ]
+     }
+    },
+    "Port": 443
+   }
+  },
+  "Rule": {
+   "Type": "AWS::VpcLattice::Rule",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "ListenerIdentifier": {
+     "Ref": "Lis"
+    },
+    "Priority": 10,
+    "Match": {
+     "HttpMatch": {
+      "PathMatch": {
+       "Match": {
+        "Prefix": "/a"
+       }
+      }
+     }
+    },
+    "Action": {
+     "Forward": {
+      "TargetGroups": [
+       {
+        "TargetGroupIdentifier": {
+         "Ref": "TG"
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

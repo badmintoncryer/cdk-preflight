@@ -1,0 +1,84 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "SvcA": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-09-p-a"
+   }
+  },
+  "SvcB": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-09-p-b"
+   }
+  },
+  "TGA": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-s2-09-p-ta",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 80,
+     "Protocol": "HTTP",
+     "VpcIdentifier": "vpc-4331593e"
+    }
+   }
+  },
+  "TGB": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-s2-09-p-tb",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 80,
+     "Protocol": "HTTP",
+     "VpcIdentifier": "vpc-4331593e"
+    }
+   }
+  },
+  "LisA": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "SvcA"
+    },
+    "Protocol": "HTTPS",
+    "DefaultAction": {
+     "Forward": {
+      "TargetGroups": [
+       {
+        "TargetGroupIdentifier": {
+         "Ref": "TGA"
+        }
+       }
+      ]
+     }
+    }
+   }
+  },
+  "LisB": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "SvcB"
+    },
+    "Protocol": "HTTPS",
+    "DefaultAction": {
+     "Forward": {
+      "TargetGroups": [
+       {
+        "TargetGroupIdentifier": {
+         "Ref": "TGB"
+        }
+       }
+      ]
+     }
+    }
+   },
+   "DependsOn": [
+    "LisA"
+   ]
+  }
+ }
+}
