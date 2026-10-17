@@ -3836,4 +3836,39 @@ describe('post-deploy run failures', () => {
     fires(tpl('EC2', 'bridge', TRUSTING('events.amazonaws.com')), TRUST);
     silent(tpl('EC2', 'bridge'), TRUST);
   });
+
+  test('pf-apigw-body-lambda-integration-post', () => {
+    const RULE = 'pf-apigw-body-lambda-integration-post';
+    const api = (integration: Record<string, unknown>) => ({
+      Resources: {
+        F: fn('python3.13', 'index.handler', 'def handler(e, c):\n  return 1\n').Resources.F,
+        A: {
+          Type: 'AWS::ApiGateway::RestApi',
+          Properties: {
+            Body: {
+              openapi: '3.0.1',
+              info: { title: 't', version: '1' },
+              paths: { '/': { get: { 'x-amazon-apigateway-integration': integration } } },
+            },
+          },
+        },
+      },
+    });
+    const uri = { 'Fn::Sub': 'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${F.Arn}/invocations' };
+    fires(api({ type: 'aws_proxy', httpMethod: 'GET', uri }), RULE);
+    silent(api({ type: 'aws_proxy', httpMethod: 'POST', uri }), RULE);
+    silent(api({ type: 'http_proxy', httpMethod: 'GET', uri: 'https://example.com' }), RULE);
+  });
+
+  test('pf-backup-selection-role-trust', () => {
+    const BACKUP = 'pf-backup-selection-role-trust';
+    const sel = (R: unknown) => ({
+      Resources: {
+        R,
+        S: { Type: 'AWS::Backup::BackupSelection', Properties: { BackupPlanId: 'p', BackupSelection: { SelectionName: 's', IamRoleArn: ROLE_ARN, Resources: ['*'] } } },
+      },
+    });
+    fires(sel(TRUSTING('lambda.amazonaws.com')), BACKUP);
+    silent(sel(TRUSTING('backup.amazonaws.com')), BACKUP);
+  });
 });
