@@ -8,7 +8,7 @@
         "Engine": "postgres",
         "DBInstanceClass": "db.t4g.micro",
         "AllocatedStorage": "20",
-        "MasterUsername": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "MasterUsername": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "MasterUserPassword": "benchpass123"
       }
     }
