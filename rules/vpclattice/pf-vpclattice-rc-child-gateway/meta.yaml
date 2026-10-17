@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-child-gateway
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A CHILD resource configuration must not set ResourceGatewayId"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail CHILD with ResourceGatewayId and a GROUP -> ROLLBACK_COMPLETE (Unexpected attribute resourceGatewayIdentifier for type CHILD); pass CHILD without ResourceGatewayId -> CREATE_COMPLETE."
+  expect: "Unexpected attribute resourceGatewayIdentifier for type CHILD"
+addedOn: 2026-10-18

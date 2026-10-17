@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-gateway-required
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A SINGLE, GROUP or ARN resource configuration needs ResourceGatewayId"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify-rerun.sh; variants from c4/verify.sh): fail SINGLE without ResourceGatewayId -> ROLLBACK_COMPLETE (Invalid request provided: ResourceGatewayId cannot be empty); pass SINGLE with an in-stack resource gateway -> CREATE_COMPLETE. Variant GROUP without ResourceGatewayId -> ROLLBACK_COMPLETE (Invalid request provided: ResourceGatewayId cannot be empty). Variant ARN without ResourceGatewayId -> ROLLBACK_COMPLETE (Invalid request provided: ResourceGatewayId cannot be empty). The CFN handler checks this before calling the API (HandlerErrorCode InvalidRequest) and returns the same text for all three types; the API text is 'Missing expected resourceGatewayIdentifier for type SINGLE' (#363 B)."
+  expect: "ResourceGatewayId cannot be empty"
+addedOn: 2026-10-18

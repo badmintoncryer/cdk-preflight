@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-single-definition-required
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A SINGLE resource configuration needs ResourceConfigurationDefinition"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail SINGLE without ResourceConfigurationDefinition -> ROLLBACK_COMPLETE (Missing expected resourceConfigurationDefinition for type SINGLE); pass SINGLE with IpResource 172.31.<n>.10 (one address per stack) -> CREATE_COMPLETE."
+  expect: "Missing expected resourceConfigurationDefinition for type SINGLE"
+addedOn: 2026-10-18

@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-protocol-child-arn
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "Only SINGLE and GROUP resource configurations take ProtocolType"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail ARN with ProtocolType TCP (ArnResource a missing RDS instance) -> ROLLBACK_COMPLETE (Unexpected attribute protocol for type ARN); pass CHILD without ProtocolType -> CREATE_COMPLETE. Variant CHILD with ProtocolType TCP -> ROLLBACK_COMPLETE (Unexpected attribute protocol for type CHILD). The pass is a CHILD without ProtocolType: the CFN handler does not fill a default ProtocolType."
+  expect: "Unexpected attribute protocol for type ARN"
+addedOn: 2026-10-18
