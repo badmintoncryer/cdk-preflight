@@ -7,7 +7,7 @@
       "Properties": {
         "AvailabilityZone": "us-east-1a",
         "VolumeType": "st1",
-        "Size": 10
+        "Size": 124
       }
     }
   }

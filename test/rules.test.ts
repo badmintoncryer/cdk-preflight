@@ -3987,3 +3987,16 @@ describe('intrinsics the shared libraries must not misread', () => {
     silent({ Parameters: { UseSpot: { Type: 'String', AllowedValues: ['yes', 'no'], Default: 'yes' } }, Conditions: { Spot: { 'Fn::Equals': [{ Ref: 'UseSpot' }, 'yes'] } }, Resources: { JQ: { Type: 'AWS::Batch::JobQueue', Properties: { Priority: 1, ComputeEnvironmentOrder: { 'Fn::If': ['Spot', [{ ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/spot', Order: 1 }, { ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/od', Order: 2 }], [{ ComputeEnvironment: 'arn:aws:batch:us-east-1:123456789012:compute-environment/od', Order: 1 }]] } } } } }, ['pf-batch-jq-ce-order-duplicate-ce', 'pf-batch-jq-ce-order-duplicate-order']);
   });
 });
+
+/**
+ * フィクスチャは符号化済みの base64 文字列で境界に乗せてある。CDK がふつうに出す
+ * `{"Fn::Base64": "<literal>"}` の形もエンジンが先に符号化して同じ経路に届くことを、境界の
+ * 両側で確かめる。しきい値は復号後のバイト数を計算した値なので boundaryProblem からは見えない。
+ */
+describe('user data written as Fn::Base64 sits on the same boundary', () => {
+  const ud = (n: number) => ({ Resources: { I: { Type: 'AWS::EC2::Instance', Properties: { ImageId: 'ami-0123456789abcdef0', InstanceType: 't3.micro', UserData: { 'Fn::Base64': 'x'.repeat(n) } } } } });
+
+  test.each([[16385, true], [16384, false]])('Fn::Base64 user data of %d bytes fires: %s', (n, fires) => {
+    expect(diagnoseTemplate(ud(n)).some((d) => d.source === 'CUSTOM' && d.ruleId === 'pf-ec2-userdata-size')).toBe(fires);
+  });
+});

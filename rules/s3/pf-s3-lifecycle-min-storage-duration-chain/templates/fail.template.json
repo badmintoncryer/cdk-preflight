@@ -16,7 +16,7 @@
                 },
                 {
                   "StorageClass": "DEEP_ARCHIVE",
-                  "TransitionInDays": 20
+                  "TransitionInDays": 93
                 }
               ]
             }

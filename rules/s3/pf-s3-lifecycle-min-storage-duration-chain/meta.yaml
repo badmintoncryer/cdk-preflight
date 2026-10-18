@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycl
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"'Days' in the 'Transition' action for StorageClass 'DEEP_ARCHIVE' for filter '(prefix=)' must be 90 days more than 'filter '(prefix=)'' in the 'Transition' action for StorageClass 'GLACIER_IR'\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-10-18 us-east-1: fail GLACIER_IR at 4 days and DEEP_ARCHIVE at 93 days (89 days apart) -> ROLLBACK_COMPLETE \"'Days' in the 'Transition' action for StorageClass 'DEEP_ARCHIVE' for filter '(prefix=)' must be 90 days more than 'filter '(prefix=)'' in the 'Transition' action for StorageClass 'GLACIER_IR'\"; pass GLACIER_IR at 30 days and DEEP_ARCHIVE at 120 days (90 days apart) -> CREATE_COMPLETE"
   expect: "Days' in the 'Transition' action for StorageClass 'DEEP_ARCHIVE' for filter '(prefix=)' must be 90 days more than 'filter '(prefix=)'' in the 'Transition' action for StorageClass 'GLACIER_IR"
 addedOn: 2026-09-06

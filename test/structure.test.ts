@@ -326,6 +326,29 @@ test('boundaryProblem follows a helper call to what it counts', () => {
   expect(boundaryProblem(helper, list(60), list(50))).toMatch(/fail template has no 51/);
 });
 
+test('boundaryProblem reads a threshold kept in a named constant or a table', () => {
+  // `size > _pf_x_max` の右辺は数字ではないが、しきい値であることに変わりはない。リテラルしか
+  // 見ていなかったときは閾値ゼロ件と判断され、境界から外れたペアが黙って通っていた（#362）
+  const top = '_pf_x_max := 16384\n\nviolation contains 1 if {\n\tsize := to_number(resolve(name, "Properties.V"))\n\tsize > _pf_x_max\n}\n';
+  expect(boundaryProblem(top, fixture('16385'), fixture('16384'))).toBeUndefined();
+  expect(boundaryProblem(top, fixture('20000'), fixture('16384'))).toMatch(/fail template has no 16385/);
+  const local = 'violation contains 1 if {\n\tu := resolve(name, "Properties.V")\n\tmx := 64\n\tcount(u) >= mx\n}\n';
+  expect(boundaryProblem(local, fixture('x'.repeat(64)), fixture('x'.repeat(63)))).toBeUndefined();
+  expect(boundaryProblem(local, fixture('x'.repeat(70)), fixture('x'.repeat(63)))).toMatch(/fail template has no 64/);
+  // テーブル引きは、フィクスチャに現れるキーの値をしきい値にする
+  const fx = (t: string, n: number) => JSON.stringify({ Resources: { X: { Type: 'AWS::X::Y', Properties: { T: t, N: n } } } });
+  const table = (lookup: string) => `_pf_x_tbl := {\n\t"io1": 4,\n\t"st1": 125,\n}\n\nviolation contains 1 if {\n\tt := resolve(name, "Properties.T")\n\tmn := ${lookup}\n\tn := _pf_num(name, "Properties.N")\n\tn < mn\n}\n`;
+  for (const lookup of ['_pf_x_tbl[t]', 'object.get(_pf_x_tbl, t, null)']) {
+    expect(boundaryProblem(table(lookup), fx('st1', 124), fx('st1', 125))).toBeUndefined();
+    expect(boundaryProblem(table(lookup), fx('st1', 1), fx('st1', 125))).toMatch(/fail template has no 124/);
+    expect(boundaryProblem(table(lookup), fx('st1', 124), fx('st1', 500))).toMatch(/pass template has no 125/);
+    // どのキーも使っていなければ判断できないので、黙らずに例外リストへの記載を求める
+    expect(boundaryProblem(table(lookup), fx('gp3', 1), fx('gp3', 1))).toMatch(/no key of _pf_x_tbl/);
+  }
+  // 数値に解けない名前（別プロパティの値）は crossFieldProblem の担当なので見ない
+  expect(boundaryProblem('violation contains 1 if {\n\tmn := resolve(name, "Properties.Min")\n\tn < mn\n}\n', fixture('a'), fixture('a'))).toBeUndefined();
+});
+
 test('boundaryProblem believes the type guard the rego writes', () => {
   // resolve() は文字列もマップも返す。`is_object(ev)` と書いてあるなら数えているのは
   // マップの要素数で、文字列長のプールと突き合わせてはいけない
