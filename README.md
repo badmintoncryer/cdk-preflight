@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3267-blue" alt="3267 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3361-blue" alt="3361 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -193,7 +193,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>417 resource types across 77 services</b> — click to expand</summary>
+<summary><b>431 resource types across 78 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -274,6 +274,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **StepFunctions** | `Activity` (3), `StateMachine` (26) |
 | **Synthetics** | `Canary` (16) |
 | **VerifiedPermissions** | `IdentitySource` (3), `Policy` (26), `PolicyStore` (23), `PolicyStoreAlias` (1), `PolicyTemplate` (29) |
+| **VpcLattice** | `AccessLogSubscription` (3), `AuthPolicy` (3), `DomainVerification` (1), `Listener` (12), `ResourceConfiguration` (30), `ResourceGateway` (6), `ResourcePolicy` (1), `Rule` (7), `Service` (2), `ServiceNetwork` (1), `ServiceNetworkResourceAssociation` (3), `ServiceNetworkServiceAssociation` (3), `ServiceNetworkVpcAssociation` (8), `TargetGroup` (14) |
 | **WAFv2** | `IPSet` (3), `LoggingConfiguration` (3), `RegexPatternSet` (3), `RuleGroup` (18), `WebACL` (23), `WebACLAssociation` (2) |
 | **XRay** | `Group` (1), `ResourcePolicy` (3), `SamplingRule` (6) |
 

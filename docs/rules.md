@@ -3232,6 +3232,100 @@
 | `pf-avp-template-placeholder-in-scope-only` | AWS::VerifiedPermissions::PolicyTemplate | A placeholder appears only in the policy scope | ERROR | none |
 | `pf-avp-template-placeholder-slot-match` | AWS::VerifiedPermissions::PolicyTemplate | ?principal sits in the principal element, ?resource in the resource element | ERROR | none |
 | `pf-avp-template-requires-placeholder` | AWS::VerifiedPermissions::PolicyTemplate | A policy template uses at least one placeholder | ERROR | none |
+| `pf-vpclattice-als-arn-region` | AWS::VpcLattice::AccessLogSubscription | An access log subscription must target a resource in the deploy region | ERROR | none |
+| `pf-vpclattice-als-destination-region` | AWS::VpcLattice::AccessLogSubscription | An access log destination must be in the deploy region | ERROR | none |
+| `pf-vpclattice-als-destination-service` | AWS::VpcLattice::AccessLogSubscription | An access log subscription delivers only to CloudWatch Logs, S3 or Firehose | ERROR | none |
+| `pf-vpclattice-authpolicy-action-prefix` | AWS::VpcLattice::AuthPolicy | Auth policy actions must use the vpc-lattice-svcs prefix | ERROR | none |
+| `pf-vpclattice-authpolicy-arn-region` | AWS::VpcLattice::AuthPolicy | An auth policy must target a service or service network in the deploy region | ERROR | none |
+| `pf-vpclattice-authpolicy-size` | AWS::VpcLattice::AuthPolicy | An auth policy must not exceed 10240 bytes | ERROR | none |
+| `pf-vpclattice-domainverification-domain-format` | AWS::VpcLattice::DomainVerification | A domain verification DomainName must be plain ASCII without spaces | ERROR | none |
+| `pf-vpclattice-listener-default-action-empty` | AWS::VpcLattice::Listener | A listener DefaultAction must not be an empty object | ERROR | none |
+| `pf-vpclattice-listener-forward-weight-required` | AWS::VpcLattice::Listener | A listener forward action with more than one target group needs a Weight on each | ERROR | none |
+| `pf-vpclattice-listener-grpc-requires-https` | AWS::VpcLattice::Listener | A GRPC target group can be used only behind an HTTPS listener | ERROR | none |
+| `pf-vpclattice-listener-http-tg-tcp` | AWS::VpcLattice::Listener | An HTTP or HTTPS listener cannot forward to a TCP target group | ERROR | none |
+| `pf-vpclattice-listener-http2-requires-https` | AWS::VpcLattice::Listener | A HTTP2 target group can be used only behind an HTTPS listener | ERROR | none |
+| `pf-vpclattice-listener-name-duplicate` | AWS::VpcLattice::Listener | Listener name must be unique within its service | ERROR | none |
+| `pf-vpclattice-listener-port-duplicate` | AWS::VpcLattice::Listener | Listener Port must be unique within its service | ERROR | none |
+| `pf-vpclattice-listener-tg-arn-region` | AWS::VpcLattice::Listener | A listener forward target group ARN must be in the deploy region | ERROR | none |
+| `pf-vpclattice-listener-tg-shared-across-services` | AWS::VpcLattice::Listener | A target group can serve listeners of only one service | ERROR | none |
+| `pf-vpclattice-listener-tls-fixed-response` | AWS::VpcLattice::Listener | A TLS_PASSTHROUGH listener default action must be Forward | ERROR | none |
+| `pf-vpclattice-listener-tls-service-custom-domain` | AWS::VpcLattice::Listener | A TLS_PASSTHROUGH listener needs a service with a CustomDomainName | ERROR | none |
+| `pf-vpclattice-listener-tls-tg-protocol` | AWS::VpcLattice::Listener | A TLS_PASSTHROUGH listener forwards only to a TCP target group | ERROR | none |
+| `pf-vpclattice-rc-allow-sharable-child` | AWS::VpcLattice::ResourceConfiguration | A CHILD resource configuration must not set AllowAssociationToSharableServiceNetwork | ERROR | none |
+| `pf-vpclattice-rc-arn-definition-type` | AWS::VpcLattice::ResourceConfiguration | An ARN resource configuration is defined by ArnResource only | ERROR | none |
+| `pf-vpclattice-rc-arn-gateway-in-vpc` | AWS::VpcLattice::ResourceConfiguration | An ARN resource configuration cannot use a resource gateway with IN_VPC DNS resolution | ERROR | none |
+| `pf-vpclattice-rc-arn-port-ranges` | AWS::VpcLattice::ResourceConfiguration | An ARN resource configuration must not set PortRanges | ERROR | none |
+| `pf-vpclattice-rc-arn-rds-only` | AWS::VpcLattice::ResourceConfiguration | An ARN resource configuration supports RDS ARNs only | ERROR | none |
+| `pf-vpclattice-rc-child-domain-subdomain` | AWS::VpcLattice::ResourceConfiguration | A CHILD's CustomDomainName must be under its GROUP's GroupDomain | ERROR | none |
+| `pf-vpclattice-rc-child-gateway` | AWS::VpcLattice::ResourceConfiguration | A CHILD resource configuration must not set ResourceGatewayId | ERROR | none |
+| `pf-vpclattice-rc-child-requires-group` | AWS::VpcLattice::ResourceConfiguration | A CHILD resource configuration needs ResourceConfigurationGroupId | ERROR | none |
+| `pf-vpclattice-rc-cidr-custom-domain` | AWS::VpcLattice::ResourceConfiguration | A CIDR resource configuration must not set CustomDomainName | ERROR | none |
+| `pf-vpclattice-rc-cidr-definition-type` | AWS::VpcLattice::ResourceConfiguration | A CIDR resource configuration is defined by CidrResource only | ERROR | none |
+| `pf-vpclattice-rc-cidr-format` | AWS::VpcLattice::ResourceConfiguration | CidrRanges prefix lengths must be at most 32 | ERROR | none |
+| `pf-vpclattice-rc-cidr-gateway-public` | AWS::VpcLattice::ResourceConfiguration | A CIDR resource configuration needs a resource gateway with IN_VPC DNS resolution | ERROR | none |
+| `pf-vpclattice-rc-custom-domain-format` | AWS::VpcLattice::ResourceConfiguration | A resource configuration's CustomDomainName must be an ASCII hostname | ERROR | none |
+| `pf-vpclattice-rc-dns-domain-format` | AWS::VpcLattice::ResourceConfiguration | DnsResource.DomainName must be an ASCII hostname | ERROR | none |
+| `pf-vpclattice-rc-dns-dualstack` | AWS::VpcLattice::ResourceConfiguration | DnsResource.IpAddressType must be IPV4 or IPV6 | ERROR | none |
+| `pf-vpclattice-rc-gateway-id-format` | AWS::VpcLattice::ResourceConfiguration | ResourceGatewayId must be a resource gateway id or ARN | ERROR | none |
+| `pf-vpclattice-rc-gateway-required` | AWS::VpcLattice::ResourceConfiguration | A SINGLE, GROUP or ARN resource configuration needs ResourceGatewayId | ERROR | none |
+| `pf-vpclattice-rc-group-domain-format` | AWS::VpcLattice::ResourceConfiguration | GroupDomain must be an ASCII hostname | ERROR | none |
+| `pf-vpclattice-rc-group-domain-non-group` | AWS::VpcLattice::ResourceConfiguration | Only a GROUP resource configuration takes GroupDomain | ERROR | none |
+| `pf-vpclattice-rc-group-id-non-child` | AWS::VpcLattice::ResourceConfiguration | Only a CHILD resource configuration takes ResourceConfigurationGroupId | ERROR | none |
+| `pf-vpclattice-rc-group-no-definition` | AWS::VpcLattice::ResourceConfiguration | A GROUP resource configuration must not set ResourceConfigurationDefinition | ERROR | none |
+| `pf-vpclattice-rc-ip-format` | AWS::VpcLattice::ResourceConfiguration | IpResource must be a valid IP address | ERROR | none |
+| `pf-vpclattice-rc-ip-private-range` | AWS::VpcLattice::ResourceConfiguration | An IPv4 IpResource must be in 10/8, 100.64/10, 172.16/12 or 192.168/16 | ERROR | none |
+| `pf-vpclattice-rc-port-range-max` | AWS::VpcLattice::ResourceConfiguration | Ports in PortRanges must be at most 65535 | ERROR | none |
+| `pf-vpclattice-rc-port-range-order` | AWS::VpcLattice::ResourceConfiguration | A port range must not start above its end | ERROR | none |
+| `pf-vpclattice-rc-port-range-zero` | AWS::VpcLattice::ResourceConfiguration | Ports in PortRanges must be at least 1 | ERROR | none |
+| `pf-vpclattice-rc-protocol-child-arn` | AWS::VpcLattice::ResourceConfiguration | Only SINGLE and GROUP resource configurations take ProtocolType | ERROR | none |
+| `pf-vpclattice-rc-single-arn-definition` | AWS::VpcLattice::ResourceConfiguration | A SINGLE resource configuration cannot use ArnResource | ERROR | none |
+| `pf-vpclattice-rc-single-definition-required` | AWS::VpcLattice::ResourceConfiguration | A SINGLE resource configuration needs ResourceConfigurationDefinition | ERROR | none |
+| `pf-vpclattice-resourceconfiguration-name-duplicate` | AWS::VpcLattice::ResourceConfiguration | Resource configuration names must be unique in the account and region | ERROR | none |
+| `pf-vpclattice-resourcepolicy-principal-required` | AWS::VpcLattice::ResourcePolicy | Every resource policy statement needs a Principal | ERROR | none |
+| `pf-vpclattice-rgw-in-vpc-ipv6` | AWS::VpcLattice::ResourceGateway | An IPV6 resource gateway cannot resolve DNS IN_VPC | ERROR | none |
+| `pf-vpclattice-rgw-ipv4-per-eni-ipv6` | AWS::VpcLattice::ResourceGateway | An IPV6 resource gateway must not set Ipv4AddressesPerEni | ERROR | none |
+| `pf-vpclattice-rgw-ipv6-subnet-family` | AWS::VpcLattice::ResourceGateway | An IPV6 or DUALSTACK resource gateway needs subnets with IPv6 blocks | ERROR | none |
+| `pf-vpclattice-rgw-sg-other-vpc` | AWS::VpcLattice::ResourceGateway | A resource gateway's security groups must be in its VPC | ERROR | none |
+| `pf-vpclattice-rgw-subnet-id-format` | AWS::VpcLattice::ResourceGateway | ResourceGateway SubnetIds must be subnet ids | ERROR | none |
+| `pf-vpclattice-rgw-subnet-other-vpc` | AWS::VpcLattice::ResourceGateway | A resource gateway's subnets must be in its VPC | ERROR | none |
+| `pf-vpclattice-rule-action-empty` | AWS::VpcLattice::Rule | A rule Action must not be an empty object | ERROR | none |
+| `pf-vpclattice-rule-forward-weight-required` | AWS::VpcLattice::Rule | A rule forward action with more than one target group needs a Weight on each | ERROR | none |
+| `pf-vpclattice-rule-http-match-empty` | AWS::VpcLattice::Rule | A rule Match.HttpMatch must not be an empty object | ERROR | none |
+| `pf-vpclattice-rule-name-duplicate` | AWS::VpcLattice::Rule | Rule name must be unique within its listener | ERROR | none |
+| `pf-vpclattice-rule-on-tls-listener` | AWS::VpcLattice::Rule | A TLS_PASSTHROUGH listener takes no rules besides its default action | ERROR | none |
+| `pf-vpclattice-rule-path-match-empty` | AWS::VpcLattice::Rule | A rule PathMatch.Match must not be an empty object | ERROR | none |
+| `pf-vpclattice-rule-priority-duplicate` | AWS::VpcLattice::Rule | Rule Priority must be unique within its listener | ERROR | none |
+| `pf-vpclattice-service-custom-domain-duplicate-in-sn` | AWS::VpcLattice::ServiceNetworkServiceAssociation | Two services with the same CustomDomainName cannot join one service network | ERROR | none |
+| `pf-vpclattice-service-custom-domain-format` | AWS::VpcLattice::Service | A service CustomDomainName must be plain ASCII without spaces | ERROR | none |
+| `pf-vpclattice-service-name-duplicate` | AWS::VpcLattice::Service | Service names must be unique within the account and region | ERROR | none |
+| `pf-vpclattice-servicenetwork-name-duplicate` | AWS::VpcLattice::ServiceNetwork | Service network names must be unique within the account and region | ERROR | none |
+| `pf-vpclattice-snra-child-rc` | AWS::VpcLattice::ServiceNetworkResourceAssociation | A CHILD resource configuration cannot be associated with a service network | ERROR | none |
+| `pf-vpclattice-snra-duplicate` | AWS::VpcLattice::ServiceNetworkResourceAssociation | A resource configuration can be associated with a service network only once | ERROR | none |
+| `pf-vpclattice-snra-sharable-sn` | AWS::VpcLattice::ServiceNetworkResourceAssociation | A resource configuration that disallows sharable service networks cannot be associated with one | ERROR | none |
+| `pf-vpclattice-snsa-arn-region` | AWS::VpcLattice::ServiceNetworkServiceAssociation | A service network service association must name a service network in the deploy region | ERROR | none |
+| `pf-vpclattice-snsa-duplicate` | AWS::VpcLattice::ServiceNetworkServiceAssociation | A service can be associated with a service network only once | ERROR | none |
+| `pf-vpclattice-snva-arn-region` | AWS::VpcLattice::ServiceNetworkVpcAssociation | A service network VPC association must name a service network in the deploy region | ERROR | none |
+| `pf-vpclattice-snva-dns-options-requires-private-dns` | AWS::VpcLattice::ServiceNetworkVpcAssociation | DnsOptions needs PrivateDnsEnabled true | ERROR | none |
+| `pf-vpclattice-snva-security-groups-max` | AWS::VpcLattice::ServiceNetworkVpcAssociation | A service network VPC association takes at most 5 security groups | ERROR | none |
+| `pf-vpclattice-snva-sg-other-vpc` | AWS::VpcLattice::ServiceNetworkVpcAssociation | Association security groups must belong to the associated VPC | ERROR | none |
+| `pf-vpclattice-snva-specified-domain-format` | AWS::VpcLattice::ServiceNetworkVpcAssociation | PrivateDnsSpecifiedDomains entries must be host names | ERROR | none |
+| `pf-vpclattice-snva-specified-domains-preference` | AWS::VpcLattice::ServiceNetworkVpcAssociation | PrivateDnsSpecifiedDomains needs a *_SPECIFIED_DOMAINS* preference | ERROR | none |
+| `pf-vpclattice-snva-specified-only-requires-domains` | AWS::VpcLattice::ServiceNetworkVpcAssociation | A *_SPECIFIED_DOMAINS* preference needs PrivateDnsSpecifiedDomains | ERROR | none |
+| `pf-vpclattice-snva-vpc-duplicate` | AWS::VpcLattice::ServiceNetworkVpcAssociation | A VPC can be associated with only one service network | ERROR | none |
+| `pf-vpclattice-targetgroup-name-duplicate` | AWS::VpcLattice::TargetGroup | Target group names must be unique within the account and region | ERROR | none |
+| `pf-vpclattice-tg-alb-health-check` | AWS::VpcLattice::TargetGroup | An ALB target group cannot carry a health check config | ERROR | none |
+| `pf-vpclattice-tg-alb-single-target` | AWS::VpcLattice::TargetGroup | An ALB target group takes a single target | ERROR | none |
+| `pf-vpclattice-tg-alb-target-account-region` | AWS::VpcLattice::TargetGroup | An ALB target group target must be a load balancer of the deploy account and region | ERROR | none |
+| `pf-vpclattice-tg-health-check-timeout-interval` | AWS::VpcLattice::TargetGroup | A target group health check timeout must not exceed its interval | ERROR | none |
+| `pf-vpclattice-tg-lambda-config-port` | AWS::VpcLattice::TargetGroup | A LAMBDA target group Config accepts only LambdaEventStructureVersion | ERROR | none |
+| `pf-vpclattice-tg-lambda-event-version-non-lambda` | AWS::VpcLattice::TargetGroup | LambdaEventStructureVersion applies only to a LAMBDA target group | ERROR | none |
+| `pf-vpclattice-tg-lambda-single-target` | AWS::VpcLattice::TargetGroup | A LAMBDA target group takes a single target | ERROR | none |
+| `pf-vpclattice-tg-lambda-target-region` | AWS::VpcLattice::TargetGroup | A LAMBDA target group target must be a function in the deploy region | ERROR | none |
+| `pf-vpclattice-tg-target-id-type` | AWS::VpcLattice::TargetGroup | An INSTANCE target group target Id must be an EC2 instance ID | ERROR | none |
+| `pf-vpclattice-tg-target-ip-family` | AWS::VpcLattice::TargetGroup | An IP target group target must match the group IpAddressType | ERROR | none |
+| `pf-vpclattice-tg-target-ip-outside-vpc` | AWS::VpcLattice::TargetGroup | An IP target group target must lie in the VPC CIDR | ERROR | none |
+| `pf-vpclattice-tg-tcp-health-check-protocol` | AWS::VpcLattice::TargetGroup | An enabled health check on a TCP target group needs HealthCheck.Protocol | ERROR | none |
+| `pf-vpclattice-tg-vpc-required` | AWS::VpcLattice::TargetGroup | An INSTANCE, IP or ALB target group needs Config.VpcIdentifier | ERROR | none |
 | `pf-wafv2-association-config-scope` | AWS::WAFv2::WebACL | AssociationConfig.RequestBody keys must match the web ACL Scope | ERROR | none |
 | `pf-wafv2-association-resource-arn` | AWS::WAFv2::WebACLAssociation | ResourceArn must be a supported protected-resource ARN in the deploy account and region | ERROR | none |
 | `pf-wafv2-association-webacl-arn` | AWS::WAFv2::WebACLAssociation | WebACLArn must be the ARN of a web ACL in the deploy region | ERROR | none |
