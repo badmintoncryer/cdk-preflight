@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-port-range-order
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A port range must not start above its end"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail PortRanges ['23-22'] -> ROLLBACK_COMPLETE (23-22 is not a valid port range); pass ['22-30'] -> CREATE_COMPLETE."
+  expect: "23-22 is not a valid port range"
+addedOn: 2026-10-18

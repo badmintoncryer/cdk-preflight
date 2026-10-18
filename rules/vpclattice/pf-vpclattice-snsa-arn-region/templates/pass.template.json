@@ -1,0 +1,28 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-21-p"
+   }
+  },
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s2-21-p-n"
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkServiceAssociation",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn"
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s2-20-p-n"
+   }
+  },
+  "SvcA": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-20-p-a",
+    "CustomDomainName": "cdkpf-363-s2-20-p-a.cdkpf-363.example.com"
+   }
+  },
+  "SvcB": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-20-p-b",
+    "CustomDomainName": "cdkpf-363-s2-20-p-b.cdkpf-363.example.com"
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkServiceAssociation",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "SvcA"
+    },
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn"
+    }
+   }
+  },
+  "B": {
+   "Type": "AWS::VpcLattice::ServiceNetworkServiceAssociation",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "SvcB"
+    },
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn"
+    }
+   },
+   "DependsOn": [
+    "A"
+   ]
+  }
+ }
+}

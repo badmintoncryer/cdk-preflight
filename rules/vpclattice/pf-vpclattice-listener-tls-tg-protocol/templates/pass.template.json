@@ -1,0 +1,45 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-12-p",
+    "CustomDomainName": "cdkpf-363-s2-12-p.cdkpf-363.example.com"
+   }
+  },
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-s2-12-p-t",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 443,
+     "Protocol": "TCP",
+     "VpcIdentifier": "vpc-4331593e"
+    }
+   }
+  },
+  "Lis": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "TLS_PASSTHROUGH",
+    "DefaultAction": {
+     "Forward": {
+      "TargetGroups": [
+       {
+        "TargetGroupIdentifier": {
+         "Ref": "TG"
+        }
+       }
+      ]
+     }
+    },
+    "Port": 443
+   }
+  }
+ }
+}

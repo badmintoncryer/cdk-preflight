@@ -1,0 +1,44 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-03-f"
+   }
+  },
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-s2-03-f-t",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 443,
+     "Protocol": "HTTPS",
+     "VpcIdentifier": "vpc-4331593e",
+     "ProtocolVersion": "GRPC"
+    }
+   }
+  },
+  "Lis": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "HTTP",
+    "DefaultAction": {
+     "Forward": {
+      "TargetGroups": [
+       {
+        "TargetGroupIdentifier": {
+         "Ref": "TG"
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

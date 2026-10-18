@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-group-id-non-child
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "Only a CHILD resource configuration takes ResourceConfigurationGroupId"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail SINGLE with ResourceConfigurationGroupId of an in-stack GROUP -> ROLLBACK_COMPLETE (Unexpected attribute resourceConfigurationGroupIdentifier for type SINGLE); pass SINGLE without it -> CREATE_COMPLETE. Variant GROUP with ResourceConfigurationGroupId -> ROLLBACK_COMPLETE (Unexpected attribute resourceConfigurationGroupIdentifier for type GROUP). Variant ARN with the property (ArnResource a missing RDS instance) -> ROLLBACK_COMPLETE (Unexpected attribute resourceConfigurationGroupIdentifier for type ARN)."
+  expect: "Unexpected attribute resourceConfigurationGroupIdentifier for type"
+addedOn: 2026-10-18

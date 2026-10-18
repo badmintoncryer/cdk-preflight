@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-gateway-id-format
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "ResourceGatewayId must be a resource gateway id or ARN"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail SINGLE with ResourceGatewayId vpc-0123456789abcdef0 -> ROLLBACK_COMPLETE (1 validation error(s) detected: Value 'vpc-0123456789abcdef0' at 'resourceGatewayIdentifier' failed to satisfy constraint: Member must satisfy regular expression pattern: ((rgw-[0-9a-z]{17})|(arn:...:resourcegateway/rgw-[0-9a-z]{17}))); pass ResourceGatewayId Fn::GetAtt of an in-stack gateway -> CREATE_COMPLETE. The text is the service's model validation returned by the resource handler (1 validation error), not CloudFormation's stack-level early validation; no stack-level validation event was recorded."
+  expect: "at 'resourceGatewayIdentifier' failed to satisfy constraint"
+addedOn: 2026-10-18

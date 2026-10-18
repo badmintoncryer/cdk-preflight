@@ -1,0 +1,25 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-01-p"
+   }
+  },
+  "Lis": {
+   "Type": "AWS::VpcLattice::Listener",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "Protocol": "HTTPS",
+    "DefaultAction": {
+     "FixedResponse": {
+      "StatusCode": 404
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-target-ip-family
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An IP target group target must match the group IpAddressType"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/target-groups.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail IPV4 IP TG with target 2001:db8::10 -> ROLLBACK_FAILED (Failed to register target 2001:db8::10:80 with message: IP address for target 2001:db8::10 is invalid itself or invalid for the target group ip address type IPV4.); pass IPV4 IP TG with 172.31.0.10 -> CREATE_COMPLETE. Variant 172.31.0.10 on an IPV6 TG -> ROLLBACK_FAILED (Failed to register target 172.31.0.10:80 with message: IP address for target 172.31.0.10 is invalid itself or invalid for the target group ip address type IPV6.)."
+  expect: "invalid for the target group ip address type IPV4"
+addedOn: 2026-10-17

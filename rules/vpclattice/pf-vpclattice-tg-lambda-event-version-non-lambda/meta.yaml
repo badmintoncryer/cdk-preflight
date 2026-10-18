@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-lambda-event-version-non-lambda
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "LambdaEventStructureVersion applies only to a LAMBDA target group"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_TargetGroupConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail IP TG with LambdaEventStructureVersion V2 -> ROLLBACK_COMPLETE (IP Target Group does not support lambda event structure version); pass LAMBDA TG with V2 -> CREATE_COMPLETE."
+  expect: "does not support lambda event structure version"
+addedOn: 2026-10-17

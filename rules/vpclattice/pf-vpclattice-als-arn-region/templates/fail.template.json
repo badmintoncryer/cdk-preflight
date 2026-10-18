@@ -1,0 +1,22 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Bk": {
+   "Type": "AWS::S3::Bucket"
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::AccessLogSubscription",
+   "Properties": {
+    "ResourceIdentifier": {
+     "Fn::Sub": "arn:${AWS::Partition}:vpc-lattice:ap-northeast-1:${AWS::AccountId}:servicenetwork/sn-0123456789abcdef0"
+    },
+    "DestinationArn": {
+     "Fn::GetAtt": [
+      "Bk",
+      "Arn"
+     ]
+    }
+   }
+  }
+ }
+}

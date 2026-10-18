@@ -1,0 +1,13 @@
+id: pf-vpclattice-snra-sharable-sn
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkResourceAssociation]
+severity: ERROR
+title: "A resource configuration that disallows sharable service networks cannot be associated with one"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail resource configuration with AllowAssociationToSharableServiceNetwork false associated with a service network with SharingConfig enabled true -> ROLLBACK_COMPLETE (Resource Configuration does not allow for association to a service network that can be shared.); pass the property omitted (same sharable service network) -> CREATE_COMPLETE."
+  expect: "Resource Configuration does not allow for association to a service network that can be shared"
+addedOn: 2026-10-18

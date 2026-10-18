@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-vpc-required
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An INSTANCE, IP or ALB target group needs Config.VpcIdentifier"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_TargetGroupConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail INSTANCE TG with Port and Protocol but no VpcIdentifier -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for INSTANCE Target Group); pass INSTANCE TG with VpcIdentifier -> CREATE_COMPLETE. Variant no Config -> ROLLBACK_COMPLETE (INSTANCE Target Group must include a config). Variant IP type -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for IP Target Group). Variant ALB type -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for ALB Target Group)."
+  expect: "vpcIdentifier must not be null for"
+addedOn: 2026-10-17

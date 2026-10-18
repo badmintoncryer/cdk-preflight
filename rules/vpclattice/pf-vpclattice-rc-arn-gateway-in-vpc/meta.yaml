@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-arn-gateway-in-vpc
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "An ARN resource configuration cannot use a resource gateway with IN_VPC DNS resolution"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-gateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail ARN (a missing RDS ARN) on an in-stack gateway with ResourceConfigDnsResolution IN_VPC -> ROLLBACK_COMPLETE (IN_VPC resolution is not supported for ARN type resource configurations); pass ARN of an in-stack RDS instance (db.t4g.micro) on a gateway without ResourceConfigDnsResolution -> CREATE_COMPLETE."
+  expect: "IN_VPC resolution is not supported for ARN type resource configurations"
+addedOn: 2026-10-18

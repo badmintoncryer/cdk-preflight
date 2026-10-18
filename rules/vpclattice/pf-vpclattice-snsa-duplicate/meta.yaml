@@ -1,0 +1,13 @@
+id: pf-vpclattice-snsa-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkServiceAssociation]
+severity: ERROR
+title: "A service can be associated with a service network only once"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/service-network-associations.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail two associations of the same service and service network (second DependsOn first) -> ROLLBACK_COMPLETE (Association for arn:aws:vpc-lattice:us-east-1:214794239830:servicenetwork/sn-096242491b292c98c and arn:aws:vpc-lattice:us-east-1:214794239830:service/svc-01e3d1d6d00a4f874 already exists.); pass two services in one service network -> CREATE_COMPLETE."
+  expect: "Association for"
+addedOn: 2026-10-18

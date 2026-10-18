@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-alb-single-target
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An ALB target group takes a single target"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/target-groups.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c1/verify-rerun.sh; the 2026-10-17 run failed with the same text): fail ALB TG with two in-stack internal ALBs as Targets -> CREATE_FAILED, ROLLBACK_FAILED because the target group delete did not stabilize (retain-deleted and swept) (Invalid request provided: TargetGroup of type ALB can't have more than 1 Target registered); pass one in-stack ALB -> CREATE_COMPLETE. The CloudFormation handler rejects this itself; the RegisterTargets API text differs (Maximum of 1 targets are supported per request)."
+  expect: "have more than 1 Target registered"
+addedOn: 2026-10-17

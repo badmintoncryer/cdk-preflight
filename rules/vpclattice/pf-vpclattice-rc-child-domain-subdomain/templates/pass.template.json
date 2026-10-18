@@ -1,0 +1,60 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Gw": {
+   "Type": "AWS::VpcLattice::ResourceGateway",
+   "Properties": {
+    "Name": "cdkpf-363-s4-05-p-g",
+    "VpcIdentifier": "vpc-4331593e",
+    "SubnetIds": [
+     "subnet-2e0a500f",
+     "subnet-ab11fde7"
+    ],
+    "SecurityGroupIds": [
+     "sg-7d699f61"
+    ]
+   }
+  },
+  "Grp": {
+   "Type": "AWS::VpcLattice::ResourceConfiguration",
+   "Properties": {
+    "Name": "cdkpf-363-s4-05-p-grp",
+    "ResourceConfigurationType": "GROUP",
+    "ResourceGatewayId": {
+     "Fn::GetAtt": [
+      "Gw",
+      "Id"
+     ]
+    },
+    "PortRanges": [
+     "443"
+    ],
+    "ProtocolType": "TCP",
+    "GroupDomain": "cdkpf-363-s4-05-p.cdkpf-363.example.com"
+   }
+  },
+  "R": {
+   "Type": "AWS::VpcLattice::ResourceConfiguration",
+   "Properties": {
+    "Name": "cdkpf-363-s4-05-p-r",
+    "ResourceConfigurationType": "CHILD",
+    "ResourceConfigurationGroupId": {
+     "Fn::GetAtt": [
+      "Grp",
+      "Id"
+     ]
+    },
+    "PortRanges": [
+     "443"
+    ],
+    "ResourceConfigurationDefinition": {
+     "DnsResource": {
+      "DomainName": "db.example.com",
+      "IpAddressType": "IPV4"
+     }
+    },
+    "CustomDomainName": "db.cdkpf-363-s4-05-p.cdkpf-363.example.com"
+   }
+  }
+ }
+}

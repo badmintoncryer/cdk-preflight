@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-custom-domain-format
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A resource configuration's CustomDomainName must be an ASCII hostname"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail SINGLE CustomDomainName 'api example.com' -> ROLLBACK_COMPLETE (`api example.com` is not a valid resource configuration domain name); pass api.<name>.cdkpf-363.example.com -> CREATE_COMPLETE. Variant a non-ASCII character (a-umlaut) -> ROLLBACK_COMPLETE (`api.cdkpf-363-s5-06-v0.cdkpf-363.ex?mple.com` is not a valid resource configuration domain name)."
+  expect: "is not a valid resource configuration domain name"
+addedOn: 2026-10-18

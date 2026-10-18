@@ -1,0 +1,47 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "V": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.99.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "S4": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "VpcId": {
+     "Ref": "V"
+    },
+    "CidrBlock": "10.99.0.0/24",
+    "AvailabilityZoneId": "use1-az2"
+   }
+  },
+  "Sg": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "cdkpf #363 resource gateway",
+    "VpcId": {
+     "Ref": "V"
+    }
+   }
+  },
+  "Gw": {
+   "Type": "AWS::VpcLattice::ResourceGateway",
+   "Properties": {
+    "Name": "cdkpf-363-s5-16-f-g",
+    "VpcIdentifier": "vpc-4331593e",
+    "SubnetIds": [
+     {
+      "Ref": "S4"
+     }
+    ],
+    "SecurityGroupIds": [
+     "sg-7d699f61"
+    ]
+   }
+  }
+ }
+}

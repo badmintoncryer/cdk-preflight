@@ -1,0 +1,41 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Gw": {
+   "Type": "AWS::VpcLattice::ResourceGateway",
+   "Properties": {
+    "Name": "cdkpf-363-s4-19-f-g",
+    "VpcIdentifier": "vpc-4331593e",
+    "SubnetIds": [
+     "subnet-2e0a500f",
+     "subnet-ab11fde7"
+    ],
+    "SecurityGroupIds": [
+     "sg-7d699f61"
+    ]
+   }
+  },
+  "R": {
+   "Type": "AWS::VpcLattice::ResourceConfiguration",
+   "Properties": {
+    "Name": "cdkpf-363-s4-19-f-r",
+    "ResourceConfigurationType": "SINGLE",
+    "ResourceGatewayId": {
+     "Fn::GetAtt": [
+      "Gw",
+      "Id"
+     ]
+    },
+    "PortRanges": [
+     "443"
+    ],
+    "ProtocolType": "TCP",
+    "ResourceConfigurationDefinition": {
+     "ArnResource": {
+      "Fn::Sub": "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:db:cdkpf-363-none"
+     }
+    }
+   }
+  }
+ }
+}

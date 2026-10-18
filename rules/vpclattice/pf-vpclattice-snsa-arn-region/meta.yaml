@@ -1,0 +1,13 @@
+id: pf-vpclattice-snsa-arn-region
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkServiceAssociation]
+severity: ERROR
+title: "A service network service association must name a service network in the deploy region"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateServiceNetworkServiceAssociation.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail association to a service network ARN in ap-northeast-1 -> ROLLBACK_COMPLETE (Provided ARN is either not valid or from a different region then this service.); pass in-stack service and service network -> CREATE_COMPLETE. Baseline (#363 B, API 2026-10-17): a missing sn- ARN in us-east-1 -> ResourceNotFoundException 'ServiceNetwork sn-0123456789abcdef0 cannot be found', so the text tracks the region. Probe (c2 variant, not claimed): a svc- ARN in ap-northeast-1 with an in-stack service network -> ROLLBACK_COMPLETE with the same text; no same-region baseline, so ServiceIdentifier is not checked."
+  expect: "from a different region then this service"
+addedOn: 2026-10-18

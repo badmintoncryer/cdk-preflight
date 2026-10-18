@@ -1,0 +1,13 @@
+id: pf-vpclattice-rule-forward-weight-required
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Rule]
+severity: ERROR
+title: "A rule forward action with more than one target group needs a Weight on each"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/listener-rules.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule forwarding to two in-stack TGs without Weight -> ROLLBACK_FAILED (Target group weights are required when more than 1 target group is provided.); pass one TG without Weight -> CREATE_COMPLETE. B control: two target groups with Weight 1 each -> accepted."
+  expect: "Target group weights are required when more than 1 target group is provided"
+addedOn: 2026-10-18

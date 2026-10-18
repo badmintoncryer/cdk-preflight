@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-arn-rds-only
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "An ARN resource configuration supports RDS ARNs only"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail ARN with an ElastiCache cluster ARN -> ROLLBACK_COMPLETE (ARN-based integration is only supported for RDS and not arn:aws:elasticache:us-east-1:214794239830:cluster:cdkpf-363-none); pass ARN with ArnResource of an in-stack RDS instance -> CREATE_COMPLETE."
+  expect: "ARN-based integration is only supported for RDS"
+addedOn: 2026-10-18

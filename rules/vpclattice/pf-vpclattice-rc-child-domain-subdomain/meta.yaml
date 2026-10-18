@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-child-domain-subdomain
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A CHILD's CustomDomainName must be under its GROUP's GroupDomain"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail CHILD CustomDomainName db<group domain> (suffix without the dot) under a GROUP with GroupDomain <name>.cdkpf-363.example.com -> ROLLBACK_COMPLETE (`dbcdkpf-363-s4-05-f.cdkpf-363.example.com` is not a subdomain of domain `cdkpf-363-s4-05-f.cdkpf-363.example.com`); pass db.<group domain> -> CREATE_COMPLETE. Variant CHILD CustomDomainName db.other.example.net -> ROLLBACK_COMPLETE (`db.other.example.net` is not a subdomain of domain `cdkpf-363-s4-05-v0.cdkpf-363.example.com`)."
+  expect: "is not a subdomain of domain"
+addedOn: 2026-10-18

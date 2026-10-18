@@ -1,0 +1,18 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-r11-f",
+    "Type": "IP",
+    "Config": {
+     "Port": 80,
+     "Protocol": "HTTP",
+     "VpcIdentifier": "vpc-4331593e",
+     "LambdaEventStructureVersion": "V2"
+    }
+   }
+  }
+ }
+}

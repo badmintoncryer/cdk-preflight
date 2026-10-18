@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-child-requires-group
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A CHILD resource configuration needs ResourceConfigurationGroupId"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify-rerun.sh; variants from c4/verify.sh): fail CHILD without ResourceConfigurationGroupId (no gateway) -> ROLLBACK_COMPLETE (Invalid request provided: ResourceConfigurationGroupId is required for CHILD type); pass CHILD under an in-stack GROUP (GetAtt Id) -> CREATE_COMPLETE. The CFN handler checks this before calling the API (HandlerErrorCode InvalidRequest); the API text is 'Missing expected resourceConfigurationGroupIdentifier for type CHILD' (#363 B)."
+  expect: "ResourceConfigurationGroupId is required for CHILD type"
+addedOn: 2026-10-18

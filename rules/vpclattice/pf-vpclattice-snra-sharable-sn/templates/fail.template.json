@@ -1,0 +1,66 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Gw": {
+   "Type": "AWS::VpcLattice::ResourceGateway",
+   "Properties": {
+    "Name": "cdkpf-363-s5-19-f-g",
+    "VpcIdentifier": "vpc-4331593e",
+    "SubnetIds": [
+     "subnet-2e0a500f",
+     "subnet-ab11fde7"
+    ],
+    "SecurityGroupIds": [
+     "sg-7d699f61"
+    ]
+   }
+  },
+  "R": {
+   "Type": "AWS::VpcLattice::ResourceConfiguration",
+   "Properties": {
+    "Name": "cdkpf-363-s5-19-f-r",
+    "ResourceConfigurationType": "SINGLE",
+    "ResourceGatewayId": {
+     "Fn::GetAtt": [
+      "Gw",
+      "Id"
+     ]
+    },
+    "PortRanges": [
+     "443"
+    ],
+    "ProtocolType": "TCP",
+    "ResourceConfigurationDefinition": {
+     "IpResource": "172.31.119.10"
+    },
+    "AllowAssociationToSharableServiceNetwork": false
+   }
+  },
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s5-19-f-n",
+    "SharingConfig": {
+     "enabled": true
+    }
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkResourceAssociation",
+   "Properties": {
+    "ResourceConfigurationId": {
+     "Fn::GetAtt": [
+      "R",
+      "Id"
+     ]
+    },
+    "ServiceNetworkId": {
+     "Fn::GetAtt": [
+      "Sn",
+      "Id"
+     ]
+    }
+   }
+  }
+ }
+}

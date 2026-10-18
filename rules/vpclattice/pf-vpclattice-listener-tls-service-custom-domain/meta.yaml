@@ -1,0 +1,13 @@
+id: pf-vpclattice-listener-tls-service-custom-domain
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Listener]
+severity: ERROR
+title: "A TLS_PASSTHROUGH listener needs a service with a CustomDomainName"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/tls-listeners.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail TLS_PASSTHROUGH listener forwarding to a TCP TG on a service without CustomDomainName -> ROLLBACK_FAILED (TLS_PASSTHROUGH listener can only be created for a service with a custom domain name.); pass the same service with CustomDomainName -> CREATE_COMPLETE."
+  expect: "TLS_PASSTHROUGH listener can only be created for a service with a custom domain name"
+addedOn: 2026-10-18

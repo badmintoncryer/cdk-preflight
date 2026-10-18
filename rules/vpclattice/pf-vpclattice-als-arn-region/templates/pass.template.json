@@ -1,0 +1,28 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-01-p-n"
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::AccessLogSubscription",
+   "Properties": {
+    "ResourceIdentifier": {
+     "Ref": "Sn"
+    },
+    "DestinationArn": {
+     "Fn::GetAtt": [
+      "Bk",
+      "Arn"
+     ]
+    }
+   }
+  },
+  "Bk": {
+   "Type": "AWS::S3::Bucket"
+  }
+ }
+}

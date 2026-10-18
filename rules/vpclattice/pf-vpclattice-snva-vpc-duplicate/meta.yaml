@@ -1,0 +1,13 @@
+id: pf-vpclattice-snva-vpc-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkVpcAssociation]
+severity: ERROR
+title: "A VPC can be associated with only one service network"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/quotas.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail one in-stack VPC associated with two in-stack service networks (second DependsOn first) -> ROLLBACK_COMPLETE (VPC has already been associated to a service network.); pass two VPCs -> CREATE_COMPLETE."
+  expect: "VPC has already been associated to a service network"
+addedOn: 2026-10-18

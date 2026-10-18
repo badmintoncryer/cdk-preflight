@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-group-no-definition
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A GROUP resource configuration must not set ResourceConfigurationDefinition"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail GROUP with IpResource 172.31.<n>.10 (one address per stack) -> ROLLBACK_COMPLETE (Unexpected attribute resourceConfigurationDefinition for type GROUP); pass GROUP without a definition -> CREATE_COMPLETE."
+  expect: "Unexpected attribute resourceConfigurationDefinition for type GROUP"
+addedOn: 2026-10-18

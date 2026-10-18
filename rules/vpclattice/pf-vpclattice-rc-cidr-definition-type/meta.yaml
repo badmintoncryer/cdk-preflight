@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-cidr-definition-type
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "A CIDR resource configuration is defined by CidrResource only"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail CIDR with IpResource on an IN_VPC gateway -> ROLLBACK_COMPLETE (resourceConfigurationDefinition.cidrResource with cidrRanges must be provided for CIDR type); pass CIDR with CidrResource 10.200.<n>.0/24, ProtocolType TCP -> CREATE_COMPLETE. Variant CIDR with DnsResource -> ROLLBACK_COMPLETE (resourceConfigurationDefinition.cidrResource with cidrRanges must be provided for CIDR type)."
+  expect: "cidrResource with cidrRanges must be provided for CIDR type"
+addedOn: 2026-10-18

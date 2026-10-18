@@ -1,0 +1,43 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Vpc": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.0.0.0/16"
+   }
+  },
+  "Subnet": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "VpcId": {
+     "Ref": "Vpc"
+    },
+    "CidrBlock": "10.0.0.0/24"
+   }
+  },
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-r16-f",
+    "Type": "IP",
+    "Config": {
+     "Port": 80,
+     "Protocol": "HTTP",
+     "VpcIdentifier": {
+      "Ref": "Vpc"
+     }
+    },
+    "Targets": [
+     {
+      "Id": "10.1.0.10",
+      "Port": 80
+     }
+    ]
+   },
+   "DependsOn": [
+    "Subnet"
+   ]
+  }
+ }
+}

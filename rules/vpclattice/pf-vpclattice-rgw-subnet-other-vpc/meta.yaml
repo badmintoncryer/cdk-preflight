@@ -1,0 +1,13 @@
+id: pf-vpclattice-rgw-subnet-other-vpc
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceGateway]
+severity: ERROR
+title: "A resource gateway's subnets must be in its VPC"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceGateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail gateway in the default VPC with a subnet of an in-stack VPC -> ROLLBACK_COMPLETE (Subnet subnet-08b1c5dcad0ddaf05 is not valid because it is not in VPC vpc-4331593e. Specify a subnet in this VPC.); pass gateway in the in-stack VPC with its subnet and security group -> CREATE_COMPLETE."
+  expect: "Specify a subnet in this VPC"
+addedOn: 2026-10-18

@@ -1,0 +1,20 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "TG": {
+   "Type": "AWS::VpcLattice::TargetGroup",
+   "Properties": {
+    "Name": "cdkpf-363-r17-f",
+    "Type": "INSTANCE",
+    "Config": {
+     "Port": 443,
+     "Protocol": "TCP",
+     "VpcIdentifier": "vpc-4331593e",
+     "HealthCheck": {
+      "Enabled": true
+     }
+    }
+   }
+  }
+ }
+}

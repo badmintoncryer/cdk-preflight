@@ -1,0 +1,13 @@
+id: pf-vpclattice-resourceconfiguration-name-duplicate
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "Resource configuration names must be unique in the account and region"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail two SINGLE resource configurations with the same Name (second DependsOn first) -> ROLLBACK_COMPLETE (RESOURCE_CONFIGURATION with name cdkpf-363-s5-10-f-r already exists); pass two different names -> CREATE_COMPLETE."
+  expect: "RESOURCE_CONFIGURATION with name"
+addedOn: 2026-10-18

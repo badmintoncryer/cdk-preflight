@@ -1,0 +1,37 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Sn": {
+   "Type": "AWS::VpcLattice::ServiceNetwork",
+   "Properties": {
+    "Name": "cdkpf-363-s3-16-p-n"
+   }
+  },
+  "Vpc": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.60.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkVpcAssociation",
+   "Properties": {
+    "ServiceNetworkIdentifier": {
+     "Ref": "Sn"
+    },
+    "VpcIdentifier": {
+     "Ref": "Vpc"
+    },
+    "PrivateDnsEnabled": true,
+    "DnsOptions": {
+     "PrivateDnsPreference": "SPECIFIED_DOMAINS_ONLY",
+     "PrivateDnsSpecifiedDomains": [
+      "example.com"
+     ]
+    }
+   }
+  }
+ }
+}

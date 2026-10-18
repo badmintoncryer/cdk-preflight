@@ -1,0 +1,18 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "R": {
+   "Type": "AWS::VpcLattice::ResourceConfiguration",
+   "Properties": {
+    "Name": "cdkpf-363-s4-07-f-r",
+    "ResourceConfigurationType": "CHILD",
+    "PortRanges": [
+     "443"
+    ],
+    "ResourceConfigurationDefinition": {
+     "IpResource": "172.31.7.10"
+    }
+   }
+  }
+ }
+}

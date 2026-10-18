@@ -1,0 +1,13 @@
+id: pf-vpclattice-rc-group-domain-non-group
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceConfiguration]
+severity: ERROR
+title: "Only a GROUP resource configuration takes GroupDomain"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateResourceConfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify-rerun.sh; variants from c4/verify.sh): fail SINGLE with GroupDomain -> ROLLBACK_COMPLETE (Invalid request provided: GroupDomain is only allowed for GROUP type); pass SINGLE without it -> CREATE_COMPLETE. Variant CHILD with GroupDomain -> ROLLBACK_COMPLETE (Invalid request provided: GroupDomain is only allowed for GROUP type). Variant ARN with the property (ArnResource a missing RDS instance) -> ROLLBACK_COMPLETE (Invalid request provided: GroupDomain is only allowed for GROUP type). The CFN handler checks this before calling the API (HandlerErrorCode InvalidRequest) and returns the same text for SINGLE, CHILD and ARN; the API text is 'Unexpected attribute groupDomain for type SINGLE' (#363 B)."
+  expect: "GroupDomain is only allowed for GROUP type"
+addedOn: 2026-10-18

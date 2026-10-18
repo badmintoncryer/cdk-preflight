@@ -1,0 +1,13 @@
+id: pf-vpclattice-tg-alb-health-check
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::TargetGroup]
+severity: ERROR
+title: "An ALB target group cannot carry a health check config"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/target-group-health-checks.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail ALB TG with HealthCheck Enabled true -> ROLLBACK_COMPLETE (ALB Target Group does not support health check config); pass ALB TG without HealthCheck -> CREATE_COMPLETE. Variant HealthCheck Enabled false -> ROLLBACK_COMPLETE (ALB Target Group does not support health check config)."
+  expect: "ALB Target Group does not support health check config"
+addedOn: 2026-10-17

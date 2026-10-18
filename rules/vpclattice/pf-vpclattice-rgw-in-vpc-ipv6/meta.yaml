@@ -1,0 +1,13 @@
+id: pf-vpclattice-rgw-in-vpc-ipv6
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ResourceGateway]
+severity: ERROR
+title: "An IPV6 resource gateway cannot resolve DNS IN_VPC"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-gateway.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c5/verify.sh): fail IPV6 gateway on an in-stack IPv6-only subnet with ResourceConfigDnsResolution IN_VPC -> ROLLBACK_COMPLETE (IN_VPC DNS resolution is incompatible with IPv6 only IP address type.); pass without ResourceConfigDnsResolution -> CREATE_COMPLETE."
+  expect: "IN_VPC DNS resolution is incompatible with IPv6 only IP address type"
+addedOn: 2026-10-18

@@ -1,0 +1,18 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Gw": {
+   "Type": "AWS::VpcLattice::ResourceGateway",
+   "Properties": {
+    "Name": "cdkpf-363-s5-15-f-g",
+    "VpcIdentifier": "vpc-4331593e",
+    "SubnetIds": [
+     "vpc-0123456789abcdef0"
+    ],
+    "SecurityGroupIds": [
+     "sg-7d699f61"
+    ]
+   }
+  }
+ }
+}

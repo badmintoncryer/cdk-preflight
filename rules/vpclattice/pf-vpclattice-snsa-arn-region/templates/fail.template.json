@@ -1,0 +1,22 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Svc": {
+   "Type": "AWS::VpcLattice::Service",
+   "Properties": {
+    "Name": "cdkpf-363-s2-21-f"
+   }
+  },
+  "A": {
+   "Type": "AWS::VpcLattice::ServiceNetworkServiceAssociation",
+   "Properties": {
+    "ServiceIdentifier": {
+     "Ref": "Svc"
+    },
+    "ServiceNetworkIdentifier": {
+     "Fn::Sub": "arn:${AWS::Partition}:vpc-lattice:ap-northeast-1:${AWS::AccountId}:servicenetwork/sn-0123456789abcdef0"
+    }
+   }
+  }
+ }
+}

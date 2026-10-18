@@ -1,0 +1,13 @@
+id: pf-vpclattice-snva-dns-options-requires-private-dns
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::ServiceNetworkVpcAssociation]
+severity: ERROR
+title: "DnsOptions needs PrivateDnsEnabled true"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_DnsOptions.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail PrivateDnsEnabled false with DnsOptions.PrivateDnsPreference ALL_DOMAINS -> ROLLBACK_COMPLETE (privateDnsPreference/privateDnsSpecifiedDomains cannot be specified if privateDnsEnabled is false); pass PrivateDnsEnabled true -> CREATE_COMPLETE. Variant PrivateDnsEnabled false with only PrivateDnsSpecifiedDomains -> ROLLBACK_COMPLETE (privateDnsPreference/privateDnsSpecifiedDomains cannot be specified if privateDnsEnabled is false)."
+  expect: "cannot be specified if privateDnsEnabled is false"
+addedOn: 2026-10-18

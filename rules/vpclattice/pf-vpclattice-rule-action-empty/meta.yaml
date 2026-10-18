@@ -1,0 +1,13 @@
+id: pf-vpclattice-rule-action-empty
+service: vpclattice
+benchRegion: us-east-1
+resourceTypes: [AWS::VpcLattice::Rule]
+severity: ERROR
+title: "A rule Action must not be an empty object"
+constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/API_CreateRule.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule with Action {} on an HTTPS listener -> ROLLBACK_FAILED (Action is required in Rule's action field.); pass Action FixedResponse 404 -> CREATE_COMPLETE."
+  expect: "Action is required in Rule"
+addedOn: 2026-10-18
