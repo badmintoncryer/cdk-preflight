@@ -19,6 +19,13 @@
 #     pf-ssm-parameter-name（ARN 全体の 1011）/ pf-secretsmanager-rotation-rules の 4 か所が該当し、
 #     フィクスチャは手で境界に置いてある（ASG は 101-0 / 100-0、SSM は素の名前 967 / 966）。
 #     片側だけを読んで「検査済み」と数えていたのをやめた分で、見えない端が増えたわけではない。
+#     pf-s3-lifecycle-min-storage-duration-chain の `d2 - d1 < mind`（mind は _lib のテーブル）も同じで、
+#     フィクスチャは手で境界に置いてある（fail は 4 日と 93 日で差 89、pass は 30 日と 120 日で差 90）。
+#   - ヘルパーや代入の中で計算した値も、テンプレートに現れる量ではないので対象外。pf-ec2-userdata-size
+#     （base64 から出した復号後のバイト数、16385 / 16384）、pf-lambda-env-size（環境変数をシリアライズした
+#     バイト数の合計、4097 / 4096）、pf-rds-pi-retention-period（`round(n / 31)`、94 / 93）が該当し、
+#     どれもフィクスチャは手で境界に置いてある。以前は呼び出しの左辺を数値プールと突き合わせて
+#     例外行にしていた。
 #   - 書式ルールの正規表現に埋まった長さの端（`^[A-Z_-]{1,40}$` の 40 など）は比較演算子が出ないので
 #     しきい値として見えない。pf-route53-cidr-location-name-format / pf-elbv2-rule-http-method-charset /
 #     pf-ecs-svc-connect-client-alias-dns-name / pf-ssm-association-targets の 4 本が該当し、端は実機で
@@ -56,7 +63,6 @@ pf-firehose-prefix-length  しきい値は展開後のプレフィックスの�
 pf-firehose-processor-buffer-size-range  BufferSizeInMBs は小数を取るので、上限 3 の隣は整数の 4 ではない。fail は 3.1 と 0.19（実機は 3.01 / 0.199 も拒否するので丸めではない）、pass は 3 と 0.2 ちょうどに乗せてある
 pf-firehose-processor-count  しきい値と突き合わせるのは Processors 配列の要素数だが、数えているのはヘルパー述語の本体（_pf_fhpc_count）の中なので検出器は呼び出し側から辿れない。フィクスチャは 6 / 0 本と 5 / 1 本に乗せてある
 pf-iam-managed-policy-size  しきい値は json.marshal したポリシー文書のバイト数。テンプレートに数値としては現れない（6145/6144 ちょうどで撮ってある）
-pf-lambda-env-size  しきい値は環境変数をシリアライズしたバイト数の合計。テンプレートに数値としては現れない（4097/4096 ちょうどで撮ってある）
 pf-lambda-esm-on-failure-destination-api-max-length  上限 350 に届く有効な ARN が存在しない（SQS/S3 の名前長の上限より先に頭打ちになる）。fail は 351 文字ちょうど
 pf-lambda-esm-poller-group-esm-count  doc-only。fail の 101 本で既にテンプレートが 57KB あり CFN の 51,200 バイト上限を超える。pass の 100 本も同じ理由で作れない
 pf-lambda-layerperm-arn-length  上限 140 に届く有効なレイヤー ARN が存在しない（レイヤー名は 64 文字まで）。fail は 141 文字ちょうど
@@ -64,7 +70,6 @@ pf-lambda-perm-policy-size  しきい値は SourceArn 長の合計。fail は既
 pf-memorydb-maintenance-window  しきい値と突き合わせるのはメンテナンスウィンドウの長さを分に直した値で、テンプレートに数値としては現れない。フィクスチャは 59 分 / 60 分ちょうどに乗せてある
 pf-memorydb-user-password  パスワード長のしきい値はヘルパー述語の引数にあり、n が何を数えた値か検出器から辿れない。フィクスチャは 15 / 129 文字と 16 / 128 文字に乗せてある
 pf-msk-serverless-subnets-count  2..6 の両端はヘルパー述語（_pf_mskssc_out(n) if n < 2 / n > 6）の引数で、検出器は呼び出し側の count(ids) まで辿れない。フィクスチャは fail に 1 本と 7 本、pass に 2 本と 6 本を置いて境界に乗せてある
-pf-rds-pi-retention-period  Performance Insights の保持期間は 7 / 31 の倍数（31-713）/ 731 という飛び飛びの集合で、k <= 23 はその倍数の上限を見ている。k の隣の値 24 に対応する保持期間は存在しない。フィクスチャは 31 の倍数でない 94 と、倍数の 93 に乗せてある
 pf-rds-proxy-pool-percent  MaxConnectionsPercent の上側 100 は同梱エンジンのスキーマが F3034 で止めるので fail に置けない（原則 1）。下側の 1 未満と ConnectionBorrowTimeout の 300 は境界に乗せてある
 pf-rds-serverless-v2-capacity  MinCapacity / MaxCapacity は 0.5 ACU 刻みなので、最も近い違反値の差は 0.5 であって 1 ではない（fail は 1.5/1 に乗せてある）。機械チェックは整数 1 の差を要求する。pass は 1/1 で限界そのものに乗っている（MaxCapacity は 1 以上でないと RDS が通さないので 0.5/0.5 は使えない）
 pf-route53-cidrcollection-cidr-item-length  fail は 51 文字（50 だと "Invalid CIDR Prefix" が先に出て maxLength に届かない）。pass 側は作れない: 有効な CIDR 表記は IPv6 を全展開しても 42 文字止まり（アカウントのプレフィックス上限 /48）

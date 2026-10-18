@@ -23,7 +23,7 @@ _pf_udsz_paths := {
 	"AWS::EC2::LaunchTemplate": "Properties.LaunchTemplateData.UserData",
 }
 
-# UserData がリテラル base64 文字列のケース
+# UserData は base64 文字列として届く。{"Fn::Base64": "<literal>"} もエンジンが先に符号化するので同じ形になる
 violation contains make_diag_full("pf-ec2-userdata-size", "ERROR", name, p,
 	sprintf("UserData decodes to about %v bytes, but EC2 limits user data to %d bytes; RunInstances fails at deploy time", [size, _pf_udsz_limit]),
 	_pf_udsz_fix, _pf_udsz_url) if {
@@ -35,15 +35,3 @@ violation contains make_diag_full("pf-ec2-userdata-size", "ERROR", name, p,
 	size > _pf_udsz_limit
 }
 
-# UserData が {"Fn::Base64": "<literal>"} のケース（エンコード前の生バイト数で判定）
-violation contains make_diag_full("pf-ec2-userdata-size", "ERROR", name, p,
-	sprintf("UserData is %d bytes before base64 encoding, but EC2 limits user data to %d bytes; RunInstances fails at deploy time", [count(inner), _pf_udsz_limit]),
-	_pf_udsz_fix, _pf_udsz_url) if {
-	some rtype, p in _pf_udsz_paths
-	some name in resources_of_type(rtype)
-	ud := resolve(name, p)
-	is_object(ud)
-	inner := object.get(ud, "Fn::Base64", null)
-	is_string(inner)
-	count(inner) > _pf_udsz_limit
-}

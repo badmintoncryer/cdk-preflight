@@ -259,7 +259,9 @@ function valuesOf(json: string, key: string): number[] {
   return out;
 }
 
-const THRESHOLD = /([A-Za-z_][A-Za-z0-9_.]*\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)/g;
+// 右辺は数字のほか名前も受ける。`size > _pf_x_max` や `count(u) > mx` のしきい値は定数や
+// テーブルに置かれていることが多く、数字だけを見ていたときは閾値ゼロ件として素通りしていた（#362）。
+const THRESHOLD = /([A-Za-z_][A-Za-z0-9_.]*\((?:[^()]|\([^()]*\))*\)|[A-Za-z_][A-Za-z0-9_.]*)\s*(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?\b|[A-Za-z_][A-Za-z0-9_]*\b(?![.(\[]))/g;
 
 /**
  * AGENTS.md 原則 2 の「両方のフィクスチャが境界に乗る」の機械チェック。rego のしきい値ごとに
@@ -314,6 +316,18 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
   // `_pf_x_ok(v) if { n <= 100 }` を `not _pf_x_ok(...)` で使うのが、この直接比較と並ぶ
   // もう 1 つの標準形。守れている向きに書かれた比較なので、境界を出す前に裏返す。
   // そのままだと fail に 100、pass に 101 を要求してしまう（向きが逆）。
+  // `_pf_x_tbl := {"io1": 4, "st1": 125}` のような数値テーブル。複数行に分けて書くのがふつうなので
+  // 行単位の代入表では中身が取れない。閉じ括弧までを読んで「キー → 数」にする。
+  const tables = new Map<string, Map<string, number>>();
+  for (const m of rego.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)\s*:=\s*\{([^{}]*)\}/gm)) {
+    const entries = [...m[2].matchAll(/"([^"]+)"\s*:\s*(-?\d+(?:\.\d+)?)\s*(?:,|$)/gm)].map((e) => [e[1], Number(e[2])] as const);
+    if (entries.length) tables.set(m[1], new Map(entries));
+  }
+  // テーブルのどの行が効くかはテンプレート次第なので、フィクスチャに文字列として現れるキーを使う。
+  // ARN の断片をキーにするルール（`split(arn, ":")[2]` のサービス名）もあるので `:sqs:` の形も数える。
+  // どのキーも現れなければ判断できない。黙ると素通りに戻るので、例外リストへの記載を求める。
+  const unresolved: string[] = [];
+
   const negated = new Set([...rego.matchAll(/\bnot\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
   const FLIP: Record<string, string> = { '<': '>=', '<=': '>', '>': '<=', '>=': '<' };
 
@@ -357,8 +371,27 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
     // 述語は閉じ括弧を持たないので次のブロックにくっついて切られる——ブロックの先頭では決められない。
     const owners = [...code.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)/gm)].map((m) => [m.index ?? 0, m[1]] as const);
     const ownerAt = (i: number) => owners.filter(([at]) => at <= i).pop()?.[1] ?? '';
+    // 右辺の名前を数に解く。数字の定数ならその値、テーブル引きならフィクスチャが使うキーの値。
+    // 数に解けない名前（別プロパティの値など）は crossFieldProblem の担当なので空を返す。
+    const limitsOf = (rhs: string): number[] => {
+      if (/^-?\d/.test(rhs)) return [Number(rhs)];
+      let v = rhs;
+      for (let i = 0; i < 4; i++) {
+        if (tables.has(v)) break;
+        const next = assigned.get(v)?.trim();
+        if (next === undefined) return [];
+        if (/^-?\d+(?:\.\d+)?$/.test(next)) return [Number(next)];
+        v = /^([A-Za-z_][A-Za-z0-9_]*)\[[^\]]*\]$/.exec(next)?.[1] ?? /^object\.get\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,/.exec(next)?.[1] ?? next;
+      }
+      const table = tables.get(v);
+      if (!table) return [];
+      const used = [...table].filter(([k]) => [fail, pass].some((t) => t.includes(`"${k}"`) || t.includes(`:${k}:`))).map(([, n]) => n);
+      if (!used.length) unresolved.push(`no key of ${v} appears in either template`);
+      return used;
+    };
     return [...code.matchAll(THRESHOLD)]
-      .map((m) => {
+      .flatMap((m) => limitsOf(m[3]).map((n) => ({ m, n })))
+      .map(({ m, n }) => {
         const at = m.index ?? 0;
         const line = code.slice(code.lastIndexOf('\n', at) + 1, (code.indexOf('\n', at) + 1 || code.length) - 1);
         const expr = m[1].startsWith('count(') ? m[1] : deref(assigned.get(m[1]) ?? '');
@@ -366,16 +399,18 @@ export function boundaryProblem(rego: string, fail: string, pass: string): strin
         const counted = expr.trimStart().startsWith('count(');
         // 算術を挟む比較は左辺が 1 つの値ではない。`mx - mn > 100` の左辺を `mn` と読むと
         // 見当違いのプロパティに 101 を要求する（`shape` と同じく対象外にする）。
-        const arith = /[*+/]|\s-\s/.test(line);
-        return { counted, kind: arith ? ('shape' as const) : kindOf(expr), op, n: Number(m[3]), key: counted || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(m[1]) ? undefined : keyFor(m[1], block) };
+        // ヘルパーの中で計算した値（base64 から復号後のバイト数を出す `(count(s) * 3) / 4` など）も同じで、
+        // テンプレートに現れる量ではない。
+        const arith = /[*+/]|\s-\s/.test(line) || /[*+/]|\s-\s/.test(expr.replace(/"[^"]*"/g, ''));
+        return { counted, kind: arith ? ('shape' as const) : kindOf(expr), op, n, key: counted || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(m[1]) ? undefined : keyFor(m[1], block) };
       })
       .filter((t): t is Threshold => t.kind !== 'shape' && Number.isInteger(t.n) && Math.abs(t.n) >= 2);
   };
 
   const thresholds = blocks.flatMap(thresholdsOf);
-  if (thresholds.length === 0) return undefined;
+  const problems: string[] = [...new Set(unresolved)];
+  if (thresholds.length === 0) return problems.length ? problems.join('; ') : undefined;
   const pools = { fail: fixturePools(fail), pass: fixturePools(pass) };
-  const problems: string[] = [];
   for (const t of thresholds) {
     // 違反する中で限界に最も近い値 / 限界そのもの
     const tightest = t.op === '<' ? t.n - 1 : t.op === '<=' ? t.n : t.op === '>' ? t.n + 1 : t.n;
