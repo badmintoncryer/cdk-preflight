@@ -1,0 +1,164 @@
+name: cdk-preflight report
+description: Synthesize a CDK app once per side and post one pull request comment with the cdk-preflight findings, the idle cost change (cfn-idle-cost) and the permission change (cfn-exec-policy).
+branding: { icon: check-circle, color: orange }
+inputs:
+  working-directory:
+    description: Directory of the CDK app (where cdk.json is), relative to the repository root.
+    default: .
+  install:
+    description: Command that installs the app's dependencies, run on both sides. Empty to skip.
+    default: npm ci
+  synth:
+    description: Command that synthesizes the app into cdk.out, run on both sides.
+    default: npx cdk synth -q
+  base-ref:
+    description: Branch to compare against. Defaults to the pull request's base branch.
+    default: ""
+  idle-cost:
+    description: Include the idle cost change (cfn-idle-cost).
+    default: "true"
+  idle-cost-args:
+    description: More cfn-idle-cost flags, e.g. "--region us-east-1 --max-increase 50".
+    default: ""
+  exec-policy:
+    description: Include the CloudFormation execution role permission change (cfn-exec-policy).
+    default: "true"
+  exec-policy-args:
+    description: More cfn-exec-policy diff flags, e.g. "--fail-on wildcard,unknown".
+    default: ""
+  comment:
+    description: Post the report as a pull request comment, updated on each run.
+    default: "true"
+  github-token:
+    description: Token used to comment.
+    default: ${{ github.token }}
+outputs:
+  failed:
+    description: Which parts failed (space-separated, from preflight, synth, idle-cost, exec-policy); empty when none did.
+    value: ${{ steps.report.outputs.failed }}
+runs:
+  using: composite
+  steps:
+    - id: report
+      shell: bash
+      env:
+        IN_DIR: ${{ inputs.working-directory }}
+        IN_INSTALL: ${{ inputs.install }}
+        IN_SYNTH: ${{ inputs.synth }}
+        IN_BASE_REF: ${{ inputs.base-ref || github.base_ref }}
+        IN_IDLE_COST: ${{ inputs.idle-cost }}
+        IN_IDLE_COST_ARGS: ${{ inputs.idle-cost-args }}
+        IN_EXEC_POLICY: ${{ inputs.exec-policy }}
+        IN_EXEC_POLICY_ARGS: ${{ inputs.exec-policy-args }}
+        IN_COMMENT: ${{ inputs.comment }}
+        ACTION_PATH: ${{ github.action_path }}
+        PR: ${{ github.event.pull_request.number }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        set -uo pipefail
+        set -f # args are split on spaces, never globbed
+        root=$(pwd)
+        work="$RUNNER_TEMP/cdk-preflight-report"
+        rm -rf "$work" && mkdir -p "$work"
+        failed=""
+
+        # synth <checkout> <name>: install and synthesize; a cdk.out with a
+        # manifest is usable even when the synth failed on a validation finding.
+        synth() {
+          local dir="$1/$IN_DIR"
+          ( cd "$dir" && { [ -z "$IN_INSTALL" ] || bash -c "$IN_INSTALL"; } && bash -c "$IN_SYNTH" ) > "$work/$2.log" 2>&1
+          echo $? > "$work/$2.code"
+          [ -f "$dir/cdk.out/manifest.json" ] && cp -r "$dir/cdk.out" "$work/$2.out"
+        }
+
+        echo "::group::synth (pull request)"
+        synth "$root" head
+        cat "$work/head.log"
+        echo "::endgroup::"
+
+        base_ok=false
+        if [ -n "$IN_BASE_REF" ]; then
+          echo "::group::synth ($IN_BASE_REF)"
+          if git fetch --no-tags --depth=1 origin "$IN_BASE_REF" && git worktree add --detach "$work/base" FETCH_HEAD; then
+            synth "$work/base" base
+            cat "$work/base.log"
+            [ -d "$work/base.out" ] && base_ok=true
+            git worktree remove --force "$work/base" || true
+          fi
+          echo "::endgroup::"
+        fi
+
+        out="$work/report.md"
+        echo "<!-- cdk-preflight-report -->" > "$out"
+        echo "## CDK pull request report" >> "$out"
+        echo >> "$out"
+
+        node "$ACTION_PATH/action/preflight-report.cjs" "$work/head.out" "$work/head.log" "$(cat "$work/head.code")" >> "$out" || failed="$failed preflight"
+        if [ ! -d "$work/head.out" ]; then
+          failed="$failed synth"
+          echo "The pull request did not synthesize, so the idle cost and permissions are not shown." >> "$out"
+        else
+          [ "$(cat "$work/head.code")" = 0 ] || case "$failed" in *preflight*) ;; *) failed="$failed synth" ;; esac
+          base_note=""
+          if [ "$base_ok" != true ]; then
+            base_note="_${IN_BASE_REF:-the base branch} did not synthesize, so this is the whole app, not the change._"
+          fi
+          if [ "$IN_IDLE_COST" = true ]; then
+            flags=(--format md)
+            [ "$base_ok" = true ] && flags+=(--base "$work/base.out")
+            echo >> "$out"
+            [ -n "$base_note" ] && { echo "$base_note" >> "$out"; echo >> "$out"; }
+            code=0
+            npx -y cfn-idle-cost@latest "${flags[@]}" $IN_IDLE_COST_ARGS "$work/head.out" > "$work/idle.md" 2> "$work/idle.err" || code=$?
+            if [ "$code" = 0 ] || [ "$code" = 3 ]; then
+              cat "$work/idle.md" >> "$out"
+              [ "$code" = 3 ] && failed="$failed idle-cost"
+            else
+              { echo "### Idle cost"; echo; echo '```'; tail -n 20 "$work/idle.err"; echo '```'; } >> "$out"
+              failed="$failed idle-cost"
+            fi
+          fi
+          if [ "$IN_EXEC_POLICY" = true ]; then
+            echo >> "$out"
+            if [ "$base_ok" = true ]; then
+              code=0
+              npx -y cfn-exec-policy@latest diff --format md --base "$work/base.out" $IN_EXEC_POLICY_ARGS "$work/head.out" > "$work/policy.md" 2> "$work/policy.err" || code=$?
+              if [ "$code" = 0 ] || [ "$code" = 3 ]; then
+                cat "$work/policy.md" >> "$out"
+                [ "$code" = 3 ] && failed="$failed exec-policy"
+              else
+                { echo "### Execution policy"; echo; echo '```'; tail -n 20 "$work/policy.err"; echo '```'; } >> "$out"
+                failed="$failed exec-policy"
+              fi
+            else
+              echo "### Execution policy" >> "$out"
+              echo >> "$out"
+              echo "$base_note" >> "$out"
+              echo "Not shown: the permission change needs both sides." >> "$out"
+            fi
+          fi
+        fi
+
+        failed="${failed# }"
+        echo "failed=$failed" >> "$GITHUB_OUTPUT"
+        cat "$out" >> "$GITHUB_STEP_SUMMARY"
+        if [ "$IN_COMMENT" = true ] && [ -n "${PR:-}" ]; then
+          marker="<!-- cdk-preflight-report -->"
+          # GitHub rejects comments over 65536 characters; cut at a line boundary.
+          awk '{ n += length($0) + 1; if (n > 60000) { print "\n(truncated; the job summary has it all)"; exit } print }' "$out" > "$out.body"
+          # A read-only token (pull requests from forks, Dependabot) can't comment: warn, don't fail.
+          ids=$(gh api "repos/$GH_REPO/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id") || ids=""
+          id="${ids%%$'\n'*}"
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GH_REPO/issues/comments/$id" -F body=@"$out.body" > /dev/null || posted=no
+          else
+            gh api "repos/$GH_REPO/issues/$PR/comments" -F body=@"$out.body" > /dev/null || posted=no
+          fi
+          [ "${posted:-}" = no ] && echo "::warning::cdk-preflight could not comment on the pull request (the token may be read-only); the report is in the job summary."
+        fi
+        if [ -n "$failed" ]; then
+          echo "::error::cdk-preflight report: $failed failed"
+          exit 1
+        fi
