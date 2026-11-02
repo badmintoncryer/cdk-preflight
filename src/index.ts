@@ -1,6 +1,7 @@
 import { Duration, Stage, Validations } from 'aws-cdk-lib';
 import { IConstruct } from 'constructs';
 import { engineVersion, installEnforceGate, isSuperseded, observePluginCached, PreflightEnforcePlugin, PreflightQuotaPlugin } from './private/enforce';
+import { EXPORT_RULE_IDS, PreflightExportPlugin } from './private/exports';
 import { installQuotaCacheFlush, QUOTA_RULE_IDS } from './private/quota';
 import { BUNDLED_RULES } from './rules.generated';
 
@@ -111,8 +112,10 @@ export class Preflight {
       throw new Error('cdk-preflight: Preflight.apply() must be called on an App or a Stage');
     }
     const exclude = options.exclude ?? [];
-    // pf-quota-* は Rego のルールではないので BUNDLED_RULES には無い（src/private/quota.ts）
-    const unknown = exclude.filter((id) => !BUNDLED_RULES.some((r) => r.id === id) && !QUOTA_RULE_IDS.includes(id));
+    // pf-quota-* と スタック間の Export のルールは Rego のルールではないので BUNDLED_RULES には無い
+    // （src/private/quota.ts、src/private/exports.ts）
+    const unknown = exclude.filter((id) => !BUNDLED_RULES.some((r) => r.id === id)
+      && !QUOTA_RULE_IDS.includes(id) && !EXPORT_RULE_IDS.includes(id));
     if (unknown.length > 0) {
       throw new Error(`cdk-preflight: unknown rule id(s) in exclude: ${unknown.join(', ')}`);
     }
@@ -133,6 +136,9 @@ export class Preflight {
       ? { ttlMs: (options.quotaCacheTtl ?? Duration.minutes(5)).toMilliseconds(), exclude }
       : undefined;
     if (quotas) installQuotaCacheFlush(scope);
+    if (!EXPORT_RULE_IDS.every((id) => exclude.includes(id))) {
+      Validations.of(scope).addPlugins(new PreflightExportPlugin(exclude));
+    }
     if (enforce) {
       Validations.of(scope).addPlugins(new PreflightEnforcePlugin(selected, strict, quotas));
       installEnforceGate(scope);
