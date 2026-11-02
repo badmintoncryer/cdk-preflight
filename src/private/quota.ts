@@ -155,7 +155,7 @@ function nestedTemplateFile(dir: string, r: Resource): string | undefined {
 }
 
 /** manifest.json からデプロイ時のスタック名を引く。見つからなければファイル名から。 */
-function stackNameOf(templatePath: string): string {
+export function stackNameOf(templatePath: string): string {
   const file = path.basename(templatePath);
   try {
     const manifest = JSON.parse(fs.readFileSync(path.join(path.dirname(templatePath), 'manifest.json'), 'utf8'));
